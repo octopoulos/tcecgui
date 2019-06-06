@@ -1,0 +1,4 @@
+{
+   "message":"BF box is having issues, rebooting it",
+   "timeout":5400
+}
