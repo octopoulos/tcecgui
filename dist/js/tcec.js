@@ -1052,20 +1052,55 @@ function getScorePct(reverse, engineName, draEval, winEval, egEval)
    return retStr;
 }
 
-function getNNPct(engineName, egEval)
-{
+// The function was posted by "ya" in the Leela Chess Zero Discord channel
+// https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
+function leelaCpToQ(cp) {
+   return cp < 234.18
+      ? 0.0033898305085 * cp -
+           (8.76079436769e-38 * Math.pow(cp, 15)) /
+              (3.618208073857e-34 * Math.pow(cp, 14) + 1.0) +
+           (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
+              (cp * cp - 487.329812319 * cp + 59486.9337812)
+      : cp < 381.73
+      ? (-17.03267913 * cp + 3342.55947265) /
+           (cp * cp - 360.8419732 * cp + 32568.5395889) +
+        0.995103
+      : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
+        ((0.4182050082072 * cp - 2942.6269998574) /
+           (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
+           Math.exp(-Math.pow((cp - 400.0) / 7000.0, 3)) -
+        5.727639074137869e-8;
+}
+
+function leelaEvalToWinPct(eval) {
+   var q;
+   if (eval >= 0) q = leelaCpToQ(eval * 100);
+   else q = -leelaCpToQ(-eval * 100);
+   return Math.round(100 * 100 * q) / 200;
+}
+
+function getNNPct(engineName, egEval) {
    var reverse = 0;
-   var whiteWinPct = (((((Math.atan((egEval * 100)/290.680623072))/3.096181612)+0.5) * 100)-50);
-   if (egEval < 0)
-   {
+   var whiteWinPct;
+
+   if (engineName === "LCZero") {
+      whiteWinPct = leelaEvalToWinPct(egEval);
+   } else {
+      whiteWinPct =
+         (Math.atan((egEval * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 -
+         50;
+   }
+
+   if (egEval < 0) {
       reverse = 1;
       whiteWinPct = -whiteWinPct;
    }
+
    var winEval = parseFloat(Math.max(0, whiteWinPct * 2)).toFixed(1);
    var losEval = 0;
    var draEval = parseFloat(100 - Math.max(winEval, losEval)).toFixed(1);
    var retStr = getScorePct(reverse, engineName, draEval, winEval, egEval);
-   return (retStr);
+   return retStr;
 }
 
 function getABPct(engineName, egEval)
