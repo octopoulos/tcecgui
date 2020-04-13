@@ -12,8 +12,10 @@ crash.json
 crosstable.json
 data*.json
 enginerating.json
+export/
 gamelist.json
 live*.json
+model/
 schedule.json
 tournament.json
 winners.json

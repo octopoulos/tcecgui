@@ -2,8 +2,8 @@
 /*
 globals
 _, $, board, bracketDataMain, C, document, Events, getUserS, hideBanner, initTables, initToolTip, io, localStorage, LS,
-Max, Min, newUpdateStandData, Round, S, screen, setBoardInit, setDefaults, setLastMoveTime, setTimeout, setTwitch,
-setTwitchChange, setUsers, setUsersMain, showBanner, Style, toggleTheme, unlistenLogMain, updateCrashData,
+Max, Min, newUpdateStandData, Round, S, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTimeout,
+setTwitch, setTwitchChange, setUsers, setUsersMain, showBanner, Style, toggleTheme, unlistenLogMain, updateCrashData,
 updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData, updateLiveEval, updateLiveEvalData,
 updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData, updateTables, updateWinners, window
 */
@@ -33,7 +33,7 @@ function init_sockets() {
     });
     socket.on('liveeval', data => {
         updateLiveEvalData(data, 1, null, 1);
-        });
+    });
     socket.on('liveeval1', data => {
         updateLiveEvalData(data, 1, null, 2);
     });
@@ -156,6 +156,7 @@ function set_global_events() {
 
 window.onload = function() {
     set_global_events();
+    set_ui_events();
     init_sockets();
     init_globals();
     resize();

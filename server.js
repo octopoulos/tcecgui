@@ -44,7 +44,6 @@ var app = express();
 // const md5 = require('md5');
 // const axios = require('axios');
 var chokidar = require('chokidar');
-var _ = require('lodash');
 var lastPgnTime = Date.now();
 const Tail = require('nodejs-tail');
 // const pid = process.pid;

@@ -1,6 +1,6 @@
 /*
 globals
-_, $, cellformatter, Floor, formatter, getImg, plog, Resource, Round, standColumns, tourInfo
+_, $, cellformatter, Floor, formatter, getImg, Hide, LS, Resource, Round, standColumns, tourInfo
 */
 'use strict';
 
@@ -23,15 +23,14 @@ function updateCrosstable()
  */
 function newUpdateStandData(data)
 {
-   plog ("Updating standtable:", 0);
+   LS("Updating standtable:");
    crosstableData = data;
 
    if (tourInfo)
    {
       if (tourInfo.cup == 1)
       {
-         $('#crossdiv').hide();
-         $('#standdiv').hide();
+         Hide('#crossdiv, #standdiv');
          return;
       }
    }
@@ -73,7 +72,7 @@ function newUpdateStandData(data)
  */
 function newUpdateCrossData()
 {
-    plog ("Updating crossdata:", 0);
+    LS("Updating crossdata:");
     let abbreviations = [],
         standtableData = crosstableData,
         engine_names = standtableData.Order,

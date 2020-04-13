@@ -12,7 +12,6 @@ function fixOrder()
 {
     let arr = [],
         count = 0,
-        debug = 1,
         engines = crosstableData.Table;
 
     Keys(engines).forEach(key => {
@@ -24,7 +23,7 @@ function fixOrder()
 
     let sorted = arr.slice().sort((a, b) => (b - a)),
         ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
-   plog ("Ranks is :" + ranks, debug);
+   LS("Ranks is :" + ranks);
    count = 0;
    var tiePoints = 0;
 
@@ -69,7 +68,7 @@ function fixOrder()
                engine.Neustadtl = 0;
             }
 
-            plog ("iengine.Rank:" + iengine.Rank + ikey + ",engine.Rank:" + engine.Rank + key, debug);
+            LS("iengine.Rank:" + iengine.Rank + ikey + ",engine.Rank:" + engine.Rank + key);
             if (parseInt(iengine.Rank) && parseInt(engine.Rank) == parseInt(iengine.Rank))
             {
                if (engine.Strikes)
@@ -78,20 +77,20 @@ function fixOrder()
                }
                else
                {
-                  plog ("engine.Strikes: " + engine.Results[ikey].Text, debug);
+                  LS("engine.Strikes: " + engine.Results[ikey].Text);
                   if (sbCount > engine.Results[ikey].Text.length/2)
                   {
-                     plog ("key won:" + key, debug);
+                     LS("key won:" + key);
                      tiePoints = tiePoints + 1/100;
                   }
                   else if (sbCount < engine.Results[ikey].Text.length/2)
                   {
-                     plog ("key lost:" + key, debug);
+                     LS("key lost:" + key);
                      tiePoints = tiePoints + 0/100;
                   }
                   else
                   {
-                     plog ("key drew:" + key, debug);
+                     LS("key drew:" + key);
                      tiePoints = tiePoints + 0.5/100;
                   }
                }
@@ -99,7 +98,7 @@ function fixOrder()
          }
       });
       tiePoints = tiePoints + (engine.WinsAsBlack + engine.WinsAsWhite)/(100 * 100);
-      plog ("tiePoints is :" + tiePoints + ", count is :" + arr[count] + " , name is :" + key + ", score:" + engine.Score, debug);
+      LS("tiePoints is :" + tiePoints + ", count is :" + arr[count] + " , name is :" + key + ", score:" + engine.Score);
       //tiePoints = tiePoints + engine.WinAsBlack/(100 * 100 * 100);
       tiePoints = tiePoints + engine.Neustadtl/(100 * 100 * 1000);
       tiePoints = tiePoints + engine.Rating/(100 * 100 * 1000 * 1000);
@@ -111,14 +110,14 @@ function fixOrder()
    sorted = arr.slice().sort((b, a) => (a - b));
    ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
    count = 0;
-   plog ("rank kenght us :" + ranks.length, debug);
-   plog ("Ranks is :" + ranks, debug);
+   LS("rank kenght us :" + ranks.length);
+   LS("Ranks is :" + ranks);
    //crosstableData.Order = ranks;
 
     Keys(engines).forEach(key => {
         let engine = engines[key];
         engine.Rank = ranks[count];
-        plog ("engine.Rank-1 is :" + ranks[count] + " ,count:" + count, 1);
+        LS("engine.Rank-1 is :" + ranks[count] + " ,count:" + count);
         count = count + 1;
         crosstableData.Order[engine.Rank-1] = key;
     });
@@ -249,13 +248,13 @@ function getOverallElo(data)
       engine.OrigRating = engine.Rating;
       Keys(engine.Results).forEach(oppkey => {
           let oppEngine = engine.Results[oppkey];
-         plog ("Opp engine is " + oppkey + " ,oppEngine is " + engines[oppkey].Rating, 1);
+         LS("Opp engine is " + oppkey + " ,oppEngine is " + engines[oppkey].Rating);
          var blackEngine = engines[oppkey];
          var strText = oppEngine.Text;
          var blackRating = blackEngine.Rating;
          for (let i = 0; i < strText.length; i++)
          {
-            plog ("strText.charAt(i): " + strText.charAt(i));
+            LS("strText.charAt(i): " + strText.charAt(i));
             if (strText.charAt(i) == '0')
             {
                findEloDiff (engine, blackEngine, key, oppkey, 0, 1, i);
@@ -274,7 +273,7 @@ function getOverallElo(data)
       });
       engine.Rating = engine.OrigRating;
       engine.elo = eloDiff;
-      plog ("Final eloDiff: " + eloDiff + " ,fscore: " + parseInt(engine.Rating + eloDiff), 1);
+      LS("Final eloDiff: " + eloDiff + " ,fscore: " + parseInt(engine.Rating + eloDiff));
    });
 }
 
@@ -291,12 +290,12 @@ function eliminateCrash(data)
       {
          if (engine.Result == "0-1")
          {
-            plog ("Calling updateResData for " + engine.Black + "white:" + engine.White + " , engine.Result:" + engine.Result + ":term:" + engine.Termination, 1);
+            LS("Calling updateResData for " + engine.Black + "white:" + engine.White + " , engine.Result:" + engine.Result + ":term:" + engine.Termination);
             updateResData(engine.White);
          }
          if (engine.Result == "1-0")
          {
-            plog ("Calling updateResData for " + engine.Black + "white:" + engine.White + " , engine.Result:" + engine.Result + ":term:" + engine.Termination, 1);
+            LS("Calling updateResData for " + engine.Black + "white:" + engine.White + " , engine.Result:" + engine.Result + ":term:" + engine.Termination);
             updateResData(engine.Black);
          }
       }
@@ -314,7 +313,7 @@ function updateResData(engineName)
       if (key == engineName)
       {
          value.Strikes = parseInt(value.Strikes) + 1;
-         plog ("value is " + engineName + ",key is :" + key, 1);
+         LS("value is " + engineName + ",key is :" + key);
       }
       if (value.Strikes > 2)
       {
@@ -330,7 +329,7 @@ function engineDisqualified(engineName)
 
    if (crashed)
    {
-      plog ("engineName crashed:" + engineName + ":" + crashed, 1);
+      LS("engineName crashed:" + engineName + ":" + crashed);
    }
    if (!crossCrash)
    {

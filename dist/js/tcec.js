@@ -1,3 +1,5 @@
+// tcec.js
+// included after: common, engine
 /*
 globals
 _, $, Abs, addDataLive, Assign, Attrs, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
@@ -11,12 +13,22 @@ updateChartDataLive, updateCrosstable, window
 
 let _BLACK = 'black',
     _WHITE = 'white',
-    BLACK_WHITE = [_BLACK, _WHITE],
+    activePly = 0,
+    isAutoplay,
+    BL = 1,
+    BLACK_WHITE = [_BLACK, _WHITE],     // TODO: remove it
     board,
     boardEl = $('#board'),
+    COLORS = {
+        black: 1,
+        Black: 1,
+        white: 0,
+        White: 0,
+    },
     currentGameActive,
     currentLastMove,                    // used for debugging
     engine2LiveData,
+    full_engines = ['w', 'b'],          // w,b full engine names
     game = new Chess(),
     newMovesCount = 0,
     pvBoarda,
@@ -30,6 +42,7 @@ let _BLACK = 'black',
     pvBoardElwc = $('#pv-boardwc'),
     pvBoardEla = $('#pv-boarda'),
     pvBoardElac = $('#pv-boardac'),
+    WH = 0,
     WHITE_BLACK = [_WHITE, _BLACK];
 
 var timezoneDiffH = -8;
@@ -54,7 +67,6 @@ var defaultStartTime = 0;
 
 var viewingActiveMove = true;
 var loadedPlies = 0;
-var activePly = 0;
 
 var activeFen = '';
 var lastMove = '';
@@ -76,8 +88,6 @@ var globalGameno = 1;
 var liveEngineEval1 = [];
 var liveEngineEval2 = [];
 var debug = 0;
-var whiteEngineFull = null;
-var blackEngineFull = null;
 var h2hRetryCount = 0;
 var h2hScoreRetryCount = 0;
 
@@ -177,19 +187,6 @@ function updateAll()
    eventNameHeader = 0;
    updatePgn(1);
    setTimeout(function() { updateTables(); }, 5000);
-}
-
-function plog(message, debugl)
-{
-   if (debugl == undefined)
-   {
-      debugl = 1;
-   }
-
-   if (debugl <= debug)
-   {
-      console.log (message);
-   }
 }
 
 function updatePgnDataMain(data)
@@ -395,7 +392,7 @@ function setUsersMain(count)
    }
    catch(err)
    {
-      plog ("Unable to update usercount", 0);
+      LS("Unable to update usercount");
    }
 }
 
@@ -406,7 +403,7 @@ function listPosition()
       var getPos = board.position();
       if (getPos != null)
       {
-         plog ("Number of pieces for leela:" + Keys(getPos).length, 1);
+         LS("Number of pieces for leela:" + Keys(getPos).length);
          return Keys(getPos).length - 6;
       }
    }
@@ -432,7 +429,7 @@ function setPgn(pgn)
 
    if (typeof pgn.Moves != 'undefined')
    {
-      plog ("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round, 1);
+      LS("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round);
    }
 
    if (pgn.gameChanged) {
@@ -442,10 +439,10 @@ function setPgn(pgn)
       setInfoFromCurrentHeaders();
       updateH2hData();
       updateScoreHeadersData();
-      plog ("New game, round is :" + parseFloat(pgn.Headers.Round), 0);
+      LS("New game, round is :" + parseFloat(pgn.Headers.Round));
    }
    else {
-      plog ("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded, 0);
+      LS("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded);
       if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
       {
          eventNameHeader = 0;
@@ -505,8 +502,8 @@ function setPgn(pgn)
        stopClock(BLACK_WHITE[whiteToPlay * 1]);
    }
 
-   plog ("XXX: loadedPlies: " + loadedPlies + " ,currentPlyCount:" + currentPlyCount +
-      " ,currentGameActive:" + currentGameActive + " ,gameActive:" + gameActive + " :gamechanged:" + pgn.gameChanged , 1);
+   LS("XXX: loadedPlies: " + loadedPlies + " ,currentPlyCount:" + currentPlyCount +
+      " ,currentGameActive:" + currentGameActive + " ,gameActive:" + gameActive + " :gamechanged:" + pgn.gameChanged);
    if (loadedPlies == currentPlyCount && (currentGameActive == gameActive)) {
       return;
    }
@@ -625,23 +622,20 @@ function setPgn(pgn)
    }
 
    if (typeof pgn.Headers == 'undefined') {
-      plog ("XXX: Returning here because headers not defined", 0);
+      LS("XXX: Returning here because headers not defined");
       return;
    }
 
    listPosition();
 
-   var title = "TCEC - Live Computer Chess Broadcast";
+   // title + favicon
+   let title = "TCEC - Live Computer Chess Broadcast";
    if (pgn.Moves.length > 0) {
       title = pgn.Headers.White + ' vs. ' + pgn.Headers.Black + ' - ' + title;
-      if (pgn.Moves.PlyCount % 2 == 0 || pgn.Headers.Termination != 'unterminated') {
-         $("#favicon").attr("href", "img/favicon.ico");
-      } else {
-         $("#favicon").attr("href", "img/faviconb.ico");
-      }
+      let is_black = (pgn.Moves.PlyCount % 2 == 0 || pgn.Headers.Termination != 'unterminated');
+      Attrs('#favicon', 'href', `img/favicon${is_black? 'b': ''}.ico`);
    }
-
-   $(document).attr("title", title);
+   document.title = title;
 
    var termination = pgn.Headers.Termination;
    if (pgn.Moves.length > 0) {
@@ -654,7 +648,7 @@ function setPgn(pgn)
          let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
          if (eventTmp)
          {
-            plog (eventTmp[1], 0);
+            LS(eventTmp[1]);
             pgn.Headers.Event = "S" + eventTmp[1];
             eventNameHeader = pgn.Headers.Event;
          }
@@ -708,7 +702,7 @@ function setPgn(pgn)
          $('#event-overview').bootstrapTable('showColumn', 'movesTo50R');
       } else {
          pgn.Headers.Termination = pgn.Headers.TerminationDetails;
-         plog ("pgn.Headers.Termination: yes" + pgn.Headers.Termination, 0);
+         LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
          if ((pgn.Headers.Termination == 'undefined') ||
             (pgn.Headers.Termination == undefined))
          {
@@ -737,10 +731,11 @@ function setPgn(pgn)
 
    updateChartData();
 
-   HTML('#engine-history', '');
-   Keys(pgn.Moves).forEach(key => {
-      let move = pgn.Moves[key];
-      let ply = key + 1;
+    HTML('#engine-history', '');
+    Keys(pgn.Moves).forEach(key => {
+        key *= 1;
+        let move = pgn.Moves[key],
+            ply = key + 1;
       if (key % 2 == 0) {
          let number = (key / 2) + 1;
          var numlink = "<a class='numsmall'>" + number + ". </a>";
@@ -762,8 +757,7 @@ function setPgn(pgn)
          moveNotation = move.m.charAt(0) + move.m.slice(1);
       }
 
-      let from = move.to;
-
+    //   let from = move.to;
       var link = "<a href='#' ply='" + ply + "' fen='" + move.fen + "' from='" + move.from + "' to='" + move.to + "' class='change-move " + linkClass + "'>" + moveNotation + "</a>";
       $('#engine-history').append(link + ' ');
    });
@@ -771,7 +765,7 @@ function setPgn(pgn)
    $("#engine-history").scrollTop($("#engine-history")[0].scrollHeight);
    if (pgn.gameChanged)
    {
-      plog ("Came to setpgn need to reread dataa at end", 0);
+      LS("Came to setpgn need to reread dataa at end");
    }
 }
 
@@ -831,25 +825,18 @@ function getShortEngineName(engine)
 
 function setInfoFromCurrentHeaders()
 {
-   var header = prevPgnData.Headers.White;
-   var name = header;
-   name = getShortEngineName(header);
-   HTML('.white-engine-name', name);
-   HTML('.white-engine-name-full', header);
-   whiteEngineFull = header;
-   let imgsrc = 'img/engines/' + name + '.jpg';
-   $('#white-engine').attr('src', imgsrc);
-   $('#white-engine').attr('alt', header);
-   $('#white-engine-chessprogramming').attr('href', 'https://www.chessprogramming.org/' + name);
-   header = prevPgnData.Headers.Black;
-   blackEngineFull = header;
-   name = getShortEngineName(header);
-   HTML('.black-engine-name', name);
-   HTML('.black-engine-name-full', header);
-   imgsrc = 'img/engines/' + name + '.jpg';
-   $('#black-engine').attr('src', imgsrc);
-   $('#black-engine').attr('alt', header);
-   $('#black-engine-chessprogramming').attr('href', 'https://www.chessprogramming.org/' + name);
+    ['White', 'Black'].forEach((key, id) => {
+        let color = WHITE_BLACK[id],
+            header = prevPgnData.Headers[key],
+            name = getShortEngineName(header);
+        full_engines[id] = header;
+
+        HTML(`.${color}-engine-name`, name);
+        HTML(`.${color}-engine-name-full`, header);
+        Attrs(`#${color}-engine`, 'src', `img/engines/${name}.jpg`);
+        Attrs(`#${color}-engine`, 'alt', header);
+        Attrs(`#${color}-engine-chessprogramming`, 'href', `https://www.chessprogramming.org/${name}`);
+    });
 }
 
 function getMoveFromPly(ply)
@@ -1160,21 +1147,27 @@ function updateMoveValues(whiteToPlay, whiteEval, blackEval)
    updateEnginePv(_BLACK, whiteToPlay, blackEval.pv);
 }
 
+/**
+ * Update engine PV
+ * @param {string} color
+ * @param {boolean} whiteToPlay
+ * @param {Object} moves
+ */
 function updateEnginePv(color, whiteToPlay, moves)
 {
-   var classhigh = '';
-   if (typeof moves != 'undefined') {
+    if (!moves) {
+        HTML(`#${color}-engine-pv`, '');
+        HTML(`.${color}-engine-pv`, '');
+        return;
+    }
 
-      let currentMove = Floor(activePly / 2);
+    var classhigh = '';
+    let currentMove = Floor(activePly / 2);
 
       if (color == _WHITE) {
          whitePv = moves;
-         //activePv = whitePv.slice();
-         //setPvFromKey(0, _WHITE, 0);
       } else {
          blackPv = moves;
-         //activePv = blackPv.slice();
-         //setPvFromKey(0, _BLACK, 0);
       }
 
       let keyOffset = 0;
@@ -1194,7 +1187,8 @@ function updateEnginePv(color, whiteToPlay, moves)
       HTML('.' + color + '-engine-pv', '');
 
       Keys(moves).forEach(key => {
-         let move = moves[key];
+          key *= 1;
+          let move = moves[key];
 
          classhigh = "";
          let effectiveKey = key + keyOffset,
@@ -1204,7 +1198,7 @@ function updateEnginePv(color, whiteToPlay, moves)
          {
             if (color == "white" && (highlightpv == key))
             {
-               plog ("Need to highlight:" + pvMove + ", move is :" + move.m, 1);
+               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
@@ -1214,7 +1208,7 @@ function updateEnginePv(color, whiteToPlay, moves)
             }
             if (color == "black" && (highlightpv == key + 1))
             {
-               plog ("Need to highlight:" + pvMove + ", move is :" + move.m, 1);
+               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
@@ -1223,13 +1217,13 @@ function updateEnginePv(color, whiteToPlay, moves)
          {
             if (color == "white" && (highlightpv - 1 == key))
             {
-               plog ("Need to highlight:" + pvMove + ", move is :" + move.m, 1);
+               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
             if (color == "black" && (highlightpv == key))
             {
-               plog ("Need to highlight:" + pvMove + ", move is :" + move.m, 1);
+               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
@@ -1282,7 +1276,7 @@ function updateEnginePv(color, whiteToPlay, moves)
                $('#' + color + '-engine-pv2').append(atsymbol);
             }
          }
-         plog ("classhigh: " + classhigh, 1);
+         LS("classhigh: " + classhigh);
          if (color == _BLACK)
          {
             classhigh += ' blue';
@@ -1292,7 +1286,7 @@ function updateEnginePv(color, whiteToPlay, moves)
          $('#' + color + '-engine-pv3').append("<a href='#' id='c" + color + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + color + "'>" + move.m + '</a> ');
       });
 
-   plog ("highlightpv is :" + highlightpv);
+   LS("highlightpv is :" + highlightpv);
    if (highlightpv == 0)
    {
       setpvmove = 0;
@@ -1309,7 +1303,7 @@ function updateEnginePv(color, whiteToPlay, moves)
          if (plyDiff == 2)
          {
             setpvmove = whitePv.length - 1;
-            plog ("plyDiff in white:" + whitePv.length);
+            LS("plyDiff in white:" + whitePv.length);
          }
          activePv = whitePv.slice();
          setPvFromKey(setpvmove, _WHITE);
@@ -1332,10 +1326,8 @@ function updateEnginePv(color, whiteToPlay, moves)
          setPvFromKey(setpvmove, _BLACK);
       }
    }
-   } else {
-      HTML('#' + color + '-engine-pv', '');
-      HTML('.' + color + '-engine-pv', '');
-   }
+
+   set_ui_events();
 }
 
 function setPlyDiv(plyDiffL)
@@ -1362,7 +1354,7 @@ function findDiffPv(whitemoves, blackmoves)
    if (plyDiff == 0)
    {
       highlightpv = 0;
-      plog ("returning here:" + plyDiff);
+      LS("returning here:" + plyDiff);
       return;
    }
 
@@ -1381,7 +1373,7 @@ function findDiffPv(whitemoves, blackmoves)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
             {
-               plog ("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m, 1);
+               LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m);
                highlightpv = key;
             }
          }
@@ -1389,79 +1381,13 @@ function findDiffPv(whitemoves, blackmoves)
          {
             if (!highlightpv && blackmoves && blackmoves[key + 1] && (blackmoves[key + 1].m != whitemoves[key].m))
             {
-               plog ("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m, 1);
+               LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m);
                highlightpv = key + 1;
             }
          }
       });
    }
 }
-
-$(document).on('click', '.change-move', function(e) {
-    let clickedPly = $(this).attr('ply'),
-        clickedFen = $(this).attr('fen');
-   moveFrom = $(this).attr('from');
-   moveTo = $(this).attr('to');
-
-   viewingActiveMove = false;
-
-   Class('.active-move', '-active-move');
-   Class(this, 'active-move');
-
-   boardEl.find('.' + squareClass).removeClass(highlightClass);
-   boardEl.find('.square-' + moveFrom).addClass(highlightClass);
-   boardEl.find('.square-' + moveTo).addClass(highlightClass);
-   squareToHighlight = moveTo;
-
-   board.position(clickedFen, false);
-   currentPosition = clickedFen;
-   activePly = clickedPly;
-   e.preventDefault();
-   listPosition();
-
-   if (clickedPly == loadedPlies)
-   {
-      viewingActiveMove = true;
-      Class('#newmove', 'd-none');
-      newMovesCount = 0;
-      Attrs('#newmove', 'data-count', 0);
-   }
-
-   handlePlyChange(false);
-
-   return false;
-});
-
-$(document).on('click', '#board-to-first', function(e) {
-   activePly = 1;
-   handlePlyChange();
-   e.preventDefault();
-});
-
-$(document).on('click', '#board-previous', function(e) {
-   if (activePly > 1) {
-      activePly--;
-   }
-   handlePlyChange();
-   e.preventDefault();
-
-   return false;
-});
-
-var isAutoplay = false;
-
-$(document).on('click', '#board-autoplay', function(e) {
-   e.preventDefault();
-   Class('#board-autoplay i', '-fa-pause fa-play', isAutoplay);
-   if (isAutoplay) {
-      isAutoplay = false;
-   } else {
-      isAutoplay = true;
-      boardAutoplay();
-   }
-
-   return false;
-});
 
 function boardAutoplay()
 {
@@ -1475,57 +1401,12 @@ function boardAutoplay()
    }
 }
 
-$(document).on('click', '#board-next', function(e) {
-   if (activePly < loadedPlies) {
-      activePly++;
-   } else {
-      viewingActiveMove = true;
-   }
-   handlePlyChange();
-   e.preventDefault();
-
-   return false;
-});
-
 function onLastMove()
 {
    activePly = loadedPlies;
    viewingActiveMove = true;
    handlePlyChange();
 }
-
-$(document).on('click', '#board-to-last', function(e) {
-   onLastMove();
-   e.preventDefault();
-
-   return false;
-});
-
-$(document).on('click', '#board-reverse', function(e) {
-   board.flip();
-
-    let oldOrientation = (board.orientation() == _BLACK)? _WHITE: _BLACK,
-        newOrientation = board.orientation();
-
-   $('.board-bottom-engine-eval.' + oldOrientation + '-engine-name').removeClass(oldOrientation + '-engine-name').addClass(newOrientation + '-engine-name');
-   $('.board-bottom-engine-eval.' + oldOrientation + '-time-remaining').removeClass(oldOrientation + '-time-remaining').addClass(newOrientation + '-time-remaining');
-   $('.board-bottom-engine-eval.' + oldOrientation + '-time-used').removeClass(oldOrientation + '-time-used').addClass(newOrientation + '-time-used');
-   $('.board-bottom-engine-eval.' + oldOrientation + '-engine-eval').removeClass(oldOrientation + '-engine-eval').addClass(newOrientation + '-engine-eval');
-
-   $('.board-top-engine-eval.' + newOrientation + '-engine-name').removeClass(newOrientation + '-engine-name').addClass(oldOrientation + '-engine-name');
-   $('.board-top-engine-eval.' + newOrientation + '-time-remaining').removeClass(newOrientation + '-time-remaining').addClass(oldOrientation + '-time-remaining');
-   $('.board-top-engine-eval.' + newOrientation + '-time-used').removeClass(newOrientation + '-time-used').addClass(oldOrientation + '-time-used');
-   $('.board-top-engine-eval.' + newOrientation + '-engine-eval').removeClass(newOrientation + '-engine-eval').addClass(oldOrientation + '-engine-eval');
-   Class('#board-top-engine-eval', `${oldOrientation}Fill -${newOrientation}Fill`);
-   Class('#board-bottom-engine-eval', `${newOrientation}Fill -${oldOrientation}Fill`);
-
-   setInfoFromCurrentHeaders();
-   handlePlyChange(false);
-
-   e.preventDefault();
-
-   return false;
-});
 
 function handlePlyChange(handleclick)
 {
@@ -1554,7 +1435,10 @@ function handlePlyChange(handleclick)
 
    if (activePly > 1)
    {
-      var prevMove = getMoveFromPly(activePly - 2);
+      let prevMove = getMoveFromPly(activePly - 2);
+      LS(`activePly=${activePly}`);
+      LS(currentMove);
+      LS(prevMove);
       for (let yy = 1 ; yy <= livePVHist.length ; yy ++)
       {
          if (livePVHist[yy])
@@ -1579,58 +1463,10 @@ function handlePlyChange(handleclick)
 
    updateMoveValues(whiteToPlay, whiteEval, blackEval);
 
+   // TODO: skip the click
    if (handleclick)
-   {
-      $('a[ply=' + activePly + ']').click();
-   }
+      _(`a[ply="${activePly}"]`).click();
 }
-
-$(document).on('click', '.set-pv-board', function(e) {
-   let selectedId = $(this).closest('div').attr('id'),
-       moveKey = $(this).attr('move-key') * 1,
-       pvColor = $(this).attr('color'),
-       hist = $(this).attr('hist');
-   if (pvColor == 'live')
-   {
-      $('#v-pills-pv-analys-tab').click();
-   }
-   else
-   {
-      if (hideDownPv == 0)
-      {
-         $('#v-pills-pv-tab').click();
-      }
-   }
-
-   activePvColor = pvColor;
-
-   if (pvColor == _WHITE) {
-      activePv = whitePv.slice();
-      setPvFromKey(moveKey, pvColor);
-   } else if (pvColor == _BLACK) {
-      activePv = blackPv.slice();
-      setPvFromKey(moveKey, pvColor);
-   } else {
-      let liveKey = $(this).attr('engine');
-      plog ("liveKey is :" + liveKey);
-      activePv = livePvs[liveKey];
-      if (hist)
-      {
-         if (activePvH && activePvH[liveKey] && (activePvH[liveKey].length > 0))
-         {
-            setPvFromKey(moveKey, pvColor, activePvH[liveKey]);
-         }
-      }
-      else
-      {
-         setPvFromKey(moveKey, pvColor, activePv);
-      }
-   }
-
-   e.preventDefault();
-
-   return false;
-});
 
 function setActiveKey(pvColor, value)
 {
@@ -1645,7 +1481,7 @@ function setActiveKey(pvColor, value)
    else if (pvColor == 'live')
    {
       activePvKey[2] = value;
-      plog ("setting live to:" + value, 1);
+      LS("setting live to:" + value);
    }
 }
 
@@ -1673,20 +1509,20 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
    else if (pvColor == _BLACK)
    {
       activePv  = blackPv.slice();
-      plog ("choosePvx is :" + JSON.stringify(activePv));
+      LS("choosePvx is :" + JSON.stringify(activePv));
    }
    else if (pvColor == 'live')
    {
       if (choosePvx != undefined)
       {
          activePv = choosePvx;
-         plog ("choosePvx is :" + JSON.stringify(choosePvx));
+         LS("choosePvx is :" + JSON.stringify(choosePvx));
          choosePv = choosePvx;
       }
       else
       {
          activePv = choosePv;
-         plog ('live choseny:' + activePv.length + " ,moveKey:" + moveKey, 1);
+         LS('live choseny:' + activePv.length + " ,moveKey:" + moveKey);
       }
    }
 
@@ -2006,7 +1842,7 @@ function getLinkArch()
 function openCrossCup(index, gamen)
 {
    index = index + 1;
-   plog ("XXX: Index is :" + index + ",:::" + eventCross[index], 0);
+   LS("XXX: Index is :" + index + ",:::" + eventCross[index]);
    var link = getLinkArch();
    var tourLink = '';
    var localGame = gamen;
@@ -2096,7 +1932,7 @@ function setDarkMode(value)
 }
 
 function crossFormatter(value, row, index, field) {
-   plog ("Came here:", 0);
+   LS("Came here:");
    if (!value.hasOwnProperty("Score")) // true
    {
       return value;
@@ -2221,28 +2057,28 @@ function updateScoreHeadersData()
       if (h2hScoreRetryCount < 10)
       {
          setTimeout(function() { updateScoreHeadersData(); }, 5000);
-         plog ("H2h score did not get updated:" + h2hScoreRetryCount, 0);
+         LS("H2h score did not get updated:" + h2hScoreRetryCount);
          h2hScoreRetryCount = h2hScoreRetryCount + 1;
          return;
       }
    }
 
-   if ((crosstableData.whiteCurrent === whiteEngineFull) &&
-      (crosstableData.blackCurrent === blackEngineFull))
+   if ((crosstableData.whiteCurrent === full_engines[WH]) &&
+      (crosstableData.blackCurrent === full_engines[BL]))
    {
       return;
    }
 
-   plog ("H2H scores updated", 0);
+   LS("H2H scores updated");
 
    var scores = {};
-   var whiteRes = crosstableData.Table[whiteEngineFull];
-   var blackRes = crosstableData.Table[blackEngineFull];
+   var whiteRes = crosstableData.Table[full_engines[WH]];
+   var blackRes = crosstableData.Table[full_engines[BL]];
 
    if (whiteRes.Rating)
    {
       HTML('#white-engine-elo', whiteRes.Rating);
-      scores = getScoreText(crosstableData.Table[whiteEngineFull].Results[blackEngineFull].Text);
+      scores = getScoreText(crosstableData.Table[full_engines[WH]].Results[full_engines[BL]].Text);
       HTML('.white-engine-score', scores.w.toFixed(1));
       HTML('.black-engine-score', scores.b.toFixed(1));
    }
@@ -2252,8 +2088,8 @@ function updateScoreHeadersData()
       HTML('#black-engine-elo', blackRes.Rating);
    }
 
-   crosstableData.whiteCurrent = whiteEngineFull;
-   crosstableData.blackCurrent = blackEngineFull;
+   crosstableData.whiteCurrent = full_engines[WH];
+   crosstableData.blackCurrent = full_engines[BL];
 
    return 0;
 }
@@ -2309,7 +2145,7 @@ function updateH2hData()
       if (h2hRetryCount < 10)
       {
          setTimeout(function() { updateH2hData(); }, 5000);
-         plog ("H2h did not get updated:" + h2hRetryCount, 0);
+         LS("H2h did not get updated:" + h2hRetryCount);
          h2hRetryCount = h2hRetryCount + 1;
          return;
       }
@@ -2321,13 +2157,13 @@ function updateH2hData()
       return;
    }
 
-   if ((oldSchedData.WhiteEngCurrent === whiteEngineFull) &&
-      (oldSchedData.BlackEngCurrent === blackEngineFull))
+   if ((oldSchedData.WhiteEngCurrent === full_engines[WH]) &&
+      (oldSchedData.BlackEngCurrent === full_engines[BL]))
    {
       return;
    }
 
-   plog ("H2h got updated", 0);
+   LS("H2h got updated");
 
    h2hRetryCount = 0;
 
@@ -2355,7 +2191,7 @@ function updateH2hData()
          momentDate.add(timezoneDiff);
          engine.Start = getLocalDate(engine.Start);
          prevDate = momentDate;
-         //plog ("diff is :" + (CurrentDate2 - CurrentDate1), 0);
+         //LS("diff is :" + (CurrentDate2 - CurrentDate1));
       }
       else
       {
@@ -2390,8 +2226,8 @@ function updateH2hData()
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
          }
       }
-      if ((engine.Black == blackEngineFull && engine.White == whiteEngineFull) ||
-         (engine.Black == whiteEngineFull && engine.White == blackEngineFull))
+      if ((engine.Black == full_engines[BL] && engine.White == full_engines[WH]) ||
+         (engine.Black == full_engines[WH] && engine.White == full_engines[BL]))
       {
          engine.h2hrank = engine.Game;
          if (engine.Result != undefined)
@@ -2405,8 +2241,8 @@ function updateH2hData()
          h2hdata.push(engine);
       }
    });
-   oldSchedData.WhiteEngCurrent = whiteEngineFull;
-   oldSchedData.BlackEngCurrent = blackEngineFull;
+   oldSchedData.WhiteEngCurrent = full_engines[WH];
+   oldSchedData.BlackEngCurrent = full_engines[BL];
 
    $('#h2h').bootstrapTable('load', h2hdata);
 }
@@ -2454,7 +2290,7 @@ function updateTourStat(data)
 
 function updateScheduleData(scdatainput)
 {
-   plog ("Updating schedule:", 0);
+   LS("Updating schedule:");
    let scdata = [];
    var prevDate = 0;
    var momentDate = 0;
@@ -2549,7 +2385,7 @@ function scheduleHighlight(_noscroll)
 
 function updateWinnersData(winnerData)
 {
-   plog ("Updating winners:", 0);
+   LS("Updating winners:");
    let scdata = [];
 //    var prevDate = 0;
 //    var momentDate = 0;
@@ -3003,7 +2839,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
-               plog("undefine move" + str,0);
+               LS("undefine move" + str);
                return;
             } else {
                currentFen = chess.fen();
@@ -3068,6 +2904,8 @@ var clearedAnnotation = 0;
  * @param {Boolean} initial Unknown behavior
  */
 function updateLiveEvalData(datum, update, fen, contno, initial) {
+    if (!datum)
+        return;
    var container = '#live-eval-cont' + contno;
 
    if (contno == 1 && !showLivEng1)  {
@@ -3081,7 +2919,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       clearedAnnotation = 1;
    }
 
-   plog ("Annotation did not get cleared" + clearedAnnotation + ",contno:" + contno, 1);
+   LS("Annotation did not get cleared" + clearedAnnotation + ", contno:" + contno);
    if (clearedAnnotation < 1 && contno == 2) {
       board.clearAnnotation();
    }
@@ -3098,28 +2936,14 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       return;
    }
 
-   // Loose typing of JS makes silly things like this possible. not a number? returns "NaN"
-   let score = parseFloat((datum || {}).eval).toFixed(2);
-   if (score === "NaN") {
-      score = datum.eval;
-   }
-   score = "" + score;
-   if (0)
-   {
-      //if isblackmove, invert sign.
-      if(regexBlackMove.test(datum.pv)) {
-         if (score.charAt(0) == "-") {
-            score = score.substring(1);
-         } else {
-            if (score != 0) {
-               score = "-" +score;
-            }
-         }
-      }
-   }
-   datum.eval = score;
-   datum.tbhits = getTBHits(datum.tbhits);
-   datum.nodes = getNodes(datum.nodes);
+    let score = '';
+    if (datum)
+        score = (parseFloat(datum.eval || 0)).toFixed(2);
+    score = "" + score;
+    datum.eval = score;
+
+    datum.tbhits = getTBHits(datum.tbhits);
+    datum.nodes = getNodes(datum.nodes);
 
    var pvs = [];
 
@@ -3136,7 +2960,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
-               plog("undefine move" + str);
+               LS("undefine move" + str);
                return;
             } else {
                currentFen = chess.fen();
@@ -3208,6 +3032,8 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
 }
 
 function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
+    if (!datum)
+        return;
    var classhigh = '';
 
    if (!livepvupdate)
@@ -3233,13 +3059,11 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
         HTML(`.${color}-engine-${key}`, datum[key]);
     }
 
-   plog ("updateLiveEvalDataNew::: Entered for color:" + datum.color, 1);
+   LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
 
-   // Loose typing of JS makes silly things like this possible. not a number? returns "NaN"
-   let score = parseFloat(datum.eval).toFixed(2);
-   if (score === "NaN") {
-      score = datum.eval;
-   }
+   let score = '';
+   if (datum)
+       score = (parseFloat(datum.eval || 0)).toFixed(2);
    score = "" + score;
    datum.eval = score;
 
@@ -3258,7 +3082,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
-               plog("undefine move" + str);
+               LS("undefine move" + str);
                return;
             } else {
                currentFen = chess.fen();
@@ -3330,7 +3154,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
 
    if (prevevalData.eval != evalData.eval)
    {
-      plog ("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval, 1);
+      LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
       if (livepvupdate)
       {
          removeData(evalChart, evalData, datum.color);
@@ -3338,7 +3162,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    }
    else
    {
-      plog ("XXX: not updating movecount:" + x + "datum.plynum," + datum.plynum, 1);
+      LS("XXX: not updating movecount:" + x + "datum.plynum," + datum.plynum);
    }
    prevevalData = evalData;
 }
@@ -3398,7 +3222,7 @@ function updateLiveChart()
 
 function setLastMoveTime(data)
 {
-   plog ("Setting last move time:" + data, 0);
+   LS("Setting last move time:" + data);
 }
 
 let twitchDiv = $("#twitchvid");
@@ -4218,13 +4042,6 @@ function initTables()
       ]
    });
 
-   $("#schedule").on("click-cell.bs.table", function (field, value, row, $el) {
-      if ($el.agame <= gamesDone)
-      {
-         openCross(0, $el.agame);
-      }
-   });
-
    $('#tf').bootstrapTable({
       classes: 'table table-striped table-no-bordered',
       striped: true,
@@ -4842,7 +4659,7 @@ function getScoreText(strText)
 
 function updateCrashData(data)
 {
-   plog ("Updating crash:", 0);
+   LS("Updating crash:");
    let scdata = [];
 //    var crashEntry = {};
 
@@ -4915,7 +4732,7 @@ function bracketDataMain(data)
 
 function drawBracket1()
 {
-   plog ("Came to drawBracket");
+   LS("Came to drawBracket");
    var roundNox = 2;
    getDateRound();
 
@@ -4948,7 +4765,7 @@ function drawBracket1()
         var isFirst = roundNox%2;
         var dataName = 0;
 
-        //plog ("Came to round: " + roundNox + " data.name is: " + data.name, 1);
+        //LS("Came to round: " + roundNox + " data.name is: " + data.name);
         roundNox ++;
         if (data && data.name)
         {
@@ -5185,7 +5002,7 @@ async function eventCrosstable(data)
     let divname = '#crosstableevent',
         standings = [];
 
-    plog ("Camee tp eventCrosstable", 0);
+    LS("Camee tp eventCrosstable");
 
     $(divname).bootstrapTable({
         classes: 'table table-striped table-no-bordered',
@@ -5208,7 +5025,7 @@ async function eventCrosstable(data)
         eventCross[id + 1] = eventCross[id] + parseInt(matchdum.Games);
     });
 
-    plog ("drawing standings", 0);
+    LS("drawing standings");
     $(divname).bootstrapTable('load', standings);
 }
 
@@ -5247,4 +5064,173 @@ function formatterEvent(value, row, index, _field) {
       }
    });
   return retStr;
+}
+
+/**
+ * Set UI events
+ */
+function set_ui_events() {
+    $(document).on('click', '.set-pv-board', function(e) {
+        let // selectedId = $(this).closest('div').attr('id'),
+            moveKey = $(this).attr('move-key') * 1,
+            pvColor = $(this).attr('color'),
+            hist = $(this).attr('hist');
+        if (pvColor == 'live')
+        {
+           $('#v-pills-pv-analys-tab').click();
+        }
+        else
+        {
+           if (hideDownPv == 0)
+           {
+              $('#v-pills-pv-tab').click();
+           }
+        }
+
+        activePvColor = pvColor;
+
+        if (pvColor == _WHITE) {
+           activePv = whitePv.slice();
+           setPvFromKey(moveKey, pvColor);
+        } else if (pvColor == _BLACK) {
+           activePv = blackPv.slice();
+           setPvFromKey(moveKey, pvColor);
+        } else {
+           let liveKey = $(this).attr('engine');
+           LS("liveKey is :" + liveKey);
+           activePv = livePvs[liveKey];
+           if (hist)
+           {
+              if (activePvH && activePvH[liveKey] && (activePvH[liveKey].length > 0))
+              {
+                 setPvFromKey(moveKey, pvColor, activePvH[liveKey]);
+              }
+           }
+           else
+           {
+              setPvFromKey(moveKey, pvColor, activePv);
+           }
+        }
+
+        e.preventDefault();
+
+        return false;
+     });
+
+     $(document).on('click', '.change-move', function(e) {
+        let clickedPly = $(this).attr('ply'),
+            clickedFen = $(this).attr('fen');
+        LS(`clickedPly=${clickedPly} : clickedFen=${clickedFen}`);
+       moveFrom = $(this).attr('from');
+       moveTo = $(this).attr('to');
+
+       viewingActiveMove = false;
+
+       Class('.active-move', '-active-move');
+       Class(this, 'active-move');
+
+       boardEl.find('.' + squareClass).removeClass(highlightClass);
+       boardEl.find('.square-' + moveFrom).addClass(highlightClass);
+       boardEl.find('.square-' + moveTo).addClass(highlightClass);
+       squareToHighlight = moveTo;
+
+       board.position(clickedFen, false);
+       currentPosition = clickedFen;
+       activePly = clickedPly;
+       e.preventDefault();
+       listPosition();
+
+       if (clickedPly == loadedPlies)
+       {
+          viewingActiveMove = true;
+          Class('#newmove', 'd-none');
+          newMovesCount = 0;
+          Attrs('#newmove', 'data-count', 0);
+       }
+
+       handlePlyChange(false);
+
+       return false;
+    });
+
+    $(document).on('click', '#board-to-first', function(e) {
+       activePly = 1;
+       handlePlyChange();
+       e.preventDefault();
+    });
+
+    $(document).on('click', '#board-previous', function(e) {
+       if (activePly > 1) {
+          activePly--;
+       }
+       handlePlyChange();
+       e.preventDefault();
+
+       return false;
+    });
+
+    $(document).on('click', '#board-autoplay', function(e) {
+        e.preventDefault();
+        Class('#board-autoplay i', '-fa-pause fa-play', isAutoplay);
+        if (isAutoplay) {
+           isAutoplay = false;
+        } else {
+           isAutoplay = true;
+           boardAutoplay();
+        }
+
+        return false;
+     });
+
+     $(document).on('click', '#board-next', function(e) {
+        if (activePly < loadedPlies) {
+           activePly++;
+        } else {
+           viewingActiveMove = true;
+        }
+        handlePlyChange();
+        e.preventDefault();
+
+        return false;
+     });
+
+     $(document).on('click', '#board-to-last', function(e) {
+        onLastMove();
+        e.preventDefault();
+
+        return false;
+     });
+
+     $(document).on('click', '#board-reverse', function(e) {
+        board.flip();
+
+         let oldOrientation = (board.orientation() == _BLACK)? _WHITE: _BLACK,
+             newOrientation = board.orientation();
+
+        $('.board-bottom-engine-eval.' + oldOrientation + '-engine-name').removeClass(oldOrientation + '-engine-name').addClass(newOrientation + '-engine-name');
+        $('.board-bottom-engine-eval.' + oldOrientation + '-time-remaining').removeClass(oldOrientation + '-time-remaining').addClass(newOrientation + '-time-remaining');
+        $('.board-bottom-engine-eval.' + oldOrientation + '-time-used').removeClass(oldOrientation + '-time-used').addClass(newOrientation + '-time-used');
+        $('.board-bottom-engine-eval.' + oldOrientation + '-engine-eval').removeClass(oldOrientation + '-engine-eval').addClass(newOrientation + '-engine-eval');
+
+        $('.board-top-engine-eval.' + newOrientation + '-engine-name').removeClass(newOrientation + '-engine-name').addClass(oldOrientation + '-engine-name');
+        $('.board-top-engine-eval.' + newOrientation + '-time-remaining').removeClass(newOrientation + '-time-remaining').addClass(oldOrientation + '-time-remaining');
+        $('.board-top-engine-eval.' + newOrientation + '-time-used').removeClass(newOrientation + '-time-used').addClass(oldOrientation + '-time-used');
+        $('.board-top-engine-eval.' + newOrientation + '-engine-eval').removeClass(newOrientation + '-engine-eval').addClass(oldOrientation + '-engine-eval');
+        Class('#board-top-engine-eval', `${oldOrientation}Fill -${newOrientation}Fill`);
+        Class('#board-bottom-engine-eval', `${newOrientation}Fill -${oldOrientation}Fill`);
+
+        setInfoFromCurrentHeaders();
+        handlePlyChange(false);
+
+        e.preventDefault();
+
+        return false;
+     });
+
+     $("#schedule").on("click-cell.bs.table", function (field, value, row, $el) {
+        if ($el.agame <= gamesDone)
+        {
+           openCross(0, $el.agame);
+        }
+     });
 }
