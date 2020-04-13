@@ -1286,7 +1286,7 @@
            </table>
            <div id="bracket" style="background-color: transparent; height:1450px; width:1350px"></div>
            <table class="table-dark table-noborder" width="1350" border=0 style="background-color:transparent">
-                <tr background=transparent align="middle">
+                <tr align="middle">
                   <td style="width: 100%; color: 007bff; font-size:x-large; vertical-align: bottom;">
                      <a href="#" target="_blank" style="background:transparent">
                        <img src="img/cup.jpg" height=50 width=50 alt="tcec" />
@@ -1434,8 +1434,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
@@ -1445,180 +1443,17 @@
     <script src="dist/js/chessboard.js?v=10000000000000000000042"></script>
     <script src="dist/js/cup.js?v=10000000000000000000042"></script>
     <script src="dist/js/tcectables.js"></script>
+    <script src="dist/js/themes.js"></script>
     <script src="dist/js/tcec.js"></script>
     <script src="dist/js/tooltipster.bundle.min.js"></script>
     <script src="dist/js/bootstrap-4-navbar.js?v=1000000000000000000042"></script>
-    <script src="dist/js/themes.js"></script>
     <script src="dist/js/bootstrap-slider.min.js"></script>
     <script src="dist/js/clipboard.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
     <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     <script type="text/javascript" src="dist/js/jquery.bracket.min.js"></script>
+    <script src="dist/js/script.js"></script>
 
-    <script>
-      $(document).ready(function () {
-          $(document).click(function (event) {
-              var clickover = $(event.target);
-              var _opened = $(".navbar-collapse").hasClass("navbar-collapse in");
-              if (_opened === true && !clickover.hasClass("navbar-toggle")) {
-                  $("button.navbar-toggle").click();
-              }
-          });
-          $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr("href") // activated tab
-            $(target).show();
-            });
-      });
-
-      var {board, pvBoardw, pvBoardb, pvBoarda, pvBoardwc, pvBoardbc} = setBoardInit();
-      $('.toggleDark').click(function() {
-        toggleTheme();
-      });
-
-      $('.refreshBoard').on('click', function() {
-        updateRefresh();
-      });
-
-      $(document).ready(function () {
-         initTables();
-      });
-
-      $(function() {
-
-        var options = {
-          sloppy: true
-        };
-
-        var sliderVale = localStorage.getItem('tcec-chat-slider');
-        if (sliderVale == undefined)
-        {
-           sliderVale = 100;
-        }
-        var chatHeight = $("#board-container").height();
-        var chatHeight1 = parseInt(chatHeight * sliderVale/100);
-
-        $('#chatright').height(chatHeight1);
-
-        $( window ).resize(function() {
-          board.resize();
-          $('#chatright').height(chatHeight1);
-          $('#chatright').width('100%');
-        });
-
-        initToolTip();
-        updatePgn(0);
-        $(document).ready(function () {
-          setDefaults();
-          window.setTimeout(function()
-          {
-             setTwitch();
-          }, 10000);
-          window.setTimeout(function()
-          {
-             getUserS();
-          }, 5000);
-          window.setTimeout(function()
-          {
-             updateWinners();
-          }, 12000);
-          hideBanner();
-          window.setTimeout(function()
-                            {
-                               updateLiveChart();
-                               updateLiveEval();
-                            }, 2000);
-          window.setTimeout(function()
-                            {
-                               updateTables();
-                            }, 3000);
-          window.setTimeout(function()
-                            {
-                               if ($('#google_adverts').height() <= 0) {
-                                 $('.encouragement').show();
-                               } else {
-                                 $('.encouragement').hide();
-                               }
-                            }, 15000);
-         });
-
-        $('#chatsize').bootstrapSlider({
-          min:40,
-          max:150,
-          value: sliderVale,
-          handle: 'round',
-          formatter: function(value) {
-            $('#chatright').height(parseInt(value/100 * chatHeight));
-            localStorage.setItem('tcec-chat-slider', value);
-          }
-        });
-      });
-
-      var socket = io.connect('https://tcec-chess.com');
-
-      unlistenLogMain();
-
-      socket.on('htmlread', function(datal){
-         var data = datal.data;
-         console.log ("XXX: recieving data from log:" + datal.room);
-         var div = document.getElementById('log-wrapper');
-         var matches = data.split(/\n|\s\n/);
-         data = matches.join("<br>");
-         var d = new Date();
-         var n = d.toLocaleTimeString();
-         div.innerHTML += "<h5><b><i><u>" + n + "</u></i></b></h5>" + "<p align=left>" + data + "</p>";
-         div.scrollTop = div.scrollHeight;
-         });
-
-      socket.on('crosstable', function(data){
-         newUpdateStandData(data);
-         });
-      socket.on('liveeval', function(data){
-         updateLiveEvalData(data, 1, null, 1);
-         });
-      socket.on('liveeval1', function(data){
-         updateLiveEvalData(data, 1, null, 2);
-         });
-      socket.on('updeng', function(data){
-         updateLiveEvalDataNew(data, 1, null, 2);
-         });
-      socket.on('pgn', function(data){
-         console.log ("Got move:" + data.lastMoveLoaded + " ,users:" + data.Users);
-         setUsersMain(data.Users);
-         updatePgnData(data, 0);
-         });
-      socket.on('schedule', function(data){
-         updateScheduleData(data);
-         updateH2hData(data);
-         });
-      socket.on('livechart', function(data){
-         updateLiveChartData(data, 1);
-         });
-      socket.on('livechart1', function(data){
-         updateLiveChartData(data, 2);
-         });
-      socket.on('lastpgntime', function(data){
-        setLastMoveTime(data);
-        });
-      socket.on('users', function(data){
-        setUsers(data);
-        });
-      socket.on('banner', function(data){
-        showBanner(data);
-        });
-      socket.on('tournament', function(data){
-        setTwitchChange(data);
-        });
-      socket.on('enginerating', function(data){
-        updateEngRatingData(data);
-        });
-      socket.on('crash', function(data){
-        updateCrashData(data);
-        });
-      socket.on('bracket', function(data){
-        bracketDataMain(data);
-        });
-
-    </script>
     <audio id="move_sound">
       <source src="dist/audio/movesound.mp3" type="audio/mpeg"><embed src="dist/audio/movesound.mp3">
     </audio>

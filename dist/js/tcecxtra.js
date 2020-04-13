@@ -2,7 +2,7 @@
 globals
 _, $, activeFen, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash, crosstableData:true,
 crossTimeout:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
-Keys, livePvs, LS, newUpdateStandData, plog, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
+Keys, livePvs, LS, newUpdateStandData, plog, Pow, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
 viewingActiveMove
 */
 'use strict';
@@ -45,7 +45,7 @@ function fixOrder()
          if (ikey != key)
          {
             var sbCount = 0;
-            for (var i = 0; i < engine.Results[ikey].Text.length ; i++)
+            for (let i = 0; i < engine.Results[ikey].Text.length ; i++)
             {
                if (engine.Results[ikey].Text[i] == '=')
                {
@@ -206,7 +206,7 @@ function findEloDiffOld (whiteEngine, blackEngine, whiteEngName, blackEngName, s
    var k = 10;
    var b_rating = blackEngine.Rating;
    var w_rating = whiteEngine.Rating;
-   var expected_score = 1 / (1 + Math.pow(10, (b_rating - w_rating) / 400 ));
+   var expected_score = 1 / (1 + Pow(10, (b_rating - w_rating) / 400 ));
    var rating_diff = k * (score - expected_score);
    return rating_diff;
 }
@@ -224,8 +224,8 @@ function getRating(engine, engName)
 function findEloDiff(whiteEngine, blackEngine, whiteEngName, blackEngName, score1, score2, gameno)
 {
    var k = 10;
-   var r1 = Math.pow(10, (whiteEngine.Rating/400));
-   var r2 = Math.pow(10, (blackEngine.Rating/400));
+   var r1 = Pow(10, (whiteEngine.Rating/400));
+   var r2 = Pow(10, (blackEngine.Rating/400));
    var e1 = r1/(r1+r2);
    var e2 = r2/(r1+r2);
    var w_rating = whiteEngine.Rating + k * (score1 - e1);
@@ -253,7 +253,7 @@ function getOverallElo(data)
          var blackEngine = engines[oppkey];
          var strText = oppEngine.Text;
          var blackRating = blackEngine.Rating;
-         for (var i = 0; i < strText.length; i++)
+         for (let i = 0; i < strText.length; i++)
          {
             plog ("strText.charAt(i): " + strText.charAt(i));
             if (strText.charAt(i) == '0')

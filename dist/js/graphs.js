@@ -1,6 +1,7 @@
 /*
 globals
-_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, plog, prevPgnData, showLivEng1, showLivEng2
+_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, Min, plog, prevPgnData, Round, showLivEng1,
+showLivEng2
 */
 'use strict';
 
@@ -317,7 +318,7 @@ function initializeCharts()
       }
    });
 
-   var nodesChartIs = document.getElementById("nodes-graph");
+   var nodesChartIs = _("#nodes-graph");
    if (nodesChartIs)
    {
       nodesChart = Chart.Line($('#nodes-graph'), {
@@ -337,10 +338,10 @@ function initializeCharts()
                   label: function(tooltipItem, data) {
                      var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                      if (nodes >= 1000000000) {
-                        nodes = Math.round (nodes / 100000000) / 10;
+                        nodes = Round(nodes / 100000000) / 10;
                         nodes += 'B';
                      } else {
-                        nodes = Math.round (nodes / 100000) / 10;
+                        nodes = Round(nodes / 100000) / 10;
                         nodes += 'M';
                      }
                      return ' (' + nodes + ' nodes)';
@@ -356,13 +357,13 @@ function initializeCharts()
                   ticks: {
                      callback: function(value, index, values) {
                         if (value >= (1000000*1000)) {
-                           value = Math.round (value / (100000 * 1000)) / 10;
+                           value = Round(value / (100000 * 1000)) / 10;
                            value += 'B';
                         } else if ((value >= (1000000*1))) {
-                           value = Math.round (value / 100000) / 10;
+                           value = Round(value / 100000) / 10;
                            value += 'M';
                         } else {
-                           value = Math.round (value / 100) / 10;
+                           value = Round(value / 100) / 10;
                            value += 'K';
                         }
                         return value;
@@ -381,13 +382,13 @@ function initializeCharts()
                   ticks: {
                      callback: function(value, index, values) {
                         if (value >= 1000000*1000) {
-                           value = Math.round (value / (100000 * 1000)) / 10;
+                           value = Round(value / (100000 * 1000)) / 10;
                            value += 'B';
                         } else if ((value >= (1000000*1))) {
-                           value = Math.round (value / 100000) / 10;
+                           value = Round(value / 100000) / 10;
                            value += 'M';
                         } else {
-                           value = Math.round (value / 100) / 10;
+                           value = Round(value / 100) / 10;
                            value += 'K';
                         }
                         return value;
@@ -422,19 +423,19 @@ function initializeCharts()
                label: function(tooltipItem, data) {
                   var value = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                   if (value >= 1000000) {
-                     value = Math.round (value / 10000) / 100;
+                     value = Round(value / 10000) / 100;
                      value += 'Mnps';
                   } else {
-                     value = Math.round (value / 10) / 100;
+                     value = Round(value / 10) / 100;
                      value += 'Knps';
                   }
 
                   var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                   if (nodes >= 1000000000) {
-                     nodes = Math.round (nodes / 100000000) / 10;
+                     nodes = Round(nodes / 100000000) / 10;
                      nodes += 'B';
                   } else {
-                     nodes = Math.round (nodes / 100000) / 10;
+                     nodes = Round(nodes / 100000) / 10;
                      nodes += 'M';
                   }
                   return value + ' (' + nodes + ' nodes)';
@@ -450,10 +451,10 @@ function initializeCharts()
                ticks: {
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
-                        value = Math.round (value / 100000) / 10;
+                        value = Round(value / 100000) / 10;
                         value += 'M';
                      } else {
-                        value = Math.round (value / 100) / 10;
+                        value = Round(value / 100) / 10;
                         value += 'K';
                      }
                      return value;
@@ -472,10 +473,10 @@ function initializeCharts()
                ticks: {
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
-                        value = Math.round (value / 100000) / 10;
+                        value = Round(value / 100000) / 10;
                         value += 'M';
                      } else {
-                        value = Math.round (value / 100) / 10;
+                        value = Round(value / 100) / 10;
                         value += 'K';
                      }
                      return value;
@@ -547,10 +548,10 @@ function initializeCharts()
                ticks: {
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
-                        value = Math.round (value / 100000) / 10;
+                        value = Round(value / 100000) / 10;
                         value += 'M';
                      } else {
-                        value = Math.round (value / 100) / 10;
+                        value = Round(value / 100) / 10;
                         value += 'K';
                      }
                      return value;
@@ -568,10 +569,10 @@ function initializeCharts()
                ticks: {
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
-                        value = Math.round (value / 100000) / 10;
+                        value = Round(value / 100000) / 10;
                         value += 'M';
                      } else {
-                        value = Math.round (value / 100) / 10;
+                        value = Round(value / 100) / 10;
                         value += 'K';
                      }
                      return value;
@@ -845,7 +846,7 @@ function updateChartDataLiveEval2()
          prevPgnData.Moves[0].didliveEval2 = 0;
       }
 
-      var endVal = Math.min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
+      var endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
 
       prevPgnData.Moves[0].didliveEval2 = 0;
 
@@ -921,7 +922,7 @@ function updateChartDataLiveEval1()
          prevPgnData.Moves[0].didliveEval1 = 0;
       }
 
-      var endVal = Math.min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
+      var endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
       prevPgnData.Moves[0].didliveEval1 = 0;
 
       for (let ctr = startEval; ctr >= endVal; ctr = ctr - 1)
@@ -1040,7 +1041,7 @@ function updateChartData()
             continue;
          }
 
-         let moveNumber = Math.round(moveCtr / 2) + 1;
+         let moveNumber = Round(moveCtr / 2) + 1;
 
          if (moveCtr % 2 != 0) {
             plyNum = moveCtr + 1;
@@ -1073,7 +1074,7 @@ function updateChartData()
             time =
             {
                'x': moveNumber,
-               'y': Math.round(move.mt / 1000),
+               'y': Round(move.mt / 1000),
                'ply': plyNum
             },
             speed =

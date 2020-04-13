@@ -10,7 +10,7 @@
 
 /*
 globals
-$, console, document, navigator, window
+_, $, Abs, console, document, navigator, Random, window
 */
 'use strict';
 
@@ -255,14 +255,14 @@ var ANIMATION_HAPPENING = false,
 // http://tinyurl.com/3ttloxj
 function createId() {
   return 'xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx'.replace(/x/g, function(c) {
-    var r = Math.random() * 16 | 0;
+    var r = Random() * 16 | 0;
     return r.toString(16);
   });
 }
 
 function uuid() {
   return 'xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx'.replace(/x/g, function(c) {
-    var r = Math.random() * 16 | 0;
+    var r = Random() * 16 | 0;
     return r.toString(16);
   });
 }
@@ -345,7 +345,7 @@ function checkDeps() {
     }
 
     // make sure the container element exists in the DOM
-    var el = document.getElementById(containerElOrId);
+    var el = _(`#${containerElOrId}`);
     if (! el) {
       window.alert('ChessBoard Error 1002: Element with id "' +
         containerElOrId + '" does not exist in the DOM.' +
@@ -898,8 +898,8 @@ function squareDistance(s1, s2) {
   var s2x = COLUMNS.indexOf(s2[0]) + 1;
   var s2y = parseInt(s2[1], 10);
 
-  var xDelta = Math.abs(s1x - s2x);
-  var yDelta = Math.abs(s1y - s2y);
+  var xDelta = Abs(s1x - s2x);
+  var yDelta = Abs(s1y - s2y);
 
   if (xDelta >= yDelta) return xDelta;
   return yDelta;
@@ -1389,7 +1389,7 @@ function computePath(s1, s2) {
     end.y   = 7 - end.y;
   }
 
-  var dist = { x: Math.abs(start.x - end.x), y: Math.abs(start.y - end.y) };
+  var dist = { x: Abs(start.x - end.x), y: Abs(start.y - end.y) };
   var corner;   // Point of the dog-leg for knight moves
   var epsilon;  // To adjust the target coords to take account of the arrowhead.
 
@@ -1633,7 +1633,7 @@ widget.clearAnnotation = function() {
 function reverseCoordinate(oldCoord)
 {
   let newCoord = '';
-  let newRow = (Math.abs(8 - oldCoord.charAt(1)) + 1).toString();
+  let newRow = (Abs(8 - oldCoord.charAt(1)) + 1).toString();
 
   switch(oldCoord.charAt(0).toLowerCase()) {
     case 'a':

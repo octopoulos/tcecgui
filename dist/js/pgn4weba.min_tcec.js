@@ -1,7 +1,8 @@
 /*
 globals
-$, ActiveXObject, alert, clearTimeout, confirm, console, document, engineWin, engineWinCheck, engineWinOnMove, google,
-Image, jQuery, localStorage, location, navigator, prompt, setInterval, setTimeout, window, XMLHttpRequest
+_, $, A, Abs, ActiveXObject, alert, Ceil, clearTimeout, confirm, console, document, engineWin, engineWinCheck,
+engineWinOnMove, Floor, google, HTML, Image, jQuery, Keys, localStorage, location, Max, Min, navigator, Pow, prompt,
+Random, RandomInt, Round, setInterval, setTimeout, Sign, Style, window, XMLHttpRequest
 */
 'use strict';
 
@@ -116,7 +117,7 @@ function customFunctionOnAlert(msg) {}
 
 function customFunctionOnCheckLiveBroadcastStatus() {}
 
-function customPgnHeaderTag(customTag, htmlElementId, gameNum) {
+function customPgnHeaderTag(customTag, selector, gameNum) {
     var matches, tag = "";
     customTag = customTag.replace(/\W+/g, "");
     if (gameNum === undefined) {
@@ -125,16 +126,16 @@ function customPgnHeaderTag(customTag, htmlElementId, gameNum) {
     if ((pgnHeader[gameNum]) && (matches = pgnHeader[gameNum].match('\\[\\s*' + customTag + '\\s*\"([^\"]+)\"\\s*\\]'))) {
         tag = matches[1];
     }
-    if (htmlElementId) {
-        var theObj = document.getElementById(htmlElementId);
-        if ((theObj) && (typeof(theObj.innerHTML) == "string")) {
+    if (selector) {
+        var theObj = _(selector);
+        if (theObj && (typeof(theObj.innerHTML) == "string")) {
             theObj.innerHTML = tag;
         }
     }
     return tag;
 }
 
-function customPgnCommentTag(customTag, htmlElementId, plyNum, varId) {
+function customPgnCommentTag(customTag, selector, plyNum, varId) {
     var matches, tag = "",
         theObj;
     customTag = customTag.replace(/\W+/g, "");
@@ -147,7 +148,7 @@ function customPgnCommentTag(customTag, htmlElementId, plyNum, varId) {
     if ((MoveCommentsVar[varId][plyNum]) && (matches = MoveCommentsVar[varId][plyNum].match('\\[%' + customTag + '\\s+((?:,?(?:"[^"]*"|[^,\\]]*))*)\\s*\\]'))) {
         tag = matches[1].replace(/\s+$/, "");
     }
-    if ((htmlElementId) && (theObj = document.getElementById(htmlElementId)) && (typeof(theObj.innerHTML) == "string")) {
+    if (selector && (theObj = _(selector)) && (typeof(theObj.innerHTML) == "string")) {
         theObj.innerHTML = tag;
     }
     return tag;
@@ -207,69 +208,35 @@ function resetAlert() {
 }
 
 function setEnginePv() {
-    //////console.log ("who's move is it " + whiteToMove);
-    var divTemp = null;
-
     if (CurrentPly == 1) {
-        divTemp = document.getElementById('white_pv');
-        divTemp.innerHTML = "book";
-        divTemp = document.getElementById('black_pv');
-        divTemp.innerHTML = "book";
-    } else if (CurrentPly == StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar] &&
-        !isArchiveFile()) {
-            //////console.log ("inside false:" + CurrentPly);
+        HTML('#white_pv', 'book');
+        HTML('#black_pv', 'book');
+        return;
+    }
+
+    if (CurrentPly == StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar] && !isArchiveFile()) {
         if (!whiteToMove) {
-            divTemp = document.getElementById('white_pv');
             if (moves[CurrentPly]) {
-                //////console.log ("inside falsex1:" + CurrentPly);
-                divTemp.innerHTML = moves[CurrentPly];
+                HTML('#white_pv', moves[CurrentPly]);
             }
-            divTemp = document.getElementById('black_pv');
             if (moves[CurrentPly + 1]) {
-                //////console.log ("inside falsex2:" + CurrentPly);
-                divTemp.innerHTML = moves[CurrentPly + 1];
+                HTML('#black_pv', moves[CurrentPly + 1]);
             }
         } else {
-            divTemp = document.getElementById('black_pv');
             if (moves[CurrentPly]) {
-                //////console.log ("inside falsex1:" + CurrentPly);
-                divTemp.innerHTML = moves[CurrentPly];
+                HTML('#black_pv', moves[CurrentPly]);
             }
-            divTemp = document.getElementById('white_pv');
             if (moves[CurrentPly + 1]) {
-                //////console.log ("inside falsex2:" + CurrentPly);
-                divTemp.innerHTML = moves[CurrentPly + 1];
+                HTML('#white_pv', moves[CurrentPly + 1]);
             }
         }
+    }
+    else if (!whiteToMove) {
+        HTML('#white_pv', moves[CurrentPly]? moves[CurrentPly]: 'no infos');
+        HTML('#black_pv', moves[CurrentPly - 1]? moves[CurrentPly - 1]: 'no infos2');
     } else {
-        if (!whiteToMove) {
-            divTemp = document.getElementById('white_pv');
-            //////console.log ("inside true:" + CurrentPly);
-            if (moves[CurrentPly]) {
-                divTemp.innerHTML = moves[CurrentPly];
-            } else {
-                divTemp.innerHTML = "no infos";
-            }
-            divTemp = document.getElementById('black_pv');
-            if (moves[CurrentPly - 1]) {
-                divTemp.innerHTML = moves[CurrentPly - 1];
-            } else {
-                divTemp.innerHTML = "no infos2";
-            }
-        } else {
-            divTemp = document.getElementById('black_pv');
-            if (moves[CurrentPly]) {
-                divTemp.innerHTML = moves[CurrentPly];
-            } else {
-                divTemp.innerHTML = "no infos3";
-            }
-            divTemp = document.getElementById('white_pv');
-            if (moves[CurrentPly - 1]) {
-                divTemp.innerHTML = moves[CurrentPly - 1];
-            } else {
-                divTemp.innerHTML = "no infos4";
-            }
-        }
+        HTML('#black_pv', moves[CurrentPly]? moves[CurrentPly]: 'no infos3');
+        HTML('#white_pv', moves[CurrentPly - 1]? moves[CurrentPly - 1]: 'no infos4');
     }
 }
 
@@ -320,7 +287,7 @@ function alertPromptTick(restart) {
         return;
     }
     var alertPromptDelay = 1500;
-    var theObj = document.getElementById('tcol' + colRow.col + 'trow' + colRow.row);
+    var theObj = _(`#tcol${colRow.col}trow${colRow.row}`);
     if (theObj) {
         if (alertPromptOn) {
             if ((highlightOption) && ((colFromHighlighted === 0 && rowFromHighlighted === 7) || (colToHighlighted === 0 && rowToHighlighted === 7))) {
@@ -616,7 +583,7 @@ function pgn4web_handleKey(e) {
             break;
         case 67:
             if (numberOfGames > 1) {
-                Init(Math.floor(Math.random() * numberOfGames));
+                Init(RandomInt(numberOfGames));
             }
             break;
         case 86:
@@ -710,7 +677,7 @@ function boardShortcut(square, title, functionPointer, defaultSetting) {
         boardOnClick[col][row] = functionPointer;
     }
     boardDefault[col][row] = defaultSetting ? !0 : !1;
-    if ((theObj = document.getElementById('img_tcol' + col + 'trow' + row))) {
+    if ((theObj = _(`#img_tcol${col}trow${row}`))) {
         if (IsRotated) {
             square = String.fromCharCode(72 - col, 49 + row);
         }
@@ -860,7 +827,7 @@ boardShortcut("C3", "load previous game", function(t, e) {
 }, !0);
 boardShortcut("D3", "load random game", function(t, e) {
     if (numberOfGames > 1) {
-        Init(Math.floor(Math.random() * numberOfGames));
+        Init(RandomInt(numberOfGames));
     }
 }, !0);
 boardShortcut("E3", "load random game at random position", function(t, e) {
@@ -1036,7 +1003,7 @@ var deciles = new Array(11);
 
 function calculateDeciles() {
     for (let ii = 0; ii < deciles.length; ii++) {
-        deciles[ii] = Math.round((numberOfGames - 1) * ii / (deciles.length - 1));
+        deciles[ii] = Round((numberOfGames - 1) * ii / (deciles.length - 1));
     }
 }
 
@@ -1055,13 +1022,12 @@ function detectJavascriptLocation(jsre) {
     if (typeof(jsre) == "undefined") {
         jsre = new RegExp("(pgn4web|pgn4web-compacted)\.js$", "");
     }
-    var e = document.getElementsByTagName("script");
-    for (let i = 0; i < e.length; i++) {
-        if ((e[i].src) && (e[i].src.match(jsre))) {
-            return e[i].src;
-        }
+    for (let node of A('script')) {
+        let src = node.src;
+        if (src && src.match(jsre))
+            return src;
     }
-    return "";
+    return '';
 }
 
 function detectHelpLocation() {
@@ -1069,13 +1035,11 @@ function detectHelpLocation() {
 }
 
 function detectBaseLocation() {
-    var e = document.getElementsByTagName("base");
-    for (let i = 0; i < e.length; i++) {
-        if (e[i].href) {
-            return e[i].href;
-        }
+    for (let node of A('base')) {
+        if (node.href)
+            return node.href;
     }
-    return "";
+    return '';
 }
 var debugWin;
 
@@ -1090,7 +1054,7 @@ function displayDebugInfo() {
     if (pgnUrl) {
         dbg3 += 'PGNURL: url=' + pgnUrl;
     } else {
-        if ((theObj = document.getElementById("pgnText"))) {
+        if ((theObj = _("#pgnText"))) {
             dbg3 += 'PGNTEXT: length=' + (theObj.tagName.toLowerCase() == "textarea" ? theObj.value.length : "?");
         }
     }
@@ -1105,7 +1069,7 @@ function displayDebugInfo() {
     if (thisInfo) {
         dbg3 += "CUSTOM: " + thisInfo + "\n\n";
     }
-    dbg3 += 'ALERTLOG: fatalnew=' + fatalErrorNumSinceReset + ' new=' + alertNumSinceReset + ' shown=' + Math.min(alertNum, alertLog.length) + ' total=' + alertNum + '\n--';
+    dbg3 += 'ALERTLOG: fatalnew=' + fatalErrorNumSinceReset + ' new=' + alertNumSinceReset + ' shown=' + Min(alertNum, alertLog.length) + ' total=' + alertNum + '\n--';
     if (alertNum > 0) {
         for (let ii = 0; ii < alertLog.length; ii++) {
             if (alertLog[(alertNum - 1 - ii) % alertLog.length] === undefined) {
@@ -1239,7 +1203,7 @@ function CurrentFEN() {
         }
     }
     thisFEN += " " + HalfMoveClock;
-    thisFEN += " " + (Math.floor(CurrentPly / 2) + 1);
+    thisFEN += " " + (Floor(CurrentPly / 2) + 1);
     return thisFEN;
 }
 var fenWin;
@@ -1258,9 +1222,9 @@ function displayFenData(addGametext) {
                 addStr = (CurrentVar ? "*" : gameResult[currentGame] || "*");
             } else {
                 if (thisPly % 2 === 0) {
-                    addStr = (Math.floor(thisPly / 2) + 1) + ". ";
+                    addStr = (Floor(thisPly / 2) + 1) + ". ";
                 } else if (thisPly == CurrentPly) {
-                    addStr = (Math.floor(thisPly / 2) + 1) + "... ";
+                    addStr = (Floor(thisPly / 2) + 1) + "... ";
                 }
                 addStr += Moves[thisPly];
             }
@@ -1522,10 +1486,10 @@ function CheckLegalityKing(thisKing) {
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisKing])) {
         return !1;
     }
-    if (Math.abs(PieceCol[MoveColor][thisKing] - mvToCol) > 1) {
+    if (Abs(PieceCol[MoveColor][thisKing] - mvToCol) > 1) {
         return !1;
     }
-    if (Math.abs(PieceRow[MoveColor][thisKing] - mvToRow) > 1) {
+    if (Abs(PieceRow[MoveColor][thisKing] - mvToRow) > 1) {
         return !1;
     }
     return !0;
@@ -1538,7 +1502,7 @@ function CheckLegalityQueen(thisQueen) {
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisQueen])) {
         return !1;
     }
-    if (((PieceCol[MoveColor][thisQueen] - mvToCol) * (PieceRow[MoveColor][thisQueen] - mvToRow) !== 0) && (Math.abs(PieceCol[MoveColor][thisQueen] - mvToCol) != Math.abs(PieceRow[MoveColor][thisQueen] - mvToRow))) {
+    if (((PieceCol[MoveColor][thisQueen] - mvToCol) * (PieceRow[MoveColor][thisQueen] - mvToRow) !== 0) && (Abs(PieceCol[MoveColor][thisQueen] - mvToCol) != Abs(PieceRow[MoveColor][thisQueen] - mvToRow))) {
         return !1;
     }
     if (!CheckClearWay(thisQueen)) {
@@ -1570,7 +1534,7 @@ function CheckLegalityBishop(thisBishop) {
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisBishop])) {
         return !1;
     }
-    if (Math.abs(PieceCol[MoveColor][thisBishop] - mvToCol) != Math.abs(PieceRow[MoveColor][thisBishop] - mvToRow)) {
+    if (Abs(PieceCol[MoveColor][thisBishop] - mvToCol) != Abs(PieceRow[MoveColor][thisBishop] - mvToRow)) {
         return !1;
     }
     if (!CheckClearWay(thisBishop)) {
@@ -1586,7 +1550,7 @@ function CheckLegalityKnight(thisKnight) {
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisKnight])) {
         return !1;
     }
-    if (Math.abs(PieceCol[MoveColor][thisKnight] - mvToCol) * Math.abs(PieceRow[MoveColor][thisKnight] - mvToRow) != 2) {
+    if (Abs(PieceCol[MoveColor][thisKnight] - mvToCol) * Abs(PieceRow[MoveColor][thisKnight] - mvToRow) != 2) {
         return !1;
     }
     return !0;
@@ -1599,7 +1563,7 @@ function CheckLegalityPawn(thisPawn) {
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisPawn])) {
         return !1;
     }
-    if (Math.abs(PieceCol[MoveColor][thisPawn] - mvToCol) != mvCapture) {
+    if (Abs(PieceCol[MoveColor][thisPawn] - mvToCol) != mvCapture) {
         return !1;
     }
     if (mvCapture) {
@@ -1714,8 +1678,8 @@ function CheckLegalityOOO() {
 }
 
 function CheckClearWay(thisPiece) {
-    var stepCol = Math.sign(mvToCol - PieceCol[MoveColor][thisPiece]);
-    var stepRow = Math.sign(mvToRow - PieceRow[MoveColor][thisPiece]);
+    var stepCol = Sign(mvToCol - PieceCol[MoveColor][thisPiece]);
+    var stepRow = Sign(mvToRow - PieceRow[MoveColor][thisPiece]);
     var startCol = PieceCol[MoveColor][thisPiece] + stepCol;
     var startRow = PieceRow[MoveColor][thisPiece] + stepRow;
     while ((startCol != mvToCol) || (startRow != mvToRow)) {
@@ -1765,7 +1729,7 @@ function GoToMove(thisPly, thisVar) {
         loopCommonPredecessor: for (let ii = PredecessorsVars[CurrentVar].length - 1; ii >= 0; ii--) {
             for (let jj = PredecessorsVars[thisVar].length - 1; jj >= 0; jj--) {
                 if (PredecessorsVars[CurrentVar][ii] === PredecessorsVars[thisVar][jj]) {
-                    backStart = Math.min(PredecessorsVars[CurrentVar][ii + 1] ? StartPlyVar[PredecessorsVars[CurrentVar][ii + 1]] : CurrentPly, PredecessorsVars[thisVar][jj + 1] ? StartPlyVar[PredecessorsVars[thisVar][jj + 1]] : thisPly);
+                    backStart = Min(PredecessorsVars[CurrentVar][ii + 1] ? StartPlyVar[PredecessorsVars[CurrentVar][ii + 1]] : CurrentPly, PredecessorsVars[thisVar][jj + 1] ? StartPlyVar[PredecessorsVars[thisVar][jj + 1]] : thisPly);
                     break loopCommonPredecessor;
                 }
             }
@@ -1831,7 +1795,7 @@ function randomGameRandomPly() {
         var oldInitialHalfmove = initialHalfmove;
         var oldAlwaysInitialHalfmove = alwaysInitialHalfmove;
         SetInitialHalfmove("random", !0);
-        Init(Math.floor(Math.random() * numberOfGames));
+        Init(RandomInt(numberOfGames));
         SetInitialHalfmove(oldInitialHalfmove, oldAlwaysInitialHalfmove);
     }
 }
@@ -1856,7 +1820,7 @@ function HighlightLastMove() {
     var theObj, moveId, text, ii, clockString, clockRegExp, clockMatch;
     undoStackStore();
     if (highlightedMoveId) {
-        if ((theObj = document.getElementById(highlightedMoveId))) {
+        if ((theObj = _(`#${highlightedMoveId}`))) {
             theObj.className = (highlightedMoveId.match(/Var0Mv/) ? 'move' : 'variation') + ' notranslate';
         }
     }
@@ -1864,7 +1828,7 @@ function HighlightLastMove() {
     if (showThisMove > StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]) {
         showThisMove = StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar];
     }
-    if ((theObj = document.getElementById("GameLastComment"))) {
+    if ((theObj = _("#GameLastComment"))) {
         if (commentsIntoMoveText) {
             variationTextDepth = CurrentVar === 0 ? 0 : 1;
             text = '<SPAN CLASS="comment">' + strippedMoveComment(showThisMove + 1, CurrentVar, !0).replace(/\sID="[^"]*"/g, '') + '</SPAN>';
@@ -1873,14 +1837,13 @@ function HighlightLastMove() {
         }
         theObj.innerHTML = text;
     }
+
     whiteToMove = ((showThisMove + 1) % 2 === 0);
-    text = whiteToMove ? 'white' : 'black';
-    if ((theObj = document.getElementById("GameSideToMove"))) {
-        theObj.innerHTML = text;
-    }
-    var lastMoverClockObj = document.getElementById(whiteToMove ? "GameBlackClock" : "GameWhiteClock");
+    HTML('#GameSideToMove', whiteToMove ? 'white' : 'black');
+
+    var lastMoverClockObj = _(whiteToMove ? "#GameBlackClock" : "#GameWhiteClock");
     var initialLastMoverClock = whiteToMove ? gameInitialBlackClock[currentGame] : gameInitialWhiteClock[currentGame];
-    var beforeLastMoverClockObj = document.getElementById(whiteToMove ? "GameWhiteClock" : "GameBlackClock");
+    var beforeLastMoverClockObj = _(whiteToMove ? "#GameWhiteClock" : "#GameBlackClock");
     var initialBeforeLastMoverClock = whiteToMove ? gameInitialWhiteClock[currentGame] : gameInitialBlackClock[currentGame];
     if (lastMoverClockObj) {
         clockString = ((showThisMove + 1 === StartPly + PlyNumber) && ((!LiveBroadcastDemo) || (gameResult[currentGame] !== "*"))) ? clockFromHeader(!whiteToMove) : null;
@@ -1915,7 +1878,7 @@ function HighlightLastMove() {
             lastMoverClockObj.innerHTML = "-";
         }
     }
-    if ((theObj = document.getElementById("GameNextMove"))) {
+    if ((theObj = _("#GameNextMove"))) {
         if (CurrentVar === 0 && showThisMove + 1 >= StartPly + PlyNumber) {
             text = '<SPAN CLASS="move notranslate">' + gameResult[currentGame] + '</SPAN>';
         } else if (typeof(Moves[showThisMove + 1]) == "undefined") {
@@ -1925,7 +1888,7 @@ function HighlightLastMove() {
         }
         theObj.innerHTML = text;
     }
-    if ((theObj = document.getElementById("GameNextVariations"))) {
+    if ((theObj = _("#GameNextVariations"))) {
         text = '';
         if (commentsIntoMoveText) {
             var children = childrenVars(showThisMove + 1, CurrentVar);
@@ -1937,17 +1900,17 @@ function HighlightLastMove() {
         }
         theObj.innerHTML = text;
     }
-    if ((theObj = document.getElementById("GameLastMove"))) {
+    if ((theObj = _("#GameLastMove"))) {
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
             text = printMoveText(showThisMove, CurrentVar, (CurrentVar !== 0), !0, !1);
         } else if (showThisMove === StartPly - 1) {
-            text = '<SPAN CLASS="' + (CurrentVar > 0 ? 'variation' : 'move') + ' notranslate">' + (Math.floor((showThisMove + 1) / 2) + 1) + (((showThisMove + 1) % 2) ? "..." : ".") + '</SPAN>';
+            text = '<SPAN CLASS="' + (CurrentVar > 0 ? 'variation' : 'move') + ' notranslate">' + (Floor((showThisMove + 1) / 2) + 1) + (((showThisMove + 1) % 2) ? "..." : ".") + '</SPAN>';
         } else {
             text = '';
         }
         theObj.innerHTML = text;
     }
-    if ((theObj = document.getElementById("GameLastVariations"))) {
+    if ((theObj = _("#GameLastVariations"))) {
         text = '';
         if (commentsIntoMoveText) {
             var siblings = childrenVars(showThisMove, HistVar[showThisMove]);
@@ -1961,7 +1924,7 @@ function HighlightLastMove() {
     }
     if (showThisMove >= (StartPlyVar[CurrentVar] - 1)) {
         moveId = 'Var' + CurrentVar + 'Mv' + (showThisMove + 1);
-        if ((theObj = document.getElementById(moveId))) {
+        if ((theObj = _(`#${moveId}`))) {
             theObj.className = (CurrentVar ? 'variation variationOn' : 'move moveOn') + ' notranslate';
         }
         highlightedMoveId = moveId;
@@ -2022,7 +1985,7 @@ function getRevGame(strn)
 
 function setRev()
 {
-    var revGame = document.getElementById('revgame');
+    var revGame = _('#revgame');
     var gameN = getRevGame(revGame.innerHTML);
 
     if (totalGames && gameN > totalGames)
@@ -2041,22 +2004,11 @@ function setRev()
 
 function setLive()
 {
-    var revGame = document.getElementById('livegame');
+    let is_live = pgnUrl.match(/live.pgn/),
+        node = _('#livegame');
 
-    if (pgnUrl.match(/live.pgn/))
-    {
-        revGame.style.cursor = "auto";
-        revGame.style.color = "#00bebe";
-        revGame.style.textDecoration = "none";
-        revGame.innerHTML = "Live";
-    }
-    else
-    {
-        revGame.style.cursor = "pointer";
-        revGame.style.color = "#7fffa9";
-        revGame.style.textDecoration = "underline";
-        revGame.innerHTML = "Go Live";
-    }
+    Style(node, is_live? 'color:#00bebe;cursor:auto;text-decoration:none': 'color:#7fffa9;cursor:pointer;text-decoration:underline');
+    HTML(node, is_live? 'Live': 'Go Live');
 }
 
 function setRevLive()
@@ -2085,7 +2037,7 @@ function myloadGame(gameN)
         gameN = parseInt(gameN);
         if (pgnUrl.match(/live.pgn/))
         {
-            document.getElementById('load').style.visibility="visible";
+            _('#load').style.visibility="visible";
             SetInitialGame(gameN-1);
             SetPgnUrl(pgnName);
             refreshPgnSource();
@@ -2093,7 +2045,7 @@ function myloadGame(gameN)
         }
         else
         {
-            document.getElementById('load').style.visibility="visible";
+            _('#load').style.visibility="visible";
             Init(gameN-1);
         }
     }
@@ -2101,7 +2053,7 @@ function myloadGame(gameN)
 
 function myloadGameRev()
 {
-   var revGame = document.getElementById('revgame');
+   var revGame = _('#revgame');
    var gameN = getRevGame(revGame.innerHTML);
    setRevLive();
    myloadGame(gameN);
@@ -2117,7 +2069,7 @@ function myloadGameLive()
     let pgnName = "live.pgn";
 
     revLoaded = !revLoaded;
-    document.getElementById('load').style.visibility="visible";
+    _('#load').style.visibility="visible";
     SetInitialGame(0);
     SetPgnUrl(pgnName);
     refreshPgnSource();
@@ -2134,15 +2086,15 @@ function ylcetSettime()
    var theObx = null;
    var theOby = null;
 
-   if ((theObx = document.getElementById("blackClock"))) {
-      if ((theOby = document.getElementById("blackClockl"))) {
+   if ((theObx = _("#blackClock"))) {
+      if ((theOby = _("#blackClockl"))) {
          //////console.log ("Came here");
          theOby.innerHTML = theObx.innerHTML; //asd
       }
    }
 
-   if ((theObx = document.getElementById("whiteClock"))) {
-      if ((theOby = document.getElementById("whiteClockl"))) {
+   if ((theObx = _("#whiteClock"))) {
+      if ((theOby = _("#whiteClockl"))) {
          theOby.innerHTML = theObx.innerHTML;
       }
    }
@@ -2175,7 +2127,7 @@ function SetPVfile() {
         }
         pvfile += "/tlcv_file_arch" + "_" + gameStr + ".txt";
         //////console.log(pvfile + "," + currentGame + ",initialGame" + initialGame);
-        var dirUrl = document.getElementById('directurl');
+        var dirUrl = _('#directurl');
         if (dirUrl) {
             dirUrl.innerHTML = getLinkArchF(gameStr);
             dirUrl.href = getLinkArchF(gameStr);
@@ -2391,6 +2343,10 @@ function myupdateLastMovetimeFromHttpRequest(this_http_request, realUpdate, isBl
     }
 }
 
+function random_no_cache() {
+    return `?noCache=${RandomInt(0x1000000000, 0x10000000000).toString(16).toUpperCase()}`;
+}
+
 function myupdateLastMovetime() {
     var isArchiveTemp = isArchiveFile();
 
@@ -2420,7 +2376,7 @@ function myupdateLastMovetime() {
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
+        randomizer2 = random_no_cache();
         http_request.open("GET", pgnUrl + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", LastMovetimeLastModifiedHeader1);
         http_request.send(null);
@@ -2517,10 +2473,8 @@ function myupdateSchedtable(realUpdate) {
         myupdateSchedtableFromHttpRequest(http_request, realUpdate);
     };
     try {
-        var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         stable = "schedule.json";
-        http_request.open("GET", stable + randomizer2);
+        http_request.open("GET", stable + random_no_cache());
         http_request.setRequestHeader("If-Modified-Since", SchedtableLastModifiedHeader1);
         http_request.send(null);
     } catch (e) {
@@ -2557,9 +2511,7 @@ function myupdateCrosstable() {
         myupdateCrosstableFromHttpRequest(http_request);
     };
     try {
-        var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
-        http_request.open("GET", "crosstable.json" + randomizer2);
+        http_request.open("GET", "crosstable.json" + random_no_cache());
         http_request.setRequestHeader("If-Modified-Since", CrosstableLastModifiedHeader1);
         http_request.send(null);
     } catch (e) {
@@ -2590,9 +2542,7 @@ function myupdateLiveSf() {
         myupdateLiveSFPvFromHttpRequest(http_request);
     };
     try {
-        var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
-        http_request.open("GET", "data.json" + randomizer2);
+        http_request.open("GET", "data.json" + random_no_cache());
         http_request.setRequestHeader("If-Modified-Since", mysfliveevalLastModifiedHeader1);
         http_request.send(null);
     } catch (e) {
@@ -2602,7 +2552,7 @@ function myupdateLiveSf() {
 }
 
 function myupdatePv(realUpdate, isBlack) {
-    var nomoves = document.getElementById('white_pv');
+    var nomoves = _('#white_pv');
     if (!nomoves) {
         return;
     }
@@ -2628,9 +2578,7 @@ function myupdatePv(realUpdate, isBlack) {
         myupdatePvFromHttpRequestB(http_request, realUpdate, isBlack);
     };
     try {
-        var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
-        http_request.open("GET", pvfile + randomizer2);
+        http_request.open("GET", pvfile + random_no_cache());
         http_request.setRequestHeader("If-Modified-Since", myupdatePvHeader1);
         http_request.send(null);
     } catch (e) {
@@ -2700,7 +2648,7 @@ function highlightSquare(col, row, on) {
     }
     var trow = IsRotated ? row : 7 - row;
     var tcol = IsRotated ? 7 - col : col;
-    var theObj = document.getElementById('tcol' + tcol + 'trow' + trow);
+    var theObj = _('#tcol' + tcol + 'trow' + trow);
     if (!theObj) {
         return !1;
     }
@@ -2889,8 +2837,8 @@ function updatePgnFromHttpRequest(this_http_request, this_http_request_id) {
         res = LOAD_PGN_OK;
     }
     loadPgnCheckingLiveStatus(res);
-    document.getElementById('load').style.visibility = "hidden";
-    document.getElementById('universal').style.visibility = "visible";
+    _('#load').style.visibility = "hidden";
+    _('#universal').style.visibility = "visible";
 }
 var LOAD_PGN_FAIL = 0;
 var LOAD_PGN_OK = 1;
@@ -3039,7 +2987,7 @@ function loadPgnFromPgnUrl(pgnUrl) {
     try {
         var randomizer = "";
         if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-            randomizer = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
+            randomizer = random_no_cache();
         }
         http_request.open("GET", pgnUrl + randomizer);
         if (LiveBroadcastDelay > 0) {
@@ -3117,19 +3065,14 @@ function checkLiveBroadcastStatus() {
         LiveBroadcastStatusString = lbgr + " " + tick + " " + numberOfGames;
         theTitle = LiveBroadcastEnded ? "live broadcast ended" : lbgr + " live game" + (lbgr > 1 ? "s" : "") + " out of " + numberOfGames;
     }
-    if ((theObj = document.getElementById("GameLiveStatus"))) {
+    if ((theObj = _("#GameLiveStatus"))) {
         theObj.innerHTML = LiveBroadcastStatusString;
         theObj.title = theTitle;
     }
-    if ((theObj = document.getElementById("GameLiveLastRefreshed"))) {
-        theObj.innerHTML = LiveBroadcastLastRefreshedLocal;
-    }
-    if ((theObj = document.getElementById("GameLiveLastReceived"))) {
-        theObj.innerHTML = LiveBroadcastLastReceivedLocal;
-    }
-    if ((theObj = document.getElementById("GameLiveLastModifiedServer"))) {
-        theObj.innerHTML = LiveBroadcastLastModified_ServerTime();
-    }
+    HTML('#GameLiveLastRefreshed', LiveBroadcastLastRefreshedLocal);
+    HTML('#GameLiveLastReceived', LiveBroadcastLastReceivedLocal);
+    HTML('#GameLiveLastModifiedServer', LiveBroadcastLastModified_ServerTime());
+
     customFunctionOnCheckLiveBroadcastStatus();
 }
 
@@ -3162,7 +3105,7 @@ function refreshPgnSource() {
     if (LiveBroadcastDemo) {
         var newPly, addedPly = 0;
         for (let ii = 0; ii < numberOfGames; ii++) {
-            newPly = [3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1][Math.floor(20 * Math.random())] || 0;
+            newPly = [3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1][Floor(20 * Random())] || 0;
             if (gameDemoMaxPly[ii] <= gameDemoLength[ii]) {
                 gameDemoMaxPly[ii] += newPly;
                 addedPly += newPly;
@@ -3174,8 +3117,8 @@ function refreshPgnSource() {
     }
     if (pgnUrl) {
         loadPgnFromPgnUrl(pgnUrl);
-    } else if (document.getElementById("pgnText")) {
-        loadPgnFromTextarea("pgnText");
+    } else if (_("#pgnText")) {
+        loadPgnFromTextarea("#pgnText");
     } else {
         pgnGameFromPgnText(alertPgn);
         undoStackReset();
@@ -3185,17 +3128,17 @@ function refreshPgnSource() {
     }
 }
 
-function loadPgnFromTextarea(textareaId) {
+function loadPgnFromTextarea(selector) {
     var res = LOAD_PGN_FAIL,
         text, theObj;
     LiveBroadcastLastRefreshedLocal = (new Date()).toLocaleString();
-    if (!(theObj = document.getElementById(textareaId))) {
-        myAlert('error: missing ' + textareaId + ' textarea object in the HTML file', !0);
+    if (!(theObj = _(selector))) {
+        myAlert(`error: missing ${selector} textarea object in the HTML file`, !0);
     } else {
-        if (document.getElementById(textareaId).tagName.toLowerCase() == "textarea") {
-            text = document.getElementById(textareaId).value;
+        if (_(selector).tagName.toLowerCase() == "textarea") {
+            text = _(selector).value;
         } else {
-            text = document.getElementById(textareaId).innerHTML;
+            text = _(selector).innerHTML;
             if (text.indexOf('\n') < 0) {
                 text = text.replace(/((\[[^\[\]]*\]\s*)+)/g, "\n$1\n");
             }
@@ -3210,14 +3153,14 @@ function loadPgnFromTextarea(textareaId) {
             res = LOAD_PGN_OK;
             LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString();
         } else {
-            myAlert('error: no games found in ' + textareaId + ' object in the HTML file');
+            myAlert(`error: no games found in ${selector} object in the HTML file`);
         }
     }
     loadPgnCheckingLiveStatus(res);
 }
 
 function createBoard() {
-    var theObu = document.getElementById("GameBoard");
+    var theObu = _("#GameBoard");
     if ((theObu) && ((currentPage == "live.php") || (currentPage == "archive.php"))) {
         theObu.innerHTML = '<span>Please wait, the chess board is loading</span></br></br><img src="img/thinking5.gif" style="border:1px solid #808080"/>';
         theObu.style.padding = "60px 30px 0 30px";
@@ -3227,8 +3170,8 @@ function createBoard() {
     }
     if (pgnUrl) {
         loadPgnFromPgnUrl(pgnUrl);
-    } else if (document.getElementById("pgnText")) {
-        loadPgnFromTextarea("pgnText");
+    } else if (_("#pgnText")) {
+        loadPgnFromTextarea("#pgnText");
     } else {
         pgnGameFromPgnText(alertPgn);
         undoStackReset();
@@ -3247,7 +3190,7 @@ function setCurrentGameFromInitialGame() {
             currentGame = numberOfGames - 1;
             break;
         case "random":
-            currentGame = Math.floor(Math.random() * numberOfGames);
+            currentGame = RandomInt(numberOfGames);
             break;
         default:
             if (isNaN(parseInt(initialGame, 10))) {
@@ -3258,13 +3201,13 @@ function setCurrentGameFromInitialGame() {
                 }
             } else {
                 initialGame = parseInt(initialGame, 10);
-                initialGame = initialGame < 0 ? -Math.floor(-initialGame) : Math.floor(initialGame);
+                initialGame = initialGame < 0 ? -Floor(-initialGame): Floor(initialGame);
                 if (initialGame < -numberOfGames) {
                     currentGame = 0;
                 } else if (initialGame < 0) {
                     currentGame = numberOfGames + initialGame;
                 } else if (initialGame === 0) {
-                    currentGame = Math.floor(Math.random() * numberOfGames);
+                    currentGame = RandomInt(numberOfGames);
                 } else if (initialGame <= numberOfGames) {
                     currentGame = (initialGame - 1);
                 } else {
@@ -3278,9 +3221,9 @@ function setCurrentGameFromInitialGame() {
 function GoToInitialHalfmove() {
     var iv, ih;
     if (initialVariation < 0) {
-        iv = Math.max(numberOfVars + initialVariation, 0);
+        iv = Max(numberOfVars + initialVariation, 0);
     } else {
-        iv = Math.min(initialVariation, numberOfVars - 1);
+        iv = Min(initialVariation, numberOfVars - 1);
     }
     switch (initialHalfmove) {
         case "start":
@@ -3300,7 +3243,7 @@ function GoToInitialHalfmove() {
             GoToMove(StartPlyVar[iv] + PlyNumberVar[iv], iv);
             break;
         case "random":
-            GoToMove(StartPlyVar[iv] + Math.floor(Math.random() * (StartPlyVar[iv] + PlyNumberVar[iv])), iv);
+            GoToMove(RandomInt(StartPlyVar[iv] + PlyNumberVar[iv], StartPlyVar[iv]), iv);
             break;
         case "comment":
         case "commentplusone":
@@ -3316,9 +3259,9 @@ function GoToInitialHalfmove() {
                 initialHalfmove = 0;
             }
             if (initialHalfmove < 0) {
-                ih = Math.max(StartPlyVar[iv] + PlyNumberVar[iv] + 1 + initialHalfmove, 0);
+                ih = Max(StartPlyVar[iv] + PlyNumberVar[iv] + 1 + initialHalfmove, 0);
             } else {
-                ih = Math.min(initialHalfmove, StartPlyVar[iv] + PlyNumberVar[iv]);
+                ih = Min(initialHalfmove, StartPlyVar[iv] + PlyNumberVar[iv]);
             }
             GoToMove(ih, iv);
             break;
@@ -3357,7 +3300,7 @@ function Init(nextGame) {
     CurrentPly = StartPly;
     if (firstStart || alwaysInitialHalfmove) {
         GoToInitialHalfmove();
-        setTimeout(() => {autoScrollToCurrentMoveIfEnabled();}, Math.min(666, 0.9 * Delay));
+        setTimeout(() => {autoScrollToCurrentMoveIfEnabled();}, Min(666, 0.9 * Delay));
     } else {
         synchMoves();
         RefreshBoard();
@@ -3720,7 +3663,7 @@ function InitImages() {
 function IsCheck(col, row, color) {
     var ii, jj;
     var sign = 2 * color - 1;
-    if ((Math.abs(PieceCol[1 - color][0] - col) <= 1) && (Math.abs(PieceRow[1 - color][0] - row) <= 1)) {
+    if ((Abs(PieceCol[1 - color][0] - col) <= 1) && (Abs(PieceRow[1 - color][0] - row) <= 1)) {
         return !0;
     }
     for (ii = -2; ii <= 2; ii += 4) {
@@ -3948,7 +3891,7 @@ function MoveForward(diff, targetVar, scanOnly) {
             break;
         }
         if ((ParseLastMoveError = !ParseMove(move, thisPly))) {
-            text = (Math.floor(thisPly / 2) + 1) + ((thisPly % 2) === 0 ? '. ' : '... ');
+            text = (Floor(thisPly / 2) + 1) + ((thisPly % 2) === 0 ? '. ' : '... ');
             myAlert('error: invalid ply ' + text + move + ' in game ' + (currentGame + 1) + ' variation ' + CurrentVar, !0);
             if (thisPly === nextVarStartPly) {
                 CurrentVar = oldVar;
@@ -4305,7 +4248,7 @@ function ParsePGNGameString(gameString) {
                     break;
                 }
             default:
-                needle = new Array('1-0', '0-1', '1/2-1/2', '*');
+                needle = ['1-0', '0-1', '1/2-1/2', '*'];
                 for (ii = 0; ii < needle.length; ii++) {
                     if (ss.indexOf(needle[ii], start) == start) {
                         if (CurrentVar === 0) {
@@ -4324,7 +4267,7 @@ function ParsePGNGameString(gameString) {
                 if (start == ss.length) {
                     break;
                 }
-                moveCount = Math.floor((StartPly + PlyNumber) / 2) + 1;
+                moveCount = Floor((StartPly + PlyNumber) / 2) + 1;
                 needle = moveCount.toString();
                 if (ss.indexOf(needle, start) == start) {
                     start += needle.length;
@@ -4618,7 +4561,7 @@ function ParseMove(move, plyCount) {
         return !1;
     }
     if (mvPiece == 6) {
-        if (Math.abs(HistRow[0][plyCount] - mvToRow) == 2) {
+        if (Abs(HistRow[0][plyCount] - mvToRow) == 2) {
             HistEnPassant[plyCount + 1] = !0;
             HistEnPassantCol[plyCount + 1] = mvToCol;
         }
@@ -4631,13 +4574,13 @@ function SetGameSelectorOptions(head, num, chEvent, chSite, chRound, chWhite, ch
         gameSelectorHead = head;
     }
     gameSelectorNum = (num === true);
-    gameSelectorChEvent = Math.max(Math.min(chEvent, 32) || 0, 0) || 0;
-    gameSelectorChSite = Math.max(Math.min(chSite, 32) || 0, 0) || 0;
-    gameSelectorChRound = Math.max(Math.min(chRound, 32) || 0, 0) || 0;
-    gameSelectorChWhite = Math.max(Math.min(chWhite, 32) || 0, 0) || 0;
-    gameSelectorChBlack = Math.max(Math.min(chBlack, 32) || 0, 0) || 0;
-    gameSelectorChResult = Math.max(Math.min(chResult, 32) || 0, 0) || 0;
-    gameSelectorChDate = Math.max(Math.min(chDate, 32) || 0, 0) || 0;
+    gameSelectorChEvent = Max(Min(chEvent, 32) || 0, 0) || 0;
+    gameSelectorChSite = Max(Min(chSite, 32) || 0, 0) || 0;
+    gameSelectorChRound = Max(Min(chRound, 32) || 0, 0) || 0;
+    gameSelectorChWhite = Max(Min(chWhite, 32) || 0, 0) || 0;
+    gameSelectorChBlack = Max(Min(chBlack, 32) || 0, 0) || 0;
+    gameSelectorChResult = Max(Min(chResult, 32) || 0, 0) || 0;
+    gameSelectorChDate = Max(Min(chDate, 32) || 0, 0) || 0;
 }
 var clickedSquareInterval = null;
 
@@ -4645,10 +4588,10 @@ function clickedSquare(ii, jj) {
     if (clickedSquareInterval) {
         return;
     }
-    var squareId = 'tcol' + jj + 'trow' + ii;
-    var theObj = document.getElementById(squareId);
+    var squareId = '#tcol' + jj + 'trow' + ii;
+    var theObj = _(squareId);
     if (theObj) {
-        var oldClass = theObj.className;
+        // var oldClass = theObj.className;
         theObj.className = (ii + jj) % 2 === 0 ? "blackSquare" : "whiteSquare";
         clickedSquareInterval = setTimeout(() => {reset_after_click(" + ii + "," + jj + ",'" + oldClass + "','" + theObj.className + "');}, 66);
         clearSelectedText();
@@ -4656,7 +4599,7 @@ function clickedSquare(ii, jj) {
 }
 
 function reset_after_click(ii, jj, oldClass, newClass) {
-    var theObj = document.getElementById('tcol' + jj + 'trow' + ii);
+    var theObj = _('#tcol' + jj + 'trow' + ii);
     if (theObj) {
         if (theObj.className == newClass) {
             theObj.className = oldClass;
@@ -4693,7 +4636,7 @@ function searchPgnGame(searchExpression, backward) {
         searchExpression = "";
     }
     lastSearchPgnExpression = searchExpression;
-    var theObj = document.getElementById('searchPgnExpression');
+    var theObj = _('#searchPgnExpression');
     if (theObj) {
         theObj.value = searchExpression;
     }
@@ -4718,9 +4661,9 @@ function searchPgnGamePrompt() {
 }
 
 function searchPgnGameForm() {
-    var theObj = document.getElementById('searchPgnExpression');
+    var theObj = _('#searchPgnExpression');
     if (theObj) {
-        searchPgnGame(document.getElementById('searchPgnExpression').value);
+        searchPgnGame(_('#searchPgnExpression').value);
     }
 }
 var chessMovesRegExp = new RegExp("\\b((\\d+(\\.{1,3}|\\s)\\s*)?((([KQRBN][a-h1-8]?)|[a-h])?x?[a-h][1-8](=[QRNB])?|O-O-O|O-O)\\b[!?+#]*)", "g");
@@ -4802,18 +4745,18 @@ function setEvalColors(theObj) {
                 totheight = 0;
             diffheight = whiteEval / minEval * boxheight;
             let newHeight;
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             newHeight = parseFloat(diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = 'white';
             totheight = newHeight;
             theObj.style.height = newHeight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             totheight = parseFloat(newHeight) + parseFloat(remainHeight);
@@ -4826,11 +4769,11 @@ function setEvalColors(theObj) {
             let diffheight = 0;
             diffheight = whiteEval / minEval * boxheight;
             let newHeight;
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             newHeight = parseFloat(-diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = newHeight + 'px';
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
@@ -4838,23 +4781,23 @@ function setEvalColors(theObj) {
             }
             theObj.style.height = remainHeight + 'px';
             theObj.style.backgroundColor = 'white';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
         } else {
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
         }
@@ -4863,17 +4806,17 @@ function setEvalColors(theObj) {
             let diffheight = 0;
             diffheight = blackEval / minEval * boxheight;
             let newHeight;
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             newHeight = parseFloat(diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = 'white';
             theObj.style.height = newHeight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
@@ -4885,11 +4828,11 @@ function setEvalColors(theObj) {
             let diffheight = 0;
             diffheight = blackEval / minEval * boxheight;
             let newHeight;
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             newHeight = parseFloat(-diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = newHeight + 'px';
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
@@ -4897,23 +4840,23 @@ function setEvalColors(theObj) {
             }
             theObj.style.height = remainHeight + 'px';
             theObj.style.backgroundColor = 'white';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
         } else {
-            theObj = document.getElementById("whoswinningw");
+            theObj = _("#whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningw1");
+            theObj = _("#whoswinningw1");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb");
+            theObj = _("#whoswinningb");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
-            theObj = document.getElementById("whoswinningb1");
+            theObj = _("#whoswinningb1");
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = boxheight + 'px';
         }
@@ -5145,7 +5088,7 @@ function ylcetAddGamesPlayedFirstTableNew()
 
     tables[0].id = "tblBordered";
 
-    var tdiv = document.getElementById('cross_divs');
+    var tdiv = _('#cross_divs');
     $("#cross_divs").html("");
     tdiv.appendChild(tables[0]);
 
@@ -5169,7 +5112,7 @@ function ylcetAddGamesPlayedFirstTableNew()
 
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
-    var table = new google.visualization.Table(document.getElementById('cross_divs'));
+    var table = new google.visualization.Table(_('#cross_divs'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
@@ -5204,7 +5147,7 @@ function drawCrosstable()
 
     tables[0].id = "tblBordered";
 
-    var tdiv = document.getElementById('cross_divs');
+    var tdiv = _('#cross_divs');
     $("#cross_divs").html("");
     tdiv.appendChild(tables[0]);
 
@@ -5228,7 +5171,7 @@ function drawCrosstable()
 
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
-    var table = new google.visualization.Table(document.getElementById('cross_divs'));
+    var table = new google.visualization.Table(_('#cross_divs'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
@@ -5263,8 +5206,8 @@ function ylcetAddGamesPlayedFirstTableOld() {
     tables[0].id = "tblBordered";
 
     for (let i = 0; i < tr.length; i++) {
-        var td = document.createElement('td');
-        var input = document.createTextNode('INPUT');
+        // var td = document.createElement('td');
+        // var input = document.createTextNode('INPUT');
         games = 0;
 
         var cells = tr[i].cells;
@@ -5302,8 +5245,8 @@ function ylcetAddGamesPlayedFirstTableOld() {
                     break;
                 }
                 let thisDataTrim = thisData.trim();
-                var thisNumber = thisTextNode.data;
-                var str = thisTextNode.data;
+                // var thisNumber = thisTextNode.data;
+                // var str = thisTextNode.data;
                 var retname = getAbbName(thisDataTrim);
                 if (retname != null) {
                     thisTdElem.innerHTML = retname;
@@ -5398,7 +5341,7 @@ function ylcetAddGamesPlayedFirstTableOld() {
         }
     }
 
-    var tdiv = document.getElementById('cross_divs');
+    var tdiv = _('#cross_divs');
     $("#cross_divs").html("");
     tables[0].id = "tblBordered1";
     tdiv.appendChild(tables[0]);
@@ -5417,7 +5360,7 @@ function ylcetAddGamesPlayedFirstTableOld() {
 
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
-    var table = new google.visualization.Table(document.getElementById('cross_divs'));
+    var table = new google.visualization.Table(_('#cross_divs'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
@@ -5493,7 +5436,7 @@ function copyCell(readCell, writeCell, count) {
 }
 
 function openArchGame(gameNum) {
-    var dirUrl = document.getElementById('directurl');
+    var dirUrl = _('#directurl');
     if (dirUrl) {
         dirUrl.innerHTML = getLinkArchF(gameNum);
         dirUrl.href = getLinkArchF(gameNum);
@@ -5539,10 +5482,10 @@ function hmsToSecondsOnly(str) {
 function getAbbNameList(myList)
 {
    var arrayList = [];
-   var keysArray = Object.keys(myList.Table);
+   var keysArray = Keys(myList.Table);
    for (let i = 0; i < keysArray.length; i++)
    {
-      var key = keysArray[i]; // here is "name" of object property
+    //   var key = keysArray[i]; // here is "name" of object property
       var value = myList.Table[myList.Order[i]].Abbreviation; // here get value "by name" as it expected with objects
       arrayList.push(value);
    }
@@ -5551,14 +5494,14 @@ function getAbbNameList(myList)
 
 function drawStandingsNew(myList1, selector)
 {
-   var tempDom = document.getElementById('cross_divs');
+   var tempDom = _('#cross_divs');
    var myList = null;
 
    if (tempDom)
    {
       $("#cross_divs").html("");
    }
-   tempDom = document.getElementById('info_divs1');
+   tempDom = _('#info_divs1');
    if (tempDom)
    {
       $("#info_divs1").html("");
@@ -5581,15 +5524,14 @@ function drawStandingsNew(myList1, selector)
    var table = document.createElement('table');
    var row = table.insertRow(0);
    var columns = addAllColumnHeadersStand(row);
-   var keysArray = Object.keys(myList.Table);
+//    var keysArray = Keys(myList.Table);
    columns = addAllColumnHeadersCross(row, abbrList);
 
+   // TODO: accelerate this
    for (let i = 0; i < abbrList.length ; i++)
    {
       row = table.insertRow(i+1);
-
-      var totWin = myList.Table[myList.Order[i]].WinsAsBlack +
-                     myList.Table[myList.Order[i]].WinsAsWhite;
+      var totWin = myList.Table[myList.Order[i]].WinsAsBlack + myList.Table[myList.Order[i]].WinsAsWhite;
       var totWWin = myList.Table[myList.Order[i]].WinsAsWhite;
       var totBWin = myList.Table[myList.Order[i]].WinsAsBlack;
       var totWinStr = totWin + " [" + totWWin + "/" + totBWin + "]";
@@ -5715,8 +5657,8 @@ function drawStandingsNew(myList1, selector)
    var values = []; // to hold our values for data table
    // get our values
    var emptyRowfound = 0;
-   tempDom = document.getElementById('cross_divs');
-   var tablex = document.getElementById('cross_divs');
+   tempDom = _('#cross_divs');
+   var tablex = _('#cross_divs');
    var tr = tempDom.getElementsByTagName("tr");
    var rowCount = tr.length;
    var currentGameNum = 0;
@@ -5753,7 +5695,7 @@ function drawStandingsNew(myList1, selector)
    dataTable1.setProperty(0, 16, 'style', 'width:55px');
    }
    var dataView1 = new google.visualization.DataView(dataTable1);
-   var table1 = new google.visualization.Table(document.getElementById('cross_divs'));
+   var table1 = new google.visualization.Table(_('#cross_divs'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
    knownHeight = 38 * abbrList.length;
     var options1 = {
@@ -5807,7 +5749,7 @@ function drawStandingsNew(myList1, selector)
    }]);
    dataView1 = new google.visualization.DataView(dataTable1);
    table1.draw(dataView1, options1);
-   document.getElementById('cross_divs').style.height = 42 * abbrList.length + "px";
+   _('#cross_divs').style.height = 42 * abbrList.length + "px";
 }
 
 var evalchartoptions = {
@@ -5871,9 +5813,9 @@ function drawSfPV(myList1, selector)
       myupdateLiveSf();
    }
 
-   var keysArray = Object.keys(myList);
+   var keysArray = Keys(myList);
 
-   var tempDom = document.getElementById('sfeval');
+   var tempDom = _('#sfeval');
    if (tempDom)
    {
       $("#sfeval").html("");
@@ -5958,7 +5900,7 @@ function drawSfPV(myList1, selector)
 
 
    // get our values
-   tempDom = document.getElementById('sfeval');
+   tempDom = _('#sfeval');
    var tr = tempDom.getElementsByTagName("tr");
    var rowCount = tr.length;
    var currentGameNum = 0;
@@ -5981,7 +5923,7 @@ function drawSfPV(myList1, selector)
    dataTable1.setProperty(0, 4, 'style', 'width:35px');
    dataTable1.setProperty(0, 4, 'style', 'width:40px');
    var dataView1 = new google.visualization.DataView(dataTable1);
-   var table1 = new google.visualization.Table(document.getElementById('sfeval'));
+   var table1 = new google.visualization.Table(_('#sfeval'));
    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormalPv', oddTableRow:'rowoddPv'};
    var options1 = {
       'showRowNumber': false,
@@ -6034,10 +5976,9 @@ function drawCrosstableNew(myList1, selector)
    abbrList = getAbbNameList(myList);
 
    var table = document.createElement('table');
+//    var columns = addAllColumnHeadersCross(table, abbrList);
 
-   var columns = addAllColumnHeadersCross(table, abbrList);
-
-   var keysArray = Object.keys(myList.Table);
+   var keysArray = Keys(myList.Table);
    for (let i = 0; i < keysArray.length; i++)
    {
       var key = keysArray[i]; // here is "name" of object property
@@ -6045,6 +5986,7 @@ function drawCrosstableNew(myList1, selector)
       ////le.log("keyo:" + key + "," , value);
    }
 
+   // TODO: accelerate this
    for (let i = 0; i < abbrList.length ; i++)
    {
       var row = table.insertRow(i+1);
@@ -6139,7 +6081,7 @@ function drawCrosstableNew(myList1, selector)
    var values = []; // to hold our values for data table
    // get our values
    var emptyRowfound = 0;
-   var tempDom = document.getElementById('info_divs1');
+   var tempDom = _('#info_divs1');
    var tr = tempDom.getElementsByTagName("tr");
    var rowCount = tr.length;
    var currentGameNum = 0;
@@ -6156,7 +6098,7 @@ function drawCrosstableNew(myList1, selector)
 
    var dataTable1 = google.visualization.arrayToDataTable(values);
    var dataView1 = new google.visualization.DataView(dataTable1);
-   var table1 = new google.visualization.Table(document.getElementById('info_divs1'));
+   var table1 = new google.visualization.Table(_('#info_divs1'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options1 = {
       'showRowNumber': false,
@@ -6207,7 +6149,7 @@ function drawCrosstableNew(myList1, selector)
    });
    dataView1 = new google.visualization.DataView(dataTable1);
    table1.draw(dataView1, options1);
-   document.getElementById('info_divs1').style.height = knownHeight + "px";
+   _('#info_divs1').style.height = knownHeight + "px";
 }
 
 function appendTable(row, selector, listnum, colnum, myList, columns)
@@ -6232,7 +6174,7 @@ function appendTable(row, selector, listnum, colnum, myList, columns)
 
 function buildHtmlTable(myList1, selector)
 {
-   var tempDom = document.getElementById('sched_divs');
+   var tempDom = _('#sched_divs');
    var myList = null;
 
    if (tempDom)
@@ -6379,7 +6321,7 @@ function buildHtmlTable(myList1, selector)
    dataTable1.setProperty(0, 11, 'style', 'width:200px');
    dataTable1.setProperty(0, 12, 'style', 'width:180px');
    var dataView1 = new google.visualization.DataView(dataTable1);
-   var table1 = new google.visualization.Table(document.getElementById('sched_divs'));
+   var table1 = new google.visualization.Table(_('#sched_divs'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
    var startPage = parseInt((emptyRowfound-1)/12);
    var options1 = {
@@ -6527,7 +6469,7 @@ function ylcetFinishTable()
 {
     var tables = tempDom.find("table");
     var tr = tables[0].getElementsByTagName("tr");
-    var games = 0;
+    // var games = 0;
     /* //////console.log("Arun: Schedule entered"); */
     findEngineArraySched();
     var engArray = engineArray;
@@ -6544,16 +6486,10 @@ function ylcetFinishTable()
         var thisData = thisTextNode.data;
         var thisDataTrim = thisData.trim();
 
-        if (thisDataTrim.localeCompare("") != 0) {
+        // CHECK THIS
+        if (thisDataTrim) {
             totalGames = i;
-            let theObj = document.getElementById("totGames");
-            if (theObj) {
-                if (totalGames != 0) {
-                    theObj.innerHTML = (totalGames);
-                } else {
-                    theObj.innerHTML = "#";
-                }
-            }
+            HTML('#totGames', totalGames? totalGames: '#');
             break;
         }
     }
@@ -6622,7 +6558,7 @@ function ylcetFinishTable()
         totMoves = parseInt(totMoves / compGames);
     }
 
-    var tdiv = document.getElementById('info_divs1');
+    var tdiv = _('#info_divs1');
 
     var tblx = document.createElement('table');
     var tbdy = document.createElement('tbody');
@@ -6768,7 +6704,7 @@ function ylcetFinishTable()
 
     var dataTable1 = google.visualization.arrayToDataTable(values);
     var dataView1 = new google.visualization.DataView(dataTable1);
-    var table1 = new google.visualization.Table(document.getElementById('info_divs1'));
+    var table1 = new google.visualization.Table(_('#info_divs1'));
     var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options1 = {
         'showRowNumber': false,
@@ -6787,7 +6723,7 @@ function ylcetFinishTable()
 
     table1.draw(dataView1, options1);
 
-    tdiv = document.getElementById('info_divs2');
+    tdiv = _('#info_divs2');
     tblx = document.createElement('table');
     tbdy = document.createElement('tbody');
     for (let i = 0; i < 2; i++) {
@@ -6910,7 +6846,7 @@ function ylcetFinishTable()
 
     dataTable1 = google.visualization.arrayToDataTable(values);
     dataView1 = new google.visualization.DataView(dataTable1);
-    table1 = new google.visualization.Table(document.getElementById('info_divs2'));
+    table1 = new google.visualization.Table(_('#info_divs2'));
     cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     options1 = {
         'showRowNumber': false,
@@ -6929,7 +6865,7 @@ function ylcetFinishTable()
 
     table1.draw(dataView1, options1);
 
-    var sdiv = document.getElementById('sched_divs');
+    var sdiv = _('#sched_divs');
     if (sdiv) {
         $("#sched_divs").html("");
         let tables = tempDom.find("table");
@@ -7012,7 +6948,7 @@ function ylcetFinishTable()
         // convert 2d array to dataTable and draw
         var dataTable = google.visualization.arrayToDataTable(values);
         var dataView = new google.visualization.DataView(dataTable);
-        var table = new google.visualization.Table(document.getElementById('sched_divs'));
+        var table = new google.visualization.Table(_('#sched_divs'));
         let cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
         var options = {
             'showRowNumber': false,
@@ -7217,7 +7153,7 @@ function returnIndex(passNum) {
 
 function PrintHTML() {
     var ii, jj, text, theObj, squareId, imageId, squareCoord, squareTitle, numText, textSO;
-    if ((theObj = document.getElementById("GameBoard"))) {
+    if ((theObj = _("#GameBoard"))) {
         text = '<TABLE CLASS="boardTable" ID="boardTable" CELLSPACING=0 CELLPADDING=0';
         text += (tableSize > 0) ? ' STYLE="width: ' + tableSize + 'px; height: ' + tableSize + 'px;">' : '>';
         for (let iiv = 0; iiv <= 7; ++iiv) {
@@ -7241,13 +7177,13 @@ function PrintHTML() {
         text += '</TABLE>';
         theObj.innerHTML = text;
     }
-    if ((theObj = document.getElementById("boardTable"))) {
+    if ((theObj = _("#boardTable"))) {
         tableSize = theObj.offsetWidth;
         if (tableSize > 0) {
             theObj.style.height = tableSize + "px";
         }
     }
-    if ((theObj = document.getElementById("GameButtons"))) {
+    if ((theObj = _("#GameButtons"))) {
         var numButtons = 5;
         var spaceSize = 15;
         var buttonSize = (tableSize - spaceSize * (numButtons - 3)) / numButtons;
@@ -7277,7 +7213,7 @@ function PrintHTML() {
         text += '"; CLASS="buttonControl" TITLE="go to game end" ' + ' ID="btnGoToEnd" onClick="clickedBbtn(this,event);this.blur();">' + '</TD></TR></TABLE></FORM>';
         theObj.innerHTML = text;
     }
-    if ((theObj = document.getElementById("GameSelector"))) {
+    if ((theObj = _("#GameSelector"))) {
         if (firstStart) {
             textSelectOptions = '';
         }
@@ -7289,7 +7225,7 @@ function PrintHTML() {
         } else {
             if (textSelectOptions === '') {
                 if (gameSelectorNum) {
-                    gameSelectorNumLenght = Math.floor(Math.log(numberOfGames) / Math.log(10)) + 1;
+                    gameSelectorNumLenght = Floor(Math.log(numberOfGames) / Math.log(10)) + 1;
                 }
                 text = '<FORM NAME="GameSel" STYLE="display:inline;"> ' + '<SELECT ID="GameSelSelect" NAME="GameSelSelect" STYLE="';
                 if (tableSize > 0) {
@@ -7329,48 +7265,26 @@ function PrintHTML() {
             }
         }
     }
-    if ((theObj = document.getElementById("GameEvent"))) {
+    if ((theObj = _("#GameEvent"))) {
         //theObj.innerHTML = gameEvent[currentGame]
         var theMatch = gameEvent[currentGame].match(/(.*?) Tournament/);
         theObj.innerHTML = theMatch[1];
     }
-    if ((theObj = document.getElementById("GameRound"))) {
-        theObj.innerHTML = gameRound[currentGame];
-    }
-    if ((theObj = document.getElementById("TotalRounds"))) {
-        if (totalGames != 0) {
-            theObj.innerHTML = (totalGames);
-        } else {
-            theObj.innerHTML = "#";
-        }
-    }
-    if ((theObj = document.getElementById("GameSite"))) {
-        theObj.innerHTML = gameSite[currentGame];
-    }
-    if ((theObj = document.getElementById("GameDate"))) {
+    HTML('#GameRound', gameRound[currentGame]);
+    HTML('#TotalRounds', totalGames? totalGames: '#');
+    HTML('#GameSite', gameSite[currentGame]);
+    if ((theObj = _("#GameDate"))) {
         theObj.innerHTML = gameDate[currentGame];
         theObj.style.whiteSpace = "nowrap";
     }
-    if ((theObj = document.getElementById("GameWhite"))) {
-        theObj.innerHTML = getAbbEngName(gameWhite[currentGame]);
-    }
-    if ((theObj = document.getElementById("GameWhiteS"))) {
-        theObj.innerHTML = getAbbEngName(gameWhite[currentGame]);
-    }
-    if ((theObj = document.getElementById("whiteVer"))) {
-        theObj.innerHTML = getEngVersion(gameWhite[currentGame]);
-    }
-    if ((theObj = document.getElementById("blackVer"))) {
-        theObj.innerHTML = getEngVersion(gameBlack[currentGame]);
-    }
-    if ((theObj = document.getElementById("GameBlack"))) {
-        theObj.innerHTML = getAbbEngName(gameBlack[currentGame]);
-    }
-    if ((theObj = document.getElementById("GameBlackS"))) {
-        theObj.innerHTML = getAbbEngName(gameBlack[currentGame]);
-    }
+    HTML('#GameWhite', getAbbEngName(gameWhite[currentGame]));
+    HTML('#GameWhiteS', getAbbEngName(gameWhite[currentGame]));
+    HTML('#whiteVer', getEngVersion(gameWhite[currentGame]));
+    HTML('#blackVer', getEngVersion(gameBlack[currentGame]));
+    HTML('#GameBlack', getAbbEngName(gameBlack[currentGame]));
+    HTML('#GameBlackS', getAbbEngName(gameBlack[currentGame]));
 
-    if (0 && (theObj = document.getElementById("whiteengineB"))) {
+    if (0 && (theObj = _("#whiteengineB"))) {
         var img = document.createElement("img");
         img.src = 'img/sf.jpg';
         img.style.height = '50px';
@@ -7379,7 +7293,7 @@ function PrintHTML() {
             whiteImgloaded++;
         }
     }
-    if (0 && (theObj = document.getElementById("blackengineB"))) {
+    if (0 && (theObj = _("#blackengineB"))) {
         let img = document.createElement("img");
         img.src = 'img/sf.jpg';
         img.style.height = '50px';
@@ -7388,7 +7302,7 @@ function PrintHTML() {
             blackImgloaded++;
         }
     }
-    if ((theObj = document.getElementById("GameResult"))) {
+    if ((theObj = _("#GameResult"))) {
         theObj.innerHTML = gameResult[currentGame];
         theObj.style.whiteSpace = "nowrap";
         if (theObj.innerHTML === "") {
@@ -7399,7 +7313,7 @@ function PrintHTML() {
         }
     }
     setB1C1F1G1boardShortcuts();
-    if ((theObj = document.getElementById("GameSearch")) && firstStart) {
+    if ((theObj = _("#GameSearch")) && firstStart) {
         if (numberOfGames < 2) {
             while (theObj.firstChild) {
                 theObj.removeChild(theObj.firstChild);
@@ -7417,7 +7331,7 @@ function PrintHTML() {
             text += '" ONFOCUS="disableShortcutKeysAndStoreStatus();" ONBLUR="restoreShortcutKeysStatus();">';
             text += '</FORM>';
             theObj.innerHTML = text;
-            theObj = document.getElementById('searchPgnExpression');
+            theObj = _('#searchPgnExpression');
             if (theObj) {
                 theObj.value = lastSearchPgnExpression;
             }
@@ -7426,32 +7340,32 @@ function PrintHTML() {
 
     let theObh;
     if (currentPage == "archive.php") {
-        let theO1 = document.getElementById("GameMoves"),
-            theO2 = document.getElementById("GameMovesA");
+        let theO1 = _("#GameMoves"),
+            theO2 = _("#GameMovesA");
         if (GameMovesA == "1") {
             theObh = theO2;
             theO1.style.display = "none";
             theO1.innerHTTML = "";
-            document.getElementById("info_row_data_2_mo").style.background = "none";
+            _("#info_row_data_2_mo").style.background = "none";
             if (localStorage.getItem('TCEC_Nigh') == 'Off') {
-                document.getElementById("tall_a_26").style.background = "white";
+                _("#tall_a_26").style.background = "white";
             } else {
-                document.getElementById("tall_a_26").style.background = "#cccccc";
+                _("#tall_a_26").style.background = "#cccccc";
             }
             theO2.style.display = "block";
         } else {
             theObh = theO1;
             theO1.style.display = "block";
             if (localStorage.getItem('TCEC_Nigh') == 'Off') {
-                document.getElementById("info_row_data_2_mo").style.background = "white";
+                _("#info_row_data_2_mo").style.background = "white";
             } else {
-                document.getElementById("info_row_data_2_mo").style.background = "#cccccc";
+                _("#info_row_data_2_mo").style.background = "#cccccc";
             }
             theO2.style.display = "none";
             theO2.innerHTTML = "";
         }
     } else {
-        theObh = document.getElementById("GameMoves");
+        theObh = _("#GameMoves");
     }
     if (theObh) {
         variationTextDepth = -1;
@@ -7636,7 +7550,7 @@ function printMoveText(thisPly, thisVar, isVar, hasLeadingNum, hasId) {
     if (thisVar >= numberOfVars || thisPly < StartPlyVar[thisVar] || thisPly > StartPlyVar[thisVar] + PlyNumberVar[thisVar]) {
         return text;
     }
-    var moveCount = Math.floor(thisPly / 2) + 1;
+    var moveCount = Floor(thisPly / 2) + 1;
     if (thisPly % 2 === 0) {
         if (moveCount == 1) {
             text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '.&nbsp;</SPAN>';
@@ -7686,12 +7600,12 @@ function autoScrollToCurrentMove(objId) {
     if (!objId) {
         return;
     }
-    var theContainerObj = document.getElementById(objId);
+    var theContainerObj = _(`#${objId}`);
     if (theContainerObj) {
         if (CurrentPly == StartPly) {
             theContainerObj.scrollTop = 0;
         } else {
-            var theMoveObj = document.getElementById('Var' + CurrentVar + 'Mv' + CurrentPly);
+            var theMoveObj = _('#Var' + CurrentVar + 'Mv' + CurrentPly);
             if (theMoveObj) {
                 var theContainerObjOffsetVeryTop = objOffsetVeryTop(theContainerObj);
                 var theMoveObjOffsetVeryTop = objOffsetVeryTop(theMoveObj);
@@ -7707,15 +7621,15 @@ var blackBottom = !1;
 function ylcetFlipBoard1() {
     let theObj;
 
-    if ((theObj = document.getElementById("blEngineContainer"))) {
+    if ((theObj = _("#blEngineContainer"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
     }
-    if ((theObj = document.getElementById("whEngineContainer"))) {
+    if ((theObj = _("#whEngineContainer"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
     }
-    if ((theObj = document.getElementById("whitespv1"))) {
+    if ((theObj = _("#whitespv1"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
         if (window.whitePv) {
@@ -7724,7 +7638,7 @@ function ylcetFlipBoard1() {
                 window.whitePv.FlipBoard();
         }
     }
-    if ((theObj = document.getElementById("whitespv2"))) {
+    if ((theObj = _("#whitespv2"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
         if (window.blackPv) {
@@ -7733,19 +7647,19 @@ function ylcetFlipBoard1() {
                 window.blackPv.FlipBoard();
         }
     }
-    if ((theObj = document.getElementById("black_pv"))) {
+    if ((theObj = _("#black_pv"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if ((theObj = document.getElementById("white_pv"))) {
+    if ((theObj = _("#white_pv"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
-    if ((theObj = document.getElementById("GameBlackS"))) {
+    if ((theObj = _("#GameBlackS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if ((theObj = document.getElementById("GameWhiteS"))) {
+    if ((theObj = _("#GameWhiteS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
@@ -7755,16 +7669,16 @@ function ylcetFlipBoard() {
     let theObj;
 
     //////console.log ("entered ylcetFlipBoard");
-    if ((theObj = document.getElementById("blEngineContainer"))) {
+    if ((theObj = _("#blEngineContainer"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
     }
     //////console.log ("entered ylcetFlipBoard1");
-    if ((theObj = document.getElementById("whEngineContainer"))) {
+    if ((theObj = _("#whEngineContainer"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
     }
-    if ((theObj = document.getElementById("whitespv1"))) {
+    if ((theObj = _("#whitespv1"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
         if (window.whitePv) {
@@ -7773,7 +7687,7 @@ function ylcetFlipBoard() {
                 window.whitePv.FlipBoard();
         }
     }
-    if ((theObj = document.getElementById("whitespv2"))) {
+    if ((theObj = _("#whitespv2"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
         if (window.blackPv) {
@@ -7783,20 +7697,20 @@ function ylcetFlipBoard() {
         }
     }
     //////console.log ("entered ylcetFlipBoard2");
-    if ((theObj = document.getElementById("black_pv"))) {
+    if ((theObj = _("#black_pv"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "162px" : "0";
     }
     //////console.log ("entered ylcetFlipBoard2");
-    if ((theObj = document.getElementById("white_pv"))) {
+    if ((theObj = _("#white_pv"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
-    if ((theObj = document.getElementById("GameBlackS"))) {
+    if ((theObj = _("#GameBlackS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if ((theObj = document.getElementById("GameWhiteS"))) {
+    if ((theObj = _("#GameWhiteS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
@@ -7809,24 +7723,24 @@ function FlipBoard() {
 
     if (currentPage == "live_big.php") {
         blackBottom = !blackBottom;
-        if ((theObj = document.getElementById("board_md_w_row"))) {
+        if ((theObj = _("#board_md_w_row"))) {
             theObj.style.position = "relative";
             theObj.style.top = blackBottom ? "-432px" : "0";
         }
-        if ((theObj = document.getElementById("board_md_b_row"))) {
+        if ((theObj = _("#board_md_b_row"))) {
             theObj.style.position = "relative";
             theObj.style.top = blackBottom ? "432px" : "0";
         }
-        if ((theObj = document.getElementById("board_letters_row_w"))) {
+        if ((theObj = _("#board_letters_row_w"))) {
             theObj.style.display = blackBottom ? "none" : "block";
         }
-        if ((theObj = document.getElementById("board_letters_row_b"))) {
+        if ((theObj = _("#board_letters_row_b"))) {
             theObj.style.display = blackBottom ? "block" : "none";
         }
-        if ((theObj = document.getElementById("board_numbers_row_w"))) {
+        if ((theObj = _("#board_numbers_row_w"))) {
             theObj.style.display = blackBottom ? "none" : "block";
         }
-        if ((theObj = document.getElementById("board_numbers_row_b"))) {
+        if ((theObj = _("#board_numbers_row_b"))) {
             theObj.style.display = blackBottom ? "block" : "none";
         }
         let tmpHighlightOption = highlightOption;
@@ -7839,15 +7753,15 @@ function FlipBoard() {
             SetHighlight(!0);
         }
     } else {
-        if ((theObj = document.getElementById("black-engine-box"))) {
+        if ((theObj = _("#black-engine-box"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "184px" : "0";
         }
-        if ((theObj = document.getElementById("white-engine-box"))) {
+        if ((theObj = _("#white-engine-box"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "-184px" : "0";
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
+        if ((theObj = _("#tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
             if (localStorage.getItem("TCEC_Coor") == 'Off') {
                 theObj.style.top = flipped ? "411px" : "0";
@@ -7855,7 +7769,7 @@ function FlipBoard() {
                 theObj.style.top = flipped ? "423px" : "0";
             }
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
+        if ((theObj = _("#tcec_gui_matclo_w"))) {
             theObj.style.position = "relative";
             if (localStorage.getItem("TCEC_Coor") == 'Off') {
                 theObj.style.top = flipped ? "-411px" : "0";
@@ -7863,16 +7777,16 @@ function FlipBoard() {
                 theObj.style.top = flipped ? "-423px" : "0";
             }
         }
-        if ((theObj = document.getElementById("GameCoorRnor"))) {
+        if ((theObj = _("#GameCoorRnor"))) {
             theObj.style.display = flipped ? "none" : "block";
         }
-        if ((theObj = document.getElementById("GameCoorRfli"))) {
+        if ((theObj = _("#GameCoorRfli"))) {
             theObj.style.display = flipped ? "block" : "none";
         }
-        if ((theObj = document.getElementById("GameCoorBnor"))) {
+        if ((theObj = _("#GameCoorBnor"))) {
             theObj.style.display = flipped ? "none" : "block";
         }
-        if ((theObj = document.getElementById("GameCoorBfli"))) {
+        if ((theObj = _("#GameCoorBfli"))) {
             theObj.style.display = flipped ? "block" : "none";
         }
         RefreshBoard();
@@ -7933,7 +7847,7 @@ var minAutoplayDelay = 500; /* ylcet */
 var maxAutoplayDelay = 300000;
 
 function setCustomAutoplayDelay() {
-    var newDelaySec = prompt("Enter custom autoplay delay, in seconds, between " + (minAutoplayDelay / 1000) + " and " + (maxAutoplayDelay / 1000) + ":", Math.floor(Delay / 100) / 10);
+    var newDelaySec = prompt("Enter custom autoplay delay, in seconds, between " + (minAutoplayDelay / 1000) + " and " + (maxAutoplayDelay / 1000) + ":", Floor(Delay / 100) / 10);
     if (!isNaN(newDelaySec = parseInt(newDelaySec, 10))) {
         SetAutoplayDelayAndStart(newDelaySec * 1000);
     }
@@ -7943,7 +7857,7 @@ function SetAutoplayDelay(vv) {
     if (isNaN(vv = parseInt(vv, 10))) {
         return;
     }
-    Delay = Math.min(Math.max(vv, minAutoplayDelay), maxAutoplayDelay);
+    Delay = Min(Max(vv, minAutoplayDelay), maxAutoplayDelay);
 }
 
 function SetAutoplayDelayAndStart(vv) {
@@ -7963,7 +7877,7 @@ function SetLiveBroadcast(delay, alertFlag, demoFlag, stepFlag) {
 function SetImage(col, row, image) {
     var trow = IsRotated ? row : 7 - row;
     var tcol = IsRotated ? 7 - col : col;
-    var theObj = document.getElementById('img_' + 'tcol' + tcol + 'trow' + trow);
+    var theObj = _('#img_' + 'tcol' + tcol + 'trow' + trow);
     if ((theObj) && (theObj.src != image)) {
         theObj.src = image;
     }
@@ -8131,7 +8045,7 @@ function pgn4web_handleTouchCancel(e) {
 }
 
 function pgn4web_initTouchEvents() {
-    var theObj = document.getElementById("GameBoard");
+    var theObj = _("#GameBoard");
     if (theObj && touchEventEnabled) {
         simpleAddEvent(theObj, "touchstart", pgn4web_handleTouchStart);
         simpleAddEvent(theObj, "touchmove", pgn4web_handleTouchMove);
@@ -8143,20 +8057,20 @@ function pgn4web_initTouchEvents() {
 var waitForDoubleLeftTouchTimer = null;
 
 function customFunctionOnTouch(deltaX, deltaY) {
-    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 13) {
+    if (Max(Abs(deltaX), Abs(deltaY)) < 13) {
         return;
     }
-    if (Math.abs(deltaY) > 1.5 * Math.abs(deltaX)) {
+    if (Abs(deltaY) > 1.5 * Abs(deltaX)) {
         if (numberOfGames > 1) {
             if ((currentGame === 0) && (deltaY < 0)) {
                 Init(numberOfGames - 1);
             } else if ((currentGame === numberOfGames - 1) && (deltaY > 0)) {
                 Init(0);
             } else {
-                Init(currentGame + Math.sign(deltaY));
+                Init(currentGame + Sign(deltaY));
             }
         }
-    } else if (Math.abs(deltaX) > 1.5 * Math.abs(deltaY)) {
+    } else if (Abs(deltaX) > 1.5 * Abs(deltaY)) {
         if (deltaX > 0) {
             if (isAutoPlayOn) {
                 GoToMove(StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]);
@@ -8259,8 +8173,8 @@ if (localStorage.getItem('TCEC_GraTB') === null) {
 function secFormat(timeip)
 {
     var sec_num = parseInt(timeip, 10); // don't forget the second param
-    var hours   = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var hours   = Floor(sec_num / 3600);
+    var minutes = Floor((sec_num - (hours * 3600)) / 60);
     var seconds = sec_num - (hours * 3600) - (minutes * 60);
 
     if (hours   < 10) {hours   = "0"+hours;}
@@ -8272,8 +8186,8 @@ function secFormat(timeip)
 function secFormatNoH(timeip)
 {
     var sec_num = parseInt(timeip, 10); // don't forget the second param
-    var hours   = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var hours   = Floor(sec_num / 3600);
+    var minutes = Floor((sec_num - (hours * 3600)) / 60);
     var seconds = sec_num - (hours * 3600) - (minutes * 60);
 
     if (hours   < 10) {hours   = "0"+hours;}
@@ -8303,16 +8217,16 @@ var SchedendTime = 0;
 
 function customFunctionOnPgnGameLoad() {
     let theObject;
-    let theObj = document.getElementById("GameBoard");
+    let theObj = _("#GameBoard");
     theObj.style.padding = "0px";
     theObj.style.width = theObj.style.width;
     theObj.style.height = theObj.style.height;
     theObj.style.textAlign = "left";
     PVCount = -1;
     if (isArchiveFile()) {
-        let currGmObj = document.getElementById('currGame');
+        let currGmObj = _('#currGame');
         if (currGmObj) {
-            document.getElementById('currGame').innerHTML = currentGame + 1;
+            HTML('#currGame', currentGame + 1);
             var urlNew = window.location.href;
             urlNew = urlNew.replace(/&gn=[^&#]*/g, '');
             urlNew += "&gn=" + parseInt(currentGame + 1);
@@ -8321,7 +8235,7 @@ function customFunctionOnPgnGameLoad() {
     }
     else
     {
-        let currGmObj = document.getElementById('currGame');
+        let currGmObj = _('#currGame');
         if (currGmObj)
         {
             var gameRoundVal10 = parseInt(gameRound[currentGame] * 10);
@@ -8329,8 +8243,8 @@ function customFunctionOnPgnGameLoad() {
             var gameDiff = gameRoundVal10 - gameRoundValR10 * 10;
             var localGameNum = (gameRoundValR10 - 1) * 4 + gameDiff;
 
-            document.getElementById('currGame').innerHTML = localGameNum;
-            var revGame = document.getElementById('revgame');
+            HTML('#currGame', localGameNum);
+            var revGame = _('#revgame');
             var gameN = parseInt(localGameNum);
             var extraAdd = 0;
             var magicN = 28;
@@ -8357,18 +8271,18 @@ function customFunctionOnPgnGameLoad() {
                     gameN = extraAdd + 56;
                 }
             }
-            revGame.innerHTML = "R#:"+gameN;
+            HTML(revGame, `R#:${gameN}`);
             setRevLive();
         }
     }
-    var currGmObj = document.getElementById('currGm');
+    var currGmObj = _('#currGm');
     if (currGmObj) {
-        document.getElementById('currGm').innerHTML = currentGame + 1;
+        HTML('#currGm', currentGame + 1);
         let urlNew = window.location.href;
         urlNew = urlNew.replace(/&gn=[^&#]*/g, '');
         urlNew += "&gn=" + parseInt(currentGame + 1);
         /* var regex = new RegExp("(gn=([^&#]*))"); */
-        var dirUrl = document.getElementById('directurl');
+        var dirUrl = _('#directurl');
         if (dirUrl) {
             dirUrl.href = urlNew;
         }
@@ -8387,8 +8301,8 @@ function customFunctionOnPgnGameLoad() {
     }
     Soun();
     let gameLink;
-    if ((gameLink = document.getElementById("GameLink"))) {
-        let gameLink2 = document.getElementById("GameLink2");
+    if ((gameLink = _("#GameLink"))) {
+        let gameLink2 = _("#GameLink2");
 
         if (pgnUrl != "archive/empty.pgn") {
             let checkSeason, FullLink, GameNumb, PgnAddress;
@@ -8404,8 +8318,8 @@ function customFunctionOnPgnGameLoad() {
                 Annotated = PgnAddress.match(/Annotated_/),
                 PreTCEC = PgnAddress.match(/_Pre_/);
             if (Annotated !== null) {
-                document.getElementById("menu30").checked = !0;
-                An_check('menu30');
+                _("#menu30").checked = !0;
+                An_check('#menu30');
             }
             if (!newGameNum) {
                 GameNumb = "";
@@ -8414,9 +8328,9 @@ function customFunctionOnPgnGameLoad() {
             }
             if (Season !== null) {
                 if (Annotated === null) {
-                    checkSeason = document.getElementById("menu" + Season[1]);
+                    checkSeason = _("#menu" + Season[1]);
                 } else {
-                    checkSeason = document.getElementById("ag" + (parseFloat(Season[1]) + 5));
+                    checkSeason = _("#ag" + (parseFloat(Season[1]) + 5));
                 }
                 let Stage = PgnAddress.match(/Stage_([0-9,a-z]*)./),
                     Superfinal = PgnAddress.match(/Superfinal/),
@@ -8428,13 +8342,13 @@ function customFunctionOnPgnGameLoad() {
                 if (Stage !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&st=" + Stage[1] + GameNumb;
-                        let checkStage = document.getElementById("s" + Season[1] + "s" + Stage[1]);
+                        let checkStage = _("#s" + Season[1] + "s" + Stage[1]);
                         if (checkStage.checked == false) {
                             checkStage.checked = !0;
                         }
                     } else {
-                        if (document.getElementById("s" + Season[1] + "s" + Stage[1]).id == "s4s2a") {
-                            checkSeason = document.getElementById("ag8");
+                        if (_("#s" + Season[1] + "s" + Stage[1]).id == "s4s2a") {
+                            checkSeason = _("#ag8");
                         }
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&st=" + Stage[1] + GameNumb + "&ag";
                     }
@@ -8444,7 +8358,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (Division !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&di=" + Division[1] + GameNumb;
-                        let checkDivision = document.getElementById("s" + Season[1] + "d" + Division[1]);
+                        let checkDivision = _("#s" + Season[1] + "d" + Division[1]);
                         if (checkDivision.checked == false) {
                             checkDivision.checked = !0;
                         }
@@ -8457,7 +8371,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (FRC !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&frc" + GameNumb;
-                        let checkFRC = document.getElementById("s" + Season[1] + "frc");
+                        let checkFRC = _("#s" + Season[1] + "frc");
                         if (checkFRC.checked == false) {
                             checkFRC.checked = !0;
                         }
@@ -8470,7 +8384,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (Rapid !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&rapid" + GameNumb;
-                        let checkRapid = document.getElementById("s" + Season[1] + "rapid");
+                        let checkRapid = _("#s" + Season[1] + "rapid");
                         if (checkRapid.checked == false) {
                             checkRapid.checked = !0;
                         }
@@ -8483,7 +8397,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (Blitz !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&blitz" + GameNumb;
-                        let checkBlitz = document.getElementById("s" + Season[1] + "blitz");
+                        let checkBlitz = _("#s" + Season[1] + "blitz");
                         if (checkBlitz.checked == false) {
                             checkBlitz.checked = !0;
                         }
@@ -8496,7 +8410,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (Superfinal !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&sf" + GameNumb;
-                        let checkSuperfinal = document.getElementById("s" + Season[1] + "sf");
+                        let checkSuperfinal = _("#s" + Season[1] + "sf");
                         if (checkSuperfinal.checked == false) {
                             checkSuperfinal.checked = !0;
                         }
@@ -8509,7 +8423,7 @@ function customFunctionOnPgnGameLoad() {
                 } else if (EliteMatch !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&em" + GameNumb;
-                        let checkEliteMatch = document.getElementById("s" + Season[1] + "em");
+                        let checkEliteMatch = _("#s" + Season[1] + "em");
                         if (checkEliteMatch.checked == false) {
                             checkEliteMatch.checked = !0;
                         }
@@ -8523,7 +8437,7 @@ function customFunctionOnPgnGameLoad() {
             } else if (Tournament !== null) {
                 if (Annotated === null) {
                     FullLink = "http://" + hostName + "/archive.php?to=" + Tournament[1] + GameNumb;
-                    let checkTournament = document.getElementById("tournament" + Tournament[1]);
+                    let checkTournament = _("#tournament" + Tournament[1]);
                     if (checkTournament.checked == false) {
                         checkTournament.checked = !0;
                     }
@@ -8531,9 +8445,9 @@ function customFunctionOnPgnGameLoad() {
                     FullLink = "http://" + hostName + "/archive.php?to=" + Tournament[1] + GameNumb + "&ag";
                     let checkTournament;
                     if ("Tournament" + Tournament[1] == "Tournament5") {
-                        checkTournament = document.getElementById("ag5");
+                        checkTournament = _("#ag5");
                     } else if ("Tournament" + Tournament[1] == "Tournament1") {
-                        checkTournament = document.getElementById("ag4");
+                        checkTournament = _("#ag4");
                     }
                     if (checkTournament.checked == false) {
                         checkTournament.checked = !0;
@@ -8542,7 +8456,7 @@ function customFunctionOnPgnGameLoad() {
             } else if (Match !== null) {
                 if (Annotated === null) {
                     FullLink = "http://" + hostName + "/archive.php?ma=" + Match[1] + GameNumb;
-                    let checkMatch = document.getElementById("match" + Match[1]);
+                    let checkMatch = _("#match" + Match[1]);
                     if (checkMatch.checked == false) {
                         checkMatch.checked = !0;
                     }
@@ -8550,7 +8464,7 @@ function customFunctionOnPgnGameLoad() {
                     FullLink = "http://" + hostName + "/archive.php?ma=" + Match[1] + GameNumb + "&ag";
                     let checkTournament;
                     if ("Match" + Match[1] == "Match3") {
-                        checkTournament = document.getElementById("ag3");
+                        checkTournament = _("#ag3");
                     }
                     if (checkTournament.checked == false) {
                         checkTournament.checked = !0;
@@ -8558,7 +8472,7 @@ function customFunctionOnPgnGameLoad() {
                 }
             } else if (PreTCEC !== null) {
                 FullLink = "http://" + hostName + "/archive.php?pt=1&ag";
-                let checkTournament = document.getElementById("ag2");
+                let checkTournament = _("#ag2");
                 if (checkTournament.checked == false) {
                     checkTournament.checked = !0;
                 }
@@ -8567,8 +8481,8 @@ function customFunctionOnPgnGameLoad() {
             gameLink2.innerHTML = 'Direct link to game:';
         }
     }
-    let LiveM = document.getElementById("live-page"),
-        ArchM = document.getElementById("archive-page");
+    let LiveM = _("#live-page"),
+        ArchM = _("#archive-page");
     if (currentPage == "live.html") {
         if (LiveM) {
             LiveM.src = "./img/check.png";
@@ -8595,14 +8509,12 @@ function customFunctionOnPgnGameLoad() {
             return;
         }
         if (this_http_request.status == 404) {
-            let theObj1 = document.getElementById("scheduleText");
-            theObj1.innerHTML = "No schedule for this event was found";
-            let theObj2 = document.getElementById("Schedule");
-            theObj2.innerHTML = "";
+            HTML('#scheduleText', 'No schedule for this event was found');
+            HTML('#Schedule', '');
         }
         if (this_http_request.status == 200) {
             ScheduleLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified");
-            document.getElementById("Schedule").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "");
+            HTML("#Schedule", this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, ""));
         }
     }
 
@@ -8630,7 +8542,7 @@ function customFunctionOnPgnGameLoad() {
         try {
             var randomizer1 = "";
             if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-                randomizer1 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
+                randomizer1 = random_no_cache();
             }
             http_request.open("GET", scheduleUrl() + randomizer1);
             http_request.setRequestHeader("If-Modified-Since", ScheduleLastModifiedHeader);
@@ -8640,11 +8552,9 @@ function customFunctionOnPgnGameLoad() {
         }
         return !0;
     }
-    if ((theObject = document.getElementById("Schedule")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
+    if ((theObject = _("#Schedule")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
         updateSchedule();
-        if ((theObject = document.getElementById("scheduleText"))) {
-            theObject.innerHTML = "Schedule for " + gameEvent[currentGame];
-        }
+        HTML('#scheduleText', `Schedule for ${gameEvent[currentGame]}`);
     }
     var CrosstableLastModifiedHeader = (new Date(0)).toUTCString();
 
@@ -8657,14 +8567,12 @@ function customFunctionOnPgnGameLoad() {
             return;
         }
         if (this_http_request.status == 404) {
-            let theObj1 = document.getElementById("crosstableText");
-            theObj1.innerHTML = "No crosstable for this event was found";
-            let theObj2 = document.getElementById("Crosstable");
-            theObj2.innerHTML = "";
+            HTML('#crosstableText', 'No crosstable for this event was found');
+            HTML('#Crosstable', '');
         }
         if (this_http_request.status == 200) {
             CrosstableLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified");
-            document.getElementById("Crosstable").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "").replace(/(\d+:[wb]\*)/g, "<span style='color:gray;'>$1</span>");
+            HTML('#Crosstable', this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "").replace(/(\d+:[wb]\*)/g, "<span style='color:gray;'>$1</span>"));
         }
     }
 
@@ -8692,7 +8600,7 @@ function customFunctionOnPgnGameLoad() {
         try {
             var randomizer2 = "";
             if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-                randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
+                randomizer2 = random_no_cache();
             }
             http_request.open("GET", crosstableUrl() + randomizer2);
             http_request.setRequestHeader("If-Modified-Since", CrosstableLastModifiedHeader);
@@ -8703,22 +8611,22 @@ function customFunctionOnPgnGameLoad() {
         return !0;
     }
 
-    if ((theObject = document.getElementById("crosstablex"))) {
+    if ((theObject = _("#crosstablex"))) {
         // ???
         ylcetRefreshCrosstable();
     }
 
 
-    if ((theObject = document.getElementById("cross_divs"))) {
+    if ((theObject = _("#cross_divs"))) {
         myupdateCrosstable();
         myupdateLiveSf();
     }
 
-    if ((theObject = document.getElementById("sched_divs"))) {
+    if ((theObject = _("#sched_divs"))) {
         myupdateSchedtable(1);
     }
 
-    if ((theObject = document.getElementById("GameDuration"))) {
+    if ((theObject = _("#GameDuration"))) {
         if (isArchiveFile()) {
             theObject.innerHTML = "NA";
         } else {
@@ -8728,11 +8636,9 @@ function customFunctionOnPgnGameLoad() {
         }
     }
 
-    if ((theObject = document.getElementById("Crosstable")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
+    if ((theObject = _("#Crosstable")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
         updateCrosstable();
-        if ((theObject = document.getElementById("crosstableText"))) {
-            theObject.innerHTML = "Crosstable for " + gameEvent[currentGame];
-        }
+        HTML('#crosstableText', `Crosstable for ${gameEvent[currentGame]}`);
     }
     var plyOffset = getPlyOffset();
     var plyOffset1 = plyOffset;
@@ -8756,8 +8662,8 @@ function customFunctionOnPgnGameLoad() {
     let cutoff = minEval;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
         let ev,
-            moveNum = Math.floor((thisPly - StartPly + 1) / 2),
-            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+            moveNum = Floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Floor((plyOffset + 1) / 2);
             // ???
             // moveIndex = thisPly;
         if (!evalchartdata[moveIndex]) {
@@ -8791,7 +8697,7 @@ function customFunctionOnPgnGameLoad() {
             evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = cutoff;
             console.log ("4");
         } else if (((match5) && (match6)) || ((match5) && (!match6))) {
-            if ((ev = Math.min(cutoff, Math.max(-cutoff, parseFloat(match5[1])))) !== null) {
+            if ((ev = Min(cutoff, Max(-cutoff, parseFloat(match5[1])))) !== null) {
                 evalchartdataFound = !0;
                 evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev;
                 evalchartdata[moveIndex][thisPly % 2 ? 2 : 1] = null;
@@ -8799,7 +8705,7 @@ function customFunctionOnPgnGameLoad() {
                 console.log ("moveIndex:" + moveIndex + "," + (thisPly % 2 ? 2 : 1) + "," + ev);
             }
         } else if ((!match5) && (match6)) {
-            if ((ev = Math.min(cutoff, Math.max(-cutoff, parseFloat(match6[1])))) !== null) {
+            if ((ev = Min(cutoff, Max(-cutoff, parseFloat(match6[1])))) !== null) {
                 evalchartdataFound = !0;
                 evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev;
         }
@@ -8807,9 +8713,9 @@ function customFunctionOnPgnGameLoad() {
     }
 
     let nomoves;
-    if ((nomoves = document.getElementById('eval_chart'))) {
+    if ((nomoves = _('#eval_chart'))) {
         if (evalchart === undefined) {
-            evalchart = new google.visualization.LineChart(document.getElementById('eval_chart'));
+            evalchart = new google.visualization.LineChart(_('#eval_chart'));
         }
         if ((evalchartdataFound) && (localStorage.getItem('TCEC_GraE') == 'On')) {
             var evalchartoptions = {
@@ -8865,9 +8771,8 @@ function customFunctionOnPgnGameLoad() {
             evalchart.clearChart();
         }
         if (PlyNumber == 0) {
-            nomoves.innerHTML = "no game loaded";
-            nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center";
+            HTML(nomoves, 'no game loaded');
+            Style(nomoves, 'text-align:center;width:100%');
         }
     }
 
@@ -8885,8 +8790,8 @@ function customFunctionOnPgnGameLoad() {
     timechartdataFound = !1;
     cutoff = 10800;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
-            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Floor((plyOffset + 1) / 2);
         if (!timechartdata[moveIndex]) {
             timechartdata[moveIndex] = new Array(3);
             timechartdata[moveIndex][0] = moveNum + "";
@@ -8900,15 +8805,15 @@ function customFunctionOnPgnGameLoad() {
         }
         let match, mt;
         if ((match = MoveComments[thisPly].match(/mt=([+-:.\d]*),/))) {
-            if ((mt = Math.min(cutoff, Math.max(-cutoff, parseFloat(clock2sec(match[1])/1000)))) !== null) {
+            if ((mt = Min(cutoff, Max(-cutoff, parseFloat(clock2sec(match[1])/1000)))) !== null) {
                 timechartdataFound = !0;
-                timechartdata[moveIndex][thisPly % 2 ? 1 : 2] = Math.floor(mt * 100) / 100;
+                timechartdata[moveIndex][thisPly % 2 ? 1 : 2] = Floor(mt * 100) / 100;
             }
         }
     }
-    if ((nomoves = document.getElementById('time_chart'))) {
+    if ((nomoves = _('#time_chart'))) {
         if (timechart === undefined) {
-            timechart = new google.visualization.LineChart(document.getElementById('time_chart'));
+            timechart = new google.visualization.LineChart(_('#time_chart'));
         }
         if ((timechartdataFound) && (localStorage.getItem('TCEC_GraT') == 'On')) {
             var timechartoptions = {
@@ -8963,9 +8868,8 @@ function customFunctionOnPgnGameLoad() {
             timechart.clearChart();
         }
         if (PlyNumber == 0) {
-            nomoves.innerHTML = "no game loaded";
-            nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center";
+            HTML(nomoves, 'no game loaded');
+            Style(nomoves, 'text-align:center;width:100%');
         }
     }
 
@@ -8983,8 +8887,8 @@ function customFunctionOnPgnGameLoad() {
     depthchartdataFound = !1;
     cutoff = 200;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
-            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Floor((plyOffset + 1) / 2);
         if (!depthchartdata[moveIndex]) {
             depthchartdata[moveIndex] = new Array(3);
             depthchartdata[moveIndex][0] = moveNum + "";
@@ -8994,15 +8898,15 @@ function customFunctionOnPgnGameLoad() {
         }
         let de, match;
         if ((match = MoveComments[thisPly].match(/d=([+-.\d]*),/))) {
-            if ((de = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1])))) !== null) {
+            if ((de = Min(cutoff, Max(-cutoff, parseFloat(match[1])))) !== null) {
                 depthchartdataFound = !0;
                 depthchartdata[moveIndex][thisPly % 2 ? 1 : 2] = de;
             }
         }
     }
-    if ((nomoves = document.getElementById('depth_chart'))) {
+    if ((nomoves = _('#depth_chart'))) {
         if (depthchart === undefined) {
-            depthchart = new google.visualization.LineChart(document.getElementById('depth_chart'));
+            depthchart = new google.visualization.LineChart(_('#depth_chart'));
         }
         if ((depthchartdataFound) && (localStorage.getItem('TCEC_GraD') == 'On')) {
             var depthchartoptions = {
@@ -9058,9 +8962,8 @@ function customFunctionOnPgnGameLoad() {
             depthchart.clearChart();
         }
         if (PlyNumber == 0) {
-            nomoves.innerHTML = "no game loaded";
-            nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center";
+            HTML(nomoves, 'no game loaded');
+            Style(nomoves, 'text-align:center;width:100%');
         }
     }
 
@@ -9078,8 +8981,8 @@ function customFunctionOnPgnGameLoad() {
     speedchartdataFound = !1;
     cutoff = 200000;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
-            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Floor((plyOffset + 1) / 2);
         if (!speedchartdata[moveIndex]) {
             speedchartdata[moveIndex] = new Array(3);
             speedchartdata[moveIndex][0] = moveNum + "";
@@ -9089,15 +8992,15 @@ function customFunctionOnPgnGameLoad() {
         }
         let match, sp;
         if ((match = MoveComments[thisPly].match(/ s=(.*?),/))) {
-            if ((sp = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1]/1024)))) !== null) {
+            if ((sp = Min(cutoff, Max(-cutoff, parseFloat(match[1]/1024)))) !== null) {
                 speedchartdataFound = !0;
                 speedchartdata[moveIndex][thisPly % 2 ? 1 : 2] = parseInt(sp/1024);
             }
         }
     }
-    if ((nomoves = document.getElementById('speed_chart'))) {
+    if ((nomoves = _('#speed_chart'))) {
         if (speedchart === undefined) {
-            speedchart = new google.visualization.LineChart(document.getElementById('speed_chart'));
+            speedchart = new google.visualization.LineChart(_('#speed_chart'));
         }
         if ((speedchartdataFound) && (localStorage.getItem('TCEC_GraS') == 'On')) {
             var speedchartoptions = {
@@ -9153,9 +9056,8 @@ function customFunctionOnPgnGameLoad() {
             speedchart.clearChart();
         }
         if (PlyNumber == 0) {
-            nomoves.innerHTML = "no game loaded";
-            nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center";
+            HTML(nomoves, 'no game loaded');
+            Style(nomoves, 'text-align:center;width:100%');
         }
     }
 
@@ -9173,8 +9075,8 @@ function customFunctionOnPgnGameLoad() {
     tablebasechartdataFound = !1;
     cutoff = 10000000000;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
-            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Floor((plyOffset + 1) / 2);
         if (!tablebasechartdata[moveIndex]) {
             tablebasechartdata[moveIndex] = new Array(3);
             tablebasechartdata[moveIndex][0] = moveNum + "";
@@ -9184,15 +9086,15 @@ function customFunctionOnPgnGameLoad() {
         }
         let match, tb;
         if ((match = MoveComments[thisPly].match(/tb=([+-.\d]*),/))) {
-            if ((tb = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1])))) !== null) {
+            if ((tb = Min(cutoff, Max(-cutoff, parseFloat(match[1])))) !== null) {
                 tablebasechartdataFound = !0;
                 tablebasechartdata[moveIndex][thisPly % 2 ? 1 : 2] = parseInt(tb/1024);
             }
         }
     }
-    if ((nomoves = document.getElementById('tb_chart'))) {
+    if ((nomoves = _('#tb_chart'))) {
         if (tablebasechart === undefined) {
-            tablebasechart = new google.visualization.LineChart(document.getElementById('tb_chart'));
+            tablebasechart = new google.visualization.LineChart(_('#tb_chart'));
         }
         if ((tablebasechartdataFound) && (localStorage.getItem('TCEC_GraTB') == 'On')) {
             var tablebasechartoptions = {
@@ -9248,9 +9150,8 @@ function customFunctionOnPgnGameLoad() {
             tablebasechart.clearChart();
         }
         if (PlyNumber == 0) {
-            nomoves.innerHTML = "no game loaded";
-            nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center";
+            HTML(nomoves, 'no game loaded');
+            Style(nomoves, 'text-align:center;width:100%');
         }
     }
 
@@ -9264,14 +9165,8 @@ function customFunctionOnPgnGameLoad() {
             }
         }
     }
-    let annota;
-    if ((annota = document.getElementById("GameAnnotator"))) {
-        if (gameResult[currentGame] == "") {
-            annota.innerHTML = "Please select an annotated game";
-        } else {
-            annota.innerHTML = "Current game annotated by " + customPgnHeaderTag("Annotator", "GameAnnotator");
-        }
-    }
+    HTML('#GameAnnotator', gameResult[currentGame]? `Current game annotated by ${customPgnHeaderTag('Annotator', '#GameAnnotator')}`: 'Please select an annotated game');
+
     let blackalt, blacksrc, theObjecty, whitealt, whitesrc;
     if ((gameResult[currentGame] !== undefined) && (gameResult[currentGame] == "*") && (gameDate[currentGame] !== undefined) && (gameDate[currentGame] !== "")) {
         whitesrc = (StartPly + PlyNumber) % 2 === 0 ? 'img/thinking5.gif' : 'img/thinking5w.gif';
@@ -9285,19 +9180,19 @@ function customFunctionOnPgnGameLoad() {
         blacksrc = "img/thinking6w.gif";
         blackalt = "Stopped Thinking";
     }
-    if ((theObject = document.getElementById("WhiteToMove"))) {
+    if ((theObject = _("#WhiteToMove"))) {
         theObject.src = whitesrc;
         theObject.alt = whitealt;
     }
-    if ((theObject = document.getElementById("BlackToMove"))) {
+    if ((theObject = _("#BlackToMove"))) {
         theObject.src = blacksrc;
         theObject.alt = blackalt;
     }
-    if ((theObjecty = document.getElementById("WhiteToMove2"))) {
+    if ((theObjecty = _("#WhiteToMove2"))) {
         theObjecty.src = whitesrc;
         theObjecty.alt = whitealt;
     }
-    if ((theObjecty = document.getElementById("BlackToMove2"))) {
+    if ((theObjecty = _("#BlackToMove2"))) {
         theObjecty.src = blacksrc;
         theObjecty.alt = blackalt;
     }
@@ -9393,24 +9288,24 @@ function customFunctionOnPgnGameLoad() {
     };
 
     let blkImg;
-    if ((blkImg = document.getElementById("blEngineImg"))) {
+    if ((blkImg = _("#blEngineImg"))) {
         let r = gameBlack[currentGame];
         r = r.substring(0, r.indexOf(' '));
         blkImg.innerHTML = '<img height="35" width="70" src="' + 'images/engines/' + r + '.jpg' + '" />';
     }
 
     let whImg;
-    if ((whImg = document.getElementById("whEngineImg"))) {
+    if ((whImg = _("#whEngineImg"))) {
         let r = gameWhite[currentGame];
         r = r.substring(0, r.indexOf(' '));
         whImg.innerHTML = '<img height="35" width="70" src="' + 'images/engines/' + r + '.jpg' + '" />';
     }
 
     let whiteImg;
-    if ((whiteImg = document.getElementById("whiteImage")) && (gameWhite[currentGame] != "")) {
-        let whiteTbBox = document.getElementById("whiteTBhits"),
-            whiteSpeed = document.getElementById("whiteSpeed"),
-            wSite = document.getElementById("whiteSite");
+    if ((whiteImg = _("#whiteImage")) && (gameWhite[currentGame] != "")) {
+        let whiteTbBox = _("#whiteTBhits"),
+            whiteSpeed = _("#whiteSpeed"),
+            wSite = _("#whiteSite");
         let r = gameWhite[currentGame];
         r = r.substring(0, r.indexOf(' '));
         let Site = engineSite[r];
@@ -9456,10 +9351,10 @@ function customFunctionOnPgnGameLoad() {
     }
 
     let blackImg;
-    if ((blackImg = document.getElementById("blackImage")) && (gameBlack[currentGame] != "")) {
-        let blackTbBox = document.getElementById("blackTBhits"),
-            blackSpeed = document.getElementById("blackSpeed"),
-            bSite = document.getElementById("blackSite");
+    if ((blackImg = _("#blackImage")) && (gameBlack[currentGame] != "")) {
+        let blackTbBox = _("#blackTBhits"),
+            blackSpeed = _("#blackSpeed"),
+            bSite = _("#blackSite");
         let t = gameBlack[currentGame];
         t = t.substring(0, t.indexOf(' '));
         let Site = engineSite[t];
@@ -9509,13 +9404,13 @@ function customFunctionOnPgnGameLoad() {
         whiteEngineName = getKomodoName(whiteEngineName);
         blackEngineName = getKomodoName(blackEngineName);
         document.title = whiteEngineName + ' vs ' + blackEngineName + ' * TCEC * Live Computer Chess Broadcast';
-        // livegame = document.getElementById("ylcet_gui_live_game");
+        // livegame = _("#ylcet_gui_live_game");
     }
 
     /* ylcet hack */
     ylcetSettime();
-    customPgnHeaderTag("ECO", "GameECO");
-    if ((theObj = document.getElementById("GameECO"))) {
+    customPgnHeaderTag("ECO", "#GameECO");
+    if ((theObj = _("#GameECO"))) {
         if (theObj.innerHTML == "") {
             theObj.innerHTML = "*";
         }
@@ -9523,10 +9418,10 @@ function customFunctionOnPgnGameLoad() {
             theObj.innerHTML = "";
         }
     }
-    theObj = document.getElementById("GameOpening");
+    theObj = _("#GameOpening");
     if (theObj) {
-        let variation = customPgnHeaderTag("Variation", "GameVariation"),
-            opening = customPgnHeaderTag("Opening", "GameOpening");
+        let variation = customPgnHeaderTag("Variation", "#GameVariation"),
+            opening = customPgnHeaderTag("Opening", "#GameOpening");
         if (theObj.innerHTML == "") {
             theObj.innerHTML = "?";
         } else if (variation == "") {
@@ -9538,8 +9433,8 @@ function customFunctionOnPgnGameLoad() {
             theObj.innerHTML = "";
         }
     }
-    let WhiteEloFull = customPgnHeaderTag("WhiteElo", "GameWhiteElo");
-    if ((theObj = document.getElementById("GameWhiteElo"))) {
+    let WhiteEloFull = customPgnHeaderTag("WhiteElo", "#GameWhiteElo");
+    if ((theObj = _("#GameWhiteElo"))) {
         if (theObj.innerHTML == "") {
             theObj.innerHTML = "";
         } else {
@@ -9549,8 +9444,8 @@ function customFunctionOnPgnGameLoad() {
             theObj.innerHTML = "";
         }
     }
-    let BlackEloFull = customPgnHeaderTag("BlackElo", "GameBlackElo");
-    if ((theObj = document.getElementById("GameBlackElo"))) {
+    let BlackEloFull = customPgnHeaderTag("BlackElo", "#GameBlackElo");
+    if ((theObj = _("#GameBlackElo"))) {
         if (theObj.innerHTML == "") {
             theObj.innerHTML = "";
         } else {
@@ -9560,9 +9455,9 @@ function customFunctionOnPgnGameLoad() {
             theObj.innerHTML = "";
         }
     }
-    let theObx = customPgnHeaderTag("Termination", "GameTermination"),
-        theOby = customPgnHeaderTag("TerminationDetails", "GameTermination"),
-        theObz = document.getElementById("GameTermination");
+    let theObx = customPgnHeaderTag("Termination", "#GameTermination"),
+        theOby = customPgnHeaderTag("TerminationDetails", "#GameTermination"),
+        theObz = _("#GameTermination");
     if (0 && (theObx != "") && (theOby == "")) {
         if (theObx == "unterminated") {
             theObz.innerHTML = "*";
@@ -9577,40 +9472,32 @@ function customFunctionOnPgnGameLoad() {
     }
 
     /* ylcet */
-    let a = customPgnHeaderTag("TimeControl", "GameTimeControl"),
+    let a = customPgnHeaderTag("TimeControl", "#GameTimeControl"),
         re = /\d+(?=(:|\+))/g,
         ts = a.match(re),
         tm = [];
     let i = 0;
     if (ts) {
         for (i = 0; i < ts.length; i = i + 1) {
-            tm[i] = Math.round(ts[i] / 60) + "' ";
+            tm[i] = Round(ts[i] / 60) + "' ";
         }
         for (i = 0; i < tm.length; i = i + 1) {
             a = a.replace(ts[i], tm[i]);
         }
         a = a.replace(/(:|\+)/g, " $1 ");
         a = a.replace(/(\+\s*\d+)/g, "$1\"");
-        if ((theObject = document.getElementById("GameTimeControl")) && (theObject.innerHTML !== null)) {
-            theObject.innerHTML = a;
-        }
+        HTML('#GameTimeControl', a);
     }
     var server_status = LiveBroadcastLastModified.getTime();
     let whenStarted = new Date().getTime();
     if (currentPage == "live.html") {
-        theObject = document.getElementById("gameFeed");
-        if (theObject) {
-            if (gameResult[currentGame] == "*") {
-                if (whenStarted > (server_status + 300000)) {
-                    theObject.innerHTML = "Offline";
-                    theObject.style.color = "#9d0d00";
-                } else {
-                    theObject.innerHTML = "Online";
-                    theObject.style.color = "#007d0a";
-                }
-            } else {
-                theObject.innerHTML = "No live game in progress";
-            }
+        let node = _("#gameFeed");
+        if (gameResult[currentGame] == "*") {
+            let is_offline = (whenStarted > server_status + 300000);
+            HTML(node, is_offline? 'Offline': 'Online');
+            Style(node, is_offline? '#9d0d00': '#007d0a');
+        } else {
+            HTML(node, 'No live game in progress');
         }
     }
     if (localStorage.getItem('TCEC_GraE') == 'On') {
@@ -9629,7 +9516,7 @@ function customFunctionOnPgnGameLoad() {
         //setSelectionTablebaseChart()
     }
     ////console.log ("Setting here1");
-    theObject = document.getElementById('adj_rule');
+    theObject = _('#adj_rule');
     if (theObject)
     {
       theObject.innerHTML = "*";
@@ -9754,14 +9641,14 @@ function assignDraw(theMatch, r50)
 function customFunctionOnMove() {
     function num2mega(num) {
         let unit;
-        if (num >= Math.pow(10, 6)) {
-            num = Math.round(num / Math.pow(10, 5)) / 10;
+        if (num >= Pow(10, 6)) {
+            num = Round(num / Pow(10, 5)) / 10;
             num = parseInt(num, 0);
             unit = " M";
         } else {
             unit = "";
         }
-        if ((unit !== "") && (num === Math.floor(num))) {
+        if ((unit !== "") && (num === Floor(num))) {
             //num += ".0";
         }
         return num + unit;
@@ -9769,20 +9656,20 @@ function customFunctionOnMove() {
 
     function num2kilo(num) {
         let unit;
-        if (num >= Math.pow(10, 3)) {
-            num = Math.round(num / Math.pow(10, 2)) / 10;
+        if (num >= Pow(10, 3)) {
+            num = Round(num / Pow(10, 2)) / 10;
             num = parseInt(num, 0);
             unit = " k";
         } else {
             unit = "";
         }
-        if ((unit !== "") && (num === Math.floor(num))) {
+        if ((unit !== "") && (num === Floor(num))) {
             //num += ".0"
         }
         return num + unit;
     }
     ////console.log ("Setting here2");
-    let theObject = document.getElementById('adj_rule');
+    let theObject = _('#adj_rule');
     if (theObject)
     {
       theObject.innerHTML = "*";
@@ -9802,11 +9689,11 @@ function customFunctionOnMove() {
          theObject.innerHTML = retStr;
       }
    }
-    var theObj = document.getElementById("whoswinningw");
+    var theObj = _("#whoswinningw");
     if (theObj) {
         setEvalColors(theObj);
     }
-    theObject = document.getElementById('CurrentFEN');
+    theObject = _('#CurrentFEN');
     var theMatch = CurrentFEN();
     if (theObject) {
         if (theMatch) {
@@ -9822,11 +9709,11 @@ function customFunctionOnMove() {
     }
     let currentTimeObject, previousTimeObject;
     if ((CurrentPly % 2) == 0) {
-        currentTimeObject = document.getElementById('blackMoveTime');
-        previousTimeObject = document.getElementById('whiteMoveTime');
+        currentTimeObject = _('#blackMoveTime');
+        previousTimeObject = _('#whiteMoveTime');
     } else {
-        currentTimeObject = document.getElementById('whiteMoveTime');
-        previousTimeObject = document.getElementById('blackMoveTime');
+        currentTimeObject = _('#whiteMoveTime');
+        previousTimeObject = _('#blackMoveTime');
     }
     if (currentTimeObject) {
         let thisTime = "no info";
@@ -9862,11 +9749,11 @@ function customFunctionOnMove() {
     }
     let currentEvalObject, previousEvalObject;
     if ((CurrentPly % 2) == 0) {
-        currentEvalObject = document.getElementById('blackEval');
-        previousEvalObject = document.getElementById('whiteEval');
+        currentEvalObject = _('#blackEval');
+        previousEvalObject = _('#whiteEval');
     } else {
-        currentEvalObject = document.getElementById('whiteEval');
-        previousEvalObject = document.getElementById('blackEval');
+        currentEvalObject = _('#whiteEval');
+        previousEvalObject = _('#blackEval');
     }
     if (currentEvalObject) {
         let thisEval = "no info";
@@ -9908,8 +9795,8 @@ function customFunctionOnMove() {
     }
     let currentClock, previousClock;
     if ((CurrentPly % 2) == 0) {
-        currentClock = document.getElementById('blackClock');
-        previousClock = document.getElementById('whiteClock');
+        currentClock = _('#blackClock');
+        previousClock = _('#whiteClock');
         if (CurrentPly != PlyNumber) {
             if ((currentClock) && (previousClock)) {
                 if (currentPage != "archive.php") {
@@ -9923,8 +9810,8 @@ function customFunctionOnMove() {
             }
         }
     } else {
-        currentClock = document.getElementById('whiteClock');
-        previousClock = document.getElementById('blackClock');
+        currentClock = _('#whiteClock');
+        previousClock = _('#blackClock');
         if (CurrentPly != PlyNumber) {
             if ((currentClock) && (previousClock)) {
                 if (currentPage != "archive.php") {
@@ -9971,11 +9858,11 @@ function customFunctionOnMove() {
 
     let currentSpeedObject, previousSpeedObject;
     if ((CurrentPly % 2) == 0) {
-        currentSpeedObject = document.getElementById('blackSpeed');
-        previousSpeedObject = document.getElementById('whiteSpeed');
+        currentSpeedObject = _('#blackSpeed');
+        previousSpeedObject = _('#whiteSpeed');
     } else {
-        currentSpeedObject = document.getElementById('whiteSpeed');
-        previousSpeedObject = document.getElementById('blackSpeed');
+        currentSpeedObject = _('#whiteSpeed');
+        previousSpeedObject = _('#blackSpeed');
     }
     if (currentSpeedObject) {
         let thisSpeed = "no info";
@@ -10017,11 +9904,11 @@ function customFunctionOnMove() {
 
     let currentDepthObject, previousDepthObject;
     if ((CurrentPly % 2) == 0) {
-        currentDepthObject = document.getElementById('blackDepth');
-        previousDepthObject = document.getElementById('whiteDepth');
+        currentDepthObject = _('#blackDepth');
+        previousDepthObject = _('#whiteDepth');
     } else {
-        currentDepthObject = document.getElementById('whiteDepth');
-        previousDepthObject = document.getElementById('blackDepth');
+        currentDepthObject = _('#whiteDepth');
+        previousDepthObject = _('#blackDepth');
     }
     if (currentDepthObject) {
         let thisDepth = "no info";
@@ -10074,11 +9961,11 @@ function customFunctionOnMove() {
 
     let currentNodesObject, previousNodesObject;
     if ((CurrentPly % 2) == 0) {
-        currentNodesObject = document.getElementById('blackNodes');
-        previousNodesObject = document.getElementById('whiteNodes');
+        currentNodesObject = _('#blackNodes');
+        previousNodesObject = _('#whiteNodes');
     } else {
-        currentNodesObject = document.getElementById('whiteNodes');
-        previousNodesObject = document.getElementById('blackNodes');
+        currentNodesObject = _('#whiteNodes');
+        previousNodesObject = _('#blackNodes');
     }
     if (currentNodesObject) {
         let thisNodes = "no info";
@@ -10119,11 +10006,11 @@ function customFunctionOnMove() {
 
     let currenttbHitsObject, previoustbHitsObject;
     if ((CurrentPly % 2) == 0) {
-        currenttbHitsObject = document.getElementById('blackTBhits');
-        previoustbHitsObject = document.getElementById('whiteTBhits');
+        currenttbHitsObject = _('#blackTBhits');
+        previoustbHitsObject = _('#whiteTBhits');
     } else {
-        currenttbHitsObject = document.getElementById('whiteTBhits');
-        previoustbHitsObject = document.getElementById('blackTBhits');
+        currenttbHitsObject = _('#whiteTBhits');
+        previoustbHitsObject = _('#blackTBhits');
     }
     if (currenttbHitsObject) {
         let thistbHits = "no info";
@@ -10190,7 +10077,7 @@ function customFunctionOnMove() {
     if (lastBlackPly < StartPly) {
         lastBlackPly = StartPly;
     }
-    let lastPlyForPv = Math.min(lastWhitePly, lastBlackPly);
+    let lastPlyForPv = Min(lastWhitePly, lastBlackPly);
     whitePvMoves = '';
     blackPvMoves = '';
     var movesRegExp = new RegExp("^(\\s*([KQRBNP]?[a-h1-8]?x?[a-h][1-8](=[QRNB])?|O-O-O|O-O)\\b[#+]?)*\\s*$", "g");
@@ -10212,7 +10099,7 @@ function customFunctionOnMove() {
         } else if (lastPlyForPv < lastBlackPly) {
             blackPvMovesArray.unshift(whitePvMovesArray[0]);
         }
-        let idxMax = Math.min(whitePvMovesArray.length, blackPvMovesArray.length),
+        let idxMax = Min(whitePvMovesArray.length, blackPvMovesArray.length),
             idxEqual = -1;
         for (let idxCurr = 0; idxCurr < idxMax; idxCurr++) {
             if (whitePvMovesArray[idxCurr] !== blackPvMovesArray[idxCurr]) {
@@ -10251,11 +10138,11 @@ function customFunctionOnMove() {
 
     let currentMDObject, previousMDObject;
     if ((CurrentPly % 2) == 0) {
-        currentMDObject = document.getElementById('materialBlack');
-        previousMDObject = document.getElementById('materialWhite');
+        currentMDObject = _('#materialBlack');
+        previousMDObject = _('#materialWhite');
     } else {
-        currentMDObject = document.getElementById('materialBlack');
-        previousMDObject = document.getElementById('materialWhite');
+        currentMDObject = _('#materialBlack');
+        previousMDObject = _('#materialWhite');
     }
     if (previousMDObject) {
         let fullImageString = ('');
@@ -10565,12 +10452,14 @@ function customFunctionOnMove() {
     }
 
     let currPV, prevPV;
+    // ???
+    // SELECTORS ARE WRONG
     if ((CurrentPly % 2) == 0) {
-        currPV = window.whitePv.document.getElementById('PV_for');
-        prevPV = window.blackPv.document.getElementById('PV_for');
+        currPV = _('#PV_for');
+        prevPV = _('#PV_for');
     } else {
-        currPV = window.blackPv.document.getElementById('PV_for');
-        prevPV = window.whitePv.document.getElementById('PV_for');
+        currPV = _('#PV_for');
+        prevPV = _('#PV_for');
     }
     if (currPV) {
         var showThisMove = CurrentPly - 2;
@@ -10580,15 +10469,11 @@ function customFunctionOnMove() {
 
         let text;
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
-            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
+            text = (Floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
         } else {
             text = '';
         }
-        if (showThisMove > -1) {
-            currPV.innerHTML = 'PV for ' + text;
-        } else {
-            currPV.innerHTML = 'Principal variation';
-        }
+        HTML(currPV, (showThisMove > -1)? 'PV for ' + text: 'Principal variation');
     }
     if (prevPV) {
         let showThisMove = CurrentPly - 1;
@@ -10598,15 +10483,11 @@ function customFunctionOnMove() {
 
         let text;
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
-            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
+            text = (Floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
         } else {
             text = '';
         }
-        if (showThisMove > -1) {
-            prevPV.innerHTML = 'PV for ' + text;
-        } else {
-            prevPV.innerHTML = 'Principal variation';
-        }
+        HTML(prevPV, (showThisMove > -1)? 'PV for ' + text: 'Principal variation');
     }
 }
 
@@ -10615,7 +10496,7 @@ function customFunctionOnCheckLiveBroadcastStatus() {
 }
 
 function downloadGame(path) {
-    let ifrm = document.getElementById("download");
+    let ifrm = _("#download");
     ifrm.src = path;
 }
 
@@ -10650,7 +10531,7 @@ document.head = document.head || document.getElementsByTagName('head')[0];
 
 function changeFavicon(src) {
     var link = document.createElement('link'),
-        oldLink = document.getElementById('dynamic-favicon');
+        oldLink = _('#dynamic-favicon');
     link.id = 'dynamic-favicon';
     link.rel = 'shortcut icon';
     link.href = src;
@@ -10664,11 +10545,11 @@ function refreshGameList() {
     $("#tall_a_24").load("archive_menu.php");
 }
 
-function An_check(annot_id) {
-    let annot = document.getElementById(annot_id);
-    let a_main_box = document.getElementById("tall_a_24"),
-        annot1_box = document.getElementById("tall_a_25"),
-        annot2_box = document.getElementById("tcec_gui_game_info_9");
+function An_check(selector) {
+    let annot = _(selector),
+        a_main_box = _("#tall_a_24"),
+        annot1_box = _("#tall_a_25"),
+        annot2_box = _("#tcec_gui_game_info_9");
     if (annot.checked) {
         a_main_box.style.height = "200px";
         annot1_box.style.display = "block";
@@ -10682,12 +10563,12 @@ function An_check(annot_id) {
 
 function CheckOpen(folder) {
     for (let i = 0; i <= 30; i++) {
-        let menu = document.getElementById('menu' + i);
+        let menu = _('#menu' + i);
         if (folder.id != menu.id) {
             menu.checked = !1;
         }
     }
-    An_check('menu30');
+    An_check('#menu30');
 }
 var fenPositions = [];
 
@@ -10750,7 +10631,7 @@ function setSelectionEvalChart() {
         if (typeof(evalchart) != "undefined") {
             if (CurrentPly > StartPly) {
                 evalchart.setSelection([{
-                    row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
+                    row: (Ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: ((CurrentPly + plyOffset) % 2 ? 1 : 2),
                 }]);
             } else {
@@ -10766,7 +10647,7 @@ function setSelectionTimeChart() {
         if (typeof(timechart) != "undefined") {
             if (CurrentPly > StartPly) {
                 timechart.setSelection([{
-                    row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
+                    row: (Ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: ((CurrentPly + plyOffset) % 2 ? 1 : 2),
                 }]);
             } else {
@@ -10782,7 +10663,7 @@ function setSelectionDepthChart() {
         if (typeof(depthchart) != "undefined") {
             if (CurrentPly > StartPly) {
                 depthchart.setSelection([{
-                    row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
+                    row: (Ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: (CurrentPly % 2 ? 1 : 2),
                 }]);
             } else {
@@ -10798,7 +10679,7 @@ function setSelectionSpeedChart() {
         if (typeof(speedchart) != "undefined") {
             if (CurrentPly > StartPly) {
                 speedchart.setSelection([{
-                    row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
+                    row: (Ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: (CurrentPly % 2 ? 1 : 2),
                 }]);
             } else {
@@ -10814,7 +10695,7 @@ function setSelectionTablebaseChart() {
         if (typeof(tablebasechart) != "undefined") {
             if (CurrentPly > StartPly) {
                 tablebasechart.setSelection([{
-                    row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
+                    row: (Ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: (CurrentPly % 2 ? 1 : 2)
                 }]);
             } else {
@@ -10840,13 +10721,13 @@ function TCECDrawRule()
     }
     var thisMove;
     var plyOffset = getPlyOffset();
-    var moveOffset = Math.ceil(plyOffset / 2);
+    var moveOffset = Ceil(plyOffset / 2);
     let thisPly;
-    for (thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForDraw) - numPliesForDraw; thisPly--) {
+    for (thisPly = CurrentPly; thisPly > Max(CurrentPly, minPlyForDraw) - numPliesForDraw; thisPly--) {
         if (!evalchartdata) {
             break;
         }
-        thisMove = Math.ceil(thisPly / 2);
+        thisMove = Ceil(thisPly / 2);
         let thisColor = 2 + 2 * (thisPly / 2 - thisMove);
         if (typeof evalchartdata[thisMove - moveOffset] !== "object") {
             break;
@@ -10893,14 +10774,14 @@ function TCECWinRule() {
     }
     var thisMove;
     var plyOffset = getPlyOffset();
-    var moveOffset = Math.ceil(plyOffset / 2);
+    var moveOffset = Ceil(plyOffset / 2);
     var winning = 1;
     let thisPly;
-    for (thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForWin) - numPliesForWin; thisPly--) {
+    for (thisPly = CurrentPly; thisPly > Max(CurrentPly, minPlyForWin) - numPliesForWin; thisPly--) {
         if (!evalchartdata) {
             break;
         }
-        thisMove = Math.ceil(thisPly / 2);
+        thisMove = Ceil(thisPly / 2);
         let thisColor = 2 + 2 * (thisPly / 2 - thisMove);
         if (typeof evalchartdata[thisMove - moveOffset] !== "object") {
             break;
@@ -11179,10 +11060,10 @@ function StatusCheck() {
     var server_status = LiveBroadcastLastModified.getTime();
     let whenStarted = new Date().getTime();
     if (currentPage == "live.html") {
-        let theObject = document.getElementById("gameFeed");
+        let theObject = _("#gameFeed");
         if (theObject) {
             if (whenStarted > (server_status + 300000)) {
-                theObject.innerHTML = "Offline " + Math.round(((whenStarted - server_status) / 1000) / 60) + "m";
+                theObject.innerHTML = "Offline " + Round(((whenStarted - server_status) / 1000) / 60) + "m";
                 theObject.style.color = "#9d0d00";
             } else {
                 theObject.innerHTML = "Online";
@@ -11196,26 +11077,26 @@ function Coor() {
     let theObj;
 
     if (localStorage.getItem('TCEC_Coor') == 'Off') {
-        let theObj1 = document.getElementById("GameCoorRight"),
-            theObj2 = document.getElementById("GameCoorBottom");
+        let theObj1 = _("#GameCoorRight"),
+            theObj2 = _("#GameCoorBottom");
         if ((theObj1) && (theObj2)) {
             theObj1.style.display = 'block';
             theObj2.style.display = 'block';
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
+        if ((theObj = _("#tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "423px" : "0";
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
+        if ((theObj = _("#tcec_gui_matclo_w"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "-423px" : "0";
         }
-        let Obj = document.getElementById("coor-check");
+        let Obj = _("#coor-check");
         if (Obj) {
             Obj.src = "./img/check.png";
         }
-        let theObjx = document.getElementById("info_row_data_2_mo"),
-            theObjy = document.getElementById("GameMoves");
+        let theObjx = _("#info_row_data_2_mo"),
+            theObjy = _("#GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_FEN') == 'Off') {
                 theObjx.style.height = "132px";
@@ -11226,26 +11107,26 @@ function Coor() {
             }
         }
     } else if (localStorage.getItem('TCEC_Coor') == 'Off') {
-        let theObj1 = document.getElementById("GameCoorRight"),
-            theObj2 = document.getElementById("GameCoorBottom");
+        let theObj1 = _("#GameCoorRight"),
+            theObj2 = _("#GameCoorBottom");
         if ((theObj1) && (theObj2)) {
             theObj1.style.display = 'none';
             theObj2.style.display = 'none';
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
+        if ((theObj = _("#tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "411px" : "0";
         }
-        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
+        if ((theObj = _("#tcec_gui_matclo_w"))) {
             theObj.style.position = "relative";
             theObj.style.top = flipped ? "-411px" : "0";
         }
-        let Obj = document.getElementById("coor-check");
+        let Obj = _("#coor-check");
         if (Obj) {
             Obj.src = "./img/check_empty.png";
         }
-        let theObjx = document.getElementById("info_row_data_2_mo"),
-            theObjy = document.getElementById("GameMoves");
+        let theObjx = _("#info_row_data_2_mo"),
+            theObjy = _("#GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_FEN') == 'Off') {
                 theObjx.style.height = "144px";
@@ -11262,16 +11143,16 @@ function Fen() {
     let theObj;
 
     if (localStorage.getItem('TCEC_FEN') == 'Off') {
-        theObj = document.getElementById("FenPosition");
+        theObj = _("#FenPosition");
         if (theObj) {
             theObj.style.display = 'block';
         }
-        let Obj = document.getElementById("fen-check");
+        let Obj = _("#fen-check");
         if (Obj) {
             Obj.src = "./img/check.png";
         }
-        let theObjx = document.getElementById("info_row_data_2_mo"),
-            theObjy = document.getElementById("GameMoves");
+        let theObjx = _("#info_row_data_2_mo"),
+            theObjy = _("#GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_Coor') == 'Off') {
                 theObjx.style.height = "121px";
@@ -11282,16 +11163,16 @@ function Fen() {
             }
         }
     } else if (localStorage.getItem('TCEC_FEN') == 'Off') {
-        theObj = document.getElementById("FenPosition");
+        theObj = _("#FenPosition");
         if (theObj) {
             theObj.style.display = 'none';
         }
-        let Obj = document.getElementById("fen-check");
+        let Obj = _("#fen-check");
         if (Obj) {
             Obj.src = "./img/check_empty.png";
         }
-        let theObjx = document.getElementById("info_row_data_2_mo"),
-            theObjy = document.getElementById("GameMoves");
+        let theObjx = _("#info_row_data_2_mo"),
+            theObjy = _("#GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_Coor') == 'Off') {
                 theObjx.style.height = "144px";
@@ -11305,9 +11186,9 @@ function Fen() {
 }
 
 function Chat() {
-    let theObj = document.getElementById("chat-box"),
-        theObj2 = document.getElementById("chat-box-hidden"),
-        theObj3 = document.getElementById("chat-check");
+    let theObj = _("#chat-box"),
+        theObj2 = _("#chat-box-hidden"),
+        theObj3 = _("#chat-check");
     if (localStorage.getItem('TCEC_Chat') == 'On') {
         if (theObj) {
             theObj.style.display = 'block';
@@ -11334,7 +11215,7 @@ function Chat() {
 
 function Twota()
 {
-    let theObj = document.getElementById("chatright");
+    let theObj = _("#chatright");
     if (theObj) {
         if ("On" == localStorage.getItem("TCEC_Twiota")) {
             theObj.src = "http://www.twitch.tv/embed/TCEC_Chess_TV/chat";
@@ -11345,10 +11226,10 @@ function Twota()
 }
 
 function HideE() {
-    let blackObj = document.getElementById("black-eval-box"),
-        whiteObj = document.getElementById("white-eval-box"),
-        chartObj = document.getElementById("info_row_ch_ev"),
-        Obj = document.getElementById("eval-check"),
+    let blackObj = _("#black-eval-box"),
+        whiteObj = _("#white-eval-box"),
+        chartObj = _("#info_row_ch_ev"),
+        Obj = _("#eval-check"),
         numGraphs = +localStorage.getItem('TCEC_Grap');
 
     if (localStorage.getItem('YLCET_HEva') == 'On') {
@@ -11396,7 +11277,7 @@ function Soun() {
         }
         if (PlyNumber >= SoundCount) {
             if (OnOff == 1) {
-                document.getElementById('move_sound').play();
+                _('#move_sound').play();
             }
             SoundCount = PlyNumber + 1;
         }
@@ -11405,17 +11286,17 @@ function Soun() {
 
 function Fonts() {
     let FontChoice = localStorage.getItem("YLCET_font"),
-        Obj1 = document.getElementById("fontme-check");
+        Obj1 = _("#fontme-check");
     Obj1.src = "./img/check_empty.png";
-    let Obj2 = document.getElementById("fontal-check");
+    let Obj2 = _("#fontal-check");
     Obj2.src = "./img/check_empty.png";
-    let Obj3 = document.getElementById("fontus-check");
+    let Obj3 = _("#fontus-check");
     Obj3.src = "./img/check_empty.png";
-    let Obj4 = document.getElementById("fontis-check");
+    let Obj4 = _("#fontis-check");
     Obj4.src = "./img/check_empty.png";
-    let Obj5 = document.getElementById("fontcs-check");
+    let Obj5 = _("#fontcs-check");
     Obj5.src = "./img/check_empty.png";
-    let Obj6 = document.getElementById("fontts-check");
+    let Obj6 = _("#fontts-check");
     Obj6.src = "./img/check_empty.png";
     if (FontChoice == 'ME') {
         if (Obj1) {
@@ -11458,10 +11339,10 @@ function Fonts() {
 
 function NightM() {
     let OnOff = localStorage.getItem('TCEC_Nigh'),
-        Obj = document.getElementById("nigh-check"),
-        setNight = document.getElementById("nightm"),
-        setNight2 = document.getElementById('whitePv').contentWindow.document.getElementById('nightmpv'),
-        setNight3 = document.getElementById('blackPv').contentWindow.document.getElementById('nightmpv');
+        Obj = _("#nigh-check"),
+        setNight = _("#nightm"),
+        setNight2 = _('#whitePv').contentWindow._('#nightmpv'),
+        setNight3 = _('#blackPv').contentWindow._('#nightmpv');
 
     let option1, option2, option3, option4, option5, option6;
     if (OnOff == 'On') {
@@ -11474,10 +11355,10 @@ function NightM() {
         option4 = '.engine_box_data_2_mt, .engine_box_data_2_ev, .engine_box_data_2_de, .engine_box_data_2_sp, .engine_box_data_2_no, .engine_box_data_2_tb {background:#cccccc}';
         option5 = '.info_row_data_2_pv {background:#cccccc}';
         option6 = '.sf-menu ul {background:#cccccc}';
-        let moves3 = document.getElementById("info_row_data_2_mo");
+        let moves3 = _("#info_row_data_2_mo");
         moves3.style.backgroundColor = "#cccccc";
         if (currentPage == "archive.php") {
-            let moves2 = document.getElementById("tall_a_24");
+            let moves2 = _("#tall_a_24");
             moves2.style.backgroundColor = "#cccccc";
         }
     } else if (OnOff == 'Off') {
@@ -11490,10 +11371,10 @@ function NightM() {
         option4 = '.engine_box_data_2_mt, .engine_box_data_2_ev, .engine_box_data_2_de, .engine_box_data_2_sp, .engine_box_data_2_no, .engine_box_data_2_tb {background:white}';
         option5 = '.info_row_data_2_pv {background:white}';
         option6 = '.sf-menu ul {background:#d4d0c8}';
-        let moves3 = document.getElementById("info_row_data_2_mo");
+        let moves3 = _("#info_row_data_2_mo");
         moves3.style.backgroundColor = "white";
         if (currentPage == "archive.php") {
-            let moves2 = document.getElementById("tall_a_24");
+            let moves2 = _("#tall_a_24");
             moves2.style.backgroundColor = "white";
         }
     }
@@ -11505,16 +11386,16 @@ function NightM() {
 
 function Graphs() {
     let // numGraphs = +localStorage.getItem('TCEC_Grap'),
-        egra = document.getElementById("egra-check"),
-        tgra = document.getElementById("tgra-check"),
-        dgra = document.getElementById("dgra-check"),
-        sgra = document.getElementById("sgra-check"),
-        tbgra = document.getElementById("tbgra-check"),
-        egra2 = document.getElementById("info_row_ch_ev"),
-        tgra2 = document.getElementById("info_row_ch_ti"),
-        dgra2 = document.getElementById("info_row_ch_de"),
-        sgra2 = document.getElementById("info_row_ch_sp"),
-        tbgra2 = document.getElementById("info_row_ch_tb");
+        egra = _("#egra-check"),
+        tgra = _("#tgra-check"),
+        dgra = _("#dgra-check"),
+        sgra = _("#sgra-check"),
+        tbgra = _("#tbgra-check"),
+        egra2 = _("#info_row_ch_ev"),
+        tgra2 = _("#info_row_ch_ti"),
+        dgra2 = _("#info_row_ch_de"),
+        sgra2 = _("#info_row_ch_sp"),
+        tbgra2 = _("#info_row_ch_tb");
     if (localStorage.getItem('TCEC_GraE') == 'Off') {
         if (egra) {
             egra.src = "./img/check_empty.png";
@@ -11804,8 +11685,8 @@ function SounTog() {
 }
 
 function About() {
-    let theObj = document.getElementById("about_1"),
-        theObz = document.getElementById("credits_1");
+    let theObj = _("#about_1"),
+        theObz = _("#credits_1");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
@@ -11819,7 +11700,7 @@ function About() {
 }
 
 function OBook() {
-    let theObj = document.getElementById("opening_1");
+    let theObj = _("#opening_1");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
@@ -11830,7 +11711,7 @@ function OBook() {
 }
 
 function Rules() {
-    let theObj = document.getElementById("rules_1");
+    let theObj = _("#rules_1");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
@@ -11841,7 +11722,7 @@ function Rules() {
 }
 
 function Credits() {
-    let theObj = document.getElementById("credits_1");
+    let theObj = _("#credits_1");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
@@ -11853,9 +11734,9 @@ function Credits() {
 
 function ViewPGN(oneGameOnly) {
     var text = '';
-    let theObj = document.getElementById("view_PGN"),
-        theObj2 = document.getElementById("view_PGN_5"),
-        theObj3 = document.getElementById("ViewPGNPart");
+    let theObj = _("#view_PGN"),
+        theObj2 = _("#view_PGN_5"),
+        theObj3 = _("#ViewPGNPart");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
@@ -11909,9 +11790,9 @@ function keyUp(e) {
     } else if (e.shiftKey && e.keyCode == 84) {
         TwiTog();
     } else if (e.shiftKey && e.keyCode == 79) {
-        document.getElementById('order2').classList.add('orderno4');
+        _('#order2').classList.add('orderno4');
     } else if (e.shiftKey && e.keyCode == 82) {
-        document.getElementById('order2').classList.remove('orderno4');
+        _('#order2').classList.remove('orderno4');
     }
 }
 simpleAddEvent(document, "keyup", keyUp, !1);
@@ -12010,7 +11891,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             d.setUTCMonth(month || 0);
             d.setUTCDate(day || 1);
             d.setUTCHours(hours || 0);
-            d.setUTCMinutes((mins || 0) - (Math.abs(tz) < 30 ? tz * 60 : tz));
+            d.setUTCMinutes((mins || 0) - (Abs(tz) < 30 ? tz * 60 : tz));
             d.setUTCSeconds(secs || 0);
             d.setUTCMilliseconds(ms || 0);
             return d;
@@ -12239,11 +12120,11 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                             break;
                         case 'o':
                             month += parseInt(matches[1], 10);
-                            day = Math.min(day, plugin._getDaysInMonth(year, month));
+                            day = Min(day, plugin._getDaysInMonth(year, month));
                             break;
                         case 'y':
                             year += parseInt(matches[1], 10);
-                            day = Math.min(day, plugin._getDaysInMonth(year, month));
+                            day = Min(day, plugin._getDaysInMonth(year, month));
                             break;
                     }
                     matches = pattern.exec(offset);
@@ -12303,7 +12184,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 return (inst.options[(compact ? 'compactLabels' : 'labels') + whichLabels(inst._periods[index])] || labels)[index];
             };
             var digit = function(value, position) {
-                return inst.options.digits[Math.floor(value / position) % 10];
+                return inst.options.digits[Floor(value / position) % 10];
             };
             var subs = {
                 desc: inst.options.description,
@@ -12422,12 +12303,12 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             if (show[Y] || show[O]) {
                 var lastNow = plugin._getDaysInMonth(now.getFullYear(), now.getMonth());
                 var lastUntil = plugin._getDaysInMonth(until.getFullYear(), until.getMonth());
-                var sameDay = (until.getDate() == now.getDate() || (until.getDate() >= Math.min(lastNow, lastUntil) && now.getDate() >= Math.min(lastNow, lastUntil)));
+                var sameDay = (until.getDate() == now.getDate() || (until.getDate() >= Min(lastNow, lastUntil) && now.getDate() >= Min(lastNow, lastUntil)));
                 var getSecs = function(date) {
                     return (date.getHours() * 60 + date.getMinutes()) * 60 + date.getSeconds();
                 };
-                var months = Math.max(0, (until.getFullYear() - now.getFullYear()) * 12 + until.getMonth() - now.getMonth() + ((until.getDate() < now.getDate() && !sameDay) || (sameDay && getSecs(until) < getSecs(now)) ? -1 : 0));
-                periods[Y] = (show[Y] ? Math.floor(months / 12) : 0);
+                var months = Max(0, (until.getFullYear() - now.getFullYear()) * 12 + until.getMonth() - now.getMonth() + ((until.getDate() < now.getDate() && !sameDay) || (sameDay && getSecs(until) < getSecs(now)) ? -1 : 0));
+                periods[Y] = (show[Y] ? Floor(months / 12) : 0);
                 periods[O] = (show[O] ? months - periods[Y] * 12 : 0);
                 now = new Date(now.getTime());
                 var wasLastDay = (now.getDate() == lastNow);
@@ -12441,9 +12322,9 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                     now.setDate(lastDay);
                 }
             }
-            var diff = Math.floor((until.getTime() - now.getTime()) / 1000);
+            var diff = Floor((until.getTime() - now.getTime()) / 1000);
             var extractPeriod = function(period, numSecs) {
-                periods[period] = (show[period] ? Math.floor(diff / numSecs) : 0);
+                periods[period] = (show[period] ? Floor(diff / numSecs) : 0);
                 diff -= periods[period] * numSecs;
             };
             extractPeriod(W, 604800);
@@ -12592,38 +12473,36 @@ function updateElapsedTimeCounterB(whenStartedB) {
     if (!whenStartedB) {
         whenStartedB = (new Date()).getTime();
     }
-    let elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedB) / 1000);
-    elapsedSeconds = Math.floor(elapsedSeconds + diffLastmoveTime);
+    let elapsedSeconds = Floor(((new Date()).getTime() - whenStartedB) / 1000);
+    elapsedSeconds = Floor(elapsedSeconds + diffLastmoveTime);
     if (elapsedSeconds < 0)
     {
        elapsedSeconds = 0;
     }
     let theObject;
-    if ((theObject = document.getElementById("elapsedTimeB")) && gameResult[currentGame] == "*") {
+    if ((theObject = _("#elapsedTimeB")) && gameResult[currentGame] == "*") {
         let seconds = elapsedSeconds % 60,
             minutes = (elapsedSeconds - seconds) / 60;
         theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]";
-        let clknew = document.getElementById("whiteClock"),
-            clknew1 = document.getElementById("whiteClockl");
+        let clknew = _("#whiteClock"),
+            clknew1 = _("#whiteClockl");
         clknew1.innerHTML = clknew.innerHTML;
         if (lastWhitePly == PlyNumber) {
-            clknew = document.getElementById("blackClock");
+            clknew = _("#blackClock");
             if (clknew && clknew.innerHTML != "no info") {
                 let clksec = parseFloat(clock2sec(clknew.innerHTML));
                 elapsedSeconds = clksec - elapsedSeconds;
-                clknew = document.getElementById("blackClockl");
+                clknew = _("#blackClockl");
                 clknew.innerHTML = new Date(elapsedSeconds * 1000).toISOString().substr(11, 8);
             }
-            var gduration = document.getElementById("GameDuration");
+            var gduration = _("#GameDuration");
             if (gduration) {
                 gameDuration();
                 var SchedendTime1 = SchedendTime;
                 gduration.innerHTML = new Date(SchedendTime1).toISOString().substr(11, 8);
             }
         } else {
-            clknew = document.getElementById("blackClockl");
-            clknew1 = document.getElementById("blackClock");
-            clknew.innerHTML = clknew1.innerHTML;
+            HTML('#blackClockl', HTML('#blackClock'));
         }
     }
     if (elapsedMoveTimeoutB) {
@@ -12636,41 +12515,39 @@ function updateElapsedTimeCounterW(whenStartedW) {
     if (!whenStartedW) {
         whenStartedW = new Date().getTime();
     }
-    let elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedW) / 1000);
-    elapsedSeconds = Math.floor(elapsedSeconds + diffLastmoveTime);
+    let elapsedSeconds = Floor(((new Date()).getTime() - whenStartedW) / 1000);
+    elapsedSeconds = Floor(elapsedSeconds + diffLastmoveTime);
     if (elapsedSeconds < 0)
     {
        elapsedSeconds = 0;
     }
     let theObject;
-    if ((theObject = document.getElementById("elapsedTimeW")) && gameResult[currentGame] == "*") {
+    if ((theObject = _("#elapsedTimeW")) && gameResult[currentGame] == "*") {
         let seconds = elapsedSeconds % 60,
             minutes = (elapsedSeconds - seconds) / 60;
         theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]";
-        let clknew = document.getElementById("blackClock"),
-            clknew1 = document.getElementById("blackClockl");
+        let clknew = _("#blackClock"),
+            clknew1 = _("#blackClockl");
         clknew1.innerHTML = clknew.innerHTML;
         if ((lastBlackPly) == PlyNumber) {
-            clknew = document.getElementById("whiteClock");
+            clknew = _("#whiteClock");
             if (clknew && clknew.innerHTML != "no info") {
                 let clksec = parseFloat(clock2sec(clknew.innerHTML));
                 if (clksec)
                 {
                     elapsedSeconds = clksec - elapsedSeconds;
                 }
-                clknew = document.getElementById("whiteClockl");
+                clknew = _("#whiteClockl");
                 clknew.innerHTML = new Date(elapsedSeconds * 1000).toISOString().substr(11, 8);
             }
-            var gduration = document.getElementById("GameDuration");
+            var gduration = _("#GameDuration");
             if (gduration) {
                 gameDuration();
                 var SchedendTime1 = SchedendTime;
                 gduration.innerHTML = new Date(SchedendTime1).toISOString().substr(11, 8);
             }
         } else {
-            clknew = document.getElementById("whiteClockl");
-            clknew1 = document.getElementById("whiteClock");
-            clknew.innerHTML = clknew1.innerHTML;
+            HTML('#whiteClockl', HTML('#whiteClock'));
         }
     }
     if (elapsedMoveTimeoutW) {
@@ -12691,29 +12568,20 @@ function resetElapsedTimeCounterW() {
     if (elapsedMoveTimeoutW) {
         clearTimeout(elapsedMoveTimeoutW);
     }
-    let theObject;
-    if ((theObject = document.getElementById("elapsedTimeW"))) {
-        theObject.innerHTML = "";
-    }
+    HTML('#elapsedTimeW', '');
 }
 
 function resetElapsedTimeCounterB() {
     if (elapsedMoveTimeoutB) {
         clearTimeout(elapsedMoveTimeoutB);
     }
-    let theObject;
-    if ((theObject = document.getElementById("elapsedTimeB"))) {
-        theObject.innerHTML = "";
-    }
+    HTML('#elapsedTimeB', '');
 }
 var oldLastPgnGameLength = -1;
 var oldNumberOfGames = -1;
 
 function customFunctionOnPgnTextLoad() {
-    var numGmObj = document.getElementById('numGm');
-    if (numGmObj) {
-        document.getElementById('numGm').innerHTML = numberOfGames;
-    }
+    HTML('#numGm', numberOfGames);
     if (LiveBroadcastStarted && !LiveBroadcastEnded) {
         let sideToMove = ((StartPly + PlyNumber) % 2 === 0),
             text = sideToMove ? 'white' : 'black';
@@ -12807,13 +12675,13 @@ $(function() {
     $(".drag").draggable({
 
       // ドラッグ開始時
-      start : function (event , ui){
-        var target = document.getElementById(this.id);
-        target.style.zIndex=100;
+      start: function (event, ui) {
+        var target = _(`#${this.id}`);
+        target.style.zIndex = 100;
       },
 
       // ドラッグ終了時
-      stop : function (event , ui) {
+      stop: function (event , ui) {
           // ////console.log(event , ui);
 
           var nowPosition = {};
@@ -12837,8 +12705,7 @@ $(function() {
           // Orderを入れる
           var number = 0;
           for (let i = newPosition.length; i--; ) {
-
-              var tmpItem = document.getElementById(newPosition[i].name);
+              var tmpItem = _(`#${newPosition[i].name}`);
               tmpItem.style.order = number;
               tmpItem.style.left = 0;
               tmpItem.style.top = 0;
@@ -12847,7 +12714,7 @@ $(function() {
           }
 
         // 最後にz-indexを元に戻す
-        var target = document.getElementById(this.id);
+        var target = _(`#${this.id}`);
         target.style.zIndex=0;
       }
 
@@ -12855,7 +12722,7 @@ $(function() {
 
     // position取得の関数
     function getPosition(item){
-      var tmpItem = document.getElementById('order'+item);
+      var tmpItem = _('#order'+item);
       // console.dir(tmpItem);
       return tmpItem.offsetLeft;
     }

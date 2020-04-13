@@ -1,23 +1,36 @@
 /*
 globals
-_, $, addDataLive, Assign, axios, bigData, board:true, Chess, ChessBoard, clearInterval, ClipboardJS, columnsEvent,
-console, crosstableData, Date, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart,
-initializeCharts, Keys, localStorage, LS, moment, pvBoarda:true, pvBoardb:true, pvBoardbc:true, pvBoardw:true,
-pvBoardwc:true, removeData, roundDate, roundDateMan, roundResults:true, setInterval, setTimeout, socket, speedChart,
-startDateR1, startDateR2, tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+_, $, Abs, addDataLive, Assign, Attrs, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
+clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date, depthChart, document, drawEval, dummyCross,
+engine2colorno:true, evalChart, Exp, Floor, Hide, HTML, initializeCharts, Keys, localStorage, LS, Max, moment, Now,
+PIECE_THEMES, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan, roundResults:true, S, setInterval,
+setTimeout, Show, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart, teamsx, timeChart, updateChartData,
+updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
-let boardEl = $('#board'),
+let _BLACK = 'black',
+    _WHITE = 'white',
+    BLACK_WHITE = [_BLACK, _WHITE],
+    board,
+    boardEl = $('#board'),
     currentGameActive,
     currentLastMove,                    // used for debugging
     engine2LiveData,
+    game = new Chess(),
+    newMovesCount = 0,
+    pvBoarda,
+    pvBoardb,
+    pvBoardbc,
+    pvBoardw,
+    pvBoardwc,
     pvBoardElb = $('#pv-boardb'),
     pvBoardElbc = $('#pv-boardbc'),
     pvBoardElw = $('#pv-boardw'),
     pvBoardElwc = $('#pv-boardwc'),
     pvBoardEla = $('#pv-boarda'),
-    pvBoardElac = $('#pv-boardac');
+    pvBoardElac = $('#pv-boardac'),
+    WHITE_BLACK = [_WHITE, _BLACK];
 
 var timezoneDiffH = -8;
 var squareToHighlight = '';
@@ -125,13 +138,11 @@ var eventCross = [];
 /***************************** CUP ***************************************************/
 
 var onMoveEnd = function() {
-   boardEl.find('.square-' + squareToHighlight)
-   .addClass(highlightClass);
+   boardEl.find('.square-' + squareToHighlight).addClass(highlightClass);
 };
 
 var onMoveEndPv = function() {
-   pvBoardElb.find('.square-' + pvSquareToHighlight)
-   .addClass(highlightClassPv);
+   pvBoardElb.find('.square-' + pvSquareToHighlight).addClass(highlightClassPv);
 };
 
 function getUserS()
@@ -151,13 +162,11 @@ function updateRefresh()
       {
          //prevPgnData.Moves[0].completed = 0;
       }
-      $('#board-to-sync').find('i').removeClass('fa-retweet');
-      $('#board-to-sync').find('i').addClass('fa-ban');
-      $('#board-to-sync').addClass('disabled');
+      Class('#board-to-sync i', '-fa-retweet fa-ban');
+      Class('#board-to-sync', 'disabled');
       setTimeout(function() {
-         $('#board-to-sync').find('i').removeClass('fa-ban');
-         $('#board-to-sync').removeClass('disabled');
-         $('#board-to-sync').find('i').addClass('fa-retweet');
+          Class('#board-to-sync i', '-fa-ban fa-retweet');
+          Class('#board-to-sync', '-disabled');
          lastRefreshTime = 0;
       }, reSyncInterval * 1000);
    }
@@ -212,36 +221,32 @@ function updatePgnData(data, read)
 
 function updatePgn(resettime)
 {
-   eventNameHeader = 0;
-   axios.get('live.json?no-cache' + (new Date()).getTime())
-   .then(function (response)
-   {
-      if (!resettime)
-      {
-         var milliseconds = new Date().getTime();
-         var lastMod = new Date(response.headers["last-modified"]);
-         var currTime = new Date(response.headers.date);
-         timeDiff = currTime.getTime() - lastMod.getTime();
-      }
-      prevPgnData = 0;
-      response.data.gameChanged = 1;
-      updatePgnDataMain(response.data);
-   })
-   .catch(function (error) {
-      // handle error
-   });
+    eventNameHeader = 0;
+    Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
+        if (code != 200)
+            return;
+        if (!resettime)
+        {
+            let curr_time = new Date(xhr.getResponseHeader('date')),
+                last_mod = new Date(xhr.getResponseHeader('last-modified'));
+            timeDiff = curr_time.getTime() - last_mod.getTime();
+        }
+        prevPgnData = 0;
+        data.gameChanged = 1;
+        updatePgnDataMain(data);
+    });
 }
 
 function startClock(color, currentMove, previousMove) {
-   stopClock('black');
-   stopClock('white');
+   stopClock(_BLACK);
+   stopClock(_WHITE);
 
    let previousTime = previousMove.tl,
        currentTime = currentMove.tl;
 
-   if (color == 'white') {
-      whiteTimeRemaining = Math.ceil(previousTime / 1000) * 1000 + 1000;
-      blackTimeRemaining = Math.ceil(currentTime / 1000) * 1000;
+   if (color == _WHITE) {
+      whiteTimeRemaining = Ceil(previousTime / 1000) * 1000 + 1000;
+      blackTimeRemaining = Ceil(currentTime / 1000) * 1000;
 
       if (isNaN(blackTimeRemaining))
       {
@@ -253,21 +258,21 @@ function startClock(color, currentMove, previousMove) {
          whiteTimeRemaining = defaultStartTime;
       }
 
-      setTimeRemaining('black', blackTimeRemaining);
+      setTimeRemaining(_BLACK, blackTimeRemaining);
 
       whiteMoveStarted = moment();
-      updateClock('white');
+      updateClock(_WHITE);
 
-      whiteClockInterval = setInterval(function() {updateClock('white');}, 1000);
+      whiteClockInterval = setInterval(function() {updateClock(_WHITE);}, 1000);
       if (currentMove.mt != undefined)
       {
-         setTimeUsed('black', currentMove.mt);
+         setTimeUsed(_BLACK, currentMove.mt);
       }
 
-      $('.white-to-move').show();
+      Show('.white-to-move');
    } else {
-      whiteTimeRemaining = Math.ceil(currentTime / 1000) * 1000;
-      blackTimeRemaining = Math.ceil(previousTime / 1000) * 1000 + 1000;
+      whiteTimeRemaining = Ceil(currentTime / 1000) * 1000;
+      blackTimeRemaining = Ceil(previousTime / 1000) * 1000 + 1000;
 
       if (isNaN(blackTimeRemaining))
       {
@@ -279,36 +284,31 @@ function startClock(color, currentMove, previousMove) {
          whiteTimeRemaining = defaultStartTime;
       }
 
-      setTimeRemaining('white', whiteTimeRemaining);
+      setTimeRemaining(_WHITE, whiteTimeRemaining);
 
       blackMoveStarted = moment();
 
-      updateClock('black');
+      updateClock(_BLACK);
 
-      blackClockInterval = setInterval(function() {updateClock('black');}, 1000);
+      blackClockInterval = setInterval(function() {updateClock(_BLACK);}, 1000);
       if (currentMove.mt != undefined)
       {
-         setTimeUsed('white', currentMove.mt);
+         setTimeUsed(_WHITE, currentMove.mt);
       }
-
-      $('.black-to-move').show();
    }
+
+   Show(`.${color}-to-move`);
 }
 
 function stopClock(color) {
-   if (color == 'white') {
-      clearInterval(whiteClockInterval);
-      $('.white-to-move').hide();
-   } else {
-      clearInterval(blackClockInterval);
-      $('.black-to-move').hide();
-   }
+    clearInterval((color == _WHITE)? whiteClockInterval: blackClockInterval);
+    Hide(`.${color}-to-move`);
 }
 
 function updateClock(color) {
    let currentTime = moment();
 
-   if (color == 'white') {
+   if (color == _WHITE) {
         let diff = currentTime.diff(whiteMoveStarted-timeDiff),
             ms = moment.duration(diff);
 
@@ -332,8 +332,8 @@ function updateClock(color) {
 function secFormatNoH(timeip)
 {
    var sec_num = parseInt(timeip/1000, 10); // don't forget the second param
-   var hours   = Math.floor(sec_num / 3600);
-   var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+   var hours   = Floor(sec_num / 3600);
+   var minutes = Floor((sec_num - (hours * 3600)) / 60);
    var seconds = sec_num - (hours * 3600) - (minutes * 60);
 
    if (hours   < 10) {hours   = "0"+hours;}
@@ -345,8 +345,8 @@ function secFormatNoH(timeip)
 function secFormat(timeip)
 {
    var sec_num = parseInt(timeip/1000, 10); // don't forget the second param
-   var hours   = Math.floor(sec_num / 3600);
-   var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+   var hours   = Floor(sec_num / 3600);
+   var minutes = Floor((sec_num - (hours * 3600)) / 60);
    var seconds = sec_num - (hours * 3600) - (minutes * 60);
 
    if (hours   < 10) {hours   = "0"+hours;}
@@ -362,13 +362,13 @@ function setTimeRemaining(color, time)
    }
 
    if (viewingActiveMove) {
-      $('.' + color + '-time-remaining').html(secFormat(time));
+      HTML('.' + color + '-time-remaining', secFormat(time));
    }
 }
 
 function setTimeUsed(color, time) {
    if (viewingActiveMove) {
-      $('.' + color + '-time-used').html(secFormatNoH(time));
+      HTML('.' + color + '-time-used', secFormatNoH(time));
    }
 }
 
@@ -399,9 +399,6 @@ function setUsersMain(count)
    }
 }
 
-
-var newMovesCount = 0;
-
 function listPosition()
 {
    if (board)
@@ -409,8 +406,8 @@ function listPosition()
       var getPos = board.position();
       if (getPos != null)
       {
-         plog ("Number of pieces for leela:" + Object.keys(getPos).length, 1);
-         return (Object.keys(getPos).length - 6);
+         plog ("Number of pieces for leela:" + Keys(getPos).length, 1);
+         return Keys(getPos).length - 6;
       }
    }
    return '-';
@@ -422,15 +419,15 @@ function setPgn(pgn)
 
    if (!viewingActiveMove)
    {
-      $('#newmove').removeClass('d-none');
+      Class('#newmove', '-d-none');
       newMovesCount = newMovesCount + 1;
-      $('#newmove').attr('data-count', newMovesCount);
+      Attrs('#newmove', 'data-count', newMovesCount);
    }
    else
    {
-      $('#newmove').addClass('d-none');
+      Class('#newmove', 'd-none');
       newMovesCount = 0;
-      $('#newmove').attr('data-count', 0);
+      Attrs('#newmove', 'data-count', 0);
    }
 
    if (typeof pgn.Moves != 'undefined')
@@ -467,7 +464,7 @@ function setPgn(pgn)
 
    if (prevPgnData) {
       for (let i = 0 ; i < pgn.totalSent ; i++) {
-         prevPgnData.Moves[i + pgn.lastMoveLoaded] = pgn.Moves [i];
+         prevPgnData.Moves[i + pgn.lastMoveLoaded] = pgn.Moves[i];
       }
       prevPgnData.BlackEngineOptions = pgn.BlackEngineOptions;
       prevPgnData.WhiteEngineOptions = pgn.WhiteEngineOptions;
@@ -500,16 +497,12 @@ function setPgn(pgn)
    }
 
    if (!currentGameActive) {
-      stopClock('white');
-      stopClock('black');
+      stopClock(_WHITE);
+      stopClock(_BLACK);
    }
 
    if (currentGameActive) {
-      if (whiteToPlay) {
-         stopClock('black');
-      } else {
-         stopClock('white');
-      }
+       stopClock(BLACK_WHITE[whiteToPlay * 1]);
    }
 
    plog ("XXX: loadedPlies: " + loadedPlies + " ,currentPlyCount:" + currentPlyCount +
@@ -534,9 +527,9 @@ function setPgn(pgn)
    }
    if (activePly == currentPlyCount) {
       viewingActiveMove = true;
-      $('#newmove').addClass('d-none');
+      Class('#newmove', 'd-none');
       newMovesCount = 0;
-      $('#newmove').attr('data-count', 0);
+      Attrs('#newmove', 'data-count', 0);
       board.clearAnnotation();
    }
    if (viewingActiveMove && activePly != currentPlyCount) {
@@ -587,8 +580,8 @@ function setPgn(pgn)
    if (viewingActiveMove) {
       updateMoveValues(whiteToPlay, whiteEval, blackEval);
       findDiffPv(whiteEval.pv, blackEval.pv);
-      updateEnginePv('white', whiteToPlay, whiteEval.pv);
-      updateEnginePv('black', whiteToPlay, blackEval.pv);
+      updateEnginePv(_WHITE, whiteToPlay, whiteEval.pv);
+      updateEnginePv(_BLACK, whiteToPlay, blackEval.pv);
    }
 
    if (whiteToPlay)
@@ -607,28 +600,19 @@ function setPgn(pgn)
    }
 
    var TC = pgn.Headers.TimeControl.split("+");
-   var base = Math.round(TC[0] / 60);
+   var base = Round(TC[0] / 60);
    TC = base + "'+" + TC[1] + '"';
    pgn.Headers.TimeControl = TC;
 
    defaultStartTime = (base * 60 * 1000);
 
-   if (currentGameActive)
-   {
-      if (whiteToPlay)
-      {
-         startClock('white', clockCurrentMove, clockPreviousMove);
-      }
-      else
-      {
-         startClock('black', clockCurrentMove, clockPreviousMove);
-      }
-   }
-   else
-   {
-      stopClock('white');
-      stopClock('black');
-   }
+    if (currentGameActive)
+        startClock(BLACK_WHITE[whiteToPlay * 1], clockCurrentMove, clockPreviousMove);
+    else
+    {
+        stopClock(_WHITE);
+        stopClock(_BLACK);
+    }
 
    if (viewingActiveMove) {
       if (pgn.Moves.length > 0) {
@@ -681,18 +665,18 @@ function setPgn(pgn)
       }
       if (termination == 'unterminated' && typeof adjudication != 'undefined') {
          termination = '-';
-         var movesToDraw = 50;
-         var movesToResignOrWin = 50;
-         var movesTo50R = 50;
+         let movesToDraw = 50,
+            movesToResignOrWin = 50,
+            movesTo50R = 50;
 
-         if (Math.abs(adjudication.Draw) <= 10 && pgn.Moves.length > 58)
+         if (Abs(adjudication.Draw) <= 10 && pgn.Moves.length > 58)
          {
-            movesToDraw = Math.max(Math.abs(adjudication.Draw), 69 - pgn.Moves.length);
+            movesToDraw = Max(Abs(adjudication.Draw), 69 - pgn.Moves.length);
          }
 
-         if (Math.abs(adjudication.ResignOrWin) < 11)
+         if (Abs(adjudication.ResignOrWin) < 11)
          {
-            movesToResignOrWin = Math.abs(adjudication.ResignOrWin);
+            movesToResignOrWin = Abs(adjudication.ResignOrWin);
          }
 
          if (adjudication.FiftyMoves < 51)
@@ -702,40 +686,19 @@ function setPgn(pgn)
 
          if (movesTo50R < 50 && movesTo50R < movesToResignOrWin)
          {
-            if(movesTo50R == 1)
-            {
-               termination = movesTo50R + ' move 50mr';
-            }
-            else
-            {
-               termination = movesTo50R + ' moves 50mr';
-            }
-            pgn.Headers.movesTo50R = movesTo50R;
+             termination = `${movesTo50R} move${(movesTo50R > 1)? 's': ''} 50mr`;
+             pgn.Headers.movesTo50R = movesTo50R;
          }
 
          if (movesToResignOrWin < 50 && movesToResignOrWin < movesToDraw && movesToResignOrWin < movesTo50R)
          {
-            if(movesToResignOrWin == 1)
-            {
-               termination = movesToResignOrWin + ' ply win';
-            }
-            else
-            {
-               termination = movesToResignOrWin + ' plies win';
-            }
-            pgn.Headers.movesToResignOrWin = movesToResignOrWin;
+             termination = `${movesToResignOrWin} pl${(movesToDraw > 1)? 'ies': 'y'} win`;
+             pgn.Headers.movesToResignOrWin = movesToResignOrWin;
          }
 
          if (movesToDraw < 50 && movesToDraw <= movesTo50R && movesToDraw <= movesToResignOrWin)
          {
-            if (movesToDraw == 1)
-            {
-               termination = movesToDraw + ' ply draw';
-            }
-            else
-            {
-               termination = movesToDraw + ' plies draw';
-            }
+            termination = `${movesToDraw} pl${(movesToDraw > 1)? 'ies': 'y'} draw`;
             pgn.Headers.movesToDraw = movesToDraw + 'p';
          }
 
@@ -766,7 +729,7 @@ function setPgn(pgn)
 
    $('#event-overview').bootstrapTable('load', [pgn.Headers]);
    setUsersMain(pgn.Users);
-   $('#event-name').html(pgn.Headers.Event);
+   HTML('#event-name', pgn.Headers.Event);
 
    if (viewingActiveMove) {
       setInfoFromCurrentHeaders();
@@ -774,7 +737,7 @@ function setPgn(pgn)
 
    updateChartData();
 
-   $('#engine-history').html('');
+   HTML('#engine-history', '');
    Keys(pgn.Moves).forEach(key => {
       let move = pgn.Moves[key];
       let ply = key + 1;
@@ -871,8 +834,8 @@ function setInfoFromCurrentHeaders()
    var header = prevPgnData.Headers.White;
    var name = header;
    name = getShortEngineName(header);
-   $('.white-engine-name').html(name);
-   $('.white-engine-name-full').html(header);
+   HTML('.white-engine-name', name);
+   HTML('.white-engine-name-full', header);
    whiteEngineFull = header;
    let imgsrc = 'img/engines/' + name + '.jpg';
    $('#white-engine').attr('src', imgsrc);
@@ -881,8 +844,8 @@ function setInfoFromCurrentHeaders()
    header = prevPgnData.Headers.Black;
    blackEngineFull = header;
    name = getShortEngineName(header);
-   $('.black-engine-name').html(name);
-   $('.black-engine-name-full').html(header);
+   HTML('.black-engine-name', name);
+   HTML('.black-engine-name-full', header);
    imgsrc = 'img/engines/' + name + '.jpg';
    $('#black-engine').attr('src', imgsrc);
    $('#black-engine').attr('alt', header);
@@ -999,9 +962,9 @@ function getEvalFromPly(ply)
     let clockPreviousMove = selectedMove,
         speed = selectedMove.s;
    if (speed < 1000000) {
-      speed = Math.round(speed / 1000) + ' knps';
+      speed = Round(speed / 1000) + ' knps';
    } else {
-      speed = Math.round(speed / 1000000) + ' Mnps';
+      speed = Round(speed / 1000000) + ' Mnps';
    }
 
    let nodes = getNodes(selectedMove.n);
@@ -1070,8 +1033,8 @@ function getScorePct(reverse, engineName, draEval, winEval, egEval)
 function leelaCpToQ(cp) {
    return cp < 234.18
       ? 0.0033898305085 * cp -
-           (8.76079436769e-38 * Math.pow(cp, 15)) /
-              (3.618208073857e-34 * Math.pow(cp, 14) + 1.0) +
+           (8.76079436769e-38 * Pow(cp, 15)) /
+              (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
            (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
               (cp * cp - 487.329812319 * cp + 59486.9337812)
       : cp < 381.73
@@ -1081,7 +1044,7 @@ function leelaCpToQ(cp) {
       : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
         ((0.4182050082072 * cp - 2942.6269998574) /
            (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
-           Math.exp(-Math.pow((cp - 400.0) / 7000.0, 3)) -
+           Exp(-Pow((cp - 400.0) / 7000.0, 3)) -
         5.727639074137869e-8;
 }
 
@@ -1089,7 +1052,7 @@ function leelaEvalToWinPct(eval_) {
    var q;
    if (eval_ >= 0) q = leelaCpToQ(eval_ * 100);
    else q = -leelaCpToQ(-eval_ * 100);
-   return Math.round(100 * 100 * q) / 200;
+   return Round(100 * 100 * q) / 200;
 }
 
 function getNNPct(engineName, egEval) {
@@ -1109,9 +1072,9 @@ function getNNPct(engineName, egEval) {
       whiteWinPct = -whiteWinPct;
    }
 
-   var winEval = parseFloat(Math.max(0, whiteWinPct * 2)).toFixed(1);
+   var winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1);
    var losEval = 0;
-   var draEval = parseFloat(100 - Math.max(winEval, losEval)).toFixed(1);
+   var draEval = parseFloat(100 - Max(winEval, losEval)).toFixed(1);
    var retStr = getScorePct(reverse, engineName, draEval, winEval, egEval);
    return retStr;
 }
@@ -1119,15 +1082,15 @@ function getNNPct(engineName, egEval) {
 function getABPct(engineName, egEval)
 {
    var reverse = 0;
-   var whiteWinPct = (50 - (100/(1 + Math.pow(10, egEval/4))));
+   var whiteWinPct = (50 - (100/(1 + Pow(10, egEval/4))));
    if (egEval <= 0)
    {
       reverse = 1;
       whiteWinPct = -whiteWinPct;
    }
-   var winEval = parseFloat(Math.max(0, whiteWinPct * 2)).toFixed(1);
+   var winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1);
    var losEval = 0;
-   var draEval = parseFloat(100 - Math.max(winEval, losEval)).toFixed(1);
+   var draEval = parseFloat(100 - Max(winEval, losEval)).toFixed(1);
    var retStr = getScorePct(reverse, engineName, draEval, winEval, egEval);
    return (retStr);
 }
@@ -1155,46 +1118,46 @@ function updateMoveValues(whiteToPlay, whiteEval, blackEval)
    /* Ben: Not sure why we need to update only if we are not viewing active move */
    if (!viewingActiveMove)
    {
-      $('.white-time-used').html(whiteEval.mtime);
-      $('.black-time-used').html(blackEval.mtime);
-      $('.white-time-remaining').html(whiteEval.timeleft);
-      $('.black-time-remaining').html(blackEval.timeleft);
+      HTML('.white-time-used', whiteEval.mtime);
+      HTML('.black-time-used', blackEval.mtime);
+      HTML('.white-time-remaining', whiteEval.timeleft);
+      HTML('.black-time-remaining', blackEval.timeleft);
    }
    else
    {
       if (whiteToPlay)
       {
-         $('.black-time-remaining').html(blackEval.timeleft);
-         $('.black-time-used').html(blackEval.mtime);
+         HTML('.black-time-remaining', blackEval.timeleft);
+         HTML('.black-time-used', blackEval.mtime);
       }
       else
       {
-         $('.white-time-used').html(whiteEval.mtime);
-         $('.white-time-remaining').html(whiteEval.timeleft);
+         HTML('.white-time-used', whiteEval.mtime);
+         HTML('.white-time-remaining', whiteEval.timeleft);
       }
    }
 
-   $('.white-engine-eval').html(whiteEval.eval);
+   HTML('.white-engine-eval', whiteEval.eval);
 
    var blackEvalPt = getPct(prevPgnData.Headers.Black, blackEval.eval);
    var whiteEvalPt = getPct(prevPgnData.Headers.White, whiteEval.eval);
-   $('.black-engine-name-full-new').html(blackEvalPt);
-   $('.white-engine-name-full-new').html(whiteEvalPt);
+   HTML('.black-engine-name-full-new', blackEvalPt);
+   HTML('.white-engine-name-full-new', whiteEvalPt);
    //$(eval a=(((((Math.atan(($(query)100)/290.680623072))/3.096181612)+0.5)100)-50);
-   //lose=Math.max(0,a-2); draw=(100-Math.max(win,lose)).toFixed(2); win=win.toFixed(2); lose=lose.toFixed(2);
-   $('.white-engine-speed').html(whiteEval.speed);
-   $('.white-engine-nodes').html(whiteEval.nodes);
-   $('.white-engine-depth').html(whiteEval.depth);
-   $('.white-engine-tbhits').html(whiteEval.tbhits);
+   //lose=Max(0,a-2); draw=(100-Max(win,lose)).toFixed(2); win=win.toFixed(2); lose=lose.toFixed(2);
+   HTML('.white-engine-speed', whiteEval.speed);
+   HTML('.white-engine-nodes', whiteEval.nodes);
+   HTML('.white-engine-depth', whiteEval.depth);
+   HTML('.white-engine-tbhits', whiteEval.tbhits);
    findDiffPv(whiteEval.pv, blackEval.pv);
-   updateEnginePv('white', whiteToPlay, whiteEval.pv);
+   updateEnginePv(_WHITE, whiteToPlay, whiteEval.pv);
 
-   $('.black-engine-eval').html(blackEval.eval);
-   $('.black-engine-speed').html(blackEval.speed);
-   $('.black-engine-nodes').html(blackEval.nodes);
-   $('.black-engine-depth').html(blackEval.depth);
-   $('.black-engine-tbhits').html(blackEval.tbhits);
-   updateEnginePv('black', whiteToPlay, blackEval.pv);
+   HTML('.black-engine-eval', blackEval.eval);
+   HTML('.black-engine-speed', blackEval.speed);
+   HTML('.black-engine-nodes', blackEval.nodes);
+   HTML('.black-engine-depth', blackEval.depth);
+   HTML('.black-engine-tbhits', blackEval.tbhits);
+   updateEnginePv(_BLACK, whiteToPlay, blackEval.pv);
 }
 
 function updateEnginePv(color, whiteToPlay, moves)
@@ -1202,20 +1165,20 @@ function updateEnginePv(color, whiteToPlay, moves)
    var classhigh = '';
    if (typeof moves != 'undefined') {
 
-      let currentMove = Math.floor(activePly / 2);
+      let currentMove = Floor(activePly / 2);
 
-      if (color == 'white') {
+      if (color == _WHITE) {
          whitePv = moves;
          //activePv = whitePv.slice();
-         //setPvFromKey(0, 'white', 0);
+         //setPvFromKey(0, _WHITE, 0);
       } else {
          blackPv = moves;
          //activePv = blackPv.slice();
-         //setPvFromKey(0, 'black', 0);
+         //setPvFromKey(0, _BLACK, 0);
       }
 
       let keyOffset = 0;
-      if (color == 'black' && !whiteToPlay) {
+      if (color == _BLACK && !whiteToPlay) {
          currentMove -= 2;
          // keyOffset = 1;
       }
@@ -1227,15 +1190,15 @@ function updateEnginePv(color, whiteToPlay, moves)
          currentMove++;
       }
       let setpvmove = -1;
-      $('#' + color + '-engine-pv').html('');
-      $('.' + color + '-engine-pv').html('');
+      HTML('#' + color + '-engine-pv', '');
+      HTML('.' + color + '-engine-pv', '');
 
       Keys(moves).forEach(key => {
          let move = moves[key];
 
          classhigh = "";
          let effectiveKey = key + keyOffset,
-            pvMove = currentMove + Math.floor(effectiveKey / 2),
+            pvMove = currentMove + Floor(effectiveKey / 2),
             pvMoveNofloor = currentMove + effectiveKey;
          if (whiteToPlay)
          {
@@ -1320,7 +1283,7 @@ function updateEnginePv(color, whiteToPlay, moves)
             }
          }
          plog ("classhigh: " + classhigh, 1);
-         if (color == 'black')
+         if (color == _BLACK)
          {
             classhigh += ' blue';
          }
@@ -1334,12 +1297,12 @@ function updateEnginePv(color, whiteToPlay, moves)
    {
       setpvmove = 0;
    }
-   if (color == 'white')
+   if (color == _WHITE)
    {
-      $('#white-engine-pv3').addClass('white-engine-pv');
-      $('#white-engine-pv3').addClass('alert');
-      $('#white-engine-pv3').addClass('alert-dark');
-      $('#white-name-dynamic').show();
+      Class('#white-engine-pv3', 'white-engine-pv');
+      Class('#white-engine-pv3', 'alert');
+      Class('#white-engine-pv3', 'alert-dark');
+      Show('#white-name-dynamic');
       whitePv = moves;
       if (whitePv.length > 0)
       {
@@ -1349,15 +1312,15 @@ function updateEnginePv(color, whiteToPlay, moves)
             plog ("plyDiff in white:" + whitePv.length);
          }
          activePv = whitePv.slice();
-         setPvFromKey(setpvmove, 'white');
+         setPvFromKey(setpvmove, _WHITE);
       }
    }
    else
    {
-      $('#black-engine-pv3').addClass('black-engine-pv');
-      $('#black-engine-pv3').addClass('alert');
-      $('#black-engine-pv3').addClass('alert-dark');
-      $('#black-name-dynamic').show();
+      Class('#black-engine-pv3', 'black-engine-pv');
+      Class('#black-engine-pv3', 'alert');
+      Class('#black-engine-pv3', 'alert-dark');
+      Show('#black-name-dynamic');
       blackPv = moves;
       if (blackPv.length > 0)
       {
@@ -1366,12 +1329,12 @@ function updateEnginePv(color, whiteToPlay, moves)
          {
             setpvmove = blackPv.length - 1;
          }
-         setPvFromKey(setpvmove, 'black');
+         setPvFromKey(setpvmove, _BLACK);
       }
    }
    } else {
-      $('#' + color + '-engine-pv').html('');
-      $('.' + color + '-engine-pv').html('');
+      HTML('#' + color + '-engine-pv', '');
+      HTML('.' + color + '-engine-pv', '');
    }
 }
 
@@ -1379,22 +1342,17 @@ function setPlyDiv(plyDiffL)
 {
    plyDiff = plyDiffL;
    findDiffPv(whitePv, blackPv);
-   updateEnginePv('white', whiteToPlay, whitePv);
-   updateEnginePv('black', whiteToPlay, blackPv);
+   updateEnginePv(_WHITE, whiteToPlay, whitePv);
+   updateEnginePv(_BLACK, whiteToPlay, blackPv);
    localStorage.setItem('tcec-ply-div', plyDiff);
-   $('input[value=ply'+plyDiffL+']').prop('checked', true);
+   Prop(`input[value="ply${plyDiffL}"]`, 'checked', true);
 }
 
 function setPlyDivDefault()
 {
    var plyDiffL = localStorage.getItem('tcec-ply-div');
-   plyDiff = 0;
-   if (plyDiffL != 'undefined')
-   {
-      plyDiff = plyDiffL;
-   }
-   plyDiff = parseInt(plyDiff);
-   $('input[value=ply'+plyDiff+']').prop('checked', true);
+   plyDiff = parseInt(plyDiffL) || 0;
+   Prop(`input[value="ply${plyDiff}"]`, 'checked', true);
 }
 
 function findDiffPv(whitemoves, blackmoves)
@@ -1410,7 +1368,7 @@ function findDiffPv(whitemoves, blackmoves)
 
    if (typeof whitemoves != 'undefined')
    {
-      let currentMove = Math.floor(activePly / 2);
+      let currentMove = Floor(activePly / 2);
 
       if (!whiteToPlay)
       {
@@ -1447,8 +1405,8 @@ $(document).on('click', '.change-move', function(e) {
 
    viewingActiveMove = false;
 
-   $('.active-move').removeClass('active-move');
-   $(this).addClass('active-move');
+   Class('.active-move', '-active-move');
+   Class(this, 'active-move');
 
    boardEl.find('.' + squareClass).removeClass(highlightClass);
    boardEl.find('.square-' + moveFrom).addClass(highlightClass);
@@ -1464,9 +1422,9 @@ $(document).on('click', '.change-move', function(e) {
    if (clickedPly == loadedPlies)
    {
       viewingActiveMove = true;
-      $('#newmove').addClass('d-none');
+      Class('#newmove', 'd-none');
       newMovesCount = 0;
-      $('#newmove').attr('data-count', 0);
+      Attrs('#newmove', 'data-count', 0);
    }
 
    handlePlyChange(false);
@@ -1494,14 +1452,11 @@ var isAutoplay = false;
 
 $(document).on('click', '#board-autoplay', function(e) {
    e.preventDefault();
+   Class('#board-autoplay i', '-fa-pause fa-play', isAutoplay);
    if (isAutoplay) {
       isAutoplay = false;
-      $('#board-autoplay i').removeClass('fa-pause');
-      $('#board-autoplay i').addClass('fa-play');
    } else {
       isAutoplay = true;
-      $('#board-autoplay i').removeClass('fa-play');
-      $('#board-autoplay i').addClass('fa-pause');
       boardAutoplay();
    }
 
@@ -1516,8 +1471,7 @@ function boardAutoplay()
       setTimeout(function() { boardAutoplay(); }, 750);
    } else {
       isAutoplay = false;
-      $('#board-autoplay i').removeClass('fa-pause');
-      $('#board-autoplay i').addClass('fa-play');
+      Class('#board-autoplay i', '-fa-pause fa-play');
    }
 }
 
@@ -1550,13 +1504,8 @@ $(document).on('click', '#board-to-last', function(e) {
 $(document).on('click', '#board-reverse', function(e) {
    board.flip();
 
-    let oldOrientation,
+    let oldOrientation = (board.orientation() == _BLACK)? _WHITE: _BLACK,
         newOrientation = board.orientation();
-   if (board.orientation() == 'black') {
-      oldOrientation = 'white';
-   } else {
-      oldOrientation = 'black';
-   }
 
    $('.board-bottom-engine-eval.' + oldOrientation + '-engine-name').removeClass(oldOrientation + '-engine-name').addClass(newOrientation + '-engine-name');
    $('.board-bottom-engine-eval.' + oldOrientation + '-time-remaining').removeClass(oldOrientation + '-time-remaining').addClass(newOrientation + '-time-remaining');
@@ -1567,10 +1516,8 @@ $(document).on('click', '#board-reverse', function(e) {
    $('.board-top-engine-eval.' + newOrientation + '-time-remaining').removeClass(newOrientation + '-time-remaining').addClass(oldOrientation + '-time-remaining');
    $('.board-top-engine-eval.' + newOrientation + '-time-used').removeClass(newOrientation + '-time-used').addClass(oldOrientation + '-time-used');
    $('.board-top-engine-eval.' + newOrientation + '-engine-eval').removeClass(newOrientation + '-engine-eval').addClass(oldOrientation + '-engine-eval');
-   $('#board-top-engine-eval').addClass(oldOrientation + 'Fill');
-   $('#board-top-engine-eval').removeClass(newOrientation + 'Fill');
-   $('#board-bottom-engine-eval').addClass(newOrientation + 'Fill');
-   $('#board-bottom-engine-eval').removeClass(oldOrientation + 'Fill');
+   Class('#board-top-engine-eval', `${oldOrientation}Fill -${newOrientation}Fill`);
+   Class('#board-bottom-engine-eval', `${newOrientation}Fill -${oldOrientation}Fill`);
 
    setInfoFromCurrentHeaders();
    handlePlyChange(false);
@@ -1608,11 +1555,11 @@ function handlePlyChange(handleclick)
    if (activePly > 1)
    {
       var prevMove = getMoveFromPly(activePly - 2);
-      for (var yy = 1 ; yy <= livePVHist.length ; yy ++)
+      for (let yy = 1 ; yy <= livePVHist.length ; yy ++)
       {
          if (livePVHist[yy])
          {
-            for (var xx = 0 ; xx < livePVHist[yy].moves.length ; xx ++)
+            for (let xx = 0 ; xx < livePVHist[yy].moves.length ; xx ++)
             {
                if (parseInt(livePVHist[yy].moves[xx].ply) == activePly)
                {
@@ -1657,10 +1604,10 @@ $(document).on('click', '.set-pv-board', function(e) {
 
    activePvColor = pvColor;
 
-   if (pvColor == 'white') {
+   if (pvColor == _WHITE) {
       activePv = whitePv.slice();
       setPvFromKey(moveKey, pvColor);
-   } else if (pvColor == 'black') {
+   } else if (pvColor == _BLACK) {
       activePv = blackPv.slice();
       setPvFromKey(moveKey, pvColor);
    } else {
@@ -1687,11 +1634,11 @@ $(document).on('click', '.set-pv-board', function(e) {
 
 function setActiveKey(pvColor, value)
 {
-   if (pvColor == undefined || pvColor == 'white')
+   if (pvColor == undefined || pvColor == _WHITE)
    {
       activePvKey[0] = value;
    }
-   else if (pvColor == 'black')
+   else if (pvColor == _BLACK)
    {
       activePvKey[1] = value;
    }
@@ -1719,11 +1666,11 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
 {
    var activePv;
 
-   if (pvColor == undefined || pvColor == 'white')
+   if (pvColor == undefined || pvColor == _WHITE)
    {
-      activePv  = whitePv.slice();
+      activePv = whitePv.slice();
    }
-   else if (pvColor == 'black')
+   else if (pvColor == _BLACK)
    {
       activePv  = blackPv.slice();
       plog ("choosePvx is :" + JSON.stringify(activePv));
@@ -1759,10 +1706,10 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
    game.load(fen);
    var pvBoardElbL = null;
 
-   $('.active-pv-move').removeClass('active-pv-move');
+   Class('.active-pv-move', '-active-pv-move');
 
    let pvBoardL;
-   if (pvColor == 'white')
+   if (pvColor == _WHITE)
    {
       if (pvBoardw != undefined)
       {
@@ -1782,7 +1729,7 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
       moveFromPvW = moveFromPv;
       moveToPvW = moveToPv;
    }
-   else if (pvColor == 'black')
+   else if (pvColor == _BLACK)
    {
       pvBoardL = pvBoardb;
       pvBoardElbL = pvBoardElb;
@@ -1822,7 +1769,7 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
    pvSquareToHighlight = moveToPv;
 
    pvBoardL.position(fen, false);
-   if (pvColor == 'white')
+   if (pvColor == _WHITE)
    {
       pvBoardL = pvBoardwc;
       pvBoardElbL = pvBoardElwc;
@@ -1831,7 +1778,7 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
       pvBoardElbL.find('.square-' + moveToPv).addClass(highlightClassPv);
       pvBoardL.position(fen, false);
    }
-   if (pvColor == 'black')
+   if (pvColor == _BLACK)
    {
       pvBoardL = pvBoardbc;
       pvBoardElbL = pvBoardElbc;
@@ -1893,20 +1840,20 @@ $('#pv-board-next').click(function(e) {
 });
 
 $('.pv-board-to-first1').click(function(e) {
-   setPvFromKey(0, 'white');
+   setPvFromKey(0, _WHITE);
    e.preventDefault();
    return false;
 });
 
 $('.pv-board-to-first2').click(function(e) {
-   setPvFromKey(0, 'black');
+   setPvFromKey(0, _BLACK);
    e.preventDefault();
    return false;
 });
 
 $('.pv-board-previous1').click(function(e) {
    if (activePvKey[0] > 0) {
-      setPvFromKey(activePvKey[0] - 1, 'white');
+      setPvFromKey(activePvKey[0] - 1, _WHITE);
    }
    e.preventDefault();
 
@@ -1915,7 +1862,7 @@ $('.pv-board-previous1').click(function(e) {
 
 $('.pv-board-previous2').click(function(e) {
    if (activePvKey[1] > 0) {
-      setPvFromKey(activePvKey[1] - 1, 'black');
+      setPvFromKey(activePvKey[1] - 1, _BLACK);
    }
    e.preventDefault();
 
@@ -1927,15 +1874,12 @@ isPvAutoplay[1] = false;
 isPvAutoplay[0] = false;
 
 $('.pv-board-autoplay1').click(function(e) {
+    Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[0]);
    if (isPvAutoplay[0]) {
       isPvAutoplay[0] = false;
-      $('.pv-board-autoplay1 i').removeClass('fa-pause');
-      $('.pv-board-autoplay1 i').addClass('fa-play');
    } else {
       isPvAutoplay[0] = true;
-      $('.pv-board-autoplay1 i').removeClass('fa-play');
-      $('.pv-board-autoplay1 i').addClass('fa-pause');
-      pvBoardautoplay(0, 'white', whitePv);
+      pvBoardautoplay(0, _WHITE, whitePv);
    }
    e.preventDefault();
 
@@ -1943,15 +1887,12 @@ $('.pv-board-autoplay1').click(function(e) {
 });
 
 $('.pv-board-autoplay2').click(function(e) {
+    Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[1]);
    if (isPvAutoplay[1]) {
       isPvAutoplay[1] = false;
-      $('.pv-board-autoplay2 i').removeClass('fa-pause');
-      $('.pv-board-autoplay2 i').addClass('fa-play');
    } else {
       isPvAutoplay[1] = true;
-      $('.pv-board-autoplay2 i').removeClass('fa-play');
-      $('.pv-board-autoplay2 i').addClass('fa-pause');
-      pvBoardautoplay(1, 'black', blackPv);
+      pvBoardautoplay(1, _BLACK, blackPv);
    }
    e.preventDefault();
 
@@ -1969,20 +1910,18 @@ function pvBoardautoplay(value, color, activePv)
       isPvAutoplay[value] = false;
       if (value == 0)
       {
-         $('.pv-board-autoplay1 i').removeClass('fa-pause');
-         $('.pv-board-autoplay1 i').addClass('fa-play');
+          Class('.pv-board-autoplay1 i', '-fa-pause fa-play');
       }
       else
       {
-         $('.pv-board-autoplay2 i').removeClass('fa-pause');
-         $('.pv-board-autoplay2 i').addClass('fa-play');
+          Class('.pv-board-autoplay2 i', '-fa-pause fa-play');
       }
    }
 }
 
 $('.pv-board-next1').click(function(e) {
    if (activePvKey[0] < whitePv.length) {
-      setPvFromKey(activePvKey[0] + 1, 'white');
+      setPvFromKey(activePvKey[0] + 1, _WHITE);
    }
    e.preventDefault();
    return false;
@@ -1990,20 +1929,20 @@ $('.pv-board-next1').click(function(e) {
 
 $('.pv-board-next2').click(function(e) {
    if (activePvKey[1] < blackPv.length) {
-      setPvFromKey(activePvKey[1] + 1, 'black');
+      setPvFromKey(activePvKey[1] + 1, _BLACK);
    }
    e.preventDefault();
    return false;
 });
 
 $('.pv-board-to-last1').click(function(e) {
-   setPvFromKey(whitePv.length - 1, 'white');
+   setPvFromKey(whitePv.length - 1, _WHITE);
    e.preventDefault();
    return false;
 });
 
 $('.pv-board-to-last2').click(function(e) {
-   setPvFromKey(blackPv.length - 1, 'black');
+   setPvFromKey(blackPv.length - 1, _BLACK);
    e.preventDefault();
    return false;
 });
@@ -2044,10 +1983,10 @@ function setPieces(piece, value, whiteToPlay) {
       color = 'w';
    }
 
-   value = Math.abs(value);
+   value = Abs(value);
 
-   $('#white-material span.' + piece).html('');
-   $('#black-material span.' + piece).html('');
+   HTML('#white-material span.' + piece, '');
+   HTML('#black-material span.' + piece, '');
 
    for (let i = 0; i < value; i++) {
       let imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
@@ -2261,7 +2200,7 @@ function crossCellformatter(value, row, index, field)
 function cellformatter(value, row, index, field) {
    if (!value.hasOwnProperty("Score")) // true
    {
-      return {classes: 'black'};
+      return {classes: _BLACK};
    }
    return {classes: 'monofont'};
 }
@@ -2299,22 +2238,18 @@ function updateScoreHeadersData()
    var scores = {};
    var whiteRes = crosstableData.Table[whiteEngineFull];
    var blackRes = crosstableData.Table[blackEngineFull];
-   var whiteDiv = $("#white-engine-elo");
-   var blackDiv = $("#black-engine-elo");
-   var whiteSc = $(".white-engine-score");
-   var blackSc = $(".black-engine-score");
 
    if (whiteRes.Rating)
    {
-      whiteDiv.html(whiteRes.Rating);
+      HTML('#white-engine-elo', whiteRes.Rating);
       scores = getScoreText(crosstableData.Table[whiteEngineFull].Results[blackEngineFull].Text);
-      whiteSc.html(scores.w.toFixed(1));
-      blackSc.html(scores.b.toFixed(1));
+      HTML('.white-engine-score', scores.w.toFixed(1));
+      HTML('.black-engine-score', scores.b.toFixed(1));
    }
 
    if (blackRes.Rating)
    {
-      blackDiv.html(blackRes.Rating);
+      HTML('#black-engine-elo', blackRes.Rating);
    }
 
    crosstableData.whiteCurrent = whiteEngineFull;
@@ -2342,28 +2277,18 @@ function updateTourInfo(data)
 
 function readTourInfo()
 {
-   axios.get('tournament.json')
-   .then(function (response)
-   {
-      updateTourInfo(response.data);
-   })
-   .catch(function (error)
-   {
-      plog(error, 0);
-   });
+    Resource('tournament.json', (code, data) => {
+        if (code == 200)
+            updateTourInfo(data);
+    });
 }
 
 function updateEngRating()
 {
-   axios.get('enginerating.json')
-   .then(function (response)
-   {
-      updateEngRatingData(response.data);
-   })
-   .catch(function (error)
-   {
-      plog(error, 0);
-   });
+    Resource('enginerating.json', (code, data) => {
+        if (code == 200)
+            updateEngRatingData(data);
+    });
 }
 
 function shallowCopy(data)
@@ -2375,7 +2300,7 @@ function updateH2hData()
 {
    if (tourInfo && tourInfo.cup == 1)
    {
-      $('#h2hdiv').hide();
+      Hide('#h2hdiv');
       return;
    }
 
@@ -2601,7 +2526,7 @@ function updateScheduleData(scdatainput)
    scheduleHighlight();
 }
 
-function scheduleHighlight(noscroll)
+function scheduleHighlight(_noscroll)
 {
    var options = $('#schedule').bootstrapTable('getOptions');
    var classSet = 'blacktds';
@@ -2618,8 +2543,8 @@ function scheduleHighlight(noscroll)
    {
       classSet = 'whitetds';
    }
-   $('#schedule tr').removeClass(classSet);
-   $('#schedule tr:eq('+index+')').addClass(classSet);
+   Class('#schedule tr', classSet, false);
+   Class(`#schedule tr:nth-child(${index})`, classSet);
 }
 
 function updateWinnersData(winnerData)
@@ -2647,28 +2572,18 @@ function updateWinnersData(winnerData)
 
 function updateWinners()
 {
-   axios.get('winners.json')
-   .then(function (response)
-   {
-      updateWinnersData(response.data);
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error, 0);
-   });
+    Resource('winners.json', (code, data) => {
+        if (code == 200)
+            updateWinnersData(data);
+    });
 }
 
 function updateSchedule()
 {
-   axios.get('schedule.json')
-   .then(function (response)
-   {
-      updateScheduleData(response.data);
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error, 0);
-   });
+    Resource('schedule.json', (code, data) => {
+        if (code == 200)
+            updateScheduleData(data);
+    });
 }
 
 function pad(pad, str) {
@@ -2676,8 +2591,6 @@ function pad(pad, str) {
       return pad;
    return (pad + str).slice(-pad.length);
 }
-
-var game = new Chess();
 
 var onDragStart = function(source, piece, position, orientation)
 {
@@ -2721,7 +2634,7 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
    activePv[pvLen].fen = fen;
    activePv[pvLen].from = oldLocation;
    activePv[pvLen].to = newLocation;
-   $(this).addClass('active-pv-move');
+   Class(this, 'active-pv-move');
    pvBoardEla.find('.' + squareClass).removeClass(highlightClassPv);
    pvBoardEla.find('.square-' + moveFrom).addClass(highlightClassPv);
    pvBoardEla.find('.square-' + moveTo).addClass(highlightClassPv);
@@ -2730,37 +2643,33 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
    analysFen = fen;
 };
 
-function drawGivenBoardDrag(cont, boardNotation)
+/**
+ * Create a new board, with or without drag
+ * @param {string} cont
+ * @param {boolean} boardNotation
+ * @param {boolean=} drag
+ */
+function createBoard(cont, boardNotation, drag)
 {
-   var newBoard =  ChessBoard(cont, {
-      pieceTheme: window[ptheme + "_piece_theme"],
-      showNotation: boardNotation,
-      position: 'start',
-      onMoveEnd: onMoveEnd,
-      moveSpeed: 1,
-      appearSpeed: 1,
-      draggable: true,
-      onDragStart: onDragStart,
-      onDrop: onDragMove,
-      boardTheme: window[btheme + "_board_theme"],
-      overlay: true
-   });
-   return newBoard;
-}
+    let options = {
+        appearSpeed: 1,
+        boardTheme: BOARD_THEMES[btheme],
+        moveSpeed: 1,
+        onMoveEnd: onMoveEnd,
+        overlay: true,
+        pieceTheme: piece => PIECE_THEMES[ptheme][piece],
+        position: 'start',
+        showNotation: boardNotation,
+    };
 
-function drawGivenBoard(cont, boardNotation)
-{
-   var newBoard =  ChessBoard(cont, {
-      pieceTheme: window[ptheme + "_piece_theme"],
-      showNotation: boardNotation,
-      position: 'start',
-      onMoveEnd: onMoveEnd,
-      moveSpeed: 1,
-      appearSpeed: 1,
-      boardTheme: window[btheme + "_board_theme"],
-      overlay: true
-   });
-   return newBoard;
+    if (drag)
+        Assign(options, {
+            draggable: true,
+            onDragStart: onDragStart,
+            onDrop: onDragMove,
+        });
+
+    return ChessBoard(cont, options);
 }
 
 function setBoardInit()
@@ -2778,22 +2687,22 @@ function setBoardInit()
       ptheme = pieceTheme;
    }
 
-   pvBoarda = drawGivenBoardDrag('pv-boarda', boardNotationPv);
-   board = drawGivenBoard('board', boardNotation);
+   pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
+   board = createBoard('board', boardNotation);
 
    if (!boardArrows) {
       board.clearAnnotation();
    }
 
-   pvBoardw = drawGivenBoard('pv-boardw', boardNotationPv);
-   pvBoardb = drawGivenBoard('pv-boardb', boardNotationPv);
-   pvBoardwc = drawGivenBoard('pv-boardwc', boardNotationPv);
-   pvBoardbc = drawGivenBoard('pv-boardbc', boardNotationPv);
+   pvBoardw = createBoard('pv-boardw', boardNotationPv);
+   pvBoardb = createBoard('pv-boardb', boardNotationPv);
+   pvBoardwc = createBoard('pv-boardwc', boardNotationPv);
+   pvBoardbc = createBoard('pv-boardbc', boardNotationPv);
 
    localStorage.setItem('tcec-board-theme', btheme);
    localStorage.setItem('tcec-piece-theme', ptheme);
-   $('input[value='+btheme+'b]').prop('checked', true);
-   $('input[value='+ptheme+'p]').prop('checked', true);
+   Prop(`input[value="${btheme}b"]`, 'checked', true);
+   Prop(`input[value="${ptheme}p"]`, 'checked', true);
 
    return {board, pvBoardw, pvBoardb, pvBoarda, pvBoardwc, pvBoardbc};
 }
@@ -2801,34 +2710,34 @@ function setBoardInit()
 function setBoard()
 {
    var fen = board.fen();
-   board = drawGivenBoard('board', boardNotation);
+   board = createBoard('board', boardNotation);
    board.position(fen, false);
 
    fen = pvBoardb.fen();
-   pvBoardb = drawGivenBoard('pv-boardb', boardNotationPv);
+   pvBoardb = createBoard('pv-boardb', boardNotationPv);
    pvBoardb.position(fen, false);
 
    fen = pvBoardw.fen();
-   pvBoardw = drawGivenBoard('pv-boardw', boardNotationPv);
+   pvBoardw = createBoard('pv-boardw', boardNotationPv);
    pvBoardw.position(fen, false);
 
    fen = pvBoarda.fen();
-   pvBoarda = drawGivenBoardDrag('pv-boarda', boardNotationPv);
+   pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
    pvBoarda.position(fen, false);
 
    fen = pvBoardwc.fen();
-   pvBoardwc = drawGivenBoardDrag('pv-boardwc', boardNotationPv);
+   pvBoardwc = createBoard('pv-boardwc', boardNotationPv, true);
    pvBoardwc.position(fen, false);
 
    fen = pvBoardbc.fen();
-   pvBoardbc = drawGivenBoardDrag('pv-boardbc', boardNotationPv);
+   pvBoardbc = createBoard('pv-boardbc', boardNotationPv, true);
    pvBoardbc.position(fen, false);
 
    localStorage.setItem('tcec-board-theme', btheme);
    localStorage.setItem('tcec-piece-theme', ptheme);
 
-   $('input[value='+btheme+'b]').prop('checked', true);
-   $('input[value='+ptheme+'p]').prop('checked', true);
+   Prop(`input[value="${btheme}b"]`, 'checked', true);
+   Prop(`input[value="${ptheme}p"]`, 'checked', true);
 
    if (prevPgnData && prevPgnData.Moves.length > 0)
    {
@@ -2871,11 +2780,7 @@ function updateTables()
 
 function setTwitchChatUrl(darkmode)
 {
-   if (darkmode) {
-      $('#chatright').attr('src', twitchChatUrl + '?darkpopout');
-   } else {
-      $('#chatright').attr('src', twitchChatUrl);
-   }
+    Attrs('#chatright', 'src', twitchChatUrl + (darkmode? '?darkpopout': ''));
 }
 
 function setTwitchBackgroundInit(backg)
@@ -2948,47 +2853,34 @@ function setTwitchBackground(backg)
       }
    }
    localStorage.setItem('tcec-twitch-back-mode', setValue);
-   $('input[value='+setValue+']').prop('checked', true);
+   Prop(`input[value="${setValue}"]`, 'checked', true);
 }
 
 function setDark()
 {
-   $('.toggleDark').find('i').removeClass('fa-moon');
-   $('.toggleDark').find('i').addClass('fa-sun');
-   $('body').addClass('dark');
-   setTwitchBackground(2);
-   setTwitchChatUrl(true);
-   $('#info-frame').attr('src', 'info.html?body=dark');
-   $('#crosstable').addClass('table-dark');
-   $('#schedule').addClass('table-dark');
-   $('#winner').addClass('table-dark');
-   $('#standtable').addClass('table-dark');
-   $('#infotable').addClass('table-dark');
-   $('#h2h').addClass('table-dark');
-   $('#themecheck').prop('checked', false);
-   $('.graphs').addClass('blackcanvas');
-   $('.graphs').removeClass('whitecanvas');
-   setDarkMode(1);
+    Class('.toggleDark i', '-fa-moon fa-sun');
+    Class('body', 'dark');
+    setTwitchBackground(2);
+    setTwitchChatUrl(true);
+    Attrs('#info-frame', 'src', 'info.html?body=dark');
+    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark');
+    Prop('#themecheck', 'checked', false);
+    Class('.graphs', 'blackcanvas -whitecanvas');
+    Style('#v-pills-tabContent', 'background:transparent');
+    setDarkMode(1);
 }
 
 function setLight()
 {
-   $('body').removeClass('dark');
-   $('.toggleDark').find('i').addClass('fa-moon');
-   $('.toggleDark').find('i').removeClass('fa-sun');
-   $('input.toggleDark').prop('checked', false);
-   $('#crosstable').removeClass('table-dark');
-   $('#schedule').removeClass('table-dark');
-   setTwitchBackground(1);
-   $('#info-frame').attr('src', 'info.html?body=light');
-   $('#standtable').removeClass('table-dark');
-   $('#winner').removeClass('table-dark');
-   $('#infotable').removeClass('table-dark');
-   $('#h2h').removeClass('table-dark');
-   $('#themecheck').prop('checked', true);
-   $('.graphs').addClass('whitecanvas');
-   $('.graphs').removeClass('blackcanvas');
-   setDarkMode(0);
+    Class('.toggleDark i', 'fa-moon -fa-sun');
+    Class('body', '-dark');
+    Prop('input.toggleDark', 'checked', false);
+    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', '-table-dark');
+    setTwitchBackground(1);
+    Attrs('#info-frame', 'src', 'info.html?body=light');
+    Prop('#themecheck', 'checked', true);
+    Class('.graphs', 'whitecanvas -blackcanvas');
+    setDarkMode(0);
 }
 
 function setDefaults()
@@ -3052,7 +2944,7 @@ function setDefaultEnginecolor()
    }
    engine2colorno = color;
    color = 'engcolor'+color;
-   $('input[value='+color+']').prop('checked', true);
+   Prop(`input[value="${color}"]`, 'checked', true);
    drawEval();
    updateChartData();
 }
@@ -3106,7 +2998,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
 
       var split = datum.pv.replace("...","... ").split(' ');
       var length = split.length;
-      for (var i = 0, moveCount = 0; i < length; i++) {
+      for (let i = 0, moveCount = 0; i < length; i++) {
          var str = split[i];
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
@@ -3140,7 +3032,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
       return;
    }
    livePvs[contno] = [];
-   $(container).html('');
+   HTML(container, '');
    board.clearAnnotation();
 
    var evalStr = getPct(datum.engine, score);
@@ -3179,10 +3071,10 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
    var container = '#live-eval-cont' + contno;
 
    if (contno == 1 && !showLivEng1)  {
-      $(container).html('');
+      HTML(container, '');
       return;
    } else if (contno == 2 && !showLivEng2) {
-      $(container).html('');
+      HTML(container, '');
       return;
    } else if (!initial && contno == 1){
       board.clearAnnotation();
@@ -3207,7 +3099,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
    }
 
    // Loose typing of JS makes silly things like this possible. not a number? returns "NaN"
-   let score = parseFloat(datum.eval).toFixed(2);
+   let score = parseFloat((datum || {}).eval).toFixed(2);
    if (score === "NaN") {
       score = datum.eval;
    }
@@ -3239,8 +3131,8 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
 
       var split = datum.pv.replace("...","... ").split(' ');
       var length = split.length;
-      for (var i = 0, moveCount = 0; i < length; i++) {
-         var str = split[i];
+      for (let i = 0, moveCount = 0; i < length; i++) {
+         let str = split[i];
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
@@ -3249,10 +3141,10 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
             } else {
                currentFen = chess.fen();
                let newPv = {
-                  'from': moveResponse.from,
-                  'to': moveResponse.to,
-                  'm': moveResponse.san,
-                  'fen': currentFen
+                  from: moveResponse.from,
+                  to: moveResponse.to,
+                  m: moveResponse.san,
+                  fen: currentFen,
                };
 
                //we can build the html and the PV in the same loop. no need to do it three times
@@ -3275,7 +3167,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
 
 
    livePvs[contno] = [];
-   $(container).html('');
+   HTML(container, '');
 
    var evalStr = getPct(datum.engine, datum.eval);
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
@@ -3328,27 +3220,18 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    }
 
    var container = '#white-engine-pv3';
-   var color = 'white';
+   var color = _WHITE;
 
    if (datum.color == 1)
    {
-      color = 'black';
+      color = _BLACK;
       container = '#black-engine-pv3';
-      $('.black-engine-eval').html(datum.eval);
-      $('.black-engine-speed').html(datum.speed);
-      $('.black-engine-nodes').html(datum.nodes);
-      $('.black-engine-depth').html(datum.depth);
-      $('.black-engine-tbhits').html(datum.tbhits);
       classhigh += ' lightblue';
    }
-   else
-   {
-      $('.white-engine-eval').html(datum.eval);
-      $('.white-engine-speed').html(datum.speed);
-      $('.white-engine-nodes').html(datum.nodes);
-      $('.white-engine-depth').html(datum.depth);
-      $('.white-engine-tbhits').html(datum.tbhits);
-   }
+
+    for (let key of ['eval', 'speed', 'nodes', 'depth', 'tbhits']) {
+        HTML(`.${color}-engine-${key}`, datum[key]);
+    }
 
    plog ("updateLiveEvalDataNew::: Entered for color:" + datum.color, 1);
 
@@ -3370,8 +3253,8 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
 
       var split = datum.pv.replace("...","... ").split(' ');
       var length = split.length;
-      for (var i = 0, moveCount = 0; i < length; i++) {
-         var str = split[i];
+      for (let i = 0, moveCount = 0; i < length; i++) {
+         let str = split[i];
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
@@ -3406,20 +3289,19 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
 
    var evalStr = getPct(datum.engine, datum.eval);
    var addClass = 'white-engine-pv';
-   $(container).html('');
+   HTML(container, '');
    if (datum.color == 0)
    {
-      $(container).removeClass('white-engine-pv');
-      $('#white-name-dynamic').hide();
+      Class(container, '-white-engine-pv');
+      Hide('#white-name-dynamic');
    }
    else
    {
-      $(container).removeClass('black-engine-pv');
-      $('#black-name-dynamic').hide();
+      Class(container, '-black-engine-pv');
+      Hide('#black-name-dynamic');
       addClass = 'black-engine-pv';
    }
-   $(container).removeClass('alert');
-   $(container).removeClass('alert-dark');
+   Class(container, '-alert -alert-dark');
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6>');
    $(container).append('<div class="' + addClass + ' ' + classhigh + ' alert alert-dark">' + moveContainer.join(' ') + '</div>');
    //updateChartData();
@@ -3462,25 +3344,16 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
 }
 
 function updateLiveEval() {
-   axios.get('data.json?no-cache' + (new Date()).getTime())
-   .then(function (response)
-   {
-      updateLiveEvalData(response.data, 1, null, 1, 1);
-      updateLiveEvalData(engine2LiveData, 1, null, 2, 1);
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error);
-   });
-   axios.get('data1.json?no-cache' + (new Date()).getTime())
-   .then(function (response)
-   {
-      engine2LiveData = response.data;
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error);
-   });
+    Resource(`data.json?no-cache${Now()}`, (code, data) => {
+        if (code == 200) {
+            updateLiveEvalData(data, 1, null, 1, 1);
+            updateLiveEvalData(engine2LiveData, 1, null, 2, 1);
+        }
+    });
+
+    Resource(`data1.json?no-cache${Now()}`, (code, data) => {
+        engine2LiveData = data;
+    });
 }
 
 function updateLiveChartData(data, contno)
@@ -3513,22 +3386,14 @@ function updateLiveChartData(data, contno)
 
 function updateLiveChart()
 {
-   axios.get('liveeval.json')
-   .then(function (response) {
-      updateLiveChartData(response.data, 1);
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error, 0);
-   });
-   axios.get('liveeval1.json')
-   .then(function (response) {
-      updateLiveChartData(response.data, 2);
-   })
-   .catch(function (error) {
-      // handle error
-      console.log(error);
-   });
+    Resource('liveeval.json', (code, data) => {
+        if (code == 200)
+            updateLiveChartData(data, 1);
+    });
+    Resource('liveeval1.json', (code, data) => {
+        if (code == 200)
+            updateLiveChartData(data, 2);
+    });
 }
 
 function setLastMoveTime(data)
@@ -3543,13 +3408,13 @@ function checkTwitch(checkbox)
 {
    if (checkbox.checked)
    {
-      $('iframe#twitchvid').hide();
+      Hide('iframe#twitchvid');
       localStorage.setItem('tcec-twitch-video', 1);
    }
    else
    {
-      $('iframe#twitchvid').attr('src', twitchSRCIframe);
-      $('iframe#twitchvid').show();
+      Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
+      Show('iframe#twitchvid');
       localStorage.setItem('tcec-twitch-video', 0);
    }
 }
@@ -3559,53 +3424,36 @@ function setTwitch()
    var getVideoCheck = localStorage.getItem('tcec-twitch-video');
    if (getVideoCheck == undefined || getVideoCheck == 0)
    {
-      $('iframe#twitchvid').attr('src', twitchSRCIframe);
-      $('iframe#twitchvid').show();
-      $('#twitchcheck').prop('checked', false);
+      Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
+      Show('iframe#twitchvid');
+      Prop('#twitchcheck', 'checked', false);
    }
    else
    {
-      $('iframe#twitchvid').hide();
-      $('#twitchcheck').prop('checked', true);
+      Hide('iframe#twitchvid');
+      Prop('#twitchcheck', 'checked', true);
    }
 }
 
 function showEvalCont()
 {
-   var evalcont = '#evalcont';
-   if (showLivEng1 || showLivEng2)
-   {
-      $(evalcont).show();
-   }
-   else
-   {
-      $(evalcont).hide();
-   }
-
-   if (showLivEng1)
-   {
-      $('#pills-eval-tab1').addClass('active');
-      $('#pills-eval-tab2').removeClass('active');
-      $('#pills-eval-tab1').addClass('show');
-      $('#pills-eval1').addClass('active');
-      $('#pills-eval2').removeClass('active');
-      $('#pills-eval1').addClass('show');
-   }
-   else if (showLivEng2)
-   {
-      $('#pills-eval-tab2').addClass('active');
-      $('#pills-eval-tab2').addClass('show');
-      $('#pills-eval-tab1').removeClass('active');
-      $('#pills-eval2').addClass('active');
-      $('#pills-eval2').addClass('show');
-      $('#pills-eval1').removeClass('active');
-   }
+    S('#evalcont', showLivEng1 || showLivEng2);
+    if (showLivEng1)
+    {
+        Class('#pills-eval-tab1, #pills-eval1', 'active show');
+        Class('#pills-eval-tab2, #pills-eval2', '-active');
+    }
+    else if (showLivEng2)
+    {
+        Class('#pills-eval-tab2, #pills-eval2', 'active show');
+        Class('#pills-eval-tab1, #pills-eval1', '-active');
+    }
 }
 
 function liveEngine(checkbox, checknum)
 {
    var config = 'tcec-live-engine' + checknum;
-   var evalcont = '#evalcont';
+//    var evalcont = '#evalcont';
 
    if (checkbox.checked)
    {
@@ -3643,7 +3491,7 @@ function setliveEngineInit(value)
    var getlive = localStorage.getItem(config);
    var cont = '#liveenginecheck' + value;
    var checknum = value;
-   var evalcont = '#evalcont';
+//    var evalcont = '#evalcont';
 
    if (getlive == undefined || getlive == 1)
    {
@@ -3660,7 +3508,7 @@ function setliveEngineInit(value)
             $('#pills-tab a[href="#pills-eval' + 2 + '"]').tab('show');
          }
       }
-      $(cont).prop('checked', true);
+      Prop(cont, 'checked', true);
    }
    else
    {
@@ -3672,7 +3520,7 @@ function setliveEngineInit(value)
       {
          showLivEng2 = 0;
       }
-      $(cont).prop('checked', false);
+      Prop(cont, 'checked', false);
    }
 }
 
@@ -3728,114 +3576,63 @@ function checkSound(checkbox)
 
 function setCrash()
 {
-   var getSound = localStorage.getItem('tcec-cross-crash');
-   var cont = '#crosscheck';
-   if (getSound == undefined || getSound == 0)
-   {
-      crossCrash = 1;
-      $(cont).prop('checked', false);
-   }
-   else
-   {
-      crossCrash = 0;
-      $(cont).prop('checked', true);
-   }
+    let getSound = localStorage.getItem('tcec-cross-crash'),
+        is_crash = (getSound == undefined || getSound == 0);
+
+    crossCrash = is_crash * 1;
+    Prop('#crosscheck', 'checked', !is_crash);
 }
 
 function setSound()
 {
-   var getSound = localStorage.getItem('tcec-sound-video');
-   var cont = '#soundcheck';
-   if (getSound == undefined || getSound == 0)
-   {
-      playSound = 1;
-      $(cont).prop('checked', false);
-   }
-   else
-   {
-      playSound = 0;
-      $(cont).prop('checked', true);
-   }
+    let getSound = localStorage.getItem('tcec-sound-video'),
+        is_sound = (getSound == undefined || getSound == 0);
+
+    playSound = is_sound * 1;
+    Prop('#soundcheck', 'checked', !is_sound);
 }
 
 function setLivePvUpdate()
 {
-   var getSound = localStorage.getItem('tcec-livepv-upd');
-   var cont = '#livepvcheck';
-   if (getSound == undefined || getSound == 1)
-   {
-      livepvupdate = 1;
-      $(cont).prop('checked', false);
-   }
-   else
-   {
-      livepvupdate = 0;
-      $(cont).prop('checked', true);
-   }
+    let getSound = localStorage.getItem('tcec-livepv-upd'),
+        is_update = (getSound == undefined || getSound == 1);
+
+    livepvupdate = is_update * 1;
+    Prop('#livepvcheck', 'checked', !is_update);
 }
 
 function setNotationPvDefault()
 {
-   var getHighL = localStorage.getItem('tcec-notation-pvx');
-   var cont = '#nottcheckpv';
+    let getHighL = localStorage.getItem('tcec-notation-pvx'),
+        is_notation = (getHighL == undefined || getHighL == 0);
 
-   if (getHighL == undefined || getHighL == 0)
-   {
-      boardNotationPv = false;
-      $(cont).prop('checked', true);
-   }
-   else
-   {
-      boardNotationPv = true;
-      $(cont).prop('checked', false);
-   }
+    boardNotationPv = !is_notation;
+    Prop('#nottcheckpv', 'checked', is_notation);
 }
 
 function setNotationDefault()
 {
-   var getHighL = localStorage.getItem('tcec-notation');
-   var cont = '#nottcheck';
+    let getHighL = localStorage.getItem('tcec-notation'),
+        is_notation = (getHighL == undefined || getHighL == 0);
 
-   if (getHighL == undefined || getHighL == 0)
-   {
-      boardNotation = true;
-      $(cont).prop('checked', false);
-   }
-   else
-   {
-      boardNotation = false;
-      $(cont).prop('checked', true);
-   }
+    boardNotation = is_notation;
+    Prop('#nottcheck', 'checked', !is_notation);
 }
 
 function setNotationPv(checkbox)
 {
-   if (!checkbox.checked)
-   {
-      localStorage.setItem('tcec-notation-pvx', 1);
-      boardNotationPv = true;
-   }
-   else
-   {
-      localStorage.setItem('tcec-notation-pvx', 0);
-      boardNotationPv = false;
-   }
-   setBoard();
+    let is_check = checkbox.checked;
+    localStorage.setItem('tcec-notation-pvx', is_check? 0: 1);
+    boardNotationPv = !is_check;
+    setBoard();
 }
 
 function setNotation(checkbox)
 {
-   if (checkbox.checked)
-   {
-      localStorage.setItem('tcec-notation', 1);
-      boardNotation = false;
-   }
-   else
-   {
-      localStorage.setItem('tcec-notation', 0);
-      boardNotation = true;
-   }
-   setBoard();
+    let is_check = checkbox.checked;
+    localStorage.setItem('tcec-notation', is_check? 1: 0);
+    boardNotation = !is_check;
+    setBoard();
 }
 
 function setHighLightMainPv(getHighL)
@@ -3861,7 +3658,7 @@ function setHighlightDefaultPv()
 
    setHighLightMainPv(getHighL);
 
-   $('input[value=highlightPvRadio'+getHighL+']').prop('checked', true);
+   Prop(`input[value="highlightPvRadio${getHighL}"]`, 'checked', true);
 }
 
 function setHighlightPv(value)
@@ -3894,7 +3691,7 @@ function setHighlightDefault()
 
    setHighLightMain(getHighL);
 
-   $('input[value=highlightRadio'+getHighL+']').prop('checked', true);
+   Prop(`input[value="highlightRadio${getHighL}"]`, 'checked', true);
 }
 
 function setHighlight(value)
@@ -3906,34 +3703,19 @@ function setHighlight(value)
 
 function setMoveArrowsDefault()
 {
-   var getHighL = localStorage.getItem('tcec-move-arrows');
-   var cont = '#notacheck';
+    let getHighL = localStorage.getItem('tcec-move-arrows'),
+        is_arrow = (getHighL == undefined || getHighL == 1);
 
-   if (getHighL == undefined || getHighL == 1)
-   {
-      boardArrows = true;
-      $(cont).prop('checked', false);
-   }
-   else
-   {
-      boardArrows = false;
-      $(cont).prop('checked', true);
-   }
+    boardArrows = is_arrow;
+    Prop('#notacheck', 'checked', !is_arrow);
 }
 
 function setMoveArrows(checkbox)
 {
-   if (checkbox.checked)
-   {
-      localStorage.setItem('tcec-move-arrows', 0);
-      boardArrows = false;
-   }
-   else
-   {
-      localStorage.setItem('tcec-move-arrows', 1);
-      boardArrows = true;
-   }
-   setBoard();
+    let is_check = checkbox.checked;
+    localStorage.setItem('tcec-move-arrows', is_check? 0: 1);
+    boardArrows = !is_check;
+    setBoard();
 }
 
 function goMoveFromChart(chartx, evt)
@@ -3947,34 +3729,26 @@ function goMoveFromChart(chartx, evt)
    }
 }
 
-document.getElementById("eval-graph").onclick = function(evt)
-{
-   goMoveFromChart(evalChart, evt);
-};
-
-document.getElementById("time-graph").onclick = function(evt)
-{
-   goMoveFromChart(timeChart, evt);
-};
-
-document.getElementById("speed-graph").onclick = function(evt)
-{
-   goMoveFromChart(speedChart, evt);
-};
-
-document.getElementById("tbhits-graph").onclick = function(evt)
-{
-   goMoveFromChart(tbHitsChart, evt);
-};
-
-document.getElementById("depth-graph").onclick = function(evt)
-{
-   goMoveFromChart(depthChart, evt);
-};
+// clicks
+C('#eval-graph', e => {
+   goMoveFromChart(evalChart, e);
+});
+C('#time-graph', e => {
+   goMoveFromChart(timeChart, e);
+});
+C('#speed-graph', e => {
+   goMoveFromChart(speedChart, e);
+});
+C('#tbhits-graph', e => {
+   goMoveFromChart(tbHitsChart, e);
+});
+C('#depth-graph', e => {
+   goMoveFromChart(depthChart, e);
+});
 
 function addToolTip(divx, divimg)
 {
-   var htmlx = '<table class="table table-dark table-striped table-dark">' + $(divx).html() + '</table>';
+   var htmlx = '<table class="table table-dark table-striped table-dark">' + HTML(divx) + '</table>';
    $(divimg).tooltipster('content', htmlx);
 }
 
@@ -4587,11 +4361,11 @@ function initTables()
          title: 'G#',
       },
       {
-         field: 'white',
+         field: _WHITE,
          title: 'White',
       },
       {
-         field: 'black',
+         field: _BLACK,
          title: 'Black',
       },
       {
@@ -4698,18 +4472,18 @@ function initTables()
 
 function removeClassEngineInfo(cont)
 {
-   $(cont).removeClass('d-sm-none d-md-none d-lg-none d-xl-none');
+   Class(cont, '-d-sm-none -d-md-none -d-lg-none -d-xl-none');
 }
 
 function addClassEngineInfo(cont)
 {
-   $(cont).addClass('d-sm-none d-md-none d-lg-none d-xl-none');
+   Class(cont, 'd-sm-none d-md-none d-lg-none d-xl-none');
 }
 
 function showEngInfo()
 {
    hideDownPv = 1;
-   for (var i = 1 ; i < 5 ; i++)
+   for (let i = 1 ; i < 5 ; i++)
    {
       removeClassEngineInfo('#boardinfod2' + i);
       removeClassEngineInfo('#boardinfod1' + i);
@@ -4720,7 +4494,7 @@ function showEngInfo()
 function hideEngInfo()
 {
    hideDownPv = 0;
-   for (var i = 1 ; i < 5 ; i++)
+   for (let i = 1 ; i < 5 ; i++)
    {
       addClassEngineInfo('#boardinfod2' + i);
       addClassEngineInfo('#boardinfod1' + i);
@@ -4733,11 +4507,11 @@ function showTabDefault()
    var topTab = localStorage.getItem('tcec-top-tab');
    if (topTab == undefined || topTab == 1)
    {
-      $('#v-pills-gameinfo-tab').click();
+      _('#v-pills-gameinfo-tab').click();
    }
    else
    {
-      $('#v-pills-pv-top-tab').click();
+      _('#v-pills-pv-top-tab').click();
    }
 }
 
@@ -4763,18 +4537,16 @@ function hideBanner(timeDispl)
 
    setTimeout(function()
    {
-    //   let close = document.getElementById("close");
-      let note = document.getElementById("note");
+      let note = _("#note");
       note.style.display = 'none';
    }, timeDispl);
 }
 
 function showBanner(data)
 {
-//    let close = document.getElementById("close");
-   let note = document.getElementById("note");
+   let note = _("#note");
    note.style.display = 'inline';
-   document.getElementById("notetext").textContent = data.message;
+   _("#notetext").textContent = data.message;
    if (data.timeout == undefined)
    {
       data.timeout = 30000;
@@ -4788,18 +4560,9 @@ function showBanner(data)
 
 function setCheckBoardMiddle(value, id)
 {
-   if (value)
-   {
-      $('#middle-data-column').addClass('order-first');
-      $(id).prop('checked', true);
-      localStorage.setItem('tcec-board-middle', 1);
-   }
-   else
-   {
-      $('#middle-data-column').removeClass('order-first');
-      $(id).prop('checked', false);
-      localStorage.setItem('tcec-board-middle', 0);
-   }
+    Class('#middle-data-column', 'order-first', value);
+    Prop(id, 'checked', !!value);
+    localStorage.setItem('tcec-board-middle', value? 1: 0);
 }
 
 function checkBoardMiddle(checkbox)
@@ -4900,7 +4663,7 @@ function scheduleToTournamentInfo(schedJson)
          data.blackWins+=1;
       }
    }
-   data.avgMoves = Math.round(data.avgMoves/compGames);
+   data.avgMoves = Round(data.avgMoves/compGames);
 
    let draws = compGames - data.whiteWins - data.blackWins;
    data.drawRate = divide2Decimals(draws * 100, compGames) + "%";
@@ -4917,7 +4680,7 @@ function scheduleToTournamentInfo(schedJson)
 
 function divide2Decimals(num,div)
 {
-   return Math.round((num +0.000001) / div * 100) / 100;
+   return Round((num +0.000001) / div * 100) / 100;
 }
 
 function hmsToSecondsOnly(str) {
@@ -4940,9 +4703,9 @@ function pad(num)
 
 function hhmm(secs)
 {
-   var minutes = Math.floor(secs / 60);
+   var minutes = Floor(secs / 60);
    secs = secs%60;
-   var hours = Math.floor(minutes/60);
+   var hours = Floor(minutes/60);
    minutes = minutes%60;
    return `${pad(hours)}:${pad(minutes)}`;
    // return pad(hours)+":"+pad(minutes)+":"+pad(secs); for old browsers
@@ -4950,11 +4713,11 @@ function hhmm(secs)
 
 function hhmmss(secs)
 {
-   var minutes = Math.floor(secs / 60);
+   var minutes = Floor(secs / 60);
    secs = secs%60;
-   var hours = Math.floor(minutes/60);
+   var hours = Floor(minutes/60);
    minutes = minutes%60;
-   var days = Math.floor(hours/24);
+   var days = Floor(hours/24);
    hours = hours%24;
    if (days > 0)
    {
@@ -4991,7 +4754,7 @@ function setDefaultLiveLog()
    {
       globalRoom = 'room10';
    }
-   $('input[value='+globalRoom+']').prop('checked', true);
+   Prop(`input[value="${globalRoom}"]`, 'checked', true);
 }
 
 function setLiveLog(livelog)
@@ -5058,7 +4821,7 @@ function getScoreText(strText)
    var blackScore = 0;
    var whiteScore = 0;
 
-   for (var i = 0; i < strText.length; i++)
+   for (let i = 0; i < strText.length; i++)
    {
       if (strText.charAt(i) == '0')
       {
@@ -5102,15 +4865,10 @@ function updateCrashData(data)
 
 function updateCrash()
 {
-   axios.get('crash.json')
-   .then(function (response)
-   {
-      updateCrashData(response.data);
-   })
-   .catch(function (error) {
-      // handle error
-      plog(error, 0);
-   });
+    Resource('crash.json', (code, data) => {
+        if (code == 200)
+            updateCrashData(data);
+    });
 }
 
 function eventCrosstableWrap()
@@ -5119,23 +4877,16 @@ function eventCrosstableWrap()
    {
       if (tourInfo.cup != 1)
       {
-         $('#eventdiv').hide();
-         $('#bracketdiv').hide();
-         $('.nav-pills a[href="#pills-stand"]').tab('show');
+         Hide('#bracketdiv, #eventdiv');
+         Show('.nav-pills a[href="#pills-stand"]');
          return;
       }
    }
 
-   axios.get('Eventcrosstable.json?no-cache' + (new Date()).getTime())
-   .then(function (responsetemp)
-   {
-      bracketDataMain(responsetemp.data);
-   })
-   .catch(function (error) {
-      // handle error
-      bracketDataMain(null);
-      plog(error);
-   });
+    Resource('crash.json', (_code, data) => {
+        // handle success + error
+        bracketDataMain(data);
+    });
 }
 
 function bracketDataMain(data)
@@ -5391,7 +5142,7 @@ function getDateRound()
    let roundDate = [];
    var diffData = 0;
 
-   for (var x = 0 ; x <= totalEvents; x++)
+   for (let x = 0 ; x <= totalEvents; x++)
    {
       if (roundDateMan[x])
       {
@@ -5399,7 +5150,7 @@ function getDateRound()
       }
       else
       {
-         var y = x + 1;
+         let y = x + 1;
          if (diffData)
          {
             if (y%2 == 1)
@@ -5413,7 +5164,7 @@ function getDateRound()
          }
          else
          {
-            var gameDiffL = gameDiff * 8 / (60 * 1000);
+            let gameDiffL = gameDiff * 8 / (60 * 1000);
             //gameDiffL = gameDiffL/1.5;
             roundDate[x] = getCurrDate(startDateR1, gameDiffL * (x/2));
          }
@@ -5461,35 +5212,6 @@ async function eventCrosstable(data)
     $(divname).bootstrapTable('load', standings);
 }
 
-// function eventCrosstableMainCooked(data)
-// {
-//    var myLocalData = dummyCross;
-//    var myLocalDataStr = JSON.stringify(myLocalData);
-//    plog("JSON is " + myLocalDataStr, 1);
-//    myLocalData.skipDecide = 1;
-//    updateCrosstableDataNew(data.match, myLocalData);
-//    tablesLoaded[data.match] = 1;
-// }
-
-// function eventCrosstableMain(ii, filename)
-// {
-//    //filename = filename + '?no-cache' + (new Date()).getTime();
-//    plog ("trying to read file " + filename);
-//    axios.get(filename)
-//    .then(function (r)
-//    {
-//       updateCrosstableDataNew(ii, r.data);
-//       tablesLoaded[ii] = 1;
-//       plog ("after trying to read file " + filename, 0);
-//    })
-//    .catch(function (error)
-//    {
-//       plog(error);
-//       plog ("failed trying to read file " + filename + ", error: " + error, 0);
-//       tablesLoaded[ii] = 0;
-//    });
-// }
-
 function formatterEvent(value, row, index, _field) {
    var retStr = '';
    var countGames = 0;
@@ -5519,7 +5241,7 @@ function formatterEvent(value, row, index, _field) {
          retStr += ' ' + '<a title="' + gameNum + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' +  index + ',' + gameNum + ')">' + engine + '</a>';
       }
       countGames = countGames + 1;
-      if (countGames%8 == 0)
+      if (countGames % 8 == 0)
       {
          retStr += '<br />';
       }

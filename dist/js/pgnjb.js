@@ -10,7 +10,8 @@ const pgnParse = require("./lib.js");
 const argv = require('yargs').argv;
 const fs = require("fs");
 
-let nomoves = 0;
+let Keys = Object.keys,
+    nomoves = 0;
 
 // for testing for the old format because move numbers are not separated from the moves with a space
 const NUMBERS = new Array(10);
@@ -296,7 +297,7 @@ function sort_object(object) {
    } else {
       const sorted_object = {};
 
-      const keys = Object.keys(object).sort();
+      const keys = Keys(object).sort();
       let key;
       for (let index = 0; index < keys.length; index++) {
          key = keys[index];

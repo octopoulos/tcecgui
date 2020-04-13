@@ -11,6 +11,7 @@ console, document, FormData, location, Node, Window, XMLHttpRequest
 
 let Abs = Math.abs,
     Assign = Object.assign,
+    Ceil = Math.ceil,
     Exp = Math.exp,
     Floor = Math.floor,
     Keys = Object.keys,
@@ -19,6 +20,7 @@ let Abs = Math.abs,
     Pow = Math.pow,
     Random = Math.random,
     Round = Math.round,
+    Sign = Math.sign,
     Sqrt = Math.sqrt,
     Tanh = Math.tanh;
 
@@ -481,6 +483,27 @@ function Parent(node, type, class_, attrs, be_self) {
 }
 
 /**
+ * Change properties
+ * @param {string|Node} sel CSS selector or node
+ * @param {string} prop property to change
+ * @param {string|boolean=} value value to set
+ * @param {Node=} parent
+ * @example
+ * Prop('input', 'checked', true)       // check the button
+ */
+function Prop(sel, prop, value, parent) {
+    if (!sel) return;
+    if (typeof(sel) == 'object') {
+        sel[prop] = value;
+        return;
+    }
+    //
+    E(sel, node => {
+        node[prop] = value;
+    }, parent);
+}
+
+/**
  * URL get query string, ordered + keep/discard/replace some elements
  * @param {boolean=} [stringify=false] true to have a sorted string, otherwise get a sorted object
  * @param {string[]} keep list of keys to keep
@@ -764,26 +787,6 @@ function Visible(sel, parent) {
             return false;
     }
     return true;
-}
-
-/**
- * Sanity startup
- * @param {function} show_login (show)
- * @param {function} show_register (show)
- * @example
- * Startup(() => {LS('login')}, () => {LS('register')})
- */
-function Startup(show_login, show_register) {
-    let path = location.pathname,
-        last = path.split('/').slice(-1)[0],
-        skip = last.slice(0, 1) == '=';
-
-    if (!skip) {
-        if (path.indexOf('/login/') >= 0 && show_login)
-            show_login(false);
-        if (path.indexOf('/register/') >= 0 && show_register)
-            show_register(false);
-    }
 }
 
 // NON-NODE FUNCTIONS
@@ -1148,7 +1151,7 @@ function Resource(url, callback, {content=null, method='GET', type='json'}={}) {
     xhr.onreadystatechange = () => {
         if (xhr.readyState != 4)
             return;
-        callback(xhr.status, xhr.response);
+        callback(xhr.status, xhr.response, xhr);
     };
     xhr.open(method, url, true);
     xhr.setRequestHeader('content-type', 'application/json;charset=UTF-8');

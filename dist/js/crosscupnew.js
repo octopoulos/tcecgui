@@ -12,6 +12,8 @@ console, require
 */
 'use strict';
 
+let Keys = Object.keys;
+
 // COMMENTED!!
 const shlib = require("./lib.js");
 const fs = require("fs");
@@ -124,7 +126,7 @@ function get_eventtable(pgn) {
     }
 
     // get the extra info for all the crosstables ------------------------------
-    const pairing_arrays = Object.keys(eventtable.EventTable);
+    const pairing_arrays = Keys(eventtable.EventTable);
     for (let index = 0; index < pairing_arrays.length; index++) {
         get_info(eventtable.CrossTable[pairing_arrays[index]]);
     }
@@ -402,7 +404,7 @@ function get_score_and_games(crosstable, engine, ignore_engines=[]) {
     let opponent;
     let opponent_table;
     let score = 0;
-    let keys = Object.keys(engine_table.Results);
+    let keys = Keys(engine_table.Results);
     for (let opponent_index = 0; opponent_index < keys.length; opponent_index++) {
         opponent = keys[opponent_index];
 
@@ -471,7 +473,7 @@ function get_extra_info(crosstable, engine, ignore_engines=[]) {
     let neustadtl_score = 0;
     let opponent;
     let opponent_score;
-    let keys = Object.keys(engine_table.Results);
+    let keys = Keys(engine_table.Results);
     for (let opponent_index = 0; opponent_index < keys.length; opponent_index++) {
         opponent = keys[opponent_index];
 
@@ -645,7 +647,7 @@ function sort_object(object) {
     } else {
         const sorted_object = {};
 
-        const keys = Object.keys(object).sort();
+        const keys = Keys(object).sort();
         let key;
         for (let index = 0; index < keys.length; index++) {
             key = keys[index];

@@ -6,6 +6,7 @@
 /package-lock.json
 
 *.mp3
+*.svg
 archive/
 crash.json
 crosstable.json

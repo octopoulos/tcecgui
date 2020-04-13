@@ -16,7 +16,7 @@ body {
 }
 
 #chatright {
-	min-height: 350px;
+   min-height: 350px;
 }
 
 @media (min-width: 768px) {
@@ -81,7 +81,7 @@ body {
 .highlight-black {
   -webkit-box-shadow: inset 0 0 1px 1px orange;
   -moz-box-shadow: inset 0 0 1px 1px orange;
-  box-shadow: inset 0 0 1px 1px orange;  
+  box-shadow: inset 0 0 1px 1px orange;
 }
 
 .highlight-none {
@@ -106,7 +106,7 @@ body {
 	width: 28px;
 }
 
-#engine-history 
+#engine-history
 {
    max-height: 170px !important;
    height: 80px !important;
@@ -127,12 +127,12 @@ body {
 #engine-eval th,
 #live-eval th,
 #h2h th,
-#schedule th 
+#schedule th
 {
     background-color: #191919;
     color: white;
     text-align: center;
-} 
+}
 
 #material-container {
 	background: #dcdcdc !important;
@@ -171,7 +171,7 @@ body.dark #v-pills-pvanalys {
 	background: #333 !important;
 }
 
-.active-move, 
+.active-move,
 .active-pv-move {
 	background-color: #1e1e1e !important;
 	color: yellow !important;
@@ -296,9 +296,9 @@ canvas {
 }
 
 #schedule-wrapper {
-	max-height: 900px;
+	/* max-height: 900px;
 	overflow: auto;
-	overflow-y: scroll;
+	overflow-y: scroll; */
    -webkit-overflow-scrolling: touch;
 }
 
@@ -394,14 +394,14 @@ canvas {
 
 .monofont
 {
-   font-family: monospace; 
+   font-family: monospace;
    font-size: large;
 }
 
 .strike
 {
    text-decoration: line-through;
-   color: red; 
+   color: red;
 }
 
 .normal
@@ -488,7 +488,7 @@ canvas {
     background: #007BFF;
     text-align: center;
     line-height: 2.5;
-    overflow: hidden; 
+    overflow: hidden;
     -webkit-box-shadow: 0 0 5px black;
     -moz-box-shadow:    0 0 5px black;
     box-shadow:         0 0 5px black;
@@ -525,23 +525,23 @@ table.gamelistclass tr:hover
    cursor:pointer;
 }
 
-table.schedulelistclass tr:hover                                                                                                                                                                      
-{                                                                                                                                                                                                     
-   cursor:pointer;                                                                                                                                                                                    
-}      
+table.schedulelistclass tr:hover
+{
+   cursor:pointer;
+}
 
-table.table.table-striped tr.blacktds td                                                                                                                                                              
-{                                                                                                                                                                                                     
-   background-color:rgba(105, 105, 105, 0.6);                                                                                                                                                         
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-table.table.table-striped tr.whitetds td                                                                                                                                                              
-{                                                                                                                                                                                                     
-   background-color:#82CAFA;                                                                                                                                                                          
-}                                                                                                                                                                                                     
+table.table.table-striped tr.blacktds td
+{
+   background-color:rgba(105, 105, 105, 0.6);
+}
+
+table.table.table-striped tr.whitetds td
+{
+   background-color:#82CAFA;
+}
 
 /* brackets */
-                     
+
 .bracket-material {
 	height: 18px;
 	width: 36px;
@@ -549,7 +549,7 @@ table.table.table-striped tr.whitetds td
    float:left;
 }
 
-#engine-history 
+#engine-history
 {
    max-height: 170px !important;
    height: 80px !important;
@@ -558,11 +558,11 @@ table.table.table-striped tr.whitetds td
    margin-bottom: 10px;
 }
 
-.smallfont                                                                                                                                                                                            
-{                                                                                                                                                                                                     
-   font-size: small;                                                                                                                                                                                  
-   text-align: center;                                                                                                                                                                                
-}     
+.smallfont
+{
+   font-size: small;
+   text-align: center;
+}
 
 .bracket-name-orange
 {

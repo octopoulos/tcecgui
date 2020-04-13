@@ -5,7 +5,7 @@ console, exports, require
 'use strict';
 
 const Chess = require("chess.js");
-const fs = require("fs");
+// const fs = require("fs");
 
 let neededFields = [
 "Black",

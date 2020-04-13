@@ -16,7 +16,7 @@ body {
 }
 
 #chatright {
-	min-height: 350px;
+	height: 350px;
 }
 
 @media (min-width: 768px) {
@@ -62,12 +62,12 @@ body {
 .highlight-white {
   -webkit-box-shadow: inset 0 0 2px 2px yellow !important;
   -moz-box-shadow: inset 0 0 2px 2px yellow !important;
-  box-shadow: inset 0 0 2px 2px yellow !important;  
+  box-shadow: inset 0 0 2px 2px yellow !important;
 }
 .highlight-black {
   -webkit-box-shadow: inset 0 0 3px 3px blue;
   -moz-box-shadow: inset 0 0 3px 3px blue;
-  box-shadow: inset 0 0 3px 3px blue;  
+  box-shadow: inset 0 0 3px 3px blue;
 }
 
 .engineimage {
@@ -88,7 +88,7 @@ body {
    float:left;
 }
 
-#engine-history 
+#engine-history
 {
    max-height: 170px !important;
    height: 80px !important;
@@ -97,11 +97,11 @@ body {
    margin-bottom: 10px;
 }
 
-.smallfont                                                                                                                                                                                            
-{                                                                                                                                                                                                     
-   font-size: small;                                                                                                                                                                                  
-   text-align: center;                                                                                                                                                                                
-}     
+.smallfont
+{
+   font-size: small;
+   text-align: center;
+}
 
 #crosstable th,
 #standtable th,
@@ -109,12 +109,12 @@ body {
 #engine-eval th,
 #crosstableevent th,
 #live-eval th,
-#schedule th 
+#schedule th
 {
     background-color: #191919;
     color: white;
     text-align: center;
-} 
+}
 
 #material-container {
 	background: #dcdcdc !important;
@@ -145,7 +145,7 @@ body.dark #v-pills-pv {
 	background: #333 !important;
 }
 
-.active-move, 
+.active-move,
 .active-pv-move {
 	background-color: #1e1e1e !important;
 	color: yellow !important;
@@ -240,9 +240,9 @@ canvas {
 }
 
 #schedule-wrapper {
-	max-height: 900px;
+	/* max-height: 900px;
 	overflow: auto;
-	overflow-y: scroll;
+	overflow-y: scroll; */
    -webkit-overflow-scrolling: touch;
 }
 
@@ -326,7 +326,7 @@ canvas {
 
 .monofont
 {
-   font-family: monospace; 
+   font-family: monospace;
    font-size: large;
    text-align: left;
 }
@@ -444,7 +444,7 @@ canvas {
 
 
  /* The alert message box */
-.alertmine 
+.alertmine
 {
     padding: 15px;
     background-color: blue; /* Red */
@@ -467,7 +467,7 @@ canvas {
 /* When moving the mouse over the close button */
 .closebtn:hover {
     color: black;
-} 
+}
 
 .bubblex
 {
@@ -497,7 +497,7 @@ canvas {
     border-left: 0
 }
 
-.bubblex.third 
+.bubblex.third
 {
     background-color: blue;
     color: white;
@@ -517,7 +517,7 @@ canvas {
     background: #007BFF;
     text-align: center;
     line-height: 2.5;
-    overflow: hidden; 
+    overflow: hidden;
     -webkit-box-shadow: 0 0 5px black;
     -moz-box-shadow:    0 0 5px black;
     box-shadow:         0 0 5px black;
@@ -541,21 +541,21 @@ canvas {
 }
 
 
-.right-align-pic                                                                                                                                                                                      
-{                                                                                                                                                                                                     
-   height: 20px;                                                                                                                                                                                      
-   width: 40px;                                                                                                                                                                                       
-   float:left;                                                                                                                                                                                        
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-.right-align                                                                                                                                                                                          
-{                                                                                                                                                                                                     
-   clear:left;                                                                                                                                                                                        
-   float:left;                                                                                                                                                                                        
-}                                                                                                                                                                                                     
-                                                                                                                                                                                                      
-.right-align-name                                                                                                                                                                                     
-{                                                                                                                                                                                                     
-   margin-left:10px;                                                                                                                                                                                  
-}                                                                                                                                                                                                     
-          
+.right-align-pic
+{
+   height: 20px;
+   width: 40px;
+   float:left;
+}
+
+.right-align
+{
+   clear:left;
+   float:left;
+}
+
+.right-align-name
+{
+   margin-left:10px;
+}
+

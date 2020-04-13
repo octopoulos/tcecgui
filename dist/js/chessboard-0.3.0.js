@@ -10,7 +10,7 @@
 
 /*
 globals
-$, console, document, navigator, window
+_, $, Abs, console, document, navigator, Random, window
 */
 'use strict';
 
@@ -177,16 +177,7 @@ function objToFen(obj) {
   }
 
   // squeeze the numbers together
-  // haha, I love this solution...
-  fen = fen.replace(/11111111/g, '8');
-  fen = fen.replace(/1111111/g, '7');
-  fen = fen.replace(/111111/g, '6');
-  fen = fen.replace(/11111/g, '5');
-  fen = fen.replace(/1111/g, '4');
-  fen = fen.replace(/111/g, '3');
-  fen = fen.replace(/11/g, '2');
-
-  return fen;
+  return fen.replace(/(1{2,8})/g, match => match.length);
 }
 
 window.ChessBoard = window.ChessBoard || function(containerElOrId, cfg) {
@@ -260,7 +251,7 @@ var ANIMATION_HAPPENING = false,
 // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 function createId() {
   return 'xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx'.replace(/x/g, function(c) {
-    var r = Math.random() * 16 | 0;
+    var r = Random() * 16 | 0;
     return r.toString(16);
   });
 }
@@ -343,7 +334,7 @@ function checkDeps() {
     }
 
     // make sure the container element exists in the DOM
-    var el = document.getElementById(containerElOrId);
+    var el = _(`#${containerElOrId}`);
     if (! el) {
       window.alert('ChessBoard Error 1002: Element with id "' +
         containerElOrId + '" does not exist in the DOM.' +
@@ -832,8 +823,8 @@ function squareDistance(s1, s2) {
   var s2x = COLUMNS.indexOf(s2[0]) + 1;
   var s2y = parseInt(s2[1], 10);
 
-  var xDelta = Math.abs(s1x - s2x);
-  var yDelta = Math.abs(s1y - s2y);
+  var xDelta = Abs(s1x - s2x);
+  var yDelta = Abs(s1y - s2y);
 
   if (xDelta >= yDelta) return xDelta;
   return yDelta;

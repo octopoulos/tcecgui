@@ -1,26 +1,20 @@
 /*
 globals
-_, $, axios, cellformatter, formatter, getImg, plog, standColumns, tourInfo
+_, $, cellformatter, Floor, formatter, getImg, plog, Resource, Round, standColumns, tourInfo
 */
 'use strict';
 
 /* Global Variables */
-var crosstableData = null;
-var crossTimeout = null;
+let crosstableData = null,
+    crossTimeout = null;
 /* Global Variables */
 
 function updateCrosstable()
 {
-   axios.get('crosstable.json')
-   .then(function (response)
-   {
-      newUpdateStandData(response.data);
-   })
-   .catch(function (error)
-   {
-      // handle error
-      plog(error, 0);
-   });
+    Resource('crosstable.json', (code, data) => {
+        if (code == 200)
+            newUpdateStandData(data);
+    });
 }
 
 /**
@@ -42,11 +36,11 @@ function newUpdateStandData(data)
       }
    }
 
-   var standings = [];
+   let standings = [];
 
-   for (let engName of crosstableData.Order) {
-      let engineDetails = crosstableData.Table[engName];
-      var eloDiff = engineDetails.Elo/3.2 * 2;
+    for (let engName of crosstableData.Order) {
+        let engineDetails = crosstableData.Table[engName],
+            eloDiff = engineDetails.Elo/3.2 * 2;
       if (engineDetails.LossAsBlack == undefined)
       {
          engineDetails.LossAsBlack = engineDetails.LossesAsBlack;
@@ -55,7 +49,7 @@ function newUpdateStandData(data)
       {
          engineDetails.LossAsWhite = engineDetails.LossesAsWhite;
       }
-      var entry = {
+      let entry = {
          rank: engineDetails.Rank,
          name: getImg(engName),
          games: engineDetails.Games,
@@ -65,7 +59,7 @@ function newUpdateStandData(data)
          crashes: engineDetails.Strikes,
          sb: parseFloat(engineDetails.Neustadtl).toFixed(2),
          elo: engineDetails.Rating,
-         elo_diff: Math.round(eloDiff) + ' [' + Math.round(eloDiff + engineDetails.Rating) + ']'
+         elo_diff: Round(eloDiff) + ' [' + Round(eloDiff + engineDetails.Rating) + ']'
       };
       standings.push(entry);
    }
@@ -79,17 +73,16 @@ function newUpdateStandData(data)
  */
 function newUpdateCrossData()
 {
-   plog ("Updating crossdata:", 0);
-   let standtableData = crosstableData,
-      engine_names = standtableData.Order,
-      localStandColumn = [...standColumns];
-
-   var abbreviations = [];
-   var standings = [];
+    plog ("Updating crossdata:", 0);
+    let abbreviations = [],
+        standtableData = crosstableData,
+        engine_names = standtableData.Order,
+        localStandColumn = [...standColumns],
+        standings = [];
 
    for (let engName of engine_names) {
-      let engineDetails = standtableData.Table[engName];
-      let abbEntry = {abbr: engineDetails.Abbreviation, name: engName};
+      let engineDetails = standtableData.Table[engName],
+          abbEntry = {abbr: engineDetails.Abbreviation, name: engName};
       abbreviations.push(abbEntry);
    }
 
@@ -102,16 +95,16 @@ function newUpdateCrossData()
             };
 
         for (let abbreviation of abbreviations) {
-            var score2 = '';
             let engineName = abbreviation.name,
-            engineAbbreviation = abbreviation.abbr,
-            engineCount = engine_names.length;
+                engineAbbreviation = abbreviation.abbr,
+                engineCount = engine_names.length,
+                score2 = '';
 
             if (engineCount < 1) {
                 engineCount = 1;
             }
 
-            let rounds = Math.floor(engineDetails.Games / engineCount) + 1;
+            let rounds = Floor(engineDetails.Games / engineCount) + 1;
             if (engineDetails.Abbreviation == engineAbbreviation) {
                 for (let i = 0; i < rounds; i++) {
                     score2 = '';

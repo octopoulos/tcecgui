@@ -31,6 +31,8 @@ console, process, require, setInterval, setTimeout
 */
 'use strict';
 
+let Keys = Object.keys;
+
 // var https = require("https");
 var http = require("http");
 // var url = require('url');
@@ -273,7 +275,7 @@ function showDuplicates(names)
       return a;
    }, {});
 
-   var duplicates = Object.keys(uniq).filter((a) => uniq[a] > 1);
+   var duplicates = Keys(uniq).filter((a) => uniq[a] > 1);
 
    console.log(duplicates);
 }
