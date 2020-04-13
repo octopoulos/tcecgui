@@ -2,7 +2,7 @@ body {
 	background-color: #dcdcdc;
 }
 
-#v-pills-tabContent {
+.tab-content {
 	background-color: #dcdcdc;
 	margin-bottom: 5px;
 }

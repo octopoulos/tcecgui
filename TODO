@@ -1,6 +1,7 @@
 TODO
 =====
   DONE         CREATED      DESCRIPTION
++ 2020-04-14 : 2020-04-13 : download_json.py to download all json files
 + 2020-04-13 : 2020-04-13 : fix the vertical line
 + 2020-04-13 : 2020-04-13 : remove axios, because `Resource` works fine => save space
 + 2020-04-13 : 2020-04-12 : correct chat height, to keep the board visible on desktops
