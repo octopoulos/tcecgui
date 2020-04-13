@@ -2,23 +2,25 @@
 globals
 _, $, activeFen, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash, crosstableData:true,
 crossTimeout:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
-livePvs, newUpdateStandData, plog, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove
+Keys, livePvs, LS, newUpdateStandData, plog, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
+viewingActiveMove
 */
 'use strict';
 
 /**************** Extra functions *****************/
 function fixOrder()
 {
-   // var crossData = crosstableData;
-   var arr = [];
-   var count = 0;
-   var debug = 1;
+    let arr = [],
+        count = 0,
+        debug = 1,
+        engines = crosstableData.Table;
 
-   _.each(crosstableData.Table, function(engine, key) {
-      arr [count] = engine.Score;
-      count = count + 1;
-      engine.Rank = 0;
-   });
+    Keys(engines).forEach(key => {
+        let engine = engines[key];
+        arr[count] = engine.Score;
+        count = count + 1;
+        engine.Rank = 0;
+    });
 
     let sorted = arr.slice().sort((a, b) => (b - a)),
         ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
@@ -26,17 +28,20 @@ function fixOrder()
    count = 0;
    var tiePoints = 0;
 
-   _.each(crosstableData.Table, function(engine, key) {
-      engine.Rank = ranks[count];
-      count = count + 1;
-   });
+    Keys(engines).forEach(key => {
+        let engine = engines[key];
+        engine.Rank = ranks[count];
+        count = count + 1;
+    });
 
    count = 0;
-   _.each(crosstableData.Table, function(engine, key) {
+    Keys(engines).forEach(key => {
+        let engine = engines[key];
       engine.Neustadtl = 0;
       tiePoints = 0;
 
-      _.each(crosstableData.Table, function(iengine, ikey) {
+        Keys(engines).forEach(ikey => {
+            let iengine = engines[ikey];
          if (ikey != key)
          {
             var sbCount = 0;
@@ -110,195 +115,13 @@ function fixOrder()
    plog ("Ranks is :" + ranks, debug);
    //crosstableData.Order = ranks;
 
-   _.each(crosstableData.Table, function(engine, key) {
-      engine.Rank = ranks[count];
-      plog ("engine.Rank-1 is :" + ranks[count] + " ,count:" + count, 1);
-      count = count + 1;
-      crosstableData.Order[engine.Rank-1] = key;
-   });
-}
-
-function updateLiveEvalDataOld(datum, update, fen, contno, initial)
-{
-   var container = '#live-eval-cont' + contno;
-
-   if (contno == 1 && !showLivEng1)
-   {
-      $(container).html('');
-      return;
-   }
-   if (contno == 2 && !showLivEng2)
-   {
-      $(container).html('');
-      return;
-   }
-
-   if (!initial && (contno == 1))
-   {
-      board.clearAnnotation();
-      clearedAnnotation = 1;
-   }
-
-   plog ("Annotation did not get cleared" + clearedAnnotation + ",contno:" + contno, 0);
-   if ((clearedAnnotation < 1) && (contno == 2))
-   {
-      board.clearAnnotation();
-   }
-
-   if (contno == 2)
-   {
-      clearedAnnotation = 0;
-   }
-   var engineData = [];
-   livePvs[contno] = [];
-   var livePvsC = livePvs[contno];
-   var score = 0;
-//    var tbhits = datum.tbhits;
-
-   if (update && !viewingActiveMove)
-   {
-      return;
-   }
-
-   if (!update)
-   {
-      updateLiveEvalDataHistory(datum, fen, container, contno);
-      return;
-   }
-
-   if (!isNaN(datum.eval))
-   {
-      score = parseFloat(datum.eval);
-   }
-   else
-   {
-      score = datum.eval;
-   }
-
-   if (datum.pv.search(/.*\.\.\..*/i) == 0)
-   {
-      if (!isNaN(score))
-      {
-         score = parseFloat(score) * -1;
-         if (score === 0)
-         {
-            score = 0;
-         }
-      }
-   }
-
-   let pvs = [];
-
-   if (datum.pv.length > 0 && datum.pv.trim() != "no info")
-   {
-      var chess = new Chess(activeFen);
-
-      var currentFen = activeFen;
-
-      datum.pv = datum.pv.replace("...", ". .. ");
-      _.each(datum.pv.split(' '), function(move) {
-         if (isNaN(move.charAt(0)) && move != '..') {
-            let moveResponse = chess.move(move);
-
-            if (!moveResponse || typeof moveResponse == 'undefined') {
-               plog("undefine move" + move);
-            } else {
-               currentFen = chess.fen();
-               let newPv = {
-                  'from': moveResponse.from,
-                  'to': moveResponse.to,
-                  'm': moveResponse.san,
-                  'fen': currentFen
-               };
-
-               currentLastMove = move.slice(-2);
-
-               pvs = _.union(pvs, [newPv]);
-            }
-         }
-      });
-   }
-
-   if (pvs.length > 0) {
-      livePvsC = _.union(livePvsC, [pvs]);
-   }
-
-   if (score > 0) {
-      score = '+' + score;
-   }
-
-   datum.eval = score;
-   datum.tbhits = getTBHits(datum.tbhits);
-   datum.nodes = getNodes(datum.nodes);
-
-   if (datum.pv.length > 0 && datum.pv != "no info") {
-      engineData = _.union(engineData, [datum]);
-   }
-
-   $(container).html('');
-
-   _.each(engineData, function(engineDatum) {
-      if (engineDatum.engine == '')
-      {
-         engineDatum.engine = datum.engine;
-      }
-
-      let parseScore = 0.00;
-      if (isNaN(engineDatum.eval)) {
-         parseScore = engineDatum.eval;
-      } else {
-         parseScore = (engineDatum.eval * 1).toFixed(2);
-      }
-
-      var evalStr = getPct(engineDatum.engine, parseScore);
-
-      $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + engineDatum.depth + ' | TB: ' + engineDatum.tbhits + ' | Sp: ' + engineDatum.speed + ' | N: ' + engineDatum.nodes +']</small>');
-      var moveContainer = [];
-      if (livePvsC.length > 0) {
-         _.each(livePvsC, function(livePv, pvKey) {
-            var moveCount = 0;
-            _.each(engineDatum.pv.split(' '), function(move) {
-               if (isNaN(move.charAt(0)) && move != '..') {
-                  let pvLocation = livePvsC[pvKey][moveCount];
-                  if (pvLocation) {
-                     moveContainer = _.union(moveContainer, ["<a href='#' class='set-pv-board' live-pv-key='" + pvKey +
-                        "' move-key='" + moveCount +
-                        "' engine='" + (contno) +
-                        "' color='live'>" + pvLocation.m +
-                        '</a>']);
-                  }
-                  else
-                  {
-                     plog ("pvlocation not defined");
-                  }
-                  moveCount++;
-               } else {
-                  moveContainer = _.union(moveContainer, [move]);
-               }
-            });
-
-            if (boardArrows) {
-                let color;
-               if (pvKey == 0) {
-                  color = 'blue';
-               } else {
-                  color = 'orange';
-               }
-               if (contno == 2)
-               {
-                  color = 'reds';
-               }
-               else
-               {
-                  color = 'blues';
-               }
-               board.addArrowAnnotation(livePv[0].from, livePv[0].to, color, board.orientation());
-            }
-         });
-      }
-      $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-      livePvs[contno] = livePvsC[0];
-   });
+    Keys(engines).forEach(key => {
+        let engine = engines[key];
+        engine.Rank = ranks[count];
+        plog ("engine.Rank-1 is :" + ranks[count] + " ,count:" + count, 1);
+        count = count + 1;
+        crosstableData.Order[engine.Rank-1] = key;
+    });
 }
 
 function getEngRecSched(data, engineName)
@@ -314,8 +137,8 @@ function getEngRecSched(data, engineName)
       Score: 0
    };
 
-   _.each(data, function (engine, key)
-   {
+   Keys(data).forEach(key => {
+       let engine = data[key];
       if (typeof engine.Moves == 'undefined')
       {
          return false;
@@ -414,21 +237,20 @@ function findEloDiff(whiteEngine, blackEngine, whiteEngName, blackEngName, score
 
 function getOverallElo(data)
 {
-   var eloDiff = 0;
+    let engines = crosstableData.Table;
+    for (let engName of crosstableData.Order) {
+        let engDetails = engines[engName];
+        // engines[engName].Rating = getRating(engDetails, engName);
+    }
 
-   for (let i = 0 ; i < crosstableData.Order.length ; i ++) {
-      let engName = crosstableData.Order[i];
-      let engDetails = crosstableData.Table[engName];
-      //crosstableData.Table[engName].Rating = getRating(engDetails, engName);
-   }
-
-   _.each(crosstableData.Table, function(engine, key) {
-      eloDiff = 0;
+    Keys(engines).forEach(key => {
+        let engine = engines[key],
+            eloDiff = 0;
       engine.OrigRating = engine.Rating;
-      _.each(engine.Results, function(oppEngine, oppkey)
-      {
-         plog ("Opp engine is " + oppkey + " ,oppEngine is " + crosstableData.Table[oppkey].Rating, 1);
-         var blackEngine = crosstableData.Table[oppkey];
+      Keys(engine.Results).forEach(oppkey => {
+          let oppEngine = engine.Results[oppkey];
+         plog ("Opp engine is " + oppkey + " ,oppEngine is " + engines[oppkey].Rating, 1);
+         var blackEngine = engines[oppkey];
          var strText = oppEngine.Text;
          var blackRating = blackEngine.Rating;
          for (var i = 0; i < strText.length; i++)
@@ -458,10 +280,8 @@ function getOverallElo(data)
 
 function eliminateCrash(data)
 {
-   var innerData = data;
-
-   _.each(data, function (engine, key)
-   {
+   Keys(data).forEach(key => {
+       let engine = data[key];
       if (typeof engine.Moves == 'undefined')
       {
          return false;
@@ -485,8 +305,8 @@ function eliminateCrash(data)
 
 function updateResData(engineName)
 {
-   _.each(crosstableData.Table, function (value, key)
-   {
+    Keys(crosstableData.Table).forEach(key => {
+        let value = crosstableData.Table[key];
       if (value.OrigStrikes == undefined || value.OrigStrikes == 'undefined')
       {
          value.OrigStrikes = value.Strikes;
@@ -505,19 +325,8 @@ function updateResData(engineName)
 
 function engineDisqualified(engineName)
 {
-   var crashed = 0;
-
-   _.each(crosstableData.Table, function (value, key)
-   {
-      if (key == engineName)
-      {
-         if (value.Strikes > 2)
-         {
-            crashed = value.Strikes;
-            return true;
-         }
-      }
-   });
+    let engine = crosstableData.Table[engineName],
+        crashed = (engine && engine.Strikes > 2)? engine.Strikes: 0;
 
    if (crashed)
    {

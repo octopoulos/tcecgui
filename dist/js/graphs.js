@@ -1,6 +1,6 @@
 /*
 globals
-_, $, Chart, console, document, liveEngineEval1, liveEngineEval2, plog, prevPgnData, showLivEng1, showLivEng2
+_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, plog, prevPgnData, showLivEng1, showLivEng2
 */
 'use strict';
 
@@ -247,16 +247,16 @@ function drawEval()
                label: function(tooltipItem, data) {
                   let evall= [];
                   if (typeof data.datasets[0].data[tooltipItem.index] != 'undefined') {
-                     evall= _.union(evall, ['White Eval: ' + data.datasets[0].data[tooltipItem.index].eval]);
+                      evall.push(['White Eval: ' + data.datasets[0].data[tooltipItem.index].eval]);
                   }
                   if (typeof data.datasets[1].data[tooltipItem.index] != 'undefined') {
-                     evall= _.union(evall, ['Black Eval: ' + data.datasets[1].data[tooltipItem.index].eval]);
+                      evall.push(['Black Eval: ' + data.datasets[1].data[tooltipItem.index].eval]);
                   }
                   if (typeof data.datasets[2].data[tooltipItem.index] != 'undefined') {
-                     evall= _.union(evall, [eng1L + 'Eval: ' + data.datasets[2].data[tooltipItem.index].eval]);
+                      evall.push([eng1L + 'Eval: ' + data.datasets[2].data[tooltipItem.index].eval]);
                   }
                   if (typeof data.datasets[3].data[tooltipItem.index] != 'undefined') {
-                     evall= _.union(evall, [eng2L + ' Eval: ' + data.datasets[3].data[tooltipItem.index].eval]);
+                      evall.push([eng2L + ' Eval: ' + data.datasets[3].data[tooltipItem.index].eval]);
                   }
                   return evall;
                }
@@ -709,38 +709,24 @@ function removeData(chart, data, black)
 
 function getLiveEval(key, moveNumber, isBlack, contno)
 {
-   var engineEval = null;
+    // CHECK THIS
+    let engineEval = (contno == 1)? liveEngineEval1: liveEngineEval2,
+        evalObject = engineEval.find(ev => ev.ply == key);
 
-   if (contno == 1)
-   {
-      engineEval = liveEngineEval1;
-   }
-   else
-   {
-      engineEval = liveEngineEval2;
-   }
+    if (typeof(evalObject) == 'object') {
+        let evall = evalObject.eval;
+        if (isBlack)
+            evall *= -1;
 
-   let evalObject = _.find(engineEval, function(ev) {
-      return ev.ply == key;
-   });
+        evalObject.eval = getEval(evall);
+        return {
+            x: moveNumber,
+            y: evalObject.eval,
+            eval: evall,
+        };
+    }
 
-   if (_.isObject(evalObject)) {
-      if (isBlack)
-      {
-         evalObject.eval = -evalObject.eval;
-      }
-      let evall = evalObject.eval;
-      evalObject.eval = getEval(evalObject.eval);
-      var evalObj =
-      {
-         'x': moveNumber,
-         'y': evalObject.eval,
-         'eval': evall
-      };
-      return evalObj;
-   }
-
-   return {'x': moveNumber, 'y': null, 'eval': null};
+    return {x: moveNumber, y: null, eval: null};
 }
 
 function clearChartData()
@@ -808,37 +794,24 @@ function clearChartData()
    firstPly = 0;
 }
 
-function getEval(evalVal)
+/**
+ * Normalise an eval
+ * @param {number} eval_
+ * @returns {number}
+ */
+function getEval(eval_)
 {
-   var retEvalVal = evalVal;
+    if (!isNaN(eval_))
+        return Clamp(eval_, -evalconstant, evalconstant);
 
-   if (!isNaN(evalVal))
-   {
-      if (evalVal > evalconstant)
-      {
-         retEvalVal = evalconstant;
-      }
-      else if (evalVal < -evalconstant)
-      {
-         retEvalVal = -evalconstant;
-      }
-   }
-   else
-   {
-      if (evalVal && evalVal.substring(0,1) == '-')
-      {
-         retEvalVal = -evalconstant;
-      }
-      else if (evalVal != undefined)
-      {
-         retEvalVal = evalconstant;
-      }
-      else
-      {
-         retEvalVal = 0;
-      }
-   }
-   return retEvalVal;
+    if (eval_ && eval_.substring(0,1) == '-')
+        eval_ = -evalconstant;
+    else if (eval_ != undefined)
+        eval_ = evalconstant;
+    else
+        eval_ = 0;
+
+    return eval_;
 }
 
 function arrayPush (chart, number, datax, index, movenum)

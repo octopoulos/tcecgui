@@ -23,9 +23,13 @@ function updateCrosstable()
    });
 }
 
+/**
+ * Standings
+ * @param {Object} data
+ */
 function newUpdateStandData(data)
 {
-   plog ("Updating crosstable:", 0);
+   plog ("Updating standtable:", 0);
    crosstableData = data;
 
    if (tourInfo)
@@ -40,8 +44,7 @@ function newUpdateStandData(data)
 
    var standings = [];
 
-   for (let i = 0 ; i < crosstableData.Order.length ; i++) {
-      let engName = crosstableData.Order[i];
+   for (let engName of crosstableData.Order) {
       let engineDetails = crosstableData.Table[engName];
       var eloDiff = engineDetails.Elo/3.2 * 2;
       if (engineDetails.LossAsBlack == undefined)
@@ -71,75 +74,75 @@ function newUpdateStandData(data)
    newUpdateCrossData();
 }
 
+/**
+ * Crosstable
+ */
 function newUpdateCrossData()
 {
-   plog ("Updating standtable:", 0);
-   var standtableData = crosstableData;
-   var localStandColumn = standColumns;
+   plog ("Updating crossdata:", 0);
+   let standtableData = crosstableData,
+      engine_names = standtableData.Order,
+      localStandColumn = [...standColumns];
 
    var abbreviations = [];
    var standings = [];
 
-   for (let i = 0 ; i < standtableData.Order.length; i ++) {
-      let engName = standtableData.Order[i];
+   for (let engName of engine_names) {
       let engineDetails = standtableData.Table[engName];
       let abbEntry = {abbr: engineDetails.Abbreviation, name: engName};
       abbreviations.push(abbEntry);
    }
 
-   for (let x = 0 ; x < standtableData.Order.length; x ++) {
-      let engName = standtableData.Order[x],
-          engineDetails = standtableData.Table[engName];
-         //  wins = (engineDetails.WinsAsBlack + engineDetails.WinsAsWhite);
-      var entry = {
-         rank: engineDetails.Rank,
-         name: getImg(engName),
-         points: engineDetails.Score.toFixed(1)
-      };
-
-      for (let j = 0 ; j < abbreviations.length ; j++) {
-         let abbreviation = abbreviations[j];
-         var score2 = '';
-         let engineName = abbreviation.name,
-            engineAbbreviation = abbreviation.abbr,
-            engineCount = standtableData.Order.length;
-
-         if (engineCount < 1) {
-            engineCount = 1;
-         }
-
-         let rounds = Math.floor(engineDetails.Games / engineCount) + 1;
-         if (engineDetails.Abbreviation == engineAbbreviation) {
-            for (let i = 0; i < rounds; i++) {
-               score2 = '';
-            }
-         } else {
-            let matchDetails = engineDetails.Results[engineName];
-            score2 =
-            {
-               Score: matchDetails.Scores,
-               Text: matchDetails.Text
+    for (let engName of engine_names) {
+        let engineDetails = standtableData.Table[engName],
+            entry = {
+                rank: engineDetails.Rank,
+                name: getImg(engName),
+                points: engineDetails.Score.toFixed(1),
             };
-         }
-         _.set(entry, engineAbbreviation, score2);
-      }
-      standings.push(entry);
-   }
 
-   for (let i = 0 ; i < standtableData.Order.length; i ++) {
-      let engName = standtableData.Order[i];
-      let engineDetails = standtableData.Table[engName];
-      localStandColumn = _.union(localStandColumn,
-         [{field: engineDetails.Abbreviation, title: engineDetails.Abbreviation,
-            formatter: formatter, cellStyle: cellformatter}]);
-   }
+        for (let abbreviation of abbreviations) {
+            var score2 = '';
+            let engineName = abbreviation.name,
+            engineAbbreviation = abbreviation.abbr,
+            engineCount = engine_names.length;
 
-   $('#standtable').bootstrapTable({
-      columns: localStandColumn,
-      classes: 'table table-striped table-no-bordered',
-      sortName: 'rank'
-   });
+            if (engineCount < 1) {
+                engineCount = 1;
+            }
 
-   $('#standtable').bootstrapTable('load', standings);
+            let rounds = Math.floor(engineDetails.Games / engineCount) + 1;
+            if (engineDetails.Abbreviation == engineAbbreviation) {
+                for (let i = 0; i < rounds; i++) {
+                    score2 = '';
+                }
+            } else {
+                let matchDetails = engineDetails.Results[engineName];
+                score2 = {
+                    Score: matchDetails.Scores,
+                    Text: matchDetails.Text
+                };
+            }
+            entry[engineAbbreviation] = score2;
+        }
+        standings.push(entry);
+    }
+
+    for (let engName of engine_names) {
+        let engineDetails = standtableData.Table[engName];
+        localStandColumn.push({
+            field: engineDetails.Abbreviation,
+            title: engineDetails.Abbreviation,
+            formatter: formatter,
+            cellStyle: cellformatter,
+        });
+    }
+
+    $('#standtable').bootstrapTable({
+        columns: localStandColumn,
+        classes: 'table table-striped table-no-bordered',
+        sortName: 'rank',
+    });
+
+    $('#standtable').bootstrapTable('load', standings);
 }
-

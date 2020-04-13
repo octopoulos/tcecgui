@@ -1,10 +1,10 @@
 /*
 globals
-_, $, addDataLive, axios, bigData, board:true, Chess, ChessBoard, clearInterval, ClipboardJS, columnsEvent, console,
-crosstableData, Date, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart, initializeCharts,
-localStorage, moment, pvBoarda:true, pvBoardb:true, pvBoardbc:true, pvBoardw:true, pvBoardwc:true, removeData,
-roundDate, roundDateMan, roundResults:true, setInterval, setTimeout, socket, speedChart, startDateR1, startDateR2,
-tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+_, $, addDataLive, Assign, axios, bigData, board:true, Chess, ChessBoard, clearInterval, ClipboardJS, columnsEvent,
+console, crosstableData, Date, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart,
+initializeCharts, Keys, localStorage, LS, moment, pvBoarda:true, pvBoardb:true, pvBoardbc:true, pvBoardw:true,
+pvBoardwc:true, removeData, roundDate, roundDateMan, roundResults:true, setInterval, setTimeout, socket, speedChart,
+startDateR1, startDateR2, tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
@@ -775,7 +775,8 @@ function setPgn(pgn)
    updateChartData();
 
    $('#engine-history').html('');
-   _.each(pgn.Moves, function(move, key) {
+   Keys(pgn.Moves).forEach(key => {
+      let move = pgn.Moves[key];
       let ply = key + 1;
       if (key % 2 == 0) {
          let number = (key / 2) + 1;
@@ -1228,11 +1229,14 @@ function updateEnginePv(color, whiteToPlay, moves)
       let setpvmove = -1;
       $('#' + color + '-engine-pv').html('');
       $('.' + color + '-engine-pv').html('');
-      _.each(moves, function(move, key) {
+
+      Keys(moves).forEach(key => {
+         let move = moves[key];
+
          classhigh = "";
-            let effectiveKey = key + keyOffset,
-                pvMove = currentMove + Math.floor(effectiveKey / 2),
-                pvMoveNofloor = currentMove + effectiveKey;
+         let effectiveKey = key + keyOffset,
+            pvMove = currentMove + Math.floor(effectiveKey / 2),
+            pvMoveNofloor = currentMove + effectiveKey;
          if (whiteToPlay)
          {
             if (color == "white" && (highlightpv == key))
@@ -1413,9 +1417,8 @@ function findDiffPv(whitemoves, blackmoves)
          currentMove++;
       }
 
-      _.each(whitemoves, function(move, key)
-      {
-         let pvMove = currentMove + key;
+      Keys(whitemoves).forEach(key => {
+         // let pvMove = currentMove + key;
          if (whiteToPlay)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
@@ -1723,14 +1726,14 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
    else if (pvColor == 'black')
    {
       activePv  = blackPv.slice();
-      plog ("choosePvx is :" + strx(activePv));
+      plog ("choosePvx is :" + JSON.stringify(activePv));
    }
    else if (pvColor == 'live')
    {
       if (choosePvx != undefined)
       {
          activePv = choosePvx;
-         plog ("choosePvx is :" + strx(choosePvx));
+         plog ("choosePvx is :" + JSON.stringify(choosePvx));
          choosePv = choosePvx;
       }
       else
@@ -2027,9 +2030,10 @@ $('#pv-board-reverse').click(function(e) {
 
 function setMoveMaterial(material, whiteToPlay)
 {
-   _.forOwn(material, function(value, key) {
-      setPieces(key, value, whiteToPlay);
-   });
+    Keys(material).forEach(key => {
+        let value = material[key];
+        setPieces(key, value, whiteToPlay);
+    });
 }
 
 function setPieces(piece, value, whiteToPlay) {
@@ -2160,13 +2164,13 @@ function crossFormatter(value, row, index, field) {
    }
 
    var retStr = '';
-   var valuex = _.get(value, 'Score');
+   let valuex = value.Score;
    var countGames = 0;
 
-   _.each(valuex, function(engine, key)
-   {
-      var gameX = parseInt(countGames/2);
-      var gameXColor = parseInt(gameX%3);
+   Keys(valuex).forEach(key => {
+        let engine = valuex[key],
+            gameX = parseInt(countGames / 2),
+            gameXColor = parseInt(gameX % 3);
 
       if (engine.Result == "0.5")
       {
@@ -2203,15 +2207,15 @@ function formatter(value, _row, index, _field) {
    }
 
    var retStr = '';
-   var valuex = _.get(value, 'Score');
+   let valuex = value.Score;
    var countGames = 0;
    var rowcountGames = 0;
    var splitcount = 10;
 
-   _.each(valuex, function(engine, key)
-   {
-      var gameX = parseInt(countGames/2);
-      var gameXColor = parseInt(gameX%3);
+   Keys(valuex).forEach(key => {
+        let engine = valuex[key],
+            gameX = parseInt(countGames / 2),
+            gameXColor = parseInt(gameX % 3);
 
       if (engine.Result == "0.5")
       {
@@ -2362,11 +2366,6 @@ function updateEngRating()
    });
 }
 
-function strx(json)
-{
-   return JSON.stringify(json);
-}
-
 function shallowCopy(data)
 {
    return JSON.parse(JSON.stringify(data));
@@ -2407,18 +2406,18 @@ function updateH2hData()
 
    h2hRetryCount = 0;
 
-   var h2hdata = [];
+   let h2hdata = [];
    var prevDate = 0;
    var momentDate = 0;
    var diff = 0;
    var gameDiff = 0;
    var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
    var h2hrank = 0;
-   var schedEntry = {};
+//    var schedEntry = {};
    var data = shallowCopy(oldSchedData);
 
-   _.each(data, function(engine, key)
-   {
+   Keys(data).forEach(key => {
+       let engine = data[key];
       engine.Gamesort = engine.Game;
       if (engine.Start)
       {
@@ -2478,7 +2477,7 @@ function updateH2hData()
                engine.h2hrank = engine.Game + ' (R)';
             }
          }
-         h2hdata = _.union(h2hdata, [engine]);
+         h2hdata.push(engine);
       }
    });
    oldSchedData.WhiteEngCurrent = whiteEngineFull;
@@ -2494,11 +2493,11 @@ function updateGame(game)
 
 function updateTourStat(data)
 {
-   var scdatainput = shallowCopy(data);
-   var tinfo = [];
+    let scdatainput = shallowCopy(data),
+        tinfo = [],
+        tinfoData = scheduleToTournamentInfo(scdatainput),
+        gameNox = tinfoData.minMoves[1];
 
-   var tinfoData = scheduleToTournamentInfo(scdatainput);
-   var gameNox = tinfoData.minMoves[1];
    tinfoData.minMoves = tinfoData.minMoves[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
    gameNox = tinfoData.maxMoves[1];
@@ -2510,47 +2509,41 @@ function updateTourStat(data)
    gameNox = tinfoData.maxTime[1];
    tinfoData.maxTime = tinfoData.maxTime[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
-   var crashes = tinfoData.crashes[1];
+
+   let crashes = tinfoData.crashes[1];
+   // CHECK THIS
    if (crashes.length)
    {
       tinfoData.crashes = tinfoData.crashes[0] + ' [';
-      for (let i = 0 ; i < crashes.length ; i++)
-      {
-         gameNox = crashes[i];
-         tinfoData.crashes += '<a title="' + gameNox + '" style="cursor:pointer; color: ' + gameArrayClass[0] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>';
-         if (i < crashes.length - 1)
-         {
-            tinfoData.crashes += ',';
-         }
-      }
-      tinfoData.crashes += ']';
+      let lines = crashes.map(crash => `<a title="${crash}" style="cursor:pointer; color:${gameArrayClass[0]};"onclick="updateGame(${gameNox})">${gameNox}</a>`);
+      tinfoData.crashes += lines.join(',') + ']';
    }
    else
    {
       tinfoData.crashes = 0;
    }
 
-   tinfo = _.union(tinfo, [tinfoData]);
+   tinfo.push(tinfoData);
    $('#tf').bootstrapTable('load', tinfo);
 }
 
 function updateScheduleData(scdatainput)
 {
    plog ("Updating schedule:", 0);
-   var scdata = [];
+   let scdata = [];
    var prevDate = 0;
    var momentDate = 0;
    var diff = 0;
    var gameDiff = 0;
    var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-   var schedEntry = {};
+//    var schedEntry = {};
    oldSchedData = shallowCopy(scdatainput);
    var data = shallowCopy(scdatainput);
    updateTourStat(scdatainput);
    var gameLocalno = 1;
 
-   _.each(data, function(engine, key)
-   {
+   Keys(data).forEach(key => {
+       let engine = data[key];
       engine.Game = gameLocalno;
       gameLocalno = gameLocalno + 1;
       engine.Gamesort = engine.Game;
@@ -2601,7 +2594,7 @@ function updateScheduleData(scdatainput)
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
          }
       }
-      scdata = _.union(scdata, [engine]);
+      scdata.push(engine);
    });
 
    $('#schedule').bootstrapTable('load', scdata);
@@ -2632,22 +2625,22 @@ function scheduleHighlight(noscroll)
 function updateWinnersData(winnerData)
 {
    plog ("Updating winners:", 0);
-   var scdata = [];
-   var prevDate = 0;
-   var momentDate = 0;
-   var diff = 0;
-   var gameDiff = 0;
-   var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-   var schedEntry = {};
-   var data = shallowCopy(winnerData);
+   let scdata = [];
+//    var prevDate = 0;
+//    var momentDate = 0;
+//    var diff = 0;
+//    var gameDiff = 0;
+//    var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
+//    var schedEntry = {};
+   let data = shallowCopy(winnerData);
 
-   _.each(data, function(engine, key)
-   {
-      var redColor = 'darkred';
-      var link = "\'" + engine.link + "\'";
-      engine.name = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass [0] + ';"onclick="openLinks(' + link + ')">' + engine.name + '</a>';
-      scdata = _.union(scdata, [engine]);
-   });
+    Keys(data).forEach(key => {
+        let engine = data[key],
+            // redColor = 'darkred',
+            link = "\'" + engine.link + "\'";
+        engine.name = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass [0] + ';"onclick="openLinks(' + link + ')">' + engine.name + '</a>';
+        scdata.push(engine);
+    });
 
    $('#winner').bootstrapTable('load', scdata);
 }
@@ -5087,20 +5080,21 @@ function getScoreText(strText)
 function updateCrashData(data)
 {
    plog ("Updating crash:", 0);
-   var scdata = [];
-   var crashEntry = {};
+   let scdata = [];
+//    var crashEntry = {};
 
-   _.each(data, function(engine, key)
-   {
+    Keys(data).forEach(key => {
+        let engine = data[key];
+
       engine.gameno = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.gameno + ')">' + engine.gameno + '</a>';
-      var link = "\'" + engine.log + "\'";
+      let link = "\'" + engine.log + "\'";
       engine.log = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.log + '</a>';
       if (engine.gpulog != undefined)
       {
          link = "\'" + engine.gpulog + "\'";
          engine.gpulog = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.gpulog + '</a>';
       }
-      scdata = _.union(scdata, [engine]);
+      scdata.push(engine);
    });
 
    $('#crash').bootstrapTable('load', scdata);
@@ -5358,8 +5352,11 @@ function drawBracket1()
 function getSeededName(name)
 {
    let engineName = 0;
-   _.each(teamsx, function(engine, key) {
-      if (getShortEngineName(engine[0][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
+
+    Keys(teamsx).forEach(key => {
+        let engine = teamsx[key];
+
+        if (getShortEngineName(engine[0][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
       {
          //engineName = "S#" + engine[0][1] + " " + engine[0][0];
          engineName = engine[0][0];
@@ -5434,32 +5431,34 @@ function getCurrDate(currdate, mins)
 
 async function eventCrosstable(data)
 {
-   var divname = '#crosstableevent';
-   var startVar = 1;
-   var standings = [];
+    let divname = '#crosstableevent',
+        standings = [];
 
-   plog ("Camee tp eventCrosstable", 0);
+    plog ("Camee tp eventCrosstable", 0);
 
-   $(divname).bootstrapTable({
+    $(divname).bootstrapTable({
         classes: 'table table-striped table-no-bordered',
         columns: columnsEvent,
         sortName: 'rank',
         sortOrder: 'desc'
-      });
+    });
 
-   let round = 1;
-   eventCross[0] = 0;
-   _.each(data, function(matchdum, key) {
-      matchdum.match = round;
-      matchdum.Winner = getImg(matchdum.Winner);
-      matchdum.Runner = getImg(matchdum.Runner);
-      standings.push(matchdum);
-      eventCross[round] = eventCross[round - 1] + parseInt(matchdum.Games);
-      round ++;
-   });
+    eventCross[0] = 0;
 
-   plog ("drawing standings", 0);
-   $(divname).bootstrapTable('load', standings);
+    // CHECK THIS
+    Keys(data).forEach((key, id) => {
+        let matchdum = data[key];
+        Assign(matchdum, {
+            match: id + 1,
+            Runner: getImg(matchdum.Runner),
+            Winner: getImg(matchdum.Winner),
+        });
+        standings.push(matchdum);
+        eventCross[id + 1] = eventCross[id] + parseInt(matchdum.Games);
+    });
+
+    plog ("drawing standings", 0);
+    $(divname).bootstrapTable('load', standings);
 }
 
 // function eventCrosstableMainCooked(data)
@@ -5496,10 +5495,10 @@ function formatterEvent(value, row, index, _field) {
    var countGames = 0;
    var gameArray =  row.Gamesno.split(",");
 
-   _.each(value, function(engine, key)
-   {
-      var gameX = parseInt(countGames/2);
-      var gameXColor = parseInt(gameX%3);
+    Keys(value).forEach(key => {
+        let engine = value[key],
+            gameX = parseInt(countGames / 2),
+            gameXColor = parseInt(gameX % 3);
 
       if (engine == "=")
       {
