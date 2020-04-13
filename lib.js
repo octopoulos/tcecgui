@@ -1,5 +1,11 @@
+/*
+globals
+console, exports, process, require
+*/
+'use strict';
+
 /* reused */
-const argv = require('yargs').argv;
+// const argv = require('yargs').argv;
 var _ = require('lodash');
 /* reused */
 
@@ -50,7 +56,7 @@ function getPGN(id, jsonMenuData)
       {
          return false;
       }
-      _.each(value.sub, function(subvalue,subkey) {
+      _.each(value.sub, function(subvalue, subkey) {
          if ((subvalue.id == id) ||
             (subvalue.idf == id))
          {
@@ -96,17 +102,17 @@ function getUpdatedJSON(totalId, jsonMenuData)
             dno = subvalue.dno;
          });
       dno = (parseInt(dno) + 4).toString();
-      totalId.dno = dno.padStart(4, '0'); 
+      totalId.dno = dno.padStart(4, '0');
       value.sub.push (totalId);
       //console.log ("STRXX:::::" + " jsonkey: " + value + " ," + JSON.stringify(data, null, '\t'));
    });
 
    data.newaddedid = totalId.id;
-   
+
    return data;
 }
 
-function getRandomSalt(fileName) 
+function getRandomSalt(fileName)
 {
    var timestamp = new Date().getTime().toString();
    var return_string = fileName + "_" + timestamp;
@@ -127,7 +133,7 @@ function getNewIdStruc(stringMessage, jsonMenuData)
    {
       nTagId = '';
    }
-   let nTagMenu = narray.slice(5).join(' ');;
+   let nTagMenu = narray.slice(5).join(' ');
    var nIdStr = '';
    var totalId = {};
    var bonus = 0;
@@ -154,7 +160,7 @@ function getNewIdStruc(stringMessage, jsonMenuData)
       }
       else
       {
-         nIdStr += nseasonNo;     
+         nIdStr += nseasonNo;
       }
    }
    else

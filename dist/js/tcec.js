@@ -1,10 +1,23 @@
-boardEl = $('#board');
-pvBoardElb = $('#pv-boardb');
-pvBoardElbc = $('#pv-boardbc');
-pvBoardElw = $('#pv-boardw');
-pvBoardElwc = $('#pv-boardwc');
-pvBoardEla = $('#pv-boarda');
-pvBoardElac = $('#pv-boardac');
+/*
+globals
+_, $, addDataLive, axios, bigData, board:true, Chess, ChessBoard, clearInterval, ClipboardJS, columnsEvent, console,
+crosstableData, Date, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart, initializeCharts,
+localStorage, moment, pvBoarda:true, pvBoardb:true, pvBoardbc:true, pvBoardw:true, pvBoardwc:true, removeData,
+roundDate, roundDateMan, roundResults:true, setInterval, setTimeout, socket, speedChart, startDateR1, startDateR2,
+tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+*/
+'use strict';
+
+let boardEl = $('#board'),
+    currentGameActive,
+    currentLastMove,                    // used for debugging
+    engine2LiveData,
+    pvBoardElb = $('#pv-boardb'),
+    pvBoardElbc = $('#pv-boardbc'),
+    pvBoardElw = $('#pv-boardw'),
+    pvBoardElwc = $('#pv-boardwc'),
+    pvBoardEla = $('#pv-boarda'),
+    pvBoardElac = $('#pv-boardac');
 
 var timezoneDiffH = -8;
 var squareToHighlight = '';
@@ -81,9 +94,9 @@ var oldSchedData = null;
 var activePvH = [];
 
 var moveFrom = null;
-var moveFromPvW = null
-var moveFromPvB = null
-var moveFromPvL = null
+var moveFromPvW = null;
+var moveFromPvB = null;
+var moveFromPvL = null;
 var moveTo = null;
 var moveToPvW = null;
 var moveToPvB = null;
@@ -119,7 +132,7 @@ var onMoveEnd = function() {
 var onMoveEndPv = function() {
    pvBoardElb.find('.square-' + pvSquareToHighlight)
    .addClass(highlightClassPv);
-}
+};
 
 function getUserS()
 {
@@ -205,9 +218,9 @@ function updatePgn(resettime)
    {
       if (!resettime)
       {
-         var milliseconds = (new Date).getTime();
+         var milliseconds = new Date().getTime();
          var lastMod = new Date(response.headers["last-modified"]);
-         var currTime = new Date(response.headers["date"]);
+         var currTime = new Date(response.headers.date);
          timeDiff = currTime.getTime() - lastMod.getTime();
       }
       prevPgnData = 0;
@@ -223,8 +236,8 @@ function startClock(color, currentMove, previousMove) {
    stopClock('black');
    stopClock('white');
 
-   previousTime = previousMove.tl;
-   currentTime = currentMove.tl;
+   let previousTime = previousMove.tl,
+       currentTime = currentMove.tl;
 
    if (color == 'white') {
       whiteTimeRemaining = Math.ceil(previousTime / 1000) * 1000 + 1000;
@@ -245,7 +258,7 @@ function startClock(color, currentMove, previousMove) {
       whiteMoveStarted = moment();
       updateClock('white');
 
-      whiteClockInterval = setInterval(function() { updateClock('white') }, 1000);
+      whiteClockInterval = setInterval(function() {updateClock('white');}, 1000);
       if (currentMove.mt != undefined)
       {
          setTimeUsed('black', currentMove.mt);
@@ -272,7 +285,7 @@ function startClock(color, currentMove, previousMove) {
 
       updateClock('black');
 
-      blackClockInterval = setInterval(function() { updateClock('black') }, 1000);
+      blackClockInterval = setInterval(function() {updateClock('black');}, 1000);
       if (currentMove.mt != undefined)
       {
          setTimeUsed('white', currentMove.mt);
@@ -293,23 +306,23 @@ function stopClock(color) {
 }
 
 function updateClock(color) {
-   currentTime = moment();
+   let currentTime = moment();
 
    if (color == 'white') {
-      var diff = currentTime.diff(whiteMoveStarted-timeDiff);
-      var ms = moment.duration(diff);
+        let diff = currentTime.diff(whiteMoveStarted-timeDiff),
+            ms = moment.duration(diff);
 
       whiteTimeUsed = ms;
-      tempTimeRemaning = whiteTimeRemaining - whiteTimeUsed + 3000;
+      let tempTimeRemaning = whiteTimeRemaining - whiteTimeUsed + 3000;
 
       setTimeUsed(color, whiteTimeUsed);
       setTimeRemaining(color, tempTimeRemaning);
    } else {
-      var diff = currentTime.diff(blackMoveStarted-timeDiff);
-      var ms = moment.duration(diff);
+        let diff = currentTime.diff(blackMoveStarted-timeDiff),
+            ms = moment.duration(diff);
 
       blackTimeUsed = ms;
-      tempTimeRemaning = blackTimeRemaining - blackTimeUsed + 3000;
+      let tempTimeRemaning = blackTimeRemaining - blackTimeUsed + 3000;
 
       setTimeUsed(color, blackTimeUsed);
       setTimeRemaining(color, tempTimeRemaning);
@@ -400,7 +413,7 @@ function listPosition()
          return (Object.keys(getPos).length - 6);
       }
    }
-   return '-'
+   return '-';
 }
 
 function setPgn(pgn)
@@ -538,10 +551,9 @@ function setPgn(pgn)
       initializeCharts();
    }
 
+   let currentMove;
    var whiteEval = {};
    var blackEval = {};
-
-   eval = getEvalFromPly(pgn.Moves.length - 1);
 
    activeFen = pgn.Moves[pgn.Moves.length - 1].fen;
    if (viewingActiveMove) {
@@ -550,25 +562,25 @@ function setPgn(pgn)
       setMoveMaterial(currentMove.material, 0);
    }
 
+    let eval_ = getEvalFromPly(pgn.Moves.length - 1);
    if (!whiteToPlay) {
-      whiteEval = eval;
+      whiteEval = eval_;
    } else {
-      blackEval = eval;
+      blackEval = eval_;
    }
 
-   clockCurrentMove = currentMove;
-   clockPreviousMove = '';
+    let clockCurrentMove = currentMove,
+        clockPreviousMove = '';
 
    if (pgn.Moves.length > 1) {
-      eval = getEvalFromPly(pgn.Moves.length-2);
-
-      selectedMove = pgn.Moves[pgn.Moves.length-2];
+        let eval_ = getEvalFromPly(pgn.Moves.length-2),
+            selectedMove = pgn.Moves[pgn.Moves.length-2];
       clockPreviousMove = selectedMove;
 
       if (whiteToPlay) {
-         whiteEval = eval;
+         whiteEval = eval_;
       } else {
-         blackEval = eval;
+         blackEval = eval_;
       }
    }
 
@@ -655,7 +667,8 @@ function setPgn(pgn)
       if (eventNameHeader == 0)
       {
          eventNameHeader = pgn.Headers.Event;
-         if (eventTmp = eventNameHeader.match(/TCEC Season (.*)/))
+         let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
+         if (eventTmp)
          {
             plog (eventTmp[1], 0);
             pgn.Headers.Event = "S" + eventTmp[1];
@@ -691,11 +704,11 @@ function setPgn(pgn)
          {
             if(movesTo50R == 1)
             {
-               termination = movesTo50R + ' move 50mr'
+               termination = movesTo50R + ' move 50mr';
             }
             else
             {
-               termination = movesTo50R + ' moves 50mr'
+               termination = movesTo50R + ' moves 50mr';
             }
             pgn.Headers.movesTo50R = movesTo50R;
          }
@@ -763,15 +776,15 @@ function setPgn(pgn)
 
    $('#engine-history').html('');
    _.each(pgn.Moves, function(move, key) {
-      ply = key + 1;
+      let ply = key + 1;
       if (key % 2 == 0) {
-         number = (key / 2) + 1;
+         let number = (key / 2) + 1;
          var numlink = "<a class='numsmall'>" + number + ". </a>";
          $('#engine-history').append(numlink);
       }
       var linkClass = "";
       if (activePly == ply) {
-         linkClass = "active-move"
+         linkClass = "active-move";
       }
 
       if (move.book == true)
@@ -785,7 +798,7 @@ function setPgn(pgn)
          moveNotation = move.m.charAt(0) + move.m.slice(1);
       }
 
-      from = move.to;
+      let from = move.to;
 
       var link = "<a href='#' ply='" + ply + "' fen='" + move.fen + "' from='" + move.from + "' to='" + move.to + "' class='change-move " + linkClass + "'>" + moveNotation + "</a>";
       $('#engine-history').append(link + ' ');
@@ -860,7 +873,7 @@ function setInfoFromCurrentHeaders()
    $('.white-engine-name').html(name);
    $('.white-engine-name-full').html(header);
    whiteEngineFull = header;
-   var imgsrc = 'img/engines/' + name + '.jpg';
+   let imgsrc = 'img/engines/' + name + '.jpg';
    $('#white-engine').attr('src', imgsrc);
    $('#white-engine').attr('alt', header);
    $('#white-engine-chessprogramming').attr('href', 'https://www.chessprogramming.org/' + name);
@@ -869,7 +882,7 @@ function setInfoFromCurrentHeaders()
    name = getShortEngineName(header);
    $('.black-engine-name').html(name);
    $('.black-engine-name-full').html(header);
-   var imgsrc = 'img/engines/' + name + '.jpg';
+   imgsrc = 'img/engines/' + name + '.jpg';
    $('#black-engine').attr('src', imgsrc);
    $('#black-engine').attr('alt', header);
    $('#black-engine-chessprogramming').attr('href', 'https://www.chessprogramming.org/' + name);
@@ -926,9 +939,8 @@ function getTBHits(tbhits)
 
 function getEvalFromPly(ply)
 {
-   selectedMove = prevPgnData.Moves[ply];
-
-   side = 'White';
+    let selectedMove = prevPgnData.Moves[ply],
+        side = 'White';
    if (whiteToPlay) {
       side = 'Black';
    }
@@ -983,15 +995,15 @@ function getEvalFromPly(ply)
    if (typeof selectedMove == 'undefined') {
       return '';
    }
-   clockPreviousMove = selectedMove;
-   speed = selectedMove.s;
+    let clockPreviousMove = selectedMove,
+        speed = selectedMove.s;
    if (speed < 1000000) {
       speed = Math.round(speed / 1000) + ' knps';
    } else {
       speed = Math.round(speed / 1000000) + ' Mnps';
    }
 
-   nodes = getNodes(selectedMove.n);
+   let nodes = getNodes(selectedMove.n);
 
    var depth = selectedMove.d + '/' + selectedMove.sd;
    var tbHits = 0;
@@ -1072,10 +1084,10 @@ function leelaCpToQ(cp) {
         5.727639074137869e-8;
 }
 
-function leelaEvalToWinPct(eval) {
+function leelaEvalToWinPct(eval_) {
    var q;
-   if (eval >= 0) q = leelaCpToQ(eval * 100);
-   else q = -leelaCpToQ(-eval * 100);
+   if (eval_ >= 0) q = leelaCpToQ(eval_ * 100);
+   else q = -leelaCpToQ(-eval_ * 100);
    return Math.round(100 * 100 * q) / 200;
 }
 
@@ -1119,21 +1131,21 @@ function getABPct(engineName, egEval)
    return (retStr);
 }
 
-function getPct(engineName, eval)
+function getPct(engineName, eval_)
 {
    var shortName = getShortEngineName(engineName);
 
-   if (isNaN(eval)) {
-      return (engineName + ' ' + eval);
+   if (isNaN(eval_)) {
+      return (engineName + ' ' + eval_);
    }
 
    if ((shortName == "LCZero") || (shortName == "AllieStein"))
    {
-      return (getNNPct(shortName, eval));
+      return (getNNPct(shortName, eval_));
    }
    else
    {
-      return (getABPct(shortName, eval));
+      return (getABPct(shortName, eval_));
    }
 }
 
@@ -1189,7 +1201,7 @@ function updateEnginePv(color, whiteToPlay, moves)
    var classhigh = '';
    if (typeof moves != 'undefined') {
 
-      currentMove = Math.floor(activePly / 2);
+      let currentMove = Math.floor(activePly / 2);
 
       if (color == 'white') {
          whitePv = moves;
@@ -1201,7 +1213,7 @@ function updateEnginePv(color, whiteToPlay, moves)
          //setPvFromKey(0, 'black', 0);
       }
 
-      keyOffset = 0;
+      let keyOffset = 0;
       if (color == 'black' && !whiteToPlay) {
          currentMove -= 2;
          // keyOffset = 1;
@@ -1213,14 +1225,14 @@ function updateEnginePv(color, whiteToPlay, moves)
       if (!whiteToPlay && color == "black") {
          currentMove++;
       }
-      setpvmove = -1;
+      let setpvmove = -1;
       $('#' + color + '-engine-pv').html('');
       $('.' + color + '-engine-pv').html('');
       _.each(moves, function(move, key) {
          classhigh = "";
-         effectiveKey = key + keyOffset;
-         pvMove = currentMove + Math.floor(effectiveKey / 2);
-         pvMoveNofloor = currentMove + effectiveKey;
+            let effectiveKey = key + keyOffset,
+                pvMove = currentMove + Math.floor(effectiveKey / 2),
+                pvMoveNofloor = currentMove + effectiveKey;
          if (whiteToPlay)
          {
             if (color == "white" && (highlightpv == key))
@@ -1394,7 +1406,7 @@ function findDiffPv(whitemoves, blackmoves)
 
    if (typeof whitemoves != 'undefined')
    {
-      currentMove = Math.floor(activePly / 2);
+      let currentMove = Math.floor(activePly / 2);
 
       if (!whiteToPlay)
       {
@@ -1403,7 +1415,7 @@ function findDiffPv(whitemoves, blackmoves)
 
       _.each(whitemoves, function(move, key)
       {
-         pvMove = currentMove + key;
+         let pvMove = currentMove + key;
          if (whiteToPlay)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
@@ -1425,8 +1437,8 @@ function findDiffPv(whitemoves, blackmoves)
 }
 
 $(document).on('click', '.change-move', function(e) {
-   clickedPly = $(this).attr('ply');
-   clickedFen = $(this).attr('fen');
+    let clickedPly = $(this).attr('ply'),
+        clickedFen = $(this).attr('fen');
    moveFrom = $(this).attr('from');
    moveTo = $(this).attr('to');
 
@@ -1485,7 +1497,7 @@ $(document).on('click', '#board-autoplay', function(e) {
       $('#board-autoplay i').addClass('fa-play');
    } else {
       isAutoplay = true;
-      $('#board-autoplay i').removeClass('fa-play')
+      $('#board-autoplay i').removeClass('fa-play');
       $('#board-autoplay i').addClass('fa-pause');
       boardAutoplay();
    }
@@ -1535,8 +1547,8 @@ $(document).on('click', '#board-to-last', function(e) {
 $(document).on('click', '#board-reverse', function(e) {
    board.flip();
 
-   newOrientation = board.orientation();
-
+    let oldOrientation,
+        newOrientation = board.orientation();
    if (board.orientation() == 'black') {
       oldOrientation = 'white';
    } else {
@@ -1575,7 +1587,8 @@ function handlePlyChange(handleclick)
 
    whiteToPlay = (activePly % 2 == 0);
 
-   whiteEval = blackEval = '';
+    let blackEval = '',
+        whiteEval = '';
 
    /* Ben: since index starts at 0, active ply should be -1 and -2 to be correct */
    if (whiteToPlay) {
@@ -1587,7 +1600,7 @@ function handlePlyChange(handleclick)
    }
 
    /* Arun: we should get move from ply - 1 as index starts at 0 */
-   currentMove = getMoveFromPly(activePly - 1);
+   let currentMove = getMoveFromPly(activePly - 1);
 
    if (activePly > 1)
    {
@@ -1623,10 +1636,10 @@ function handlePlyChange(handleclick)
 }
 
 $(document).on('click', '.set-pv-board', function(e) {
-   selectedId = $(this).closest('div').attr('id')
-   moveKey = $(this).attr('move-key') * 1;
-   pvColor = $(this).attr('color');
-   hist = $(this).attr('hist');
+   let selectedId = $(this).closest('div').attr('id'),
+       moveKey = $(this).attr('move-key') * 1,
+       pvColor = $(this).attr('color'),
+       hist = $(this).attr('hist');
    if (pvColor == 'live')
    {
       $('#v-pills-pv-analys-tab').click();
@@ -1648,7 +1661,7 @@ $(document).on('click', '.set-pv-board', function(e) {
       activePv = blackPv.slice();
       setPvFromKey(moveKey, pvColor);
    } else {
-      liveKey = $(this).attr('engine');
+      let liveKey = $(this).attr('engine');
       plog ("liveKey is :" + liveKey);
       activePv = livePvs[liveKey];
       if (hist)
@@ -1737,13 +1750,15 @@ function setPvFromKey(moveKey, pvColor, choosePvx)
    }
    setActiveKey(pvColor, moveKey);
 
-   moveFromPv = activePv[moveKey].from;
-   moveToPv = activePv[moveKey].to;
-   fen = activePv[moveKey].fen;
+    let moveFromPv = activePv[moveKey].from,
+        moveToPv = activePv[moveKey].to,
+        fen = activePv[moveKey].fen;
    game.load(fen);
    var pvBoardElbL = null;
 
    $('.active-pv-move').removeClass('active-pv-move');
+
+   let pvBoardL;
    if (pvColor == 'white')
    {
       if (pvBoardw != undefined)
@@ -1915,7 +1930,7 @@ $('.pv-board-autoplay1').click(function(e) {
       $('.pv-board-autoplay1 i').addClass('fa-play');
    } else {
       isPvAutoplay[0] = true;
-      $('.pv-board-autoplay1 i').removeClass('fa-play')
+      $('.pv-board-autoplay1 i').removeClass('fa-play');
       $('.pv-board-autoplay1 i').addClass('fa-pause');
       pvBoardautoplay(0, 'white', whitePv);
    }
@@ -1931,7 +1946,7 @@ $('.pv-board-autoplay2').click(function(e) {
       $('.pv-board-autoplay2 i').addClass('fa-play');
    } else {
       isPvAutoplay[1] = true;
-      $('.pv-board-autoplay2 i').removeClass('fa-play')
+      $('.pv-board-autoplay2 i').removeClass('fa-play');
       $('.pv-board-autoplay2 i').addClass('fa-pause');
       pvBoardautoplay(1, 'black', blackPv);
    }
@@ -2014,7 +2029,7 @@ function setMoveMaterial(material, whiteToPlay)
 {
    _.forOwn(material, function(value, key) {
       setPieces(key, value, whiteToPlay);
-   })
+   });
 }
 
 function setPieces(piece, value, whiteToPlay) {
@@ -2030,8 +2045,8 @@ function setPieces(piece, value, whiteToPlay) {
    $('#white-material span.' + piece).html('');
    $('#black-material span.' + piece).html('');
 
-   for (i = 0; i < value; i++) {
-      imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
+   for (let i = 0; i < value; i++) {
+      let imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
       $('#' + target + ' span.' + piece).append('<img src="' + imgPath + '" class="engine-material" />');
    }
 }
@@ -2155,7 +2170,7 @@ function crossFormatter(value, row, index, field) {
 
       if (engine.Result == "0.5")
       {
-         engine.Result = '&frac12'
+         engine.Result = '&frac12';
          gameXColor = 2;
       }
       else
@@ -2181,7 +2196,7 @@ function crossFormatter(value, row, index, field) {
 
 var numberEngines = 0;
 
-function formatter(value, row, index, field) {
+function formatter(value, _row, index, _field) {
    if (!value.hasOwnProperty("Score")) // true
    {
       return value;
@@ -2200,7 +2215,7 @@ function formatter(value, row, index, field) {
 
       if (engine.Result == "0.5")
       {
-         engine.Result = '&frac12'
+         engine.Result = '&frac12';
          gameXColor = 2;
       }
       else
@@ -2501,7 +2516,7 @@ function updateTourStat(data)
       tinfoData.crashes = tinfoData.crashes[0] + ' [';
       for (let i = 0 ; i < crashes.length ; i++)
       {
-         var gameNox = crashes[i];
+         gameNox = crashes[i];
          tinfoData.crashes += '<a title="' + gameNox + '" style="cursor:pointer; color: ' + gameArrayClass[0] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>';
          if (i < crashes.length - 1)
          {
@@ -2681,8 +2696,7 @@ var onDragStart = function(source, piece, position, orientation)
    }
 };
 
-var onDragMove = function(newLocation, oldLocation, source,
-   piece, position, orientation)
+var onDragMove = function(newLocation, oldLocation, source, piece, position, orientation)
 {
    var move = game.move({
       from: newLocation,
@@ -2707,7 +2721,7 @@ var onDragMove = function(newLocation, oldLocation, source,
       return;
    }
 
-   var str = newLocation + '-' + oldLocation;+ '-' + newLocation;
+   var str = newLocation + '-' + oldLocation;   // + '-' + newLocation;
    pvBoarda.move(str);
    fen = pvBoarda.fen();
    activePv[pvLen] = {};
@@ -2950,7 +2964,7 @@ function setDark()
    $('.toggleDark').find('i').addClass('fa-sun');
    $('body').addClass('dark');
    setTwitchBackground(2);
-   setTwitchChatUrl(true)
+   setTwitchChatUrl(true);
    $('#info-frame').attr('src', 'info.html?body=dark');
    $('#crosstable').addClass('table-dark');
    $('#schedule').addClass('table-dark');
@@ -3062,6 +3076,7 @@ function setEngineColor(color)
 
 function updateLiveEvalDataHistory(datum, fen, container, contno)
 {
+    let score;
    if (!isNaN(datum.eval))
    {
       score = parseFloat(datum.eval);
@@ -3076,7 +3091,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
    {
       if (!isNaN(score))
       {
-         /* Invert the score */ 	  
+         /* Invert the score */
          score = parseFloat(score) * -1;
          if (score === 0)
          {
@@ -3084,7 +3099,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
          }
       }
    }
-	
+
    datum.eval = score;
    datum.tbhits = getTBHits(datum.tbhits);
    datum.nodes = getNodes(datum.nodes);
@@ -3101,13 +3116,13 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
       for (var i = 0, moveCount = 0; i < length; i++) {
          var str = split[i];
          if (isNaN(str.charAt(0))) {
-            moveResponse = chess.move(str);
+            let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
                plog("undefine move" + str,0);
                return;
             } else {
                currentFen = chess.fen();
-               newPv = {
+               let newPv = {
                   'from': moveResponse.from,
                   'to': moveResponse.to,
                   'm': moveResponse.san,
@@ -3138,6 +3153,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
    var evalStr = getPct(datum.engine, score);
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
    if (boardArrows) {
+       let color;
       if (contno == 2) {
          color = 'reds';
       }
@@ -3149,7 +3165,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
       }
    }
    $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-   livePvs[contno] = pvs
+   livePvs[contno] = pvs;
    activePvH[contno] =pvs;
    datum.eval = datum.origeval;
 }
@@ -3233,14 +3249,13 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       for (var i = 0, moveCount = 0; i < length; i++) {
          var str = split[i];
          if (isNaN(str.charAt(0))) {
-            moveResponse = chess.move(str);
+            let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
                plog("undefine move" + str);
                return;
             } else {
-
                currentFen = chess.fen();
-               newPv = {
+               let newPv = {
                   'from': moveResponse.from,
                   'to': moveResponse.to,
                   'm': moveResponse.san,
@@ -3273,6 +3288,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
 
    if (boardArrows) {
+       let color;
       if (contno == 2) {
          color = 'reds';
       }
@@ -3306,7 +3322,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
    }
 }
 
-function updateLiveEvalDataNew(datum, update, fen, contno, initial) {
+function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    var classhigh = '';
 
    if (!livepvupdate)
@@ -3364,14 +3380,13 @@ function updateLiveEvalDataNew(datum, update, fen, contno, initial) {
       for (var i = 0, moveCount = 0; i < length; i++) {
          var str = split[i];
          if (isNaN(str.charAt(0))) {
-            moveResponse = chess.move(str);
+            let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
                plog("undefine move" + str);
                return;
             } else {
-
                currentFen = chess.fen();
-               newPv = {
+               let newPv = {
                   'from': moveResponse.from,
                   'to': moveResponse.to,
                   'm': moveResponse.san,
@@ -3425,7 +3440,7 @@ function updateLiveEvalDataNew(datum, update, fen, contno, initial) {
    {
       x = (datum.plynum + 1)/2;
    }
-   var evalData = 
+   var evalData =
 	{
 		'x': x,
 		'y': score,
@@ -3435,7 +3450,7 @@ function updateLiveEvalDataNew(datum, update, fen, contno, initial) {
 
    if (prevevalData.ply != datum.plynum)
    {
-      prevevalData = {}; 
+      prevevalData = {};
    }
 
    if (prevevalData.eval != evalData.eval)
@@ -3452,8 +3467,6 @@ function updateLiveEvalDataNew(datum, update, fen, contno, initial) {
    }
    prevevalData = evalData;
 }
-
-var engine2LiveData = undefined;
 
 function updateLiveEval() {
    axios.get('data.json?no-cache' + (new Date()).getTime())
@@ -3987,14 +4000,14 @@ function updateEngineInfo(divx, divimg, data)
    addToolTip(divx, divimg);
 }
 
-function addToolTipInit(divx, divimg, direction)
+function addToolTipInit(_divx, divimg, direction)
 {
    $(divimg).tooltipster({
       contentAsHTML: true,
       interactive: true,
       side: [direction],
       theme: 'tooltipster-shadow',
-      trigger: 'hover',
+    //   trigger: 'hover',
       delay: [500, 200],
       contentCloning: true,
       delayTouch: [10, 2000],
@@ -4032,19 +4045,19 @@ function initToolTip()
 function stopEvProp(e) {
    e.cancelBubble = !0;
    if (e.stopPropagation) {
-      e.stopPropagation()
+      e.stopPropagation();
    }
    if (e.preventDefault) {
-      e.preventDefault()
+      e.preventDefault();
    }
-   return !1
+   return !1;
 }
 
 function firstButtonMain()
 {
    activePly = 1;
    handlePlyChange();
-};
+}
 
 function firstButton()
 {
@@ -4063,7 +4076,7 @@ function firstButton()
          $('.pv-board-to-first2').click();
       }
    }
-};
+}
 
 function backButtonMain()
 {
@@ -4073,7 +4086,7 @@ function backButtonMain()
    handlePlyChange();
 
    return false;
-};
+}
 
 function backButton()
 {
@@ -4147,18 +4160,18 @@ function endButton()
          $('.pv-board-to-last2').click();
       }
    }
-};
+}
 
 function tcecHandleKey(e)
 {
-   var keycode, oldPly, oldVar, colRow, colRowList;
+   var keycode;     // , oldPly, oldVar, colRow, colRowList;
    if (!e)
    {
-      e = window.event
+      e = window.event;
    }
    keycode = e.keyCode;
    if (e.altKey || e.ctrlKey || e.metaKey) {
-      return !0
+      return !0;
    }
 
    switch (keycode)
@@ -4176,20 +4189,20 @@ function tcecHandleKey(e)
       endButton();
       break;
       default:
-      return !0
+      return !0;
    }
-   return stopEvProp(e)
+   return stopEvProp(e);
 }
 
 function simpleAddEvent(obj, evt, cbk)
 {
    if (obj.addEventListener)
    {
-      obj.addEventListener(evt, cbk, !1)
+      obj.addEventListener(evt, cbk, !1);
    }
    else if (obj.attachEvent)
    {
-      obj.attachEvent("on" + evt, cbk)
+      obj.attachEvent("on" + evt, cbk);
    }
 }
 simpleAddEvent(document, "keydown", tcecHandleKey);
@@ -4278,75 +4291,75 @@ function initTables()
       {
          field: 'Gamesort',
          title: 'sortnumber',
-         visible: false
+         visible: false,
       },
       {
          field: 'h2hrank',
-         title: 'Game#'
-         ,sortable: true
-         ,sorter: schedSorted
-         ,sortName: 'Gamesort'
-         ,align: 'left'
+         title: 'Game#',
+         sortable: true,
+         sorter: schedSorted,
+         sortName: 'Gamesort',
+         align: 'left',
       },
       {
          field: 'FixWhite',
-         title: 'White'
-         ,sortable: true
+         title: 'White',
+         sortable: true,
       },
       {
          field: 'WhiteEv',
-         title: 'W.Ev'
-         ,sortable: true
+         title: 'W.Ev',
+         sortable: true,
       },
       {
          field: 'BlackEv',
-         title: 'B.Ev'
-         ,sortable: true
+         title: 'B.Ev',
+         sortable: true,
       },
       {
          field: 'FixBlack',
-         title: 'Black'
-         ,sortable: true
+         title: 'Black',
+         sortable: true,
       },
       {
          field: 'Result',
-         title: 'Result'
-         ,sortable: true
+         title: 'Result',
+         sortable: true,
       },
       {
          field: 'Moves',
-         title: 'Moves'
-         ,sortable: true
+         title: 'Moves',
+         sortable: true,
       },
       {
          field: 'Duration',
-         title: 'Duration'
-         ,sortable: true
+         title: 'Duration',
+         sortable: true,
       },
       {
          field: 'Opening',
          title: 'Opening',
          sortable: true,
-         align: 'left'
+         align: 'left',
       },
       {
          field: 'Termination',
-         title: 'Termination'
-         ,sortable: true
+         title: 'Termination',
+         sortable: true,
       },
       {
          field: 'ECO',
-         title: 'ECO'
-         ,sortable: true
+         title: 'ECO',
+         sortable: true,
       },
       {
          field: 'FinalFen',
          title: 'Final Fen',
-         align: 'left'
+         align: 'left',
       },
       {
          field: 'Start',
-         title: 'Start'
+         title: 'Start',
       }
       ]
    });
@@ -4370,70 +4383,70 @@ function initTables()
       },
       {
          field: 'Game',
-         title: 'Game#'
-         ,sortable: true
-         ,sorter: schedSorted
-         ,sortName: 'Gamesort'
+         title: 'Game#',
+         sortable: true,
+         sorter: schedSorted,
+         sortName: 'Gamesort',
       },
       {
          field: 'FixWhite',
-         title: 'White'
-         ,sortable: true
+         title: 'White',
+         sortable: true,
       },
       {
          field: 'WhiteEv',
-         title: 'Ev'
-         ,sortable: true
+         title: 'Ev',
+         sortable: true,
       },
       {
          field: 'FixBlack',
-         title: 'Black'
-         ,sortable: true
+         title: 'Black',
+         sortable: true,
       },
       {
          field: 'BlackEv',
-         title: 'Ev'
-         ,sortable: true
+         title: 'Ev',
+         sortable: true,
       },
       {
          field: 'Result',
-         title: 'Result'
-         ,sortable: true
+         title: 'Result',
+         sortable: true,
       },
       {
          field: 'Moves',
-         title: 'Moves'
-         ,sortable: true
+         title: 'Moves',
+         sortable: true,
       },
       {
          field: 'Duration',
-         title: 'Duration'
-         ,sortable: true
+         title: 'Duration',
+         sortable: true,
       },
       {
          field: 'Opening',
          title: 'Opening',
          sortable: true,
-         align: 'left'
+         align: 'left',
       },
       {
          field: 'Termination',
-         title: 'Termination'
-         ,sortable: true
+         title: 'Termination',
+         sortable: true,
       },
       {
          field: 'ECO',
-         title: 'ECO'
-         ,sortable: true
+         title: 'ECO',
+         sortable: true,
       },
       {
          field: 'FinalFen',
          title: 'Final Fen',
-         align: 'left'
+         align: 'left',
       },
       {
          field: 'Start',
-         title: 'Start'
+         title: 'Start',
       }
       ]
    });
@@ -4551,21 +4564,21 @@ function initTables()
    standColumns = [
    {
       field: 'rank',
-      title: 'Rank'
-      ,sortable: true
-      ,width: '4%'
+      title: 'Rank',
+      sortable: true,
+      width: '4%',
    },
    {
       field: 'name',
-      title: 'Engine'
-      ,sortable: true
-      ,width: '18%'
+      title: 'Engine',
+      sortable: true,
+      width: '18%',
    },
    {
       field: 'points',
-      title: 'Points'
-      ,sortable: true
-      ,width: '7%'
+      title: 'Points',
+      sortable: true,
+      width: '7%',
    }
    ];
 
@@ -4613,73 +4626,73 @@ function initTables()
       ]
    });
 
-   crossColumns = [
+   let crossColumns = [
    {
       field: 'rank',
-      title: 'Rank'
-      ,sortable: true
-      ,width: '4%'
-      ,cellStyle: crossCellformatter
+      title: 'Rank',
+      sortable: true,
+      width: '4%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'name',
-      title: 'Engine'
-      ,sortable: true
-      ,width: '28%'
-      ,cellStyle: crossCellformatter
+      title: 'Engine',
+      sortable: true,
+      width: '28%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'games',
-      title: '# Games'
-      ,sortable: true
-      ,width: '4%'
-      ,cellStyle: crossCellformatter
+      title: '# Games',
+      sortable: true,
+      width: '4%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'points',
-      title: 'Points'
-      ,sortable: true
-      ,width: '7%'
-      ,cellStyle: crossCellformatter
+      title: 'Points',
+      sortable: true,
+      width: '7%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'crashes',
-      title: 'Crashes'
-      ,sortable: true
-      ,width: '4%'
-      ,cellStyle: crossCellformatter
+      title: 'Crashes',
+      sortable: true,
+      width: '4%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'wins',
-      title: 'Wins [W/B]'
-      ,width: '10%'
-      ,cellStyle: crossCellformatter
+      title: 'Wins [W/B]',
+      width: '10%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'loss',
-      title: 'Loss [W/B]'
-      ,width: '10%'
-      ,cellStyle: crossCellformatter
+      title: 'Loss [W/B]',
+      width: '10%',
+      cellStyle: crossCellformatter,
    },
    {
       field: 'sb',
-      title: 'SB'
-      ,sortable: true
-      ,cellStyle: crossCellformatter
-      ,width: '4%'
+      title: 'SB',
+      sortable: true,
+      cellStyle: crossCellformatter,
+      width: '4%',
    },
    {
       field: 'elo',
-      title: 'Elo'
-      ,cellStyle: crossCellformatter
-      ,sortable: true
-      ,width: '5%'
+      title: 'Elo',
+      cellStyle: crossCellformatter,
+      sortable: true,
+      width: '5%',
    },
    {
       field: 'elo_diff',
-      title: 'Diff [Live]'
-      ,width: '7%'
-      ,cellStyle: crossCellformatter
+      title: 'Diff [Live]',
+      width: '7%',
+      cellStyle: crossCellformatter,
    }
    ];
 
@@ -4757,16 +4770,16 @@ function hideBanner(timeDispl)
 
    setTimeout(function()
    {
-      close = document.getElementById("close");
-      note = document.getElementById("note");
+    //   let close = document.getElementById("close");
+      let note = document.getElementById("note");
       note.style.display = 'none';
    }, timeDispl);
 }
 
 function showBanner(data)
 {
-   close = document.getElementById("close");
-   note = document.getElementById("note");
+//    let close = document.getElementById("close");
+   let note = document.getElementById("note");
    note.style.display = 'inline';
    document.getElementById("notetext").textContent = data.message;
    if (data.timeout == undefined)
@@ -4843,16 +4856,16 @@ function scheduleToTournamentInfo(schedJson)
       minMoves: [9999999,-1],
       maxMoves: [0,-1],
       avgMoves: 0,
-      minTime:["99:59:59",-1],
-      maxTime:["00:00:00",-1],
+      minTime: ["99:59:59",-1],
+      maxTime: ["00:00:00",-1],
       avgTime: new Date(0),
       totalTime: -1,
-      winRate:0,
-      drawRate:0,
-      whiteWins:0,
-      blackWins:0,
-      crashes:[0,[]]
-   }
+      winRate: 0,
+      drawRate: 0,
+      whiteWins: 0,
+      blackWins: 0,
+      crashes: [0, []],
+   };
 
    let len = schedJson.length;
    let avgTime = 0;
@@ -4894,10 +4907,9 @@ function scheduleToTournamentInfo(schedJson)
          data.blackWins+=1;
       }
    }
-   ;
    data.avgMoves = Math.round(data.avgMoves/compGames);
 
-   let draws = compGames - data.whiteWins - data.blackWins
+   let draws = compGames - data.whiteWins - data.blackWins;
    data.drawRate = divide2Decimals(draws * 100, compGames) + "%";
 
    data.winRateW = divide2Decimals(data.whiteWins *100, compGames) + "%";
@@ -4937,7 +4949,7 @@ function hhmm(secs)
 {
    var minutes = Math.floor(secs / 60);
    secs = secs%60;
-   var hours = Math.floor(minutes/60)
+   var hours = Math.floor(minutes/60);
    minutes = minutes%60;
    return `${pad(hours)}:${pad(minutes)}`;
    // return pad(hours)+":"+pad(minutes)+":"+pad(secs); for old browsers
@@ -4947,7 +4959,7 @@ function hhmmss(secs)
 {
    var minutes = Math.floor(secs / 60);
    secs = secs%60;
-   var hours = Math.floor(minutes/60)
+   var hours = Math.floor(minutes/60);
    minutes = minutes%60;
    var days = Math.floor(hours/24);
    hours = hours%24;
@@ -5115,7 +5127,7 @@ function eventCrosstableWrap()
       {
          $('#eventdiv').hide();
          $('#bracketdiv').hide();
-         $('.nav-pills a[href="#pills-stand"]').tab('show')
+         $('.nav-pills a[href="#pills-stand"]').tab('show');
          return;
       }
    }
@@ -5140,11 +5152,11 @@ function bracketDataMain(data)
       roundResults = data.matchresults;
       bigData.results = data.results;
    }
-   for (var i = roundResults.length + 1; i <= 32; i++)
+   for (let i = roundResults.length + 1; i <= 32; i++)
    {
       roundResults[i-1] = [{lead:-1, score: -1}, {lead:-1, score: -1}];
    }
-   for (var i = bigData.teams.length + 1; i <= 16; i++)
+   for (let i = bigData.teams.length + 1; i <= 16; i++)
    {
       bigData.teams[i-1] = [{name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]),
                              score: -1, rank: '1', date: '', lead: 0},
@@ -5162,31 +5174,31 @@ function drawBracket1()
    var roundNox = 2;
    getDateRound();
 
-   function onClick(data)
-   {
-      //alert(data);
-   }
-   /* Edit function is called when team label is clicked */
-   function edit_fn1(container, data, doneCb) {
-     var input = $('<input type="text">')
-     input.val(data ? data.flag + ':' + data.name : '')
-     container.html(input)
-     input.focus()
-     input.blur(function() {
-       var inputValue = input.val()
-       if (inputValue.length === 0) {
-         doneCb(null); // Drop the team and replace with BYE
-       } else {
-         var flagAndName = inputValue.split(':') // Expects correct input
-         doneCb({flag: flagAndName[0], name: flagAndName[1]})
-       }
-     })
-   }
-   function edit_fn(container, data, doneCb) {
+//    function onClick(data)
+//    {
+//       //alert(data);
+//    }
+//    /* Edit function is called when team label is clicked */
+//    function edit_fn1(container, data, doneCb) {
+//      var input = $('<input type="text">')
+//      input.val(data ? data.flag + ':' + data.name : '');
+//      container.html(input);
+//      input.focus();
+//      input.blur(function() {
+//        var inputValue = input.val();
+//        if (inputValue.length === 0) {
+//          doneCb(null); // Drop the team and replace with BYE
+//        } else {
+//          var flagAndName = inputValue.split(':'); // Expects correct input
+//          doneCb({flag: flagAndName[0], name: flagAndName[1]});
+//        }
+//      });
+//    }
+   function edit_fn(_container, _data, _doneCb) {
       return;
    }
 
-   function render_fn2(container, data, score, state) {
+   function render_fn2(container, data, _score, state) {
         var localRound = parseInt(roundNox/2) - 1;
         var isFirst = roundNox%2;
         var dataName = 0;
@@ -5201,16 +5213,16 @@ function drawBracket1()
 
         switch(state) {
           case "empty-bye":
-            container.append("No team")
+            container.append("No team");
             return;
           case "empty-tbd":
             if (roundNox%2 == 1)
             {
-               var befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRound + 1) + '</a> ';
+               let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRound + 1) + '</a> ';
                befStr = befStr + '</div>';
                $(befStr).insertBefore(container);
             }
-            container.append("TBD")
+            container.append("TBD");
             return;
 
           case "entry-no-score":
@@ -5240,19 +5252,19 @@ function drawBracket1()
                if (manual == 1)
                {
                   appendStr = '<div class="bracket-name"> <a> ' + dataName + '</a> </div>' +
-                              '<div class="bracket-score orange"> <a> (' + scoreL + ')</a> </div>'
+                              '<div class="bracket-score orange"> <a> (' + scoreL + ')</a> </div>';
                   $(container).parent().addClass('bracket-name-orange');
                }
                else if (lead == 0)
                {
                   appendStr = '<div class="bracket-name"> <a> ' + dataName + '</a> </div>' +
-                              '<div class="bracket-score redb "> <a> (' + scoreL + ')</a> </div>'
+                              '<div class="bracket-score redb "> <a> (' + scoreL + ')</a> </div>';
                   $(container).parent().addClass('bracket-name-red');
                }
                else if (lead == 1)
                {
                   appendStr = '<div class="bracket-name"> <a> ' + dataName + '</a> </div>' +
-                              '<div class="bracket-score green"> <a> (' + scoreL + ')</a> </div>'
+                              '<div class="bracket-score green"> <a> (' + scoreL + ')</a> </div>';
                   $(container).parent().addClass('bracket-name-green');
                }
                else
@@ -5262,12 +5274,12 @@ function drawBracket1()
                      scoreL = 0;
                   }
                   appendStr = '<div class="bracket-name"> <a> ' + dataName + '</a> </div>' +
-                              '<div class="bracket-score"> <a> (' + scoreL + ')</a> </div>'
+                              '<div class="bracket-score"> <a> (' + scoreL + ')</a> </div>';
                   $(container).parent().addClass('bracket-name-current');
                }
                if (roundNox%2 == 1)
                {
-                  var localRoundL = localRound + 1;
+                  let localRoundL = localRound + 1;
                   if (localRoundL == 31)
                   {
                      localRoundL = 32;
@@ -5276,7 +5288,7 @@ function drawBracket1()
                   {
                      localRoundL = 31;
                   }
-                  var befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
+                  let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
                   if (roundDate[localRound] != undefined)
                   {
                      //befStr = befStr + '<a> ' + roundDate[localRound] + '</a> </div>';
@@ -5292,7 +5304,7 @@ function drawBracket1()
             }
             else
             {
-               var localRoundL = localRound + 1;
+               let localRoundL = localRound + 1;
                if (localRoundL == 31)
                {
                   localRoundL = 32;
@@ -5303,11 +5315,13 @@ function drawBracket1()
                }
                if (roundNox%2 == 1)
                {
-                  var befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
+                  let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
                   befStr = befStr + '</div>';
                   $(befStr).insertBefore(container);
                }
-               container.append('<img class="bracket-material" src="img/engines/'+data.flag+'.jpg" />').append('<div class="bracket-name"> <a> ' + dataName + '</a> </div>')
+               container
+                    .append('<img class="bracket-material" src="img/engines/'+data.flag+'.jpg" />')
+                    .append('<div class="bracket-name"> <a> ' + dataName + '</a> </div>');
             }
 
             if (roundNox > 64)
@@ -5330,8 +5344,7 @@ function drawBracket1()
             roundMargin: 18,
             init: bigData,
             //skipConsolationRound: true,
-            decorator: {edit: edit_fn,
-                        render: render_fn2}
+            decorator: {edit: edit_fn, render: render_fn2}
          });
       });
    }
@@ -5344,7 +5357,7 @@ function drawBracket1()
 
 function getSeededName(name)
 {
-   var engineName = 0;
+   let engineName = 0;
    _.each(teamsx, function(engine, key) {
       if (getShortEngineName(engine[0][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
       {
@@ -5378,7 +5391,7 @@ function getSeededName(name)
 
 function getDateRound()
 {
-   roundDate = [];
+   let roundDate = [];
    var diffData = 0;
 
    for (var x = 0 ; x <= totalEvents; x++)
@@ -5414,7 +5427,7 @@ function getDateRound()
 function getCurrDate(currdate, mins)
 {
    var timezoneDiff = moment().utcOffset() * 60 * 1000 + mins * 60 * 1000;
-   momentDate = moment(currdate, 'HH:mm:ss on YYYY.MM.DD');
+   let momentDate = moment(currdate, 'HH:mm:ss on YYYY.MM.DD');
    momentDate.add(timezoneDiff);
    return momentDate.format('MMM DD YYYY, HH:mm');
 }
@@ -5449,36 +5462,36 @@ async function eventCrosstable(data)
    $(divname).bootstrapTable('load', standings);
 }
 
-function eventCrosstableMainCooked(data)
-{
-   var myLocalData = dummyCross;
-   var myLocalDataStr = JSON.stringify(myLocalData);
-   plog("JSON is " + myLocalDataStr, 1);
-   myLocalData.skipDecide = 1;
-   updateCrosstableDataNew(data.match, myLocalData);
-   tablesLoaded[data.match] = 1;
-}
+// function eventCrosstableMainCooked(data)
+// {
+//    var myLocalData = dummyCross;
+//    var myLocalDataStr = JSON.stringify(myLocalData);
+//    plog("JSON is " + myLocalDataStr, 1);
+//    myLocalData.skipDecide = 1;
+//    updateCrosstableDataNew(data.match, myLocalData);
+//    tablesLoaded[data.match] = 1;
+// }
 
-function eventCrosstableMain(ii, filename)
-{
-   //filename = filename + '?no-cache' + (new Date()).getTime();
-   plog ("trying to read file " + filename);
-   axios.get(filename)
-   .then(function (r)
-   {
-      updateCrosstableDataNew(ii, r.data);
-      tablesLoaded[ii] = 1;
-      plog ("after trying to read file " + filename, 0);
-   })
-   .catch(function (error)
-   {
-      plog(error);
-      plog ("failed trying to read file " + filename + ", error: " + error, 0);
-      tablesLoaded[ii] = 0;
-   });
-}
+// function eventCrosstableMain(ii, filename)
+// {
+//    //filename = filename + '?no-cache' + (new Date()).getTime();
+//    plog ("trying to read file " + filename);
+//    axios.get(filename)
+//    .then(function (r)
+//    {
+//       updateCrosstableDataNew(ii, r.data);
+//       tablesLoaded[ii] = 1;
+//       plog ("after trying to read file " + filename, 0);
+//    })
+//    .catch(function (error)
+//    {
+//       plog(error);
+//       plog ("failed trying to read file " + filename + ", error: " + error, 0);
+//       tablesLoaded[ii] = 0;
+//    });
+// }
 
-function formatterEvent(value, row, index, field) {
+function formatterEvent(value, row, index, _field) {
    var retStr = '';
    var countGames = 0;
    var gameArray =  row.Gamesno.split(",");
@@ -5490,7 +5503,7 @@ function formatterEvent(value, row, index, field) {
 
       if (engine == "=")
       {
-         engine = '&frac12'
+         engine = '&frac12';
          gameXColor = 2;
       }
       else
@@ -5514,5 +5527,3 @@ function formatterEvent(value, row, index, field) {
    });
   return retStr;
 }
-
-

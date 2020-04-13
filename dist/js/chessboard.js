@@ -8,10 +8,14 @@
  * Date: $date$
  */
 
-// start anonymous scope
-;(function() {
+/*
+globals
+$, console, document, navigator, window
+*/
 'use strict';
 
+// start anonymous scope
+;(function() {
 //------------------------------------------------------------------------------
 // Chess Util Functions
 //------------------------------------------------------------------------------
@@ -51,7 +55,7 @@ function validFen(fen) {
   if (chunks.length !== 8) return false;
 
   // check the piece sections
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     if (chunks[i] === '' ||
         chunks[i].length > 8 ||
         chunks[i].search(/[^kqrbnpKQRNBP1-8]/) !== -1) {
@@ -65,7 +69,7 @@ function validFen(fen) {
 function validPositionObject(pos) {
   if (typeof pos !== 'object') return false;
 
-  for (var i in pos) {
+  for (let i in pos) {
     if (pos.hasOwnProperty(i) !== true) continue;
 
     if (validSquare(i) !== true || validPieceCode(pos[i]) !== true) {
@@ -115,12 +119,12 @@ function fenToObj(fen) {
   var position = {};
 
   var currentRow = 8;
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     var row = rows[i].split('');
     var colIndex = 0;
 
     // loop through each character in the FEN section
-    for (var j = 0; j < row.length; j++) {
+    for (let j = 0; j < row.length; j++) {
       // number / empty squares
       if (row[j].search(/[1-8]/) !== -1) {
         var emptySquares = parseInt(row[j], 10);
@@ -147,11 +151,10 @@ function objToFen(obj) {
     return false;
   }
 
-  var fen = '';
-
-  var currentRow = 8;
-  for (var i = 0; i < 8; i++) {
-    for (var j = 0; j < 8; j++) {
+  let fen = '',
+      currentRow = 8;
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
       var square = COLUMNS[j] + currentRow;
 
       // piece exists
@@ -173,19 +176,10 @@ function objToFen(obj) {
   }
 
   // squeeze the numbers together
-  // haha, I love this solution...
-  fen = fen.replace(/11111111/g, '8');
-  fen = fen.replace(/1111111/g, '7');
-  fen = fen.replace(/111111/g, '6');
-  fen = fen.replace(/11111/g, '5');
-  fen = fen.replace(/1111/g, '4');
-  fen = fen.replace(/111/g, '3');
-  fen = fen.replace(/11/g, '2');
-
-  return fen;
+  return fen.replace(/(1{2,8})/g, match => match.length);
 }
 
-window['ChessBoard'] = window['ChessBoard'] || function(containerElOrId, cfg) {
+window.ChessBoard = window.ChessBoard || function(containerElOrId, cfg) {
 
 cfg = cfg || {};
 
@@ -457,8 +451,7 @@ function expandConfig() {
   }
 
   // default color board theme
-  if (cfg.hasOwnProperty('boardTheme') !== true ||
-      cfg.boardTheme.length != 2 ){
+  if (!Array.isArray(cfg.boardTheme) || cfg.boardTheme.length != 2 ){
     cfg.boardTheme = ["#f0d9b5", "#b58863"];
   }
 
@@ -536,8 +529,8 @@ function calculateSquareSize() {
 // create random IDs for elements
 function createElIds() {
   // squares on the board
-  for (var i = 0; i < COLUMNS.length; i++) {
-    for (var j = 1; j <= 8; j++) {
+  for (let i = 0; i < COLUMNS.length; i++) {
+    for (let j = 1; j <= 8; j++) {
       var square = COLUMNS[i] + j;
       SQUARE_ELS_IDS[square] = square + '-' + uuid();
     }
@@ -545,7 +538,7 @@ function createElIds() {
 
   // spare pieces
   var pieces = 'KQRBNP'.split('');
-  for (var i = 0; i < pieces.length; i++) {
+  for (let i = 0; i < pieces.length; i++) {
     var whitePiece = 'w' + pieces[i];
     var blackPiece = 'b' + pieces[i];
     SPARE_PIECE_ELS_IDS[whitePiece] = whitePiece + '-' + uuid();
@@ -629,7 +622,7 @@ function buildOverlay() {
     overlayEl.empty();
     overlayEl.append(defsEl);
   }
-};  
+}
 
 
 /*
@@ -664,9 +657,9 @@ function buildBoard(orientation) {
   }
 
   var squareColor = 'white';
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     html += '<div class="' + CSS.row + '">';
-    for (var j = 0; j < 8; j++) {
+    for (let j = 0; j < 8; j++) {
       var square = alpha[j] + row;
 
       html += '<div class="' + CSS.square + ' ' + CSS[squareColor] + ' ' +
@@ -748,7 +741,7 @@ function buildSparePieces(color) {
   }
 
   var html = '';
-  for (var i = 0; i < pieces.length; i++) {
+  for (let i = 0; i < pieces.length; i++) {
     html += buildPiece(pieces[i], false, SPARE_PIECE_ELS_IDS[pieces[i]]);
   }
 
@@ -867,7 +860,7 @@ function doAnimations(a, oldPos, newPos) {
     }
   }
 
-  for (var i = 0; i < a.length; i++) {
+  for (let i = 0; i < a.length; i++) {
     // clear a piece
     if (a[i].type === 'clear') {
       $('#' + SQUARE_ELS_IDS[a[i].square] + ' .' + CSS.piece)
@@ -917,8 +910,8 @@ function createRadius(square) {
   var squares = [];
 
   // calculate distance of all squares
-  for (var i = 0; i < 8; i++) {
-    for (var j = 0; j < 8; j++) {
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
       var s = COLUMNS[i] + (j + 1);
 
       // skip the square we're starting from
@@ -938,7 +931,7 @@ function createRadius(square) {
 
   // just return the square code
   var squares2 = [];
-  for (var i = 0; i < squares.length; i++) {
+  for (let i = 0; i < squares.length; i++) {
     squares2.push(squares[i].square);
   }
 
@@ -952,7 +945,7 @@ function findClosestPiece(position, piece, square) {
   var closestSquares = createRadius(square);
 
   // search through the position in order of distance for the piece
-  for (var i = 0; i < closestSquares.length; i++) {
+  for (let i = 0; i < closestSquares.length; i++) {
     var s = closestSquares[i];
 
     if (position.hasOwnProperty(s) === true && position[s] === piece) {
@@ -974,7 +967,7 @@ function calculateAnimations(pos1, pos2) {
   var squaresMovedTo = {};
 
   // remove pieces that are the same in both positions
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     if (pos1.hasOwnProperty(i) === true && pos1[i] === pos2[i]) {
@@ -984,7 +977,7 @@ function calculateAnimations(pos1, pos2) {
   }
 
   // find all the "move" animations
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     var closestPiece = findClosestPiece(pos1, pos2[i], i);
@@ -1003,20 +996,20 @@ function calculateAnimations(pos1, pos2) {
   }
 
   // add pieces to pos2
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     animations.push({
       type: 'add',
       square: i,
       piece: pos2[i]
-    })
+    });
 
     delete pos2[i];
   }
 
   // clear pieces from pos1
-  for (var i in pos1) {
+  for (let i in pos1) {
     if (pos1.hasOwnProperty(i) !== true) continue;
 
     // do not clear a piece if it is on a square that is the result
@@ -1044,7 +1037,7 @@ function drawPositionInstant() {
   boardEl.find('.' + CSS.piece).remove();
 
   // add the pieces
-  for (var i in CURRENT_POSITION) {
+  for (let i in CURRENT_POSITION) {
     if (CURRENT_POSITION.hasOwnProperty(i) !== true) continue;
 
     $('#' + SQUARE_ELS_IDS[i]).append(buildPiece(CURRENT_POSITION[i]));
@@ -1055,11 +1048,11 @@ function addBoardTheme() {
   var wcol = cfg.boardTheme[0];
   var bcol = cfg.boardTheme[1];
 
-  containerEl.find(".white-1e1d7").css("background-color", wcol)
-  containerEl.find(".white-1e1d7").css("color", bcol)
+  containerEl.find(".white-1e1d7").css("background-color", wcol);
+  containerEl.find(".white-1e1d7").css("color", bcol);
 
-  containerEl.find(".black-3c85d").css("background-color", bcol)
-  containerEl.find(".black-3c85d").css("color", wcol)
+  containerEl.find(".black-3c85d").css("background-color", bcol);
+  containerEl.find(".black-3c85d").css("color", wcol);
 
 
 }
@@ -1085,7 +1078,7 @@ function drawBoard() {
 function calculatePositionFromMoves(position, moves) {
   position = deepCopy(position);
 
-  for (var i in moves) {
+  for (let i in moves) {
     if (moves.hasOwnProperty(i) !== true) continue;
 
     // skip the move if the position doesn't have a piece on the source square
@@ -1119,7 +1112,7 @@ function setCurrentPosition(position) {
 }
 
 function isXYOnSquare(x, y) {
-  for (var i in SQUARE_ELS_OFFSETS) {
+  for (let i in SQUARE_ELS_OFFSETS) {
     if (SQUARE_ELS_OFFSETS.hasOwnProperty(i) !== true) continue;
 
     var s = SQUARE_ELS_OFFSETS[i];
@@ -1136,7 +1129,7 @@ function isXYOnSquare(x, y) {
 function captureSquareOffsets() {
   SQUARE_ELS_OFFSETS = {};
 
-  for (var i in SQUARE_ELS_IDS) {
+  for (let i in SQUARE_ELS_IDS) {
     if (SQUARE_ELS_IDS.hasOwnProperty(i) !== true) continue;
 
     SQUARE_ELS_OFFSETS[i] = $('#' + SQUARE_ELS_IDS[i]).offset();
@@ -1378,7 +1371,7 @@ function stopDraggedPiece(location) {
 // SVG Overlay
 //------------------------------------------------------------------------------
 
-/* 
+/*
  * Construct an svg path string for an arrow drawn between two points.
  */
 function computePath(s1, s2) {
@@ -1387,19 +1380,19 @@ function computePath(s1, s2) {
     if(a > b) return +0.25;
     return 0;
   }
-  
+
   var start = { x: COLUMNS.indexOf(s1[0]), y: parseInt(s1[1], 10) -1 };
   var end   = { x: COLUMNS.indexOf(s2[0]), y: parseInt(s2[1], 10) -1 };
-  
+
   if(cfg.orientation == "white") {
     start.y = 7 - start.y;
     end.y   = 7 - end.y;
   }
-  
+
   var dist = { x: Math.abs(start.x - end.x), y: Math.abs(start.y - end.y) };
   var corner;   // Point of the dog-leg for knight moves
   var epsilon;  // To adjust the target coords to take account of the arrowhead.
-  
+
   if(dist.x != 0 && dist.y != 0 && dist.x != dist.y) {
     // Knight move; Calculate a corner point for the path, such that
     // the path dog-legs first along the long side, then short.
@@ -1415,13 +1408,13 @@ function computePath(s1, s2) {
   else {
     epsilon = {x: tristate(start.x, end.x), y: tristate(start.y, end.y) };
   }
-  
+
   var path = ["M", SQUARE_SIZE * (start.x + 0.5), SQUARE_SIZE * (start.y + 0.5)];
   if(corner !== undefined) {
     path.push("L", SQUARE_SIZE * (corner.x + 0.5) , SQUARE_SIZE * (corner.y + 0.5));
-  } 
+  }
   path.push("L", SQUARE_SIZE * (end.x + epsilon.x + 0.5), SQUARE_SIZE * (end.y + epsilon.y + 0.5));
-  
+
   return path.join(" ");
 }
 
@@ -1470,7 +1463,7 @@ widget.move = function() {
 
   // collect the moves into an object
   var moves = {};
-  for (var i = 0; i < arguments.length; i++) {
+  for (let i = 0; i < arguments.length; i++) {
     // any "false" to this function means no animations
     if (arguments[i] === false) {
       useAnimation = false;
@@ -1607,22 +1600,22 @@ widget.addArrowAnnotation = function(source, target, color, orientation) {
     var groupEl = overlayEl.find('> .square-' + source);
     if(!groupEl.length) {
       groupEl = createSvgEl("g", {
-        'class': CSS['overlayGroup'] + " square-" + source + " " + color
+        'class': CSS.overlayGroup + " square-" + source + " " + color
       });
       overlayEl.append(groupEl);
     }
-    
-    var pathEl = overlayEl.find("> g.square-" + source + " > path.square-" + target);
+
+    let pathEl = overlayEl.find("> g.square-" + source + " > path.square-" + target);
     if(!pathEl.length) {
-      var pathEl = createSvgEl("path", {
-        'class' :       CSS['overlayArrow'] + " square-" + target + " ",
+      pathEl = createSvgEl("path", {
+        'class' :       CSS.overlayArrow + " square-" + target + " ",
         'd':            computePath(source, target),
         'stroke-width': (SQUARE_SIZE / 6)
       });
       groupEl.append(pathEl);
     }
   }
-}
+};
 
 widget.removeArrowAnnotation = function(source, target) {
   if(cfg.overlay === true) {
@@ -1631,11 +1624,11 @@ widget.removeArrowAnnotation = function(source, target) {
       + (target !== undefined ? ' > path.square-' + target : '')
     ).remove();
   }
-}
+};
 
 widget.clearAnnotation = function() {
   buildOverlay();
-}
+};
 
 function reverseCoordinate(oldCoord)
 {

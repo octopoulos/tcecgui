@@ -1,7 +1,15 @@
+/*
+globals
+_, $, activeFen, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash, crosstableData:true,
+crossTimeout:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
+livePvs, newUpdateStandData, plog, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove
+*/
+'use strict';
+
 /**************** Extra functions *****************/
 function fixOrder()
 {
-   var crossData = crosstableData;
+   // var crossData = crosstableData;
    var arr = [];
    var count = 0;
    var debug = 1;
@@ -12,8 +20,8 @@ function fixOrder()
       engine.Rank = 0;
    });
 
-   var sorted = arr.slice().sort(function(a,b){return b-a})
-   var ranks = arr.slice().map(function(v){ return sorted.indexOf(v)+1 });
+    let sorted = arr.slice().sort((a, b) => (b - a)),
+        ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
    plog ("Ranks is :" + ranks, debug);
    count = 0;
    var tiePoints = 0;
@@ -95,8 +103,8 @@ function fixOrder()
       count = count + 1;
    });
 
-   var sorted = arr.slice().sort(function(b,a){return a-b})
-   var ranks = arr.slice().map(function(v){ return sorted.indexOf(v)+1 });
+   sorted = arr.slice().sort((b, a) => (a - b));
+   ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
    count = 0;
    plog ("rank kenght us :" + ranks.length, debug);
    plog ("Ranks is :" + ranks, debug);
@@ -145,7 +153,7 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
    livePvs[contno] = [];
    var livePvsC = livePvs[contno];
    var score = 0;
-   var tbhits = datum.tbhits;
+//    var tbhits = datum.tbhits;
 
    if (update && !viewingActiveMove)
    {
@@ -179,7 +187,7 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
       }
    }
 
-   pvs = [];
+   let pvs = [];
 
    if (datum.pv.length > 0 && datum.pv.trim() != "no info")
    {
@@ -190,13 +198,13 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
       datum.pv = datum.pv.replace("...", ". .. ");
       _.each(datum.pv.split(' '), function(move) {
          if (isNaN(move.charAt(0)) && move != '..') {
-            moveResponse = chess.move(move);
+            let moveResponse = chess.move(move);
 
             if (!moveResponse || typeof moveResponse == 'undefined') {
                plog("undefine move" + move);
             } else {
                currentFen = chess.fen();
-               newPv = {
+               let newPv = {
                   'from': moveResponse.from,
                   'to': moveResponse.to,
                   'm': moveResponse.san,
@@ -235,7 +243,7 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
          engineDatum.engine = datum.engine;
       }
 
-      parseScore = 0.00;
+      let parseScore = 0.00;
       if (isNaN(engineDatum.eval)) {
          parseScore = engineDatum.eval;
       } else {
@@ -251,7 +259,7 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
             var moveCount = 0;
             _.each(engineDatum.pv.split(' '), function(move) {
                if (isNaN(move.charAt(0)) && move != '..') {
-                  pvLocation = livePvsC[pvKey][moveCount];
+                  let pvLocation = livePvsC[pvKey][moveCount];
                   if (pvLocation) {
                      moveContainer = _.union(moveContainer, ["<a href='#' class='set-pv-board' live-pv-key='" + pvKey +
                         "' move-key='" + moveCount +
@@ -270,6 +278,7 @@ function updateLiveEvalDataOld(datum, update, fen, contno, initial)
             });
 
             if (boardArrows) {
+                let color;
                if (pvKey == 0) {
                   color = 'blue';
                } else {

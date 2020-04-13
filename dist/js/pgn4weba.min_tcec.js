@@ -1,3 +1,15 @@
+/*
+globals
+$, ActiveXObject, alert, clearTimeout, confirm, console, document, engineWin, engineWinCheck, engineWinOnMove, google,
+Image, jQuery, localStorage, location, navigator, prompt, setInterval, setTimeout, window, XMLHttpRequest
+*/
+'use strict';
+
+let blackPvMoves = '',
+    lastBlackPly,
+    lastWhitePly,
+    whitePvMoves = '';
+
 var InitLoad;
 var ClockCount;
 var PVCount;
@@ -36,13 +48,13 @@ var Sup;
 var Eli;
 var currentPage = window.location.pathname.split('/').pop();
 var hostName = window.location.hostname;
-"use strict";
+
 var pgn4web_version = '';
 var pgn4web_project_url = "http://pgn4web.casaschi.net";
 var pgn4web_project_author = "Paolo Casaschi";
 var pgn4web_project_email;
 if (typeof(pgn4web_project_email) == "undefined") {
-    pgn4web_project_email = "pgn4web@casaschi.net"
+    pgn4web_project_email = "pgn4web@casaschi.net";
 }
 var helpWin;
 var CurrentVar = -1;
@@ -69,7 +81,7 @@ var jsSeasonInt = 0;
 var finalInt = 0;
 var playOffInt = 0;
 var kver = 0;
-var moves = new Array();
+var moves = [];
 var pvfile = "tlcv_file_new2.txt";
 /* end of archives */
 
@@ -86,11 +98,11 @@ var knownHeight = 0;
 
 function displayHelp(section) {
     if (helpWin && !helpWin.closed) {
-        helpWin.close()
+        helpWin.close();
     }
     helpWin = window.open(detectHelpLocation() + (section ? "?" + section : ""), "pgn4web_help", "resizable=yes,scrollbars=yes,toolbar=no,location=no,menubar=no,status=no");
     if (helpWin && window.focus) {
-        helpWin.focus()
+        helpWin.focus();
     }
 }
 
@@ -108,18 +120,18 @@ function customPgnHeaderTag(customTag, htmlElementId, gameNum) {
     var matches, tag = "";
     customTag = customTag.replace(/\W+/g, "");
     if (gameNum === undefined) {
-        gameNum = currentGame
+        gameNum = currentGame;
     }
     if ((pgnHeader[gameNum]) && (matches = pgnHeader[gameNum].match('\\[\\s*' + customTag + '\\s*\"([^\"]+)\"\\s*\\]'))) {
-        tag = matches[1]
+        tag = matches[1];
     }
     if (htmlElementId) {
         var theObj = document.getElementById(htmlElementId);
         if ((theObj) && (typeof(theObj.innerHTML) == "string")) {
-            theObj.innerHTML = tag
+            theObj.innerHTML = tag;
         }
     }
-    return tag
+    return tag;
 }
 
 function customPgnCommentTag(customTag, htmlElementId, plyNum, varId) {
@@ -127,50 +139,50 @@ function customPgnCommentTag(customTag, htmlElementId, plyNum, varId) {
         theObj;
     customTag = customTag.replace(/\W+/g, "");
     if (typeof(varId) == "undefined") {
-        varId = 0
+        varId = 0;
     }
     if (typeof(plyNum) == "undefined") {
-        plyNum = CurrentPly
+        plyNum = CurrentPly;
     }
     if ((MoveCommentsVar[varId][plyNum]) && (matches = MoveCommentsVar[varId][plyNum].match('\\[%' + customTag + '\\s+((?:,?(?:"[^"]*"|[^,\\]]*))*)\\s*\\]'))) {
-        tag = matches[1].replace(/\s+$/, "")
+        tag = matches[1].replace(/\s+$/, "");
     }
     if ((htmlElementId) && (theObj = document.getElementById(htmlElementId)) && (typeof(theObj.innerHTML) == "string")) {
-        theObj.innerHTML = tag
+        theObj.innerHTML = tag;
     }
-    return tag
+    return tag;
 }
 
 function simpleAddEvent(obj, evt, cbk) {
     if (obj.addEventListener) {
-        obj.addEventListener(evt, cbk, !1)
+        obj.addEventListener(evt, cbk, !1);
     } else if (obj.attachEvent) {
-        obj.attachEvent("on" + evt, cbk)
+        obj.attachEvent("on" + evt, cbk);
     }
 }
 simpleAddEvent(document, "keydown", pgn4web_handleKey_event);
 simpleAddEvent(window, "load", pgn4web_onload_event);
 
 function pgn4web_onload_event(e) {
-    pgn4web_onload(e)
+    pgn4web_onload(e);
 }
 
 function pgn4web_onload(e) {
-    start_pgn4web()
+    start_pgn4web();
 }
 
 function start_pgn4web() {
     if (alertFirstResetLoadingPgn) {
-        alertFirstResetLoadingPgn = !1
+        alertFirstResetLoadingPgn = !1;
     } else {
-        resetAlert()
+        resetAlert();
     }
     InitImages();
     createBoard();
     if (LiveBroadcastDelay > 0) {
-        restartLiveBroadcastTimeout()
+        restartLiveBroadcastTimeout();
     }
-    pgn4web_initTouchEvents()
+    pgn4web_initTouchEvents();
 }
 var alertLog;
 var alertLast;
@@ -189,7 +201,7 @@ function resetAlert() {
     stopAlertPrompt();
     if (!alertFirstResetLoadingPgn) {
         if (boardIsDefault(debugShortcutSquare)) {
-            boardShortcut(debugShortcutSquare, "pgn4web v" + pgn4web_version + " debug info", null, !0)
+            boardShortcut(debugShortcutSquare, "pgn4web v" + pgn4web_version + " debug info", null, !0);
         }
     }
 }
@@ -265,95 +277,95 @@ function myAlert(msg, fatalError, doNotPrompt) {
     alertNum++;
     alertNumSinceReset++;
     if (fatalError) {
-        fatalErrorNumSinceReset++
+        fatalErrorNumSinceReset++;
     }
     alertLast = (alertLast + 1) % alertLog.length;
     alertLog[alertLast] = msg + "\n" + (new Date()).toLocaleString();
     if (boardIsDefault(debugShortcutSquare)) {
-        boardShortcut(debugShortcutSquare, "pgn4web v" + pgn4web_version + " debug info, " + alertNum + " alert" + (alertNum > 1 ? "s" : ""), null, !0)
+        boardShortcut(debugShortcutSquare, "pgn4web v" + pgn4web_version + " debug info, " + alertNum + " alert" + (alertNum > 1 ? "s" : ""), null, !0);
     }
-    if ((!doNotPrompt) && ((LiveBroadcastDelay === 0) || (LiveBroadcastAlert === !0)) && (boardIsDefault(debugShortcutSquare))) {
-        startAlertPrompt()
+    if ((!doNotPrompt) && ((LiveBroadcastDelay === 0) || (LiveBroadcastAlert === true)) && (boardIsDefault(debugShortcutSquare))) {
+        startAlertPrompt();
     }
-    customFunctionOnAlert(msg)
+    customFunctionOnAlert(msg);
 }
 
 function startAlertPrompt() {
     if (alertPromptOn) {
-        return
+        return;
     }
     if (alertPromptInterval) {
-        clearTimeout(alertPromptInterval)
+        clearTimeout(alertPromptInterval);
     }
-    alertPromptInterval = setTimeout("alertPromptTick(true);", 500)
+    alertPromptInterval = setTimeout(() => {alertPromptTick(true);}, 500);
 }
 
 function stopAlertPrompt() {
     if (alertPromptInterval) {
         clearTimeout(alertPromptInterval);
-        alertPromptInterval = null
+        alertPromptInterval = null;
     }
     if (alertPromptOn) {
-        alertPromptTick(!1)
+        alertPromptTick(!1);
     }
 }
 
 function alertPromptTick(restart) {
     if (alertPromptInterval) {
         clearTimeout(alertPromptInterval);
-        alertPromptInterval = null
+        alertPromptInterval = null;
     }
     var colRow = colRowFromSquare(debugShortcutSquare);
     if (!colRow) {
-        return
+        return;
     }
     var alertPromptDelay = 1500;
     var theObj = document.getElementById('tcol' + colRow.col + 'trow' + colRow.row);
     if (theObj) {
         if (alertPromptOn) {
             if ((highlightOption) && ((colFromHighlighted === 0 && rowFromHighlighted === 7) || (colToHighlighted === 0 && rowToHighlighted === 7))) {
-                theObj.className = 'highlightWhiteSquare'
+                theObj.className = 'highlightWhiteSquare';
             } else {
-                theObj.className = 'whiteSquare'
+                theObj.className = 'whiteSquare';
             }
         } else {
-            theObj.className = 'blackSquare'
+            theObj.className = 'blackSquare';
         }
         alertPromptOn = !alertPromptOn;
         if (alertPromptOn) {
-            alertPromptDelay = 500
+            alertPromptDelay = 500;
         } else {
-            alertPromptDelay = 3000
+            alertPromptDelay = 3000;
         }
     }
     if (restart) {
-        alertPromptInterval = setTimeout("alertPromptTick(true);", alertPromptDelay)
+        alertPromptInterval = setTimeout(() => {alertPromptTick(true);}, alertPromptDelay);
     }
 }
 
 function stopEvProp(e) {
     e.cancelBubble = !0;
     if (e.stopPropagation) {
-        e.stopPropagation()
+        e.stopPropagation();
     }
     if (e.preventDefault) {
-        e.preventDefault()
+        e.preventDefault();
     }
-    return !1
+    return !1;
 }
 var shortcutKeysWereEnabled = !1;
 
 function disableShortcutKeysAndStoreStatus() {
-    if ((shortcutKeysWereEnabled = shortcutKeysEnabled) === !0) {
-        SetShortcutKeysEnabled(!1)
+    if ((shortcutKeysWereEnabled = shortcutKeysEnabled) === true) {
+        SetShortcutKeysEnabled(!1);
     }
 }
 
 function restoreShortcutKeysStatus() {
-    if (shortcutKeysWereEnabled === !0) {
-        SetShortcutKeysEnabled(!0)
+    if (shortcutKeysWereEnabled === true) {
+        SetShortcutKeysEnabled(!0);
     }
-    shortcutKeysWereEnabled = !1
+    shortcutKeysWereEnabled = !1;
 }
 
 function customShortcutKey_Shift_0() {}
@@ -377,21 +389,21 @@ function customShortcutKey_Shift_8() {}
 function customShortcutKey_Shift_9() {}
 
 function pgn4web_handleKey_event(e) {
-    pgn4web_handleKey(e)
+    pgn4web_handleKey(e);
 }
 var shortcutKeysEnabled = !1;
 
 function pgn4web_handleKey(e) {
     var keycode, oldPly, oldVar, colRow, colRowList;
     if (!e) {
-        e = window.event
+        e = window.event;
     }
     keycode = e.keyCode;
     if (e.altKey || e.ctrlKey || e.metaKey) {
-        return !0
+        return !0;
     }
     if (!shortcutKeysEnabled && !(keycode == 27 && e.shiftKey)) {
-        return !0
+        return !0;
     }
     switch (keycode) {
         case 8:
@@ -410,27 +422,28 @@ function pgn4web_handleKey(e) {
             return !0;
         case 27:
             if (e.shiftKey) {
-                interactivelyToggleShortcutKeys()
+                interactivelyToggleShortcutKeys();
             } else {
-                displayHelp()
+                displayHelp();
             }
             break;
         case 189:
-            if (colRowList = prompt("Enter shortcut square coordinates to click:", "")) {
+            colRowList = prompt("Enter shortcut square coordinates to click:", "");
+            if (colRowList) {
                 colRowList = colRowList.toUpperCase().replace(/[^A-Z0-9]/g, "");
-                while (colRow = colRowFromSquare(colRowList)) {
+                while ((colRow = colRowFromSquare(colRowList))) {
                     boardOnClick[colRow.col][colRow.row]({
                         "id": "img_tcol" + colRow.col + "trow" + colRow.row
                     }, e);
-                    colRowList = colRowList.substr(2)
+                    colRowList = colRowList.substr(2);
                 }
             }
             break;
         case 90:
             if (e.shiftKey) {
-                window.open(pgn4web_project_url)
+                window.open(pgn4web_project_url);
             } else {
-                displayDebugInfo()
+                displayDebugInfo();
             }
             break;
         case 37:
@@ -457,16 +470,16 @@ function pgn4web_handleKey(e) {
             break;
         case 190:
             if (e.shiftKey) {
-                goToFirstChild()
+                goToFirstChild();
             } else {
-                goToNextVariationSibling()
+                goToNextVariationSibling();
             }
             break;
         case 85:
             if (e.shiftKey) {
-                undoStackRedo()
+                undoStackRedo();
             } else {
-                undoStackUndo()
+                undoStackUndo();
             }
             break;
         case 45:
@@ -477,23 +490,23 @@ function pgn4web_handleKey(e) {
             break;
         case 83:
             if (e.shiftKey) {
-                searchPgnGame("")
+                searchPgnGame("");
             } else {
-                searchPgnGamePrompt()
+                searchPgnGamePrompt();
             }
             break;
         case 13:
             if (e.shiftKey) {
-                searchPgnGame(lastSearchPgnExpression, !0)
+                searchPgnGame(lastSearchPgnExpression, !0);
             } else {
-                searchPgnGame(lastSearchPgnExpression)
+                searchPgnGame(lastSearchPgnExpression);
             }
             break;
         case 68:
             if (e.shiftKey) {
-                displayFenData()
+                displayFenData();
             } else {
-                displayPgnData(!0)
+                displayPgnData(!0);
             }
             break;
         case 187:
@@ -505,72 +518,72 @@ function pgn4web_handleKey(e) {
             break;
         case 48:
             if (e.shiftKey) {
-                customShortcutKey_Shift_0()
+                customShortcutKey_Shift_0();
             } else {
-                SetAutoPlay(!1)
+                SetAutoPlay(!1);
             }
             break;
         case 49:
             if (e.shiftKey) {
-                customShortcutKey_Shift_1()
+                customShortcutKey_Shift_1();
             } else {
-                SetAutoplayDelayAndStart(1 * 1000)
+                SetAutoplayDelayAndStart(1 * 1000);
             }
             break;
         case 50:
             if (e.shiftKey) {
-                customShortcutKey_Shift_2()
+                customShortcutKey_Shift_2();
             } else {
-                SetAutoplayDelayAndStart(2 * 1000)
+                SetAutoplayDelayAndStart(2 * 1000);
             }
             break;
         case 51:
             if (e.shiftKey) {
-                customShortcutKey_Shift_3()
+                customShortcutKey_Shift_3();
             } else {
-                SetAutoplayDelayAndStart(3 * 1000)
+                SetAutoplayDelayAndStart(3 * 1000);
             }
             break;
         case 52:
             if (e.shiftKey) {
-                customShortcutKey_Shift_4()
+                customShortcutKey_Shift_4();
             } else {
-                SetAutoplayDelayAndStart(4 * 1000)
+                SetAutoplayDelayAndStart(4 * 1000);
             }
             break;
         case 53:
             if (e.shiftKey) {
-                customShortcutKey_Shift_5()
+                customShortcutKey_Shift_5();
             } else {
-                SetAutoplayDelayAndStart(5 * 1000)
+                SetAutoplayDelayAndStart(5 * 1000);
             }
             break;
         case 54:
             if (e.shiftKey) {
-                customShortcutKey_Shift_6()
+                customShortcutKey_Shift_6();
             } else {
-                SetAutoplayDelayAndStart(6 * 1000)
+                SetAutoplayDelayAndStart(6 * 1000);
             }
             break;
         case 55:
             if (e.shiftKey) {
-                customShortcutKey_Shift_7()
+                customShortcutKey_Shift_7();
             } else {
-                SetAutoplayDelayAndStart(7 * 1000)
+                SetAutoplayDelayAndStart(7 * 1000);
             }
             break;
         case 56:
             if (e.shiftKey) {
-                customShortcutKey_Shift_8()
+                customShortcutKey_Shift_8();
             } else {
-                SetAutoplayDelayAndStart(8 * 1000)
+                SetAutoplayDelayAndStart(8 * 1000);
             }
             break;
         case 57:
             if (e.shiftKey) {
-                customShortcutKey_Shift_9()
+                customShortcutKey_Shift_9();
             } else {
-                setCustomAutoplayDelay()
+                setCustomAutoplayDelay();
             }
             break;
         case 81:
@@ -587,9 +600,9 @@ function pgn4web_handleKey(e) {
             break;
         case 84:
             if (e.shiftKey) {
-                LiveBroadcastSteppingMode = !LiveBroadcastSteppingMode
+                LiveBroadcastSteppingMode = !LiveBroadcastSteppingMode;
             } else {
-                refreshPgnSource()
+                refreshPgnSource();
             }
             break;
         case 89:
@@ -603,12 +616,12 @@ function pgn4web_handleKey(e) {
             break;
         case 67:
             if (numberOfGames > 1) {
-                Init(Math.floor(Math.random() * numberOfGames))
+                Init(Math.floor(Math.random() * numberOfGames));
             }
             break;
         case 86:
             if (numberOfGames > 1) {
-                Init(0)
+                Init(0);
             }
             break;
         case 66:
@@ -619,14 +632,14 @@ function pgn4web_handleKey(e) {
             break;
         case 77:
             if (numberOfGames > 1) {
-                Init(numberOfGames - 1)
+                Init(numberOfGames - 1);
             }
             break;
         case 80:
             if (e.shiftKey) {
-                SetCommentsOnSeparateLines(!commentsOnSeparateLines)
+                SetCommentsOnSeparateLines(!commentsOnSeparateLines);
             } else {
-                SetCommentsIntoMoveText(!commentsIntoMoveText)
+                SetCommentsIntoMoveText(!commentsIntoMoveText);
             }
             oldPly = CurrentPly;
             oldVar = CurrentVar;
@@ -634,45 +647,45 @@ function pgn4web_handleKey(e) {
             GoToMove(oldPly, oldVar);
             break;
         default:
-            return !0
+            return !0;
     }
-    return stopEvProp(e)
+    return stopEvProp(e);
 }
 var boardOnClick = new Array(8);
 var boardTitle = new Array(8);
 var boardDefault = new Array(8);
-for (var col = 0; col < 8; col++) {
+for (let col = 0; col < 8; col++) {
     boardOnClick[col] = new Array(8);
     boardTitle[col] = new Array(8);
-    boardDefault[col] = new Array(8)
+    boardDefault[col] = new Array(8);
 }
 clearShortcutSquares("ABCDEFGH", "12345678");
 
 function colRowFromSquare(square) {
     if ((typeof(square) != "string") || (!square)) {
-        return null
+        return null;
     }
     var col = square.charCodeAt(0) - 65;
     if ((col < 0) || (col > 7)) {
-        return null
+        return null;
     }
     var row = 56 - square.charCodeAt(1);
     if ((row < 0) || (row > 7)) {
-        return null
+        return null;
     }
     return {
-        "col": col,
-        "row": row
-    }
+        col: col,
+        row: row,
+    };
 }
 
 function clearShortcutSquares(cols, rows) {
     if ((typeof(cols) != "string") || (typeof(rows) != "string")) {
-        return
+        return;
     }
-    for (var c = 0; c < cols.length; c++) {
-        for (var r = 0; r < rows.length; r++) {
-            boardShortcut(cols.charAt(c).toUpperCase() + rows.charAt(r), "", function(t, e) {})
+    for (let c = 0; c < cols.length; c++) {
+        for (let r = 0; r < rows.length; r++) {
+            boardShortcut(cols.charAt(c).toUpperCase() + rows.charAt(r), "", function(t, e) {});
         }
     }
 }
@@ -680,275 +693,274 @@ function clearShortcutSquares(cols, rows) {
 function boardIsDefault(square) {
     var colRow = colRowFromSquare(square);
     if (!colRow) {
-        return !1
+        return !1;
     }
-    return boardDefault[colRow.col][colRow.row]
+    return boardDefault[colRow.col][colRow.row];
 }
 
 function boardShortcut(square, title, functionPointer, defaultSetting) {
     var theObj, colRow = colRowFromSquare(square);
-    if (!colRow) {
-        return
-    } else {
-        var col = colRow.col;
-        var row = colRow.row
-    }
+    if (!colRow)
+        return;
+
+    let col = colRow.col,
+        row = colRow.row;
     boardTitle[col][row] = title;
     if (functionPointer) {
-        boardOnClick[col][row] = functionPointer
+        boardOnClick[col][row] = functionPointer;
     }
     boardDefault[col][row] = defaultSetting ? !0 : !1;
-    if (theObj = document.getElementById('img_tcol' + col + 'trow' + row)) {
+    if ((theObj = document.getElementById('img_tcol' + col + 'trow' + row))) {
         if (IsRotated) {
-            square = String.fromCharCode(72 - col, 49 + row)
+            square = String.fromCharCode(72 - col, 49 + row);
         }
-        theObj.title = square + (boardTitle[col][row] ? ': ' + boardTitle[col][row] : '')
+        theObj.title = square + (boardTitle[col][row] ? ': ' + boardTitle[col][row] : '');
     }
 }
 var debugShortcutSquare = "A8";
 boardShortcut("A8", "pgn4web v" + pgn4web_version + " debug info", function(t, e) {
-    displayDebugInfo()
+    displayDebugInfo();
 }, !0);
 boardShortcut("B8", "show this position FEN string", function(t, e) {
-    displayFenData()
+    displayFenData();
 }, !0);
 boardShortcut("C8", "show this game PGN source data", function(t, e) {
     if (e.shiftKey) {
-        savePgnData(!0)
+        savePgnData(!0);
     } else {
-        displayPgnData(!0)
+        displayPgnData(!0);
     }
 }, !0);
 boardShortcut("D8", "show full PGN source data", function(t, e) {
     if (e.shiftKey) {
-        savePgnData()
+        savePgnData();
     } else {
-        displayPgnData()
+        displayPgnData();
     }
 }, !0);
 boardShortcut("E8", "search help", function(t, e) {
-    displayHelp("search_tool")
+    displayHelp("search_tool");
 }, !0);
 boardShortcut("F8", "shortcut keys help", function(t, e) {
-    displayHelp("shortcut_keys")
+    displayHelp("shortcut_keys");
 }, !0);
 boardShortcut("G8", "shortcut squares help", function(t, e) {
-    displayHelp(e.shiftKey ? "informant_symbols" : "shortcut_squares")
+    displayHelp(e.shiftKey ? "informant_symbols" : "shortcut_squares");
 }, !0);
 boardShortcut("H8", "pgn4web help", function(t, e) {
-    displayHelp(e.shiftKey ? "credits_and_license" : "")
+    displayHelp(e.shiftKey ? "credits_and_license" : "");
 }, !0);
 boardShortcut("A7", "pgn4web website", function(t, e) {
-    window.open(pgn4web_project_url)
+    window.open(pgn4web_project_url);
 }, !0);
 boardShortcut("B7", "undo last chessboard position update", function(t, e) {
-    undoStackUndo()
+    undoStackUndo();
 }, !0);
 boardShortcut("C7", "redo last undo", function(t, e) {
-    undoStackRedo()
+    undoStackRedo();
 }, !0);
 boardShortcut("D7", "toggle highlight last move", function(t, e) {
-    SetHighlight(!highlightOption)
+    SetHighlight(!highlightOption);
 }, !0);
 boardShortcut("F7", "toggle show comments in game text", function(t, e) {
     if (e.shiftKey) {
-        SetCommentsOnSeparateLines(!commentsOnSeparateLines)
+        SetCommentsOnSeparateLines(!commentsOnSeparateLines);
     } else {
-        SetCommentsIntoMoveText(!commentsIntoMoveText)
+        SetCommentsIntoMoveText(!commentsIntoMoveText);
     }
     var oldPly = CurrentPly;
     var oldVar = CurrentVar;
     Init();
-    GoToMove(oldPly, oldVar)
+    GoToMove(oldPly, oldVar);
 }, !0);
 boardShortcut("G7", "", function(t, e) {}, !0);
 boardShortcut("H7", "toggle enabling shortcut keys", function(t, e) {
-    interactivelyToggleShortcutKeys()
+    interactivelyToggleShortcutKeys();
 }, !0);
 boardShortcut("A6", "", function(t, e) {}, !0);
 boardShortcut("B6", "", function(t, e) {}, !0);
 boardShortcut("C6", "search previous finished game", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"(?!\\*"\\s*\\])', !0)
+    searchPgnGame('\\[\\s*Result\\s*"(?!\\*"\\s*\\])', !0);
 });
 boardShortcut("D6", "search previous unfinished game", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"\\*"\\s*\\]', !0)
+    searchPgnGame('\\[\\s*Result\\s*"\\*"\\s*\\]', !0);
 });
 boardShortcut("E6", "search next unfinished game", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"\\*"\\s*\\]', !1)
+    searchPgnGame('\\[\\s*Result\\s*"\\*"\\s*\\]', !1);
 }, !0);
 boardShortcut("F6", "search next finished game", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"(?!\\*"\\s*\\])', !1)
+    searchPgnGame('\\[\\s*Result\\s*"(?!\\*"\\s*\\])', !1);
 }, !0);
 boardShortcut("G6", "", function(t, e) {}, !0);
 boardShortcut("H6", "", function(t, e) {}, !0);
 boardShortcut("A5", "repeat last search backward", function(t, e) {
-    searchPgnGame(lastSearchPgnExpression, !0)
+    searchPgnGame(lastSearchPgnExpression, !0);
 }, !0);
 boardShortcut("B5", "search prompt", function(t, e) {
     if (e.shiftKey) {
-        searchPgnGame("")
+        searchPgnGame("");
     } else {
-        searchPgnGamePrompt()
+        searchPgnGamePrompt();
     }
 }, !0);
 boardShortcut("C5", "repeat last search", function(t, e) {
-    searchPgnGame(lastSearchPgnExpression)
+    searchPgnGame(lastSearchPgnExpression);
 }, !0);
 boardShortcut("D5", "search previous win result", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"(1-0|0-1)"\\s*\\]', !0)
+    searchPgnGame('\\[\\s*Result\\s*"(1-0|0-1)"\\s*\\]', !0);
 }, !0);
 boardShortcut("E5", "search next win result", function(t, e) {
-    searchPgnGame('\\[\\s*Result\\s*"(1-0|0-1)"\\s*\\]', !1)
+    searchPgnGame('\\[\\s*Result\\s*"(1-0|0-1)"\\s*\\]', !1);
 }, !0);
 boardShortcut("F5", "", function(t, e) {}, !0);
 boardShortcut("G5", "", function(t, e) {}, !0);
 boardShortcut("H5", "", function(t, e) {}, !0);
 boardShortcut("A4", "search previous event", function(t, e) {
-    searchPgnGame('\\[\\s*Event\\s*"(?!' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\])', !0)
+    searchPgnGame('\\[\\s*Event\\s*"(?!' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\])', !0);
 }, !0);
 boardShortcut("B4", "search previous round of same event", function(t, e) {
-    searchPgnGame('\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\].*\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\])|\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\]).*\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\]', !0)
+    searchPgnGame('\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\].*\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\])|\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\]).*\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\]', !0);
 }, !0);
 boardShortcut("C4", "search previous game of same black player", function(t, e) {
-    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'White' : 'Black') + '\\s*"' + fixRegExp(gameBlack[currentGame]) + '"\\s*\\]', !0)
+    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'White' : 'Black') + '\\s*"' + fixRegExp(gameBlack[currentGame]) + '"\\s*\\]', !0);
 }, !0);
 boardShortcut("D4", "search previous game of same white player", function(t, e) {
-    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'Black' : 'White') + '\\s*"' + fixRegExp(gameWhite[currentGame]) + '"\\s*\\]', !0)
+    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'Black' : 'White') + '\\s*"' + fixRegExp(gameWhite[currentGame]) + '"\\s*\\]', !0);
 }, !0);
 boardShortcut("E4", "search next game of same white player", function(t, e) {
-    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'Black' : 'White') + '\\s*"' + fixRegExp(gameWhite[currentGame]) + '"\\s*\\]', !1)
+    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'Black' : 'White') + '\\s*"' + fixRegExp(gameWhite[currentGame]) + '"\\s*\\]', !1);
 }, !0);
 boardShortcut("F4", "search next game of same black player", function(t, e) {
-    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'White' : 'Black') + '\\s*"' + fixRegExp(gameBlack[currentGame]) + '"\\s*\\]', !1)
+    searchPgnGame('\\[\\s*' + (e.shiftKey ? 'White' : 'Black') + '\\s*"' + fixRegExp(gameBlack[currentGame]) + '"\\s*\\]', !1);
 }, !0);
 boardShortcut("G4", "search next round of same event", function(t, e) {
-    searchPgnGame('\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\].*\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\])|\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\]).*\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\]', !1)
+    searchPgnGame('\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\].*\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\])|\\[\\s*Round\\s*"(?!' + fixRegExp(gameRound[currentGame]) + '"\\s*\\]).*\\[\\s*Event\\s*"' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\]', !1);
 }, !0);
 boardShortcut("H4", "search next event", function(t, e) {
-    searchPgnGame('\\[\\s*Event\\s*"(?!' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\])', !1)
+    searchPgnGame('\\[\\s*Event\\s*"(?!' + fixRegExp(gameEvent[currentGame]) + '"\\s*\\])', !1);
 }, !0);
 boardShortcut("A3", "load first game", function(t, e) {
     if (numberOfGames > 1) {
-        Init(0)
+        Init(0);
     }
 }, !0);
 boardShortcut("B3", "jump to previous games decile", function(t, e) {
     if (currentGame > 0) {
         calculateDeciles();
-        for (var ii = (deciles.length - 2); ii >= 0; ii--) {
+        for (let ii = (deciles.length - 2); ii >= 0; ii--) {
             if (currentGame > deciles[ii]) {
                 Init(deciles[ii]);
-                break
+                break;
             }
         }
     }
 }, !0);
 boardShortcut("C3", "load previous game", function(t, e) {
-    Init(currentGame - 1)
+    Init(currentGame - 1);
 }, !0);
 boardShortcut("D3", "load random game", function(t, e) {
     if (numberOfGames > 1) {
-        Init(Math.floor(Math.random() * numberOfGames))
+        Init(Math.floor(Math.random() * numberOfGames));
     }
 }, !0);
 boardShortcut("E3", "load random game at random position", function(t, e) {
-    randomGameRandomPly()
+    randomGameRandomPly();
 }, !0);
 boardShortcut("F3", "load next game", function(t, e) {
-    Init(currentGame + 1)
+    Init(currentGame + 1);
 }, !0);
 boardShortcut("G3", "jump to next games decile", function(t, e) {
     if (currentGame < numberOfGames - 1) {
         calculateDeciles();
-        for (var ii = 1; ii < deciles.length; ii++) {
+        for (let ii = 1; ii < deciles.length; ii++) {
             if (currentGame < deciles[ii]) {
                 Init(deciles[ii]);
-                break
+                break;
             }
         }
     }
 }, !0);
 boardShortcut("H3", "load last game", function(t, e) {
     if (numberOfGames > 1) {
-        Init(numberOfGames - 1)
+        Init(numberOfGames - 1);
     }
 }, !0);
 boardShortcut("A2", "stop autoplay", function(t, e) {
-    SetAutoPlay(e.shiftKey)
+    SetAutoPlay(e.shiftKey);
 }, !0);
 boardShortcut("B2", "toggle autoplay", function(t, e) {
-    SwitchAutoPlay()
+    SwitchAutoPlay();
 }, !0);
 boardShortcut("C2", "autoplay 1 second", function(t, e) {
-    SetAutoplayDelayAndStart((e.shiftKey ? 10 : 1) * 1000)
+    SetAutoplayDelayAndStart((e.shiftKey ? 10 : 1) * 1000);
 }, !0);
 boardShortcut("D2", "autoplay 2 seconds", function(t, e) {
-    SetAutoplayDelayAndStart((e.shiftKey ? 20 : 2) * 1000)
+    SetAutoplayDelayAndStart((e.shiftKey ? 20 : 2) * 1000);
 }, !0);
 boardShortcut("E2", "autoplay 5 seconds", function(t, e) {
-    SetAutoplayDelayAndStart((e.shiftKey ? 50 : 5) * 1000)
+    SetAutoplayDelayAndStart((e.shiftKey ? 50 : 5) * 1000);
 }, !0);
 boardShortcut("F2", "autoplay custom delay", function(t, e) {
-    setCustomAutoplayDelay()
+    setCustomAutoplayDelay();
 }, !0);
 boardShortcut("G2", "replay up to 6 previous half-moves, then autoplay forward", function(t, e) {
-    replayPreviousMoves(e.shiftKey ? 10 : 6)
+    replayPreviousMoves(e.shiftKey ? 10 : 6);
 }, !0);
 boardShortcut("H2", "replay the previous half-move, then autoplay forward", function(t, e) {
-    replayPreviousMoves(e.shiftKey ? 3 : 1)
+    replayPreviousMoves(e.shiftKey ? 3 : 1);
 }, !0);
 boardShortcut("A1", "go to game start", function(t, e) {
-    startButton(e)
+    startButton(e);
 }, !0);
 boardShortcut("B1", "", function(t, e) {}, !0);
 boardShortcut("C1", "", function(t, e) {}, !0);
 boardShortcut("D1", "move backward", function(t, e) {
-    GoToMove(CurrentPly - 1)
+    GoToMove(CurrentPly - 1);
 }, !0);
 boardShortcut("E1", "move forward", function(t, e) {
-    GoToMove(CurrentPly + 1)
+    GoToMove(CurrentPly + 1);
 }, !0);
 boardShortcut("F1", "", function(t, e) {}, !0);
 boardShortcut("G1", "", function(t, e) {}, !0);
 boardShortcut("H1", "go to game end", function(t, e) {
-    endButton(e)
+    endButton(e);
 }, !0);
 setG7A6B6H7boardShortcuts();
 
 function setG7A6B6H7boardShortcuts() {
     if (LiveBroadcastDelay > 0) {
         if (boardIsDefault("G7")) {
-            boardShortcut("G7", "", function(t, e) {}, !0)
+            boardShortcut("G7", "", function(t, e) {}, !0);
         }
         if (boardIsDefault("A6")) {
             boardShortcut("A6", "pause live broadcast automatic games refresh", function(t, e) {
-                pauseLiveBroadcast()
-            }, !0)
+                pauseLiveBroadcast();
+            }, !0);
         }
         if (boardIsDefault("B6")) {
             boardShortcut("B6", "restart live broadcast automatic games refresh", function(t, e) {
-                restartLiveBroadcast()
-            }, !0)
+                restartLiveBroadcast();
+            }, !0);
         }
         if (boardIsDefault("H6")) {
             boardShortcut("H6", "force live broadcast games refresh", function(t, e) {
-                refreshPgnSource()
-            }, !0)
+                refreshPgnSource();
+            }, !0);
         }
     } else {
         if (boardIsDefault("G7")) {
             boardShortcut("G7", "toggle autoplay next game", function(t, e) {
-                SetAutoplayNextGame(!autoplayNextGame)
-            }, !0)
+                SetAutoplayNextGame(!autoplayNextGame);
+            }, !0);
         }
         if (boardIsDefault("A6")) {
-            boardShortcut("A6", "", function(t, e) {}, !0)
+            boardShortcut("A6", "", function(t, e) {}, !0);
         }
         if (boardIsDefault("B6")) {
-            boardShortcut("B6", "", function(t, e) {}, !0)
+            boardShortcut("B6", "", function(t, e) {}, !0);
         }
         if (boardIsDefault("H6")) {
-            boardShortcut("H6", "", function(t, e) {}, !0)
+            boardShortcut("H6", "", function(t, e) {}, !0);
         }
     }
 }
@@ -959,111 +971,111 @@ function setB1C1F1G1boardShortcuts() {
         if (boardIsDefault("B1")) {
             boardShortcut("B1", "go to previous comment or variation", function(t, e) {
                 if (e.shiftKey) {
-                    GoToMove(CurrentPly - 10)
+                    GoToMove(CurrentPly - 10);
                 } else {
-                    MoveToPrevComment()
+                    MoveToPrevComment();
                 }
-            }, !0)
+            }, !0);
         }
         if (boardIsDefault("G1")) {
             boardShortcut("G1", "go to next comment or variation", function(t, e) {
                 if (e.shiftKey) {
-                    GoToMove(CurrentPly + 10)
+                    GoToMove(CurrentPly + 10);
                 } else {
-                    MoveToNextComment()
+                    MoveToNextComment();
                 }
-            }, !0)
+            }, !0);
         }
     } else {
         if (boardIsDefault("B1")) {
             boardShortcut("B1", "move 10 half-moves backward", function(t, e) {
-                GoToMove(CurrentPly - 10)
-            }, !0)
+                GoToMove(CurrentPly - 10);
+            }, !0);
         }
         if (boardIsDefault("G1")) {
             boardShortcut("G1", "move 10 half-moves forward", function(t, e) {
-                GoToMove(CurrentPly + 10)
-            }, !0)
+                GoToMove(CurrentPly + 10);
+            }, !0);
         }
     }
     if (commentsIntoMoveText && GameHasVariations) {
         if (boardIsDefault("C1")) {
             boardShortcut("C1", "go to parent variation", function(t, e) {
                 if (e.shiftKey) {
-                    GoToMove(CurrentPly - 6)
+                    GoToMove(CurrentPly - 6);
                 } else {
-                    GoToMove(StartPlyVar[CurrentVar])
+                    GoToMove(StartPlyVar[CurrentVar]);
                 }
-            }, !0)
+            }, !0);
         }
         if (boardIsDefault("F1")) {
             boardShortcut("F1", "cycle through alternative variations, if any, otherwise move forward", function(t, e) {
                 if (e.shiftKey) {
-                    GoToMove(CurrentPly + 6)
+                    GoToMove(CurrentPly + 6);
                 } else {
                     if (!goToNextVariationSibling()) {
-                        GoToMove(CurrentPly + 1)
+                        GoToMove(CurrentPly + 1);
                     }
                 }
-            }, !0)
+            }, !0);
         }
     } else {
         if (boardIsDefault("C1")) {
             boardShortcut("C1", "move 6 half-moves backward", function(t, e) {
-                GoToMove(CurrentPly - 6)
-            }, !0)
+                GoToMove(CurrentPly - 6);
+            }, !0);
         }
         if (boardIsDefault("F1")) {
             boardShortcut("F1", "move 6 half-moves forward", function(t, e) {
-                GoToMove(CurrentPly + 6)
-            }, !0)
+                GoToMove(CurrentPly + 6);
+            }, !0);
         }
     }
 }
 var deciles = new Array(11);
 
 function calculateDeciles() {
-    for (var ii = 0; ii < deciles.length; ii++) {
-        deciles[ii] = Math.round((numberOfGames - 1) * ii / (deciles.length - 1))
+    for (let ii = 0; ii < deciles.length; ii++) {
+        deciles[ii] = Math.round((numberOfGames - 1) * ii / (deciles.length - 1));
     }
 }
 
 function replayPreviousMoves(numPlies) {
     var thisPly = numPlies ? CurrentPly - numPlies : StartPly;
     if (thisPly < StartPlyVar[CurrentVar]) {
-        thisPly = StartPlyVar[CurrentVar] + (CurrentVar === 0 ? 0 : 1)
+        thisPly = StartPlyVar[CurrentVar] + (CurrentVar === 0 ? 0 : 1);
     }
     if (thisPly !== CurrentPly) {
-        GoToMove(thisPly)
+        GoToMove(thisPly);
     }
-    SetAutoPlay(!0)
+    SetAutoPlay(!0);
 }
 
 function detectJavascriptLocation(jsre) {
     if (typeof(jsre) == "undefined") {
-        jsre = new RegExp("(pgn4web|pgn4web-compacted)\.js$", "")
+        jsre = new RegExp("(pgn4web|pgn4web-compacted)\.js$", "");
     }
     var e = document.getElementsByTagName("script");
-    for (var i = 0; i < e.length; i++) {
+    for (let i = 0; i < e.length; i++) {
         if ((e[i].src) && (e[i].src.match(jsre))) {
-            return e[i].src
+            return e[i].src;
         }
     }
-    return ""
+    return "";
 }
 
 function detectHelpLocation() {
-    return detectJavascriptLocation().replace(/(pgn4web|pgn4web-compacted)\.js/, "pgn4web-help.html")
+    return detectJavascriptLocation().replace(/(pgn4web|pgn4web-compacted)\.js/, "pgn4web-help.html");
 }
 
 function detectBaseLocation() {
     var e = document.getElementsByTagName("base");
-    for (var i = 0; i < e.length; i++) {
+    for (let i = 0; i < e.length; i++) {
         if (e[i].href) {
-            return e[i].href
+            return e[i].href;
         }
     }
-    return ""
+    return "";
 }
 var debugWin;
 
@@ -1076,36 +1088,36 @@ function displayDebugInfo() {
     var dbg2 = location.href.length < 100 ? location.href : (location.href.substring(0, 99) + '...');
     var dbg3 = '\n' + (base ? 'BASEURL: url=' + base + '\n' : '') + (jsurl != 'pgn4web.js' ? 'JSURL: url=' + jsurl + '\n' : '');
     if (pgnUrl) {
-        dbg3 += 'PGNURL: url=' + pgnUrl
+        dbg3 += 'PGNURL: url=' + pgnUrl;
     } else {
-        if (theObj = document.getElementById("pgnText")) {
-            dbg3 += 'PGNTEXT: length=' + (theObj.tagName.toLowerCase() == "textarea" ? theObj.value.length : "?")
+        if ((theObj = document.getElementById("pgnText"))) {
+            dbg3 += 'PGNTEXT: length=' + (theObj.tagName.toLowerCase() == "textarea" ? theObj.value.length : "?");
         }
     }
     dbg3 += '\n\n' + 'GAME: current=' + (currentGame + 1) + ' number=' + numberOfGames + '\n' + 'VARIATION: current=' + CurrentVar + ' number=' + (numberOfVars - 1) + '\n' + 'PLY: start=' + StartPly + ' current=' + CurrentPly + ' number=' + PlyNumber + '\n' + 'AUTOPLAY: status=' + (isAutoPlayOn ? 'on' : 'off') + ' delay=' + Delay + 'ms' + ' next=' + autoplayNextGame + '\n\n';
     if (LiveBroadcastDelay > 0) {
-        dbg3 += 'LIVEBROADCAST: status=' + liveStatusDebug() + ' ticker=' + LiveBroadcastTicker + ' delay=' + LiveBroadcastDelay + 'm' + '\n' + 'refreshed: ' + LiveBroadcastLastRefreshedLocal + '\n' + 'received: ' + LiveBroadcastLastReceivedLocal + '\n' + 'modified (server time): ' + LiveBroadcastLastModified_ServerTime() + '\n\n'
+        dbg3 += 'LIVEBROADCAST: status=' + liveStatusDebug() + ' ticker=' + LiveBroadcastTicker + ' delay=' + LiveBroadcastDelay + 'm' + '\n' + 'refreshed: ' + LiveBroadcastLastRefreshedLocal + '\n' + 'received: ' + LiveBroadcastLastReceivedLocal + '\n' + 'modified (server time): ' + LiveBroadcastLastModified_ServerTime() + '\n\n';
     }
     if (typeof(engineWinCheck) == "function") {
-        dbg3 += "ANALYSIS: " + (engineWinCheck() ? "board=connected " + engineWin.customDebugInfo() : "board=disconnected") + "\n\n"
+        dbg3 += "ANALYSIS: " + (engineWinCheck() ? "board=connected " + engineWin.customDebugInfo() : "board=disconnected") + "\n\n";
     }
     var thisInfo = customDebugInfo();
     if (thisInfo) {
-        dbg3 += "CUSTOM: " + thisInfo + "\n\n"
+        dbg3 += "CUSTOM: " + thisInfo + "\n\n";
     }
     dbg3 += 'ALERTLOG: fatalnew=' + fatalErrorNumSinceReset + ' new=' + alertNumSinceReset + ' shown=' + Math.min(alertNum, alertLog.length) + ' total=' + alertNum + '\n--';
     if (alertNum > 0) {
-        for (var ii = 0; ii < alertLog.length; ii++) {
+        for (let ii = 0; ii < alertLog.length; ii++) {
             if (alertLog[(alertNum - 1 - ii) % alertLog.length] === undefined) {
-                break
+                break;
             } else {
-                dbg3 += "\n" + alertLog[(alertNum - 1 - ii) % alertLog.length] + "\n--"
+                dbg3 += "\n" + alertLog[(alertNum - 1 - ii) % alertLog.length] + "\n--";
             }
         }
     }
     if (confirm(dbg1 + dbg2 + dbg3 + '\n\nclick OK to show this debug info in a browser window for cut and paste')) {
         if (debugWin && !debugWin.closed) {
-            debugWin.close()
+            debugWin.close();
         }
         debugWin = window.open("", "pgn4web_debug_data", "resizable=yes,scrollbars=yes,toolbar=no,location=no,menubar=no,status=no");
         if (debugWin) {
@@ -1113,43 +1125,43 @@ function displayDebugInfo() {
             debugWin.document.write("<html><head><title>pgn4web debug info</title>" + "<link rel='shortcut icon' href='pawn.ico' /></head>" + "<body>\n<pre>\n" + dbg1 + location.href + " " + dbg3 + "\n</pre>\n</body></html>");
             debugWin.document.close();
             if (window.focus) {
-                debugWin.focus()
+                debugWin.focus();
             }
         }
     }
-    alertNumSinceReset = fatalErrorNumSinceReset = 0
+    alertNumSinceReset = fatalErrorNumSinceReset = 0;
 }
 
 function liveStatusDebug() {
     if (LiveBroadcastEnded) {
-        return "ended"
+        return "ended";
     }
     if (LiveBroadcastPaused) {
-        return "paused"
+        return "paused";
     }
     if (LiveBroadcastStarted) {
-        return "started"
+        return "started";
     }
-    return "waiting"
+    return "waiting";
 }
 
 function customDebugInfo() {
-    return ""
+    return "";
 }
 var pgnWin;
 
 function displayPgnData(oneGameOnly) {
     if (pgnWin && !pgnWin.closed) {
-        pgnWin.close()
+        pgnWin.close();
     }
     pgnWin = window.open("", "pgn4web_pgn_data", "resizable=yes,scrollbars=yes,toolbar=no,location=no,menubar=no,status=no");
     if (pgnWin) {
         var text = "<html><head><title>pgn4web PGN source</title>" + "<link rel='shortcut icon' href='pawn.ico' /></head><body>\n<pre>\n";
         if (oneGameOnly) {
-            text += fullPgnGame(currentGame) + "\n\n"
+            text += fullPgnGame(currentGame) + "\n\n";
         } else {
-            for (var ii = 0; ii < numberOfGames; ++ii) {
-                text += fullPgnGame(ii) + "\n\n"
+            for (let ii = 0; ii < numberOfGames; ++ii) {
+                text += fullPgnGame(ii) + "\n\n";
             }
         }
         text += "\n</pre>\n</body></html>";
@@ -1157,109 +1169,109 @@ function displayPgnData(oneGameOnly) {
         pgnWin.document.write(text);
         pgnWin.document.close();
         if (window.focus) {
-            pgnWin.focus()
+            pgnWin.focus();
         }
     }
 }
 
 function savePgnData(oneGameOnly) {
     if (pgnUrl && !oneGameOnly) {
-        location.href = pgnUrl
+        location.href = pgnUrl;
     } else {
-        displayPgnData(oneGameOnly)
+        displayPgnData(oneGameOnly);
     }
 }
 
 function CurrentFEN() {
     var thisFEN = "";
     var emptySquares = 0;
-    for (var row = 7; row >= 0; row--) {
-        for (var col = 0; col <= 7; col++) {
+    for (let row = 7; row >= 0; row--) {
+        for (let col = 0; col <= 7; col++) {
             if (Board[col][row] === 0) {
-                emptySquares++
+                emptySquares++;
             } else {
                 if (emptySquares) {
                     thisFEN += emptySquares;
-                    emptySquares = 0
+                    emptySquares = 0;
                 }
                 if (Board[col][row] > 0) {
-                    thisFEN += FenPieceName.charAt(Board[col][row] - 1).toUpperCase()
+                    thisFEN += FenPieceName.charAt(Board[col][row] - 1).toUpperCase();
                 } else if (Board[col][row] < 0) {
-                    thisFEN += FenPieceName.charAt(-Board[col][row] - 1).toLowerCase()
+                    thisFEN += FenPieceName.charAt(-Board[col][row] - 1).toLowerCase();
                 }
             }
         }
         if (emptySquares) {
             thisFEN += emptySquares;
-            emptySquares = 0
+            emptySquares = 0;
         }
         if (row > 0) {
-            thisFEN += "/"
+            thisFEN += "/";
         }
     }
     thisFEN += CurrentPly % 2 ? " b" : " w";
     var CastlingFEN = "";
     if (RookForOOCastling(0) !== null) {
-        CastlingFEN += FenPieceName.charAt(0).toUpperCase()
+        CastlingFEN += FenPieceName.charAt(0).toUpperCase();
     }
     if (RookForOOOCastling(0) !== null) {
-        CastlingFEN += FenPieceName.charAt(1).toUpperCase()
+        CastlingFEN += FenPieceName.charAt(1).toUpperCase();
     }
     if (RookForOOCastling(1) !== null) {
-        CastlingFEN += FenPieceName.charAt(0).toLowerCase()
+        CastlingFEN += FenPieceName.charAt(0).toLowerCase();
     }
     if (RookForOOOCastling(1) !== null) {
-        CastlingFEN += FenPieceName.charAt(1).toLowerCase()
+        CastlingFEN += FenPieceName.charAt(1).toLowerCase();
     }
     thisFEN += " " + (CastlingFEN || "-");
     if (HistEnPassant[CurrentPly]) {
         thisFEN += " " + String.fromCharCode(HistEnPassantCol[CurrentPly] + 97);
-        thisFEN += CurrentPly % 2 ? "3" : "6"
+        thisFEN += CurrentPly % 2 ? "3" : "6";
     } else {
-        thisFEN += " -"
+        thisFEN += " -";
     }
     var HalfMoveClock = InitialHalfMoveClock;
-    for (var thisPly = StartPly; thisPly < CurrentPly; thisPly++) {
+    for (let thisPly = StartPly; thisPly < CurrentPly; thisPly++) {
         if ((HistType[0][thisPly] == 6) || (HistPieceId[1][thisPly] >= 16)) {
-            HalfMoveClock = 0
+            HalfMoveClock = 0;
         } else {
-            HalfMoveClock++
+            HalfMoveClock++;
         }
     }
     thisFEN += " " + HalfMoveClock;
     thisFEN += " " + (Math.floor(CurrentPly / 2) + 1);
-    return thisFEN
+    return thisFEN;
 }
 var fenWin;
 
 function displayFenData(addGametext) {
     if (fenWin && !fenWin.closed) {
-        fenWin.close()
+        fenWin.close();
     }
     var thisFEN = CurrentFEN();
     var movesStr = "";
     var lineStart = 0;
     if (addGametext) {
-        for (var thisPly = CurrentPly; thisPly <= StartPly + PlyNumber; thisPly++) {
+        for (let thisPly = CurrentPly; thisPly <= StartPly + PlyNumber; thisPly++) {
             var addStr = "";
             if (thisPly == StartPly + PlyNumber) {
-                addStr = (CurrentVar ? "*" : gameResult[currentGame] || "*")
+                addStr = (CurrentVar ? "*" : gameResult[currentGame] || "*");
             } else {
                 if (thisPly % 2 === 0) {
-                    addStr = (Math.floor(thisPly / 2) + 1) + ". "
+                    addStr = (Math.floor(thisPly / 2) + 1) + ". ";
                 } else if (thisPly == CurrentPly) {
-                    addStr = (Math.floor(thisPly / 2) + 1) + "... "
+                    addStr = (Math.floor(thisPly / 2) + 1) + "... ";
                 }
-                addStr += Moves[thisPly]
+                addStr += Moves[thisPly];
             }
             if (movesStr.length + addStr.length + 1 > lineStart + 80) {
                 lineStart = movesStr.length;
-                movesStr += "\n" + addStr
+                movesStr += "\n" + addStr;
             } else {
                 if (movesStr.length > 0) {
-                    movesStr += " "
+                    movesStr += " ";
                 }
-                movesStr += addStr
+                movesStr += addStr;
             }
         }
     }
@@ -1267,44 +1279,44 @@ function displayFenData(addGametext) {
     if (fenWin) {
         var text = "<html>" + "<head><title>pgn4web FEN string</title><link rel='shortcut icon' href='pawn.ico' /></head>" + "<body>\n<b><pre>\n\n" + thisFEN + "\n\n</pre></b>\n<hr>\n<pre>\n\n";
         if (addGametext) {
-            text += "[Event \"" + ((CurrentVar ? "" : gameEvent[currentGame]) || "?") + "\"]\n" + "[Site \"" + ((CurrentVar ? "" : gameSite[currentGame]) || "?") + "\"]\n" + "[Date \"" + ((CurrentVar ? "" : gameDate[currentGame]) || "????.??.??") + "\"]\n" + "[Round \"" + ((CurrentVar ? "" : gameRound[currentGame]) || "?") + "\"]\n" + "[White \"" + ((CurrentVar ? "" : gameWhite[currentGame]) || "?") + "\"]\n" + "[Black \"" + ((CurrentVar ? "" : gameBlack[currentGame]) || "?") + "\"]\n" + "[Result \"" + ((CurrentVar ? "" : gameResult[currentGame]) || "*") + "\"]\n"
+            text += "[Event \"" + ((CurrentVar ? "" : gameEvent[currentGame]) || "?") + "\"]\n" + "[Site \"" + ((CurrentVar ? "" : gameSite[currentGame]) || "?") + "\"]\n" + "[Date \"" + ((CurrentVar ? "" : gameDate[currentGame]) || "????.??.??") + "\"]\n" + "[Round \"" + ((CurrentVar ? "" : gameRound[currentGame]) || "?") + "\"]\n" + "[White \"" + ((CurrentVar ? "" : gameWhite[currentGame]) || "?") + "\"]\n" + "[Black \"" + ((CurrentVar ? "" : gameBlack[currentGame]) || "?") + "\"]\n" + "[Result \"" + ((CurrentVar ? "" : gameResult[currentGame]) || "*") + "\"]\n";
         }
         if ((thisFEN != FenStringStart) || (!addGametext)) {
-            text += "[SetUp \"1\"]\n" + "[FEN \"" + thisFEN + "\"]\n"
+            text += "[SetUp \"1\"]\n" + "[FEN \"" + thisFEN + "\"]\n";
         }
         if (gameVariant[currentGame] !== "") {
-            text += "[Variant \"" + gameVariant[currentGame] + "\"]\n"
+            text += "[Variant \"" + gameVariant[currentGame] + "\"]\n";
         }
         if (addGametext) {
-            text += "\n" + movesStr + "\n"
+            text += "\n" + movesStr + "\n";
         }
         text += "</pre>\n</body></html>";
         fenWin.document.open("text/html", "replace");
         fenWin.document.write(text);
         fenWin.document.close();
         if (window.focus) {
-            fenWin.focus()
+            fenWin.focus();
         }
     }
 }
-var pgnHeader = new Array();
-var pgnGame = new Array();
+var pgnHeader = [];
+var pgnGame = [];
 var numberOfGames = -1;
 var currentGame = -1;
 var firstStart = !0;
-var gameDate = new Array();
-var gameWhite = new Array();
-var gameBlack = new Array();
-var gameEvent = new Array();
-var gameOpening = new Array();
-var gameSite = new Array();
-var gameRound = new Array();
-var gameResult = new Array();
-var gameSetUp = new Array();
-var gameFEN = new Array();
-var gameInitialWhiteClock = new Array();
-var gameInitialBlackClock = new Array();
-var gameVariant = new Array();
+var gameDate = [];
+var gameWhite = [];
+var gameBlack = [];
+var gameEvent = [];
+var gameOpening = [];
+var gameSite = [];
+var gameRound = [];
+var gameResult = [];
+var gameSetUp = [];
+var gameFEN = [];
+var gameInitialWhiteClock = [];
+var gameInitialBlackClock = [];
+var gameVariant = [];
 var highlightedMoveId = "";
 var isAutoPlayOn = !1;
 var AutoPlayInterval = null;
@@ -1331,8 +1343,8 @@ var LiveBroadcastLastReceivedLocal = 'unavailable';
 var LiveBroadcastLastRefreshedLocal = 'unavailable';
 var LiveBroadcastPlaceholderEvent = 'TCEC';
 var LiveBroadcastPlaceholderPgn = '[Event "' + LiveBroadcastPlaceholderEvent + '"]';
-var gameDemoMaxPly = new Array();
-var gameDemoLength = new Array();
+var gameDemoMaxPly = [];
+var gameDemoLength = [];
 var LiveBroadcastSteppingMode = !1;
 var ParseLastMoveError = !1;
 var castleRook = -1;
@@ -1350,35 +1362,35 @@ var mvCaptured = -1;
 var mvCapturedId = -1;
 var mvIsNull = 0;
 var Board = new Array(8);
-for (var i = 0; i < 8; ++i) {
-    Board[i] = new Array(8)
+for (let i = 0; i < 8; ++i) {
+    Board[i] = new Array(8);
 }
 var HistCol = new Array(3);
 var HistRow = new Array(3);
 var HistPieceId = new Array(2);
 var HistType = new Array(2);
-var HistVar = new Array();
+var HistVar = [];
 var PieceCol = new Array(2);
 var PieceRow = new Array(2);
 var PieceType = new Array(2);
 var PieceMoveCounter = new Array(2);
-for (i = 0; i < 2; ++i) {
+for (let i = 0; i < 2; ++i) {
     PieceCol[i] = new Array(16);
     PieceRow[i] = new Array(16);
     PieceType[i] = new Array(16);
     PieceMoveCounter[i] = new Array(16);
-    HistType[i] = new Array();
-    HistPieceId[i] = new Array()
+    HistType[i] = [];
+    HistPieceId[i] = [];
 }
-for (i = 0; i < 3; ++i) {
-    HistCol[i] = new Array();
-    HistRow[i] = new Array()
+for (let i = 0; i < 3; ++i) {
+    HistCol[i] = [];
+    HistRow[i] = [];
 }
-var HistEnPassant = new Array();
+var HistEnPassant = [];
 HistEnPassant[0] = !1;
-var HistEnPassantCol = new Array();
+var HistEnPassantCol = [];
 HistEnPassantCol[0] = -1;
-var HistNull = new Array();
+var HistNull = [];
 HistNull[0] = 0;
 var FenPieceName = "KQRBNP";
 var PieceCode = FenPieceName.split("");
@@ -1398,8 +1410,8 @@ var pgnUrl = '';
 var flipBoard = 0;
 var CastlingLong = new Array(2);
 var CastlingShort = new Array(2);
-var Moves = new Array();
-var MoveComments = new Array();
+var Moves = [];
+var MoveComments = [];
 var MoveColor;
 var MoveCount;
 var PlyNumber;
@@ -1428,388 +1440,390 @@ function CheckLegality(what, plyCount) {
     var retVal, thisCol;
     if (what == '--') {
         StoreMove(plyCount);
-        return !0
+        return !0;
     }
     if (what == 'O-O') {
         if (!CheckLegalityOO()) {
-            return !1
+            return !1;
         }
         for (thisCol = PieceCol[MoveColor][0]; thisCol < 7; thisCol++) {
             if (IsCheck(thisCol, MoveColor * 7, MoveColor)) {
-                return !1
+                return !1;
             }
         }
         StoreMove(plyCount);
-        return !0
+        return !0;
     } else if (what == 'O-O-O') {
         if (!CheckLegalityOOO()) {
-            return !1
+            return !1;
         }
         for (thisCol = PieceCol[MoveColor][0]; thisCol > 1; thisCol--) {
             if (IsCheck(thisCol, MoveColor * 7, MoveColor)) {
-                return !1
+                return !1;
             }
         }
         StoreMove(plyCount);
-        return !0
+        return !0;
     }
     if (!mvCapture) {
         if (Board[mvToCol][mvToRow] !== 0) {
-            return !1
+            return !1;
         }
     }
     if ((mvCapture) && (Color(Board[mvToCol][mvToRow]) != 1 - MoveColor)) {
         if ((mvPiece != 6) || (!HistEnPassant[plyCount]) || (HistEnPassantCol[plyCount] != mvToCol) || (mvToRow != 5 - 3 * MoveColor)) {
-            return !1
+            return !1;
         }
     }
     if (mvIsPromotion) {
         if (mvPiece != 6) {
-            return !1
+            return !1;
         }
         if (mvPieceOnTo >= 6) {
-            return !1
+            return !1;
         }
         if (mvToRow != 7 * (1 - MoveColor)) {
-            return !1
+            return !1;
         }
     }
-    for (var pieceId = 0; pieceId < 16; ++pieceId) {
+    for (let pieceId = 0; pieceId < 16; ++pieceId) {
         if (PieceType[MoveColor][pieceId] == mvPiece) {
             if (mvPiece == 1) {
-                retVal = CheckLegalityKing(pieceId)
+                retVal = CheckLegalityKing(pieceId);
             } else if (mvPiece == 2) {
-                retVal = CheckLegalityQueen(pieceId)
+                retVal = CheckLegalityQueen(pieceId);
             } else if (mvPiece == 3) {
-                retVal = CheckLegalityRook(pieceId)
+                retVal = CheckLegalityRook(pieceId);
             } else if (mvPiece == 4) {
-                retVal = CheckLegalityBishop(pieceId)
+                retVal = CheckLegalityBishop(pieceId);
             } else if (mvPiece == 5) {
-                retVal = CheckLegalityKnight(pieceId)
+                retVal = CheckLegalityKnight(pieceId);
             } else if (mvPiece == 6) {
-                retVal = CheckLegalityPawn(pieceId)
+                retVal = CheckLegalityPawn(pieceId);
             }
             if (retVal) {
                 mvPieceId = pieceId;
                 StoreMove(plyCount);
                 if (!IsCheck(PieceCol[MoveColor][0], PieceRow[MoveColor][0], MoveColor)) {
-                    return !0
+                    return !0;
                 } else {
-                    UndoMove(plyCount)
+                    UndoMove(plyCount);
                 }
             }
         }
     }
-    return !1
+    return !1;
 }
 
 function CheckLegalityKing(thisKing) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisKing])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisKing])) {
-        return !1
+        return !1;
     }
     if (Math.abs(PieceCol[MoveColor][thisKing] - mvToCol) > 1) {
-        return !1
+        return !1;
     }
     if (Math.abs(PieceRow[MoveColor][thisKing] - mvToRow) > 1) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function CheckLegalityQueen(thisQueen) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisQueen])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisQueen])) {
-        return !1
+        return !1;
     }
     if (((PieceCol[MoveColor][thisQueen] - mvToCol) * (PieceRow[MoveColor][thisQueen] - mvToRow) !== 0) && (Math.abs(PieceCol[MoveColor][thisQueen] - mvToCol) != Math.abs(PieceRow[MoveColor][thisQueen] - mvToRow))) {
-        return !1
+        return !1;
     }
     if (!CheckClearWay(thisQueen)) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function CheckLegalityRook(thisRook) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisRook])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisRook])) {
-        return !1
+        return !1;
     }
     if ((PieceCol[MoveColor][thisRook] - mvToCol) * (PieceRow[MoveColor][thisRook] - mvToRow) !== 0) {
-        return !1
+        return !1;
     }
     if (!CheckClearWay(thisRook)) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function CheckLegalityBishop(thisBishop) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisBishop])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisBishop])) {
-        return !1
+        return !1;
     }
     if (Math.abs(PieceCol[MoveColor][thisBishop] - mvToCol) != Math.abs(PieceRow[MoveColor][thisBishop] - mvToRow)) {
-        return !1
+        return !1;
     }
     if (!CheckClearWay(thisBishop)) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function CheckLegalityKnight(thisKnight) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisKnight])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisKnight])) {
-        return !1
+        return !1;
     }
     if (Math.abs(PieceCol[MoveColor][thisKnight] - mvToCol) * Math.abs(PieceRow[MoveColor][thisKnight] - mvToRow) != 2) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function CheckLegalityPawn(thisPawn) {
     if ((mvFromCol >= 0) && (mvFromCol != PieceCol[MoveColor][thisPawn])) {
-        return !1
+        return !1;
     }
     if ((mvFromRow >= 0) && (mvFromRow != PieceRow[MoveColor][thisPawn])) {
-        return !1
+        return !1;
     }
     if (Math.abs(PieceCol[MoveColor][thisPawn] - mvToCol) != mvCapture) {
-        return !1
+        return !1;
     }
     if (mvCapture) {
         if (PieceRow[MoveColor][thisPawn] - mvToRow != 2 * MoveColor - 1) {
-            return !1
+            return !1;
         }
     } else {
         if (PieceRow[MoveColor][thisPawn] - mvToRow == 4 * MoveColor - 2) {
             if (PieceRow[MoveColor][thisPawn] != 1 + 5 * MoveColor) {
-                return !1
+                return !1;
             }
             if (Board[mvToCol][mvToRow + 2 * MoveColor - 1] !== 0) {
-                return !1
+                return !1;
             }
         } else {
             if (PieceRow[MoveColor][thisPawn] - mvToRow != 2 * MoveColor - 1) {
-                return !1
+                return !1;
             }
         }
     }
-    return !0
+    return !0;
 }
 
 function RookForOOCastling(color) {
     if (CastlingShort[color] < 0) {
-        return null
+        return null;
     }
     if (PieceMoveCounter[color][0] > 0) {
-        return null
+        return null;
     }
     var legal = !1;
-    for (var thisRook = 0; thisRook < 16; thisRook++) {
+    let thisRook;
+    for (thisRook = 0; thisRook < 16; thisRook++) {
         if ((PieceCol[color][thisRook] == CastlingShort[color]) && (PieceCol[color][thisRook] > PieceCol[color][0]) && (PieceRow[color][thisRook] == color * 7) && (PieceType[color][thisRook] == 3)) {
             legal = !0;
-            break
+            break;
         }
     }
     if (!legal) {
-        return null
+        return null;
     }
     if (PieceMoveCounter[color][thisRook] > 0) {
-        return null
+        return null;
     }
-    return thisRook
+    return thisRook;
 }
 
 function CheckLegalityOO() {
     var thisRook = RookForOOCastling(MoveColor);
     if (thisRook === null) {
-        return !1
+        return !1;
     }
     Board[PieceCol[MoveColor][0]][MoveColor * 7] = 0;
     Board[PieceCol[MoveColor][thisRook]][MoveColor * 7] = 0;
     var col = PieceCol[MoveColor][thisRook];
     if (col < 6) {
-        col = 6
+        col = 6;
     }
     while ((col > PieceCol[MoveColor][0]) || (col >= 5)) {
         if (Board[col][MoveColor * 7] !== 0) {
-            return !1
+            return !1;
         }
-        --col
+        --col;
     }
     castleRook = thisRook;
-    return !0
+    return !0;
 }
 
 function RookForOOOCastling(color) {
     if (CastlingLong[color] < 0) {
-        return null
+        return null;
     }
     if (PieceMoveCounter[color][0] > 0) {
-        return null
+        return null;
     }
     var legal = !1;
-    for (var thisRook = 0; thisRook < 16; thisRook++) {
+    let thisRook;
+    for (thisRook = 0; thisRook < 16; thisRook++) {
         if ((PieceCol[color][thisRook] == CastlingLong[color]) && (PieceCol[color][thisRook] < PieceCol[color][0]) && (PieceRow[color][thisRook] == color * 7) && (PieceType[color][thisRook] == 3)) {
             legal = !0;
-            break
+            break;
         }
     }
     if (!legal) {
-        return null
+        return null;
     }
     if (PieceMoveCounter[color][thisRook] > 0) {
-        return null
+        return null;
     }
-    return thisRook
+    return thisRook;
 }
 
 function CheckLegalityOOO() {
     var thisRook = RookForOOOCastling(MoveColor);
     if (thisRook === null) {
-        return !1
+        return !1;
     }
     Board[PieceCol[MoveColor][0]][MoveColor * 7] = 0;
     Board[PieceCol[MoveColor][thisRook]][MoveColor * 7] = 0;
     var col = PieceCol[MoveColor][thisRook];
     if (col > 2) {
-        col = 2
+        col = 2;
     }
     while ((col < PieceCol[MoveColor][0]) || (col <= 3)) {
         if (Board[col][MoveColor * 7] !== 0) {
-            return !1
+            return !1;
         }
-        ++col
+        ++col;
     }
     castleRook = thisRook;
-    return !0
+    return !0;
 }
 
 function CheckClearWay(thisPiece) {
-    var stepCol = sign(mvToCol - PieceCol[MoveColor][thisPiece]);
-    var stepRow = sign(mvToRow - PieceRow[MoveColor][thisPiece]);
+    var stepCol = Math.sign(mvToCol - PieceCol[MoveColor][thisPiece]);
+    var stepRow = Math.sign(mvToRow - PieceRow[MoveColor][thisPiece]);
     var startCol = PieceCol[MoveColor][thisPiece] + stepCol;
     var startRow = PieceRow[MoveColor][thisPiece] + stepRow;
     while ((startCol != mvToCol) || (startRow != mvToRow)) {
         if (Board[startCol][startRow] !== 0) {
-            return !1
+            return !1;
         }
         startCol += stepCol;
-        startRow += stepRow
+        startRow += stepRow;
     }
-    return !0
+    return !0;
 }
 
 function CleanMove(move) {
     move = move.replace(/[^a-wyzA-WYZ0-9+x=#-]*/g, '');
     if (move.match(/^[Oo0]/)) {
-        move = move.replace(/[o0]/g, 'O').replace(/O(?=O)/g, 'O-')
+        move = move.replace(/[o0]/g, 'O').replace(/O(?=O)/g, 'O-');
     }
     move = move.replace(/ep/i, '');
-    return move
+    return move;
 }
 
 function GoToMove(thisPly, thisVar) {
     SetAutoPlay(!1);
     if (typeof(thisVar) == "undefined") {
-        thisVar = CurrentVar
+        thisVar = CurrentVar;
     } else {
         if (thisVar < 0) {
-            thisVar = 0
+            thisVar = 0;
         } else if (thisVar >= numberOfVars) {
-            thisVar = numberOfVars - 1
+            thisVar = numberOfVars - 1;
         }
     }
     if (thisPly < 0) {
-        thisPly = 0
+        thisPly = 0;
     } else if (thisPly >= StartPlyVar[thisVar] + PlyNumberVar[thisVar]) {
-        thisPly = StartPlyVar[thisVar] + PlyNumberVar[thisVar]
+        thisPly = StartPlyVar[thisVar] + PlyNumberVar[thisVar];
     }
     if (thisVar === CurrentVar) {
         var diff = thisPly - CurrentPly;
         if (diff > 0) {
-            MoveForward(diff)
+            MoveForward(diff);
         } else {
-            MoveBackward(-diff)
+            MoveBackward(-diff);
         }
     } else {
         var backStart = StartPly;
-        loopCommonPredecessor: for (var ii = PredecessorsVars[CurrentVar].length - 1; ii >= 0; ii--) {
-            for (var jj = PredecessorsVars[thisVar].length - 1; jj >= 0; jj--) {
+        loopCommonPredecessor: for (let ii = PredecessorsVars[CurrentVar].length - 1; ii >= 0; ii--) {
+            for (let jj = PredecessorsVars[thisVar].length - 1; jj >= 0; jj--) {
                 if (PredecessorsVars[CurrentVar][ii] === PredecessorsVars[thisVar][jj]) {
                     backStart = Math.min(PredecessorsVars[CurrentVar][ii + 1] ? StartPlyVar[PredecessorsVars[CurrentVar][ii + 1]] : CurrentPly, PredecessorsVars[thisVar][jj + 1] ? StartPlyVar[PredecessorsVars[thisVar][jj + 1]] : thisPly);
-                    break loopCommonPredecessor
+                    break loopCommonPredecessor;
                 }
             }
         }
         MoveBackward(CurrentPly - backStart, !0);
-        MoveForward(thisPly - backStart, thisVar)
+        MoveForward(thisPly - backStart, thisVar);
     }
    ylcetSettime();
    setEnginePv();
 }
 
 function SetShortcutKeysEnabled(onOff) {
-    shortcutKeysEnabled = onOff
+    shortcutKeysEnabled = onOff;
 }
 
 function interactivelyToggleShortcutKeys() {
     if (confirm("Shortcut keys currently " + (shortcutKeysEnabled ? "enabled" : "disabled") + ".\nToggle shortcut keys to " + (shortcutKeysEnabled ? "DISABLED" : "ENABLED") + "?")) {
-        SetShortcutKeysEnabled(!shortcutKeysEnabled)
+        SetShortcutKeysEnabled(!shortcutKeysEnabled);
     }
 }
 
 function SetCommentsIntoMoveText(onOff) {
-    commentsIntoMoveText = onOff
+    commentsIntoMoveText = onOff;
 }
 
 function SetCommentsOnSeparateLines(onOff) {
-    commentsOnSeparateLines = onOff
+    commentsOnSeparateLines = onOff;
 }
 
 function SetAutostartAutoplay(onOff) {
-    autostartAutoplay = onOff
+    autostartAutoplay = onOff;
 }
 
 function SetAutoplayNextGame(onOff) {
-    autoplayNextGame = onOff
+    autoplayNextGame = onOff;
 }
 
 function SetInitialHalfmove(number_or_string, always) {
-    alwaysInitialHalfmove = (always === !0);
+    alwaysInitialHalfmove = (always === true);
     if (number_or_string === undefined) {
         initialHalfmove = 0;
-        return
+        return;
     }
     initialHalfmove = number_or_string;
     if ((typeof number_or_string == "string") && (number_or_string.match(/^(start|startplusone|startplusfive|end|random|comment|commentplusone|variation)$/))) {
-        return
+        return;
     }
     if (isNaN(initialHalfmove = parseInt(initialHalfmove, 10))) {
-        initialHalfmove = 0
+        initialHalfmove = 0;
     }
 }
 
 function SetInitialVariation(number) {
-    initialVariation = isNaN(number = parseInt(number, 10)) ? 0 : number
+    initialVariation = isNaN(number = parseInt(number, 10)) ? 0 : number;
 }
 
 function SetInitialGame(number_or_string) {
-    initialGame = typeof(number_or_string) == "undefined" ? 1 : number_or_string
+    initialGame = typeof(number_or_string) == "undefined" ? 1 : number_or_string;
 }
 
 function randomGameRandomPly() {
@@ -1818,21 +1832,21 @@ function randomGameRandomPly() {
         var oldAlwaysInitialHalfmove = alwaysInitialHalfmove;
         SetInitialHalfmove("random", !0);
         Init(Math.floor(Math.random() * numberOfGames));
-        SetInitialHalfmove(oldInitialHalfmove, oldAlwaysInitialHalfmove)
+        SetInitialHalfmove(oldInitialHalfmove, oldAlwaysInitialHalfmove);
     }
 }
 
 function clockFromComment(plyNum) {
-    return customPgnCommentTag("clk", null, plyNum)
+    return customPgnCommentTag("clk", null, plyNum);
 }
 
 function clockFromHeader(whiteToMove) {
     var clockString = customPgnHeaderTag("Clock") + "";
     var matches = clockString.match("^" + (whiteToMove ? "W" : "B") + "/(.*)$");
     if (matches) {
-        return matches[1]
+        return matches[1];
     } else {
-        return null
+        return null;
     }
 }
 
@@ -1842,27 +1856,27 @@ function HighlightLastMove() {
     var theObj, moveId, text, ii, clockString, clockRegExp, clockMatch;
     undoStackStore();
     if (highlightedMoveId) {
-        if (theObj = document.getElementById(highlightedMoveId)) {
-            theObj.className = (highlightedMoveId.match(/Var0Mv/) ? 'move' : 'variation') + ' notranslate'
+        if ((theObj = document.getElementById(highlightedMoveId))) {
+            theObj.className = (highlightedMoveId.match(/Var0Mv/) ? 'move' : 'variation') + ' notranslate';
         }
     }
     var showThisMove = CurrentPly - 1;
     if (showThisMove > StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]) {
-        showThisMove = StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]
+        showThisMove = StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar];
     }
-    if (theObj = document.getElementById("GameLastComment")) {
+    if ((theObj = document.getElementById("GameLastComment"))) {
         if (commentsIntoMoveText) {
             variationTextDepth = CurrentVar === 0 ? 0 : 1;
-            text = '<SPAN CLASS="comment">' + strippedMoveComment(showThisMove + 1, CurrentVar, !0).replace(/\sID="[^"]*"/g, '') + '</SPAN>'
+            text = '<SPAN CLASS="comment">' + strippedMoveComment(showThisMove + 1, CurrentVar, !0).replace(/\sID="[^"]*"/g, '') + '</SPAN>';
         } else {
-            text = ''
+            text = '';
         }
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
     whiteToMove = ((showThisMove + 1) % 2 === 0);
     text = whiteToMove ? 'white' : 'black';
-    if (theObj = document.getElementById("GameSideToMove")) {
-        theObj.innerHTML = text
+    if ((theObj = document.getElementById("GameSideToMove"))) {
+        theObj.innerHTML = text;
     }
     var lastMoverClockObj = document.getElementById(whiteToMove ? "GameBlackClock" : "GameWhiteClock");
     var initialLastMoverClock = whiteToMove ? gameInitialBlackClock[currentGame] : gameInitialWhiteClock[currentGame];
@@ -1874,12 +1888,12 @@ function HighlightLastMove() {
             clockString = showThisMove + 1 > StartPly ? clockFromComment(showThisMove + 1) : initialLastMoverClock;
             if (!clockString && (CurrentPly === StartPly + PlyNumber)) {
                 clockRegExp = new RegExp((whiteToMove ? "Black" : "White") + "\\s+Time:\\s*(\\S+)", "i");
-                if (clockMatch = strippedMoveComment(StartPly + PlyNumber).match(clockRegExp)) {
-                    clockString = clockMatch[1]
+                if ((clockMatch = strippedMoveComment(StartPly + PlyNumber).match(clockRegExp))) {
+                    clockString = clockMatch[1];
                 }
             }
         }
-        lastMoverClockObj.innerHTML = clockString
+        lastMoverClockObj.innerHTML = clockString;
     }
     if (beforeLastMoverClockObj) {
         clockString = ((showThisMove + 1 === StartPly + PlyNumber) && ((!LiveBroadcastDemo) || (gameResult[currentGame] !== "*"))) ? clockFromHeader(whiteToMove) : null;
@@ -1887,82 +1901,82 @@ function HighlightLastMove() {
             clockString = showThisMove > StartPly ? clockFromComment(showThisMove) : initialBeforeLastMoverClock;
             if (!clockString && (CurrentPly === StartPly + PlyNumber)) {
                 clockRegExp = new RegExp((whiteToMove ? "White" : "Black") + "\\s+Time:\\s*(\\S+)", "i");
-                if (clockMatch = strippedMoveComment(StartPly + PlyNumber).match(clockRegExp)) {
-                    clockString = clockMatch[1]
+                if ((clockMatch = strippedMoveComment(StartPly + PlyNumber).match(clockRegExp))) {
+                    clockString = clockMatch[1];
                 }
             }
         }
-        beforeLastMoverClockObj.innerHTML = clockString
+        beforeLastMoverClockObj.innerHTML = clockString;
     }
     if (lastMoverClockObj && beforeLastMoverClockObj) {
         if (lastMoverClockObj.innerHTML && !beforeLastMoverClockObj.innerHTML) {
-            beforeLastMoverClockObj.innerHTML = "-"
+            beforeLastMoverClockObj.innerHTML = "-";
         } else if (!lastMoverClockObj.innerHTML && beforeLastMoverClockObj.innerHTML) {
-            lastMoverClockObj.innerHTML = "-"
+            lastMoverClockObj.innerHTML = "-";
         }
     }
-    if (theObj = document.getElementById("GameNextMove")) {
+    if ((theObj = document.getElementById("GameNextMove"))) {
         if (CurrentVar === 0 && showThisMove + 1 >= StartPly + PlyNumber) {
-            text = '<SPAN CLASS="move notranslate">' + gameResult[currentGame] + '</SPAN>'
+            text = '<SPAN CLASS="move notranslate">' + gameResult[currentGame] + '</SPAN>';
         } else if (typeof(Moves[showThisMove + 1]) == "undefined") {
-            text = ""
+            text = "";
         } else {
-            text = printMoveText(showThisMove + 1, CurrentVar, (CurrentVar !== 0), !0, !1)
+            text = printMoveText(showThisMove + 1, CurrentVar, (CurrentVar !== 0), !0, !1);
         }
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
-    if (theObj = document.getElementById("GameNextVariations")) {
+    if ((theObj = document.getElementById("GameNextVariations"))) {
         text = '';
         if (commentsIntoMoveText) {
             var children = childrenVars(showThisMove + 1, CurrentVar);
             for (ii = 0; ii < children.length; ii++) {
                 if (children[ii] !== CurrentVar) {
-                    text += ' ' + printMoveText(showThisMove + 1, children[ii], (children[ii] !== 0), !0, !1)
+                    text += ' ' + printMoveText(showThisMove + 1, children[ii], (children[ii] !== 0), !0, !1);
                 }
             }
         }
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
-    if (theObj = document.getElementById("GameLastMove")) {
+    if ((theObj = document.getElementById("GameLastMove"))) {
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
-            text = printMoveText(showThisMove, CurrentVar, (CurrentVar !== 0), !0, !1)
+            text = printMoveText(showThisMove, CurrentVar, (CurrentVar !== 0), !0, !1);
         } else if (showThisMove === StartPly - 1) {
-            text = '<SPAN CLASS="' + (CurrentVar > 0 ? 'variation' : 'move') + ' notranslate">' + (Math.floor((showThisMove + 1) / 2) + 1) + (((showThisMove + 1) % 2) ? "..." : ".") + '</SPAN>'
+            text = '<SPAN CLASS="' + (CurrentVar > 0 ? 'variation' : 'move') + ' notranslate">' + (Math.floor((showThisMove + 1) / 2) + 1) + (((showThisMove + 1) % 2) ? "..." : ".") + '</SPAN>';
         } else {
-            text = ''
+            text = '';
         }
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
-    if (theObj = document.getElementById("GameLastVariations")) {
+    if ((theObj = document.getElementById("GameLastVariations"))) {
         text = '';
         if (commentsIntoMoveText) {
             var siblings = childrenVars(showThisMove, HistVar[showThisMove]);
             for (ii = 0; ii < siblings.length; ii++) {
                 if (siblings[ii] !== CurrentVar) {
-                    text += ' ' + printMoveText(showThisMove, siblings[ii], (siblings[ii] !== 0), !0, !1)
+                    text += ' ' + printMoveText(showThisMove, siblings[ii], (siblings[ii] !== 0), !0, !1);
                 }
             }
         }
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
     if (showThisMove >= (StartPlyVar[CurrentVar] - 1)) {
         moveId = 'Var' + CurrentVar + 'Mv' + (showThisMove + 1);
-        if (theObj = document.getElementById(moveId)) {
-            theObj.className = (CurrentVar ? 'variation variationOn' : 'move moveOn') + ' notranslate'
+        if ((theObj = document.getElementById(moveId))) {
+            theObj.className = (CurrentVar ? 'variation variationOn' : 'move moveOn') + ' notranslate';
         }
         highlightedMoveId = moveId;
         if (highlightOption) {
             var colFrom, rowFrom, colTo, rowTo;
             if ((showThisMove < StartPly) || HistNull[showThisMove]) {
                 colFrom = rowFrom = -1;
-                colTo = rowTo = -1
+                colTo = rowTo = -1;
             } else {
                 colFrom = HistCol[0][showThisMove] === undefined ? -1 : HistCol[0][showThisMove];
                 rowFrom = HistRow[0][showThisMove] === undefined ? -1 : HistRow[0][showThisMove];
                 colTo = HistCol[2][showThisMove] === undefined ? -1 : HistCol[2][showThisMove];
-                rowTo = HistRow[2][showThisMove] === undefined ? -1 : HistRow[2][showThisMove]
+                rowTo = HistRow[2][showThisMove] === undefined ? -1 : HistRow[2][showThisMove];
             }
-            highlightMove(colFrom, rowFrom, colTo, rowTo)
+            highlightMove(colFrom, rowFrom, colTo, rowTo);
         }
     }
 }
@@ -2041,21 +2055,21 @@ function setLive()
         revGame.style.cursor = "pointer";
         revGame.style.color = "#7fffa9";
         revGame.style.textDecoration = "underline";
-        revGame.innerHTML = "Go Live"; 
+        revGame.innerHTML = "Go Live";
     }
 }
 
 function setRevLive()
 {
    setRev();
-   setLive();    
+   setLive();
 }
 
-function topFunction() 
+function topFunction()
 {
     document.body.scrollTop = 0; // For Safari
     document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-} 
+}
 
 function myloadGame(gameN)
 {
@@ -2066,8 +2080,8 @@ function myloadGame(gameN)
     }
     else
     {
-        var theMatch = gameEvent[currentGame].match(/(.*?) Tournament/); 
-        pgnName = theMatch[1] + ".pgn";
+        var theMatch = gameEvent[currentGame].match(/(.*?) Tournament/);
+        let pgnName = theMatch[1] + ".pgn";
         gameN = parseInt(gameN);
         if (pgnUrl.match(/live.pgn/))
         {
@@ -2100,8 +2114,8 @@ function myloadGameLive()
     {
         return;
     }
-    pgnName = "live.pgn";
-    
+    let pgnName = "live.pgn";
+
     revLoaded = !revLoaded;
     document.getElementById('load').style.visibility="visible";
     SetInitialGame(0);
@@ -2110,9 +2124,9 @@ function myloadGameLive()
     RefreshBoard();
 }
 
-function ylcetSettime() 
+function ylcetSettime()
 {
-   if (gameResult[currentGame] == "*") 
+   if (gameResult[currentGame] == "*")
    {
       return;
    }
@@ -2120,29 +2134,29 @@ function ylcetSettime()
    var theObx = null;
    var theOby = null;
 
-   if (theObx = document.getElementById("blackClock")) {
-      if (theOby = document.getElementById("blackClockl")) {
+   if ((theObx = document.getElementById("blackClock"))) {
+      if ((theOby = document.getElementById("blackClockl"))) {
          //////console.log ("Came here");
          theOby.innerHTML = theObx.innerHTML; //asd
       }
    }
 
-   if (theObx = document.getElementById("whiteClock")) {
-      if (theOby = document.getElementById("whiteClockl")) {
+   if ((theObx = document.getElementById("whiteClock"))) {
+      if ((theOby = document.getElementById("whiteClockl"))) {
          theOby.innerHTML = theObx.innerHTML;
       }
    }
 }
 
-function SetCrossTableFile(crosstable) {
-    ctable = crosstable;
-    csStr = "&c=" + ctable;
-}
+// function SetCrossTableFile(crosstable) {
+//     ctable = crosstable;
+//     csStr = "&c=" + ctable;
+// }
 
-function SetScheduleFile(schedule) {
-    stable = schedule;
-    csStr += "&sc=" + stable;
-}
+// function SetScheduleFile(schedule) {
+//     stable = schedule;
+//     csStr += "&sc=" + stable;
+// }
 
 function SetPVfile() {
     if (isArchiveFile()) {
@@ -2169,7 +2183,7 @@ function SetPVfile() {
     }
 }
 
-function SetSeason(sname) 
+function SetSeason(sname)
 {
     jsSeasonInt = parseInt(sname);
 }
@@ -2201,10 +2215,10 @@ function gameDuration() {
 }
 
 var currDepth = 1;
-var depthArray = new Array();
+var depthArray = [];
 var tempCurrDepth = 1;
 var replace = 1;
-var depthFound = new Array();
+var depthFound = [];
 
 function replacer(match, p1, p2, p3, p4, p5, p6, offset, string) {
     if (p2.search(/.*:info.*/) == 0) {
@@ -2245,7 +2259,7 @@ var initialCheckPv = 0;
 var resetMoves = 0;
 
 function getBPv(decr) {
-    var n = new Array();
+    var n = [];
     var prevM = 0;
     var res = strText.split("\n");
     var lastknownMove = 0;
@@ -2277,9 +2291,9 @@ function getBPv(decr) {
         lastknownMove = moves.length - 2;
     }
 
-    for (var x = res.length - 1; x >= 0; x--) {
+    for (let x = res.length - 1; x >= 0; x--) {
         var str = res[x].trim();
-        var moveNo = str.match(/(.*?)#(.*?)::(.*)/)
+        var moveNo = str.match(/(.*?)#(.*?)::(.*)/);
         if (moveNo) {
             if (moveNo[2] < lastknownMove - 1 && !initialCheckPv) {
                 ////////console.log ("not calculating lastmove:: " + moveNo[1]);
@@ -2291,7 +2305,7 @@ function getBPv(decr) {
             if (prevM > 0 && (prevM != moveX)) {
                 moves[prevM] = n.join('<br />');
                 //////console.log (" last entry pushed:" + moveNo[2]);
-                n = new Array();
+                n = [];
                 //////console.log ("arun: setting array for move#:" + prevM);
             }
             var tempX = moveX;
@@ -2310,9 +2324,9 @@ function getBPv(decr) {
             moves[prevM] = n.join('<br />');
         }
         //////console.log ("initialCheckPv is :" + initialCheckPv);
-        if (moves[1] = null || moves[1] == undefined || initialCheckPv) {
+        if (moves[1] == null || initialCheckPv) {
             prevM = parseInt(prevM - 1);
-            for (var x = prevM; x > 0; x--) {
+            for (let x = prevM; x > 0; x--) {
                 if (MoveComments[x] && MoveComments[x].trim() == 'book')
                     moves[x] = "book";
             }
@@ -2323,7 +2337,7 @@ function getBPv(decr) {
 
 function myupdateCrosstableFromHttpRequest(this_http_request) {
     if (this_http_request.readyState != 4) {
-        return
+        return;
     }
 
     if (this_http_request.status == 404) {
@@ -2335,7 +2349,7 @@ function myupdateCrosstableFromHttpRequest(this_http_request) {
     }
     */
 
-   if (this_http_request.status == 200) 
+   if (this_http_request.status == 200)
    {
       CrosstableLastModifiedHeader1 = this_http_request.getResponseHeader("Last-Modified");
       drawStandingsNew(this_http_request.responseText, "#cross_divs"); /* pgnload */
@@ -2347,7 +2361,7 @@ function myupdateCrosstableFromHttpRequest(this_http_request) {
 
 function myupdateLiveSFPvFromHttpRequest(this_http_request) {
     if (this_http_request.readyState != 4) {
-        return
+        return;
     }
 
     if (this_http_request.status == 404) {
@@ -2359,7 +2373,7 @@ function myupdateLiveSFPvFromHttpRequest(this_http_request) {
     }
     */
 
-   if (this_http_request.status == 200) 
+   if (this_http_request.status == 200)
    {
       mysfliveevalLastModifiedHeader1 = this_http_request.getResponseHeader("Last-Modified");
       drawSfPV(this_http_request.responseText, "#sfeval"); /* pgnload */
@@ -2369,7 +2383,7 @@ function myupdateLiveSFPvFromHttpRequest(this_http_request) {
 
 function myupdateLastMovetimeFromHttpRequest(this_http_request, realUpdate, isBlack) {
     if (this_http_request.readyState != 4) {
-        return
+        return;
     }
 
     if (this_http_request.status == 200) {
@@ -2386,39 +2400,39 @@ function myupdateLastMovetime() {
 
     var http_request = !1;
     if (window.XMLHttpRequest) {
-        http_request = new XMLHttpRequest()
+        http_request = new XMLHttpRequest();
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
-        return !1
+        return !1;
     }
     http_request.onreadystatechange = function() {
-        myupdateLastMovetimeFromHttpRequest(http_request)
+        myupdateLastMovetimeFromHttpRequest(http_request);
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         http_request.open("GET", pgnUrl + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", LastMovetimeLastModifiedHeader1);
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function myupdatePvFromHttpRequestB(this_http_request, realUpdate, isBlack) {
     if (this_http_request.readyState != 4) {
-        return
+        return;
     }
 
     if (this_http_request.status == 404) {
@@ -2438,10 +2452,10 @@ function myupdatePvFromHttpRequestB(this_http_request, realUpdate, isBlack) {
     }
 }
 
-function myupdateSchedtableFromHttpRequest(this_http_request, realUpdate) 
+function myupdateSchedtableFromHttpRequest(this_http_request, realUpdate)
 {
    if (this_http_request.readyState != 4) {
-      return
+      return;
    }
 
    if (this_http_request.status == 404) {
@@ -2452,13 +2466,13 @@ function myupdateSchedtableFromHttpRequest(this_http_request, realUpdate)
       /* alert("no update found"); */
    }
 
-   if (this_http_request.status == 200) 
+   if (this_http_request.status == 200)
    {
       SchedtableLastModifiedHeader2 = this_http_request.getResponseHeader("Last-Modified");
       var timeDiff = getLastMod(SchedtableLastModifiedHeader2);
       timeDiff = parseInt(timeDiff);
       SchedendTime = parseInt(timeDiff);
-      if (realUpdate) 
+      if (realUpdate)
       {
          SchedtableLastModifiedHeader1 = this_http_request.getResponseHeader("Last-Modified");
          tempDom = $('<div></div>').append($.parseHTML(this_http_request.responseText));
@@ -2484,35 +2498,35 @@ function myupdateSchedtable(realUpdate) {
 
     var http_request = !1;
     if (window.XMLHttpRequest) {
-        http_request = new XMLHttpRequest()
+        http_request = new XMLHttpRequest();
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
-        return !1
+        return !1;
     }
     http_request.onreadystatechange = function() {
-        myupdateSchedtableFromHttpRequest(http_request, realUpdate)
+        myupdateSchedtableFromHttpRequest(http_request, realUpdate);
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         stable = "schedule.json";
         http_request.open("GET", stable + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", SchedtableLastModifiedHeader1);
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function myupdateCrosstable() {
@@ -2524,67 +2538,67 @@ function myupdateCrosstable() {
 
     var http_request = !1;
     if (window.XMLHttpRequest) {
-        http_request = new XMLHttpRequest()
+        http_request = new XMLHttpRequest();
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
-        return !1
+        return !1;
     }
     http_request.onreadystatechange = function() {
-        myupdateCrosstableFromHttpRequest(http_request)
+        myupdateCrosstableFromHttpRequest(http_request);
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         http_request.open("GET", "crosstable.json" + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", CrosstableLastModifiedHeader1);
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function myupdateLiveSf() {
     var http_request = !1;
     if (window.XMLHttpRequest) {
-        http_request = new XMLHttpRequest()
+        http_request = new XMLHttpRequest();
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
-        return !1
+        return !1;
     }
     http_request.onreadystatechange = function() {
-        myupdateLiveSFPvFromHttpRequest(http_request)
+        myupdateLiveSFPvFromHttpRequest(http_request);
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         http_request.open("GET", "data.json" + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", mysfliveevalLastModifiedHeader1);
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function myupdatePv(realUpdate, isBlack) {
@@ -2595,34 +2609,34 @@ function myupdatePv(realUpdate, isBlack) {
 
     var http_request = !1;
     if (window.XMLHttpRequest) {
-        http_request = new XMLHttpRequest()
+        http_request = new XMLHttpRequest();
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
-        return !1
+        return !1;
     }
     http_request.onreadystatechange = function() {
         myupdatePvFromHttpRequestB(http_request, realUpdate, isBlack);
     };
     try {
         var randomizer2 = "";
-        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+        randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         http_request.open("GET", pvfile + randomizer2);
         http_request.setRequestHeader("If-Modified-Since", myupdatePvHeader1);
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function ResetGlobVar() {
@@ -2635,12 +2649,12 @@ function ResetGlobVar() {
 }
 
 function SetHighlightOption(on) {
-    highlightOption = on
+    highlightOption = on;
 }
 
 function ylcetHighLight() {
-    for (iiv = 0; iiv <= 7; ++iiv) {
-        for (jjv = 0; jjv <= 7; ++jjv) {
+    for (let iiv = 0; iiv <= 7; ++iiv) {
+        for (let jjv = 0; jjv <= 7; ++jjv) {
             highlightSquare(jjv, iiv, 0);
         }
     }
@@ -2650,9 +2664,9 @@ function SetHighlight(on) {
     SetHighlightOption(on);
     if (on) {
         ylcetHighLight();
-        HighlightLastMove()
+        HighlightLastMove();
     } else {
-        highlightMove(-1, -1, -1, -1)
+        highlightMove(-1, -1, -1, -1);
     }
 }
 var colFromHighlighted = -1;
@@ -2665,37 +2679,37 @@ function highlightMove(colFrom, rowFrom, colTo, rowTo) {
     highlightSquare(colToHighlighted, rowToHighlighted, !1);
     if (highlightSquare(colFrom, rowFrom, !0)) {
         colFromHighlighted = colFrom;
-        rowFromHighlighted = rowFrom
+        rowFromHighlighted = rowFrom;
     } else {
-        colFromHighlighted = rowFromHighlighted = -1
+        colFromHighlighted = rowFromHighlighted = -1;
     }
     if (highlightSquare(colTo, rowTo, !0)) {
         colToHighlighted = colTo;
-        rowToHighlighted = rowTo
+        rowToHighlighted = rowTo;
     } else {
-        colToHighlighted = rowToHighlighted = -1
+        colToHighlighted = rowToHighlighted = -1;
     }
 }
 
 function highlightSquare(col, row, on) {
     if ((col === undefined) || (row === undefined)) {
-        return !1
+        return !1;
     }
     if (!SquareOnBoard(col, row)) {
-        return !1
+        return !1;
     }
     var trow = IsRotated ? row : 7 - row;
     var tcol = IsRotated ? 7 - col : col;
     var theObj = document.getElementById('tcol' + tcol + 'trow' + trow);
     if (!theObj) {
-        return !1
+        return !1;
     }
     if (on) {
-        theObj.className = (trow + tcol) % 2 === 0 ? "highlightWhiteSquare" : "highlightBlackSquare"
+        theObj.className = (trow + tcol) % 2 === 0 ? "highlightWhiteSquare" : "highlightBlackSquare";
     } else {
-        theObj.className = (trow + tcol) % 2 === 0 ? "whiteSquare" : "blackSquare"
+        theObj.className = (trow + tcol) % 2 === 0 ? "whiteSquare" : "blackSquare";
     }
-    return !0
+    return !0;
 }
 var undoStackMax = 1000;
 var undoStackGame = new Array(undoStackMax);
@@ -2710,12 +2724,12 @@ function undoStackReset() {
     undoStackGame = new Array(undoStackMax);
     undoStackVar = new Array(undoStackMax);
     undoStackPly = new Array(undoStackMax);
-    undoStackStart = undoStackCurrent = undoStackEnd = 0
+    undoStackStart = undoStackCurrent = undoStackEnd = 0;
 }
 
 function undoStackStore() {
     if (undoRedoInProgress) {
-        return !1
+        return !1;
     }
     if ((undoStackStart === undoStackCurrent) || (currentGame !== undoStackGame[undoStackCurrent]) || (CurrentVar !== undoStackVar[undoStackCurrent]) || (CurrentPly !== undoStackPly[undoStackCurrent])) {
         undoStackCurrent = (undoStackCurrent + 1) % undoStackMax;
@@ -2724,38 +2738,38 @@ function undoStackStore() {
         undoStackPly[undoStackCurrent] = CurrentPly;
         undoStackEnd = undoStackCurrent;
         if (undoStackStart === undoStackCurrent) {
-            undoStackStart = (undoStackStart + 1) % undoStackMax
+            undoStackStart = (undoStackStart + 1) % undoStackMax;
         }
     }
-    return !0
+    return !0;
 }
 
 function undoStackUndo() {
     if ((undoStackCurrent - 1 + undoStackMax) % undoStackMax === undoStackStart) {
-        return !1
+        return !1;
     }
     undoRedoInProgress = !0;
     undoStackCurrent = (undoStackCurrent - 1 + undoStackMax) % undoStackMax;
     if (undoStackGame[undoStackCurrent] !== currentGame) {
-        Init(undoStackGame[undoStackCurrent])
+        Init(undoStackGame[undoStackCurrent]);
     }
     GoToMove(undoStackPly[undoStackCurrent], undoStackVar[undoStackCurrent]);
     undoRedoInProgress = !1;
-    return !0
+    return !0;
 }
 
 function undoStackRedo() {
     if (undoStackCurrent === undoStackEnd) {
-        return !1
+        return !1;
     }
     undoRedoInProgress = !0;
     undoStackCurrent = (undoStackCurrent + 1) % undoStackMax;
     if (undoStackGame[undoStackCurrent] !== currentGame) {
-        Init(undoStackGame[undoStackCurrent])
+        Init(undoStackGame[undoStackCurrent]);
     }
     GoToMove(undoStackPly[undoStackCurrent], undoStackVar[undoStackCurrent]);
     undoRedoInProgress = !1;
-    return !0
+    return !0;
 }
 
 function fixCommonPgnMistakes(text) {
@@ -2765,7 +2779,7 @@ function fixCommonPgnMistakes(text) {
     text = text.replace(/\u2024/g, ".");
     text = text.replace(/[\u2025-\u2026]/g, "...");
     text = text.replace(/\\"/g, "'");
-    return text
+    return text;
 }
 
 function fullPgnGame(gameNum) {
@@ -2773,7 +2787,7 @@ function fullPgnGame(gameNum) {
     res = res.replace(/\[\s*(\w+)\s*"([^"]*)"\s*\][^[]*/g, '[$1 "$2"]\n');
     res += "\n";
     res += pgnGame[gameNum] ? pgnGame[gameNum].replace(/(^[\s]*|[\s]*$)/g, "") : "";
-    return res
+    return res;
 }
 var prevpgnText = '';
 
@@ -2789,7 +2803,7 @@ function pgnGameFromPgnText(pgnText) {
     pgnText = pgnText.replace(/(^|\n)%.*(\n|$)/g, "\n");
     numberOfGames = 0;
     checkedGame = "";
-    while (headMatch = pgnHeaderBlockRegExp.exec(pgnText)) {
+    while ((headMatch = pgnHeaderBlockRegExp.exec(pgnText))) {
         newHead = headMatch[0];
         startNew = pgnText.indexOf(newHead);
         afterNew = startNew + newHead.length;
@@ -2799,25 +2813,25 @@ function pgnGameFromPgnText(pgnText) {
             if (validHead) {
                 pgnHeader[numberOfGames] = prevHead;
                 pgnGame[numberOfGames++] = checkedGame;
-                checkedGame = ""
+                checkedGame = "";
             } else {
-                checkedGame += newHead
+                checkedGame += newHead;
             }
         } else {
-            validHead = !0
+            validHead = !0;
         }
         if (validHead) {
-            prevHead = newHead
+            prevHead = newHead;
         }
-        pgnText = pgnText.slice(afterNew)
+        pgnText = pgnText.slice(afterNew);
     }
     if (prevHead) {
         pgnHeader[numberOfGames] = prevHead;
         checkedGame += pgnText;
-        pgnGame[numberOfGames++] = checkedGame
+        pgnGame[numberOfGames++] = checkedGame;
     }
     console.log ("numberOfGames:" + numberOfGames);
-    return (numberOfGames > 0)
+    return (numberOfGames > 0);
 }
 
 var pgnLoaded = 0;
@@ -2829,50 +2843,50 @@ function pgnGameFromHttpRequest(httpResponseData) {
     }
     else
        pgnLoaded = 1;
-    return pgnGameFromPgnText(httpResponseData)
+    return pgnGameFromPgnText(httpResponseData);
 }
 var http_request_last_processed_id = 0;
 
 function updatePgnFromHttpRequest(this_http_request, this_http_request_id) {
     var res = LOAD_PGN_FAIL;
     if (this_http_request.readyState != 4) {
-        return
+        return;
     }
     if (this_http_request_id < http_request_last_processed_id) {
-        return
+        return;
     } else {
-        http_request_last_processed_id = this_http_request_id
+        http_request_last_processed_id = this_http_request_id;
     }
     if ((this_http_request.status == 200) || (this_http_request.status === 0) || (this_http_request.status == 304)) {
         if (this_http_request.status == 304) {
             if (LiveBroadcastDelay > 0) {
-                res = LOAD_PGN_UNMODIFIED
+                res = LOAD_PGN_UNMODIFIED;
             } else {
-                myAlert('error: unmodified PGN URL when not in live mode')
+                myAlert('error: unmodified PGN URL when not in live mode');
             }
         } else if (window.opera && (!this_http_request.responseText) && (this_http_request.status === 0)) {
             this_http_request.abort();
-            res = LOAD_PGN_UNMODIFIED
+            res = LOAD_PGN_UNMODIFIED;
         } else if (!this_http_request.responseText) {
-            myAlert('error: no data received from PGN URL\n' + pgnUrl, !0)
+            myAlert('error: no data received from PGN URL\n' + pgnUrl, !0);
         } else if (!pgnGameFromHttpRequest(this_http_request.responseText)) {
-            myAlert('error: no games found at PGN URL\n' + pgnUrl, !0)
+            myAlert('error: no games found at PGN URL\n' + pgnUrl, !0);
         } else {
             if (LiveBroadcastDelay > 0) {
                 LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString();
-                if (LiveBroadcastLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified")) {
-                    LiveBroadcastLastModified = new Date(LiveBroadcastLastModifiedHeader)
+                if ((LiveBroadcastLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified"))) {
+                    LiveBroadcastLastModified = new Date(LiveBroadcastLastModifiedHeader);
                 } else {
-                    LiveBroadcastLastModified_Reset()
+                    LiveBroadcastLastModified_Reset();
                 }
             }
-            res = LOAD_PGN_OK
+            res = LOAD_PGN_OK;
         }
     } else {
-        myAlert('error: failed reading PGN URL\n' + pgnUrl, !0)
+        myAlert('error: failed reading PGN URL\n' + pgnUrl, !0);
     }
     if (LiveBroadcastDemo && (res == LOAD_PGN_UNMODIFIED)) {
-        res = LOAD_PGN_OK
+        res = LOAD_PGN_OK;
     }
     loadPgnCheckingLiveStatus(res);
     document.getElementById('load').style.visibility = "hidden";
@@ -2885,14 +2899,16 @@ var LOAD_PGN_UNMODIFIED = 2;
 function loadPgnCheckingLiveStatus(res) {
     switch (res) {
         case LOAD_PGN_OK:
+            let oldAutoplay, oldInitialHalfmove, oldInitialVariation, oldParseLastMoveError;
+
             ////console.log ("herexx");
             if (LiveBroadcastDelay > 0) {
                 firstStart = !0;
-                var oldParseLastMoveError = ParseLastMoveError;
+                oldParseLastMoveError = ParseLastMoveError;
                 if (!LiveBroadcastStarted) {
                     ////console.log ("yyy1");
-                    LiveBroadcastStarted = !0
-                } else 
+                    LiveBroadcastStarted = !0;
+                } else
                     {
                     if (currentGame == 0)
                     {
@@ -2908,29 +2924,30 @@ function loadPgnCheckingLiveStatus(res) {
                     LiveBroadcastOldCurrentVar = CurrentVar;
                     LiveBroadcastOldCurrentPly = CurrentPly;
                     LiveBroadcastOldCurrentPlyLast = (CurrentVar === 0 && CurrentPly === StartPlyVar[0] + PlyNumberVar[0]);
-                    var oldAutoplay = isAutoPlayOn;
+                    oldAutoplay = isAutoPlayOn;
                     if (isAutoPlayOn) {
-                        SetAutoPlay(!1)
+                        SetAutoPlay(!1);
                     }
                     LoadGameHeaders();
                     LiveBroadcastFoundOldGame = !1;
-                    for (var ii = 0; ii < numberOfGames; ii++) {
+                    let ii;
+                    for (ii = 0; ii < numberOfGames; ii++) {
                         LiveBroadcastFoundOldGame = (gameWhite[ii] == oldWhite) && (gameBlack[ii] == oldBlack) && (gameEvent[ii] == oldEvent) && (gameRound[ii] == oldRound) && (gameSite[ii] == oldSite) && (gameDate[ii] == oldDate);
                         if (LiveBroadcastFoundOldGame) {
-                            break
+                            break;
                         }
                     }
                     if (LiveBroadcastFoundOldGame) {
-                        initialGame = ii + 1
+                        initialGame = ii + 1;
                     }
                     if (LiveBroadcastFoundOldGame) {
-                        var oldInitialVariation = initialVariation;
-                        var oldInitialHalfmove = initialHalfmove;
+                        oldInitialVariation = initialVariation;
+                        oldInitialHalfmove = initialHalfmove;
                         initialVariation = CurrentVar;
                         if (LiveBroadcastSteppingMode) {
-                            initialHalfmove = (LiveBroadcastOldCurrentPlyLast || oldParseLastMoveError) ? LiveBroadcastOldCurrentPly + 1 : LiveBroadcastOldCurrentPly
+                            initialHalfmove = (LiveBroadcastOldCurrentPlyLast || oldParseLastMoveError) ? LiveBroadcastOldCurrentPly + 1 : LiveBroadcastOldCurrentPly;
                         } else {
-                            initialHalfmove = (LiveBroadcastOldCurrentPlyLast || oldParseLastMoveError) ? "end" : LiveBroadcastOldCurrentPly
+                            initialHalfmove = (LiveBroadcastOldCurrentPlyLast || oldParseLastMoveError) ? "end" : LiveBroadcastOldCurrentPly;
                         }
                     }
                 }
@@ -2940,20 +2957,20 @@ function loadPgnCheckingLiveStatus(res) {
             if (LiveBroadcastDelay > 0) {
                 if (LiveBroadcastFoundOldGame) {
                     initialHalfmove = oldInitialHalfmove;
-                    initialVariation = oldInitialVariation
+                    initialVariation = oldInitialVariation;
                 }
-                checkLiveBroadcastStatus()
+                checkLiveBroadcastStatus();
             }
             customFunctionOnPgnTextLoad();
             if (LiveBroadcastDelay > 0) {
                 if (LiveBroadcastFoundOldGame) {
                     if (LiveBroadcastSteppingMode) {
                         if (oldAutoplay || LiveBroadcastOldCurrentPlyLast || oldParseLastMoveError) {
-                            SetAutoPlay(!0)
+                            SetAutoPlay(!0);
                         }
                     } else {
                         if (oldAutoplay) {
-                            SetAutoPlay(!0)
+                            SetAutoPlay(!0);
                         }
                     }
                 }
@@ -2961,7 +2978,7 @@ function loadPgnCheckingLiveStatus(res) {
             break;
         case LOAD_PGN_UNMODIFIED:
             if (LiveBroadcastDelay > 0) {
-                checkLiveBroadcastStatus()
+                checkLiveBroadcastStatus();
             }
             break;
         case LOAD_PGN_FAIL:
@@ -2970,7 +2987,7 @@ function loadPgnCheckingLiveStatus(res) {
                 pgnGameFromPgnText(alertPgn);
                 undoStackReset();
                 Init();
-                customFunctionOnPgnTextLoad()
+                customFunctionOnPgnTextLoad();
             } else {
                 if (!LiveBroadcastStarted) {
                     pgnGameFromPgnText(LiveBroadcastPlaceholderPgn);
@@ -2978,15 +2995,15 @@ function loadPgnCheckingLiveStatus(res) {
                     undoStackReset();
                     Init();
                     checkLiveBroadcastStatus();
-                    customFunctionOnPgnTextLoad()
+                    customFunctionOnPgnTextLoad();
                 } else {
-                    checkLiveBroadcastStatus()
+                    checkLiveBroadcastStatus();
                 }
             }
-            break
+            break;
     }
     if (LiveBroadcastDelay > 0) {
-        restartLiveBroadcastTimeout()
+        restartLiveBroadcastTimeout();
     }
 }
 var http_request_last_id = 0;
@@ -2997,43 +3014,43 @@ function loadPgnFromPgnUrl(pgnUrl) {
     if (window.XMLHttpRequest) {
         http_request = new XMLHttpRequest();
         if (http_request.overrideMimeType) {
-            http_request.overrideMimeType("text/plain")
+            http_request.overrideMimeType("text/plain");
         }
     } else if (window.ActiveXObject) {
         try {
-            http_request = new ActiveXObject("Msxml2.XMLHTTP")
+            http_request = new ActiveXObject("Msxml2.XMLHTTP");
         } catch (e) {
             try {
-                http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                http_request = new ActiveXObject("Microsoft.XMLHTTP");
             } catch (e) {
                 myAlert('error: XMLHttpRequest unavailable for PGN URL\n' + pgnUrl, !0);
-                return !1
+                return !1;
             }
         }
     }
     if (!http_request) {
         myAlert('error: failed creating XMLHttpRequest for PGN URL\n' + pgnUrl, !0);
-        return !1
+        return !1;
     }
     var http_request_id = http_request_last_id++;
     http_request.onreadystatechange = function() {
-        updatePgnFromHttpRequest(http_request, http_request_id)
+        updatePgnFromHttpRequest(http_request, http_request_id);
     };
     try {
         var randomizer = "";
         if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-            randomizer = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+            randomizer = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
         }
         http_request.open("GET", pgnUrl + randomizer);
         if (LiveBroadcastDelay > 0) {
-            http_request.setRequestHeader("If-Modified-Since", LiveBroadcastLastModifiedHeader)
+            http_request.setRequestHeader("If-Modified-Since", LiveBroadcastLastModifiedHeader);
         }
-        http_request.send(null)
+        http_request.send(null);
     } catch (e) {
         myAlert('error: failed sending XMLHttpRequest for PGN URL\n' + pgnUrl, !0);
-        return !1
+        return !1;
     }
-    return !0
+    return !0;
 }
 
 function SetPgnUrl(url) {
@@ -3049,85 +3066,85 @@ function SetBoardFlip(flip) {
 
 function LiveBroadcastLastModified_Reset() {
     LiveBroadcastLastModified = new Date(0);
-    LiveBroadcastLastModifiedHeader = LiveBroadcastLastModified.toUTCString()
+    LiveBroadcastLastModifiedHeader = LiveBroadcastLastModified.toUTCString();
 }
 
 function LiveBroadcastLastReceivedLocal_Reset() {
-    LiveBroadcastLastReceivedLocal = 'unavailable'
+    LiveBroadcastLastReceivedLocal = 'unavailable';
 }
 
 function LiveBroadcastLastModified_ServerTime() {
-    return LiveBroadcastLastModified.getTime() === 0 ? 'unavailable' : LiveBroadcastLastModifiedHeader
+    return LiveBroadcastLastModified.getTime() === 0 ? 'unavailable' : LiveBroadcastLastModifiedHeader;
 }
 
 function pauseLiveBroadcast() {
     if (LiveBroadcastDelay === 0) {
-        return
+        return;
     }
     LiveBroadcastPaused = !0;
     clearTimeout(LiveBroadcastInterval);
-    LiveBroadcastInterval = null
+    LiveBroadcastInterval = null;
 }
 
 function restartLiveBroadcast() {
     if (LiveBroadcastDelay === 0) {
-        return
+        return;
     }
     LiveBroadcastPaused = !1;
-    refreshPgnSource()
+    refreshPgnSource();
 }
 
 function checkLiveBroadcastStatus() {
     var theTitle, theObj, ii;
     var tick = "&nbsp;" + (LiveBroadcastTicker % 2 ? "<>" : "><") + "&nbsp;";
     if (LiveBroadcastDelay === 0) {
-        return
+        return;
     }
-    if (LiveBroadcastStarted === !1 || typeof(pgnHeader) == "undefined" || (numberOfGames == 1 && gameEvent[0] == LiveBroadcastPlaceholderEvent)) {
+    if (LiveBroadcastStarted === false || typeof(pgnHeader) == "undefined" || (numberOfGames == 1 && gameEvent[0] == LiveBroadcastPlaceholderEvent)) {
         LiveBroadcastEnded = !1;
         LiveBroadcastGamesRunning = 0;
         LiveBroadcastStatusString = "0 " + tick + " 0";
-        theTitle = "live broadcast yet to start"
+        theTitle = "live broadcast yet to start";
     } else {
         var lbgr = 0;
         for (ii = 0; ii < numberOfGames; ii++) {
             if (gameResult[ii].indexOf('*') >= 0) {
-                lbgr++
+                lbgr++;
             }
         }
         LiveBroadcastEnded = (lbgr === 0);
         LiveBroadcastGamesRunning = lbgr;
         LiveBroadcastStatusString = lbgr + " " + tick + " " + numberOfGames;
-        theTitle = LiveBroadcastEnded ? "live broadcast ended" : lbgr + " live game" + (lbgr > 1 ? "s" : "") + " out of " + numberOfGames
+        theTitle = LiveBroadcastEnded ? "live broadcast ended" : lbgr + " live game" + (lbgr > 1 ? "s" : "") + " out of " + numberOfGames;
     }
-    if (theObj = document.getElementById("GameLiveStatus")) {
+    if ((theObj = document.getElementById("GameLiveStatus"))) {
         theObj.innerHTML = LiveBroadcastStatusString;
-        theObj.title = theTitle
+        theObj.title = theTitle;
     }
-    if (theObj = document.getElementById("GameLiveLastRefreshed")) {
-        theObj.innerHTML = LiveBroadcastLastRefreshedLocal
+    if ((theObj = document.getElementById("GameLiveLastRefreshed"))) {
+        theObj.innerHTML = LiveBroadcastLastRefreshedLocal;
     }
-    if (theObj = document.getElementById("GameLiveLastReceived")) {
-        theObj.innerHTML = LiveBroadcastLastReceivedLocal
+    if ((theObj = document.getElementById("GameLiveLastReceived"))) {
+        theObj.innerHTML = LiveBroadcastLastReceivedLocal;
     }
-    if (theObj = document.getElementById("GameLiveLastModifiedServer")) {
-        theObj.innerHTML = LiveBroadcastLastModified_ServerTime()
+    if ((theObj = document.getElementById("GameLiveLastModifiedServer"))) {
+        theObj.innerHTML = LiveBroadcastLastModified_ServerTime();
     }
-    customFunctionOnCheckLiveBroadcastStatus()
+    customFunctionOnCheckLiveBroadcastStatus();
 }
 
 function restartLiveBroadcastTimeout() {
     if (LiveBroadcastDelay === 0) {
-        return
+        return;
     }
     if (LiveBroadcastInterval) {
         clearTimeout(LiveBroadcastInterval);
-        LiveBroadcastInterval = null
+        LiveBroadcastInterval = null;
     }
     if ((!LiveBroadcastEnded) && (!LiveBroadcastPaused)) {
-        LiveBroadcastInterval = setTimeout("refreshPgnSource()", LiveBroadcastDelay * 60000)
+        LiveBroadcastInterval = setTimeout(() => {refreshPgnSource();}, LiveBroadcastDelay * 60000);
     }
-    LiveBroadcastTicker++
+    LiveBroadcastTicker++;
 }
 var LiveBroadcastFoundOldGame = !1;
 var LiveBroadcastOldCurrentVar;
@@ -3136,35 +3153,35 @@ var LiveBroadcastOldCurrentPlyLast = !1;
 
 function refreshPgnSource() {
     if (LiveBroadcastDelay === 0) {
-        return
+        return;
     }
     if (LiveBroadcastInterval) {
         clearTimeout(LiveBroadcastInterval);
-        LiveBroadcastInterval = null
+        LiveBroadcastInterval = null;
     }
     if (LiveBroadcastDemo) {
         var newPly, addedPly = 0;
-        for (var ii = 0; ii < numberOfGames; ii++) {
+        for (let ii = 0; ii < numberOfGames; ii++) {
             newPly = [3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1][Math.floor(20 * Math.random())] || 0;
             if (gameDemoMaxPly[ii] <= gameDemoLength[ii]) {
                 gameDemoMaxPly[ii] += newPly;
-                addedPly += newPly
+                addedPly += newPly;
             }
         }
         if (addedPly > 0) {
-            LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString()
+            LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString();
         }
     }
     if (pgnUrl) {
-        loadPgnFromPgnUrl(pgnUrl)
+        loadPgnFromPgnUrl(pgnUrl);
     } else if (document.getElementById("pgnText")) {
-        loadPgnFromTextarea("pgnText")
+        loadPgnFromTextarea("pgnText");
     } else {
         pgnGameFromPgnText(alertPgn);
         undoStackReset();
         Init();
         customFunctionOnPgnTextLoad();
-        myAlert('error: missing PGN URL location and pgnText object in the HTML file', !0)
+        myAlert('error: missing PGN URL location and pgnText object in the HTML file', !0);
     }
 }
 
@@ -3173,30 +3190,30 @@ function loadPgnFromTextarea(textareaId) {
         text, theObj;
     LiveBroadcastLastRefreshedLocal = (new Date()).toLocaleString();
     if (!(theObj = document.getElementById(textareaId))) {
-        myAlert('error: missing ' + textareaId + ' textarea object in the HTML file', !0)
+        myAlert('error: missing ' + textareaId + ' textarea object in the HTML file', !0);
     } else {
         if (document.getElementById(textareaId).tagName.toLowerCase() == "textarea") {
-            text = document.getElementById(textareaId).value
+            text = document.getElementById(textareaId).value;
         } else {
             text = document.getElementById(textareaId).innerHTML;
             if (text.indexOf('\n') < 0) {
-                text = text.replace(/((\[[^\[\]]*\]\s*)+)/g, "\n$1\n")
+                text = text.replace(/((\[[^\[\]]*\]\s*)+)/g, "\n$1\n");
             }
             if (text.indexOf('"') < 0) {
-                text = text.replace(/(&quot;)/g, '"')
+                text = text.replace(/(&quot;)/g, '"');
             }
         }
-        if (pgnHeaderTagRegExp.test(text) === !1) {
-            text = emptyPgnHeader + "\n" + text
+        if (pgnHeaderTagRegExp.test(text) === false) {
+            text = emptyPgnHeader + "\n" + text;
         }
         if (pgnGameFromPgnText(text)) {
             res = LOAD_PGN_OK;
-            LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString()
+            LiveBroadcastLastReceivedLocal = (new Date()).toLocaleString();
         } else {
-            myAlert('error: no games found in ' + textareaId + ' object in the HTML file')
+            myAlert('error: no games found in ' + textareaId + ' object in the HTML file');
         }
     }
-    loadPgnCheckingLiveStatus(res)
+    loadPgnCheckingLiveStatus(res);
 }
 
 function createBoard() {
@@ -3206,18 +3223,18 @@ function createBoard() {
         theObu.style.padding = "60px 30px 0 30px";
         theObu.style.height = "324px";
         theObu.style.width = "324px";
-        theObu.style.textAlign = "center"
+        theObu.style.textAlign = "center";
     }
     if (pgnUrl) {
-        loadPgnFromPgnUrl(pgnUrl)
+        loadPgnFromPgnUrl(pgnUrl);
     } else if (document.getElementById("pgnText")) {
-        loadPgnFromTextarea("pgnText")
+        loadPgnFromTextarea("pgnText");
     } else {
         pgnGameFromPgnText(alertPgn);
         undoStackReset();
         Init();
         customFunctionOnPgnTextLoad();
-        myAlert('error: missing PGN URL location or pgnText in the HTML file', !0)
+        myAlert('error: missing PGN URL location or pgnText in the HTML file', !0);
     }
 }
 
@@ -3237,46 +3254,46 @@ function setCurrentGameFromInitialGame() {
                 currentGame = gameNumberSearchPgn(initialGame, !1, !0);
 
                 if (!currentGame) {
-                    currentGame = 0
+                    currentGame = 0;
                 }
             } else {
                 initialGame = parseInt(initialGame, 10);
                 initialGame = initialGame < 0 ? -Math.floor(-initialGame) : Math.floor(initialGame);
                 if (initialGame < -numberOfGames) {
-                    currentGame = 0
+                    currentGame = 0;
                 } else if (initialGame < 0) {
-                    currentGame = numberOfGames + initialGame
+                    currentGame = numberOfGames + initialGame;
                 } else if (initialGame === 0) {
-                    currentGame = Math.floor(Math.random() * numberOfGames)
+                    currentGame = Math.floor(Math.random() * numberOfGames);
                 } else if (initialGame <= numberOfGames) {
-                    currentGame = (initialGame - 1)
+                    currentGame = (initialGame - 1);
                 } else {
-                    currentGame = numberOfGames - 1
+                    currentGame = numberOfGames - 1;
                 }
             }
-            break
+            break;
     }
 }
 
 function GoToInitialHalfmove() {
     var iv, ih;
     if (initialVariation < 0) {
-        iv = Math.max(numberOfVars + initialVariations, 0)
+        iv = Math.max(numberOfVars + initialVariation, 0);
     } else {
-        iv = Math.min(initialVariation, numberOfVars - 1)
+        iv = Math.min(initialVariation, numberOfVars - 1);
     }
     switch (initialHalfmove) {
         case "start":
         case "startplusone":
             GoToMove(StartPly, iv);
             if (initialHalfmove == "startplusone") {
-                MoveForward(1)
+                MoveForward(1);
             }
             break;
         case "startplusfive":
             GoToMove(StartPly, iv);
             if (initialHalfmove == "startplusfive") {
-                MoveForward(5)
+                MoveForward(5);
             }
             break;
         case "end":
@@ -3291,20 +3308,20 @@ function GoToInitialHalfmove() {
             GoToMove(StartPly, iv);
             MoveToNextComment(initialHalfmove == "variation");
             if (initialHalfmove == "commentplusone") {
-                MoveForward(1)
+                MoveForward(1);
             }
             break;
         default:
             if (isNaN(initialHalfmove = parseInt(initialHalfmove, 10))) {
-                initialHalfmove = 0
+                initialHalfmove = 0;
             }
             if (initialHalfmove < 0) {
-                ih = Math.max(StartPlyVar[iv] + PlyNumberVar[iv] + 1 + initialHalfmove, 0)
+                ih = Math.max(StartPlyVar[iv] + PlyNumberVar[iv] + 1 + initialHalfmove, 0);
             } else {
-                ih = Math.min(initialHalfmove, StartPlyVar[iv] + PlyNumberVar[iv])
+                ih = Math.min(initialHalfmove, StartPlyVar[iv] + PlyNumberVar[iv]);
             }
             GoToMove(ih, iv);
-            break
+            break;
     }
 }
 
@@ -3312,14 +3329,14 @@ function Init(nextGame) {
     //console.log ("numberOfGames is " + numberOfGames + "nextGame:" + nextGame);
     if (nextGame !== undefined) {
         if ((!isNaN(nextGame)) && (nextGame >= 0) && (nextGame < numberOfGames)) {
-            currentGame = parseInt(nextGame, 10)
+            currentGame = parseInt(nextGame, 10);
         } else {
-            return
+            return;
         }
     }
     //console.log ("currentGame is: " + currentGame);
     if (isAutoPlayOn) {
-        SetAutoPlay(!1)
+        SetAutoPlay(!1);
     }
     InitImages();
     SetPVfile();
@@ -3329,18 +3346,18 @@ function Init(nextGame) {
     }
     if (firstStart) {
         LoadGameHeaders();
-        setCurrentGameFromInitialGame()
+        setCurrentGameFromInitialGame();
     }
     if ((gameSetUp[currentGame] !== undefined) && (gameSetUp[currentGame] != "1")) {
-        InitFEN()
+        InitFEN();
     } else {
-        InitFEN(gameFEN[currentGame])
+        InitFEN(gameFEN[currentGame]);
     }
     OpenGame(currentGame);
     CurrentPly = StartPly;
     if (firstStart || alwaysInitialHalfmove) {
         GoToInitialHalfmove();
-        setTimeout("autoScrollToCurrentMoveIfEnabled();", Math.min(666, 0.9 * Delay))
+        setTimeout(() => {autoScrollToCurrentMoveIfEnabled();}, Math.min(666, 0.9 * Delay));
     } else {
         synchMoves();
         RefreshBoard();
@@ -3348,11 +3365,11 @@ function Init(nextGame) {
         autoScrollToCurrentMoveIfEnabled();
         customFunctionOnMove();
         if (typeof(engineWinOnMove) == "function") {
-            engineWinOnMove()
+            engineWinOnMove();
         }
     }
     if ((firstStart) && (autostartAutoplay)) {
-        SetAutoPlay(!0)
+        SetAutoPlay(!0);
     }
     firstStart = !1;
     customFunctionOnPgnGameLoad();
@@ -3360,7 +3377,7 @@ function Init(nextGame) {
 }
 
 function myAlertFEN(FenString, text) {
-    myAlert("error: invalid FEN in game " + (currentGame + 1) + ": " + text + "\n" + FenString, !0)
+    myAlert("error: invalid FEN in game " + (currentGame + 1) + ": " + text + "\n" + FenString, !0);
 }
 
 function InitFEN(startingFEN) {
@@ -3368,7 +3385,7 @@ function InitFEN(startingFEN) {
     var FenString = typeof(startingFEN) != "string" ? FenStringStart : startingFEN.replace(/\\/g, "/").replace(/[^a-zA-Z0-9\s\/-]/g, " ").replace(/(^\s*|\s*$)/g, "").replace(/\s+/g, " ");
     for (ii = 0; ii < 8; ++ii) {
         for (jj = 0; jj < 8; ++jj) {
-            Board[ii][jj] = 0
+            Board[ii][jj] = 0;
         }
     }
     StartPly = 0;
@@ -3388,9 +3405,9 @@ function InitFEN(startingFEN) {
             PieceMoveCounter[color] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             PieceRow[color] = color ? [7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6] : [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1];
             for (ii = 0; ii < 16; ii++) {
-                var col = PieceCol[color][ii];
-                var row = PieceRow[color][ii];
-                Board[col][row] = (1 - 2 * color) * PieceType[color][ii]
+                let col = PieceCol[color][ii],
+                    row = PieceRow[color][ii];
+                Board[col][row] = (1 - 2 * color) * PieceType[color][ii];
             }
         }
     } else {
@@ -3400,7 +3417,7 @@ function InitFEN(startingFEN) {
                 PieceType[ii][jj] = -1;
                 PieceCol[ii][jj] = 0;
                 PieceRow[ii][jj] = 0;
-                PieceMoveCounter[ii][jj] = 0
+                PieceMoveCounter[ii][jj] = 0;
             }
         }
         ii = 0;
@@ -3414,102 +3431,102 @@ function InitFEN(startingFEN) {
                 if (ii != 8) {
                     myAlertFEN(FenString, "char " + ll);
                     InitFEN();
-                    return
+                    return;
                 }
                 ii = 0;
-                jj--
+                jj--;
             }
             if (ii == 8) {
                 myAlertFEN(FenString, "char " + ll);
                 InitFEN();
-                return
+                return;
             }
             if (!isNaN(cc)) {
                 ii += parseInt(cc, 10);
                 if ((ii < 0) || (ii > 8)) {
                     myAlertFEN(FenString, "char " + ll);
                     InitFEN();
-                    return
+                    return;
                 }
             }
             if (cc.charCodeAt(0) == FenPieceName.toUpperCase().charCodeAt(0)) {
                 if (PieceType[0][0] != -1) {
                     myAlertFEN(FenString, "char " + ll);
                     InitFEN();
-                    return
+                    return;
                 }
                 PieceType[0][0] = 1;
                 PieceCol[0][0] = ii;
                 PieceRow[0][0] = jj;
-                ii++
+                ii++;
             }
             if (cc.charCodeAt(0) == FenPieceName.toLowerCase().charCodeAt(0)) {
                 if (PieceType[1][0] != -1) {
                     myAlertFEN(FenString, "char " + ll);
                     InitFEN();
-                    return
+                    return;
                 }
                 PieceType[1][0] = 1;
                 PieceCol[1][0] = ii;
                 PieceRow[1][0] = jj;
-                ii++
+                ii++;
             }
             for (kk = 1; kk < 6; kk++) {
                 if (cc.charCodeAt(0) == FenPieceName.toUpperCase().charCodeAt(kk)) {
                     if (nn == 16) {
                         myAlertFEN(FenString, "char " + ll);
                         InitFEN();
-                        return
+                        return;
                     }
                     PieceType[0][nn] = kk + 1;
                     PieceCol[0][nn] = ii;
                     PieceRow[0][nn] = jj;
                     nn++;
-                    ii++
+                    ii++;
                 }
                 if (cc.charCodeAt(0) == FenPieceName.toLowerCase().charCodeAt(kk)) {
                     if (mm == 16) {
                         myAlertFEN(FenString, "char " + ll);
                         InitFEN();
-                        return
+                        return;
                     }
                     PieceType[1][mm] = kk + 1;
                     PieceCol[1][mm] = ii;
                     PieceRow[1][mm] = jj;
                     mm++;
-                    ii++
+                    ii++;
                 }
             }
-            cc = ll < FenString.length ? FenString.charAt(ll++) : " "
+            cc = ll < FenString.length ? FenString.charAt(ll++) : " ";
         }
         if ((ii != 8) || (jj !== 0)) {
             myAlertFEN(FenString, "char " + ll);
             InitFEN();
-            return
+            return;
         }
         if ((PieceType[0][0] == -1) || (PieceType[1][0] == -1)) {
             myAlertFEN(FenString, "missing King");
             InitFEN();
-            return
+            return;
         }
         if (ll == FenString.length) {
-            FenString += "w " + assumedCastleRights() + " - 0 1"
+            FenString += "w " + assumedCastleRights() + " - 0 1";
         }
         cc = FenString.charAt(ll++);
         if ((cc == "w") || (cc == "b")) {
             if (cc == "b") {
                 StartPly += 1;
-                MoveColor = 1
+                MoveColor = 1;
             }
         } else {
-            myAlertFEN(FenString, "invalid active color")
+            myAlertFEN(FenString, "invalid active color");
         }
         for (color = 0; color < 2; ++color) {
             for (ii = 0; ii < 16; ii++) {
                 if (PieceType[color][ii] != -1) {
-                    col = PieceCol[color][ii];
-                    row = PieceRow[color][ii];
-                    Board[col][row] = (1 - 2 * color) * (PieceType[color][ii])
+                    let col = PieceCol[color][ii],
+                        row = PieceRow[color][ii];
+                    Board[col][row] = (1 - 2 * color) * (PieceType[color][ii]);
                 }
             }
         }
@@ -3517,7 +3534,7 @@ function InitFEN(startingFEN) {
         if (ll >= FenString.length) {
             myAlertFEN(FenString, "missing castling availability");
             FenString += " " + assumedCastleRights() + " - 0 1";
-            ll++
+            ll++;
         }
         CastlingLong = [-1, -1];
         CastlingShort = [-1, -1];
@@ -3526,102 +3543,102 @@ function InitFEN(startingFEN) {
             if (cc.charCodeAt(0) == FenPieceName.toUpperCase().charCodeAt(0)) {
                 for (CastlingShort[0] = 7; CastlingShort[0] > PieceCol[0][0]; CastlingShort[0]--) {
                     if (Board[CastlingShort[0]][0] == 3) {
-                        break
+                        break;
                     }
                 }
                 if (CastlingShort[0] <= PieceCol[0][0]) {
                     myAlertFEN(FenString, "missing castling Rook " + cc);
-                    CastlingShort[0] = -1
+                    CastlingShort[0] = -1;
                 }
             }
             if (cc.charCodeAt(0) == FenPieceName.toUpperCase().charCodeAt(1)) {
                 for (CastlingLong[0] = 0; CastlingLong[0] < PieceCol[0][0]; CastlingLong[0]++) {
                     if (Board[CastlingLong[0]][0] == 3) {
-                        break
+                        break;
                     }
                 }
                 if (CastlingLong[0] >= PieceCol[0][0]) {
                     myAlertFEN(FenString, "missing castling Rook " + cc);
-                    CastlingLong[0] = -1
+                    CastlingLong[0] = -1;
                 }
             }
             if (cc.charCodeAt(0) == FenPieceName.toLowerCase().charCodeAt(0)) {
                 for (CastlingShort[1] = 7; CastlingShort[1] > PieceCol[1][0]; CastlingShort[1]--) {
                     if (Board[CastlingShort[1]][7] == -3) {
-                        break
+                        break;
                     }
                 }
                 if (CastlingShort[1] <= PieceCol[1][0]) {
                     myAlertFEN(FenString, "missing castling Rook " + cc);
-                    CastlingShort[1] = -1
+                    CastlingShort[1] = -1;
                 }
             }
             if (cc.charCodeAt(0) == FenPieceName.toLowerCase().charCodeAt(1)) {
                 for (CastlingLong[1] = 0; CastlingLong[1] < PieceCol[1][0]; CastlingLong[1]++) {
                     if (Board[CastlingLong[1]][7] == -3) {
-                        break
+                        break;
                     }
                 }
                 if (CastlingLong[1] >= PieceCol[1][0]) {
                     myAlertFEN(FenString, "missing castling Rook " + cc);
-                    CastlingLong[1] = -1
+                    CastlingLong[1] = -1;
                 }
             }
             castlingRookCol = columnsLetters.toUpperCase().indexOf(cc);
             if (castlingRookCol >= 0) {
-                color = 0
+                color = 0;
             } else {
                 castlingRookCol = columnsLetters.toLowerCase().indexOf(cc);
                 if (castlingRookCol >= 0) {
-                    color = 1
+                    color = 1;
                 }
             }
             if (castlingRookCol >= 0) {
                 if (Board[castlingRookCol][color * 7] == (1 - 2 * color) * 3) {
                     if (castlingRookCol > PieceCol[color][0]) {
-                        CastlingShort[color] = castlingRookCol
+                        CastlingShort[color] = castlingRookCol;
                     }
                     if (castlingRookCol < PieceCol[color][0]) {
-                        CastlingLong[color] = castlingRookCol
+                        CastlingLong[color] = castlingRookCol;
                     }
                 } else {
-                    myAlertFEN(FenString, "missing castling Rook " + cc)
+                    myAlertFEN(FenString, "missing castling Rook " + cc);
                 }
             }
-            cc = ll < FenString.length ? FenString.charAt(ll++) : " "
+            cc = ll < FenString.length ? FenString.charAt(ll++) : " ";
         }
         if (ll >= FenString.length) {
             myAlertFEN(FenString, "missing en passant square");
             FenString += " - 0 1";
-            ll++
+            ll++;
         }
         cc = FenString.charAt(ll++);
         while (cc != " ") {
             if ((cc.charCodeAt(0) - 97 >= 0) && (cc.charCodeAt(0) - 97 <= 7)) {
                 newEnPassant = !0;
-                newEnPassantCol = cc.charCodeAt(0) - 97
+                newEnPassantCol = cc.charCodeAt(0) - 97;
             }
-            cc = ll < FenString.length ? FenString.charAt(ll++) : " "
+            cc = ll < FenString.length ? FenString.charAt(ll++) : " ";
         }
         if (ll >= FenString.length) {
             myAlertFEN(FenString, "missing halfmove clock");
             FenString += " 0 1";
-            ll++
+            ll++;
         }
         InitialHalfMoveClock = 0;
         cc = FenString.charAt(ll++);
         while (cc != " ") {
             if (isNaN(cc)) {
                 myAlertFEN(FenString, "invalid halfmove clock");
-                break
+                break;
             }
             InitialHalfMoveClock = InitialHalfMoveClock * 10 + parseInt(cc, 10);
-            cc = ll < FenString.length ? FenString.charAt(ll++) : " "
+            cc = ll < FenString.length ? FenString.charAt(ll++) : " ";
         }
         if (ll >= FenString.length) {
             myAlertFEN(FenString, "missing fullmove number");
             FenString += " 1";
-            ll++
+            ll++;
         }
         fullMoveNumber = 0;
         cc = FenString.charAt(ll++);
@@ -3629,20 +3646,20 @@ function InitFEN(startingFEN) {
             if (isNaN(cc)) {
                 myAlertFEN(FenString, "invalid fullmove number");
                 fullMoveNumber = 1;
-                break
+                break;
             }
             fullMoveNumber = fullMoveNumber * 10 + parseInt(cc, 10);
-            cc = ll < FenString.length ? FenString.charAt(ll++) : " "
+            cc = ll < FenString.length ? FenString.charAt(ll++) : " ";
         }
         if (fullMoveNumber === 0) {
             myAlertFEN(FenString, "invalid fullmove 0 set to 1");
-            fullMoveNumber = 1
+            fullMoveNumber = 1;
         }
         StartPly += 2 * (fullMoveNumber - 1);
         HistEnPassant[StartPly] = newEnPassant;
         HistEnPassantCol[StartPly] = newEnPassantCol;
         HistNull[StartPly] = 0;
-        HistVar[StartPly] = 0
+        HistVar[StartPly] = 0;
     }
 }
 
@@ -3651,70 +3668,71 @@ function assumedCastleRights() {
     if ((PieceRow[0][0] === 0) && (PieceCol[0][0] === 4)) {
         for (ii = 0; ii < PieceType[0].length; ii++) {
             if ((PieceType[0][ii] === 3) && (PieceRow[0][ii] === 0) && (PieceCol[0][ii] === 7)) {
-                rights += FenPieceName.charAt(0).toUpperCase()
+                rights += FenPieceName.charAt(0).toUpperCase();
             }
             if ((PieceType[0][ii] === 3) && (PieceRow[0][ii] === 0) && (PieceCol[0][ii] === 0)) {
-                rights += FenPieceName.charAt(1).toUpperCase()
+                rights += FenPieceName.charAt(1).toUpperCase();
             }
         }
     }
     if ((PieceRow[1][0] === 7) && (PieceCol[1][0] === 4)) {
         for (ii = 0; ii < PieceType[1].length; ii++) {
             if ((PieceType[1][ii] === 3) && (PieceRow[1][ii] === 7) && (PieceCol[1][ii] === 7)) {
-                rights += FenPieceName.charAt(0).toLowerCase()
+                rights += FenPieceName.charAt(0).toLowerCase();
             }
             if ((PieceType[1][ii] === 3) && (PieceRow[1][ii] === 7) && (PieceCol[1][ii] === 0)) {
-                rights += FenPieceName.charAt(1).toLowerCase()
+                rights += FenPieceName.charAt(1).toLowerCase();
             }
         }
     }
-    return rights || "-"
+    return rights || "-";
 }
 
 function SetImageType(extension) {
-    imageType = extension
+    imageType = extension;
 }
 
 function InitImages() {
     if (ImagePathOld === ImagePath) {
-        return
+        return;
     }
     if ((ImagePath.length > 0) && (ImagePath[ImagePath.length - 1] != '/')) {
-        ImagePath += '/'
+        ImagePath += '/';
     }
     ClearImg = new Image();
     ClearImg.src = ImagePath + 'clear.' + imageType;
+    let ColorName;
     if ((window.devicePixelRatio && window.devicePixelRatio > 1) && (currentPage == "live.php" || (currentPage == "archive.php"))) {
-        var ColorName = new Array("rw", "rb")
+        ColorName = ["rw", "rb"];
     } else {
-        var ColorName = new Array("w", "b")
+        ColorName = ["w", "b"];
     }
     var PiecePrefix = new Array("k", "q", "r", "b", "n", "p");
-    for (var c = 0; c < 2; ++c) {
-        for (var p = 1; p < 7; p++) {
+    for (let c = 0; c < 2; ++c) {
+        for (let p = 1; p < 7; p++) {
             PieceImg[c][p] = new Image();
-            PieceImg[c][p].src = ImagePath + ColorName[c] + PiecePrefix[p - 1] + '.' + imageType
+            PieceImg[c][p].src = ImagePath + ColorName[c] + PiecePrefix[p - 1] + '.' + imageType;
         }
     }
-    ImagePathOld = ImagePath
+    ImagePathOld = ImagePath;
 }
 
 function IsCheck(col, row, color) {
     var ii, jj;
     var sign = 2 * color - 1;
     if ((Math.abs(PieceCol[1 - color][0] - col) <= 1) && (Math.abs(PieceRow[1 - color][0] - row) <= 1)) {
-        return !0
+        return !0;
     }
     for (ii = -2; ii <= 2; ii += 4) {
         for (jj = -1; jj <= 1; jj += 2) {
             if (SquareOnBoard(col + ii, row + jj)) {
                 if (Board[col + ii][row + jj] == sign * 5) {
-                    return !0
+                    return !0;
                 }
             }
             if (SquareOnBoard(col + jj, row + ii)) {
                 if (Board[col + jj][row + ii] == sign * 5) {
-                    return !0
+                    return !0;
                 }
             }
         }
@@ -3722,7 +3740,7 @@ function IsCheck(col, row, color) {
     for (ii = -1; ii <= 1; ii += 2) {
         if (SquareOnBoard(col + ii, row - sign)) {
             if (Board[col + ii][row - sign] == sign * 6) {
-                return !0
+                return !0;
             }
         }
     }
@@ -3736,27 +3754,27 @@ function IsCheck(col, row, color) {
                     thisPiece = Board[checkCol][checkRow];
                     if (thisPiece === 0) {
                         checkCol += ii;
-                        checkRow += jj
+                        checkRow += jj;
                     } else {
                         if (thisPiece == sign * 2) {
-                            return !0
+                            return !0;
                         }
                         if ((thisPiece == sign * 3) && ((ii === 0) || (jj === 0))) {
-                            return !0
+                            return !0;
                         }
                         if ((thisPiece == sign * 4) && ((ii !== 0) && (jj !== 0))) {
-                            return !0
+                            return !0;
                         }
                     }
                 }
             }
         }
     }
-    return !1
+    return !1;
 }
 
 function fixRegExp(exp) {
-    return exp.replace(/([\[\]\(\)\{\}\.\*\+\^\$\|\?\\])/g, "\\$1")
+    return exp.replace(/([\[\]\(\)\{\}\.\*\+\^\$\|\?\\])/g, "\\$1");
 }
 
 function LoadGameHeaders() {
@@ -3774,7 +3792,7 @@ function LoadGameHeaders() {
         gameWhite[ii] = gameBlack[ii] = gameResult[ii] = "";
         gameInitialWhiteClock[ii] = gameInitialBlackClock[ii] = "";
         gameVariant[ii] = "";
-        while (parse = pgnHeaderTagRegExpGlobal.exec(ss)) {
+        while ((parse = pgnHeaderTagRegExpGlobal.exec(ss))) {
             switch (parse[1]) {
                 case 'Event':
                     gameEvent[ii] = parse[2] + " Tournament";
@@ -3820,7 +3838,7 @@ function LoadGameHeaders() {
                     currGamechessgui = parse[2];
                     break;
                 default:
-                    break
+                    break;
             }
         }
     }
@@ -3829,33 +3847,33 @@ function LoadGameHeaders() {
             if ((gameDemoLength[ii] === undefined) || (gameDemoLength[ii] === 0)) {
                 InitFEN(gameFEN[ii]);
                 ParsePGNGameString(pgnGame[ii]);
-                gameDemoLength[ii] = PlyNumber
+                gameDemoLength[ii] = PlyNumber;
             }
             if (gameDemoMaxPly[ii] === undefined) {
-                gameDemoMaxPly[ii] = 0
+                gameDemoMaxPly[ii] = 0;
             }
             if (gameDemoMaxPly[ii] <= gameDemoLength[ii]) {
-                gameResult[ii] = '*'
+                gameResult[ii] = '*';
             }
         }
     }
-    return
+    return;
 }
 
 function MoveBackward(diff, scanOnly) {
     var goFromPly = CurrentPly - 1;
     var goToPly = goFromPly - diff;
     if (goToPly < StartPly) {
-        goToPly = StartPly - 1
+        goToPly = StartPly - 1;
     }
-    for (var thisPly = goFromPly; thisPly > goToPly; --thisPly) {
+    for (let thisPly = goFromPly; thisPly > goToPly; --thisPly) {
         CurrentPly--;
         MoveColor = 1 - MoveColor;
         CurrentVar = HistVar[thisPly];
-        UndoMove(thisPly)
+        UndoMove(thisPly);
     }
     if (scanOnly) {
-        return
+        return;
     }
     synchMoves();
     RefreshBoard();
@@ -3863,26 +3881,24 @@ function MoveBackward(diff, scanOnly) {
     autoScrollToCurrentMoveIfEnabled();
     if (AutoPlayInterval) {
         clearTimeout(AutoPlayInterval);
-        AutoPlayInterval = null
+        AutoPlayInterval = null;
     }
     if (isAutoPlayOn) {
         if (goToPly >= StartPlyVar[CurrentVar]) {
-            AutoPlayInterval = setTimeout("MoveBackward(1)", Delay)
+            AutoPlayInterval = setTimeout(() => {MoveBackward(1);}, Delay);
         } else {
-            SetAutoPlay(!1)
+            SetAutoPlay(!1);
         }
     }
     customFunctionOnMove();
     setEnginePv();
     if (typeof(engineWinOnMove) == "function") {
-        engineWinOnMove()
+        engineWinOnMove();
     }
 }
 
 function testtime() {
-    var i = setTimeout(function() {
-        newfunc()
-    }, 4000);
+    setTimeout(() => {newfunc();}, 4000);
 }
 
 function newfunc() {
@@ -3894,54 +3910,56 @@ function MoveForward(diff, targetVar, scanOnly) {
     var nextVar, nextVarStartPly, move, text;
     var oldVar = -1;
     if (typeof(targetVar) == "undefined") {
-        targetVar = CurrentVar
+        targetVar = CurrentVar;
     }
     var goToPly = CurrentPly + parseInt(diff, 10);
     if (goToPly > StartPlyVar[targetVar] + PlyNumberVar[targetVar]) {
-        goToPly = StartPlyVar[targetVar] + PlyNumberVar[targetVar]
+        goToPly = StartPlyVar[targetVar] + PlyNumberVar[targetVar];
     }
-    for (var thisPly = CurrentPly; thisPly < goToPly; ++thisPly) {
+    let thisPly;
+    for (thisPly = CurrentPly; thisPly < goToPly; ++thisPly) {
         if (targetVar !== CurrentVar) {
-            for (var ii = 0; ii < PredecessorsVars[targetVar].length; ii++) {
+            let ii;
+            for (ii = 0; ii < PredecessorsVars[targetVar].length; ii++) {
                 if (PredecessorsVars[targetVar][ii] === CurrentVar) {
-                    break
+                    break;
                 }
             }
             if (ii === PredecessorsVars[targetVar].length) {
                 myAlert("error: unknown path to variation " + targetVar + " from " + CurrentVar + " in game " + (currentGame + 1), !0);
-                return
+                return;
             } else {
                 nextVarStartPly = StartPlyVar[PredecessorsVars[targetVar][ii + 1]];
                 for (ii = ii + 1; ii < PredecessorsVars[targetVar].length - 1; ii++) {
                     if (StartPlyVar[PredecessorsVars[targetVar][ii + 1]] !== StartPlyVar[PredecessorsVars[targetVar][ii]]) {
-                        break
+                        break;
                     }
                 }
-                nextVar = PredecessorsVars[targetVar][ii]
+                nextVar = PredecessorsVars[targetVar][ii];
             }
         } else {
-            nextVar = nextVarStartPly = -1
+            nextVar = nextVarStartPly = -1;
         }
         if (thisPly === nextVarStartPly) {
             oldVar = CurrentVar;
-            CurrentVar = nextVar
+            CurrentVar = nextVar;
         }
         if (typeof(move = MovesVar[CurrentVar][thisPly]) == "undefined") {
-            break
+            break;
         }
-        if (ParseLastMoveError = !ParseMove(move, thisPly)) {
+        if ((ParseLastMoveError = !ParseMove(move, thisPly))) {
             text = (Math.floor(thisPly / 2) + 1) + ((thisPly % 2) === 0 ? '. ' : '... ');
             myAlert('error: invalid ply ' + text + move + ' in game ' + (currentGame + 1) + ' variation ' + CurrentVar, !0);
             if (thisPly === nextVarStartPly) {
-                CurrentVar = oldVar
+                CurrentVar = oldVar;
             }
-            break
+            break;
         }
-        MoveColor = 1 - MoveColor
+        MoveColor = 1 - MoveColor;
     }
     CurrentPly = thisPly;
     if (scanOnly) {
-        return
+        return;
     }
     synchMoves();
     RefreshBoard();
@@ -3950,10 +3968,10 @@ function MoveForward(diff, targetVar, scanOnly) {
     autoScrollToCurrentMoveIfEnabled();
     if (AutoPlayInterval) {
         clearTimeout(AutoPlayInterval);
-        AutoPlayInterval = null
+        AutoPlayInterval = null;
     }
     if (ParseLastMoveError) {
-        SetAutoPlay(!1)
+        SetAutoPlay(!1);
     } else if (thisPly == goToPly) {
         if (isAutoPlayOn) {
             if (goToPly < StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]) {
@@ -3962,16 +3980,16 @@ function MoveForward(diff, targetVar, scanOnly) {
                 }, Delay);
             } else {
                 if (autoplayNextGame && (CurrentVar === 0)) {
-                    AutoPlayInterval = setTimeout("AutoplayNextGame()", Delay);
+                    AutoPlayInterval = setTimeout(() => {AutoplayNextGame();}, Delay);
                 } else {
-                    SetAutoPlay(!1)
+                    SetAutoPlay(!1);
                 }
             }
         }
     }
     customFunctionOnMove();
     if (typeof(engineWinOnMove) == "function") {
-        engineWinOnMove()
+        engineWinOnMove();
     }
 }
 var lastSynchCurrentVar = -1;
@@ -3979,25 +3997,26 @@ var lastSynchCurrentVar = -1;
 function synchMoves() {
     var start, end;
     if (CurrentVar === lastSynchCurrentVar) {
-        return
+        return;
     }
-    Moves = new Array();
-    MoveComments = new Array();
-    for (var ii = 0; ii < PredecessorsVars[CurrentVar].length; ii++) {
+    Moves = [];
+    MoveComments = [];
+    let ii, jj;
+    for (ii = 0; ii < PredecessorsVars[CurrentVar].length; ii++) {
         start = StartPlyVar[PredecessorsVars[CurrentVar][ii]];
         if (ii < PredecessorsVars[CurrentVar].length - 1) {
-            end = StartPlyVar[PredecessorsVars[CurrentVar][ii + 1]]
+            end = StartPlyVar[PredecessorsVars[CurrentVar][ii + 1]];
         } else {
-            end = StartPlyVar[PredecessorsVars[CurrentVar][ii]] + PlyNumberVar[PredecessorsVars[CurrentVar][ii]]
+            end = StartPlyVar[PredecessorsVars[CurrentVar][ii]] + PlyNumberVar[PredecessorsVars[CurrentVar][ii]];
         }
-        for (var jj = start; jj < end; jj++) {
+        for (jj = start; jj < end; jj++) {
             Moves[jj] = MovesVar[PredecessorsVars[CurrentVar][ii]][jj];
-            MoveComments[jj] = MoveCommentsVar[PredecessorsVars[CurrentVar][ii]][jj] || ""
+            MoveComments[jj] = MoveCommentsVar[PredecessorsVars[CurrentVar][ii]][jj] || "";
         }
     }
     MoveComments[jj] = MoveCommentsVar[PredecessorsVars[CurrentVar][ii - 1]][jj] || "";
     PlyNumber = StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar] - StartPly;
-    lastSynchCurrentVar = CurrentVar
+    lastSynchCurrentVar = CurrentVar;
 }
 
 function AutoplayNextGame() {
@@ -4006,31 +4025,31 @@ function AutoplayNextGame() {
             Init((currentGame + 1) % numberOfGames);
             if ((numberOfGames > 1) || (PlyNumber > 0)) {
                 SetAutoPlay(!0);
-                return
+                return;
             }
         }
     }
-    SetAutoPlay(!1)
+    SetAutoPlay(!1);
 }
 
 function MoveToNextComment(varOnly) {
-    for (var ii = CurrentPly + 1; ii <= StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]; ii++) {
+    for (let ii = CurrentPly + 1; ii <= StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]; ii++) {
         if (MoveComments[ii].match(pgn4webVariationRegExp) || (!varOnly && strippedMoveComment(ii))) {
             GoToMove(ii);
-            break
+            break;
         }
     }
 }
 
 function MoveToPrevComment(varOnly) {
-    for (var ii = (CurrentPly - 1); ii >= StartPly; ii--) {
+    for (let ii = (CurrentPly - 1); ii >= StartPly; ii--) {
         if ((ii > 0 || CurrentVar > 0) && ii === StartPlyVar[HistVar[ii + 1]]) {
             GoToMove(ii + 1, HistVar[ii]);
-            break
+            break;
         }
         if (MoveComments[ii].match(pgn4webVariationRegExp) || (!varOnly && strippedMoveComment(ii))) {
             GoToMove(ii);
-            break
+            break;
         }
     }
 }
@@ -4041,135 +4060,137 @@ function OpenGame(gameId) {
     ParseLastMoveError = !1;
     if (LiveBroadcastDemo) {
         if (gameDemoMaxPly[gameId] <= PlyNumber) {
-            PlyNumber = PlyNumberVar[0] = gameDemoMaxPly[gameId]
+            PlyNumber = PlyNumberVar[0] = gameDemoMaxPly[gameId];
         }
     }
-    PrintHTML()
+    PrintHTML();
 }
 
 function initVar() {
-    MovesVar = new Array();
-    MoveCommentsVar = new Array();
+    MovesVar = [];
+    MoveCommentsVar = [];
     GameHasComments = !1;
     GameHasVariations = !1;
-    StartPlyVar = new Array();
-    PlyNumberVar = new Array();
+    StartPlyVar = [];
+    PlyNumberVar = [];
     CurrentVar = -1;
     lastVarWithNoMoves = [!1];
     numberOfVars = 0;
-    CurrentVarStack = new Array();
+    CurrentVarStack = [];
     PlyNumber = 1;
-    PlyNumberStack = new Array();
-    PredecessorsVars = new Array();
-    startVar(!1)
+    PlyNumberStack = [];
+    PredecessorsVars = [];
+    startVar(!1);
 }
 
 function startVar(isContinuation) {
     if (CurrentVar >= 0) {
         CurrentVarStack.push(CurrentVar);
-        PlyNumberStack.push(PlyNumber)
+        PlyNumberStack.push(PlyNumber);
     }
     CurrentVar = numberOfVars++;
     PredecessorsVars[CurrentVar] = CurrentVarStack.slice(0);
     PredecessorsVars[CurrentVar].push(CurrentVar);
-    MovesVar[CurrentVar] = new Array();
-    MoveCommentsVar[CurrentVar] = new Array();
+    MovesVar[CurrentVar] = [];
+    MoveCommentsVar[CurrentVar] = [];
     if (!isContinuation) {
         if (lastVarWithNoMoves[lastVarWithNoMoves.length - 1]) {
-            myAlert("warning: malformed PGN data in game " + (currentGame + 1) + ": variant " + CurrentVar + " starting before parent", !0)
+            myAlert("warning: malformed PGN data in game " + (currentGame + 1) + ": variant " + CurrentVar + " starting before parent", !0);
         } else {
-            PlyNumber -= 1
+            PlyNumber -= 1;
         }
     }
     lastVarWithNoMoves.push(!0);
     MoveCommentsVar[CurrentVar][StartPly + PlyNumber] = "";
-    StartPlyVar[CurrentVar] = StartPly + PlyNumber
+    StartPlyVar[CurrentVar] = StartPly + PlyNumber;
 }
 
 function closeVar() {
     if (StartPly + PlyNumber === StartPlyVar[CurrentVar]) {
-        myAlert("warning: empty variation " + CurrentVar + " in game " + (currentGame + 1), !1)
+        myAlert("warning: empty variation " + CurrentVar + " in game " + (currentGame + 1), !1);
     } else {
-        GameHasVariations = !0
+        GameHasVariations = !0;
     }
     lastVarWithNoMoves.pop();
     PlyNumberVar[CurrentVar] = StartPly + PlyNumber - StartPlyVar[CurrentVar];
-    for (var ii = StartPlyVar[CurrentVar]; ii <= StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]; ii++) {
+    for (let ii = StartPlyVar[CurrentVar]; ii <= StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]; ii++) {
         if (MoveCommentsVar[CurrentVar][ii]) {
             MoveCommentsVar[CurrentVar][ii] = MoveCommentsVar[CurrentVar][ii].replace(/\s+/g, ' ');
             MoveCommentsVar[CurrentVar][ii] = translateNAGs(MoveCommentsVar[CurrentVar][ii]);
-            MoveCommentsVar[CurrentVar][ii] = MoveCommentsVar[CurrentVar][ii].replace(/\s+$/g, '')
+            MoveCommentsVar[CurrentVar][ii] = MoveCommentsVar[CurrentVar][ii].replace(/\s+$/g, '');
         } else {
-            MoveCommentsVar[CurrentVar][ii] = ''
+            MoveCommentsVar[CurrentVar][ii] = '';
         }
     }
     if (CurrentVarStack.length) {
         CurrentVar = CurrentVarStack.pop();
-        PlyNumber = PlyNumberStack.pop()
+        PlyNumber = PlyNumberStack.pop();
     } else {
-        myAlert("error: closeVar error" + " in game " + (currentGame + 1), !0)
+        myAlert("error: closeVar error" + " in game " + (currentGame + 1), !0);
     }
 }
 
 function childrenVars(thisPly, thisVar) {
     if (typeof(thisVar) == "undefined") {
-        thisVar = CurrentVar
+        thisVar = CurrentVar;
     }
     if (typeof(thisPly) == "undefined") {
-        thisPly = CurrentPly
+        thisPly = CurrentPly;
     }
-    var children = new Array();
-    for (var ii = thisVar; ii < numberOfVars; ii++) {
+    var children = [];
+    for (let ii = thisVar; ii < numberOfVars; ii++) {
         if ((ii === thisVar && StartPlyVar[ii] + PlyNumberVar[ii] > thisPly) || (realParentVar(ii) === thisVar && StartPlyVar[ii] === thisPly && PlyNumberVar[ii] > 0)) {
-            children.push(ii)
+            children.push(ii);
         }
     }
-    return children
+    return children;
 }
 
 function realParentVar(childVar) {
-    for (var ii = PredecessorsVars[childVar].length - 1; ii > 0; ii--) {
+    let ii;
+    for (ii = PredecessorsVars[childVar].length - 1; ii > 0; ii--) {
         if (StartPlyVar[PredecessorsVars[childVar][ii]] !== StartPlyVar[PredecessorsVars[childVar][ii - 1]]) {
-            return PredecessorsVars[childVar][ii - 1]
+            return PredecessorsVars[childVar][ii - 1];
         }
     }
-    return PredecessorsVars[childVar][ii]
+    return PredecessorsVars[childVar][ii];
 }
 
 function goToNextVariationSibling() {
     if (CurrentPly === StartPly) {
-        return !1
+        return !1;
     }
     var siblings = childrenVars(CurrentPly - 1, HistVar[CurrentPly - 1]);
     if (siblings.length < 2) {
-        return !1
+        return !1;
     }
-    for (var ii = 0; ii < siblings.length; ii++) {
+    let ii;
+    for (ii = 0; ii < siblings.length; ii++) {
         if (siblings[ii] === CurrentVar) {
-            break
+            break;
         }
     }
     if (siblings[ii] !== CurrentVar) {
-        return !1
+        return !1;
     }
     GoToMove(CurrentPly, siblings[(ii + 1) % siblings.length]);
-    return !0
+    return !0;
 }
 
 function goToFirstChild() {
     var children = childrenVars(CurrentPly, CurrentVar);
     if (children.length < 1) {
-        return !1
+        return !1;
     }
     if (children[0] === CurrentVar) {
         if (children.length < 2) {
-            return !1
+            return !1;
         }
-        GoToMove(CurrentPly + 1, children[1])
+        GoToMove(CurrentPly + 1, children[1]);
     } else {
-        GoToMove(CurrentPly + 1, children[0])
+        GoToMove(CurrentPly + 1, children[0]);
     }
-    return !0
+    return !0;
 }
 
 function ParsePGNGameString(gameString) {
@@ -4178,12 +4199,12 @@ function ParsePGNGameString(gameString) {
         ssComm;
     ss = ss.replace(pgn4webVariationRegExpGlobal, "[%_pgn4web_variation_ $1]");
     while ((ssRep = ss.replace(/\((([\?!+#\s]|\$\d+|{[^}]*})*)\)/g, ' $1 ')) !== ss) {
-        ss = ssRep
+        ss = ssRep;
     }
     ss = ss.replace(/^\s/, '');
     ss = ss.replace(/\s$/, '');
     while ((ssRep = ss.replace(/ev=0.00, d=1, mt=00:00:0.*/g, "book}")) !== ss) {
-        ss = ssRep
+        ss = ssRep;
     }
     initVar();
     PlyNumber = 0;
@@ -4202,11 +4223,11 @@ function ParsePGNGameString(gameString) {
                 while ('0123456789'.indexOf(ss.charAt(commentEnd)) >= 0) {
                     commentEnd++;
                     if (commentEnd >= ss.length) {
-                        break
+                        break;
                     }
                 }
                 if (MoveCommentsVar[CurrentVar][StartPly + PlyNumber]) {
-                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' '
+                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' ';
                 }
                 MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += translateNAGs(ss.substring(commentStart, commentEnd).replace(/(^\s*|\s*$)/, ''));
                 start = commentEnd - 1;
@@ -4218,11 +4239,11 @@ function ParsePGNGameString(gameString) {
                 while ('!?'.indexOf(ss.charAt(commentEnd)) >= 0) {
                     commentEnd++;
                     if (commentEnd >= ss.length) {
-                        break
+                        break;
                     }
                 }
                 if (MoveCommentsVar[CurrentVar][StartPly + PlyNumber]) {
-                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' '
+                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' ';
                 }
                 MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ss.substring(commentStart, commentEnd);
                 start = commentEnd - 1;
@@ -4232,10 +4253,10 @@ function ParsePGNGameString(gameString) {
                 commentEnd = ss.indexOf('}', start + 1);
                 if (commentEnd < 0) {
                     myAlert('error: missing end comment } in game ' + (currentGame + 1), !0);
-                    commentEnd = ss.length
+                    commentEnd = ss.length;
                 }
                 if (MoveCommentsVar[CurrentVar][StartPly + PlyNumber]) {
-                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' '
+                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' ';
                 }
                 ssComm = translateNAGs(ss.substring(commentStart, commentEnd).replace(/(^\s*|\s*$)/, ''));
                 MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ssComm;
@@ -4244,12 +4265,12 @@ function ParsePGNGameString(gameString) {
                 break;
             case '%':
                 if ((start > 0) && (ss.charAt(start - 1) != '\n')) {
-                    break
+                    break;
                 }
                 commentStart = start + 1;
                 commentEnd = ss.indexOf('\n', start + 1);
                 if (commentEnd < 0) {
-                    commentEnd = ss.length
+                    commentEnd = ss.length;
                 }
                 start = commentEnd;
                 break;
@@ -4257,10 +4278,10 @@ function ParsePGNGameString(gameString) {
                 commentStart = start + 1;
                 commentEnd = ss.indexOf('\n', start + 1);
                 if (commentEnd < 0) {
-                    commentEnd = ss.length
+                    commentEnd = ss.length;
                 }
                 if (MoveCommentsVar[CurrentVar][StartPly + PlyNumber]) {
-                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' '
+                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' ';
                 }
                 ssComm = translateNAGs(ss.substring(commentStart, commentEnd).replace(/(^\s*|\s*$)/, ''));
                 MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ssComm;
@@ -4268,8 +4289,8 @@ function ParsePGNGameString(gameString) {
                 start = commentEnd;
                 break;
             case '(':
-                if (isContinuation = (ss.charAt(start + 1) == '*')) {
-                    start += 1
+                if ((isContinuation = (ss.charAt(start + 1) == '*'))) {
+                    start += 1;
                 }
                 MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' [%pgn4web_variation ' + numberOfVars + '] ';
                 startVar(isContinuation);
@@ -4281,66 +4302,66 @@ function ParsePGNGameString(gameString) {
                 if (ss.substr(start, 8) == "&lt;&gt;") {
                     ss = ss.slice(0, start) + "     -- " + ss.slice(start + 8);
                     start += 4;
-                    break
+                    break;
                 }
             default:
                 needle = new Array('1-0', '0-1', '1/2-1/2', '*');
                 for (ii = 0; ii < needle.length; ii++) {
                     if (ss.indexOf(needle[ii], start) == start) {
                         if (CurrentVar === 0) {
-                            end = ss.length
+                            end = ss.length;
                         } else {
                             end = start + needle[ii].length;
                             if (MoveCommentsVar[CurrentVar][StartPly + PlyNumber]) {
-                                MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' '
+                                MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += ' ';
                             }
-                            MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += needle[ii]
+                            MoveCommentsVar[CurrentVar][StartPly + PlyNumber] += needle[ii];
                         }
                         start = end;
-                        break
+                        break;
                     }
                 }
                 if (start == ss.length) {
-                    break
+                    break;
                 }
                 moveCount = Math.floor((StartPly + PlyNumber) / 2) + 1;
                 needle = moveCount.toString();
                 if (ss.indexOf(needle, start) == start) {
                     start += needle.length;
                     while (' .\n\r'.indexOf(ss.charAt(start)) != -1) {
-                        start++
+                        start++;
                     }
                 }
                 if ((end = start + ss.substr(start).search(/[\s${;!?()]/)) < start) {
-                    end = ss.length
+                    end = ss.length;
                 }
                 move = ss.substring(start, end);
                 MovesVar[CurrentVar][StartPly + PlyNumber] = CleanMove(move);
                 lastVarWithNoMoves[lastVarWithNoMoves.length - 1] = !1;
                 if (ss.charAt(end) == ' ') {
-                    start = end
+                    start = end;
                 } else {
-                    start = end - 1
+                    start = end - 1;
                 }
                 if (!MovesVar[CurrentVar][StartPly + PlyNumber].match(/^[\s+#]*$/)) {
                     PlyNumber++;
-                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] = ''
+                    MoveCommentsVar[CurrentVar][StartPly + PlyNumber] = '';
                 }
-                break
+                break;
         }
     }
     if (CurrentVar !== 0) {
         myAlert("error: ParsePGNGameString ends with CurrentVar " + CurrentVar + " in game " + (currentGame + 1), !0);
         while (CurrentVar > 0) {
-            closeVar()
+            closeVar();
         }
     }
     StartPlyVar[0] = StartPly;
     PlyNumberVar[0] = PlyNumber;
     GameHasComments = GameHasComments || GameHasVariations;
-    lastSynchCurrentVar = -1
+    lastSynchCurrentVar = -1;
 }
-var NAG = new Array();
+var NAG = [];
 NAG[0] = '';
 NAG[1] = '!';
 NAG[2] = '?';
@@ -4418,21 +4439,21 @@ NAG[132] = 'White has moderate counterplay';
 NAG[134] = 'White has decisive counterplay';
 NAG[136] = 'White has moderate time control pressure';
 NAG[138] = 'White has severe time control pressure';
-for (i = 14; i < 139; i += 2) {
-    NAG[i + 1] = NAG[i].replace("White", "Black")
+for (let i = 14; i < 139; i += 2) {
+    NAG[i + 1] = NAG[i].replace("White", "Black");
 }
 
 function translateNAGs(comment) {
     var matches = comment.match(/\$+[0-9]+/g);
     if (matches) {
-        for (var ii = 0; ii < matches.length; ii++) {
+        for (let ii = 0; ii < matches.length; ii++) {
             var nag = matches[ii].substr(1);
             if (NAG[nag] !== undefined) {
-                comment = comment.replace(new RegExp("\\$+" + nag + "(?!\\d)"), NAG[nag])
+                comment = comment.replace(new RegExp("\\$+" + nag + "(?!\\d)"), NAG[nag]);
             }
         }
     }
-    return comment
+    return comment;
 }
 
 function ParseMove(move, plyCount) {
@@ -4454,14 +4475,14 @@ function ParseMove(move, plyCount) {
     mvCapturedId = -1;
     mvIsNull = 0;
     if (typeof(move) == "undefined") {
-        return !1
+        return !1;
     }
     HistEnPassant[plyCount + 1] = !1;
     HistEnPassantCol[plyCount + 1] = -1;
     if (move.indexOf('--') === 0) {
         mvIsNull = 1;
         CheckLegality('--', plyCount);
-        return !0
+        return !0;
     }
     for (ii = move.length - 1; ii > 0; ii--) {
         if (!isNaN(move.charAt(ii))) {
@@ -4469,7 +4490,7 @@ function ParseMove(move, plyCount) {
             mvToRow = move.charAt(ii) - 1;
             rem = move.substring(0, ii - 1);
             toRowMarker = ii;
-            break
+            break;
         }
     }
     if ((mvToCol < 0) || (mvToCol > 7) || (mvToRow < 0) || (mvToRow > 7)) {
@@ -4482,7 +4503,7 @@ function ParseMove(move, plyCount) {
             mvToCol = 2;
             mvFromRow = 7 * MoveColor;
             mvToRow = 7 * MoveColor;
-            return CheckLegality('O-O-O', plyCount)
+            return CheckLegality('O-O-O', plyCount);
         } else if (move.indexOf('O-O') === 0) {
             mvIsCastling = 1;
             mvPiece = 1;
@@ -4492,86 +4513,86 @@ function ParseMove(move, plyCount) {
             mvToCol = 6;
             mvFromRow = 7 * MoveColor;
             mvToRow = 7 * MoveColor;
-            return CheckLegality('O-O', plyCount)
+            return CheckLegality('O-O', plyCount);
         } else {
-            return !1
+            return !1;
         }
     }
     rem = rem.replace(/-/g, '');
     ll = rem.length;
     if (ll > 4) {
-        return !1
+        return !1;
     }
     mvPiece = -1;
     if (ll === 0) {
-        mvPiece = 6
+        mvPiece = 6;
     } else {
         for (ii = 5; ii > 0; ii--) {
             if (rem.charAt(0) == PieceCode[ii - 1]) {
                 mvPiece = ii;
-                break
+                break;
             }
         }
         if (mvPiece == -1) {
             if (columnsLetters.toLowerCase().indexOf(rem.charAt(0)) >= 0) {
-                mvPiece = 6
+                mvPiece = 6;
             }
         }
         if (mvPiece == -1) {
-            return !1
+            return !1;
         }
         if (rem.charAt(ll - 1) == 'x') {
-            mvCapture = 1
+            mvCapture = 1;
         }
         if (isNaN(move.charAt(ll - 1 - mvCapture))) {
             mvFromCol = move.charCodeAt(ll - 1 - mvCapture) - 97;
             if ((mvFromCol < 0) || (mvFromCol > 7)) {
-                mvFromCol = -1
+                mvFromCol = -1;
             }
         } else {
             mvFromRow = move.charAt(ll - 1 - mvCapture) - 1;
             if ((mvFromRow < 0) || (mvFromRow > 7)) {
-                mvFromRow = -1
+                mvFromRow = -1;
             } else {
                 mvFromCol = move.charCodeAt(ll - 2 - mvCapture) - 97;
                 if ((mvFromCol < 0) || (mvFromCol > 7)) {
-                    mvFromCol = -1
+                    mvFromCol = -1;
                 }
             }
         }
         if ((ll > 1) && (!mvCapture) && (mvFromCol == -1) && (mvFromRow == -1)) {
-            return !1
+            return !1;
         }
         if ((mvPiece == 6) && (!mvCapture) && (mvFromCol == -1) && (mvFromRow == -1)) {
-            return !1
+            return !1;
         }
     }
     mvPieceOnTo = mvPiece;
     if ((Board[mvToCol][mvToRow] !== 0) || ((mvPiece == 6) && (HistEnPassant[plyCount]) && (mvToCol == HistEnPassantCol[plyCount]) && (mvToRow == 5 - 3 * MoveColor))) {
-        mvCapture = 1
+        mvCapture = 1;
     }
     if (mvPiece == 6) {
         ii = move.indexOf('=');
         if (ii < 0) {
-            ii = toRowMarker
+            ii = toRowMarker;
         }
         if ((ii > 0) && (ii < move.length - 1)) {
             var newPiece = move.charAt(ii + 1);
             if (newPiece == PieceCode[1]) {
-                mvPieceOnTo = 2
+                mvPieceOnTo = 2;
             } else if (newPiece == PieceCode[2]) {
-                mvPieceOnTo = 3
+                mvPieceOnTo = 3;
             } else if (newPiece == PieceCode[3]) {
-                mvPieceOnTo = 4
+                mvPieceOnTo = 4;
             } else if (newPiece == PieceCode[4]) {
-                mvPieceOnTo = 5
+                mvPieceOnTo = 5;
             }
             if (mvPieceOnTo != mvPiece) {
-                mvIsPromotion = 1
+                mvIsPromotion = 1;
             }
         }
         if ((mvToRow == 7 * (1 - MoveColor)) ? !mvIsPromotion : mvIsPromotion) {
-            return !1
+            return !1;
         }
     }
     if (mvCapture) {
@@ -4579,58 +4600,58 @@ function ParseMove(move, plyCount) {
             if ((PieceType[1 - MoveColor][mvCapturedId] > 0) && (PieceCol[1 - MoveColor][mvCapturedId] == mvToCol) && (PieceRow[1 - MoveColor][mvCapturedId] == mvToRow)) {
                 mvCaptured = PieceType[1 - MoveColor][mvCapturedId];
                 if (mvCaptured == 1) {
-                    return !1
+                    return !1;
                 }
-                break
+                break;
             }
         }
         if ((mvPiece == 6) && (mvCapturedId < 1) && (HistEnPassant[plyCount])) {
             for (mvCapturedId = 15; mvCapturedId >= 0; mvCapturedId--) {
                 if ((PieceType[1 - MoveColor][mvCapturedId] == 6) && (PieceCol[1 - MoveColor][mvCapturedId] == mvToCol) && (PieceRow[1 - MoveColor][mvCapturedId] == 4 - MoveColor)) {
                     mvCaptured = PieceType[1 - MoveColor][mvCapturedId];
-                    break
+                    break;
                 }
             }
         }
     }
     if (!CheckLegality(PieceCode[mvPiece - 1], plyCount)) {
-        return !1
+        return !1;
     }
     if (mvPiece == 6) {
         if (Math.abs(HistRow[0][plyCount] - mvToRow) == 2) {
             HistEnPassant[plyCount + 1] = !0;
-            HistEnPassantCol[plyCount + 1] = mvToCol
+            HistEnPassantCol[plyCount + 1] = mvToCol;
         }
     }
-    return !0
+    return !0;
 }
 
 function SetGameSelectorOptions(head, num, chEvent, chSite, chRound, chWhite, chBlack, chResult, chDate) {
     if (typeof(head) == "string") {
-        gameSelectorHead = head
+        gameSelectorHead = head;
     }
-    gameSelectorNum = (num === !0);
+    gameSelectorNum = (num === true);
     gameSelectorChEvent = Math.max(Math.min(chEvent, 32) || 0, 0) || 0;
     gameSelectorChSite = Math.max(Math.min(chSite, 32) || 0, 0) || 0;
     gameSelectorChRound = Math.max(Math.min(chRound, 32) || 0, 0) || 0;
     gameSelectorChWhite = Math.max(Math.min(chWhite, 32) || 0, 0) || 0;
     gameSelectorChBlack = Math.max(Math.min(chBlack, 32) || 0, 0) || 0;
     gameSelectorChResult = Math.max(Math.min(chResult, 32) || 0, 0) || 0;
-    gameSelectorChDate = Math.max(Math.min(chDate, 32) || 0, 0) || 0
+    gameSelectorChDate = Math.max(Math.min(chDate, 32) || 0, 0) || 0;
 }
 var clickedSquareInterval = null;
 
 function clickedSquare(ii, jj) {
     if (clickedSquareInterval) {
-        return
+        return;
     }
     var squareId = 'tcol' + jj + 'trow' + ii;
     var theObj = document.getElementById(squareId);
     if (theObj) {
         var oldClass = theObj.className;
         theObj.className = (ii + jj) % 2 === 0 ? "blackSquare" : "whiteSquare";
-        clickedSquareInterval = setTimeout("reset_after_click(" + ii + "," + jj + ",'" + oldClass + "','" + theObj.className + "')", 66);
-        clearSelectedText()
+        clickedSquareInterval = setTimeout(() => {reset_after_click(" + ii + "," + jj + ",'" + oldClass + "','" + theObj.className + "');}, 66);
+        clearSelectedText();
     }
 }
 
@@ -4638,9 +4659,9 @@ function reset_after_click(ii, jj, oldClass, newClass) {
     var theObj = document.getElementById('tcol' + jj + 'trow' + ii);
     if (theObj) {
         if (theObj.className == newClass) {
-            theObj.className = oldClass
+            theObj.className = oldClass;
         }
-        clickedSquareInterval = null
+        clickedSquareInterval = null;
     }
 }
 var lastSearchPgnExpression = "";
@@ -4648,64 +4669,64 @@ var lastSearchPgnExpression = "";
 function gameNumberSearchPgn(searchExpression, backward, includeCurrent) {
     lastSearchPgnExpression = searchExpression;
     if (searchExpression === "") {
-        return !1
+        return !1;
     }
     var newlinesRegExp = new RegExp("[\n\r]", "gm");
     var searchExpressionRegExp = new RegExp(searchExpression, "im");
     var thisCurrentGame = (currentGame < 0) || (currentGame >= numberOfGames) ? 0 : currentGame;
     var needle = fullPgnGame(thisCurrentGame);
     if (includeCurrent && needle.replace(newlinesRegExp, " ").match(searchExpressionRegExp)) {
-        return thisCurrentGame
+        return thisCurrentGame;
     }
     var delta = backward ? -1 : +1;
-    for (var thisGame = (thisCurrentGame + delta + numberOfGames) % numberOfGames; thisGame != thisCurrentGame; thisGame = (thisGame + delta + numberOfGames) % numberOfGames) {
+    for (let thisGame = (thisCurrentGame + delta + numberOfGames) % numberOfGames; thisGame != thisCurrentGame; thisGame = (thisGame + delta + numberOfGames) % numberOfGames) {
         needle = fullPgnGame(thisGame);
         if (needle.replace(newlinesRegExp, " ").match(searchExpressionRegExp)) {
-            return thisGame
+            return thisGame;
         }
     }
-    return !1
+    return !1;
 }
 
 function searchPgnGame(searchExpression, backward) {
     if (typeof(searchExpression) == "undefined") {
-        searchExpression = ""
+        searchExpression = "";
     }
     lastSearchPgnExpression = searchExpression;
     var theObj = document.getElementById('searchPgnExpression');
     if (theObj) {
-        theObj.value = searchExpression
+        theObj.value = searchExpression;
     }
     if ((searchExpression === "") || (numberOfGames < 2)) {
-        return
+        return;
     }
     var thisGame = gameNumberSearchPgn(searchExpression, backward, !1);
-    if ((thisGame !== !1) && (thisGame != currentGame)) {
-        Init(thisGame)
+    if ((thisGame !== false) && (thisGame != currentGame)) {
+        Init(thisGame);
     }
 }
 
 function searchPgnGamePrompt() {
     if (numberOfGames < 2) {
         alert("info: search prompt disabled with less than 2 games");
-        return
+        return;
     }
     var searchExpression = prompt("Please enter search pattern for PGN games:", lastSearchPgnExpression);
     if (searchExpression) {
-        searchPgnGame(searchExpression)
+        searchPgnGame(searchExpression);
     }
 }
 
 function searchPgnGameForm() {
     var theObj = document.getElementById('searchPgnExpression');
     if (theObj) {
-        searchPgnGame(document.getElementById('searchPgnExpression').value)
+        searchPgnGame(document.getElementById('searchPgnExpression').value);
     }
 }
 var chessMovesRegExp = new RegExp("\\b((\\d+(\\.{1,3}|\\s)\\s*)?((([KQRBN][a-h1-8]?)|[a-h])?x?[a-h][1-8](=[QRNB])?|O-O-O|O-O)\\b[!?+#]*)", "g");
 
 function fixCommentForDisplay(comment) {
-    return comment.replace(chessMovesRegExp, '<SPAN CLASS="commentMove">$1</SPAN>')
+    return comment.replace(chessMovesRegExp, '<SPAN CLASS="commentMove">$1</SPAN>');
 }
 var tableSize = 0;
 var textSelectOptions = '';
@@ -4740,25 +4761,25 @@ function setEvalColors(theObj) {
     }
 
     if (MoveComments[blackPly]) {
-        theMatch1 = MoveComments[blackPly].match(/ev=(.*?),/);
-        theMatch2 = MoveComments[blackPly].match(/wv=(.*?)([, }])/);
-        theMatch3 = MoveComments[blackPly];
+        let theMatch1 = MoveComments[blackPly].match(/ev=(.*?),/),
+            theMatch2 = MoveComments[blackPly].match(/wv=(.*?)([, }])/),
+            theMatch3 = MoveComments[blackPly];
         if (((theMatch1) && (theMatch2)) || ((!theMatch1) && (theMatch2))) {
-            blackEval = theMatch2[1]
+            blackEval = theMatch2[1];
         } else if ((theMatch1) && (!theMatch2)) {
-            blackEval = theMatch1[1]
+            blackEval = theMatch1[1];
         } else if (theMatch3 == "book") {
             blackEval = -1;
         }
     }
     if (MoveComments[whitePly]) {
-        theMatch1 = MoveComments[whitePly].match(/ev=(.*?),/);
-        theMatch2 = MoveComments[whitePly].match(/wv=(.*?)([, }])/);
-        theMatch3 = MoveComments[whitePly];
+        let theMatch1 = MoveComments[whitePly].match(/ev=(.*?),/),
+            theMatch2 = MoveComments[whitePly].match(/wv=(.*?)([, }])/),
+            theMatch3 = MoveComments[whitePly];
         if (((theMatch1) && (theMatch2)) || ((!theMatch1) && (theMatch2))) {
-            whiteEval = theMatch2[1]
+            whiteEval = theMatch2[1];
         } else if ((theMatch1) && (!theMatch2)) {
-            whiteEval = theMatch1[1]
+            whiteEval = theMatch1[1];
         } else if (theMatch3 == "book") {
             whiteEval = -1;
         }
@@ -4777,10 +4798,10 @@ function setEvalColors(theObj) {
 
     if (!whiteMove) {
         if (whiteEval > 0) {
-            var diffheight = 0;
-            var totheight = 0;
+            let diffheight = 0,
+                totheight = 0;
             diffheight = whiteEval / minEval * boxheight;
-            var newHeight;
+            let newHeight;
             theObj = document.getElementById("whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
@@ -4793,7 +4814,7 @@ function setEvalColors(theObj) {
             totheight = newHeight;
             theObj.style.height = newHeight + 'px';
             theObj = document.getElementById("whoswinningb1");
-            remainHeight = boxheight * 2 - newHeight;
+            let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             totheight = parseFloat(newHeight) + parseFloat(remainHeight);
             if (remainHeight <= 0) {
@@ -4802,15 +4823,15 @@ function setEvalColors(theObj) {
             theObj.style.height = remainHeight + 'px';
             theObj.style.backgroundColor = '#303030';
         } else if (whiteEval < 0) {
-            var diffheight = 0;
+            let diffheight = 0;
             diffheight = whiteEval / minEval * boxheight;
-            var newHeight;
+            let newHeight;
             theObj = document.getElementById("whoswinningw1");
             newHeight = parseFloat(-diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = newHeight + 'px';
             theObj = document.getElementById("whoswinningw");
-            remainHeight = boxheight * 2 - newHeight;
+            let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
                 remainHeight = 0;
@@ -4839,9 +4860,9 @@ function setEvalColors(theObj) {
         }
     } else if (whiteMove) {
         if (blackEval > 0) {
-            var diffheight = 0;
+            let diffheight = 0;
             diffheight = blackEval / minEval * boxheight;
-            var newHeight;
+            let newHeight;
             theObj = document.getElementById("whoswinningw");
             theObj.style.backgroundColor = 'white';
             theObj.style.height = boxheight + 'px';
@@ -4853,7 +4874,7 @@ function setEvalColors(theObj) {
             theObj.style.backgroundColor = 'white';
             theObj.style.height = newHeight + 'px';
             theObj = document.getElementById("whoswinningb1");
-            remainHeight = boxheight * 2 - newHeight;
+            let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
                 remainHeight = 0;
@@ -4861,15 +4882,15 @@ function setEvalColors(theObj) {
             theObj.style.height = remainHeight + 'px';
             theObj.style.backgroundColor = '#303030';
         } else if (blackEval < 0) {
-            var diffheight = 0;
+            let diffheight = 0;
             diffheight = blackEval / minEval * boxheight;
-            var newHeight;
+            let newHeight;
             theObj = document.getElementById("whoswinningw1");
             newHeight = parseFloat(-diffheight * 2).toFixed(0);
             theObj.style.backgroundColor = '#303030';
             theObj.style.height = newHeight + 'px';
             theObj = document.getElementById("whoswinningw");
-            remainHeight = boxheight * 2 - newHeight;
+            let remainHeight = boxheight * 2 - newHeight;
             remainHeight = parseFloat(remainHeight).toFixed(0);
             if (remainHeight <= 0) {
                 remainHeight = 0;
@@ -4906,13 +4927,13 @@ var tempDom;
 function Create2DArray(rows, cols, prop) {
     var darray = [];
 
-    for (var i = 0; i < rows; i++) {
+    for (let i = 0; i < rows; i++) {
         darray.push([]);
         darray[i].push(new Array(cols));
-        for (var j = 0; j < cols; j++) {
+        for (let j = 0; j < cols; j++) {
             darray[i].push([]);
             darray[i][j].push(new Array(prop));
-            for (var k = 0; k < prop; k++) {
+            for (let k = 0; k < prop; k++) {
                 darray[i][j][k] = 0;
             }
         }
@@ -4923,7 +4944,7 @@ function Create2DArray(rows, cols, prop) {
 
 var currDiv = null;
 
-function getLinkArch(gameNumber) 
+function getLinkArch(gameNumber)
 {
    var retLink;
    if (currDiv == null)
@@ -4965,7 +4986,7 @@ function assignScores(engArray, arr, firstEngine, secondEngine, firstScore, seco
     var firstVal = '';
     var secondVal = '';
 
-    for (var i = 0; i < engArray.length; i++) {
+    for (let i = 0; i < engArray.length; i++) {
         if (engArray[i].localeCompare(firstEngine.trim()) == 0) {
             first = i;
         }
@@ -4987,7 +5008,7 @@ function assignScores(engArray, arr, firstEngine, secondEngine, firstScore, seco
         arr[second][first][0] = getAbbName(firstEngine.trim());
         arr[second][first][1] = parseFloat(arr[second][first][1]) + parseFloat(1);
         if (!arr[second][first][2]) {
-            arr[second][first][2] = new Array();
+            arr[second][first][2] = [];
         }
         arr[second][first][2].push(firstVal);
         arr[second][first][2].push(gameNumber);
@@ -5006,7 +5027,7 @@ function assignScores(engArray, arr, firstEngine, secondEngine, firstScore, seco
         arr[first][second][0] = getAbbName(secondEngine.trim());
         arr[first][second][1] = parseFloat(arr[first][second][1]) + parseFloat(1);
         if (!arr[first][second][2]) {
-            arr[first][second][2] = new Array();
+            arr[first][second][2] = [];
         }
         arr[first][second][2].push(firstVal);
         arr[first][second][2].push(gameNumber);
@@ -5022,7 +5043,7 @@ function findFirstColumn(name) {
     var firstColumn = 0;
 
     var cells = tr[0].cells;
-    for (var i = 0, len = cells.length; i < len; ++i) {
+    for (let i = 0, len = cells.length; i < len; ++i) {
         var thisTdElem = cells[i];
         var thisTextNode = thisTdElem.childNodes.item(0);
         var thisData = thisTextNode.data;
@@ -5043,7 +5064,7 @@ function getTableColumnCount() {
     var columnCount = 0;
     var cells = tr[0].cells;
 
-    for (var i = 0, len = cells.length; i < len; ++i) 
+    for (let i = 0, len = cells.length; i < len; ++i)
     {
         var thisTdElem = cells[i];
         if (thisTdElem == null || thisTdElem == undefined)
@@ -5063,36 +5084,36 @@ function getTableColumnCount() {
     return cells.length;
 }
 
-function getAbbName(enginename) 
+function getAbbName(enginename)
 {
-    if (enginename.search(/.*Houdini.*/i) == 0) 
+    if (enginename.search(/.*Houdini.*/i) == 0)
     {
         return ("Ho");
-    } 
-    else if (enginename.search(/.*Stockfish.*/i) == 0) 
+    }
+    else if (enginename.search(/.*Stockfish.*/i) == 0)
     {
         return ("SF");
-    } 
-    else if (enginename.search(/.*Komodo.*/i) == 0) 
+    }
+    else if (enginename.search(/.*Komodo.*/i) == 0)
     {
         return ("Ko");
-    } 
-    else if (enginename.search(/.*asmFish.*/i) == 0) 
+    }
+    else if (enginename.search(/.*asmFish.*/i) == 0)
     {
         return ("As");
     }
-    else if (enginename.search(/.*MysteryX.*/i) == 0) 
+    else if (enginename.search(/.*MysteryX.*/i) == 0)
     {
         return ("MX3");
     }
     return null;
 }
 
-function getKomodoName(str) 
+function getKomodoName(str)
 {
     if (kver)
     {
-        if (str.search(/.*Komodo.*/i) == 0) 
+        if (str.search(/.*Komodo.*/i) == 0)
         {
             return ("Komodo " + kver);
         }
@@ -5100,20 +5121,20 @@ function getKomodoName(str)
     return str;
 }
 
-function ylcetAddGamesPlayedFirstTable() 
+function ylcetAddGamesPlayedFirstTable()
 {
    if ((jsSeasonInt <= 5) ||
       ((jsSeasonInt == 6) && (finalInt == 0)))
    {
       ylcetAddGamesPlayedFirstTableOld();
-   } 
-   else 
+   }
+   else
    {
       ylcetAddGamesPlayedFirstTableNew();
    }
 }
 
-function ylcetAddGamesPlayedFirstTableNew() 
+function ylcetAddGamesPlayedFirstTableNew()
 {
     var tables = tempDom.find("table");
     var tr = tables[0].getElementsByTagName("tr");
@@ -5128,7 +5149,7 @@ function ylcetAddGamesPlayedFirstTableNew()
     $("#cross_divs").html("");
     tdiv.appendChild(tables[0]);
 
-    for (i = tr.length - 1; i >= 0; i--) {
+    for (let i = tr.length - 1; i >= 0; i--) {
         if (isRowEmpty(tr, i, 0)) {
             tables[0].deleteRow(i);
         }
@@ -5149,7 +5170,7 @@ function ylcetAddGamesPlayedFirstTableNew()
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
     var table = new google.visualization.Table(document.getElementById('cross_divs'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
         'allowHtml': true,
@@ -5159,11 +5180,11 @@ function ylcetAddGamesPlayedFirstTableNew()
         'width': '100%',
         'legend': {
             position: 'top',
-            maxLines: 3
+            maxLines: 3,
         },
         'title': 'Population Density (people/km^2)',
         'backgroundColor': 'red'
-    }
+    };
 
     table.draw(dataView, options);
 
@@ -5172,7 +5193,7 @@ function ylcetAddGamesPlayedFirstTableNew()
     return 1;
 }
 
-function drawCrosstable() 
+function drawCrosstable()
 {
     var tables = tempDom.find("table");
     var tr = tables[0].getElementsByTagName("tr");
@@ -5187,7 +5208,7 @@ function drawCrosstable()
     $("#cross_divs").html("");
     tdiv.appendChild(tables[0]);
 
-    for (i = tr.length - 1; i >= 0; i--) {
+    for (let i = tr.length - 1; i >= 0; i--) {
         if (isRowEmpty(tr, i, 0)) {
             tables[0].deleteRow(i);
         }
@@ -5208,7 +5229,7 @@ function drawCrosstable()
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
     var table = new google.visualization.Table(document.getElementById('cross_divs'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
         'allowHtml': true,
@@ -5218,11 +5239,11 @@ function drawCrosstable()
         'width': '100%',
         'legend': {
             position: 'top',
-            maxLines: 3
+            maxLines: 3,
         },
         'title': 'Population Density (people/km^2)',
         'backgroundColor': 'red'
-    }
+    };
 
     table.draw(dataView, options);
 
@@ -5241,7 +5262,7 @@ function ylcetAddGamesPlayedFirstTableOld() {
 
     tables[0].id = "tblBordered";
 
-    for (i = 0; i < tr.length; i++) {
+    for (let i = 0; i < tr.length; i++) {
         var td = document.createElement('td');
         var input = document.createTextNode('INPUT');
         games = 0;
@@ -5265,22 +5286,22 @@ function ylcetAddGamesPlayedFirstTableOld() {
             var newCell = tr[i].insertCell(4);
             var newText = document.createTextNode("Games");
             newCell.appendChild(newText);
-            var thisTdElem = tr[i].cells[4];
-            for (var j = 0; j <= tolColno; j++) {
-                var thisTdElem = tr[i].cells[j];
+            let thisTdElem = tr[i].cells[4];
+            for (let j = 0; j <= tolColno; j++) {
+                thisTdElem = tr[i].cells[j];
                 thisTdElem.className = "headercol";
             }
-            for (var j = columnCount; j <= tolColno; j++) {
-                var thisTdElem = cells[j];
-                var thisTextNode = thisTdElem.childNodes.item(0);
+            for (let j = columnCount; j <= tolColno; j++) {
+                thisTdElem = cells[j];
+                let thisTextNode = thisTdElem.childNodes.item(0);
                 if (thisTextNode == undefined || thisTextNode == null) {
                     break;
                 }
-                var thisData = thisTextNode.data;
+                let thisData = thisTextNode.data;
                 if (thisData == null || thisData == undefined) {
                     break;
                 }
-                var thisDataTrim = thisData.trim();
+                let thisDataTrim = thisData.trim();
                 var thisNumber = thisTextNode.data;
                 var str = thisTextNode.data;
                 var retname = getAbbName(thisDataTrim);
@@ -5290,37 +5311,37 @@ function ylcetAddGamesPlayedFirstTableOld() {
             }
             continue;
         } else {
-            if (1) /* komodo */ {
-                var thisTdElem = cells[1];
-                var thisTextNode = thisTdElem.childNodes.item(0);
-                var thisData = thisTextNode.data;
-                var thisDataTrim = thisData.trim();
-                var thisNumber = thisTextNode.data;
-                var str = thisTextNode.data;
-                str = getKomodoName(str);
-                thisTextNode.data = str;
-            }
+            // if (1) /* komodo */ {
+            let thisTdElem = cells[1],
+                thisTextNode = thisTdElem.childNodes.item(0),
+                thisData = thisTextNode.data,
+                thisDataTrim = thisData.trim(),
+                thisNumber = thisTextNode.data,
+                str = thisTextNode.data;
+            str = getKomodoName(str);
+            thisTextNode.data = str;
+            // }
 
-            for (var j = columnCount; j < tolColno; j++) {
-                var thisTdElem = cells[j];
-                var thisTextNode = thisTdElem.childNodes.item(0);
-                var thisData = thisTextNode.data;
-                var thisDataTrim = thisData.trim();
-                var thisNumber = thisTextNode.data;
-                var str = thisTextNode.data;
+            for (let j = columnCount; j < tolColno; j++) {
+                thisTdElem = cells[j];
+                thisTextNode = thisTdElem.childNodes.item(0);
+                thisData = thisTextNode.data;
+                thisDataTrim = thisData.trim();
+                thisNumber = thisTextNode.data;
+                str = thisTextNode.data;
                 if (isNaN(thisNumber)) {
                     var res = str.split(" ");
 
-                    for (a in res) {
+                    for (let a in res) {
                         var strx = res[a];
                         if (strx.localeCompare("+") == 0) {
-                            var b = parseFloat(a) + 1;
+                            let b = parseFloat(a) + 1;
                             games = games + parseFloat(res[b]);
                         } else if (strx.localeCompare("=") == 0) {
-                            var b = parseFloat(a) + 1;
+                            let b = parseFloat(a) + 1;
                             games = games + parseFloat(res[b]);
                         } else if (strx.localeCompare("-") == 0) {
-                            var b = parseFloat(a) + 1;
+                            let b = parseFloat(a) + 1;
                             games = games + parseFloat(res[b]);
                         }
                     }
@@ -5330,13 +5351,13 @@ function ylcetAddGamesPlayedFirstTableOld() {
                 }
             }
 
-            var newCell = tr[i].insertCell(4);
-            var newText = document.createTextNode(games);
+            let newCell = tr[i].insertCell(4),
+                newText = document.createTextNode(games);
             newCell.appendChild(newText);
-            for (var j = 0; j <= tolColno; j++) {
-                var thisTdElemx = tr[i].cells[j];
-                var thisTextNode = thisTdElemx.childNodes.item(0);
-                var thisData = thisTextNode.data;
+            for (let j = 0; j <= tolColno; j++) {
+                let thisTdElemx = tr[i].cells[j],
+                    thisTextNode = thisTdElemx.childNodes.item(0),
+                    thisData = thisTextNode.data;
                 if (j == 0) {
                     thisTdElemx.setAttribute('style', 'width:20px');
                     thisTdElemx.className = "regularcol";
@@ -5361,16 +5382,16 @@ function ylcetAddGamesPlayedFirstTableOld() {
     }
 
     /* //////console.log ("Added played column1"); */
-    for (i = tr.length - 1; i >= 0; i--) {
-        var cells = tr[i].cells;
-        var thisTdElem = cells[0];
-        var thisTextNode = thisTdElem.childNodes.item(0);
-        var thisData = thisTextNode.data;
+    for (let i = tr.length - 1; i >= 0; i--) {
+        let cells = tr[i].cells,
+            thisTdElem = cells[0],
+            thisTextNode = thisTdElem.childNodes.item(0),
+            thisData = thisTextNode.data;
         if (thisData == null || thisData == undefined) {
             tables[0].deleteRow(i);
             continue;
         }
-        var thisDataTrim = thisData.trim();
+        let thisDataTrim = thisData.trim();
         if (thisDataTrim.localeCompare("") == 0) {
             tables[0].deleteRow(i);
             continue;
@@ -5397,7 +5418,7 @@ function ylcetAddGamesPlayedFirstTableOld() {
     var dataTable = google.visualization.arrayToDataTable(values);
     var dataView = new google.visualization.DataView(dataTable);
     var table = new google.visualization.Table(document.getElementById('cross_divs'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options = {
         'showRowNumber': false,
         'allowHtml': true,
@@ -5407,11 +5428,11 @@ function ylcetAddGamesPlayedFirstTableOld() {
         'width': '100%',
         'legend': {
             position: 'top',
-            maxLines: 3
+            maxLines: 3,
         },
         'title': 'Population Density (people/km^2)',
         'backgroundColor': 'red'
-    }
+    };
 
     table.draw(dataView, options);
 
@@ -5429,7 +5450,7 @@ function findEngineArraySched() {
     /* ylcet: Even if worst case there are more than 3 engines, we need not
      * proceed more than 8 rows
      */
-    for (i = 1; i < 6; i++) {
+    for (let i = 1; i < 6; i++) {
         var firsrCell = tr[i].cells;
         var thisTdElem = firsrCell[1];
         var thisTextNode = thisTdElem.childNodes.item(0);
@@ -5519,7 +5540,7 @@ function getAbbNameList(myList)
 {
    var arrayList = [];
    var keysArray = Object.keys(myList.Table);
-   for (var i = 0; i < keysArray.length; i++) 
+   for (let i = 0; i < keysArray.length; i++)
    {
       var key = keysArray[i]; // here is "name" of object property
       var value = myList.Table[myList.Order[i]].Abbreviation; // here get value "by name" as it expected with objects
@@ -5528,26 +5549,26 @@ function getAbbNameList(myList)
    return arrayList;
 }
 
-function drawStandingsNew(myList1, selector) 
+function drawStandingsNew(myList1, selector)
 {
    var tempDom = document.getElementById('cross_divs');
    var myList = null;
 
-   if (tempDom) 
+   if (tempDom)
    {
       $("#cross_divs").html("");
    }
    tempDom = document.getElementById('info_divs1');
-   if (tempDom) 
+   if (tempDom)
    {
       $("#info_divs1").html("");
    }
 
-   try 
+   try
    {
       myList = JSON.parse(myList1);
-   } 
-   catch(e) 
+   }
+   catch(e)
    {
       CrosstableLastModifiedHeader1 = (new Date(0)).toUTCString();
       myupdateCrosstable();
@@ -5561,11 +5582,11 @@ function drawStandingsNew(myList1, selector)
    var row = table.insertRow(0);
    var columns = addAllColumnHeadersStand(row);
    var keysArray = Object.keys(myList.Table);
-   var columns = addAllColumnHeadersCross(row, abbrList);
+   columns = addAllColumnHeadersCross(row, abbrList);
 
-   for (var i = 0; i < abbrList.length ; i++)
+   for (let i = 0; i < abbrList.length ; i++)
    {
-      var row = table.insertRow(i+1);
+      row = table.insertRow(i+1);
 
       var totWin = myList.Table[myList.Order[i]].WinsAsBlack +
                      myList.Table[myList.Order[i]].WinsAsWhite;
@@ -5577,32 +5598,32 @@ function drawStandingsNew(myList1, selector)
       var cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = myList.Table[myList.Order[i]].Rank;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = myList.Order[i];
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = myList.Table[myList.Order[i]].Games;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       var score = myList.Table[myList.Order[i]].Score;
       score = score.toFixed(1);
       cell.innerHTML = score;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = totWinStr;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = myList.Table[myList.Order[i]].Strikes;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       var sb = myList.Table[myList.Order[i]].Neustadtl;
       sb = sb.toFixed(2);
       cell.innerHTML = sb;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       cell.innerHTML = myList.Table[myList.Order[i]].Rating;
-      var cell = row.insertCell(count);
+      cell = row.insertCell(count);
       count = count + 1;
       var elo1 = parseInt(myList.Table[myList.Order[i]].Elo);
       var elo = elo1 + myList.Table[myList.Order[i]].Rating;
@@ -5610,23 +5631,23 @@ function drawStandingsNew(myList1, selector)
 
       var mainEngine = myList.Order[i];
       var regex = new RegExp("(([^&#]*) )");
-      var results = regex.exec(mainEngine)
+      var results = regex.exec(mainEngine);
       mainEngine = results[0];
       var colors = ["hyperClassG", "hyperClassR", "hyperClassW"];
       if (1)
       {
-         for (var j = 0; j < abbrList.length ; j++)
+        for (let j = 0; j < abbrList.length ; j++)
          {
             cell = row.insertCell(j+count);
             cell.innerHTML = '';
             if (i != j)
             {
                var gameLength = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores.length;
-               compEngine = myList.Order[j];
+               let compEngine = myList.Order[j];
                results = regex.exec(compEngine);
                compEngine = results[0];
                var gameX = 0;
-               for (var x = 0 ; x < gameLength ; x++)
+               for (let x = 0 ; x < gameLength ; x++)
                {
                   gameX = parseInt(x/2);
                   var link = document.createElement("a");
@@ -5636,10 +5657,10 @@ function drawStandingsNew(myList1, selector)
                   link.setAttribute("onClick", "return myloadGame(" + htmlData + ")");
 
                   var winner = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Winner;
-                  var resultN = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Result
+                  var resultN = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Result;
                   var result = '';
                   resultN = parseFloat(resultN);
-                  var gameXColor = parseInt(gameX%3);  
+                  var gameXColor = parseInt(gameX%3);
                   link.className = colors[gameXColor];
                   if (resultN === 1)
                   {
@@ -5677,7 +5698,7 @@ function drawStandingsNew(myList1, selector)
                   result = getModifiedResult(resultN);
                   var linkText = document.createTextNode(result);
                   link.appendChild(linkText);
-                  link.style.cursor = "pointer"; 
+                  link.style.cursor = "pointer";
                   cell.innerHTML += ' ';
                   cell.appendChild(link);
                }
@@ -5733,8 +5754,8 @@ function drawStandingsNew(myList1, selector)
    }
    var dataView1 = new google.visualization.DataView(dataTable1);
    var table1 = new google.visualization.Table(document.getElementById('cross_divs'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
-   knownHeight = 38 * abbrList.length; 
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
+   knownHeight = 38 * abbrList.length;
     var options1 = {
       'showRowNumber': false,
       'allowHtml': true,
@@ -5744,15 +5765,15 @@ function drawStandingsNew(myList1, selector)
       'height': knownHeight,
       'legend': {
          position: 'top',
-         maxLines: 3
+         maxLines: 3,
       },
       'title': 'Population Density (people/km^2)',
       'backgroundColor': 'red'
-   }
+   };
 
    google.visualization.events.addListener(table1, 'sort', function(sender) {
       var sortColumn;
-      dataTable = google.visualization.arrayToDataTable(values);
+      let dataTable = google.visualization.arrayToDataTable(values);
       //////console.log ("sender.column:" + sender.column);
 
       switch (sender.column) {
@@ -5778,11 +5799,11 @@ function drawStandingsNew(myList1, selector)
       options1.sortAscending = sender.ascending;
       options1.sortColumn = sender.column;
       dataTable.sort([{column: sortColumn, desc: !sender.ascending}]);
-      dataView = new google.visualization.DataView(dataTable);
+      let dataView = new google.visualization.DataView(dataTable);
       table1.draw(dataView, options1);
    });
    dataTable1.sort([{
-      column: 0
+      column: 0,
    }]);
    dataView1 = new google.visualization.DataView(dataTable1);
    table1.draw(dataView1, options1);
@@ -5821,7 +5842,7 @@ var evalchartoptions = {
                     textPosition: 'in',
                     gridlines: {
                         color: '#e5e3de',
-                        count: 7
+                        count: 7,
                     },
                     textStyle: {
                         color: '#000000'
@@ -5836,15 +5857,15 @@ var evalchartoptions = {
                 },
                 interpolateNulls: true
             };
-            
-function drawSfPV(myList1, selector) 
+
+function drawSfPV(myList1, selector)
 {
    var myList;
-   try 
+   try
    {
       myList = JSON.parse(myList1);
-   } 
-   catch(e) 
+   }
+   catch(e)
    {
       //////console.log ("caught" + e);
       myupdateLiveSf();
@@ -5853,20 +5874,20 @@ function drawSfPV(myList1, selector)
    var keysArray = Object.keys(myList);
 
    var tempDom = document.getElementById('sfeval');
-   if (tempDom) 
+   if (tempDom)
    {
       $("#sfeval").html("");
    }
    var row = $('<tr/>');
-   row.append($('<th/>').html("Eng"))
-   row.append($('<th/>').html("Eval"))
-   row.append($('<th/>').html("PV"))
-   row.append($('<th/>').html("Depth"))
-   row.append($('<th/>').html("Speed"))
-   row.append($('<th/>').html("Nodes"))
-   row.append($('<th/>').html("TBhits"))
+   row.append($('<th/>').html("Eng"));
+   row.append($('<th/>').html("Eval"));
+   row.append($('<th/>').html("PV"));
+   row.append($('<th/>').html("Depth"));
+   row.append($('<th/>').html("Speed"));
+   row.append($('<th/>').html("Nodes"));
+   row.append($('<th/>').html("TBhits"));
    $(selector).append(row);
-   for (var i = 0 ; i < keysArray.length ; i ++) 
+   for (let i = 0 ; i < keysArray.length ; i ++)
    {
       row = $('<tr/>');
       var eng = keysArray[i];
@@ -5894,7 +5915,7 @@ function drawSfPV(myList1, selector)
             {
                score = 0;
             }
-         } 
+         }
       }
       if (!isNaN(score))
       {
@@ -5903,7 +5924,7 @@ function drawSfPV(myList1, selector)
       var evalPv = pv.match(/(.*?)\..*/i);
       if (evalPv && evalPv[1])
       {
-         var moveIndex = parseInt(evalPv[1]);
+         let moveIndex = parseInt(evalPv[1]);
          console.log ("movenum is :" + moveIndex);
         if (evalchartdataFound && !evalchartdata[moveIndex]) {
             evalchartdata[moveIndex] = new Array(4);
@@ -5913,11 +5934,11 @@ function drawSfPV(myList1, selector)
             evalchartdata[moveIndex][3] = NaN;
         }
         if (evalchartdataFound)
-            evalchartdata[moveIndex][3] = score;   
-      }  
+            evalchartdata[moveIndex][3] = score;
+      }
       tbhits= tbhits.toFixed(0);
       tbhits = tbhits + "k";
-      
+
       row.append($('<td/>').html(eng));
       row.append($('<td/>').html(score));
       row.append($('<td/>').html(pv));
@@ -5926,11 +5947,11 @@ function drawSfPV(myList1, selector)
       row.append($('<td/>').html(nodes));
       row.append($('<td/>').html(tbhits));
       $(selector).append(row);
-   } 
+   }
 
    if (evalchartdataFound)
    {
-       //evalchart.draw(google.visualization.arrayToDataTable(evalchartdata), evalchartoptions); 
+       //evalchart.draw(google.visualization.arrayToDataTable(evalchartdata), evalchartoptions);
    }
 
    var values = []; // to hold our values for data table
@@ -5969,15 +5990,15 @@ function drawSfPV(myList1, selector)
       'sortAscending': true,
       'legend': {
          position: 'top',
-         maxLines: 3
+         maxLines: 3,
       },
       'title': 'Population Density (people/km^2)',
       'backgroundColor': 'red',
       'height': '100%'
-   }
+   };
 
    dataTable1.sort([{
-      column: 0
+      column: 0,
    }]);
    dataView1 = new google.visualization.DataView(dataTable1);
    table1.draw(dataView1, options1);
@@ -5993,15 +6014,15 @@ function getModifiedResult(result)
    return result;
 }
 
-function drawCrosstableNew(myList1, selector) 
+function drawCrosstableNew(myList1, selector)
 {
    var myList = null;
 
-   try 
+   try
    {
       myList = JSON.parse(myList1);
-   } 
-   catch(e) 
+   }
+   catch(e)
    {
       CrosstableLastModifiedHeader1 = (new Date(0)).toUTCString();
       myupdateCrosstable();
@@ -6017,14 +6038,14 @@ function drawCrosstableNew(myList1, selector)
    var columns = addAllColumnHeadersCross(table, abbrList);
 
    var keysArray = Object.keys(myList.Table);
-   for (var i = 0; i < keysArray.length; i++) 
+   for (let i = 0; i < keysArray.length; i++)
    {
       var key = keysArray[i]; // here is "name" of object property
       var value = myList.Table[key].Elo; // here get value "by name" as it expected with objects
       ////le.log("keyo:" + key + "," , value);
    }
 
-   for (var i = 0; i < abbrList.length ; i++)
+   for (let i = 0; i < abbrList.length ; i++)
    {
       var row = table.insertRow(i+1);
       var cell = row.insertCell(0);
@@ -6033,38 +6054,38 @@ function drawCrosstableNew(myList1, selector)
       var results = regex.exec(mainEngine);
       cell.innerHTML = results[0];
       mainEngine = results[0];
-      for (var j = 0; j < abbrList.length ; j++)
+      for (let j = 0; j < abbrList.length ; j++)
       {
          cell = row.insertCell(j+1);
          cell.innerHTML = '';
          if (i != j)
          {
             var gameLength = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores.length;
-            compEngine = keysArray[j];
+            let compEngine = keysArray[j];
             results = regex.exec(compEngine);
             compEngine = results[0];
-            for (var x = 0 ; x < gameLength ; x++)
+            for (let x = 0 ; x < gameLength ; x++)
             {
                var link = document.createElement("a");
                var htmlData = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Game;
                var linkData = getLinkArch(htmlData);
                link.setAttribute("href", linkData);
                var winner = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Winner;
-               var resultN = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Result
+               var resultN = myList.Table[myList.Order[i]].Results[myList.Order[j]].Scores[x].Result;
                var result = '';
                resultN = parseFloat(resultN);
                if (resultN === 1)
                {
                   link.className = "hyperClassW";
-               }   
+               }
                else if (resultN === 0)
                {
                   link.className = "hyperClassR";
-               }   
+               }
                else
                {
                   link.className = "hyperClassB";
-               }   
+               }
                if (resultN === 1)
                {
                   if (winner.match(/white/i))
@@ -6136,7 +6157,7 @@ function drawCrosstableNew(myList1, selector)
    var dataTable1 = google.visualization.arrayToDataTable(values);
    var dataView1 = new google.visualization.DataView(dataTable1);
    var table1 = new google.visualization.Table(document.getElementById('info_divs1'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options1 = {
       'showRowNumber': false,
       'allowHtml': true,
@@ -6144,18 +6165,18 @@ function drawCrosstableNew(myList1, selector)
       'sort': 'event',
       'sortAscending': true,
       'width': '100%',
-      'height': knownHeight,  
+      'height': knownHeight,
       'legend': {
          position: 'top',
-         maxLines: 3
+         maxLines: 3,
       },
       'title': 'Population Density (people/km^2)',
       'backgroundColor': 'red'
-   }
+   };
 
    google.visualization.events.addListener(table1, 'sort', function(sender) {
       var sortColumn;
-      dataTable = google.visualization.arrayToDataTable(values);
+      let dataTable = google.visualization.arrayToDataTable(values);
       //////console.log ("sender.column:" + sender.column);
 
       switch (sender.column) {
@@ -6181,7 +6202,7 @@ function drawCrosstableNew(myList1, selector)
       options1.sortAscending = sender.ascending;
       options1.sortColumn = sender.column;
       dataTable.sort([{column: sortColumn, desc: !sender.ascending}]);
-      dataView = new google.visualization.DataView(dataTable);
+      let dataView = new google.visualization.DataView(dataTable);
       table1.draw(dataView, options1);
    });
    dataView1 = new google.visualization.DataView(dataTable1);
@@ -6209,20 +6230,20 @@ function appendTable(row, selector, listnum, colnum, myList, columns)
    }
 }
 
-function buildHtmlTable(myList1, selector) 
+function buildHtmlTable(myList1, selector)
 {
    var tempDom = document.getElementById('sched_divs');
    var myList = null;
 
-   if (tempDom) 
+   if (tempDom)
    {
       $("#sched_divs").html("");
    }
-   try 
+   try
    {
       myList = JSON.parse(myList1);
-   } 
-   catch(e) 
+   }
+   catch(e)
    {
       SchedtableLastModifiedHeader1 = (new Date(0)).toUTCString();
       myupdateSchedtable();
@@ -6235,9 +6256,9 @@ function buildHtmlTable(myList1, selector)
 
    if (columns.length < 9)
    {
-      for (var i = 0; i < myList.length; i++) 
+    for (let i = 0; i < myList.length; i++)
       {
-         var row = $('<tr/>');
+         let row = $('<tr/>');
          appendTable(row, selector, i, 1, myList, columns);
          appendTable(row, selector, i, 5, myList, columns);
          appendTable(row, selector, i, 11, myList, columns);
@@ -6255,9 +6276,9 @@ function buildHtmlTable(myList1, selector)
    }
    else
    {
-      for (var i = 0; i < myList.length; i++)
+    for (let i = 0; i < myList.length; i++)
       {
-         var row = $('<tr/>');
+         let row = $('<tr/>');
          appendTable(row, selector, i, 5, myList, columns);
          appendTable(row, selector, i, 11, myList, columns);
          appendTable(row, selector, i, 12, myList, columns);
@@ -6279,10 +6300,10 @@ function buildHtmlTable(myList1, selector)
    var tr = tempDom.getElementsByTagName("tr");
    var rowCount = tr.length;
    var currentGameNum = 0;
-   for (i = 1; i < tr.length ; i++)
+   for (let i = 1; i < tr.length ; i++)
    {
       var cells = tr[i].cells;
-      for (j = 0 ; j < 10 ; j++)
+      for (let j = 0 ; j < 10 ; j++)
       {
          var thisTdElem = cells[j];
          thisTdElem.className = "regularcol1";
@@ -6310,7 +6331,7 @@ function buildHtmlTable(myList1, selector)
                var linkText = document.createTextNode(htmlData);
                linkText.className = "hyperClass";
                link.appendChild(linkText);
-               link.style.cursor = "pointer"; 
+               link.style.cursor = "pointer";
                thisTdElem.innerHTML = '';
                thisTdElem.className = "regularcol1";
                thisTdElem.appendChild(link);
@@ -6370,18 +6391,18 @@ function buildHtmlTable(myList1, selector)
       'height': '100%',
       'legend': {
          position: 'top',
-         maxLines: 3
+         maxLines: 3,
       },
       'title': 'Population Density (people/km^2)',
       'backgroundColor': 'red',
       'page' : 'enabled',
       'pageSize' : 12,
       'startPage' : startPage
-   }
+   };
 
    google.visualization.events.addListener(table1, 'sort', function(sender) {
       var sortColumn;
-      dataTable = google.visualization.arrayToDataTable(values);
+      let dataTable = google.visualization.arrayToDataTable(values);
       //////console.log ("sender.column:" + sender.column);
 
       switch (sender.column) {
@@ -6406,7 +6427,7 @@ function buildHtmlTable(myList1, selector)
       options1.sortAscending = sender.ascending;
       options1.sortColumn = sender.column;
       dataTable.sort([{column: sortColumn, desc: !sender.ascending}]);
-      dataView = new google.visualization.DataView(dataTable);
+      let dataView = new google.visualization.DataView(dataTable);
       dataView.setColumns([0,1,2,3,4,5,6,7,8,9,10,11,12]);
       table1.draw(dataView, options1);
    });
@@ -6421,7 +6442,7 @@ function buildHtmlTable(myList1, selector)
 // Adds a header row to the table and returns the set of columns.
 // Need to do union of keys from all records as some records may not contain
 // all records.
-function addAllColumnHeaders(myList, selector) 
+function addAllColumnHeaders(myList, selector)
 {
    var columnSet = [];
    var headerTr$ = $('<tr/>');
@@ -6429,7 +6450,7 @@ function addAllColumnHeaders(myList, selector)
    var rowHash = myList[0];
    var j = 0;
 
-   for (var key in rowHash)
+   for (let key in rowHash)
    {
       columnSet.push(key);
    }
@@ -6455,10 +6476,10 @@ function addAllColumnHeaders(myList, selector)
    return columnSet;
 }
 
-function addAllColumnHeadersStand(row) 
+function addAllColumnHeadersStand(row)
 {
    var columnSet = [];
- 
+
    columnSet.push("Rank");
    columnSet.push("Engine");
    columnSet.push("#Games");
@@ -6469,7 +6490,7 @@ function addAllColumnHeadersStand(row)
    columnSet.push("Current Elo");
    columnSet.push("Elo Diff [LiveR]");
 
-   for (var i = 0; i < columnSet.length ; i++)
+   for (let i = 0; i < columnSet.length ; i++)
    {
       var cell1 = row.insertCell(i);
       cell1.innerHTML =  columnSet[i];
@@ -6478,16 +6499,16 @@ function addAllColumnHeadersStand(row)
    return columnSet;
 }
 
-function addAllColumnHeadersCross(row, myList) 
+function addAllColumnHeadersCross(row, myList)
 {
    var columnSet = [];
 
-   for (var i = 0; i < myList.length ; i++)
+   for (let i = 0; i < myList.length ; i++)
    {
       columnSet.push(myList[i]);
    }
 
-   for (var i = 0; i < columnSet.length ; i++)
+   for (let i = 0; i < columnSet.length ; i++)
    {
       var cell1 = row.insertCell(i+9);
       cell1.innerHTML = columnSet[i];
@@ -6502,7 +6523,7 @@ function drawSchedTable(text)
 }
 
 
-function ylcetFinishTable() 
+function ylcetFinishTable()
 {
     var tables = tempDom.find("table");
     var tr = tables[0].getElementsByTagName("tr");
@@ -6513,16 +6534,20 @@ function ylcetFinishTable()
     var darray = Create2DArray(11, 11, 11);
     var compGames = 0;
 
-    for (i = tr.length - 1; i > 0; i--) {
-        var cells = tr[i].cells;
-        var thisTdElem = cells[0];
+    let cells,
+        thisTdElem;
+
+    for (let i = tr.length - 1; i > 0; i--) {
+        cells = tr[i].cells;
+        thisTdElem = cells[0];
         var thisTextNode = thisTdElem.childNodes.item(0);
         var thisData = thisTextNode.data;
         var thisDataTrim = thisData.trim();
 
         if (thisDataTrim.localeCompare("") != 0) {
             totalGames = i;
-            if (theObj = document.getElementById("totGames")) {
+            let theObj = document.getElementById("totGames");
+            if (theObj) {
                 if (totalGames != 0) {
                     theObj.innerHTML = (totalGames);
                 } else {
@@ -6536,16 +6561,16 @@ function ylcetFinishTable()
     var totTime = 0;
     var totMoves = 0;
 
-    for (i = 1; i < tr.length; i++) {
-        var cells = tr[i].cells;
-        var thisTdElem = cells[2];
-        var thisTextNode = thisTdElem.childNodes.item(0);
-        var thisData = thisTextNode.data;
+    for (let i = 1; i < tr.length; i++) {
+        let cells = tr[i].cells,
+            thisTdElem = cells[2],
+            thisTextNode = thisTdElem.childNodes.item(0),
+            thisData = thisTextNode.data;
         if (thisData == null | thisData == undefined) {
             compGames = 0;
             break;
         }
-        var thisDataTrim = thisData.trim();
+        let thisDataTrim = thisData.trim();
         compGames = i - 1;
 
         if (thisDataTrim.localeCompare("") == 0) {
@@ -6556,8 +6581,8 @@ function ylcetFinishTable()
             break;
         }
         compGames = i;
-        var thisTdElem = cells[1];
-        var thisTextNode = thisTdElem.childNodes.item(0);
+        thisTdElem = cells[1];
+        thisTextNode = thisTdElem.childNodes.item(0);
         var firstEngine = thisTextNode.data;
         thisTdElem = cells[4];
         thisTextNode = thisTdElem.childNodes.item(0);
@@ -6570,15 +6595,15 @@ function ylcetFinishTable()
         var secondScore = thisTextNode.data;
         ////////console.log ("CAlling assignScores");
         thisTdElem = cells[10];
-        var thisTextNode = thisTdElem.childNodes.item(0);
-        var thisData = thisTextNode.data;
+        thisTextNode = thisTdElem.childNodes.item(0);
+        thisData = thisTextNode.data;
         if (thisData == null | thisData == undefined) {
             break;
         }
         totTime += hmsToSecondsOnly(thisData.trim());
         thisTdElem = cells[6];
-        var thisTextNode = thisTdElem.childNodes.item(0);
-        var thisData = thisTextNode.data;
+        thisTextNode = thisTdElem.childNodes.item(0);
+        thisData = thisTextNode.data;
         if (thisData == null | thisData == undefined) {
             break;
         }
@@ -6601,9 +6626,9 @@ function ylcetFinishTable()
 
     var tblx = document.createElement('table');
     var tbdy = document.createElement('tbody');
-    for (var i = 0; i <= engArray.length * 2; i++) {
-        var tr = document.createElement('tr');
-        for (var j = 0; j <= 5; j++) {
+    for (let i = 0; i <= engArray.length * 2; i++) {
+        let tr = document.createElement('tr');
+        for (let j = 0; j <= 5; j++) {
             var newCell = tr.insertCell(j);
             var newText = document.createTextNode('');
             newCell.appendChild(newText);
@@ -6612,15 +6637,15 @@ function ylcetFinishTable()
         tbdy.appendChild(tr);
     }
     tblx.appendChild(tbdy);
-    var tables = tdiv.getElementsByTagName("table");
+    tables = tdiv.getElementsByTagName("table");
     tblx.id = "tblBordered1";
     tdiv.appendChild(tblx);
 
     tr = tables[0].getElementsByTagName("tr");
     var trCount = 1;
-    var cells = tr[0].cells;
+    cells = tr[0].cells;
     var cellCnt = 0;
-    var thisTdElem = cells[cellCnt];
+    thisTdElem = cells[cellCnt];
     thisTdElem.className = "headercol";
     thisTdElem.setAttribute('style', 'width:120px');
     thisTdElem.innerText = "Head to Head";
@@ -6658,18 +6683,18 @@ function ylcetFinishTable()
     var totalWhitewins = 0;
     var totalBlackwins = 0;
 
-    for (i = 0; i < engArray.length; i++) {
-        for (var x = i + 1; x < engArray.length; x++) {
+    for (let i = 0; i < engArray.length; i++) {
+        for (let x = i + 1; x < engArray.length; x++) {
             ////////console.log ("trcount is ::" + engArray.length);
             if (tr[trCount] == null)
             {
                 break;
             }
-            var cells = tr[trCount].cells;
+            let cells = tr[trCount].cells;
             trCount++;
 
-            var cellCnt = 0;
-            var thisTdElem = cells[cellCnt];
+            let cellCnt = 0,
+                thisTdElem = cells[cellCnt];
             var opp = darray[i][x][0];
             if (opp == 0) {
                 opp = '';
@@ -6681,7 +6706,7 @@ function ylcetFinishTable()
             cellCnt++;
             thisTdElem = cells[cellCnt];
             ////////console.log("darray[i][x][2].length:: " + darray[i][x][2].length);
-            for (y = 0; y < darray[i][x][2].length; y = y + 2) {
+            for (let y = 0; y < darray[i][x][2].length; y = y + 2) {
                 var htmlData = darray[i][x][2][y + 1];
                 var link = document.createElement("a");
                 var linkData = getLinkArch(htmlData);
@@ -6721,7 +6746,7 @@ function ylcetFinishTable()
 
     totaWins = totalBlackwins + totalWhitewins;
 
-    for (i = tr.length - 1; i > 0; i--) {
+    for (let i = tr.length - 1; i > 0; i--) {
         if (isRowEmpty(tr, i, 0)) {
             tables[0].deleteRow(i);
         } else {
@@ -6744,7 +6769,7 @@ function ylcetFinishTable()
     var dataTable1 = google.visualization.arrayToDataTable(values);
     var dataView1 = new google.visualization.DataView(dataTable1);
     var table1 = new google.visualization.Table(document.getElementById('info_divs1'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
     var options1 = {
         'showRowNumber': false,
         'allowHtml': true,
@@ -6754,22 +6779,22 @@ function ylcetFinishTable()
         'width': '100%',
         'legend': {
             position: 'top',
-            maxLines: 3
+            maxLines: 3,
         },
         'title': 'Population Density (people/km^2)',
         'backgroundColor': 'red'
-    }
+    };
 
     table1.draw(dataView1, options1);
 
-    var tdiv = document.getElementById('info_divs2');
-    var tblx = document.createElement('table');
-    var tbdy = document.createElement('tbody');
-    for (var i = 0; i < 2; i++) {
-        var tr = document.createElement('tr');
-        for (var j = 0; j <= 7; j++) {
-            var newCell = tr.insertCell(j);
-            var newText = document.createTextNode('');
+    tdiv = document.getElementById('info_divs2');
+    tblx = document.createElement('table');
+    tbdy = document.createElement('tbody');
+    for (let i = 0; i < 2; i++) {
+        let tr = document.createElement('tr');
+        for (let j = 0; j <= 7; j++) {
+            let newCell = tr.insertCell(j),
+                newText = document.createTextNode('');
             newCell.appendChild(newText);
             newCell.className = "regularcol1";
         }
@@ -6779,10 +6804,10 @@ function ylcetFinishTable()
     tdiv.appendChild(tblx);
 
     tr = tblx.getElementsByTagName("tr");
-    var trCount = 1;
-    var cells = tr[0].cells;
-    var cellCnt = 0;
-    var thisTdElem = cells[cellCnt];
+    trCount = 1;
+    cells = tr[0].cells;
+    cellCnt = 0;
+    thisTdElem = cells[cellCnt];
     thisTdElem.className = "headercol";
     thisTdElem.setAttribute('style', 'width:220px');
     thisTdElem.innerText = "#Completed";
@@ -6822,11 +6847,11 @@ function ylcetFinishTable()
     thisTdElem.setAttribute('style', 'width:166px');
     thisTdElem.className = "headercol";
 
-    var cells = tr[trCount].cells;
+    cells = tr[trCount].cells;
     trCount++;
 
-    var cellCnt = 0;
-    var thisTdElem = cells[cellCnt];
+    cellCnt = 0;
+    thisTdElem = cells[cellCnt];
     thisTdElem.innerText = compGames + "/" + totalGames;
     thisTdElem.className = "regularcol";
     cellCnt++;
@@ -6834,7 +6859,7 @@ function ylcetFinishTable()
     thisTdElem.innerText = totaWins;
     thisTdElem.className = "regularcol";
     cellCnt++;
-    var thisTdElem = cells[cellCnt];
+    thisTdElem = cells[cellCnt];
     thisTdElem.innerText = totalWhitewins;
     thisTdElem.className = "regularcol";
     cellCnt++;
@@ -6871,7 +6896,7 @@ function ylcetFinishTable()
 
     tblx.id = "tblBordered3";
 
-    var values = []; // to hold our values for data table
+    values = []; // to hold our values for data table
     // get our values
     $('#tblBordered3 tr').each(function(i, v) {
         values[i] = [];
@@ -6883,11 +6908,11 @@ function ylcetFinishTable()
         });
     });
 
-    var dataTable1 = google.visualization.arrayToDataTable(values);
-    var dataView1 = new google.visualization.DataView(dataTable1);
-    var table1 = new google.visualization.Table(document.getElementById('info_divs2'));
-    var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
-    var options1 = {
+    dataTable1 = google.visualization.arrayToDataTable(values);
+    dataView1 = new google.visualization.DataView(dataTable1);
+    table1 = new google.visualization.Table(document.getElementById('info_divs2'));
+    cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
+    options1 = {
         'showRowNumber': false,
         'allowHtml': true,
         'cssClassNames': cssClassNames,
@@ -6896,38 +6921,38 @@ function ylcetFinishTable()
         'width': '100%',
         'legend': {
             position: 'top',
-            maxLines: 3
+            maxLines: 3,
         },
         'title': 'Population Density (people/km^2)',
         'backgroundColor': 'red'
-    }
+    };
 
     table1.draw(dataView1, options1);
 
     var sdiv = document.getElementById('sched_divs');
     if (sdiv) {
         $("#sched_divs").html("");
-        var tables = tempDom.find("table");
+        let tables = tempDom.find("table");
         var tbl = tables[0];
         tbl.id = "schedtable";
-        var tr = tbl.getElementsByTagName("tr");
+        tr = tbl.getElementsByTagName("tr");
         tr[0].deleteCell(12);
         tr[0].deleteCell(9);
-        var cells = tr[0].cells;
+        let cells = tr[0].cells;
 
         var emptyRowfound = 0;
         var rowCount = tr.length;
-        for (i = 1; i < tr.length; i++) {
+        for (let i = 1; i < tr.length; i++) {
             tr[i].deleteCell(12);
             tr[i].deleteCell(9);
-            var cells = tr[i].cells;
-            for (j = 0; j < 12; j++) {
-                var thisTdElem = cells[j];
+            let cells = tr[i].cells;
+            for (let j = 0; j < 12; j++) {
+                let thisTdElem = cells[j];
                 if (thisTdElem == null) {
                     continue;
                 }
 
-                if (j == 1 || j == 4) 
+                if (j == 1 || j == 4)
                 {
                     thisTdElem.innerText = getAbbEngNameSched(thisTdElem.innerText, i);
                 }
@@ -6941,9 +6966,9 @@ function ylcetFinishTable()
                 thisTdElem.className = "regularcol1";
                 if (j == 0) {
                     if (!emptyRowfound && !isRowEmpty(tr, i, 7)) {
-                        var link = document.createElement("a");
-                        var htmlData = thisTdElem.innerHTML.trim();
-                        var linkData = getLinkArch(htmlData);
+                        let link = document.createElement("a"),
+                            htmlData = thisTdElem.innerHTML.trim(),
+                            linkData = getLinkArch(htmlData);
                         if (isArchiveFile()) {
                             link.setAttribute("href", linkData);
                             link.setAttribute("onClick", "return openArchGame(" + htmlData + ")");
@@ -6954,7 +6979,7 @@ function ylcetFinishTable()
                         }
                         link.title = "Click here to open the game#" + htmlData + " from the archives";
                         link.target = "_blank";
-                        var linkText = document.createTextNode(htmlData);
+                        let linkText = document.createTextNode(htmlData);
                         linkText.className = "hyperClass";
                         link.appendChild(linkText);
                         thisTdElem.innerHTML = '';
@@ -6969,7 +6994,7 @@ function ylcetFinishTable()
         }
         tbl.id = "tblBordered4";
         sdiv.appendChild(tbl);
-        var values = []; // to hold our values for data table
+        let values = []; // to hold our values for data table
         // get our values
         $('#tblBordered4 tr').each(function(i, v) {
             values[i] = [];
@@ -6988,7 +7013,7 @@ function ylcetFinishTable()
         var dataTable = google.visualization.arrayToDataTable(values);
         var dataView = new google.visualization.DataView(dataTable);
         var table = new google.visualization.Table(document.getElementById('sched_divs'));
-        var cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};    
+        let cssClassNames = {headerRow: 'headercol', tableRow: 'rownormal', oddTableRow:'rowodd'};
         var options = {
             'showRowNumber': false,
             'allowHtml': true,
@@ -6999,11 +7024,11 @@ function ylcetFinishTable()
             'width': '100%',
             'legend': {
                 position: 'top',
-                maxLines: 3
+                maxLines: 3,
             },
             'title': 'Population Density (people/km^2)',
             'backgroundColor': 'red'
-        }
+        };
 
         google.visualization.events.addListener(table, 'sort', function(sender) {
             var sortColumn;
@@ -7062,14 +7087,14 @@ function isArchiveFile() {
     return (isArchive);
 }
 
-function ylcetDrawCrosstable() 
+function ylcetDrawCrosstable()
 {
     ylcetAddGamesPlayedFirstTable();
     crossLoaded = 1;
     return;
 }
 
-function ylcetDrawSchedtable() 
+function ylcetDrawSchedtable()
 {
     ylcetFinishTable();
     schedLoaded = 1;
@@ -7077,110 +7102,110 @@ function ylcetDrawSchedtable()
 
 function getAbbEngNameSched(enginename, rowno)
 {
-    if (enginename == undefined || enginename == null) 
+    if (enginename == undefined || enginename == null)
     {
         return "unknown";
     }
-    if (enginename.search(/.*Houdini.*/i) == 0) 
+    if (enginename.search(/.*Houdini.*/i) == 0)
     {
-        return ("Houdini");
-    } 
-    else if (enginename.search(/.*MysteryX.*/i) == 0) 
+        return "Houdini";
+    }
+    else if (enginename.search(/.*MysteryX.*/i) == 0)
     {
         if (jsSeasonInt == 6 && finalInt == 0)
         {
             if (rowno <= 78)
             {
-                return ("MysterX")
+                return "MysterX";
             }
             else if (rowno <= 83)
             {
-                return ("MysterX1")
+                return "MysterX1";
             }
             else
             {
-                return ("MysteryX2");
+                return "MysteryX2";
             }
         }
         else
         {
-            return ("MysteryX3");
+            return "MysteryX3";
         }
-    } 
-    else if (enginename.search(/.*Stockfish.*/i) == 0) 
+    }
+    else if (enginename.search(/.*Stockfish.*/i) == 0)
     {
-        return ("Stockfish");
-    } 
-    else if (enginename.search(/.*Komodo.*/i) == 0) 
+        return "Stockfish";
+    }
+    else if (enginename.search(/.*Komodo.*/i) == 0)
     {
         if (jsSeasonInt == 5 && finalInt == 0)
         {
             if (rowno <= 128)
             {
-                return ("Kom 2028")
+                return "Kom 2028";
             }
             else
             {
-                return ("Kom 2037")
+                return "Kom 2037";
             }
         }
         else
         {
-            return ("Komodo");
+            return "Komodo";
         }
-    } 
-    else if (enginename.search(/.*asmFish.*/i) == 0) 
+    }
+    else if (enginename.search(/.*asmFish.*/i) == 0)
     {
-        return ("Asmfish");
+        return "Asmfish";
     }
     return enginename;
 }
 
-function getAbbEngName(enginename) 
+function getAbbEngName(enginename)
 {
-    if (enginename == undefined || enginename == null) 
+    if (enginename == undefined || enginename == null)
     {
         return "unknown";
     }
-    if (enginename.search(/.*Houdini.*/i) == 0) 
+    if (enginename.search(/.*Houdini.*/i) == 0)
     {
-        return ("Houdini");
-    } 
-    else if (enginename.search(/.*MysteryX.*/i) == 0) 
+        return "Houdini";
+    }
+    else if (enginename.search(/.*MysteryX.*/i) == 0)
     {
-        return ("MysteryX3");
-    } 
-    else if (enginename.search(/.*Stockfish.*/i) == 0) 
+        return "MysteryX3";
+    }
+    else if (enginename.search(/.*Stockfish.*/i) == 0)
     {
-        return ("Stockfish");
-    } 
-    else if (enginename.search(/.*Komodo.*/i) == 0) 
+        return "Stockfish";
+    }
+    else if (enginename.search(/.*Komodo.*/i) == 0)
     {
-        return ("Komodo");
-    } 
-    else if (enginename.search(/.*asmFish.*/i) == 0) 
+        return "Komodo";
+    }
+    else if (enginename.search(/.*asmFish.*/i) == 0)
     {
-        return ("Asmfish");
+        return "Asmfish";
     }
     return enginename;
 }
 
-function getEngVersion(enginename) 
+function getEngVersion(enginename)
 {
     if (enginename == undefined || enginename == null) {
         return "unknown";
     }
     var regex = new RegExp("( ([^&#]*))");
     var results = regex.exec(enginename);
-    if (results != null) 
+    if (results != null)
     {
         if (kver)
         {
-            if (enginename.search(/.*Komodo.*/i) == 0) 
+            if (enginename.search(/.*Komodo.*/i) == 0)
             {
                 return (kver);
             }
-        } 
+        }
         return (results[0].substr(0,8));
     }
     return '';
@@ -7192,14 +7217,14 @@ function returnIndex(passNum) {
 
 function PrintHTML() {
     var ii, jj, text, theObj, squareId, imageId, squareCoord, squareTitle, numText, textSO;
-    if (theObj = document.getElementById("GameBoard")) {
+    if ((theObj = document.getElementById("GameBoard"))) {
         text = '<TABLE CLASS="boardTable" ID="boardTable" CELLSPACING=0 CELLPADDING=0';
         text += (tableSize > 0) ? ' STYLE="width: ' + tableSize + 'px; height: ' + tableSize + 'px;">' : '>';
-        for (iiv = 0; iiv <= 7; ++iiv) {
-            var ii = iiv;
+        for (let iiv = 0; iiv <= 7; ++iiv) {
+            ii = iiv;
             text += '<TR>';
-            for (jjv = 0; jjv <= 7; ++jjv) {
-                var jj = jjv;
+            for (let jjv = 0; jjv <= 7; ++jjv) {
+                jj = jjv;
                 squareId = 'tcol' + jj + 'trow' + ii;
                 imageId = 'img_' + squareId;
                 text += (ii + jj) % 2 === 0 ? '<TD CLASS="whiteSquare" ID="' + squareId + '" background="images/whiteboard.jpg"' : '<TD CLASS="blackSquare" ID="' + squareId + '" background="images/blackboard.jpg"';
@@ -7207,73 +7232,73 @@ function PrintHTML() {
                 squareCoord = IsRotated ? String.fromCharCode(72 - jj, 49 + ii) : String.fromCharCode(jj + 65, 56 - ii);
                 squareTitle = squareCoord;
                 if (boardTitle[jj][ii] !== '') {
-                    squareTitle += ': ' + boardTitle[jj][ii]
+                    squareTitle += ': ' + boardTitle[jj][ii];
                 }
-                text += '<IMG SRC="' + ClearImg.src + '" ' + 'CLASS="pieceImage" STYLE="border: none; display: block; vertical-align: middle;" ' + 'WIDTH="44" HEIGHT="44" ' + 'ONCLICK="boardOnClick[' + jj + '][' + ii + '](this, event);" ' + 'ID="' + imageId + '" TITLE="' + squareTitle + '" ' + 'ONFOCUS="this.blur()" />' + '</TD>'
+                text += '<IMG SRC="' + ClearImg.src + '" ' + 'CLASS="pieceImage" STYLE="border: none; display: block; vertical-align: middle;" ' + 'WIDTH="44" HEIGHT="44" ' + 'ONCLICK="boardOnClick[' + jj + '][' + ii + '](this, event);" ' + 'ID="' + imageId + '" TITLE="' + squareTitle + '" ' + 'ONFOCUS="this.blur()" />' + '</TD>';
             }
-            text += '</TR>'
+            text += '</TR>';
         }
         text += '</TABLE>';
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
-    if (theObj = document.getElementById("boardTable")) {
+    if ((theObj = document.getElementById("boardTable"))) {
         tableSize = theObj.offsetWidth;
         if (tableSize > 0) {
-            theObj.style.height = tableSize + "px"
+            theObj.style.height = tableSize + "px";
         }
     }
-    if (theObj = document.getElementById("GameButtons")) {
+    if ((theObj = document.getElementById("GameButtons"))) {
         var numButtons = 5;
         var spaceSize = 15;
         var buttonSize = (tableSize - spaceSize * (numButtons - 3)) / numButtons;
         /* buttonSize = 30; arunfix */
         text = '<FORM NAME="GameButtonsForm" STYLE="display:inline;">' + '<TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0">' + '<TR><TD>' + '<INPUT ID="startButton" TYPE="BUTTON" VALUE="&lt;&lt;" STYLE="';
         if (buttonSize > 0) {
-            text += 'width: ' + buttonSize + 'px;'
+            text += 'width: ' + buttonSize + 'px;';
         }
         text += '"; CLASS="buttonControl" TITLE="go to game start" ' + ' ID="btnGoToStart" onClick="clickedBbtn(this,event);this.blur();">' + '</TD>' + '<TD CLASS="buttonControlSpace" WIDTH="' + spaceSize + '">' + '</TD><TD>' + '<INPUT ID="backButton" TYPE="BUTTON" VALUE="&lt;" STYLE="';
         if (buttonSize > 0) {
-            text += 'width: ' + buttonSize + 'px;'
+            text += 'width: ' + buttonSize + 'px;';
         }
         text += '"; CLASS="buttonControl" TITLE="move backward" ' + ' ID="btnMoveBackward1" onClick="clickedBbtn(this,event);this.blur();">' + '</TD>' + '<TD CLASS="buttonControlSpace" WIDTH="' + spaceSize + '">' + '</TD><TD>';
         text += '<INPUT ID="autoplayButton" TYPE="BUTTON" VALUE=' + (isAutoPlayOn ? "=" : "+") + ' STYLE="';
         if (buttonSize > 0) {
-            text += 'width: ' + buttonSize + 'px;'
+            text += 'width: ' + buttonSize + 'px;';
         }
         text += isAutoPlayOn ? '"; CLASS="buttonControlStop" TITLE="toggle autoplay (stop)" ' : '"; CLASS="buttonControlPlay" TITLE="toggle autoplay (start)" ';
         text += ' ID="btnPlay" NAME="AutoPlay" onClick="clickedBbtn(this,event);this.blur();">' + '</TD>' + '<TD CLASS="buttonControlSpace" WIDTH="' + spaceSize + '">' + '</TD><TD>' + '<INPUT ID="forwardButton" TYPE="BUTTON" VALUE="&gt;" STYLE="';
         if (buttonSize > 0) {
-            text += 'width: ' + buttonSize + 'px;'
+            text += 'width: ' + buttonSize + 'px;';
         }
         text += '"; CLASS="buttonControl" TITLE="move forward" ' + ' ID="btnMoveForward1" onClick="clickedBbtn(this,event);this.blur();">' + '</TD>' + '<TD CLASS="buttonControlSpace" WIDTH="' + spaceSize + '">' + '</TD><TD>' + '<INPUT ID="endButton" TYPE="BUTTON" VALUE="&gt;&gt;" STYLE="';
         if (buttonSize > 0) {
-            text += 'width: ' + buttonSize + 'px;'
+            text += 'width: ' + buttonSize + 'px;';
         }
         text += '"; CLASS="buttonControl" TITLE="go to game end" ' + ' ID="btnGoToEnd" onClick="clickedBbtn(this,event);this.blur();">' + '</TD></TR></TABLE></FORM>';
-        theObj.innerHTML = text
+        theObj.innerHTML = text;
     }
-    if (theObj = document.getElementById("GameSelector")) {
+    if ((theObj = document.getElementById("GameSelector"))) {
         if (firstStart) {
-            textSelectOptions = ''
+            textSelectOptions = '';
         }
         if (numberOfGames < 2) {
             while (theObj.firstChild) {
-                theObj.removeChild(theObj.firstChild)
+                theObj.removeChild(theObj.firstChild);
             }
-            textSelectOptions = ''
+            textSelectOptions = '';
         } else {
             if (textSelectOptions === '') {
                 if (gameSelectorNum) {
-                    gameSelectorNumLenght = Math.floor(Math.log(numberOfGames) / Math.log(10)) + 1
+                    gameSelectorNumLenght = Math.floor(Math.log(numberOfGames) / Math.log(10)) + 1;
                 }
                 text = '<FORM NAME="GameSel" STYLE="display:inline;"> ' + '<SELECT ID="GameSelSelect" NAME="GameSelSelect" STYLE="';
                 if (tableSize > 0) {
-                    text += 'width: ' + tableSize + 'px; '
+                    text += 'width: ' + tableSize + 'px; ';
                 }
                 text += 'font-family: monospace;" CLASS="selectControl" TITLE="select a game" ' + 'ONCHANGE="this.blur(); if (this.value >= 0) { Init(this.value); this.value = -1; }" ' + 'ONFOCUS="disableShortcutKeysAndStoreStatus();" ONBLUR="restoreShortcutKeysStatus();" ' + '> ' + '<OPTION CLASS="optionSelectControl" value=-1>';
                 var blanks = '';
                 for (ii = 0; ii < 32; ii++) {
-                    blanks += ' '
+                    blanks += ' ';
                 }
                 var headDisplay = (gameSelectorNum ? blanks.substring(0, gameSelectorNumLenght) + '  ' : '') + gameSelectorHead;
                 text += headDisplay.replace(/ /g, '&nbsp;');
@@ -7285,63 +7310,63 @@ function PrintHTML() {
                         textSO += '#' + blanks.substr(0, gameSelectorNumLenght - (numText.length - 1)) + numText + ' ';
                     }
                     if (gameSelectorChRound > 0) {
-                        textSO += ' ' + blanks.substr(0, gameSelectorChRound - gameRound[ii].length) + gameRound[ii].substring(0, gameSelectorChRound) + ' '
+                        textSO += ' ' + blanks.substr(0, gameSelectorChRound - gameRound[ii].length) + gameRound[ii].substring(0, gameSelectorChRound) + ' ';
                     }
                     textSO += ' ' + gameOpening[ii];
                     if (gameSelectorChWhite > 0) {
-                        textSO += ' ' + gameWhite[ii].substring(0, gameSelectorChWhite) + blanks.substr(0, gameSelectorChWhite - gameWhite[ii].length) + ' '
+                        textSO += ' ' + gameWhite[ii].substring(0, gameSelectorChWhite) + blanks.substr(0, gameSelectorChWhite - gameWhite[ii].length) + ' ';
                     }
                     if (gameSelectorChBlack > 0) {
-                        textSO += ' ' + gameBlack[ii].substring(0, gameSelectorChBlack) + blanks.substr(0, gameSelectorChBlack - gameBlack[ii].length) + ' '
+                        textSO += ' ' + gameBlack[ii].substring(0, gameSelectorChBlack) + blanks.substr(0, gameSelectorChBlack - gameBlack[ii].length) + ' ';
                     }
                     if (gameSelectorChResult > 0) {
-                        textSO += ' ' + gameResult[ii].substring(0, gameSelectorChResult) + blanks.substr(0, gameSelectorChResult - gameResult[ii].length) + ' '
+                        textSO += ' ' + gameResult[ii].substring(0, gameSelectorChResult) + blanks.substr(0, gameSelectorChResult - gameResult[ii].length) + ' ';
                     }
-                    textSelectOptions += textSO.replace(/ /g, '&nbsp;')
+                    textSelectOptions += textSO.replace(/ /g, '&nbsp;');
                 }
                 text += textSelectOptions.replace(/&(amp|lt|gt);/g, '&amp;$1;') + '</SELECT></FORM>';
                 theObj.innerHTML = text;
             }
         }
     }
-    if (theObj = document.getElementById("GameEvent")) {
+    if ((theObj = document.getElementById("GameEvent"))) {
         //theObj.innerHTML = gameEvent[currentGame]
-        var theMatch = gameEvent[currentGame].match(/(.*?) Tournament/); 
+        var theMatch = gameEvent[currentGame].match(/(.*?) Tournament/);
         theObj.innerHTML = theMatch[1];
     }
-    if (theObj = document.getElementById("GameRound")) {
-        theObj.innerHTML = gameRound[currentGame]
+    if ((theObj = document.getElementById("GameRound"))) {
+        theObj.innerHTML = gameRound[currentGame];
     }
-    if (theObj = document.getElementById("TotalRounds")) {
+    if ((theObj = document.getElementById("TotalRounds"))) {
         if (totalGames != 0) {
             theObj.innerHTML = (totalGames);
         } else {
             theObj.innerHTML = "#";
         }
     }
-    if (theObj = document.getElementById("GameSite")) {
-        theObj.innerHTML = gameSite[currentGame]
+    if ((theObj = document.getElementById("GameSite"))) {
+        theObj.innerHTML = gameSite[currentGame];
     }
-    if (theObj = document.getElementById("GameDate")) {
+    if ((theObj = document.getElementById("GameDate"))) {
         theObj.innerHTML = gameDate[currentGame];
-        theObj.style.whiteSpace = "nowrap"
+        theObj.style.whiteSpace = "nowrap";
     }
-    if (theObj = document.getElementById("GameWhite")) {
+    if ((theObj = document.getElementById("GameWhite"))) {
         theObj.innerHTML = getAbbEngName(gameWhite[currentGame]);
     }
-    if (theObj = document.getElementById("GameWhiteS")) {
+    if ((theObj = document.getElementById("GameWhiteS"))) {
         theObj.innerHTML = getAbbEngName(gameWhite[currentGame]);
     }
-    if (theObj = document.getElementById("whiteVer")) {
+    if ((theObj = document.getElementById("whiteVer"))) {
         theObj.innerHTML = getEngVersion(gameWhite[currentGame]);
     }
-    if (theObj = document.getElementById("blackVer")) {
+    if ((theObj = document.getElementById("blackVer"))) {
         theObj.innerHTML = getEngVersion(gameBlack[currentGame]);
     }
-    if (theObj = document.getElementById("GameBlack")) {
+    if ((theObj = document.getElementById("GameBlack"))) {
         theObj.innerHTML = getAbbEngName(gameBlack[currentGame]);
     }
-    if (theObj = document.getElementById("GameBlackS")) {
+    if ((theObj = document.getElementById("GameBlackS"))) {
         theObj.innerHTML = getAbbEngName(gameBlack[currentGame]);
     }
 
@@ -7355,7 +7380,7 @@ function PrintHTML() {
         }
     }
     if (0 && (theObj = document.getElementById("blackengineB"))) {
-        var img = document.createElement("img");
+        let img = document.createElement("img");
         img.src = 'img/sf.jpg';
         img.style.height = '50px';
         img.style.weight = '50px';
@@ -7363,115 +7388,117 @@ function PrintHTML() {
             blackImgloaded++;
         }
     }
-    if (theObj = document.getElementById("GameResult")) {
+    if ((theObj = document.getElementById("GameResult"))) {
         theObj.innerHTML = gameResult[currentGame];
         theObj.style.whiteSpace = "nowrap";
         if (theObj.innerHTML === "") {
-            theObj.innerHTML = "*"
+            theObj.innerHTML = "*";
         }
         if (PlyNumber == 0) {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         }
     }
     setB1C1F1G1boardShortcuts();
     if ((theObj = document.getElementById("GameSearch")) && firstStart) {
         if (numberOfGames < 2) {
             while (theObj.firstChild) {
-                theObj.removeChild(theObj.firstChild)
+                theObj.removeChild(theObj.firstChild);
             }
         } else {
             text = '<FORM ID="searchPgnForm" STYLE="display: inline;" ' + 'ACTION="javascript:searchPgnGameForm();">';
             text += '<INPUT ID="searchPgnButton" CLASS="searchPgnButton" STYLE="display: inline; ';
             if (tableSize > 0) {
-                text += 'width: ' + (tableSize / 4) + 'px; '
+                text += 'width: ' + (tableSize / 4) + 'px; ';
             }
             text += '" TITLE="find games matching the search string (regular expression)" ' + 'TYPE="submit" VALUE="?">' + '<INPUT ID="searchPgnExpression" CLASS="searchPgnExpression" ' + 'TITLE="find games matching the search string (regular expression)" ' + 'TYPE="input" VALUE="" STYLE="display: inline; box-sizing: border-box; ' + '-moz-box-sizing: border-box; -webkit-box-sizing: border-box;';
             if (tableSize > 0) {
-                text += 'width: ' + (3 * tableSize / 4) + 'px; '
+                text += 'width: ' + (3 * tableSize / 4) + 'px; ';
             }
             text += '" ONFOCUS="disableShortcutKeysAndStoreStatus();" ONBLUR="restoreShortcutKeysStatus();">';
             text += '</FORM>';
             theObj.innerHTML = text;
             theObj = document.getElementById('searchPgnExpression');
             if (theObj) {
-                theObj.value = lastSearchPgnExpression
+                theObj.value = lastSearchPgnExpression;
             }
         }
     }
+
+    let theObh;
     if (currentPage == "archive.php") {
-        theO1 = document.getElementById("GameMoves")
-        theO2 = document.getElementById("GameMovesA")
+        let theO1 = document.getElementById("GameMoves"),
+            theO2 = document.getElementById("GameMovesA");
         if (GameMovesA == "1") {
-            var theObh = theO2;
+            theObh = theO2;
             theO1.style.display = "none";
             theO1.innerHTTML = "";
             document.getElementById("info_row_data_2_mo").style.background = "none";
             if (localStorage.getItem('TCEC_Nigh') == 'Off') {
-                document.getElementById("tall_a_26").style.background = "white"
+                document.getElementById("tall_a_26").style.background = "white";
             } else {
-                document.getElementById("tall_a_26").style.background = "#cccccc"
+                document.getElementById("tall_a_26").style.background = "#cccccc";
             }
-            theO2.style.display = "block"
+            theO2.style.display = "block";
         } else {
-            var theObh = theO1;
+            theObh = theO1;
             theO1.style.display = "block";
             if (localStorage.getItem('TCEC_Nigh') == 'Off') {
-                document.getElementById("info_row_data_2_mo").style.background = "white"
+                document.getElementById("info_row_data_2_mo").style.background = "white";
             } else {
-                document.getElementById("info_row_data_2_mo").style.background = "#cccccc"
+                document.getElementById("info_row_data_2_mo").style.background = "#cccccc";
             }
             theO2.style.display = "none";
-            theO2.innerHTTML = ""
+            theO2.innerHTTML = "";
         }
     } else {
-        var theObh = document.getElementById("GameMoves")
+        theObh = document.getElementById("GameMoves");
     }
     if (theObh) {
         variationTextDepth = -1;
-        text = '<SPAN ID="ShowPgnText">' + variationTextFromId(0); + '</SPAN>';
+        text = '<SPAN ID="ShowPgnText">' + variationTextFromId(0) + '</SPAN>';
         if ((gameResult[currentGame] == "1-0") || (gameResult[currentGame] == "0-1") || (gameResult[currentGame] == "1/2-1/2") || (gameResult[currentGame] == "*")) {
-            theObh.innerHTML = text + '&nbsp;' + gameResult[currentGame]
+            theObh.innerHTML = text + '&nbsp;' + gameResult[currentGame];
         } else {
-            theObh.innerHTML = text
+            theObh.innerHTML = text;
         }
     }
 }
 
 function startButton(e) {
     if (e.shiftKey) {
-        GoToMove(StartPlyVar[CurrentVar] + (CurrentPly <= StartPlyVar[CurrentVar] + 1 ? 0 : 1))
+        GoToMove(StartPlyVar[CurrentVar] + (CurrentPly <= StartPlyVar[CurrentVar] + 1 ? 0 : 1));
     } else {
-        GoToMove(StartPlyVar[0], 0)
+        GoToMove(StartPlyVar[0], 0);
     }
 }
 
 function backButton(e) {
     if (e.shiftKey) {
-        GoToMove(StartPlyVar[CurrentVar])
+        GoToMove(StartPlyVar[CurrentVar]);
     } else {
-        GoToMove(CurrentPly - 1)
+        GoToMove(CurrentPly - 1);
     }
 }
 
 function forwardButton(e) {
     if (e.shiftKey) {
         if (!goToNextVariationSibling()) {
-            GoToMove(CurrentPly + 1)
+            GoToMove(CurrentPly + 1);
         }
     } else {
-        GoToMove(CurrentPly + 1)
+        GoToMove(CurrentPly + 1);
     }
 }
 
 function endButton(e) {
     if (e.shiftKey) {
         if (CurrentPly === StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]) {
-            goToFirstChild()
+            goToFirstChild();
         } else {
-            GoToMove(StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar])
+            GoToMove(StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]);
         }
     } else {
-        GoToMove(StartPlyVar[0] + PlyNumberVar[0], 0)
+        GoToMove(StartPlyVar[0] + PlyNumberVar[0], 0);
     }
 }
 
@@ -7485,9 +7512,9 @@ function clickedBbtn(t, e) {
             break;
         case "autoplayButton":
             if (e.shiftKey) {
-                goToNextVariationSibling()
+                goToNextVariationSibling();
             } else {
-                SwitchAutoPlay()
+                SwitchAutoPlay();
             }
             break;
         case "forwardButton":
@@ -7497,55 +7524,55 @@ function clickedBbtn(t, e) {
             endButton(e);
             break;
         default:
-            break
+            break;
     }
 }
 var basicNAGs = /^[\?!+#\s]+(\s|$)/;
 
 function strippedMoveComment(plyNum, varId, addHtmlTags) {
     if (typeof(addHtmlTags) == "undefined") {
-        addHtmlTags = !1
+        addHtmlTags = !1;
     }
     if (typeof(varId) == "undefined") {
-        varId = CurrentVar
+        varId = CurrentVar;
     }
     if (!MoveCommentsVar[varId][plyNum]) {
-        return ""
+        return "";
     }
     return fixCommentForDisplay(MoveCommentsVar[varId][plyNum]).replace(pgn4webVariationRegExpGlobal, function(m) {
-        return variationTextFromTag(m, addHtmlTags)
-    }).replace(/\[%[^\]]*\]\s*/g, '').replace(basicNAGs, '').replace(/^\s+$/, '')
+        return variationTextFromTag(m, addHtmlTags);
+    }).replace(/\[%[^\]]*\]\s*/g, '').replace(basicNAGs, '').replace(/^\s+$/, '');
 }
 
 function basicNAGsMoveComment(plyNum, varId) {
     if (typeof(varId) == "undefined") {
-        varId = CurrentVar
+        varId = CurrentVar;
     }
     if (!MoveCommentsVar[varId][plyNum]) {
-        return ""
+        return "";
     }
     var thisBasicNAGs = MoveCommentsVar[varId][plyNum].replace(/\[%[^\]]*\]\s*/g, '').match(basicNAGs, '');
-    return thisBasicNAGs ? thisBasicNAGs[0].replace(/\s+(?!class=)/gi, '') : ''
+    return thisBasicNAGs ? thisBasicNAGs[0].replace(/\s+(?!class=)/gi, '') : '';
 }
 
 function variationTextFromTag(variationTag, addHtmlTags) {
     if (typeof(addHtmlTags) == "undefined") {
-        addHtmlTags = !1
+        addHtmlTags = !1;
     }
     var varId = variationTag.replace(pgn4webVariationRegExp, "$1");
     if (isNaN(varId)) {
         myAlert("error: issue parsing variation tag " + variationTag + " in game " + (currentGame + 1), !0);
-        return ""
+        return "";
     }
     var text = variationTextFromId(varId);
     if (text) {
         if (addHtmlTags) {
-            text = '</SPAN>' + text + '<SPAN CLASS="comment">'
+            text = '</SPAN>' + text + '<SPAN CLASS="comment">';
         }
     } else {
-        text = ''
+        text = '';
     }
-    return text
+    return text;
 }
 var variationTextDepth, printedComment, printedVariation;
 
@@ -7554,121 +7581,122 @@ function variationTextFromId(varId) {
         thisComment;
     if (isNaN(varId) || varId < 0 || varId >= numberOfVars || typeof(StartPlyVar[varId]) == "undefined" || typeof(PlyNumberVar[varId]) == "undefined") {
         myAlert("error: issue parsing variation id " + varId + " in game " + (currentGame + 1), !0);
-        return ""
+        return "";
     }
     var text = ++variationTextDepth ? ('<SPAN CLASS="variation">' + (printedVariation ? ' ' : '') + (variationTextDepth > 1 ? '(' : '[')) + '</SPAN>' : '';
     printedVariation = !1;
-    for (var ii = StartPlyVar[varId]; ii < StartPlyVar[varId] + PlyNumberVar[varId]; ii++) {
+    for (let ii = StartPlyVar[varId]; ii < StartPlyVar[varId] + PlyNumberVar[varId]; ii++) {
         printedComment = !1;
         if (commentsIntoMoveText && (thisComment = strippedMoveComment(ii, varId, !0))) {
             if (commentsOnSeparateLines && variationTextDepth === 0 && ii > StartPlyVar[varId]) {
-                text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>'
+                text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>';
             }
             if (printedVariation) {
                 if (punctChars.indexOf(thisComment.charAt(0)) == -1) {
-                    text += '<SPAN CLASS="variation"> </SPAN>'
+                    text += '<SPAN CLASS="variation"> </SPAN>';
                 }
             } else {
-                printedVariation = variationTextDepth > 0
+                printedVariation = variationTextDepth > 0;
             }
             text += '<SPAN CLASS="comment">' + thisComment + '</SPAN>';
             if (commentsOnSeparateLines && variationTextDepth === 0) {
-                text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>'
+                text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>';
             }
-            printedComment = !0
+            printedComment = !0;
         }
         if (printedComment || printedVariation) {
-            text += '<SPAN CLASS="variation"> </SPAN>'
+            text += '<SPAN CLASS="variation"> </SPAN>';
         }
         printedVariation = !0;
-        text += printMoveText(ii, varId, (variationTextDepth > 0), ((printedComment) || (ii == StartPlyVar[varId])), !0)
+        text += printMoveText(ii, varId, (variationTextDepth > 0), ((printedComment) || (ii == StartPlyVar[varId])), !0);
     }
     if (commentsIntoMoveText && (thisComment = strippedMoveComment(StartPlyVar[varId] + PlyNumberVar[varId], varId, !0))) {
         if (commentsOnSeparateLines && variationTextDepth === 0) {
-            text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>'
+            text += '<DIV CLASS="comment" STYLE="line-height: 33%;">&nbsp;</DIV>';
         }
         if (printedVariation && (punctChars.indexOf(thisComment.charAt(0)) == -1)) {
-            text += '<SPAN CLASS="comment notranslate"> </SPAN>'
+            text += '<SPAN CLASS="comment notranslate"> </SPAN>';
         }
         text += '<SPAN CLASS="comment">' + thisComment + '</SPAN>';
-        printedComment = !0
+        printedComment = !0;
     }
     text += variationTextDepth-- ? ('<SPAN CLASS="variation">' + (variationTextDepth ? ')' : ']') + '</SPAN>') : '';
     printedVariation = !0;
-    return text
+    return text;
 }
 
 function printMoveText(thisPly, thisVar, isVar, hasLeadingNum, hasId) {
     if (typeof(thisVar) == "undefined") {
-        thisVar = CurrentVar
+        thisVar = CurrentVar;
     }
     if (typeof(thisPly) == "undefined") {
-        thisPly = CurrentPly
+        thisPly = CurrentPly;
     }
     var text = '';
     if (thisVar >= numberOfVars || thisPly < StartPlyVar[thisVar] || thisPly > StartPlyVar[thisVar] + PlyNumberVar[thisVar]) {
-        return text
+        return text;
     }
     var moveCount = Math.floor(thisPly / 2) + 1;
     if (thisPly % 2 === 0) {
         if (moveCount == 1) {
-            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '.&nbsp;</SPAN>'
+            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '.&nbsp;</SPAN>';
         } else {
-            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '.&nbsp;</SPAN>'
+            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '.&nbsp;</SPAN>';
         }
     } else {
         if (hasLeadingNum) {
-            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '...&nbsp;</SPAN>'
+            text += '<SPAN CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate">' + moveCount + '...&nbsp;</SPAN>';
         }
     }
     var jj = thisPly + 1;
     text += '<A HREF="javascript:void(0);" ONCLICK="GoToMove(' + jj + ', ' + thisVar + ');" ' + 'CLASS="' + (isVar ? 'variation' : 'move') + ' notranslate" ' + (hasId ? ('ID="Var' + thisVar + 'Mv' + jj + '" ') : '') + 'ONFOCUS="this.blur();">' + MovesVar[thisVar][thisPly];
     if (commentsIntoMoveText) {
-        text += basicNAGsMoveComment(jj, thisVar)
+        text += basicNAGsMoveComment(jj, thisVar);
     }
     text += '</A>';
-    return text
+    return text;
 }
 
 function enableAutoScrollToCurrentMove(objId) {
-    autoScrollToCurrentMove_objId = objId
+    autoScrollToCurrentMove_objId = objId;
 }
 
 function disableAutoScrollToCurrentMove() {
-    autoScrollToCurrentMove_objId = ""
+    autoScrollToCurrentMove_objId = "";
 }
 
 function toggleAutoScrollToCurrentMove(objId) {
-    autoScrollToCurrentMove_objId = autoScrollToCurrentMove_objId ? "" : objId
+    autoScrollToCurrentMove_objId = autoScrollToCurrentMove_objId ? "" : objId;
 }
 var autoScrollToCurrentMove_objId = "";
 
 function autoScrollToCurrentMoveIfEnabled() {
-    autoScrollToCurrentMove(autoScrollToCurrentMove_objId)
+    autoScrollToCurrentMove(autoScrollToCurrentMove_objId);
 }
 
 function objOffsetVeryTop(obj) {
-    for (var offset = obj.offsetTop; obj = obj.offsetParent;) {
-        offset += obj.offsetTop + obj.clientTop
+    let offset;
+    for (offset = obj.offsetTop; (obj = obj.offsetParent);) {
+        offset += obj.offsetTop + obj.clientTop;
     }
-    return offset
+    return offset;
 }
 
 function autoScrollToCurrentMove(objId) {
     if (!objId) {
-        return
+        return;
     }
     var theContainerObj = document.getElementById(objId);
     if (theContainerObj) {
         if (CurrentPly == StartPly) {
-            theContainerObj.scrollTop = 0
+            theContainerObj.scrollTop = 0;
         } else {
             var theMoveObj = document.getElementById('Var' + CurrentVar + 'Mv' + CurrentPly);
             if (theMoveObj) {
                 var theContainerObjOffsetVeryTop = objOffsetVeryTop(theContainerObj);
                 var theMoveObjOffsetVeryTop = objOffsetVeryTop(theMoveObj);
                 if ((theMoveObjOffsetVeryTop + theMoveObj.offsetHeight > theContainerObjOffsetVeryTop + theContainerObj.scrollTop + theContainerObj.clientHeight) || (theMoveObjOffsetVeryTop < theContainerObjOffsetVeryTop + theContainerObj.scrollTop)) {
-                    theContainerObj.scrollTop = theMoveObjOffsetVeryTop - theContainerObjOffsetVeryTop
+                    theContainerObj.scrollTop = theMoveObjOffsetVeryTop - theContainerObjOffsetVeryTop;
                 }
             }
         }
@@ -7677,73 +7705,77 @@ function autoScrollToCurrentMove(objId) {
 var blackBottom = !1;
 
 function ylcetFlipBoard1() {
-    if (theObj = document.getElementById("blEngineContainer")) {
+    let theObj;
+
+    if ((theObj = document.getElementById("blEngineContainer"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "250px" : "0"
+        theObj.style.top = IsRotated ? "250px" : "0";
     }
-    if (theObj = document.getElementById("whEngineContainer")) {
+    if ((theObj = document.getElementById("whEngineContainer"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-250px" : "0"
+        theObj.style.top = IsRotated ? "-250px" : "0";
     }
-    if (theObj = document.getElementById("whitespv1")) {
+    if ((theObj = document.getElementById("whitespv1"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "250px" : "0"
+        theObj.style.top = IsRotated ? "250px" : "0";
         if (window.whitePv) {
             window.whitePv.IsRotated = IsRotated;
             if (window.whitePv.FlipBoard)
                 window.whitePv.FlipBoard();
         }
     }
-    if (theObj = document.getElementById("whitespv2")) {
+    if ((theObj = document.getElementById("whitespv2"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-250px" : "0"
+        theObj.style.top = IsRotated ? "-250px" : "0";
         if (window.blackPv) {
             window.blackPv.IsRotated = IsRotated;
             if (window.blackPv.FlipBoard)
                 window.blackPv.FlipBoard();
         }
     }
-    if (theObj = document.getElementById("black_pv")) {
+    if ((theObj = document.getElementById("black_pv"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "162px" : "0"
+        theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if (theObj = document.getElementById("white_pv")) {
+    if ((theObj = document.getElementById("white_pv"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-162px" : "0"
+        theObj.style.top = IsRotated ? "-162px" : "0";
     }
-    if (theObj = document.getElementById("GameBlackS")) {
+    if ((theObj = document.getElementById("GameBlackS"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "162px" : "0"
+        theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if (theObj = document.getElementById("GameWhiteS")) {
+    if ((theObj = document.getElementById("GameWhiteS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
 }
 
 function ylcetFlipBoard() {
+    let theObj;
+
     //////console.log ("entered ylcetFlipBoard");
-    if (theObj = document.getElementById("blEngineContainer")) {
+    if ((theObj = document.getElementById("blEngineContainer"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "250px" : "0"
+        theObj.style.top = IsRotated ? "250px" : "0";
     }
     //////console.log ("entered ylcetFlipBoard1");
-    if (theObj = document.getElementById("whEngineContainer")) {
+    if ((theObj = document.getElementById("whEngineContainer"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-250px" : "0"
+        theObj.style.top = IsRotated ? "-250px" : "0";
     }
-    if (theObj = document.getElementById("whitespv1")) {
+    if ((theObj = document.getElementById("whitespv1"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "250px" : "0"
+        theObj.style.top = IsRotated ? "250px" : "0";
         if (window.whitePv) {
             window.whitePv.IsRotated = IsRotated;
             if (window.whitePv.FlipBoard)
                 window.whitePv.FlipBoard();
         }
     }
-    if (theObj = document.getElementById("whitespv2")) {
+    if ((theObj = document.getElementById("whitespv2"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-250px" : "0"
+        theObj.style.top = IsRotated ? "-250px" : "0";
         if (window.blackPv) {
             window.blackPv.IsRotated = IsRotated;
             if (window.blackPv.FlipBoard)
@@ -7751,20 +7783,20 @@ function ylcetFlipBoard() {
         }
     }
     //////console.log ("entered ylcetFlipBoard2");
-    if (theObj = document.getElementById("black_pv")) {
+    if ((theObj = document.getElementById("black_pv"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "162px" : "0"
+        theObj.style.top = IsRotated ? "162px" : "0";
     }
     //////console.log ("entered ylcetFlipBoard2");
-    if (theObj = document.getElementById("white_pv")) {
+    if ((theObj = document.getElementById("white_pv"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "-162px" : "0"
+        theObj.style.top = IsRotated ? "-162px" : "0";
     }
-    if (theObj = document.getElementById("GameBlackS")) {
+    if ((theObj = document.getElementById("GameBlackS"))) {
         theObj.style.position = "relative";
-        theObj.style.top = IsRotated ? "162px" : "0"
+        theObj.style.top = IsRotated ? "162px" : "0";
     }
-    if (theObj = document.getElementById("GameWhiteS")) {
+    if ((theObj = document.getElementById("GameWhiteS"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-162px" : "0";
     }
@@ -7773,90 +7805,92 @@ function ylcetFlipBoard() {
 }
 
 function FlipBoard() {
+    let theObj;
+
     if (currentPage == "live_big.php") {
         blackBottom = !blackBottom;
-        if (theObj = document.getElementById("board_md_w_row")) {
+        if ((theObj = document.getElementById("board_md_w_row"))) {
             theObj.style.position = "relative";
-            theObj.style.top = blackBottom ? "-432px" : "0"
+            theObj.style.top = blackBottom ? "-432px" : "0";
         }
-        if (theObj = document.getElementById("board_md_b_row")) {
+        if ((theObj = document.getElementById("board_md_b_row"))) {
             theObj.style.position = "relative";
-            theObj.style.top = blackBottom ? "432px" : "0"
+            theObj.style.top = blackBottom ? "432px" : "0";
         }
-        if (theObj = document.getElementById("board_letters_row_w")) {
-            theObj.style.display = blackBottom ? "none" : "block"
+        if ((theObj = document.getElementById("board_letters_row_w"))) {
+            theObj.style.display = blackBottom ? "none" : "block";
         }
-        if (theObj = document.getElementById("board_letters_row_b")) {
-            theObj.style.display = blackBottom ? "block" : "none"
+        if ((theObj = document.getElementById("board_letters_row_b"))) {
+            theObj.style.display = blackBottom ? "block" : "none";
         }
-        if (theObj = document.getElementById("board_numbers_row_w")) {
-            theObj.style.display = blackBottom ? "none" : "block"
+        if ((theObj = document.getElementById("board_numbers_row_w"))) {
+            theObj.style.display = blackBottom ? "none" : "block";
         }
-        if (theObj = document.getElementById("board_numbers_row_b")) {
-            theObj.style.display = blackBottom ? "block" : "none"
+        if ((theObj = document.getElementById("board_numbers_row_b"))) {
+            theObj.style.display = blackBottom ? "block" : "none";
         }
-        tmpHighlightOption = highlightOption;
+        let tmpHighlightOption = highlightOption;
         if (tmpHighlightOption) {
-            SetHighlight(!1)
+            SetHighlight(!1);
         }
         IsRotated = !IsRotated;
         RefreshBoard();
         if (tmpHighlightOption) {
-            SetHighlight(!0)
+            SetHighlight(!0);
         }
     } else {
-        if (theObj = document.getElementById("black-engine-box")) {
+        if ((theObj = document.getElementById("black-engine-box"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "184px" : "0"
+            theObj.style.top = flipped ? "184px" : "0";
         }
-        if (theObj = document.getElementById("white-engine-box")) {
+        if ((theObj = document.getElementById("white-engine-box"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "-184px" : "0"
+            theObj.style.top = flipped ? "-184px" : "0";
         }
-        if (theObj = document.getElementById("tcec_gui_matclo_b")) {
-            theObj.style.position = "relative";
-            if (localStorage.getItem("TCEC_Coor") == 'Off') {
-                theObj.style.top = flipped ? "411px" : "0"
-            } else if (localStorage.getItem("TCEC_Coor") == 'On') {
-                theObj.style.top = flipped ? "423px" : "0"
-            }
-        }
-        if (theObj = document.getElementById("tcec_gui_matclo_w")) {
+        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
             if (localStorage.getItem("TCEC_Coor") == 'Off') {
-                theObj.style.top = flipped ? "-411px" : "0"
+                theObj.style.top = flipped ? "411px" : "0";
             } else if (localStorage.getItem("TCEC_Coor") == 'On') {
-                theObj.style.top = flipped ? "-423px" : "0"
+                theObj.style.top = flipped ? "423px" : "0";
             }
         }
-        if (theObj = document.getElementById("GameCoorRnor")) {
-            theObj.style.display = flipped ? "none" : "block"
+        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
+            theObj.style.position = "relative";
+            if (localStorage.getItem("TCEC_Coor") == 'Off') {
+                theObj.style.top = flipped ? "-411px" : "0";
+            } else if (localStorage.getItem("TCEC_Coor") == 'On') {
+                theObj.style.top = flipped ? "-423px" : "0";
+            }
         }
-        if (theObj = document.getElementById("GameCoorRfli")) {
-            theObj.style.display = flipped ? "block" : "none"
+        if ((theObj = document.getElementById("GameCoorRnor"))) {
+            theObj.style.display = flipped ? "none" : "block";
         }
-        if (theObj = document.getElementById("GameCoorBnor")) {
-            theObj.style.display = flipped ? "none" : "block"
+        if ((theObj = document.getElementById("GameCoorRfli"))) {
+            theObj.style.display = flipped ? "block" : "none";
         }
-        if (theObj = document.getElementById("GameCoorBfli")) {
-            theObj.style.display = flipped ? "block" : "none"
+        if ((theObj = document.getElementById("GameCoorBnor"))) {
+            theObj.style.display = flipped ? "none" : "block";
         }
-        RefreshBoard()
+        if ((theObj = document.getElementById("GameCoorBfli"))) {
+            theObj.style.display = flipped ? "block" : "none";
+        }
+        RefreshBoard();
     }
 }
 
 function RefreshBoard() {
-    for (var jj = 0; jj < 8; ++jj) {
-        for (var ii = 0; ii < 8; ++ii) {
+    for (let jj = 0; jj < 8; ++jj) {
+        for (let ii = 0; ii < 8; ++ii) {
             if (Board[jj][ii] === 0) {
-                SetImage(jj, ii, ClearImg.src)
+                SetImage(jj, ii, ClearImg.src);
             }
         }
     }
-    for (jj = 0; jj < 2; ++jj) {
-        for (ii = 0; ii < 16; ++ii) {
+    for (let jj = 0; jj < 2; ++jj) {
+        for (let ii = 0; ii < 16; ++ii) {
             if (PieceType[jj][ii] > 0) {
-                SetImage(PieceCol[jj][ii], PieceRow[jj][ii], PieceImg[jj][PieceType[jj][ii]].src)
+                SetImage(PieceCol[jj][ii], PieceRow[jj][ii], PieceImg[jj][PieceType[jj][ii]].src);
             }
         }
     }
@@ -7866,23 +7900,23 @@ function SetAutoPlay(vv) {
     isAutoPlayOn = vv;
     if (AutoPlayInterval) {
         clearTimeout(AutoPlayInterval);
-        AutoPlayInterval = null
+        AutoPlayInterval = null;
     }
     if (isAutoPlayOn) {
         if (document.GameButtonsForm) {
             if (document.GameButtonsForm.AutoPlay) {
                 document.GameButtonsForm.AutoPlay.value = "=";
                 document.GameButtonsForm.AutoPlay.title = "toggle autoplay (stop)";
-                document.GameButtonsForm.AutoPlay.className = "buttonControlStop"
+                document.GameButtonsForm.AutoPlay.className = "buttonControlStop";
             }
         }
         if (CurrentPly < StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]) {
-            AutoPlayInterval = setTimeout("MoveForward(1)", Delay);
+            AutoPlayInterval = setTimeout(() => {MoveForward(1);}, Delay);
         } else {
             if (autoplayNextGame && (CurrentVar === 0)) {
-                AutoPlayInterval = setTimeout("AutoplayNextGame()")
+                AutoPlayInterval = setTimeout(() => {AutoplayNextGame();});
             } else {
-                SetAutoPlay(!1)
+                SetAutoPlay(!1);
             }
         }
     } else {
@@ -7890,7 +7924,7 @@ function SetAutoPlay(vv) {
             if (document.GameButtonsForm.AutoPlay) {
                 document.GameButtonsForm.AutoPlay.value = "+";
                 document.GameButtonsForm.AutoPlay.title = "toggle autoplay (start)";
-                document.GameButtonsForm.AutoPlay.className = "buttonControlPlay"
+                document.GameButtonsForm.AutoPlay.className = "buttonControlPlay";
             }
         }
     }
@@ -7901,29 +7935,29 @@ var maxAutoplayDelay = 300000;
 function setCustomAutoplayDelay() {
     var newDelaySec = prompt("Enter custom autoplay delay, in seconds, between " + (minAutoplayDelay / 1000) + " and " + (maxAutoplayDelay / 1000) + ":", Math.floor(Delay / 100) / 10);
     if (!isNaN(newDelaySec = parseInt(newDelaySec, 10))) {
-        SetAutoplayDelayAndStart(newDelaySec * 1000)
+        SetAutoplayDelayAndStart(newDelaySec * 1000);
     }
 }
 
 function SetAutoplayDelay(vv) {
     if (isNaN(vv = parseInt(vv, 10))) {
-        return
+        return;
     }
-    Delay = Math.min(Math.max(vv, minAutoplayDelay), maxAutoplayDelay)
+    Delay = Math.min(Math.max(vv, minAutoplayDelay), maxAutoplayDelay);
 }
 
 function SetAutoplayDelayAndStart(vv) {
     MoveForward(1);
     SetAutoplayDelay(vv);
-    SetAutoPlay(!0)
+    SetAutoPlay(!0);
 }
 
 function SetLiveBroadcast(delay, alertFlag, demoFlag, stepFlag) {
     LiveBroadcastDelay = delay;
-    LiveBroadcastAlert = (alertFlag === !0);
-    LiveBroadcastDemo = (demoFlag === !0);
-    LiveBroadcastSteppingMode = (stepFlag === !0);
-    setG7A6B6H7boardShortcuts()
+    LiveBroadcastAlert = (alertFlag === true);
+    LiveBroadcastDemo = (demoFlag === true);
+    LiveBroadcastSteppingMode = (stepFlag === true);
+    setG7A6B6H7boardShortcuts();
 }
 
 function SetImage(col, row, image) {
@@ -7931,25 +7965,25 @@ function SetImage(col, row, image) {
     var tcol = IsRotated ? 7 - col : col;
     var theObj = document.getElementById('img_' + 'tcol' + tcol + 'trow' + trow);
     if ((theObj) && (theObj.src != image)) {
-        theObj.src = image
+        theObj.src = image;
     }
 }
 
 function SetImagePath(path) {
-    ImagePath = path
+    ImagePath = path;
 }
 
 function SwitchAutoPlay() {
     if (!isAutoPlayOn) {
-        MoveForward(1)
+        MoveForward(1);
     }
-    SetAutoPlay(!isAutoPlayOn)
+    SetAutoPlay(!isAutoPlayOn);
 }
 
 function StoreMove(thisPly) {
     HistVar[thisPly + 1] = CurrentVar;
-    if (HistNull[thisPly] = mvIsNull) {
-        return
+    if ((HistNull[thisPly] = mvIsNull)) {
+        return;
     }
     HistPieceId[0][thisPly] = mvPieceId;
     HistCol[0][thisPly] = PieceCol[MoveColor][mvPieceId];
@@ -7961,20 +7995,20 @@ function StoreMove(thisPly) {
         HistPieceId[1][thisPly] = castleRook;
         HistCol[1][thisPly] = PieceCol[MoveColor][castleRook];
         HistRow[1][thisPly] = PieceRow[MoveColor][castleRook];
-        HistType[1][thisPly] = PieceType[MoveColor][castleRook]
+        HistType[1][thisPly] = PieceType[MoveColor][castleRook];
     } else if (mvCapturedId >= 0) {
         HistPieceId[1][thisPly] = mvCapturedId + 16;
         HistCol[1][thisPly] = PieceCol[1 - MoveColor][mvCapturedId];
         HistRow[1][thisPly] = PieceRow[1 - MoveColor][mvCapturedId];
-        HistType[1][thisPly] = PieceType[1 - MoveColor][mvCapturedId]
+        HistType[1][thisPly] = PieceType[1 - MoveColor][mvCapturedId];
     } else {
-        HistPieceId[1][thisPly] = -1
+        HistPieceId[1][thisPly] = -1;
     }
     Board[PieceCol[MoveColor][mvPieceId]][PieceRow[MoveColor][mvPieceId]] = 0;
     if (mvCapturedId >= 0) {
         PieceType[1 - MoveColor][mvCapturedId] = -1;
         PieceMoveCounter[1 - MoveColor][mvCapturedId]++;
-        Board[PieceCol[1 - MoveColor][mvCapturedId]][PieceRow[1 - MoveColor][mvCapturedId]] = 0
+        Board[PieceCol[1 - MoveColor][mvCapturedId]][PieceRow[1 - MoveColor][mvCapturedId]] = 0;
     }
     PieceType[MoveColor][mvPieceId] = mvPieceOnTo;
     PieceMoveCounter[MoveColor][mvPieceId]++;
@@ -7983,18 +8017,18 @@ function StoreMove(thisPly) {
     if (mvIsCastling) {
         PieceMoveCounter[MoveColor][castleRook]++;
         PieceCol[MoveColor][castleRook] = mvToCol == 2 ? 3 : 5;
-        PieceRow[MoveColor][castleRook] = mvToRow
+        PieceRow[MoveColor][castleRook] = mvToRow;
     }
     Board[mvToCol][mvToRow] = PieceType[MoveColor][mvPieceId] * (1 - 2 * MoveColor);
     if (mvIsCastling) {
-        Board[PieceCol[MoveColor][castleRook]][PieceRow[MoveColor][castleRook]] = PieceType[MoveColor][castleRook] * (1 - 2 * MoveColor)
+        Board[PieceCol[MoveColor][castleRook]][PieceRow[MoveColor][castleRook]] = PieceType[MoveColor][castleRook] * (1 - 2 * MoveColor);
     }
-    return
+    return;
 }
 
 function UndoMove(thisPly) {
     if (HistNull[thisPly]) {
-        return
+        return;
     }
     var chgPiece = HistPieceId[0][thisPly];
     Board[PieceCol[MoveColor][chgPiece]][PieceRow[MoveColor][chgPiece]] = 0;
@@ -8010,7 +8044,7 @@ function UndoMove(thisPly) {
         PieceType[MoveColor][chgPiece] = HistType[1][thisPly];
         PieceCol[MoveColor][chgPiece] = HistCol[1][thisPly];
         PieceRow[MoveColor][chgPiece] = HistRow[1][thisPly];
-        PieceMoveCounter[MoveColor][chgPiece]--
+        PieceMoveCounter[MoveColor][chgPiece]--;
     }
     chgPiece -= 16;
     if ((chgPiece >= 0) && (chgPiece < 16)) {
@@ -8019,91 +8053,81 @@ function UndoMove(thisPly) {
         PieceType[1 - MoveColor][chgPiece] = HistType[1][thisPly];
         PieceCol[1 - MoveColor][chgPiece] = HistCol[1][thisPly];
         PieceRow[1 - MoveColor][chgPiece] = HistRow[1][thisPly];
-        PieceMoveCounter[1 - MoveColor][chgPiece]--
+        PieceMoveCounter[1 - MoveColor][chgPiece]--;
     }
 }
 
 function Color(nn) {
     if (nn < 0) {
-        return 1
+        return 1;
     }
     if (nn > 0) {
-        return 0
+        return 0;
     }
-    return 2
-}
-
-function sign(nn) {
-    if (nn > 0) {
-        return 1
-    }
-    if (nn < 0) {
-        return -1
-    }
-    return 0
+    return 2;
 }
 
 function SquareOnBoard(col, row) {
-    return col >= 0 && col <= 7 && row >= 0 && row <= 7
+    return col >= 0 && col <= 7 && row >= 0 && row <= 7;
 }
 var pgn4webMaxTouches = 0;
-var pgn4webOngoingTouches = new Array();
+var pgn4webOngoingTouches = [];
 
 function pgn4webOngoingTouchIndexById(needle) {
     var id;
-    for (var ii = 0; ii < pgn4webOngoingTouches.length; ii++) {
+    for (let ii = 0; ii < pgn4webOngoingTouches.length; ii++) {
         id = pgn4webOngoingTouches[ii].identifier;
         if (pgn4webOngoingTouches[ii].identifier === needle) {
-            return ii
+            return ii;
         }
     }
-    return -1
+    return -1;
 }
 
 function pgn4web_handleTouchStart(e) {
     e.stopPropagation();
-    for (var ii = 0; ii < e.changedTouches.length; ii++) {
+    for (let ii = 0; ii < e.changedTouches.length; ii++) {
         pgn4webMaxTouches++;
         pgn4webOngoingTouches.push({
             identifier: e.changedTouches[ii].identifier,
             clientX: e.changedTouches[ii].clientX,
             clientY: e.changedTouches[ii].clientY
-        })
+        });
     }
 }
 
 function pgn4web_handleTouchMove(e) {
     e.stopPropagation();
-    e.preventDefault()
+    e.preventDefault();
 }
 
 function pgn4web_handleTouchEnd(e) {
     e.stopPropagation();
     var jj;
-    for (var ii = 0; ii < e.changedTouches.length; ii++) {
+    for (let ii = 0; ii < e.changedTouches.length; ii++) {
         if ((jj = pgn4webOngoingTouchIndexById(e.changedTouches[ii].identifier)) != -1) {
             if (pgn4webOngoingTouches.length == 1) {
                 customFunctionOnTouch(e.changedTouches[ii].clientX - pgn4webOngoingTouches[jj].clientX, e.changedTouches[ii].clientY - pgn4webOngoingTouches[jj].clientY);
-                pgn4webMaxTouches = 0
+                pgn4webMaxTouches = 0;
             }
-            pgn4webOngoingTouches.splice(jj, 1)
+            pgn4webOngoingTouches.splice(jj, 1);
         }
     }
-    clearSelectedText()
+    clearSelectedText();
 }
 
 function pgn4web_handleTouchCancel(e) {
     e.stopPropagation();
     var jj;
-    for (var ii = 0; ii < e.changedTouches.length; ii++) {
+    for (let ii = 0; ii < e.changedTouches.length; ii++) {
         if ((jj = pgn4webOngoingTouchIndexById(e.changedTouches[ii].identifier)) != -1) {
             pgn4webOngoingTouches.splice(jj, 1);
             if (pgn4webOngoingTouches.length === 0) {
-                pgn4webMaxTouches = 0
+                pgn4webMaxTouches = 0;
             }
         }
     }
-    clearSelectedText()
+    clearSelectedText();
 }
 
 function pgn4web_initTouchEvents() {
@@ -8113,45 +8137,45 @@ function pgn4web_initTouchEvents() {
         simpleAddEvent(theObj, "touchmove", pgn4web_handleTouchMove);
         simpleAddEvent(theObj, "touchend", pgn4web_handleTouchEnd);
         simpleAddEvent(theObj, "touchleave", pgn4web_handleTouchEnd);
-        simpleAddEvent(theObj, "touchcancel", pgn4web_handleTouchCancel)
+        simpleAddEvent(theObj, "touchcancel", pgn4web_handleTouchCancel);
     }
 }
 var waitForDoubleLeftTouchTimer = null;
 
 function customFunctionOnTouch(deltaX, deltaY) {
     if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 13) {
-        return
+        return;
     }
     if (Math.abs(deltaY) > 1.5 * Math.abs(deltaX)) {
         if (numberOfGames > 1) {
             if ((currentGame === 0) && (deltaY < 0)) {
-                Init(numberOfGames - 1)
+                Init(numberOfGames - 1);
             } else if ((currentGame === numberOfGames - 1) && (deltaY > 0)) {
-                Init(0)
+                Init(0);
             } else {
-                Init(currentGame + sign(deltaY))
+                Init(currentGame + Math.sign(deltaY));
             }
         }
     } else if (Math.abs(deltaX) > 1.5 * Math.abs(deltaY)) {
         if (deltaX > 0) {
             if (isAutoPlayOn) {
-                GoToMove(StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar])
+                GoToMove(StartPlyVar[CurrentVar] + PlyNumberVar[CurrentVar]);
             } else {
-                SwitchAutoPlay()
+                SwitchAutoPlay();
             }
         } else {
             if (isAutoPlayOn && !waitForDoubleLeftTouchTimer) {
-                SwitchAutoPlay()
+                SwitchAutoPlay();
             } else {
                 if (waitForDoubleLeftTouchTimer) {
                     clearTimeout(waitForDoubleLeftTouchTimer);
-                    waitForDoubleLeftTouchTimer = null
+                    waitForDoubleLeftTouchTimer = null;
                 }
                 if ((LiveBroadcastDelay > 0) && (CurrentVar === 0) && (CurrentPly === StartPly + PlyNumber)) {
-                    waitForDoubleLeftTouchTimer = setTimeout("waitForDoubleLeftTouchTimer = null;", 900);
-                    replayPreviousMoves(6)
+                    waitForDoubleLeftTouchTimer = setTimeout(() => {waitForDoubleLeftTouchTimer = null;}, 900);
+                    replayPreviousMoves(6);
                 } else {
-                    GoToMove(StartPlyVar[CurrentVar] + (((CurrentPly <= StartPlyVar[CurrentVar] + 1) || (CurrentVar === 0)) ? 0 : 1))
+                    GoToMove(StartPlyVar[CurrentVar] + (((CurrentPly <= StartPlyVar[CurrentVar] + 1) || (CurrentVar === 0)) ? 0 : 1));
                 }
             }
         }
@@ -8160,27 +8184,27 @@ function customFunctionOnTouch(deltaX, deltaY) {
 var touchEventEnabled = !0;
 
 function SetTouchEventEnabled(onOff) {
-    touchEventEnabled = onOff
+    touchEventEnabled = onOff;
 }
 
 function clearSelectedText() {
     if (window.getSelection) {
         if (window.getSelection().empty) {
-            window.getSelection().empty()
+            window.getSelection().empty();
         } else if (window.getSelection().removeAllRanges) {
-            window.getSelection().removeAllRanges()
+            window.getSelection().removeAllRanges();
         }
     } else if (document.selection && document.selection.empty) {
-        document.selection.empty()
+        document.selection.empty();
     }
 }
 
 function simpleHtmlentities(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function simpleHtmlentitiesDecode(text) {
-    return text.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&")
+    return text.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
 }
 SetHighlightOption(!0);
 SetCommentsOnSeparateLines(!1);
@@ -8193,46 +8217,46 @@ if (localStorage.getItem('TCEC_Them') === null) {
 }
 
 if (localStorage.getItem('TCEC_Coor') === null) {
-    localStorage.setItem('TCEC_Coor', 'Off')
+    localStorage.setItem('TCEC_Coor', 'Off');
 }
 if (localStorage.getItem('TCEC_FEN') === null) {
-    localStorage.setItem('TCEC_FEN', 'Off')
+    localStorage.setItem('TCEC_FEN', 'Off');
 }
 if (localStorage.getItem('TCEC_Conf') === null) {
-    localStorage.setItem('TCEC_Conf', 'Off')
+    localStorage.setItem('TCEC_Conf', 'Off');
 }
 if (localStorage.getItem('TCEC_Rota') === null) {
-    localStorage.setItem('TCEC_Rota', 'Off')
+    localStorage.setItem('TCEC_Rota', 'Off');
 }
 if (localStorage.getItem("TCEC_Soun") === null) {
-    localStorage.setItem('TCEC_Soun', 'On')
+    localStorage.setItem('TCEC_Soun', 'On');
 }
 if (localStorage.getItem('TCEC_Chat') === null) {
-    localStorage.setItem('TCEC_Chat', 'On')
+    localStorage.setItem('TCEC_Chat', 'On');
 }
 if (localStorage.getItem('YLCET_font') === null) {
-    localStorage.setItem('YLCET_font', 'ME')
+    localStorage.setItem('YLCET_font', 'ME');
 }
 if (localStorage.getItem('TCEC_Nigh') === null) {
-    localStorage.setItem('TCEC_Nigh', 'Off')
+    localStorage.setItem('TCEC_Nigh', 'Off');
 }
 if (localStorage.getItem('TCEC_GraE') === null) {
-    localStorage.setItem('TCEC_GraE', 'On')
+    localStorage.setItem('TCEC_GraE', 'On');
 }
 if (localStorage.getItem('TCEC_GraT') === null) {
-    localStorage.setItem('TCEC_GraT', 'On')
+    localStorage.setItem('TCEC_GraT', 'On');
 }
 if (localStorage.getItem('TCEC_GraD') === null) {
-    localStorage.setItem('TCEC_GraD', 'On')
+    localStorage.setItem('TCEC_GraD', 'On');
 }
 if (localStorage.getItem('TCEC_GraS') === null) {
-    localStorage.setItem('TCEC_GraS', 'On')
+    localStorage.setItem('TCEC_GraS', 'On');
 }
 if (localStorage.getItem('TCEC_GraTB') === null) {
-    localStorage.setItem('TCEC_GraTB', 'On')
+    localStorage.setItem('TCEC_GraTB', 'On');
 }
 
-function secFormat(timeip) 
+function secFormat(timeip)
 {
     var sec_num = parseInt(timeip, 10); // don't forget the second param
     var hours   = Math.floor(sec_num / 3600);
@@ -8245,7 +8269,7 @@ function secFormat(timeip)
     return hours+':'+minutes+':'+seconds;
 }
 
-function secFormatNoH(timeip) 
+function secFormatNoH(timeip)
 {
     var sec_num = parseInt(timeip, 10); // don't forget the second param
     var hours   = Math.floor(sec_num / 3600);
@@ -8260,10 +8284,10 @@ function secFormatNoH(timeip)
 
 function SetGrap(arr, what) {
     var how_many = 0;
-    for (var i = 0; i < arr.length; i++) {
-        if (arr[i] == what) how_many++
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] == what) how_many++;
     }
-    localStorage.setItem('TCEC_Grap', how_many)
+    localStorage.setItem('TCEC_Grap', how_many);
 }
 SetGrap([localStorage.getItem('TCEC_GraE'), localStorage.getItem('TCEC_GraT'), localStorage.getItem('TCEC_GraD'), localStorage.getItem('TCEC_GraS'), localStorage.getItem('TCEC_GraTB')], 'On');
 
@@ -8278,14 +8302,15 @@ var nullDate = (new Date(0)).toUTCString();
 var SchedendTime = 0;
 
 function customFunctionOnPgnGameLoad() {
-    var theObj = document.getElementById("GameBoard");
+    let theObject;
+    let theObj = document.getElementById("GameBoard");
     theObj.style.padding = "0px";
     theObj.style.width = theObj.style.width;
     theObj.style.height = theObj.style.height;
     theObj.style.textAlign = "left";
     PVCount = -1;
     if (isArchiveFile()) {
-        var currGmObj = document.getElementById('currGame');
+        let currGmObj = document.getElementById('currGame');
         if (currGmObj) {
             document.getElementById('currGame').innerHTML = currentGame + 1;
             var urlNew = window.location.href;
@@ -8293,11 +8318,11 @@ function customFunctionOnPgnGameLoad() {
             urlNew += "&gn=" + parseInt(currentGame + 1);
             /* var regex = new RegExp("(gn=([^&#]*))"); */
         }
-    } 
-    else 
+    }
+    else
     {
-        var currGmObj = document.getElementById('currGame');
-        if (currGmObj) 
+        let currGmObj = document.getElementById('currGame');
+        if (currGmObj)
         {
             var gameRoundVal10 = parseInt(gameRound[currentGame] * 10);
             var gameRoundValR10 = parseInt(gameRoundVal10/10);
@@ -8339,7 +8364,7 @@ function customFunctionOnPgnGameLoad() {
     var currGmObj = document.getElementById('currGm');
     if (currGmObj) {
         document.getElementById('currGm').innerHTML = currentGame + 1;
-        var urlNew = window.location.href;
+        let urlNew = window.location.href;
         urlNew = urlNew.replace(/&gn=[^&#]*/g, '');
         urlNew += "&gn=" + parseInt(currentGame + 1);
         /* var regex = new RegExp("(gn=([^&#]*))"); */
@@ -8358,335 +8383,342 @@ function customFunctionOnPgnGameLoad() {
         customFunctionOnPgnTextLoad();
         Twota();
         PvSel();
-        InitLoad = 1
+        InitLoad = 1;
     }
     Soun();
-    if (gameLink = document.getElementById("GameLink")) {
-        gameLink2 = document.getElementById("GameLink2");
+    let gameLink;
+    if ((gameLink = document.getElementById("GameLink"))) {
+        let gameLink2 = document.getElementById("GameLink2");
+
         if (pgnUrl != "archive/empty.pgn") {
+            let checkSeason, FullLink, GameNumb, PgnAddress;
+
             if (newPgnUrl === null) {
-                PgnAddress = pgnUrl
+                PgnAddress = pgnUrl;
             } else {
-                PgnAddress = newPgnUrl
+                PgnAddress = newPgnUrl;
             }
-            Season = PgnAddress.match(/Season_([0-9]*)_/);
-            Tournament = PgnAddress.match(/Tournament_([0-9]*)./);
-            Match = PgnAddress.match(/Match_([0-9]*)./);
-            Annotated = PgnAddress.match(/Annotated_/);
-            PreTCEC = PgnAddress.match(/_Pre_/);
+            let Season = PgnAddress.match(/Season_([0-9]*)_/),
+                Tournament = PgnAddress.match(/Tournament_([0-9]*)./),
+                Match = PgnAddress.match(/Match_([0-9]*)./),
+                Annotated = PgnAddress.match(/Annotated_/),
+                PreTCEC = PgnAddress.match(/_Pre_/);
             if (Annotated !== null) {
                 document.getElementById("menu30").checked = !0;
-                An_check(menu30)
+                An_check('menu30');
             }
             if (!newGameNum) {
-                GameNumb = ""
+                GameNumb = "";
             } else {
-                GameNumb = "&ga=" + newGameNum
+                GameNumb = "&ga=" + newGameNum;
             }
             if (Season !== null) {
                 if (Annotated === null) {
-                    checkSeason = document.getElementById("menu" + Season[1])
+                    checkSeason = document.getElementById("menu" + Season[1]);
                 } else {
-                    checkSeason = document.getElementById("ag" + (parseFloat(Season[1]) + 5))
+                    checkSeason = document.getElementById("ag" + (parseFloat(Season[1]) + 5));
                 }
-                Stage = PgnAddress.match(/Stage_([0-9,a-z]*)./);
-                Superfinal = PgnAddress.match(/Superfinal/);
-                FRC = PgnAddress.match(/FRC/);
-                Rapid = PgnAddress.match(/Rapid/);
-                Blitz = PgnAddress.match(/Blitz/);
-                Division = PgnAddress.match(/Division_([0-9,A-Z]*)./);
-                EliteMatch = PgnAddress.match(/Elite-Match/);
+                let Stage = PgnAddress.match(/Stage_([0-9,a-z]*)./),
+                    Superfinal = PgnAddress.match(/Superfinal/),
+                    FRC = PgnAddress.match(/FRC/),
+                    Rapid = PgnAddress.match(/Rapid/),
+                    Blitz = PgnAddress.match(/Blitz/),
+                    Division = PgnAddress.match(/Division_([0-9,A-Z]*)./),
+                    EliteMatch = PgnAddress.match(/Elite-Match/);
                 if (Stage !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&st=" + Stage[1] + GameNumb;
-                        checkStage = document.getElementById("s" + Season[1] + "s" + Stage[1]);
-                        if (checkStage.checked == !1) {
-                            checkStage.checked = !0
+                        let checkStage = document.getElementById("s" + Season[1] + "s" + Stage[1]);
+                        if (checkStage.checked == false) {
+                            checkStage.checked = !0;
                         }
                     } else {
                         if (document.getElementById("s" + Season[1] + "s" + Stage[1]).id == "s4s2a") {
-                            checkSeason = document.getElementById("ag8")
+                            checkSeason = document.getElementById("ag8");
                         }
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&st=" + Stage[1] + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&st=" + Stage[1] + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (Division !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&di=" + Division[1] + GameNumb;
-                        checkDivision = document.getElementById("s" + Season[1] + "d" + Division[1]);
-                        if (checkDivision.checked == !1) {
-                            checkDivision.checked = !0
+                        let checkDivision = document.getElementById("s" + Season[1] + "d" + Division[1]);
+                        if (checkDivision.checked == false) {
+                            checkDivision.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&di=" + Division[1] + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&di=" + Division[1] + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (FRC !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&frc" + GameNumb;
-                        checkFRC = document.getElementById("s" + Season[1] + "frc");
-                        if (checkFRC.checked == !1) {
-                            checkFRC.checked = !0
+                        let checkFRC = document.getElementById("s" + Season[1] + "frc");
+                        if (checkFRC.checked == false) {
+                            checkFRC.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&frc" + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&frc" + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (Rapid !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&rapid" + GameNumb;
-                        checkRapid = document.getElementById("s" + Season[1] + "rapid");
-                        if (checkRapid.checked == !1) {
-                            checkRapid.checked = !0
+                        let checkRapid = document.getElementById("s" + Season[1] + "rapid");
+                        if (checkRapid.checked == false) {
+                            checkRapid.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&rapid" + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&rapid" + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (Blitz !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&blitz" + GameNumb;
-                        checkBlitz = document.getElementById("s" + Season[1] + "blitz");
-                        if (checkBlitz.checked == !1) {
-                            checkBlitz.checked = !0
+                        let checkBlitz = document.getElementById("s" + Season[1] + "blitz");
+                        if (checkBlitz.checked == false) {
+                            checkBlitz.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&blitz" + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&blitz" + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (Superfinal !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&sf" + GameNumb;
-                        checkSuperfinal = document.getElementById("s" + Season[1] + "sf");
-                        if (checkSuperfinal.checked == !1) {
-                            checkSuperfinal.checked = !0
+                        let checkSuperfinal = document.getElementById("s" + Season[1] + "sf");
+                        if (checkSuperfinal.checked == false) {
+                            checkSuperfinal.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&sf" + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&sf" + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 } else if (EliteMatch !== null) {
                     if (Annotated === null) {
                         FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&em" + GameNumb;
-                        checkEliteMatch = document.getElementById("s" + Season[1] + "em");
-                        if (checkEliteMatch.checked == !1) {
-                            checkEliteMatch.checked = !0
+                        let checkEliteMatch = document.getElementById("s" + Season[1] + "em");
+                        if (checkEliteMatch.checked == false) {
+                            checkEliteMatch.checked = !0;
                         }
                     } else {
-                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&em" + GameNumb + "&ag"
+                        FullLink = "http://" + hostName + "/archive.php?se=" + Season[1] + "&em" + GameNumb + "&ag";
                     }
-                    if (checkSeason.checked == !1) {
-                        checkSeason.checked = !0
+                    if (checkSeason.checked == false) {
+                        checkSeason.checked = !0;
                     }
                 }
             } else if (Tournament !== null) {
                 if (Annotated === null) {
                     FullLink = "http://" + hostName + "/archive.php?to=" + Tournament[1] + GameNumb;
-                    checkTournament = document.getElementById("tournament" + Tournament[1]);
-                    if (checkTournament.checked == !1) {
-                        checkTournament.checked = !0
+                    let checkTournament = document.getElementById("tournament" + Tournament[1]);
+                    if (checkTournament.checked == false) {
+                        checkTournament.checked = !0;
                     }
                 } else {
                     FullLink = "http://" + hostName + "/archive.php?to=" + Tournament[1] + GameNumb + "&ag";
+                    let checkTournament;
                     if ("Tournament" + Tournament[1] == "Tournament5") {
-                        checkTournament = document.getElementById("ag5")
+                        checkTournament = document.getElementById("ag5");
                     } else if ("Tournament" + Tournament[1] == "Tournament1") {
-                        checkTournament = document.getElementById("ag4")
+                        checkTournament = document.getElementById("ag4");
                     }
-                    if (checkTournament.checked == !1) {
-                        checkTournament.checked = !0
+                    if (checkTournament.checked == false) {
+                        checkTournament.checked = !0;
                     }
                 }
             } else if (Match !== null) {
                 if (Annotated === null) {
                     FullLink = "http://" + hostName + "/archive.php?ma=" + Match[1] + GameNumb;
-                    checkMatch = document.getElementById("match" + Match[1]);
-                    if (checkMatch.checked == !1) {
-                        checkMatch.checked = !0
+                    let checkMatch = document.getElementById("match" + Match[1]);
+                    if (checkMatch.checked == false) {
+                        checkMatch.checked = !0;
                     }
                 } else {
                     FullLink = "http://" + hostName + "/archive.php?ma=" + Match[1] + GameNumb + "&ag";
+                    let checkTournament;
                     if ("Match" + Match[1] == "Match3") {
-                        checkTournament = document.getElementById("ag3")
+                        checkTournament = document.getElementById("ag3");
                     }
-                    if (checkTournament.checked == !1) {
-                        checkTournament.checked = !0
+                    if (checkTournament.checked == false) {
+                        checkTournament.checked = !0;
                     }
                 }
             } else if (PreTCEC !== null) {
                 FullLink = "http://" + hostName + "/archive.php?pt=1&ag";
-                checkTournament = document.getElementById("ag2");
-                if (checkTournament.checked == !1) {
-                    checkTournament.checked = !0
+                let checkTournament = document.getElementById("ag2");
+                if (checkTournament.checked == false) {
+                    checkTournament.checked = !0;
                 }
             }
             gameLink.innerHTML = '<a href="' + FullLink + '">' + FullLink + '</a>';
-            gameLink2.innerHTML = 'Direct link to game:'
+            gameLink2.innerHTML = 'Direct link to game:';
         }
     }
-    LiveM = document.getElementById("live-page");
-    ArchM = document.getElementById("archive-page");
+    let LiveM = document.getElementById("live-page"),
+        ArchM = document.getElementById("archive-page");
     if (currentPage == "live.html") {
         if (LiveM) {
-            LiveM.src = "./img/check.png"
+            LiveM.src = "./img/check.png";
         }
         if (ArchM) {
-            ArchM.src = "./img/check_empty.png"
+            ArchM.src = "./img/check_empty.png";
         }
     } else if (currentPage == "archive.php") {
         if (LiveM) {
-            LiveM.src = "./img/check_empty.png"
+            LiveM.src = "./img/check_empty.png";
         }
         if (ArchM) {
-            ArchM.src = "./img/check.png"
+            ArchM.src = "./img/check.png";
         }
     }
     var ScheduleLastModifiedHeader = (new Date(0)).toUTCString();
 
     function scheduleUrl() {
-        return ('archive/' + gameEvent[currentGame] + ' Schedule.txt')
+        return ('archive/' + gameEvent[currentGame] + ' Schedule.txt');
     }
 
     function updateScheduleFromHttpRequest(this_http_request) {
         if (this_http_request.readyState != 4) {
-            return
+            return;
         }
         if (this_http_request.status == 404) {
-            theObj1 = document.getElementById("scheduleText");
+            let theObj1 = document.getElementById("scheduleText");
             theObj1.innerHTML = "No schedule for this event was found";
-            theObj2 = document.getElementById("Schedule");
-            theObj2.innerHTML = ""
+            let theObj2 = document.getElementById("Schedule");
+            theObj2.innerHTML = "";
         }
         if (this_http_request.status == 200) {
             ScheduleLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified");
-            document.getElementById("Schedule").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "")
+            document.getElementById("Schedule").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "");
         }
     }
 
     function updateSchedule() {
         var http_request = !1;
         if (window.XMLHttpRequest) {
-            http_request = new XMLHttpRequest()
+            http_request = new XMLHttpRequest();
         } else if (window.ActiveXObject) {
             try {
-                http_request = new ActiveXObject("Msxml2.XMLHTTP")
+                http_request = new ActiveXObject("Msxml2.XMLHTTP");
             } catch (e) {
                 try {
-                    http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                    http_request = new ActiveXObject("Microsoft.XMLHTTP");
                 } catch (e) {
-                    return !1
+                    return !1;
                 }
             }
         }
         if (!http_request) {
-            return !1
+            return !1;
         }
         http_request.onreadystatechange = function() {
-            updateScheduleFromHttpRequest(http_request)
+            updateScheduleFromHttpRequest(http_request);
         };
         try {
             var randomizer1 = "";
             if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-                randomizer1 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+                randomizer1 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
             }
             http_request.open("GET", scheduleUrl() + randomizer1);
             http_request.setRequestHeader("If-Modified-Since", ScheduleLastModifiedHeader);
-            http_request.send(null)
+            http_request.send(null);
         } catch (e) {
-            return !1
+            return !1;
         }
-        return !0
+        return !0;
     }
     if ((theObject = document.getElementById("Schedule")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
         updateSchedule();
-        if (theObject = document.getElementById("scheduleText")) {
-            theObject.innerHTML = "Schedule for " + gameEvent[currentGame]
+        if ((theObject = document.getElementById("scheduleText"))) {
+            theObject.innerHTML = "Schedule for " + gameEvent[currentGame];
         }
     }
     var CrosstableLastModifiedHeader = (new Date(0)).toUTCString();
 
     function crosstableUrl() {
-        return ('archive/' + gameEvent[currentGame] + ' Crosstable.txt')
+        return ('archive/' + gameEvent[currentGame] + ' Crosstable.txt');
     }
 
     function updateCrosstableFromHttpRequest(this_http_request) {
         if (this_http_request.readyState != 4) {
-            return
+            return;
         }
         if (this_http_request.status == 404) {
-            theObj1 = document.getElementById("crosstableText");
+            let theObj1 = document.getElementById("crosstableText");
             theObj1.innerHTML = "No crosstable for this event was found";
-            theObj2 = document.getElementById("Crosstable");
-            theObj2.innerHTML = ""
+            let theObj2 = document.getElementById("Crosstable");
+            theObj2.innerHTML = "";
         }
         if (this_http_request.status == 200) {
             CrosstableLastModifiedHeader = this_http_request.getResponseHeader("Last-Modified");
-            document.getElementById("Crosstable").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "").replace(/(\d+:[wb]\*)/g, "<span style='color:gray;'>$1</span>")
+            document.getElementById("Crosstable").innerHTML = this_http_request.responseText.replace(/<html>|<head>|<title>.*<\/title>|<body>|<br.*>|GUI:|<a.*<\/a>|<\/body>|<\/html>/g, "").replace(/(\d+:[wb]\*)/g, "<span style='color:gray;'>$1</span>");
         }
     }
 
     function updateCrosstable() {
         var http_request = !1;
         if (window.XMLHttpRequest) {
-            http_request = new XMLHttpRequest()
+            http_request = new XMLHttpRequest();
         } else if (window.ActiveXObject) {
             try {
-                http_request = new ActiveXObject("Msxml2.XMLHTTP")
+                http_request = new ActiveXObject("Msxml2.XMLHTTP");
             } catch (e) {
                 try {
-                    http_request = new ActiveXObject("Microsoft.XMLHTTP")
+                    http_request = new ActiveXObject("Microsoft.XMLHTTP");
                 } catch (e) {
-                    return !1
+                    return !1;
                 }
             }
         }
         if (!http_request) {
-            return !1
+            return !1;
         }
         http_request.onreadystatechange = function() {
-            updateCrosstableFromHttpRequest(http_request)
+            updateCrosstableFromHttpRequest(http_request);
         };
         try {
             var randomizer2 = "";
             if ((LiveBroadcastDelay > 0) && (pgnUrl.indexOf("?") == -1) && (pgnUrl.indexOf("#") == -1)) {
-                randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase()
+                randomizer2 = "?noCache=" + (0x1000000000 + Math.floor((Math.random() * 0xF000000000))).toString(16).toUpperCase();
             }
             http_request.open("GET", crosstableUrl() + randomizer2);
             http_request.setRequestHeader("If-Modified-Since", CrosstableLastModifiedHeader);
-            http_request.send(null)
+            http_request.send(null);
         } catch (e) {
-            return !1
+            return !1;
         }
-        return !0
+        return !0;
     }
 
-    if (theObject = document.getElementById("crosstablex")) {
+    if ((theObject = document.getElementById("crosstablex"))) {
+        // ???
         ylcetRefreshCrosstable();
     }
 
 
-    if (theObject = document.getElementById("cross_divs")) {
+    if ((theObject = document.getElementById("cross_divs"))) {
         myupdateCrosstable();
         myupdateLiveSf();
     }
 
-    if (theObject = document.getElementById("sched_divs")) {
+    if ((theObject = document.getElementById("sched_divs"))) {
         myupdateSchedtable(1);
     }
 
-    if (theObject = document.getElementById("GameDuration")) {
+    if ((theObject = document.getElementById("GameDuration"))) {
         if (isArchiveFile()) {
             theObject.innerHTML = "NA";
         } else {
@@ -8698,18 +8730,18 @@ function customFunctionOnPgnGameLoad() {
 
     if ((theObject = document.getElementById("Crosstable")) && ((pgnUrl != "live/empty.pgn") && (pgnUrl != "archive/empty.pgn"))) {
         updateCrosstable();
-        if (theObject = document.getElementById("crosstableText")) {
-            theObject.innerHTML = "Crosstable for " + gameEvent[currentGame]
+        if ((theObject = document.getElementById("crosstableText"))) {
+            theObject.innerHTML = "Crosstable for " + gameEvent[currentGame];
         }
     }
     var plyOffset = getPlyOffset();
     var plyOffset1 = plyOffset;
     if (MoveComments[1] === '' || MoveComments[1] === 'book') {
-        for (var mc in MoveComments) {
+        for (let mc in MoveComments) {
             if (mc > 1)
                 if (MoveComments[mc] !== '' && MoveComments[mc] !== 'book') {
                     plyOffset = mc - 5;
-                    break
+                    break;
                 }
         }
     }
@@ -8720,25 +8752,28 @@ function customFunctionOnPgnGameLoad() {
     numGraphs = 1;
     evalchartdata = new Array(["move", "white", "black", "liveeval"]);
     evalchartdataFound = !1;
-    cutoff = minEval;
+    let thisPly;
+    let cutoff = minEval;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        moveNum = Math.floor((thisPly - StartPly + 1) / 2);
-        moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
-        moveIndex = thisPly;
+        let ev,
+            moveNum = Math.floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+            // ???
+            // moveIndex = thisPly;
         if (!evalchartdata[moveIndex]) {
             evalchartdata[moveIndex] = new Array(4);
             evalchartdata[moveIndex][0] = moveNum + "";
             evalchartdata[moveIndex][1] = NaN;
             evalchartdata[moveIndex][2] = NaN;
             evalchartdata[moveIndex][3] = NaN;
-            evalchartdataFound = !0
+            evalchartdataFound = !0;
         }
-        match1 = MoveComments[thisPly].match(/wv=([#M]\d+)([, }])/);
-        match2 = MoveComments[thisPly].match(/wv=(-[#M]\d+)([, }])/);
-        match3 = MoveComments[thisPly].match(/ev=([#M]\d+),/);
-        match4 = MoveComments[thisPly].match(/ev=(-[#M]\d+),/);
-        match5 = MoveComments[thisPly].match(/wv=([+-.\d]*)([, }])/);
-        match6 = MoveComments[thisPly].match(/ev=([+-.\d]*),/)
+        let match1 = MoveComments[thisPly].match(/wv=([#M]\d+)([, }])/),
+            match2 = MoveComments[thisPly].match(/wv=(-[#M]\d+)([, }])/),
+            match3 = MoveComments[thisPly].match(/ev=([#M]\d+),/),
+            match4 = MoveComments[thisPly].match(/ev=(-[#M]\d+),/),
+            match5 = MoveComments[thisPly].match(/wv=([+-.\d]*)([, }])/),
+            match6 = MoveComments[thisPly].match(/ev=([+-.\d]*),/);
         if (match4 && match1) {
             evalchartdataFound = !0;
             evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = cutoff;
@@ -8749,16 +8784,16 @@ function customFunctionOnPgnGameLoad() {
             console.log ("2");
         } else if ((match2) || (match4)) {
             evalchartdataFound = !0;
-            evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = -cutoff
+            evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = -cutoff;
             console.log ("3");
         } else if ((match1) || (match3)) {
             evalchartdataFound = !0;
-            evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = cutoff
+            evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = cutoff;
             console.log ("4");
         } else if (((match5) && (match6)) || ((match5) && (!match6))) {
             if ((ev = Math.min(cutoff, Math.max(-cutoff, parseFloat(match5[1])))) !== null) {
                 evalchartdataFound = !0;
-                evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev
+                evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev;
                 evalchartdata[moveIndex][thisPly % 2 ? 2 : 1] = null;
                 console.log ("moveIndex:" + moveIndex + "," + (thisPly % 2 ? 1 : 2) + "," + ev);
                 console.log ("moveIndex:" + moveIndex + "," + (thisPly % 2 ? 2 : 1) + "," + ev);
@@ -8766,14 +8801,15 @@ function customFunctionOnPgnGameLoad() {
         } else if ((!match5) && (match6)) {
             if ((ev = Math.min(cutoff, Math.max(-cutoff, parseFloat(match6[1])))) !== null) {
                 evalchartdataFound = !0;
-                evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev
+                evalchartdata[moveIndex][thisPly % 2 ? 1 : 2] = ev;
         }
         }
     }
 
-    if (nomoves = document.getElementById('eval_chart')) {
+    let nomoves;
+    if ((nomoves = document.getElementById('eval_chart'))) {
         if (evalchart === undefined) {
-            evalchart = new google.visualization.LineChart(document.getElementById('eval_chart'))
+            evalchart = new google.visualization.LineChart(document.getElementById('eval_chart'));
         }
         if ((evalchartdataFound) && (localStorage.getItem('TCEC_GraE') == 'On')) {
             var evalchartoptions = {
@@ -8824,14 +8860,14 @@ function customFunctionOnPgnGameLoad() {
                 interpolateNulls: true
             };
             evalchart.draw(google.visualization.arrayToDataTable(evalchartdata), evalchartoptions);
-            google.visualization.events.addListener(evalchart, "select", evalChartClickHandler)
+            google.visualization.events.addListener(evalchart, "select", evalChartClickHandler);
         } else {
-            evalchart.clearChart()
+            evalchart.clearChart();
         }
         if (PlyNumber == 0) {
             nomoves.innerHTML = "no game loaded";
             nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center"
+            nomoves.style.textAlign = "center";
         }
     }
 
@@ -8840,7 +8876,7 @@ function customFunctionOnPgnGameLoad() {
         if (typeof(selection[0]) != "undefined") {
             if (selection[0].row !== null && selection[0].column !== null) {
                 if (!isNaN(thisPly = parseInt(selection[0].row * 2 + (selection[0].column == 1 ? 1 : 2), 10))) {
-                    GoToMove(thisPly + plyOffset)
+                    GoToMove(thisPly + plyOffset);
                 }
             }
         }
@@ -8849,29 +8885,30 @@ function customFunctionOnPgnGameLoad() {
     timechartdataFound = !1;
     cutoff = 10800;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        moveNum = Math.floor((thisPly - StartPly + 1) / 2);
-        moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
         if (!timechartdata[moveIndex]) {
             timechartdata[moveIndex] = new Array(3);
             timechartdata[moveIndex][0] = moveNum + "";
             timechartdata[moveIndex][1] = NaN;
             timechartdata[moveIndex][2] = NaN;
-            timechartdataFound = !0
+            timechartdataFound = !0;
         }
-        match51 = MoveComments[thisPly].match(/ev=0.00, d=1, mt=00:00:00.*/);
+        let match51 = MoveComments[thisPly].match(/ev=0.00, d=1, mt=00:00:00.*/);
         if (match51) {
             continue;
         }
-        if (match = MoveComments[thisPly].match(/mt=([+-:.\d]*),/)) {
+        let match, mt;
+        if ((match = MoveComments[thisPly].match(/mt=([+-:.\d]*),/))) {
             if ((mt = Math.min(cutoff, Math.max(-cutoff, parseFloat(clock2sec(match[1])/1000)))) !== null) {
                 timechartdataFound = !0;
-                timechartdata[moveIndex][thisPly % 2 ? 1 : 2] = Math.floor(mt * 100) / 100
+                timechartdata[moveIndex][thisPly % 2 ? 1 : 2] = Math.floor(mt * 100) / 100;
             }
         }
     }
-    if (nomoves = document.getElementById('time_chart')) {
+    if ((nomoves = document.getElementById('time_chart'))) {
         if (timechart === undefined) {
-            timechart = new google.visualization.LineChart(document.getElementById('time_chart'))
+            timechart = new google.visualization.LineChart(document.getElementById('time_chart'));
         }
         if ((timechartdataFound) && (localStorage.getItem('TCEC_GraT') == 'On')) {
             var timechartoptions = {
@@ -8921,14 +8958,14 @@ function customFunctionOnPgnGameLoad() {
                 }
             };
             timechart.draw(google.visualization.arrayToDataTable(timechartdata), timechartoptions);
-            google.visualization.events.addListener(timechart, "select", timeChartClickHandler)
+            google.visualization.events.addListener(timechart, "select", timeChartClickHandler);
         } else {
-            timechart.clearChart()
+            timechart.clearChart();
         }
         if (PlyNumber == 0) {
             nomoves.innerHTML = "no game loaded";
             nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center"
+            nomoves.style.textAlign = "center";
         }
     }
 
@@ -8937,7 +8974,7 @@ function customFunctionOnPgnGameLoad() {
         if (typeof(selection[0]) != "undefined") {
             if (selection[0].row !== null && selection[0].column !== null) {
                 if (!isNaN(thisPly = parseInt(selection[0].row * 2 + (selection[0].column == 1 ? 1 : 2), 10))) {
-                    GoToMove(thisPly + plyOffset)
+                    GoToMove(thisPly + plyOffset);
                 }
             }
         }
@@ -8946,25 +8983,26 @@ function customFunctionOnPgnGameLoad() {
     depthchartdataFound = !1;
     cutoff = 200;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        moveNum = Math.floor((thisPly - StartPly + 1) / 2);
-        moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
         if (!depthchartdata[moveIndex]) {
             depthchartdata[moveIndex] = new Array(3);
             depthchartdata[moveIndex][0] = moveNum + "";
             depthchartdata[moveIndex][1] = NaN;
             depthchartdata[moveIndex][2] = NaN;
-            depthchartdataFound = !0
+            depthchartdataFound = !0;
         }
-        if (match = MoveComments[thisPly].match(/d=([+-.\d]*),/)) {
+        let de, match;
+        if ((match = MoveComments[thisPly].match(/d=([+-.\d]*),/))) {
             if ((de = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1])))) !== null) {
                 depthchartdataFound = !0;
-                depthchartdata[moveIndex][thisPly % 2 ? 1 : 2] = de
+                depthchartdata[moveIndex][thisPly % 2 ? 1 : 2] = de;
             }
         }
     }
-    if (nomoves = document.getElementById('depth_chart')) {
+    if ((nomoves = document.getElementById('depth_chart'))) {
         if (depthchart === undefined) {
-            depthchart = new google.visualization.LineChart(document.getElementById('depth_chart'))
+            depthchart = new google.visualization.LineChart(document.getElementById('depth_chart'));
         }
         if ((depthchartdataFound) && (localStorage.getItem('TCEC_GraD') == 'On')) {
             var depthchartoptions = {
@@ -9015,14 +9053,14 @@ function customFunctionOnPgnGameLoad() {
             };
 
             depthchart.draw(google.visualization.arrayToDataTable(depthchartdata), depthchartoptions);
-            google.visualization.events.addListener(depthchart, "select", depthChartClickHandler)
+            google.visualization.events.addListener(depthchart, "select", depthChartClickHandler);
         } else {
-            depthchart.clearChart()
+            depthchart.clearChart();
         }
         if (PlyNumber == 0) {
             nomoves.innerHTML = "no game loaded";
             nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center"
+            nomoves.style.textAlign = "center";
         }
     }
 
@@ -9031,7 +9069,7 @@ function customFunctionOnPgnGameLoad() {
         if (typeof(selection[0]) != "undefined") {
             if (selection[0].row !== null && selection[0].column !== null) {
                 if (!isNaN(thisPly = parseInt(selection[0].row * 2 + (selection[0].column == 1 ? 1 : 2), 10))) {
-                    GoToMove(thisPly + plyOffset)
+                    GoToMove(thisPly + plyOffset);
                 }
             }
         }
@@ -9040,25 +9078,26 @@ function customFunctionOnPgnGameLoad() {
     speedchartdataFound = !1;
     cutoff = 200000;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        moveNum = Math.floor((thisPly - StartPly + 1) / 2);
-        moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
         if (!speedchartdata[moveIndex]) {
             speedchartdata[moveIndex] = new Array(3);
             speedchartdata[moveIndex][0] = moveNum + "";
             speedchartdata[moveIndex][1] = NaN;
             speedchartdata[moveIndex][2] = NaN;
-            speedchartdataFound = !0
+            speedchartdataFound = !0;
         }
-        if (match = MoveComments[thisPly].match(/ s=(.*?),/)) {
+        let match, sp;
+        if ((match = MoveComments[thisPly].match(/ s=(.*?),/))) {
             if ((sp = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1]/1024)))) !== null) {
                 speedchartdataFound = !0;
                 speedchartdata[moveIndex][thisPly % 2 ? 1 : 2] = parseInt(sp/1024);
             }
         }
     }
-    if (nomoves = document.getElementById('speed_chart')) {
+    if ((nomoves = document.getElementById('speed_chart'))) {
         if (speedchart === undefined) {
-            speedchart = new google.visualization.LineChart(document.getElementById('speed_chart'))
+            speedchart = new google.visualization.LineChart(document.getElementById('speed_chart'));
         }
         if ((speedchartdataFound) && (localStorage.getItem('TCEC_GraS') == 'On')) {
             var speedchartoptions = {
@@ -9109,14 +9148,14 @@ function customFunctionOnPgnGameLoad() {
             };
 
             speedchart.draw(google.visualization.arrayToDataTable(speedchartdata), speedchartoptions);
-            google.visualization.events.addListener(speedchart, "select", speedChartClickHandler)
+            google.visualization.events.addListener(speedchart, "select", speedChartClickHandler);
         } else {
-            speedchart.clearChart()
+            speedchart.clearChart();
         }
         if (PlyNumber == 0) {
             nomoves.innerHTML = "no game loaded";
             nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center"
+            nomoves.style.textAlign = "center";
         }
     }
 
@@ -9125,7 +9164,7 @@ function customFunctionOnPgnGameLoad() {
         if (typeof(selection[0]) != "undefined") {
             if (selection[0].row !== null && selection[0].column !== null) {
                 if (!isNaN(thisPly = parseInt(selection[0].row * 2 + (selection[0].column == 1 ? 1 : 2), 10))) {
-                    GoToMove(thisPly + plyOffset)
+                    GoToMove(thisPly + plyOffset);
                 }
             }
         }
@@ -9134,25 +9173,26 @@ function customFunctionOnPgnGameLoad() {
     tablebasechartdataFound = !1;
     cutoff = 10000000000;
     for (thisPly = StartPly + plyOffset; thisPly <= StartPly + PlyNumber; thisPly++) {
-        moveNum = Math.floor((thisPly - StartPly + 1) / 2);
-        moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
+        let moveNum = Math.floor((thisPly - StartPly + 1) / 2),
+            moveIndex = moveNum - Math.floor((plyOffset + 1) / 2);
         if (!tablebasechartdata[moveIndex]) {
             tablebasechartdata[moveIndex] = new Array(3);
             tablebasechartdata[moveIndex][0] = moveNum + "";
             tablebasechartdata[moveIndex][1] = NaN;
             tablebasechartdata[moveIndex][2] = NaN;
-            tablebasechartdataFound = !0
+            tablebasechartdataFound = !0;
         }
-        if (match = MoveComments[thisPly].match(/tb=([+-.\d]*),/)) {
+        let match, tb;
+        if ((match = MoveComments[thisPly].match(/tb=([+-.\d]*),/))) {
             if ((tb = Math.min(cutoff, Math.max(-cutoff, parseFloat(match[1])))) !== null) {
                 tablebasechartdataFound = !0;
                 tablebasechartdata[moveIndex][thisPly % 2 ? 1 : 2] = parseInt(tb/1024);
             }
         }
     }
-    if (nomoves = document.getElementById('tb_chart')) {
+    if ((nomoves = document.getElementById('tb_chart'))) {
         if (tablebasechart === undefined) {
-            tablebasechart = new google.visualization.LineChart(document.getElementById('tb_chart'))
+            tablebasechart = new google.visualization.LineChart(document.getElementById('tb_chart'));
         }
         if ((tablebasechartdataFound) && (localStorage.getItem('TCEC_GraTB') == 'On')) {
             var tablebasechartoptions = {
@@ -9203,14 +9243,14 @@ function customFunctionOnPgnGameLoad() {
                 }
             };
             tablebasechart.draw(google.visualization.arrayToDataTable(tablebasechartdata), tablebasechartoptions);
-            google.visualization.events.addListener(tablebasechart, "select", tablebaseChartClickHandler)
+            google.visualization.events.addListener(tablebasechart, "select", tablebaseChartClickHandler);
         } else {
-            tablebasechart.clearChart()
+            tablebasechart.clearChart();
         }
         if (PlyNumber == 0) {
             nomoves.innerHTML = "no game loaded";
             nomoves.style.width = "100%";
-            nomoves.style.textAlign = "center"
+            nomoves.style.textAlign = "center";
         }
     }
 
@@ -9219,45 +9259,47 @@ function customFunctionOnPgnGameLoad() {
         if (typeof(selection[0]) != "undefined") {
             if (selection[0].row !== null && selection[0].column !== null) {
                 if (!isNaN(thisPly = parseInt(selection[0].row * 2 + (selection[0].column == 1 ? 1 : 2), 10))) {
-                    GoToMove(thisPly + plyOffset)
+                    GoToMove(thisPly + plyOffset);
                 }
             }
         }
     }
-    if (annota = document.getElementById("GameAnnotator")) {
+    let annota;
+    if ((annota = document.getElementById("GameAnnotator"))) {
         if (gameResult[currentGame] == "") {
-            annota.innerHTML = "Please select an annotated game"
+            annota.innerHTML = "Please select an annotated game";
         } else {
-            annota.innerHTML = "Current game annotated by " + customPgnHeaderTag("Annotator", "GameAnnotator")
+            annota.innerHTML = "Current game annotated by " + customPgnHeaderTag("Annotator", "GameAnnotator");
         }
     }
+    let blackalt, blacksrc, theObjecty, whitealt, whitesrc;
     if ((gameResult[currentGame] !== undefined) && (gameResult[currentGame] == "*") && (gameDate[currentGame] !== undefined) && (gameDate[currentGame] !== "")) {
         whitesrc = (StartPly + PlyNumber) % 2 === 0 ? 'img/thinking5.gif' : 'img/thinking5w.gif';
         whitealt = (StartPly + PlyNumber) % 2 === 0 ? "Thinking" : "Waiting";
         blacksrc = (StartPly + PlyNumber) % 2 === 1 ? 'img/thinking6.gif' : 'img/thinking6w.gif';
         blackalt = (StartPly + PlyNumber) % 2 === 1 ? "Thinking" : "Waiting";
-        (StartPly + PlyNumber) % 2 === 1 ? changeFavicon('faviconb.ico') : changeFavicon('favicon.ico')
+        changeFavicon((StartPly + PlyNumber) % 2 === 1 ? 'faviconb.ico': 'favicon.ico');
     } else {
         whitesrc = "img/thinking5w.gif";
         whitealt = "Stopped Thinking";
         blacksrc = "img/thinking6w.gif";
-        blackalt = "Stopped Thinking"
+        blackalt = "Stopped Thinking";
     }
-    if (theObject = document.getElementById("WhiteToMove")) {
+    if ((theObject = document.getElementById("WhiteToMove"))) {
         theObject.src = whitesrc;
-        theObject.alt = whitealt
+        theObject.alt = whitealt;
     }
-    if (theObject = document.getElementById("BlackToMove")) {
+    if ((theObject = document.getElementById("BlackToMove"))) {
         theObject.src = blacksrc;
-        theObject.alt = blackalt
+        theObject.alt = blackalt;
     }
-    if (theObjecty = document.getElementById("WhiteToMove2")) {
+    if ((theObjecty = document.getElementById("WhiteToMove2"))) {
         theObjecty.src = whitesrc;
-        theObjecty.alt = whitealt
+        theObjecty.alt = whitealt;
     }
-    if (theObjecty = document.getElementById("BlackToMove2")) {
+    if ((theObjecty = document.getElementById("BlackToMove2"))) {
         theObjecty.src = blacksrc;
-        theObjecty.alt = blackalt
+        theObjecty.alt = blackalt;
     }
     var engineSite = {
         Alfil: "https://chessprogramming.wikispaces.com/Alfil",
@@ -9348,222 +9390,226 @@ function customFunctionOnPgnGameLoad() {
         Vitruvius: "https://chessprogramming.wikispaces.com/Vitruvius",
         Wasp: "https://chessprogramming.wikispaces.com/Wasp",
         Zappa: "https://chessprogramming.wikispaces.com/Zappa",
-    }
+    };
 
-    if (blkImg = document.getElementById("blEngineImg")) {
-        var r = gameBlack[currentGame];
+    let blkImg;
+    if ((blkImg = document.getElementById("blEngineImg"))) {
+        let r = gameBlack[currentGame];
         r = r.substring(0, r.indexOf(' '));
         blkImg.innerHTML = '<img height="35" width="70" src="' + 'images/engines/' + r + '.jpg' + '" />';
     }
 
-    if (whImg = document.getElementById("whEngineImg")) {
-        var r = gameWhite[currentGame];
+    let whImg;
+    if ((whImg = document.getElementById("whEngineImg"))) {
+        let r = gameWhite[currentGame];
         r = r.substring(0, r.indexOf(' '));
         whImg.innerHTML = '<img height="35" width="70" src="' + 'images/engines/' + r + '.jpg' + '" />';
     }
 
+    let whiteImg;
     if ((whiteImg = document.getElementById("whiteImage")) && (gameWhite[currentGame] != "")) {
-        whiteTbBox = document.getElementById("whiteTBhits");
-        whiteSpeed = document.getElementById("whiteSpeed");
-        wSite = document.getElementById("whiteSite");
-        var r = gameWhite[currentGame];
+        let whiteTbBox = document.getElementById("whiteTBhits"),
+            whiteSpeed = document.getElementById("whiteSpeed"),
+            wSite = document.getElementById("whiteSite");
+        let r = gameWhite[currentGame];
         r = r.substring(0, r.indexOf(' '));
-        Site = engineSite[r];
+        let Site = engineSite[r];
         whiteImg.src = 'img/engines/' + r + '.jpg';
         whiteImg.alt = r;
         wSite.href = Site;
         wSite.target = "_blank";
-        Bases = whitePar.getAttribute("data-tooltip").match(/Path/);
-        Xboard = whitePar.getAttribute("data-tooltip").match(/xboard/);
+        // ???
+        let Bases = whitePar.getAttribute("data-tooltip").match(/Path/),
+            Xboard = whitePar.getAttribute("data-tooltip").match(/xboard/);
         if (currentPage == "live.html") {
             if (Xboard === null) {
                 whiteTbBox.style.display = 'block';
-                whiteSpeed.style.display = 'block'
+                whiteSpeed.style.display = 'block';
             } else if (Xboard !== null) {
                 whiteTbBox.style.display = 'block';
-                whiteSpeed.style.display = 'block'
+                whiteSpeed.style.display = 'block';
             }
             if (Bases === null) {
-                whiteTbBox.style.display = 'block'
+                whiteTbBox.style.display = 'block';
             } else if (Bases !== null) {
-                whiteTbBox.style.display = 'block'
+                whiteTbBox.style.display = 'block';
             }
         } else {
             if (pgnUrl.match(/TCEC_Season_6/) !== null || pgnUrl.match(/TCEC_Season_7/) !== null || pgnUrl.match(/TCEC_Season_8/) !== null || pgnUrl.match(/TCEC_Season_9/) || pgnUrl.match(/TCEC_Season_10/) || pgnUrl.match(/TCEC_Season_11/) !== null) {
                 if (Xboard === null) {
                     whiteTbBox.style.display = 'block';
-                    whiteSpeed.style.display = 'block'
+                    whiteSpeed.style.display = 'block';
                 } else if (Xboard !== null) {
                     whiteTbBox.style.display = 'block';
-                    whiteSpeed.style.display = 'block'
+                    whiteSpeed.style.display = 'block';
                 }
                 if (Bases === null) {
-                    whiteTbBox.style.display = 'block'
+                    whiteTbBox.style.display = 'block';
                 } else if (Bases !== null) {
-                    whiteTbBox.style.display = 'block'
+                    whiteTbBox.style.display = 'block';
                 }
             } else {
                 whiteTbBox.style.display = 'block';
-                whiteSpeed.style.display = 'block'
+                whiteSpeed.style.display = 'block';
             }
         }
     }
 
+    let blackImg;
     if ((blackImg = document.getElementById("blackImage")) && (gameBlack[currentGame] != "")) {
-        blackTbBox = document.getElementById("blackTBhits");
-        blackSpeed = document.getElementById("blackSpeed");
-        bSite = document.getElementById("blackSite");
-        var t = gameBlack[currentGame];
+        let blackTbBox = document.getElementById("blackTBhits"),
+            blackSpeed = document.getElementById("blackSpeed"),
+            bSite = document.getElementById("blackSite");
+        let t = gameBlack[currentGame];
         t = t.substring(0, t.indexOf(' '));
-        Site = engineSite[t];
+        let Site = engineSite[t];
         blackImg.src = 'img/engines/' + t + '.jpg';
         blackImg.alt = t;
         bSite.href = Site;
         bSite.target = "_blank";
-        Bases = blackPar.getAttribute("data-tooltip").match(/Path/);
-        Xboard = blackPar.getAttribute("data-tooltip").match(/xboard/);
+        let Bases = blackPar.getAttribute("data-tooltip").match(/Path/),
+            Xboard = blackPar.getAttribute("data-tooltip").match(/xboard/);
         if (currentPage == "live.html") {
             if (Xboard === null) {
                 blackTbBox.style.display = 'block';
-                blackSpeed.style.display = 'block'
+                blackSpeed.style.display = 'block';
             } else if (Xboard !== null) {
                 blackTbBox.style.display = 'block';
-                blackSpeed.style.display = 'block'
+                blackSpeed.style.display = 'block';
             }
             if (Bases === null) {
-                blackTbBox.style.display = 'block'
+                blackTbBox.style.display = 'block';
             } else if (Bases !== null) {
-                blackTbBox.style.display = 'block'
+                blackTbBox.style.display = 'block';
             }
         } else {
             if (pgnUrl.match(/TCEC_Season_6/) !== null || pgnUrl.match(/TCEC_Season_7/) !== null || pgnUrl.match(/TCEC_Season_8/) !== null || pgnUrl.match(/TCEC_Season_9/) || pgnUrl.match(/TCEC_Season_10/) || pgnUrl.match(/TCEC_Season_11/) !== null) {
                 if (Xboard === null) {
                     blackTbBox.style.display = 'block';
-                    blackSpeed.style.display = 'block'
+                    blackSpeed.style.display = 'block';
                 } else if (Xboard !== null) {
                     blackTbBox.style.display = 'block';
-                    blackSpeed.style.display = 'block'
+                    blackSpeed.style.display = 'block';
                 }
                 if (Bases === null) {
-                    blackTbBox.style.display = 'block'
+                    blackTbBox.style.display = 'block';
                 } else if (Bases !== null) {
-                    blackTbBox.style.display = 'block'
+                    blackTbBox.style.display = 'block';
                 }
             } else {
                 blackTbBox.style.display = 'block';
-                blackSpeed.style.display = 'block'
+                blackSpeed.style.display = 'block';
             }
         }
     }
 
     if ((currentPage != "archive.php") && (gameWhite[currentGame] != "")) {
-        var whiteEngineName = gameWhite[currentGame];
-        var blackEngineName = gameBlack[currentGame];
+        let whiteEngineName = gameWhite[currentGame],
+            blackEngineName = gameBlack[currentGame];
         whiteEngineName = getKomodoName(whiteEngineName);
         blackEngineName = getKomodoName(blackEngineName);
         document.title = whiteEngineName + ' vs ' + blackEngineName + ' * TCEC * Live Computer Chess Broadcast';
-        livegame = document.getElementById("ylcet_gui_live_game");
-
+        // livegame = document.getElementById("ylcet_gui_live_game");
     }
 
     /* ylcet hack */
     ylcetSettime();
     customPgnHeaderTag("ECO", "GameECO");
-    if (theObj = document.getElementById("GameECO")) {
+    if ((theObj = document.getElementById("GameECO"))) {
         if (theObj.innerHTML == "") {
-            theObj.innerHTML = "*"
+            theObj.innerHTML = "*";
         }
         if (PlyNumber == 0) {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         }
     }
     theObj = document.getElementById("GameOpening");
     if (theObj) {
-        variation = customPgnHeaderTag("Variation", "GameVariation");
-        opening = customPgnHeaderTag("Opening", "GameOpening");
+        let variation = customPgnHeaderTag("Variation", "GameVariation"),
+            opening = customPgnHeaderTag("Opening", "GameOpening");
         if (theObj.innerHTML == "") {
-            theObj.innerHTML = "?"
+            theObj.innerHTML = "?";
         } else if (variation == "") {
-            theObj.innerHTML = opening
+            theObj.innerHTML = opening;
         } else {
-            theObj.innerHTML = opening + ", " + variation
+            theObj.innerHTML = opening + ", " + variation;
         }
         if (PlyNumber == 0) {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         }
     }
-    WhiteEloFull = customPgnHeaderTag("WhiteElo", "GameWhiteElo");
-    if (theObj = document.getElementById("GameWhiteElo")) {
+    let WhiteEloFull = customPgnHeaderTag("WhiteElo", "GameWhiteElo");
+    if ((theObj = document.getElementById("GameWhiteElo"))) {
         if (theObj.innerHTML == "") {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         } else {
             theObj.innerHTML = '&nbsp;' + WhiteEloFull;
         }
         if (PlyNumber == 0) {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         }
     }
-    BlackEloFull = customPgnHeaderTag("BlackElo", "GameBlackElo");
-    if (theObj = document.getElementById("GameBlackElo")) {
+    let BlackEloFull = customPgnHeaderTag("BlackElo", "GameBlackElo");
+    if ((theObj = document.getElementById("GameBlackElo"))) {
         if (theObj.innerHTML == "") {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         } else {
             theObj.innerHTML = '&nbsp;' + BlackEloFull;
         }
         if (PlyNumber == 0) {
-            theObj.innerHTML = ""
+            theObj.innerHTML = "";
         }
     }
-    theObx = customPgnHeaderTag("Termination", "GameTermination");
-    theOby = customPgnHeaderTag("TerminationDetails", "GameTermination");
-    theObz = document.getElementById("GameTermination");
+    let theObx = customPgnHeaderTag("Termination", "GameTermination"),
+        theOby = customPgnHeaderTag("TerminationDetails", "GameTermination"),
+        theObz = document.getElementById("GameTermination");
     if (0 && (theObx != "") && (theOby == "")) {
         if (theObx == "unterminated") {
-            theObz.innerHTML = "*"
+            theObz.innerHTML = "*";
         } else if (PlyNumber == 0) {
-            theObz.innerHTML = ""
+            theObz.innerHTML = "";
         } else {
-            theObz.innerHTML = theObx
+            theObz.innerHTML = theObx;
         }
     } else if (theOby != "") {
         if (theObz)
-            theObz.innerHTML = theOby
+            theObz.innerHTML = theOby;
     }
 
     /* ylcet */
-    a = customPgnHeaderTag("TimeControl", "GameTimeControl");
-    re = /\d+(?=(:|\+))/g;
-    ts = a.match(re);
-    tm = [];
-    i = 0;
+    let a = customPgnHeaderTag("TimeControl", "GameTimeControl"),
+        re = /\d+(?=(:|\+))/g,
+        ts = a.match(re),
+        tm = [];
+    let i = 0;
     if (ts) {
         for (i = 0; i < ts.length; i = i + 1) {
-            tm[i] = Math.round(ts[i] / 60) + "' "
+            tm[i] = Math.round(ts[i] / 60) + "' ";
         }
         for (i = 0; i < tm.length; i = i + 1) {
-            a = a.replace(ts[i], tm[i])
+            a = a.replace(ts[i], tm[i]);
         }
         a = a.replace(/(:|\+)/g, " $1 ");
         a = a.replace(/(\+\s*\d+)/g, "$1\"");
         if ((theObject = document.getElementById("GameTimeControl")) && (theObject.innerHTML !== null)) {
-            theObject.innerHTML = a
+            theObject.innerHTML = a;
         }
     }
     var server_status = LiveBroadcastLastModified.getTime();
-    whenStarted = new Date().getTime();
+    let whenStarted = new Date().getTime();
     if (currentPage == "live.html") {
         theObject = document.getElementById("gameFeed");
         if (theObject) {
             if (gameResult[currentGame] == "*") {
                 if (whenStarted > (server_status + 300000)) {
                     theObject.innerHTML = "Offline";
-                    theObject.style.color = "#9d0d00"
+                    theObject.style.color = "#9d0d00";
                 } else {
                     theObject.innerHTML = "Online";
-                    theObject.style.color = "#007d0a"
+                    theObject.style.color = "#007d0a";
                 }
             } else {
-                theObject.innerHTML = "No live game in progress"
+                theObject.innerHTML = "No live game in progress";
             }
         }
     }
@@ -9583,14 +9629,14 @@ function customFunctionOnPgnGameLoad() {
         //setSelectionTablebaseChart()
     }
     ////console.log ("Setting here1");
-    var theObject = document.getElementById('adj_rule');
-    if (theObject) 
+    theObject = document.getElementById('adj_rule');
+    if (theObject)
     {
       theObject.innerHTML = "*";
-      theMatch = TCECWinRule();
+      let theMatch = TCECWinRule();
       if (!isNaN(theMatch))
       {
-         var retStr = assignWin(theMatch);
+         let retStr = assignWin(theMatch);
          ////console.log ("win worked" + theMatch);
          theObject.innerHTML = retStr;
       }
@@ -9598,12 +9644,12 @@ function customFunctionOnPgnGameLoad() {
       {
          ////console.log ("win not worked" + retStr);
          theMatch = TCECDrawRule();
-         retStr = assignDraw(theMatch, MoveComments[CurrentPly]);
+         let retStr = assignDraw(theMatch, MoveComments[CurrentPly]);
          theObject.innerHTML = retStr;
       }
    }
     if (currentPage == "archive.php") {
-        MarkCurrentGame()
+        MarkCurrentGame();
     }
 }
 
@@ -9612,11 +9658,11 @@ function getSpeed(inSpeed)
     var thisSpeedK = parseInt(inSpeed/1000/1000);
     var thisSpeed;
 
-    if (thisSpeedK > 1) 
-    { 
+    if (thisSpeedK > 1)
+    {
         thisSpeedK = parseInt(thisSpeedK/1000/1000);
-        if (thisSpeedK > 1) 
-        { 
+        if (thisSpeedK > 1)
+        {
             thisSpeed = thisSpeedK + ' Gn/s';
         }
         else
@@ -9626,7 +9672,7 @@ function getSpeed(inSpeed)
     }
     else
     {
-        thisSpeed = parseInt(inSpeed/1000) + ' Kn/s'
+        thisSpeed = parseInt(inSpeed/1000) + ' Kn/s';
     }
     return thisSpeed;
 }
@@ -9636,11 +9682,11 @@ function getNodes(innode)
     var thisSpeedK = parseInt(innode/1000/1000);
     var thisSpeed;
 
-    if (thisSpeedK > 1) 
-    { 
+    if (thisSpeedK > 1)
+    {
         thisSpeedK = parseInt(thisSpeedK/1000/1000);
-        if (thisSpeedK > 1) 
-        { 
+        if (thisSpeedK > 1)
+        {
             thisSpeed = thisSpeedK + ' g';
         }
         else
@@ -9650,7 +9696,7 @@ function getNodes(innode)
     }
     else
     {
-        thisSpeed = parseInt(innode/1000) + ' k'
+        thisSpeed = parseInt(innode/1000) + ' k';
     }
     return thisSpeed;
 }
@@ -9658,38 +9704,38 @@ function getNodes(innode)
 function assignWin(theMatch)
 {
    var winStr = " for White]";
-   var retStr = null;
+   let retStr = null;
 
    if (theMatch == 0)
    {
       if ((gameResult[currentGame] == "1-0"))
-      { 
+      {
          winStr = "  Plies [White Won]";
       }
       else
-      { 
+      {
          winStr = "  Plies [Black Won]";
       }
       retStr = theMatch + winStr;
    }
    else if (theMatch < 0)
    {
-      winStr = " for black]"
+      winStr = " for black]";
       retStr = -1 * theMatch + " Plies [Win " + winStr;
-   } 
+   }
    else if (theMatch > 0)
    {
       retStr = theMatch + " Plies [Win " + winStr;
-   } 
+   }
    return retStr;
 }
 
 function assignDraw(theMatch, r50)
 {
    var finalScore = 0;
-   var retStr = "*";
+   let retStr = "*";
    var theMatch1 = r50.match(/R50=(.*?),/);
-   
+
    if (theMatch1 && (theMatch1[1] < 50))
    {
       finalScore = parseInt(theMatch1[1]) * 2;
@@ -9707,42 +9753,44 @@ function assignDraw(theMatch, r50)
 
 function customFunctionOnMove() {
     function num2mega(num) {
+        let unit;
         if (num >= Math.pow(10, 6)) {
             num = Math.round(num / Math.pow(10, 5)) / 10;
-            num = parseInt(num, 0);                    
-            unit = " M"
+            num = parseInt(num, 0);
+            unit = " M";
         } else {
-            unit = ""
+            unit = "";
         }
         if ((unit !== "") && (num === Math.floor(num))) {
-            //num += ".0"
+            //num += ".0";
         }
-        return num + unit
+        return num + unit;
     }
 
     function num2kilo(num) {
+        let unit;
         if (num >= Math.pow(10, 3)) {
             num = Math.round(num / Math.pow(10, 2)) / 10;
-            num = parseInt(num, 0);                    
-            unit = " k"
+            num = parseInt(num, 0);
+            unit = " k";
         } else {
-            unit = ""
+            unit = "";
         }
         if ((unit !== "") && (num === Math.floor(num))) {
             //num += ".0"
         }
-        return num + unit
+        return num + unit;
     }
     ////console.log ("Setting here2");
-    var theObject = document.getElementById('adj_rule');
-    if (theObject) 
+    let theObject = document.getElementById('adj_rule');
+    if (theObject)
     {
       theObject.innerHTML = "*";
       theMatch = TCECWinRule();
-      var retStr = "";
+      let retStr = "";
       if (!isNaN(theMatch))
       {
-         var retStr = assignWin(theMatch);
+         retStr = assignWin(theMatch);
          ////console.log ("win worked" + theMatch);
          theObject.innerHTML = retStr;
       }
@@ -9754,108 +9802,111 @@ function customFunctionOnMove() {
          theObject.innerHTML = retStr;
       }
    }
-   var theObj = document.getElementById("whoswinningw");
+    var theObj = document.getElementById("whoswinningw");
     if (theObj) {
         setEvalColors(theObj);
     }
-    var theObject = document.getElementById('CurrentFEN');
+    theObject = document.getElementById('CurrentFEN');
     var theMatch = CurrentFEN();
     if (theObject) {
         if (theMatch) {
             theObject.innerHTML = theMatch;
             if (theMatch.length <= 60) {
-                theObject.style.fontSize = "12px"
+                theObject.style.fontSize = "12px";
             } else {
-                theObject.style.fontSize = "12px"
+                theObject.style.fontSize = "12px";
             }
         } else {
-            theObject.innerHTML = "no info"
+            theObject.innerHTML = "no info";
         }
     }
+    let currentTimeObject, previousTimeObject;
     if ((CurrentPly % 2) == 0) {
         currentTimeObject = document.getElementById('blackMoveTime');
-        previousTimeObject = document.getElementById('whiteMoveTime')
+        previousTimeObject = document.getElementById('whiteMoveTime');
     } else {
         currentTimeObject = document.getElementById('whiteMoveTime');
-        previousTimeObject = document.getElementById('blackMoveTime')
+        previousTimeObject = document.getElementById('blackMoveTime');
     }
     if (currentTimeObject) {
-        thisTime = "no info";
+        let thisTime = "no info";
         if (MoveComments[CurrentPly]) {
             theMatch = MoveComments[CurrentPly].match(/mt=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly];
+            let theMatch2 = MoveComments[CurrentPly];
             if (theMatch) {
-                thisTime = theMatch[1]
+                thisTime = theMatch[1];
             } else if (theMatch2 == "book") {
-                thisTime = "book"
+                thisTime = "book";
             }
         }
         currentTimeObject.innerHTML = secFormatNoH(thisTime/1000);
         if (PlyNumber == 0) {
-            currentTimeObject.innerHTML = ""
+            currentTimeObject.innerHTML = "";
         }
     }
     if (previousTimeObject) {
-        thisTime = "no info";
+        let thisTime = "no info";
         if (MoveComments[CurrentPly - 1]) {
             theMatch = MoveComments[CurrentPly - 1].match(/mt=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly - 1];
+            let theMatch2 = MoveComments[CurrentPly - 1];
             if (theMatch) {
-                thisTime = theMatch[1]
+                thisTime = theMatch[1];
             } else if (theMatch2 == "book") {
-                thisTime = "book"
+                thisTime = "book";
             }
         }
         previousTimeObject.innerHTML = secFormatNoH(thisTime/1000);
         if (PlyNumber == 0) {
-            previousTimeObject.innerHTML = ""
+            previousTimeObject.innerHTML = "";
         }
     }
+    let currentEvalObject, previousEvalObject;
     if ((CurrentPly % 2) == 0) {
         currentEvalObject = document.getElementById('blackEval');
-        previousEvalObject = document.getElementById('whiteEval')
+        previousEvalObject = document.getElementById('whiteEval');
     } else {
         currentEvalObject = document.getElementById('whiteEval');
-        previousEvalObject = document.getElementById('blackEval')
+        previousEvalObject = document.getElementById('blackEval');
     }
     if (currentEvalObject) {
-        thisEval = "no info";
+        let thisEval = "no info";
         if (MoveComments[CurrentPly]) {
-            theMatch1 = MoveComments[CurrentPly].match(/ev=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly].match(/wv=(.*?)([, }])/);
-            theMatch3 = MoveComments[CurrentPly];
+            let theMatch1 = MoveComments[CurrentPly].match(/ev=(.*?),/),
+                theMatch2 = MoveComments[CurrentPly].match(/wv=(.*?)([, }])/);
+            let theMatch3 = MoveComments[CurrentPly];
             if (((theMatch1) && (theMatch2)) || ((!theMatch1) && (theMatch2))) {
-                thisEval = theMatch2[1]
+                thisEval = theMatch2[1];
             } else if ((theMatch1) && (!theMatch2)) {
-                thisEval = theMatch1[1]
+                thisEval = theMatch1[1];
             } else if (theMatch3 == "book") {
-                thisEval = "book"
+                thisEval = "book";
             }
         }
         currentEvalObject.innerHTML = thisEval;
         if (PlyNumber == 0) {
-            currentEvalObject.innerHTML = ""
+            currentEvalObject.innerHTML = "";
         }
     }
     if (previousEvalObject) {
-        thisEval = "no info";
+        let thisEval = "no info";
         if (MoveComments[CurrentPly - 1]) {
-            theMatch1 = MoveComments[CurrentPly - 1].match(/ev=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly - 1].match(/wv=(.*?)([, }])/);
-            theMatch3 = MoveComments[CurrentPly - 1];
+            let theMatch1 = MoveComments[CurrentPly - 1].match(/ev=(.*?),/),
+                theMatch2 = MoveComments[CurrentPly - 1].match(/wv=(.*?)([, }])/);
+            let theMatch3 = MoveComments[CurrentPly - 1];
             if (((theMatch1) && (theMatch2)) || ((!theMatch1) && (theMatch2))) {
-                thisEval = theMatch2[1]
+                thisEval = theMatch2[1];
             } else if ((theMatch1) && (!theMatch2)) {
-                thisEval = theMatch1[1]
+                thisEval = theMatch1[1];
             } else if (theMatch3 == "book") {
-                thisEval = "book"
+                thisEval = "book";
             }
         }
         previousEvalObject.innerHTML = thisEval;
         if (PlyNumber == 0) {
-            previousEvalObject.innerHTML = ""
+            previousEvalObject.innerHTML = "";
         }
     }
+    let currentClock, previousClock;
     if ((CurrentPly % 2) == 0) {
         currentClock = document.getElementById('blackClock');
         previousClock = document.getElementById('whiteClock');
@@ -9888,24 +9939,24 @@ function customFunctionOnMove() {
         }
     }
     if (currentClock) {
-        thisClock = "no info";
+        let thisClock = "no info";
         if (MoveComments[CurrentPly]) {
             theMatch = MoveComments[CurrentPly].match(/tl=(.*?),/);
-            if (theMatch) 
+            if (theMatch)
             {
                 thisClock = theMatch[1];
             }
             if (PlyNumber == 0) {
-                thisClock = ""
+                thisClock = "";
             }
         }
         if (PlyNumber == 0) {
-            thisClock = ""
+            thisClock = "";
         }
         currentClock.innerHTML = secFormat(thisClock/1000);
     }
     if (previousClock) {
-        thisClock = "no info";
+        let thisClock = "no info";
         if (MoveComments[CurrentPly - 1]) {
             theMatch = MoveComments[CurrentPly - 1].match(/tl=(.*?),/);
             if (theMatch) {
@@ -9913,368 +9964,379 @@ function customFunctionOnMove() {
             }
         }
         if (PlyNumber == 0) {
-            thisClock = ""
+            thisClock = "";
         }
         previousClock.innerHTML = secFormat(thisClock/1000);
     }
+
+    let currentSpeedObject, previousSpeedObject;
     if ((CurrentPly % 2) == 0) {
         currentSpeedObject = document.getElementById('blackSpeed');
-        previousSpeedObject = document.getElementById('whiteSpeed')
+        previousSpeedObject = document.getElementById('whiteSpeed');
     } else {
         currentSpeedObject = document.getElementById('whiteSpeed');
-        previousSpeedObject = document.getElementById('blackSpeed')
+        previousSpeedObject = document.getElementById('blackSpeed');
     }
     if (currentSpeedObject) {
-        thisSpeed = "no info";
+        let thisSpeed = "no info";
         if (MoveComments[CurrentPly]) {
             if (!(MoveComments[CurrentPly].match(/UCI/) || MoveComments[CurrentPly].match(/xboard/))) {
                 theMatch = MoveComments[CurrentPly].match(/ s=(.*?),/);
-                theMatch2 = MoveComments[CurrentPly];
+                let theMatch2 = MoveComments[CurrentPly];
                 if (theMatch) {
                     thisSpeed = getSpeed(theMatch[1]);
                     //alert(thisSpeed);
                 } else if (theMatch2 == "book") {
-                    thisSpeed = "book"
+                    thisSpeed = "book";
                 }
             }
         }
         currentSpeedObject.innerHTML = thisSpeed;
         if (PlyNumber == 0) {
-            currentSpeedObject.innerHTML = ""
+            currentSpeedObject.innerHTML = "";
         }
     }
     if (previousSpeedObject) {
-        thisSpeed = "no info";
+        let thisSpeed = "no info";
         if (MoveComments[CurrentPly - 1]) {
             if (!(MoveComments[CurrentPly - 1].match(/UCI/) || MoveComments[CurrentPly - 1].match(/xboard/))) {
                 theMatch = MoveComments[CurrentPly - 1].match(/ s=(.*?),/);
-                theMatch2 = MoveComments[CurrentPly - 1];
+                let theMatch2 = MoveComments[CurrentPly - 1];
                 if (theMatch) {
                     thisSpeed = getSpeed(theMatch[1]);
                 } else if (theMatch2 == "book") {
-                    thisSpeed = "book"
+                    thisSpeed = "book";
                 }
             }
         }
         previousSpeedObject.innerHTML = thisSpeed;
         if (PlyNumber == 0) {
-            previousSpeedObject.innerHTML = ""
+            previousSpeedObject.innerHTML = "";
         }
     }
+
+    let currentDepthObject, previousDepthObject;
     if ((CurrentPly % 2) == 0) {
         currentDepthObject = document.getElementById('blackDepth');
         previousDepthObject = document.getElementById('whiteDepth');
     } else {
         currentDepthObject = document.getElementById('whiteDepth');
-        previousDepthObject = document.getElementById('blackDepth')
+        previousDepthObject = document.getElementById('blackDepth');
     }
     if (currentDepthObject) {
-        thisDepth = "no info";
+        let thisDepth = "no info";
         if (MoveComments[CurrentPly]) {
             theMatch = MoveComments[CurrentPly].match(/d=(.*?),/);
-            var theMatch3 = MoveComments[CurrentPly].match(/sd=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly];
-            if (theMatch) 
+            let theMatch3 = MoveComments[CurrentPly].match(/sd=(.*?),/),
+                theMatch2 = MoveComments[CurrentPly];
+            if (theMatch)
             {
                thisDepth = theMatch[1];
                if (theMatch3 && theMatch3[1])
                {
                   thisDepth = thisDepth + "/" + theMatch3[1];
                }
-            } 
-            else if (theMatch2 == "book") 
+            }
+            else if (theMatch2 == "book")
             {
-                thisDepth = "book"
+                thisDepth = "book";
             }
         }
         currentDepthObject.innerHTML = thisDepth;
         if (PlyNumber == 0) {
-            currentDepthObject.innerHTML = ""
+            currentDepthObject.innerHTML = "";
         }
     }
     if (previousDepthObject) {
-        thisDepth = "no info";
+        let thisDepth = "no info";
         if (MoveComments[CurrentPly - 1]) {
             theMatch = MoveComments[CurrentPly - 1].match(/d=(.*?),/);
-            var theMatch3 = MoveComments[CurrentPly - 1].match(/sd=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly - 1];
-            if (theMatch) 
+            let theMatch3 = MoveComments[CurrentPly - 1].match(/sd=(.*?),/),
+                theMatch2 = MoveComments[CurrentPly - 1];
+            if (theMatch)
             {
                thisDepth = theMatch[1];
                if (theMatch3 && theMatch3[1])
                {
                   thisDepth = thisDepth + "/" + theMatch3[1];
                }
-            } 
-            else if (theMatch2 == "book") 
+            }
+            else if (theMatch2 == "book")
             {
-                thisDepth = "book"
+                thisDepth = "book";
             }
         }
         previousDepthObject.innerHTML = thisDepth;
         if (PlyNumber == 0) {
-            previousDepthObject.innerHTML = ""
+            previousDepthObject.innerHTML = "";
         }
     }
+
+    let currentNodesObject, previousNodesObject;
     if ((CurrentPly % 2) == 0) {
         currentNodesObject = document.getElementById('blackNodes');
-        previousNodesObject = document.getElementById('whiteNodes')
+        previousNodesObject = document.getElementById('whiteNodes');
     } else {
         currentNodesObject = document.getElementById('whiteNodes');
-        previousNodesObject = document.getElementById('blackNodes')
+        previousNodesObject = document.getElementById('blackNodes');
     }
     if (currentNodesObject) {
-        thisNodes = "no info";
+        let thisNodes = "no info";
         if (MoveComments[CurrentPly]) {
             if (!(MoveComments[CurrentPly].match(/UCI/) || MoveComments[CurrentPly].match(/xboard/))) {
                 theMatch = MoveComments[CurrentPly].match(/n=(.*?),/);
-                theMatch2 = MoveComments[CurrentPly];
+                let theMatch2 = MoveComments[CurrentPly];
                 if (theMatch) {
                     thisNodes = getNodes(theMatch[1]);
                 } else if (theMatch2 == "book") {
-                    thisNodes = "book"
+                    thisNodes = "book";
                 }
             }
         }
         currentNodesObject.innerHTML = num2mega(thisNodes);
         if (PlyNumber == 0) {
-            currentNodesObject.innerHTML = ""
+            currentNodesObject.innerHTML = "";
         }
     }
     if (previousNodesObject) {
-        thisNodes = "no info";
+        let thisNodes = "no info";
         if (MoveComments[CurrentPly - 1]) {
             if (!(MoveComments[CurrentPly - 1].match(/UCI/) || MoveComments[CurrentPly - 1].match(/xboard/))) {
                 theMatch = MoveComments[CurrentPly - 1].match(/n=(.*?),/);
-                theMatch2 = MoveComments[CurrentPly - 1];
+                let theMatch2 = MoveComments[CurrentPly - 1];
                 if (theMatch) {
                     thisNodes = getNodes(theMatch[1]);
                 } else if (theMatch2 == "book") {
-                    thisNodes = "book"
+                    thisNodes = "book";
                 }
             }
         }
         previousNodesObject.innerHTML = num2mega(thisNodes);
         if (PlyNumber == 0) {
-            previousNodesObject.innerHTML = ""
+            previousNodesObject.innerHTML = "";
         }
     }
+
+    let currenttbHitsObject, previoustbHitsObject;
     if ((CurrentPly % 2) == 0) {
         currenttbHitsObject = document.getElementById('blackTBhits');
-        previoustbHitsObject = document.getElementById('whiteTBhits')
+        previoustbHitsObject = document.getElementById('whiteTBhits');
     } else {
         currenttbHitsObject = document.getElementById('whiteTBhits');
-        previoustbHitsObject = document.getElementById('blackTBhits')
+        previoustbHitsObject = document.getElementById('blackTBhits');
     }
     if (currenttbHitsObject) {
-        thistbHits = "no info";
+        let thistbHits = "no info";
         if (MoveComments[CurrentPly]) {
             theMatch = MoveComments[CurrentPly].match(/tb=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly];
+            let theMatch2 = MoveComments[CurrentPly];
             if (theMatch) {
-                thistbHits = theMatch[1]
+                thistbHits = theMatch[1];
             } else if (theMatch2 == "book") {
-                thistbHits = "book"
+                thistbHits = "book";
             }
         }
         if (isNaN(thistbHits))
-        { 
+        {
             currenttbHitsObject.innerHTML = "NA";
-        } 
-        else 
-        { 
+        }
+        else
+        {
             currenttbHitsObject.innerHTML = num2kilo(thistbHits);
-        } 
+        }
         if (PlyNumber == 0) {
-            currenttbHitsObject.innerHTML = ""
+            currenttbHitsObject.innerHTML = "";
         }
     }
     if (previoustbHitsObject) {
-        thistbHits = "no info";
+        let thistbHits = "no info";
         if (MoveComments[CurrentPly - 1]) {
             theMatch = MoveComments[CurrentPly - 1].match(/tb=(.*?),/);
-            theMatch2 = MoveComments[CurrentPly - 1];
+            let theMatch2 = MoveComments[CurrentPly - 1];
             if (theMatch) {
-                thistbHits = theMatch[1]
+                thistbHits = theMatch[1];
             } else if (theMatch2 == "book") {
-                thistbHits = "book"
+                thistbHits = "book";
             }
         }
         if (isNaN(thistbHits))
-        { 
+        {
             previoustbHitsObject.innerHTML = "NA";
-        } 
-        else 
-        { 
+        }
+        else
+        {
             previoustbHitsObject.innerHTML = num2kilo(thistbHits);
-        } 
+        }
         if (PlyNumber == 0) {
-            previoustbHitsObject.innerHTML = ""
+            previoustbHitsObject.innerHTML = "";
         }
     }
     if (PVCount === undefined) {
-        PVCount = PlyNumber
+        PVCount = PlyNumber;
     }
     if (PlyNumber >= PVCount) {
         if (window.whitePv) {
             if ((!fenPositions[CurrentPly]) || (fenPositions[CurrentPly] !== CurrentFEN())) {
                 scanGameForFen();
-                PVCount = PlyNumber + 1
+                PVCount = PlyNumber + 1;
             }
         }
     }
     lastWhitePly = CurrentPly % 2 ? CurrentPly : CurrentPly - 1;
     if (lastWhitePly < StartPly) {
-        lastWhitePly = StartPly
+        lastWhitePly = StartPly;
     }
     lastBlackPly = CurrentPly % 2 ? CurrentPly - 1 : CurrentPly;
     if (lastBlackPly < StartPly) {
-        lastBlackPly = StartPly
+        lastBlackPly = StartPly;
     }
-    lastPlyForPv = Math.min(lastWhitePly, lastBlackPly);
+    let lastPlyForPv = Math.min(lastWhitePly, lastBlackPly);
     whitePvMoves = '';
     blackPvMoves = '';
     var movesRegExp = new RegExp("^(\\s*([KQRBNP]?[a-h1-8]?x?[a-h][1-8](=[QRNB])?|O-O-O|O-O)\\b[#+]?)*\\s*$", "g");
     if (lastPlyForPv > StartPly) {
-        pvMatch = MoveComments[lastWhitePly] ? MoveComments[lastWhitePly].match(/pv=([^,]+)/) : "";
+        let pvMatch = MoveComments[lastWhitePly] ? MoveComments[lastWhitePly].match(/pv=([^,]+)/) : "";
         if (pvMatch && pvMatch[1].match(movesRegExp)) {
-            whitePvMoves = pvMatch[1]
+            whitePvMoves = pvMatch[1];
         }
         pvMatch = MoveComments[lastBlackPly] ? MoveComments[lastBlackPly].match(/pv=([^,]+)/) : "";
         if (pvMatch && pvMatch[1].match(movesRegExp)) {
-            blackPvMoves = pvMatch[1]
+            blackPvMoves = pvMatch[1];
         }
     }
     if (whitePvMoves && blackPvMoves) {
-        whitePvMovesArray = whitePvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' ');
-        blackPvMovesArray = blackPvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' ');
+        let whitePvMovesArray = whitePvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' '),
+            blackPvMovesArray = blackPvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' ');
         if (lastPlyForPv < lastWhitePly) {
-            whitePvMovesArray.unshift(blackPvMovesArray[0])
+            whitePvMovesArray.unshift(blackPvMovesArray[0]);
         } else if (lastPlyForPv < lastBlackPly) {
-            blackPvMovesArray.unshift(whitePvMovesArray[0])
+            blackPvMovesArray.unshift(whitePvMovesArray[0]);
         }
-        idxMax = Math.min(whitePvMovesArray.length, blackPvMovesArray.length);
-        idxEqual = -1;
-        for (idxCurr = 0; idxCurr < idxMax; idxCurr++) {
+        let idxMax = Math.min(whitePvMovesArray.length, blackPvMovesArray.length),
+            idxEqual = -1;
+        for (let idxCurr = 0; idxCurr < idxMax; idxCurr++) {
             if (whitePvMovesArray[idxCurr] !== blackPvMovesArray[idxCurr]) {
-                break
+                break;
             }
-            idxEqual = idxCurr
+            idxEqual = idxCurr;
         }
         whitePvMoves = '';
         blackPvMoves = '';
-        for (idxCurr = lastPlyForPv === lastWhitePly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
-            whitePvMoves += whitePvMovesArray[idxCurr] + ' '
+        for (let idxCurr = lastPlyForPv === lastWhitePly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
+            whitePvMoves += whitePvMovesArray[idxCurr] + ' ';
         }
-        for (idxCurr = lastPlyForPv === lastBlackPly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
-            blackPvMoves += blackPvMovesArray[idxCurr] + ' '
+        for (let idxCurr = lastPlyForPv === lastBlackPly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
+            blackPvMoves += blackPvMovesArray[idxCurr] + ' ';
         }
         whitePvMoves += '{@} ';
         blackPvMoves += '{@} ';
-        for (idxCurr = idxEqual + 1; idxCurr < whitePvMovesArray.length; idxCurr++) {
-            whitePvMoves += whitePvMovesArray[idxCurr] + ' '
+        for (let idxCurr = idxEqual + 1; idxCurr < whitePvMovesArray.length; idxCurr++) {
+            whitePvMoves += whitePvMovesArray[idxCurr] + ' ';
         }
-        for (idxCurr = idxEqual + 1; idxCurr < blackPvMovesArray.length; idxCurr++) {
-            blackPvMoves += blackPvMovesArray[idxCurr] + ' '
+        for (let idxCurr = idxEqual + 1; idxCurr < blackPvMovesArray.length; idxCurr++) {
+            blackPvMoves += blackPvMovesArray[idxCurr] + ' ';
         }
     }
 
     if (window && window.whitePv && window.whitePv.updatePgn) {
-        pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
-        window.whitePv.updatePgn(pvPgn)
+        let pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
+        window.whitePv.updatePgn(pvPgn);
         PvSel();
     }
     if (window && window.blackPv && window.blackPv.updatePgn) {
-        pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
-        window.blackPv.updatePgn(pvPgn)
+        let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
+        window.blackPv.updatePgn(pvPgn);
         PvSel();
     }
+
+    let currentMDObject, previousMDObject;
     if ((CurrentPly % 2) == 0) {
         currentMDObject = document.getElementById('materialBlack');
-        previousMDObject = document.getElementById('materialWhite')
+        previousMDObject = document.getElementById('materialWhite');
     } else {
         currentMDObject = document.getElementById('materialBlack');
-        previousMDObject = document.getElementById('materialWhite')
+        previousMDObject = document.getElementById('materialWhite');
     }
     if (previousMDObject) {
-        fullImageString = ('');
+        let fullImageString = ('');
 
         function repeat(str, num) {
-            return (new Array(num + 1)).join(str)
+            return (new Array(num + 1)).join(str);
         }
         if (MoveComments[CurrentPly]) {
             theMatch = CurrentFEN().match(/(.*?) /);
             if (theMatch) {
-                whiteArray = theMatch[1];
-                var whitePawnCount = 0;
-                var whiteBishopCount = 0;
-                var whiteKnightCount = 0;
-                var whiteRookCount = 0;
-                var whiteQueenCount = 0;
-                var blackPawnCount = 0;
-                var blackBishopCount = 0;
-                var blackKnightCount = 0;
-                var blackRookCount = 0;
-                var blackQueenCount = 0;
-                var whitePawnString = "";
-                var whiteBishopString = "";
-                var whiteKnightString = "";
-                var whiteRookString = "";
-                var whiteQueenString = "";
-                var myArray = whiteArray.split('');
-                for (i = 0; i < myArray.length; i++) {
+                let whiteArray = theMatch[1],
+                    whitePawnCount = 0,
+                    whiteBishopCount = 0,
+                    whiteKnightCount = 0,
+                    whiteRookCount = 0,
+                    whiteQueenCount = 0,
+                    blackPawnCount = 0,
+                    blackBishopCount = 0,
+                    blackKnightCount = 0,
+                    blackRookCount = 0,
+                    blackQueenCount = 0,
+                    whitePawnString = "",
+                    whiteBishopString = "",
+                    whiteKnightString = "",
+                    whiteRookString = "",
+                    whiteQueenString = "",
+                    whiteEqualCount = 0,
+                    myArray = whiteArray.split('');
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'P') {
-                        whitePawnCount++
+                        whitePawnCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'B') {
-                        whiteBishopCount++
+                        whiteBishopCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'N') {
-                        whiteKnightCount++
+                        whiteKnightCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'R') {
-                        whiteRookCount++
+                        whiteRookCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'Q') {
-                        whiteQueenCount++
+                        whiteQueenCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == '-') {
-                        whiteEqualCount++
+                        whiteEqualCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'p') {
-                        blackPawnCount++
+                        blackPawnCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'b') {
-                        blackBishopCount++
+                        blackBishopCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'n') {
-                        blackKnightCount++
+                        blackKnightCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'r') {
-                        blackRookCount++
+                        blackRookCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'q') {
-                        blackQueenCount++
+                        blackQueenCount++;
                     }
                 }
                 whitePawnCount = whitePawnCount - blackPawnCount;
@@ -10282,143 +10344,144 @@ function customFunctionOnMove() {
                 whiteKnightCount = whiteKnightCount - blackKnightCount;
                 whiteRookCount = whiteRookCount - blackRookCount;
                 whiteQueenCount = whiteQueenCount - blackQueenCount;
-                fontType = localStorage.getItem("YLCET_font");
-                folder = '/16';
+                let fontType = localStorage.getItem("YLCET_font"),
+                    folder = '/16';
                 if (imageType == "svg") {
-                    folder = ''
+                    folder = '';
                 }
                 if (fontType == "ME") {
-                    fontType = "merida"
+                    fontType = "merida";
                 } else if (fontType == "AL") {
-                    fontType = "alpha"
+                    fontType = "alpha";
                 } else if (fontType == "US") {
-                    fontType = "uscf"
+                    fontType = "uscf";
                 } else if (fontType == "IS") {
-                    fontType = "igorsvg"
+                    fontType = "igorsvg";
                 } else if (fontType == "CS") {
-                    fontType = "colinsvg"
+                    fontType = "colinsvg";
                 } else if (fontType == "TS") {
-                    fontType = "tilesvg"
+                    fontType = "tilesvg";
                 }
                 if (whitePawnCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        whitePawnString = repeat('<img src=\"img/' + fontType + folder + '/rbp.' + imageType + '\" alt=\"White pawn\" width=\"16px\" height=\"16px\">', whitePawnCount)
+                        whitePawnString = repeat('<img src=\"img/' + fontType + folder + '/rbp.' + imageType + '\" alt=\"White pawn\" width=\"16px\" height=\"16px\">', whitePawnCount);
                     } else {
-                        whitePawnString = repeat('<img src=\"img/' + fontType + folder + '/bp.' + imageType + '\" alt=\"White pawn\" width=\"16px\" height=\"16px\">', whitePawnCount)
+                        whitePawnString = repeat('<img src=\"img/' + fontType + folder + '/bp.' + imageType + '\" alt=\"White pawn\" width=\"16px\" height=\"16px\">', whitePawnCount);
                     }
                 }
                 if (whiteBishopCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        whiteBishopString = repeat('<img src=\"img/' + fontType + folder + '/rbb.' + imageType + '\" alt=\"White bishop\" width=\"16px\" height=\"16px\">', whiteBishopCount)
+                        whiteBishopString = repeat('<img src=\"img/' + fontType + folder + '/rbb.' + imageType + '\" alt=\"White bishop\" width=\"16px\" height=\"16px\">', whiteBishopCount);
                     } else {
-                        whiteBishopString = repeat('<img src=\"img/' + fontType + folder + '/bb.' + imageType + '\" alt=\"White bishop\" width=\"16px\" height=\"16px\">', whiteBishopCount)
+                        whiteBishopString = repeat('<img src=\"img/' + fontType + folder + '/bb.' + imageType + '\" alt=\"White bishop\" width=\"16px\" height=\"16px\">', whiteBishopCount);
                     }
                 }
                 if (whiteKnightCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        whiteKnightString = repeat('<img src=\"img/' + fontType + folder + '/rbn.' + imageType + '\" alt=\"White knight\" width=\"16px\" height=\"16px\">', whiteKnightCount)
+                        whiteKnightString = repeat('<img src=\"img/' + fontType + folder + '/rbn.' + imageType + '\" alt=\"White knight\" width=\"16px\" height=\"16px\">', whiteKnightCount);
                     } else {
-                        whiteKnightString = repeat('<img src=\"img/' + fontType + folder + '/bn.' + imageType + '\" alt=\"White knight\" width=\"16px\" height=\"16px\">', whiteKnightCount)
+                        whiteKnightString = repeat('<img src=\"img/' + fontType + folder + '/bn.' + imageType + '\" alt=\"White knight\" width=\"16px\" height=\"16px\">', whiteKnightCount);
                     }
                 }
                 if (whiteRookCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        whiteRookString = repeat('<img src=\"img/' + fontType + folder + '/rbr.' + imageType + '\" alt=\"White rook\" width=\"16px\" height=\"16px\">', whiteRookCount)
+                        whiteRookString = repeat('<img src=\"img/' + fontType + folder + '/rbr.' + imageType + '\" alt=\"White rook\" width=\"16px\" height=\"16px\">', whiteRookCount);
                     } else {
-                        whiteRookString = repeat('<img src=\"img/' + fontType + folder + '/br.' + imageType + '\" alt=\"White rook\" width=\"16px\" height=\"16px\">', whiteRookCount)
+                        whiteRookString = repeat('<img src=\"img/' + fontType + folder + '/br.' + imageType + '\" alt=\"White rook\" width=\"16px\" height=\"16px\">', whiteRookCount);
                     }
                 }
                 if (whiteQueenCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        whiteQueenString = repeat('<img src=\"img/' + fontType + folder + '/rbq.' + imageType + '\" alt=\"White queen\" width=\"16px\" height=\"16px\">', whiteQueenCount)
+                        whiteQueenString = repeat('<img src=\"img/' + fontType + folder + '/rbq.' + imageType + '\" alt=\"White queen\" width=\"16px\" height=\"16px\">', whiteQueenCount);
                     } else {
-                        whiteQueenString = repeat('<img src=\"img/' + fontType + folder + '/bq.' + imageType + '\" alt=\"White queen\" width=\"16px\" height=\"16px\">', whiteQueenCount)
+                        whiteQueenString = repeat('<img src=\"img/' + fontType + folder + '/bq.' + imageType + '\" alt=\"White queen\" width=\"16px\" height=\"16px\">', whiteQueenCount);
                     }
                 }
-                fullImageString = (whitePawnString + whiteBishopString + whiteKnightString + whiteRookString + whiteQueenString)
+                fullImageString = (whitePawnString + whiteBishopString + whiteKnightString + whiteRookString + whiteQueenString);
             }
         }
-        previousMDObject.innerHTML = fullImageString
+        previousMDObject.innerHTML = fullImageString;
     }
     if (currentMDObject) {
-        fullImageString = ('');
+        let fullImageString = ('');
 
         function repeat(str, num) {
-            return (new Array(num + 1)).join(str)
+            return (new Array(num + 1)).join(str);
         }
         if (MoveComments[CurrentPly]) {
             theMatch = CurrentFEN().match(/(.*?) /);
             if (theMatch) {
-                blackArray = theMatch[1];
-                var blackPawnCount = 0;
-                var blackBishopCount = 0;
-                var blackKnightCount = 0;
-                var blackRookCount = 0;
-                var blackQueenCount = 0;
-                var whitePawnCount = 0;
-                var whiteBishopCount = 0;
-                var whiteKnightCount = 0;
-                var whiteRookCount = 0;
-                var whiteQueenCount = 0;
-                var blackPawnString = "";
-                var blackBishopString = "";
-                var blackKnightString = "";
-                var blackRookString = "";
-                var blackQueenString = "";
-                var myArray = blackArray.split('');
-                for (i = 0; i < myArray.length; i++) {
+                let blackArray = theMatch[1];
+                let blackPawnCount = 0,
+                    blackBishopCount = 0,
+                    blackKnightCount = 0,
+                    blackRookCount = 0,
+                    blackQueenCount = 0,
+                    whitePawnCount = 0,
+                    whiteBishopCount = 0,
+                    whiteKnightCount = 0,
+                    whiteRookCount = 0,
+                    whiteQueenCount = 0,
+                    blackPawnString = "",
+                    blackBishopString = "",
+                    blackKnightString = "",
+                    blackRookString = "",
+                    blackQueenString = "",
+                    blackEqualCount = 0,
+                    myArray = blackArray.split('');
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'p') {
-                        blackPawnCount++
+                        blackPawnCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'b') {
-                        blackBishopCount++
+                        blackBishopCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'n') {
-                        blackKnightCount++
+                        blackKnightCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'r') {
-                        blackRookCount++
+                        blackRookCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'q') {
-                        blackQueenCount++
+                        blackQueenCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == '-') {
-                        blackEqualCount++
+                        blackEqualCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'P') {
-                        whitePawnCount++
+                        whitePawnCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'B') {
-                        whiteBishopCount++
+                        whiteBishopCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'N') {
-                        whiteKnightCount++
+                        whiteKnightCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'R') {
-                        whiteRookCount++
+                        whiteRookCount++;
                     }
                 }
-                for (i = 0; i < myArray.length; i++) {
+                for (let i = 0; i < myArray.length; i++) {
                     if (myArray[i] == 'Q') {
-                        whiteQueenCount++
+                        whiteQueenCount++;
                     }
                 }
                 blackPawnCount = blackPawnCount - whitePawnCount;
@@ -10426,128 +10489,134 @@ function customFunctionOnMove() {
                 blackKnightCount = blackKnightCount - whiteKnightCount;
                 blackRookCount = blackRookCount - whiteRookCount;
                 blackQueenCount = blackQueenCount - whiteQueenCount;
-                fontType = localStorage.getItem("YLCET_font");
-                folder = '/16';
+                let fontType = localStorage.getItem("YLCET_font"),
+                    folder = '/16';
                 if (imageType == "svg") {
-                    folder = ''
+                    folder = '';
                 }
                 if (fontType == "ME") {
-                    fontType = "merida"
+                    fontType = "merida";
                 } else if (fontType == "AL") {
-                    fontType = "alpha"
+                    fontType = "alpha";
                 } else if (fontType == "US") {
-                    fontType = "uscf"
+                    fontType = "uscf";
                 } else if (fontType == "IS") {
-                    fontType = "igorsvg"
+                    fontType = "igorsvg";
                 } else if (fontType == "CS") {
-                    fontType = "colinsvg"
+                    fontType = "colinsvg";
                 } else if (fontType == "TS") {
-                    fontType = "tilesvg"
+                    fontType = "tilesvg";
                 }
 
                 if (blackPawnCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        blackPawnString = repeat('<img src=\"img/' + fontType + folder + '/rwp.' + imageType + '\" alt=\"Black pawn\" width=\"16px\" height=\"16px\">', blackPawnCount)
+                        blackPawnString = repeat('<img src=\"img/' + fontType + folder + '/rwp.' + imageType + '\" alt=\"Black pawn\" width=\"16px\" height=\"16px\">', blackPawnCount);
                     } else {
-                        blackPawnString = repeat('<img src=\"img/' + fontType + folder + '/wp.' + imageType + '\" alt=\"Black pawn\" width=\"16px\" height=\"16px\">', blackPawnCount)
+                        blackPawnString = repeat('<img src=\"img/' + fontType + folder + '/wp.' + imageType + '\" alt=\"Black pawn\" width=\"16px\" height=\"16px\">', blackPawnCount);
                     }
                 }
                 if (blackBishopCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        blackBishopString = repeat('<img src=\"img/' + fontType + folder + '/rwb.' + imageType + '\" alt=\"Black bishop\" width=\"16px\" height=\"16px\">', blackBishopCount)
+                        blackBishopString = repeat('<img src=\"img/' + fontType + folder + '/rwb.' + imageType + '\" alt=\"Black bishop\" width=\"16px\" height=\"16px\">', blackBishopCount);
                     } else {
-                        blackBishopString = repeat('<img src=\"img/' + fontType + folder + '/wb.' + imageType + '\" alt=\"Black bishop\" width=\"16px\" height=\"16px\">', blackBishopCount)
+                        blackBishopString = repeat('<img src=\"img/' + fontType + folder + '/wb.' + imageType + '\" alt=\"Black bishop\" width=\"16px\" height=\"16px\">', blackBishopCount);
                     }
                 }
                 if (blackKnightCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        blackKnightString = repeat('<img src=\"img/' + fontType + folder + '/rwn.' + imageType + '\" alt=\"Black knight\" width=\"16px\" height=\"16px\">', blackKnightCount)
+                        blackKnightString = repeat('<img src=\"img/' + fontType + folder + '/rwn.' + imageType + '\" alt=\"Black knight\" width=\"16px\" height=\"16px\">', blackKnightCount);
                     } else {
-                        blackKnightString = repeat('<img src=\"img/' + fontType + folder + '/wn.' + imageType + '\" alt=\"Black knight\" width=\"16px\" height=\"16px\">', blackKnightCount)
+                        blackKnightString = repeat('<img src=\"img/' + fontType + folder + '/wn.' + imageType + '\" alt=\"Black knight\" width=\"16px\" height=\"16px\">', blackKnightCount);
                     }
                 }
                 if (blackRookCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        blackRookString = repeat('<img src=\"img/' + fontType + folder + '/rwr.' + imageType + '\" alt=\"Black rook\" width=\"16px\" height=\"16px\">', blackRookCount)
+                        blackRookString = repeat('<img src=\"img/' + fontType + folder + '/rwr.' + imageType + '\" alt=\"Black rook\" width=\"16px\" height=\"16px\">', blackRookCount);
                     } else {
-                        blackRookString = repeat('<img src=\"img/' + fontType + folder + '/wr.' + imageType + '\" alt=\"Black rook\" width=\"16px\" height=\"16px\">', blackRookCount)
+                        blackRookString = repeat('<img src=\"img/' + fontType + folder + '/wr.' + imageType + '\" alt=\"Black rook\" width=\"16px\" height=\"16px\">', blackRookCount);
                     }
                 }
                 if (blackQueenCount > 0) {
                     if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-                        blackQueenString = repeat('<img src=\"img/' + fontType + folder + '/rwq.' + imageType + '\" alt=\"Black queen\" width=\"16px\" height=\"16px\">', blackQueenCount)
+                        blackQueenString = repeat('<img src=\"img/' + fontType + folder + '/rwq.' + imageType + '\" alt=\"Black queen\" width=\"16px\" height=\"16px\">', blackQueenCount);
                     } else {
-                        blackQueenString = repeat('<img src=\"img/' + fontType + folder + '/wq.' + imageType + '\" alt=\"Black queen\" width=\"16px\" height=\"16px\">', blackQueenCount)
+                        blackQueenString = repeat('<img src=\"img/' + fontType + folder + '/wq.' + imageType + '\" alt=\"Black queen\" width=\"16px\" height=\"16px\">', blackQueenCount);
                     }
                 }
-                fullImageString = (blackPawnString + blackBishopString + blackKnightString + blackRookString + blackQueenString)
+                fullImageString = (blackPawnString + blackBishopString + blackKnightString + blackRookString + blackQueenString);
             }
         }
-        currentMDObject.innerHTML = fullImageString
+        currentMDObject.innerHTML = fullImageString;
     }
     if (localStorage.getItem('TCEC_GraE') == 'On') {
-        setSelectionEvalChart()
+        setSelectionEvalChart();
     }
     if (localStorage.getItem('TCEC_GraT') == 'On') {
-        setSelectionTimeChart()
+        setSelectionTimeChart();
     }
     if (localStorage.getItem('TCEC_GraD') == 'On') {
-        setSelectionDepthChart()
+        setSelectionDepthChart();
     }
     if (localStorage.getItem('TCEC_GraS') == 'On') {
-        setSelectionSpeedChart()
+        setSelectionSpeedChart();
     }
     if (localStorage.getItem('TCEC_GraTB') == 'On') {
-        setSelectionTablebaseChart()
+        setSelectionTablebaseChart();
     }
+
+    let currPV, prevPV;
     if ((CurrentPly % 2) == 0) {
         currPV = window.whitePv.document.getElementById('PV_for');
-        prevPV = window.blackPv.document.getElementById('PV_for')
+        prevPV = window.blackPv.document.getElementById('PV_for');
     } else {
         currPV = window.blackPv.document.getElementById('PV_for');
-        prevPV = window.whitePv.document.getElementById('PV_for')
+        prevPV = window.whitePv.document.getElementById('PV_for');
     }
     if (currPV) {
         var showThisMove = CurrentPly - 2;
         if (showThisMove > StartPlyVar[CurrentVar - 2] + PlyNumberVar[CurrentVar - 2]) {
-            showThisMove = StartPlyVar[CurrentVar - 2] + PlyNumberVar[CurrentVar - 2]
+            showThisMove = StartPlyVar[CurrentVar - 2] + PlyNumberVar[CurrentVar - 2];
         }
+
+        let text;
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
-            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove]
+            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
         } else {
-            text = ''
+            text = '';
         }
         if (showThisMove > -1) {
-            currPV.innerHTML = 'PV for ' + text
+            currPV.innerHTML = 'PV for ' + text;
         } else {
-            currPV.innerHTML = 'Principal variation'
+            currPV.innerHTML = 'Principal variation';
         }
     }
     if (prevPV) {
-        var showThisMove = CurrentPly - 1;
+        let showThisMove = CurrentPly - 1;
         if (showThisMove > StartPlyVar[CurrentVar - 1] + PlyNumberVar[CurrentVar - 1]) {
-            showThisMove = StartPlyVar[CurrentVar - 1] + PlyNumberVar[CurrentVar - 1]
+            showThisMove = StartPlyVar[CurrentVar - 1] + PlyNumberVar[CurrentVar - 1];
         }
+
+        let text;
         if ((showThisMove >= StartPly) && Moves[showThisMove]) {
-            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove]
+            text = (Math.floor(showThisMove / 2) + 1) + (showThisMove % 2 === 0 ? '. ' : '... ') + Moves[showThisMove];
         } else {
-            text = ''
+            text = '';
         }
         if (showThisMove > -1) {
-            prevPV.innerHTML = 'PV for ' + text
+            prevPV.innerHTML = 'PV for ' + text;
         } else {
-            prevPV.innerHTML = 'Principal variation'
+            prevPV.innerHTML = 'Principal variation';
         }
     }
 }
 
 function customFunctionOnCheckLiveBroadcastStatus() {
-    StatusCheck()
+    StatusCheck();
 }
 
 function downloadGame(path) {
-    ifrm = document.getElementById("download");
-    ifrm.src = path
+    let ifrm = document.getElementById("download");
+    ifrm.src = path;
 }
 
 function selectText(element) {
@@ -10557,13 +10626,13 @@ function selectText(element) {
     if (doc.body.createTextRange) {
         range = doc.body.createTextRange();
         range.moveToElementText(text);
-        range.select()
+        range.select();
     } else if (window.getSelection) {
         selection = window.getSelection();
         range = doc.createRange();
         range.selectNodeContents(text);
         selection.removeAllRanges();
-        selection.addRange(range)
+        selection.addRange(range);
     }
 }
 
@@ -10573,9 +10642,9 @@ function MarkCurrentGame() {
     $(document).ready(function() {
         $('.selGame').click(function() {
             $('.file').removeClass('activeGame');
-            $(this).parent("li").addClass('activeGame')
-        })
-    })
+            $(this).parent("li").addClass('activeGame');
+        });
+    });
 }
 document.head = document.head || document.getElementsByTagName('head')[0];
 
@@ -10586,70 +10655,73 @@ function changeFavicon(src) {
     link.rel = 'shortcut icon';
     link.href = src;
     if (oldLink) {
-        document.head.removeChild(oldLink)
+        document.head.removeChild(oldLink);
     }
-    document.head.appendChild(link)
+    document.head.appendChild(link);
 }
 
 function refreshGameList() {
-    $("#tall_a_24").load("archive_menu.php")
+    $("#tall_a_24").load("archive_menu.php");
 }
 
-function An_check(annot) {
-    a_main_box = document.getElementById("tall_a_24");
-    annot1_box = document.getElementById("tall_a_25");
-    annot2_box = document.getElementById("tcec_gui_game_info_9");
+function An_check(annot_id) {
+    let annot = document.getElementById(annot_id);
+    let a_main_box = document.getElementById("tall_a_24"),
+        annot1_box = document.getElementById("tall_a_25"),
+        annot2_box = document.getElementById("tcec_gui_game_info_9");
     if (annot.checked) {
         a_main_box.style.height = "200px";
         annot1_box.style.display = "block";
-        annot2_box.style.display = "block"
+        annot2_box.style.display = "block";
     } else {
         a_main_box.style.height = "612px";
         annot1_box.style.display = "none";
-        annot2_box.style.display = "none"
+        annot2_box.style.display = "none";
     }
 }
 
 function CheckOpen(folder) {
-    for (i = 0; i <= 30; i++) {
-        menu = document.getElementById('menu' + i);
+    for (let i = 0; i <= 30; i++) {
+        let menu = document.getElementById('menu' + i);
         if (folder.id != menu.id) {
-            menu.checked = !1
+            menu.checked = !1;
         }
     }
-    An_check(menu30)
+    An_check('menu30');
 }
-var fenPositions = new Array();
+var fenPositions = [];
 
 function resetFenPositions() {
-    fenPositions = new Array()
+    fenPositions = [];
 }
 
 function scanGameForFen() {
-    savedCurrentPly = CurrentPly;
-    savedCurrentVar = CurrentVar;
-    if (wasAutoPlayOn = isAutoPlayOn) {
-        SetAutoPlay(!1)
+    let savedCurrentPly = CurrentPly,
+        savedCurrentVar = CurrentVar,
+        wasAutoPlayOn;
+    if ((wasAutoPlayOn = isAutoPlayOn)) {
+        SetAutoPlay(!1);
     }
     MoveForward(StartPly + PlyNumber - savedCurrentPly, CurrentVar, !0);
     resetFenPositions();
     while (!0) {
         fenPositions[CurrentPly] = CurrentFEN();
         if (CurrentPly === StartPly) {
-            break
+            break;
         }
-        MoveBackward(1, !0)
+        MoveBackward(1, !0);
     }
     MoveForward(savedCurrentPly - StartPly, savedCurrentVar, !0);
     if (wasAutoPlayOn) {
-        SetAutoPlay(!0)
+        SetAutoPlay(!0);
     }
-    needScanGameForFen = !1
+    // ???
+    // needScanGameForFen = !1;
 }
 
 function getPlyOffset() {
     if (MoveComments[1] === 'book') {
-        for (var mc in MoveComments) {
+        for (let mc in MoveComments) {
             if (!mc || mc === '0') continue;
             if (MoveComments[mc] !== 'book') {
                 if (mc % 2 !== 0) {
@@ -10660,14 +10732,14 @@ function getPlyOffset() {
             }
         }
     }
-    return 0
+    return 0;
 }
 
 function drawCharts()
 {
    setSelectionEvalChart();
    setSelectionTimeChart();
-   setSelectionDepthChart()
+   setSelectionDepthChart();
    setSelectionSpeedChart();
    setSelectionTablebaseChart();
 }
@@ -10679,10 +10751,10 @@ function setSelectionEvalChart() {
             if (CurrentPly > StartPly) {
                 evalchart.setSelection([{
                     row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
-                    column: ((CurrentPly + plyOffset) % 2 ? 1 : 2)
-                }])
+                    column: ((CurrentPly + plyOffset) % 2 ? 1 : 2),
+                }]);
             } else {
-                evalchart.setSelection()
+                evalchart.setSelection();
             }
         }
     }
@@ -10695,10 +10767,10 @@ function setSelectionTimeChart() {
             if (CurrentPly > StartPly) {
                 timechart.setSelection([{
                     row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
-                    column: ((CurrentPly + plyOffset) % 2 ? 1 : 2)
-                }])
+                    column: ((CurrentPly + plyOffset) % 2 ? 1 : 2),
+                }]);
             } else {
-                timechart.setSelection()
+                timechart.setSelection();
             }
         }
     }
@@ -10711,10 +10783,10 @@ function setSelectionDepthChart() {
             if (CurrentPly > StartPly) {
                 depthchart.setSelection([{
                     row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
-                    column: (CurrentPly % 2 ? 1 : 2)
-                }])
+                    column: (CurrentPly % 2 ? 1 : 2),
+                }]);
             } else {
-                depthchart.setSelection()
+                depthchart.setSelection();
             }
         }
     }
@@ -10727,10 +10799,10 @@ function setSelectionSpeedChart() {
             if (CurrentPly > StartPly) {
                 speedchart.setSelection([{
                     row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
-                    column: (CurrentPly % 2 ? 1 : 2)
-                }])
+                    column: (CurrentPly % 2 ? 1 : 2),
+                }]);
             } else {
-                speedchart.setSelection()
+                speedchart.setSelection();
             }
         }
     }
@@ -10744,68 +10816,70 @@ function setSelectionTablebaseChart() {
                 tablebasechart.setSelection([{
                     row: (Math.ceil((CurrentPly - StartPly - plyOffset) / 2) - 1),
                     column: (CurrentPly % 2 ? 1 : 2)
-                }])
+                }]);
             } else {
-                tablebasechart.setSelection()
+                tablebasechart.setSelection();
             }
         }
     }
 }
 
-function TCECDrawRule() 
+function TCECDrawRule()
 {
     var minPlyForDraw = 80;
+    let numPliesForDraw;
     if (pgnUrl == "archive/TCEC_Season_1_-_Division_2.pgn") {
-        var numPliesForDraw = 8;
+        numPliesForDraw = 8;
     } else {
-        var numPliesForDraw = 10;
+        numPliesForDraw = 10;
     }
     var minDrawThreshold = -0.05;
     var maxDrawThreshold = +0.05;
     if (CurrentPly <= minPlyForDraw - numPliesForDraw) {
-        return "*"
+        return "*";
     }
     var thisMove;
-    var plyOffset = getPlyOffset()
+    var plyOffset = getPlyOffset();
     var moveOffset = Math.ceil(plyOffset / 2);
-    for (var thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForDraw) - numPliesForDraw; thisPly--) {
+    let thisPly;
+    for (thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForDraw) - numPliesForDraw; thisPly--) {
         if (!evalchartdata) {
-            break
+            break;
         }
         thisMove = Math.ceil(thisPly / 2);
-        thisColor = 2 + 2 * (thisPly / 2 - thisMove);
+        let thisColor = 2 + 2 * (thisPly / 2 - thisMove);
         if (typeof evalchartdata[thisMove - moveOffset] !== "object") {
-            break
+            break;
         }
         if (typeof evalchartdata[thisMove - moveOffset][thisColor] !== "number") {
-            break
+            break;
         }
         if ((evalchartdata[thisMove - moveOffset][thisColor] < minDrawThreshold) || (evalchartdata[thisMove - moveOffset][thisColor] > maxDrawThreshold)) {
-            break
+            break;
         }
         if (HistType[0][thisPly - 1] == 6) {
-            break
+            break;
         }
         if (HistPieceId[1][thisPly - 1] > 16) {
-            break
+            break;
         }
         if (MoveComments[thisPly] === "") {
-            break
+            break;
         }
     }
     var formula = numPliesForDraw + thisPly - CurrentPly;
-        ////console.log ("return here:" + formula + ",numPliesForDraw" + numPliesForDraw + "," + thisPly + "," + CurrentPly); 
-    if (((formula) <= 9) && ((formula) >= 0)) 
+        ////console.log ("return here:" + formula + ",numPliesForDraw" + numPliesForDraw + "," + thisPly + "," + CurrentPly);
+    if (((formula) <= 9) && ((formula) >= 0))
     {
         if ((formula) == 0) {
-            return 0
+            return 0;
         } else if ((formula) == 1) {
             return formula;
         } else if ((formula) != 1) {
             return formula;
         }
     } else {
-        return "*"
+        return "*";
     }
 }
 
@@ -10815,69 +10889,70 @@ function TCECWinRule() {
     var minWinThreshold = -minEval;
     var maxWinThreshold = +minEval;
     if (CurrentPly <= minPlyForWin - numPliesForWin) {
-        return "*"
+        return "*";
     }
     var thisMove;
-    var plyOffset = getPlyOffset()
+    var plyOffset = getPlyOffset();
     var moveOffset = Math.ceil(plyOffset / 2);
     var winning = 1;
-    for (var thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForWin) - numPliesForWin; thisPly--) {
+    let thisPly;
+    for (thisPly = CurrentPly; thisPly > Math.max(CurrentPly, minPlyForWin) - numPliesForWin; thisPly--) {
         if (!evalchartdata) {
-            break
+            break;
         }
         thisMove = Math.ceil(thisPly / 2);
-        thisColor = 2 + 2 * (thisPly / 2 - thisMove);
+        let thisColor = 2 + 2 * (thisPly / 2 - thisMove);
         if (typeof evalchartdata[thisMove - moveOffset] !== "object") {
-            break
+            break;
         }
         if (typeof evalchartdata[thisMove - moveOffset][thisColor] !== "number") {
-            break
+            break;
         }
 
         if ((evalchartdata[thisMove - moveOffset][thisColor] > minWinThreshold) && (evalchartdata[thisMove - moveOffset][thisColor] < maxWinThreshold)) {
            if (evalchartdata[thisMove - moveOffset][thisColor] < 0)
            {
               winning = -1;
-           } 
-            break
+           }
+            break;
         }
         if (MoveComments[thisPly] == "book") {
-            break
+            break;
         }
         if (MoveComments[thisPly] === "") {
-            break
+            break;
         }
     }
     var formula = numPliesForWin + thisPly - CurrentPly;
     if (CurrentPly > 20 && ((formula) < minMoveswin) && ((formula) >= 0)) {
         if ((formula) == 0) {
-            return 0
+            return 0;
         } else if ((formula) == 1) {
             return winning * formula;
         } else if ((formula) != 1) {
             return winning * formula;
         }
     } else {
-        return "*"
+        return "*";
     }
 }
 
 function clock2sec(string) {
-    items = string.split(':');
-    val = 0;
-    for (i in items) {
-        val = 60 * val + parseFloat(items[i])
+    let items = string.split(':'),
+        val = 0;
+    for (let item of items) {
+        val = 60 * val + parseFloat(item);
     }
-    return val
+    return val;
 }
 
 function tc2sec(string) {
-    x = string.match(/([\d]*)\+/);
-    base = Number(x[1]);
-    y = string.match(/\+([\d]*)/);
-    add = Number(y[1]);
-    tc = parseFloat(base + add);
-    return tc
+    let x = string.match(/([\d]*)\+/),
+        base = Number(x[1]),
+        y = string.match(/\+([\d]*)/),
+        add = Number(y[1]),
+        tc = parseFloat(base + add);
+    return tc;
 }
 
 function crc32(str) {
@@ -10886,28 +10961,29 @@ function crc32(str) {
     var x = 0;
     var y = 0;
     crc = crc ^ (-1);
-    for (var i = 0, iTop = str.length; i < iTop; i++) {
+    for (let i = 0, iTop = str.length; i < iTop; i++) {
         y = (crc ^ (str.charCodeAt(i) % 0x100)) & 0xFF;
         x = "0x" + table.substr(y * 9, 8);
-        crc = (crc >>> 8) ^ x
+        crc = (crc >>> 8) ^ x;
     }
-    return crc ^ (-1)
+    return crc ^ (-1);
 }
 
 function printHex(n) {
     var hex = "0123456789ABCDEF";
     var s = "";
     var r = 0;
-    for (var i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++) {
         r = n % 16;
         if (r < 0) {
-            r += 16
+            r += 16;
         }
         s = hex.charAt(r) + s;
-        n >>= 4
+        n >>= 4;
     }
-    return s
-};
+    return s;
+}
+
 (function($) {
     var methods = (function() {
         var c = {
@@ -10920,29 +10996,29 @@ function printHex(n) {
                 $(window).load(function() {
                     $('body').children().on('click.superclick', function() {
                         var $allMenus = $('.sf-js-enabled');
-                        $allMenus.superclick('reset')
-                    })
-                })
+                        $allMenus.superclick('reset');
+                    });
+                });
             })(),
             toggleMenuClasses = function($menu, o) {
                 var classes = c.menuClass;
                 if (o.cssArrows) {
-                    classes += ' ' + c.menuArrowClass
+                    classes += ' ' + c.menuArrowClass;
                 }
-                $menu.toggleClass(classes)
+                $menu.toggleClass(classes);
             },
             setPathToCurrent = function($menu, o) {
                 return $menu.find('li.' + o.pathClass).slice(0, o.pathLevels).addClass(o.activeClass + ' ' + c.bcClass).filter(function() {
-                    return ($(this).children('ul').hide().show().length)
-                }).removeClass(o.pathClass)
+                    return ($(this).children('ul').hide().show().length);
+                }).removeClass(o.pathClass);
             },
             toggleAnchorClass = function($li) {
-                $li.children('a').toggleClass(c.anchorClass)
+                $li.children('a').toggleClass(c.anchorClass);
             },
             toggleTouchAction = function($menu) {
                 var touchAction = $menu.css('ms-touch-action');
                 touchAction = (touchAction === 'pan-y') ? 'auto' : 'pan-y';
-                $menu.css('ms-touch-action', touchAction)
+                $menu.css('ms-touch-action', touchAction);
             },
             clickHandler = function(e) {
                 var $this = $(this),
@@ -10951,18 +11027,18 @@ function printHex(n) {
                 if ($ul.length) {
                     func = ($ul.is(':hidden')) ? over : out;
                     $.proxy(func, $this.parent('li'))();
-                    return !1
+                    return !1;
                 }
             },
             over = function() {
                 var $this = $(this),
                     o = getOptions($this);
-                $this.siblings().superclick('hide').end().superclick('show')
+                $this.siblings().superclick('hide').end().superclick('show');
             },
             out = function() {
                 var $this = $(this),
                     o = getOptions($this);
-                $.proxy(close, $this, o)()
+                $.proxy(close, $this, o)();
             },
             close = function(o) {
                 o.retainPath = ($.inArray(this[0], o.$path) > -1);
@@ -10970,15 +11046,15 @@ function printHex(n) {
                 if (!this.parents('.' + o.activeClass).length) {
                     o.onIdle.call(getMenu(this));
                     if (o.$path.length) {
-                        $.proxy(over, o.$path)()
+                        $.proxy(over, o.$path)();
                     }
                 }
             },
             getMenu = function($el) {
-                return $el.closest('.' + c.menuClass)
+                return $el.closest('.' + c.menuClass);
             },
             getOptions = function($el) {
-                return getMenu($el).data('sf-options')
+                return getMenu($el).data('sf-options');
             };
         return {
             hide: function(instant) {
@@ -10986,36 +11062,36 @@ function printHex(n) {
                     var $this = this,
                         o = getOptions($this);
                     if (!o) {
-                        return this
+                        return this;
                     }
-                    var not = (o.retainPath === !0) ? o.$path : '',
+                    var not = (o.retainPath === true) ? o.$path : '',
                         $ul = $this.find('li.' + o.activeClass).add(this).not(not).removeClass(o.activeClass).children('ul'),
                         speed = o.speedOut;
                     if (instant) {
                         $ul.show();
-                        speed = 0
+                        speed = 0;
                     }
                     o.retainPath = !1;
                     o.onBeforeHide.call($ul);
                     $ul.stop(!0, !0).animate(o.animationOut, speed, function() {
                         var $this = $(this);
-                        o.onHide.call($this)
-                    })
+                        o.onHide.call($this);
+                    });
                 }
-                return this
+                return this;
             },
             show: function() {
                 var o = getOptions(this);
                 if (!o) {
-                    return this
+                    return this;
                 }
                 var $this = this.addClass(o.activeClass),
                     $ul = $this.children('ul');
                 o.onBeforeShow.call($ul);
                 $ul.stop(!0, !0).animate(o.animation, o.speed, function() {
-                    o.onShow.call($ul)
+                    o.onShow.call($ul);
                 });
-                return this
+                return this;
             },
             destroy: function() {
                 return this.each(function() {
@@ -11023,34 +11099,34 @@ function printHex(n) {
                         o = $this.data('sf-options'),
                         $liHasUl = $this.find('li:has(ul)');
                     if (!o) {
-                        return !1
+                        return !1;
                     }
                     toggleMenuClasses($this, o);
                     toggleAnchorClass($liHasUl);
                     toggleTouchAction($this);
                     $this.off('.superclick');
                     $liHasUl.children('ul').attr('style', function(i, style) {
-                        return style.replace(/display[^;]+;?/g, '')
+                        return style.replace(/display[^;]+;?/g, '');
                     });
                     o.$path.removeClass(o.activeClass + ' ' + c.bcClass).addClass(o.pathClass);
                     $this.find('.' + o.activeClass).removeClass(o.activeClass);
                     o.onDestroy.call($this);
-                    $this.removeData('sf-options')
-                })
+                    $this.removeData('sf-options');
+                });
             },
             reset: function() {
                 return this.each(function() {
                     var $menu = $(this),
                         o = getOptions($menu),
                         $openLis = $($menu.find('.' + o.activeClass).toArray().reverse());
-                    $openLis.children('a').trigger('click')
-                })
+                    $openLis.children('a').trigger('click');
+                });
             },
             init: function(op) {
                 return this.each(function() {
                     var $this = $(this);
                     if ($this.data('sf-options')) {
-                        return !1
+                        return !1;
                     }
                     var o = $.extend({}, $.fn.superclick.defaults, op),
                         $liHasUl = $this.find('li:has(ul)');
@@ -11061,18 +11137,18 @@ function printHex(n) {
                     toggleTouchAction($this);
                     $this.on('click.superclick', 'a', clickHandler);
                     $liHasUl.not('.' + c.bcClass).superclick('hide', !0);
-                    o.onInit.call(this)
-                })
+                    o.onInit.call(this);
+                });
             }
-        }
+        };
     })();
     $.fn.superclick = function(method, args) {
         if (methods[method]) {
-            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1))
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
         } else if (typeof method === 'object' || !method) {
-            return methods.init.apply(this, arguments)
+            return methods.init.apply(this, arguments);
         } else {
-            return $.error('Method ' + method + ' does not exist on jQuery.fn.superclick')
+            return $.error('Method ' + method + ' does not exist on jQuery.fn.superclick');
         }
     };
     $.fn.superclick.defaults = {
@@ -11095,166 +11171,170 @@ function printHex(n) {
         onHide: $.noop,
         onIdle: $.noop,
         onDestroy: $.noop
-    }
-})
+    };
+});
 /* (jQuery); uncomment this to display live clocks */
 
 function StatusCheck() {
     var server_status = LiveBroadcastLastModified.getTime();
-    whenStarted = new Date().getTime();
+    let whenStarted = new Date().getTime();
     if (currentPage == "live.html") {
-        theObject = document.getElementById("gameFeed");
+        let theObject = document.getElementById("gameFeed");
         if (theObject) {
             if (whenStarted > (server_status + 300000)) {
                 theObject.innerHTML = "Offline " + Math.round(((whenStarted - server_status) / 1000) / 60) + "m";
-                theObject.style.color = "#9d0d00"
+                theObject.style.color = "#9d0d00";
             } else {
                 theObject.innerHTML = "Online";
-                theObject.style.color = "#007d0a"
+                theObject.style.color = "#007d0a";
             }
         }
     }
 }
 
 function Coor() {
+    let theObj;
+
     if (localStorage.getItem('TCEC_Coor') == 'Off') {
-        theObj1 = document.getElementById("GameCoorRight");
-        theObj2 = document.getElementById("GameCoorBottom");
+        let theObj1 = document.getElementById("GameCoorRight"),
+            theObj2 = document.getElementById("GameCoorBottom");
         if ((theObj1) && (theObj2)) {
             theObj1.style.display = 'block';
-            theObj2.style.display = 'block'
+            theObj2.style.display = 'block';
         }
-        if (theObj = document.getElementById("tcec_gui_matclo_b")) {
+        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "423px" : "0"
+            theObj.style.top = flipped ? "423px" : "0";
         }
-        if (theObj = document.getElementById("tcec_gui_matclo_w")) {
+        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "-423px" : "0"
+            theObj.style.top = flipped ? "-423px" : "0";
         }
-        Obj = document.getElementById("coor-check");
+        let Obj = document.getElementById("coor-check");
         if (Obj) {
-            Obj.src = "./img/check.png"
+            Obj.src = "./img/check.png";
         }
-        theObjx = document.getElementById("info_row_data_2_mo");
-        theObjy = document.getElementById("GameMoves");
+        let theObjx = document.getElementById("info_row_data_2_mo"),
+            theObjy = document.getElementById("GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_FEN') == 'Off') {
                 theObjx.style.height = "132px";
-                theObjy.style.height = "126px"
+                theObjy.style.height = "126px";
             } else {
                 theObjx.style.height = "109px";
-                theObjy.style.height = "103px"
+                theObjy.style.height = "103px";
             }
         }
     } else if (localStorage.getItem('TCEC_Coor') == 'Off') {
-        theObj1 = document.getElementById("GameCoorRight");
-        theObj2 = document.getElementById("GameCoorBottom");
+        let theObj1 = document.getElementById("GameCoorRight"),
+            theObj2 = document.getElementById("GameCoorBottom");
         if ((theObj1) && (theObj2)) {
             theObj1.style.display = 'none';
-            theObj2.style.display = 'none'
+            theObj2.style.display = 'none';
         }
-        if (theObj = document.getElementById("tcec_gui_matclo_b")) {
+        if ((theObj = document.getElementById("tcec_gui_matclo_b"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "411px" : "0"
+            theObj.style.top = flipped ? "411px" : "0";
         }
-        if (theObj = document.getElementById("tcec_gui_matclo_w")) {
+        if ((theObj = document.getElementById("tcec_gui_matclo_w"))) {
             theObj.style.position = "relative";
-            theObj.style.top = flipped ? "-411px" : "0"
+            theObj.style.top = flipped ? "-411px" : "0";
         }
-        Obj = document.getElementById("coor-check");
+        let Obj = document.getElementById("coor-check");
         if (Obj) {
-            Obj.src = "./img/check_empty.png"
+            Obj.src = "./img/check_empty.png";
         }
-        theObjx = document.getElementById("info_row_data_2_mo");
-        theObjy = document.getElementById("GameMoves");
+        let theObjx = document.getElementById("info_row_data_2_mo"),
+            theObjy = document.getElementById("GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_FEN') == 'Off') {
                 theObjx.style.height = "144px";
-                theObjy.style.height = "138px"
+                theObjy.style.height = "138px";
             } else {
                 theObjx.style.height = "121px";
-                theObjy.style.height = "115px"
+                theObjy.style.height = "115px";
             }
         }
     }
 }
 
 function Fen() {
+    let theObj;
+
     if (localStorage.getItem('TCEC_FEN') == 'Off') {
         theObj = document.getElementById("FenPosition");
         if (theObj) {
-            theObj.style.display = 'block'
+            theObj.style.display = 'block';
         }
-        Obj = document.getElementById("fen-check");
+        let Obj = document.getElementById("fen-check");
         if (Obj) {
-            Obj.src = "./img/check.png"
+            Obj.src = "./img/check.png";
         }
-        theObjx = document.getElementById("info_row_data_2_mo");
-        theObjy = document.getElementById("GameMoves");
+        let theObjx = document.getElementById("info_row_data_2_mo"),
+            theObjy = document.getElementById("GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_Coor') == 'Off') {
                 theObjx.style.height = "121px";
-                theObjy.style.height = "115px"
+                theObjy.style.height = "115px";
             } else {
                 theObjx.style.height = "109px";
-                theObjy.style.height = "103px"
+                theObjy.style.height = "103px";
             }
         }
     } else if (localStorage.getItem('TCEC_FEN') == 'Off') {
         theObj = document.getElementById("FenPosition");
         if (theObj) {
-            theObj.style.display = 'none'
+            theObj.style.display = 'none';
         }
-        Obj = document.getElementById("fen-check");
+        let Obj = document.getElementById("fen-check");
         if (Obj) {
-            Obj.src = "./img/check_empty.png"
+            Obj.src = "./img/check_empty.png";
         }
-        theObjx = document.getElementById("info_row_data_2_mo");
-        theObjy = document.getElementById("GameMoves");
+        let theObjx = document.getElementById("info_row_data_2_mo"),
+            theObjy = document.getElementById("GameMoves");
         if ((theObjx) && (theObjy)) {
             if (localStorage.getItem('TCEC_Coor') == 'Off') {
                 theObjx.style.height = "144px";
-                theObjy.style.height = "138px"
+                theObjy.style.height = "138px";
             } else {
                 theObjx.style.height = "132px";
-                theObjy.style.height = "126px"
+                theObjy.style.height = "126px";
             }
         }
     }
 }
 
 function Chat() {
-    theObj = document.getElementById("chat-box");
-    theObj2 = document.getElementById("chat-box-hidden");
-    theObj3 = document.getElementById("chat-check");
+    let theObj = document.getElementById("chat-box"),
+        theObj2 = document.getElementById("chat-box-hidden"),
+        theObj3 = document.getElementById("chat-check");
     if (localStorage.getItem('TCEC_Chat') == 'On') {
         if (theObj) {
-            theObj.style.display = 'block'
+            theObj.style.display = 'block';
         }
         if (theObj2) {
-            theObj2.style.display = 'none'
+            theObj2.style.display = 'none';
         }
         if (theObj3) {
-            theObj3.src = "./img/check.png"
+            theObj3.src = "./img/check.png";
         }
     } else if (localStorage.getItem('TCEC_Chat') == 'Off') {
         if (theObj) {
-            theObj.style.display = 'none'
+            theObj.style.display = 'none';
         }
         if (theObj2) {
-            theObj2.style.display = 'block'
+            theObj2.style.display = 'block';
         }
         if (theObj3) {
-            theObj3.src = "./img/check_empty.png"
+            theObj3.src = "./img/check_empty.png";
         }
     }
 }
 
 
-function Twota() 
+function Twota()
 {
-    var theObj = document.getElementById("chatright");
+    let theObj = document.getElementById("chatright");
     if (theObj) {
         if ("On" == localStorage.getItem("TCEC_Twiota")) {
             theObj.src = "http://www.twitch.tv/embed/TCEC_Chess_TV/chat";
@@ -11265,42 +11345,43 @@ function Twota()
 }
 
 function HideE() {
-    blackObj = document.getElementById("black-eval-box");
-    whiteObj = document.getElementById("white-eval-box");
-    chartObj = document.getElementById("info_row_ch_ev");
-    Obj = document.getElementById("eval-check");
-    numGraphs = +localStorage.getItem('TCEC_Grap');
+    let blackObj = document.getElementById("black-eval-box"),
+        whiteObj = document.getElementById("white-eval-box"),
+        chartObj = document.getElementById("info_row_ch_ev"),
+        Obj = document.getElementById("eval-check"),
+        numGraphs = +localStorage.getItem('TCEC_Grap');
+
     if (localStorage.getItem('YLCET_HEva') == 'On') {
         if (blackObj) {
-            blackObj.style.display = 'none'
+            blackObj.style.display = 'none';
         }
         if (whiteObj) {
-            whiteObj.style.display = 'none'
+            whiteObj.style.display = 'none';
         }
         if (chartObj) {
-            chartObj.style.display = 'none'
+            chartObj.style.display = 'none';
         }
         if (localStorage.getItem('TCEC_GraE') == 'On') {
             localStorage.setItem('TCEC_GraE', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
         if (Obj) {
-            Obj.src = "./img/check.png"
+            Obj.src = "./img/check.png";
         }
     } else if (localStorage.getItem('YLCET_HEva') == 'Off') {
         if (blackObj) {
-            blackObj.style.display = 'block'
+            blackObj.style.display = 'block';
         }
         if (whiteObj) {
-            whiteObj.style.display = 'block'
+            whiteObj.style.display = 'block';
         }
         if (localStorage.getItem('TCEC_GraE') == 'On') {
             if (chartObj) {
-                chartObj.style.display = 'block'
+                chartObj.style.display = 'block';
             }
         }
         if (Obj) {
-            Obj.src = "./img/check_empty.png"
+            Obj.src = "./img/check_empty.png";
         }
     }
 }
@@ -11308,82 +11389,84 @@ function HideE() {
 
 function Soun() {
     if (currentPage == "live.html") {
-        OnOff = localStorage.getItem("YL_SOUND");
+        let OnOff = localStorage.getItem("YL_SOUND");
         if (pvcurrentGame != gameRound[currentGame])
         {
             SoundCount = 1;
         }
         if (PlyNumber >= SoundCount) {
             if (OnOff == 1) {
-                document.getElementById('move_sound').play()
+                document.getElementById('move_sound').play();
             }
-            SoundCount = PlyNumber + 1
+            SoundCount = PlyNumber + 1;
         }
     }
 }
 
 function Fonts() {
-    FontChoice = localStorage.getItem("YLCET_font");
-    Obj1 = document.getElementById("fontme-check");
+    let FontChoice = localStorage.getItem("YLCET_font"),
+        Obj1 = document.getElementById("fontme-check");
     Obj1.src = "./img/check_empty.png";
-    Obj2 = document.getElementById("fontal-check");
+    let Obj2 = document.getElementById("fontal-check");
     Obj2.src = "./img/check_empty.png";
-    Obj3 = document.getElementById("fontus-check");
+    let Obj3 = document.getElementById("fontus-check");
     Obj3.src = "./img/check_empty.png";
-    Obj4 = document.getElementById("fontis-check");
+    let Obj4 = document.getElementById("fontis-check");
     Obj4.src = "./img/check_empty.png";
-    Obj5 = document.getElementById("fontcs-check");
+    let Obj5 = document.getElementById("fontcs-check");
     Obj5.src = "./img/check_empty.png";
-    Obj6 = document.getElementById("fontts-check");
+    let Obj6 = document.getElementById("fontts-check");
     Obj6.src = "./img/check_empty.png";
     if (FontChoice == 'ME') {
         if (Obj1) {
             Obj1.src = "./img/check.png";
             SetImageType("png");
-            SetImagePath("img/merida/44")
+            SetImagePath("img/merida/44");
         }
     } else if (FontChoice == 'AL') {
         if (Obj2) {
             Obj2.src = "./img/check.png";
             SetImageType("png");
-            SetImagePath("img/alpha/44")
+            SetImagePath("img/alpha/44");
         }
     } else if (FontChoice == 'US') {
         if (Obj3) {
             Obj3.src = "./img/check.png";
             SetImageType("png");
-            SetImagePath("img/uscf/44")
+            SetImagePath("img/uscf/44");
         }
     } else if (FontChoice == 'IS') {
         if (Obj4) {
             Obj4.src = "./img/check.png";
             SetImageType("svg");
-            SetImagePath("img/igorsvg")
+            SetImagePath("img/igorsvg");
         }
     } else if (FontChoice == 'CS') {
         if (Obj5) {
             Obj5.src = "./img/check.png";
             SetImageType("svg");
-            SetImagePath("img/colinsvg")
+            SetImagePath("img/colinsvg");
         }
     } else if (FontChoice == 'TS') {
         if (Obj6) {
             Obj6.src = "./img/check.png";
             SetImageType("svg");
-            SetImagePath("img/tilesvg")
+            SetImagePath("img/tilesvg");
         }
     }
 }
 
 function NightM() {
-    OnOff = localStorage.getItem('TCEC_Nigh');
-    Obj = document.getElementById("nigh-check");
-    setNight = document.getElementById("nightm");
-    setNight2 = document.getElementById('whitePv').contentWindow.document.getElementById('nightmpv');
-    setNight3 = document.getElementById('blackPv').contentWindow.document.getElementById('nightmpv');
+    let OnOff = localStorage.getItem('TCEC_Nigh'),
+        Obj = document.getElementById("nigh-check"),
+        setNight = document.getElementById("nightm"),
+        setNight2 = document.getElementById('whitePv').contentWindow.document.getElementById('nightmpv'),
+        setNight3 = document.getElementById('blackPv').contentWindow.document.getElementById('nightmpv');
+
+    let option1, option2, option3, option4, option5, option6;
     if (OnOff == 'On') {
         if (Obj) {
-            Obj.src = "./img/check.png"
+            Obj.src = "./img/check.png";
         }
         option1 = '#tcec_gui_1 {background:#a9a9a9;}';
         option2 = 'body {background:url(img/wood3.jpg)}';
@@ -11391,15 +11474,15 @@ function NightM() {
         option4 = '.engine_box_data_2_mt, .engine_box_data_2_ev, .engine_box_data_2_de, .engine_box_data_2_sp, .engine_box_data_2_no, .engine_box_data_2_tb {background:#cccccc}';
         option5 = '.info_row_data_2_pv {background:#cccccc}';
         option6 = '.sf-menu ul {background:#cccccc}';
-        moves3 = document.getElementById("info_row_data_2_mo");
+        let moves3 = document.getElementById("info_row_data_2_mo");
         moves3.style.backgroundColor = "#cccccc";
         if (currentPage == "archive.php") {
-            moves2 = document.getElementById("tall_a_24");
-            moves2.style.backgroundColor = "#cccccc"
+            let moves2 = document.getElementById("tall_a_24");
+            moves2.style.backgroundColor = "#cccccc";
         }
     } else if (OnOff == 'Off') {
         if (Obj) {
-            Obj.src = "./img/check_empty.png"
+            Obj.src = "./img/check_empty.png";
         }
         option1 = '#tcec_gui_1 {background:#d4d0c8;}';
         option2 = 'body {background:url(img/wood2.jpg)}';
@@ -11407,84 +11490,84 @@ function NightM() {
         option4 = '.engine_box_data_2_mt, .engine_box_data_2_ev, .engine_box_data_2_de, .engine_box_data_2_sp, .engine_box_data_2_no, .engine_box_data_2_tb {background:white}';
         option5 = '.info_row_data_2_pv {background:white}';
         option6 = '.sf-menu ul {background:#d4d0c8}';
-        moves3 = document.getElementById("info_row_data_2_mo");
+        let moves3 = document.getElementById("info_row_data_2_mo");
         moves3.style.backgroundColor = "white";
         if (currentPage == "archive.php") {
-            moves2 = document.getElementById("tall_a_24");
-            moves2.style.backgroundColor = "white"
+            let moves2 = document.getElementById("tall_a_24");
+            moves2.style.backgroundColor = "white";
         }
     }
     setNight.innerHTML = option1 + option2 + option3 + option4 + option6;
     setNight2.innerHTML = option5;
-    setNight3.innerHTML = option5
+    setNight3.innerHTML = option5;
 }
 
 
 function Graphs() {
-    numGraphs = +localStorage.getItem('TCEC_Grap');
-    egra = document.getElementById("egra-check");
-    tgra = document.getElementById("tgra-check");
-    dgra = document.getElementById("dgra-check");
-    sgra = document.getElementById("sgra-check");
-    tbgra = document.getElementById("tbgra-check");
-    egra2 = document.getElementById("info_row_ch_ev");
-    tgra2 = document.getElementById("info_row_ch_ti");
-    dgra2 = document.getElementById("info_row_ch_de");
-    sgra2 = document.getElementById("info_row_ch_sp");
-    tbgra2 = document.getElementById("info_row_ch_tb");
+    let // numGraphs = +localStorage.getItem('TCEC_Grap'),
+        egra = document.getElementById("egra-check"),
+        tgra = document.getElementById("tgra-check"),
+        dgra = document.getElementById("dgra-check"),
+        sgra = document.getElementById("sgra-check"),
+        tbgra = document.getElementById("tbgra-check"),
+        egra2 = document.getElementById("info_row_ch_ev"),
+        tgra2 = document.getElementById("info_row_ch_ti"),
+        dgra2 = document.getElementById("info_row_ch_de"),
+        sgra2 = document.getElementById("info_row_ch_sp"),
+        tbgra2 = document.getElementById("info_row_ch_tb");
     if (localStorage.getItem('TCEC_GraE') == 'Off') {
         if (egra) {
             egra.src = "./img/check_empty.png";
-            egra2.style.display = "none"
+            egra2.style.display = "none";
         }
     } else {
         if (egra) {
             egra.src = "./img/check.png";
-            egra2.style.display = "block"
+            egra2.style.display = "block";
         }
     }
     if (localStorage.getItem('TCEC_GraT') == 'Off') {
         if (tgra) {
             tgra.src = "./img/check_empty.png";
-            tgra2.style.display = "none"
+            tgra2.style.display = "none";
         }
     } else {
         if (tgra) {
             tgra.src = "./img/check.png";
-            tgra2.style.display = "block"
+            tgra2.style.display = "block";
         }
     }
     if (localStorage.getItem('TCEC_GraD') == 'Off') {
         if (dgra) {
             dgra.src = "./img/check_empty.png";
-            dgra2.style.display = "none"
+            dgra2.style.display = "none";
         }
     } else {
         if (dgra) {
             dgra.src = "./img/check.png";
-            dgra2.style.display = "block"
+            dgra2.style.display = "block";
         }
     }
     if (localStorage.getItem('TCEC_GraS') == 'Off') {
         if (sgra) {
             sgra.src = "./img/check_empty.png";
-            sgra2.style.display = "none"
+            sgra2.style.display = "none";
         }
     } else {
         if (sgra) {
             sgra.src = "./img/check.png";
-            sgra2.style.display = "block"
+            sgra2.style.display = "block";
         }
     }
     if (localStorage.getItem('TCEC_GraTB') == 'Off') {
         if (tbgra) {
             tbgra.src = "./img/check_empty.png";
-            tbgra2.style.display = "none"
+            tbgra2.style.display = "none";
         }
     } else {
         if (tbgra) {
             tbgra.src = "./img/check.png";
-            tbgra2.style.display = "block"
+            tbgra2.style.display = "block";
         }
     }
 
@@ -11493,50 +11576,50 @@ function Graphs() {
 
 
 function GraphTog(id) {
-    numGraphs = +localStorage.getItem('TCEC_Grap');
+    let numGraphs = +localStorage.getItem('TCEC_Grap');
     if (id == "EGra") {
         if (localStorage.getItem('TCEC_GraE') == 'Off') {
             if (localStorage.getItem('YLCET_HEva') == 'On') {
-                alert('To show the eval graph you need to uncheck the "Hide evaluation" option in the Tools menu first.')
+                alert('To show the eval graph you need to uncheck the "Hide evaluation" option in the Tools menu first.');
             } else {
                 localStorage.setItem('TCEC_GraE', 'On');
-                localStorage.setItem('TCEC_Grap', numGraphs + 1)
+                localStorage.setItem('TCEC_Grap', numGraphs + 1);
             }
         } else {
             localStorage.setItem('TCEC_GraE', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
     } else if (id == "TGra") {
         if (localStorage.getItem('TCEC_GraT') == 'Off') {
             localStorage.setItem('TCEC_GraT', 'On');
-            localStorage.setItem('TCEC_Grap', numGraphs + 1)
+            localStorage.setItem('TCEC_Grap', numGraphs + 1);
         } else {
             localStorage.setItem('TCEC_GraT', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
     } else if (id == "DGra") {
         if (localStorage.getItem('TCEC_GraD') == 'Off') {
             localStorage.setItem('TCEC_GraD', 'On');
-            localStorage.setItem('TCEC_Grap', numGraphs + 1)
+            localStorage.setItem('TCEC_Grap', numGraphs + 1);
         } else {
             localStorage.setItem('TCEC_GraD', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
     } else if (id == "SGra") {
         if (localStorage.getItem('TCEC_GraS') == 'Off') {
             localStorage.setItem('TCEC_GraS', 'On');
-            localStorage.setItem('TCEC_Grap', numGraphs + 1)
+            localStorage.setItem('TCEC_Grap', numGraphs + 1);
         } else {
             localStorage.setItem('TCEC_GraS', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
     } else if (id == "TBGra") {
         if (localStorage.getItem('TCEC_GraTB') == 'Off') {
             localStorage.setItem('TCEC_GraTB', 'On');
-            localStorage.setItem('TCEC_Grap', numGraphs + 1)
+            localStorage.setItem('TCEC_Grap', numGraphs + 1);
         } else {
             localStorage.setItem('TCEC_GraTB', 'Off');
-            localStorage.setItem('TCEC_Grap', numGraphs - 1)
+            localStorage.setItem('TCEC_Grap', numGraphs - 1);
         }
     }
     Graphs();
@@ -11545,7 +11628,7 @@ function GraphTog(id) {
     depthchart.clearChart();
     speedchart.clearChart();
     tablebasechart.clearChart();
-    customFunctionOnPgnGameLoad()
+    customFunctionOnPgnGameLoad();
 }
 
 function NighTog() {
@@ -11557,7 +11640,7 @@ function NighTog() {
         depthchart.clearChart();
         speedchart.clearChart();
         tablebasechart.clearChart();
-        customFunctionOnPgnGameLoad()
+        customFunctionOnPgnGameLoad();
     } else {
         localStorage.setItem('TCEC_Nigh', 'On');
         NightM();
@@ -11566,14 +11649,14 @@ function NighTog() {
         depthchart.clearChart();
         speedchart.clearChart();
         tablebasechart.clearChart();
-        customFunctionOnPgnGameLoad()
+        customFunctionOnPgnGameLoad();
     }
 }
 
 function FontTog(id) {
-    hvitPV = window.whitePv;
-    sortPV = window.blackPv;
-    boardAna = window.analysisBoard;
+    let hvitPV = window.whitePv,
+        sortPV = window.blackPv,
+        boardAna = window.analysisBoard;
     switch (id) {
         case "ME":
             localStorage.setItem('YLCET_font', 'ME');
@@ -11592,8 +11675,9 @@ function FontTog(id) {
             break;
         case "TS":
             localStorage.setItem('YLCET_font', 'TS');
-            break
+            break;
     }
+    // ???
     Themes();
     Fonts();
     InitImages();
@@ -11602,17 +11686,17 @@ function FontTog(id) {
     if (hvitPV) {
         hvitPV.FontsPv();
         hvitPV.InitImages();
-        hvitPV.RefreshBoard()
+        hvitPV.RefreshBoard();
     }
     if (sortPV) {
         sortPV.FontsPv();
         sortPV.InitImages();
-        sortPV.RefreshBoard()
+        sortPV.RefreshBoard();
     }
     if (boardAna) {
         boardAna.FontsAna();
         boardAna.InitImages();
-        boardAna.RefreshBoard()
+        boardAna.RefreshBoard();
     }
     PvSel();
 }
@@ -11620,47 +11704,50 @@ function FontTog(id) {
 function CoorTog() {
     if (localStorage.getItem('TCEC_Coor') == 'On') {
         localStorage.setItem('TCEC_Coor', 'Off');
-        Coor()
+        Coor();
     } else {
         localStorage.setItem('TCEC_Coor', 'On');
-        Coor()
+        Coor();
     }
 }
 
 function FenTog() {
     if (localStorage.getItem('TCEC_FEN') == 'On') {
         localStorage.setItem('TCEC_FEN', 'Off');
-        Fen()
+        Fen();
     } else {
         localStorage.setItem('TCEC_FEN', 'On');
-        Fen()
+        Fen();
     }
 }
 
 function ChatTog() {
     if (localStorage.getItem('TCEC_Chat') == 'On') {
         localStorage.setItem('TCEC_Chat', 'Off');
-        Chat()
+        Chat();
     } else {
         localStorage.setItem('TCEC_Chat', 'On');
-        Chat()
+        Chat();
     }
 }
 
 function RotaTog() {
     if (localStorage.getItem('TCEC_Rota') == 'On') {
         localStorage.setItem('TCEC_Rota', 'Off');
-        Rota()
+        // ???
+        Rota();
     } else {
         localStorage.setItem('TCEC_Rota', 'On');
-        Rota()
+        Rota();
     }
 }
 
 function TwiTog() {
-    "On" == localStorage.getItem("TCEC_Twiota") ?
-        (localStorage.setItem("TCEC_Twiota", "Off"), Twota()) :
-        (localStorage.setItem("TCEC_Twiota", "On"), Twota());
+    if (localStorage.getItem("TCEC_Twiota") == 'On')
+        localStorage.setItem("TCEC_Twiota", "Off");
+    else
+        localStorage.setItem("TCEC_Twiota", "On");
+    Twota();
 }
 
 function HideETog() {
@@ -11668,38 +11755,38 @@ function HideETog() {
         localStorage.setItem('YLCET_HEva', 'Off');
         HideE();
         Graphs();
-        customFunctionOnPgnGameLoad()
+        customFunctionOnPgnGameLoad();
     } else {
         localStorage.setItem('YLCET_HEva', 'On');
         HideE();
         Graphs();
-        customFunctionOnPgnGameLoad()
+        customFunctionOnPgnGameLoad();
     }
 }
 
 function PvsTog(id) {
     if (id == "pvF") {
-        localStorage.setItem('TCEC_PvS', 'First')
+        localStorage.setItem('TCEC_PvS', 'First');
     } else if (id == "pvD") {
-        localStorage.setItem('TCEC_PvS', 'Dive')
+        localStorage.setItem('TCEC_PvS', 'Dive');
     } else if (id == "pv5") {
-        localStorage.setItem('TCEC_PvS', 'Five')
+        localStorage.setItem('TCEC_PvS', 'Five');
     } else if (id == "pvL") {
-        localStorage.setItem('TCEC_PvS', 'Last')
+        localStorage.setItem('TCEC_PvS', 'Last');
     }
-    PvSel()
+    PvSel();
 }
 
-function PvSel() 
+function PvSel()
 {
-   wPv = window.whitePv;
-   bPv = window.blackPv;
-   if (wPv && wPv.SetInitialHalfmove) 
+   let wPv = window.whitePv,
+       bPv = window.blackPv;
+   if (wPv && wPv.SetInitialHalfmove)
    {
       wPv.SetInitialHalfmove("commentplusone");
       wPv.GoToInitialHalfmove();
    }
-   if (bPv && bPv.SetInitialHalfmove) 
+   if (bPv && bPv.SetInitialHalfmove)
    {
       bPv.SetInitialHalfmove("commentplusone");
       bPv.GoToInitialHalfmove();
@@ -11709,122 +11796,122 @@ function PvSel()
 function SounTog() {
     if (localStorage.getItem('TCEC_Soun') == 'On') {
         localStorage.setItem('TCEC_Soun', 'Off');
-        Soun()
+        Soun();
     } else {
         localStorage.setItem('TCEC_Soun', 'On');
-        Soun()
+        Soun();
     }
 }
 
 function About() {
-    theObj = document.getElementById("about_1")
-    theObz = document.getElementById("credits_1")
+    let theObj = document.getElementById("about_1"),
+        theObz = document.getElementById("credits_1");
     if (theObj) {
         if (theObj.style.display == "none") {
-            theObj.style.display = "block"
+            theObj.style.display = "block";
         } else {
-            theObj.style.display = "none"
+            theObj.style.display = "none";
         }
         if (theObz.style.display == "block") {
-            theObz.style.display = "none"
+            theObz.style.display = "none";
         }
     }
 }
 
 function OBook() {
-    theObj = document.getElementById("opening_1")
+    let theObj = document.getElementById("opening_1");
     if (theObj) {
         if (theObj.style.display == "none") {
-            theObj.style.display = "block"
+            theObj.style.display = "block";
         } else {
-            theObj.style.display = "none"
+            theObj.style.display = "none";
         }
     }
 }
 
 function Rules() {
-    theObj = document.getElementById("rules_1")
+    let theObj = document.getElementById("rules_1");
     if (theObj) {
         if (theObj.style.display == "none") {
-            theObj.style.display = "block"
+            theObj.style.display = "block";
         } else {
-            theObj.style.display = "none"
+            theObj.style.display = "none";
         }
     }
 }
 
 function Credits() {
-    theObj = document.getElementById("credits_1")
+    let theObj = document.getElementById("credits_1");
     if (theObj) {
         if (theObj.style.display == "none") {
-            theObj.style.display = "block"
+            theObj.style.display = "block";
         } else {
-            theObj.style.display = "none"
+            theObj.style.display = "none";
         }
     }
 }
 
 function ViewPGN(oneGameOnly) {
     var text = '';
-    theObj = document.getElementById("view_PGN")
-    theObj2 = document.getElementById("view_PGN_5")
-    theObj3 = document.getElementById("ViewPGNPart")
+    let theObj = document.getElementById("view_PGN"),
+        theObj2 = document.getElementById("view_PGN_5"),
+        theObj3 = document.getElementById("ViewPGNPart");
     if (theObj) {
         if (theObj.style.display == "none") {
             theObj.style.display = "block";
             if (oneGameOnly) {
                 text += fullPgnGame(currentGame) + "\n\n";
-                theObj3.innerHTML = gameEvent[currentGame] + ',&nbsp;Round&nbsp;' + gameRound[currentGame] + '&nbsp;-&nbsp;' + gameWhite[currentGame] + '&nbsp;vs&nbsp;' + gameBlack[currentGame]
+                theObj3.innerHTML = gameEvent[currentGame] + ',&nbsp;Round&nbsp;' + gameRound[currentGame] + '&nbsp;-&nbsp;' + gameWhite[currentGame] + '&nbsp;vs&nbsp;' + gameBlack[currentGame];
             } else {
-                for (var ii = 0; ii < numberOfGames; ++ii) {
-                    text += fullPgnGame(ii) + "\n\n"
+                for (let ii = 0; ii < numberOfGames; ++ii) {
+                    text += fullPgnGame(ii) + "\n\n";
                 }
-                theObj3.innerHTML = gameEvent[currentGame] + '&nbsp;-&nbsp;All&nbsp;Games'
+                theObj3.innerHTML = gameEvent[currentGame] + '&nbsp;-&nbsp;All&nbsp;Games';
             }
-            theObj2.innerHTML = text
+            theObj2.innerHTML = text;
         } else {
             theObj.style.display = "none";
             theObj2.innerHTML = "";
-            theObj3.innerHTML = ""
+            theObj3.innerHTML = "";
         }
     }
 }
 
 function keyUp(e) {
     if (e.shiftKey && e.keyCode == 67) {
-        CoorTog()
+        CoorTog();
     } else if (e.shiftKey && e.keyCode == 70) {
-        FenTog()
+        FenTog();
     } else if (e.shiftKey && e.keyCode == 66) {
-        ChatTog()
+        ChatTog();
     } else if ((e.altKey && e.keyCode == 83) && currentPage == "live.html") {
-        SounTog()
+        SounTog();
     } else if (e.altKey && e.keyCode == 76) {
-        HideETog()
+        HideETog();
     } else if (e.altKey && e.keyCode == 78) {
-        NighTog()
+        NighTog();
     } else if (e.altKey && e.keyCode == 82) {
-        RotaTog()
+        RotaTog();
     } else if ((e.shiftKey && e.keyCode == 83) && currentPage == "live.html") {
-        window.open("dl.php?live=1", "_self")
+        window.open("dl.php?live=1", "_self");
     } else if ((e.shiftKey && e.keyCode == 69) && currentPage == "live.html") {
-        window.open("dl.php?live=2", "_self")
+        window.open("dl.php?live=2", "_self");
     } else if (e.shiftKey && e.keyCode == 86) {
         savePgnData(!0);
     } else if ((e.shiftKey && e.keyCode == 87) && currentPage == "archive.php") {
-        ViewPGN(!1)
+        ViewPGN(!1);
     } else if ((e.shiftKey && e.keyCode == 82) && currentPage == "archive.php") {
-        refreshGameList()
+        refreshGameList();
     } else if (e.shiftKey && e.keyCode == 65) {
-        window.open("archive.php", "_self")
+        window.open("archive.php", "_self");
     } else if (e.shiftKey && e.keyCode == 76) {
-        window.open("live.html", "_self")
+        window.open("live.html", "_self");
     } else if (e.shiftKey && e.keyCode == 84) {
-           TwiTog();
+        TwiTog();
     } else if (e.shiftKey && e.keyCode == 79) {
-           document.getElementById('order2').classList.add('orderno4');
+        document.getElementById('order2').classList.add('orderno4');
     } else if (e.shiftKey && e.keyCode == 82) {
-           document.getElementById('order2').classList.remove('orderno4');
+        document.getElementById('order2').classList.remove('orderno4');
     }
 }
 simpleAddEvent(document, "keyup", keyUp, !1);
@@ -11860,28 +11947,29 @@ simpleAddEvent(document, "keyup", keyUp, !1);
         $.extend(this._defaults, this.regional['']);
         this._serverSyncs = [];
         var now = (typeof Date.now == 'function' ? Date.now : function() {
-            return new Date().getTime()
+            return new Date().getTime();
         });
-        var perfAvail = (window.performance && typeof window.performance.now == 'function');
+        let performance = window.performance;
+        var perfAvail = (performance && typeof performance.now == 'function');
 
         function timerCallBack(timestamp) {
             var drawStart = (timestamp < 1e12 ? (perfAvail ? (performance.now() + performance.timing.navigationStart) : now()) : timestamp || now());
             if (drawStart - animationStartTime >= 1000) {
                 plugin._updateTargets();
-                animationStartTime = drawStart
+                animationStartTime = drawStart;
             }
-            requestAnimationFrame(timerCallBack)
+            requestAnimationFrame(timerCallBack);
         }
         var requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || null;
         var animationStartTime = 0;
         if (!requestAnimationFrame || $.noRequestAnimationFrame) {
             $.noRequestAnimationFrame = null;
             setInterval(function() {
-                plugin._updateTargets()
-            }, 980)
+                plugin._updateTargets();
+            }, 980);
         } else {
             animationStartTime = window.animationStartTime || window.webkitAnimationStartTime || window.mozAnimationStartTime || window.oAnimationStartTime || window.msAnimationStartTime || now();
-            requestAnimationFrame(timerCallBack)
+            requestAnimationFrame(timerCallBack);
         }
     }
     var Y = 0;
@@ -11904,7 +11992,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
         _timerTargets: [],
         setDefaults: function(options) {
             this._resetExtraLabels(this._defaults, options);
-            $.extend(this._defaults, options || {})
+            $.extend(this._defaults, options || {});
         },
         UTCDate: function(tz, year, month, day, hours, mins, secs, ms) {
             if (typeof year == 'object' && year.constructor == Date) {
@@ -11914,7 +12002,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 hours = year.getHours();
                 day = year.getDate();
                 month = year.getMonth();
-                year = year.getFullYear()
+                year = year.getFullYear();
             }
             var d = new Date();
             d.setUTCFullYear(year);
@@ -11925,39 +12013,39 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             d.setUTCMinutes((mins || 0) - (Math.abs(tz) < 30 ? tz * 60 : tz));
             d.setUTCSeconds(secs || 0);
             d.setUTCMilliseconds(ms || 0);
-            return d
+            return d;
         },
         periodsToSeconds: function(periods) {
-            return periods[0] * 31557600 + periods[1] * 2629800 + periods[2] * 604800 + periods[3] * 86400 + periods[4] * 3600 + periods[5] * 60 + periods[6]
+            return periods[0] * 31557600 + periods[1] * 2629800 + periods[2] * 604800 + periods[3] * 86400 + periods[4] * 3600 + periods[5] * 60 + periods[6];
         },
         _attachPlugin: function(target, options) {
             target = $(target);
             if (target.hasClass(this.markerClassName)) {
-                return
+                return;
             }
             var inst = {
                 options: $.extend({}, this._defaults),
                 _periods: [0, 0, 0, 0, 0, 0, 0]
             };
             target.addClass(this.markerClassName).data(this.propertyName, inst);
-            this._optionPlugin(target, options)
+            this._optionPlugin(target, options);
         },
         _addTarget: function(target) {
             if (!this._hasTarget(target)) {
-                this._timerTargets.push(target)
+                this._timerTargets.push(target);
             }
         },
         _hasTarget: function(target) {
-            return ($.inArray(target, this._timerTargets) > -1)
+            return ($.inArray(target, this._timerTargets) > -1);
         },
         _removeTarget: function(target) {
             this._timerTargets = $.map(this._timerTargets, function(value) {
-                return (value == target ? null : value)
-            })
+                return (value == target ? null : value);
+            });
         },
         _updateTargets: function() {
-            for (var i = this._timerTargets.length - 1; i >= 0; i--) {
-                this._updateCountdown(this._timerTargets[i])
+            for (let i = this._timerTargets.length - 1; i >= 0; i--) {
+                this._updateCountdown(this._timerTargets[i]);
             }
         },
         _optionPlugin: function(target, options, value) {
@@ -11966,19 +12054,19 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             if (!options || (typeof options == 'string' && value == null)) {
                 var name = options;
                 options = (inst || {}).options;
-                return (options && name ? options[name] : options)
+                return (options && name ? options[name] : options);
             }
             if (!target.hasClass(this.markerClassName)) {
-                return
+                return;
             }
             options = options || {};
             if (typeof options == 'string') {
-                var name = options;
+                let name = options;
                 options = {};
-                options[name] = value
+                options[name] = value;
             }
             if (options.layout) {
-                options.layout = options.layout.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                options.layout = options.layout.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
             }
             this._resetExtraLabels(inst.options, options);
             var timezoneChanged = (inst.options.timezone != options.timezone);
@@ -11986,21 +12074,21 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             this._adjustSettings(target, inst, options.until != null || options.since != null || timezoneChanged);
             var now = new Date();
             if ((inst._since && inst._since < now) || (inst._until && inst._until > now)) {
-                this._addTarget(target[0])
+                this._addTarget(target[0]);
             }
-            this._updateCountdown(target, inst)
+            this._updateCountdown(target, inst);
         },
         _updateCountdown: function(target, inst) {
             var $target = $(target);
             inst = inst || $target.data(this.propertyName);
             if (!inst) {
-                return
+                return;
             }
             $target.html(this._generateHTML(inst)).toggleClass(this._rtlClass, inst.options.isRTL);
             if ($.isFunction(inst.options.onTick)) {
                 var periods = inst._hold != 'lap' ? inst._periods : this._calculatePeriods(inst, inst._show, inst.options.significant, new Date());
                 if (inst.options.tickInterval == 1 || this.periodsToSeconds(periods) % inst.options.tickInterval == 0) {
-                    inst.options.onTick.apply(target, [periods])
+                    inst.options.onTick.apply(target, [periods]);
                 }
             }
             var expired = inst._hold != 'pause' && (inst._since ? inst._now.getTime() < inst._since.getTime() : inst._now.getTime() >= inst._until.getTime());
@@ -12009,36 +12097,36 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 if (this._hasTarget(target) || inst.options.alwaysExpire) {
                     this._removeTarget(target);
                     if ($.isFunction(inst.options.onExpiry)) {
-                        inst.options.onExpiry.apply(target, [])
+                        inst.options.onExpiry.apply(target, []);
                     }
                     if (inst.options.expiryText) {
                         var layout = inst.options.layout;
                         inst.options.layout = inst.options.expiryText;
                         this._updateCountdown(target, inst);
-                        inst.options.layout = layout
+                        inst.options.layout = layout;
                     }
                     if (inst.options.expiryUrl) {
-                        window.location = inst.options.expiryUrl
+                        window.location = inst.options.expiryUrl;
                     }
                 }
-                inst._expiring = !1
+                inst._expiring = !1;
             } else if (inst._hold == 'pause') {
-                this._removeTarget(target)
+                this._removeTarget(target);
             }
-            $target.data(this.propertyName, inst)
+            $target.data(this.propertyName, inst);
         },
         _resetExtraLabels: function(base, options) {
             var changingLabels = !1;
-            for (var n in options) {
+            for (let n in options) {
                 if (n != 'whichLabels' && n.match(/[Ll]abels/)) {
                     changingLabels = !0;
-                    break
+                    break;
                 }
             }
             if (changingLabels) {
-                for (var n in base) {
+                for (let n in base) {
                     if (n.match(/[Ll]abels[02-9]|compactLabels1/)) {
-                        base[n] = null
+                        base[n] = null;
                     }
                 }
             }
@@ -12047,20 +12135,20 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             var now;
             var serverOffset = 0;
             var serverEntry = null;
-            for (var i = 0; i < this._serverSyncs.length; i++) {
+            for (let i = 0; i < this._serverSyncs.length; i++) {
                 if (this._serverSyncs[i][0] == inst.options.serverSync) {
                     serverEntry = this._serverSyncs[i][1];
-                    break
+                    break;
                 }
             }
             if (serverEntry != null) {
                 serverOffset = (inst.options.serverSync ? serverEntry : 0);
-                now = new Date()
+                now = new Date();
             } else {
                 var serverResult = ($.isFunction(inst.options.serverSync) ? inst.options.serverSync.apply(target, []) : null);
                 now = new Date();
                 serverOffset = (serverResult ? now.getTime() - serverResult.getTime() : 0);
-                this._serverSyncs.push([inst.options.serverSync, serverOffset])
+                this._serverSyncs.push([inst.options.serverSync, serverOffset]);
             }
             var timezone = inst.options.timezone;
             timezone = (timezone == null ? -now.getTimezoneOffset() : timezone);
@@ -12069,32 +12157,32 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 if (inst._since != null) {
                     inst._since = this.UTCDate(timezone, this._determineTime(inst._since, null));
                     if (inst._since && serverOffset) {
-                        inst._since.setMilliseconds(inst._since.getMilliseconds() + serverOffset)
+                        inst._since.setMilliseconds(inst._since.getMilliseconds() + serverOffset);
                     }
                 }
                 inst._until = this.UTCDate(timezone, this._determineTime(inst.options.until, now));
                 if (serverOffset) {
-                    inst._until.setMilliseconds(inst._until.getMilliseconds() + serverOffset)
+                    inst._until.setMilliseconds(inst._until.getMilliseconds() + serverOffset);
                 }
             }
-            inst._show = this._determineShow(inst)
+            inst._show = this._determineShow(inst);
         },
         _destroyPlugin: function(target) {
             target = $(target);
             if (!target.hasClass(this.markerClassName)) {
-                return
+                return;
             }
             this._removeTarget(target[0]);
-            target.removeClass(this.markerClassName).empty().removeData(this.propertyName)
+            target.removeClass(this.markerClassName).empty().removeData(this.propertyName);
         },
         _pausePlugin: function(target) {
-            this._hold(target, 'pause')
+            this._hold(target, 'pause');
         },
         _lapPlugin: function(target) {
-            this._hold(target, 'lap')
+            this._hold(target, 'lap');
         },
         _resumePlugin: function(target) {
-            this._hold(target, null)
+            this._hold(target, null);
         },
         _hold: function(target, hold) {
             var inst = $.data(target, this.propertyName);
@@ -12103,23 +12191,23 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                     inst._periods = inst._savePeriods;
                     var sign = (inst._since ? '-' : '+');
                     inst[inst._since ? '_since' : '_until'] = this._determineTime(sign + inst._periods[0] + 'y' + sign + inst._periods[1] + 'o' + sign + inst._periods[2] + 'w' + sign + inst._periods[3] + 'd' + sign + inst._periods[4] + 'h' + sign + inst._periods[5] + 'm' + sign + inst._periods[6] + 's');
-                    this._addTarget(target)
+                    this._addTarget(target);
                 }
                 inst._hold = hold;
                 inst._savePeriods = (hold == 'pause' ? inst._periods : null);
                 $.data(target, this.propertyName, inst);
-                this._updateCountdown(target, inst)
+                this._updateCountdown(target, inst);
             }
         },
         _getTimesPlugin: function(target) {
             var inst = $.data(target, this.propertyName);
-            return (!inst ? null : (inst._hold == 'pause' ? inst._savePeriods : (!inst._hold ? inst._periods : this._calculatePeriods(inst, inst._show, inst.options.significant, new Date()))))
+            return (!inst ? null : (inst._hold == 'pause' ? inst._savePeriods : (!inst._hold ? inst._periods : this._calculatePeriods(inst, inst._show, inst.options.significant, new Date()))));
         },
         _determineTime: function(setting, defaultTime) {
             var offsetNumeric = function(offset) {
                 var time = new Date();
                 time.setTime(time.getTime() + offset * 1000);
-                return time
+                return time;
             };
             var offsetString = function(offset) {
                 offset = offset.toLowerCase();
@@ -12156,21 +12244,21 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                         case 'y':
                             year += parseInt(matches[1], 10);
                             day = Math.min(day, plugin._getDaysInMonth(year, month));
-                            break
+                            break;
                     }
-                    matches = pattern.exec(offset)
+                    matches = pattern.exec(offset);
                 }
-                return new Date(year, month, day, hour, minute, second, 0)
+                return new Date(year, month, day, hour, minute, second, 0);
             };
             var time = (setting == null ? defaultTime : (typeof setting == 'string' ? offsetString(setting) : (typeof setting == 'number' ? offsetNumeric(setting) : setting)));
             if (time) time.setMilliseconds(0);
-            return time
+            return time;
         },
         _getDaysInMonth: function(year, month) {
-            return 32 - new Date(year, month, 32).getDate()
+            return 32 - new Date(year, month, 32).getDate();
         },
         _normalLabels: function(num) {
-            return num
+            return num;
         },
         _generateHTML: function(inst) {
             var self = this;
@@ -12179,20 +12267,20 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             var showCount = 0;
             var sigCount = inst.options.significant;
             var show = $.extend({}, inst._show);
-            for (var period = Y; period <= S; period++) {
+            for (let period = Y; period <= S; period++) {
                 shownNonZero |= (inst._show[period] == '?' && inst._periods[period] > 0);
                 show[period] = (inst._show[period] == '?' && !shownNonZero ? null : inst._show[period]);
                 showCount += (show[period] ? 1 : 0);
-                sigCount -= (inst._periods[period] > 0 ? 1 : 0)
+                sigCount -= (inst._periods[period] > 0 ? 1 : 0);
             }
             var showSignificant = [!1, !1, !1, !1, !1, !1, !1];
-            for (var period = S; period >= Y; period--) {
+            for (let period = S; period >= Y; period--) {
                 if (inst._show[period]) {
                     if (inst._periods[period]) {
-                        showSignificant[period] = !0
+                        showSignificant[period] = !0;
                     } else {
                         showSignificant[period] = sigCount > 0;
-                        sigCount--
+                        sigCount--;
                     }
                 }
             }
@@ -12200,22 +12288,22 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             var whichLabels = inst.options.whichLabels || this._normalLabels;
             var showCompact = function(period) {
                 var labelsNum = inst.options['compactLabels' + whichLabels(inst._periods[period])];
-                return (show[period] ? self._translateDigits(inst, inst._periods[period]) + (labelsNum ? labelsNum[period] : labels[period]) + ' ' : '')
+                return (show[period] ? self._translateDigits(inst, inst._periods[period]) + (labelsNum ? labelsNum[period] : labels[period]) + ' ' : '');
             };
             var showFull = function(period) {
                 var labelsNum = inst.options['labels' + whichLabels(inst._periods[period])];
-                return ((!inst.options.significant && show[period]) || (inst.options.significant && showSignificant[period]) ? '<span class="' + plugin._sectionClass + '">' + '<span class="' + plugin._amountClass + '">' + self._translateDigits(inst, inst._periods[period]) + '</span><br/>' + (labelsNum ? labelsNum[period] : labels[period]) + '</span>' : '')
+                return ((!inst.options.significant && show[period]) || (inst.options.significant && showSignificant[period]) ? '<span class="' + plugin._sectionClass + '">' + '<span class="' + plugin._amountClass + '">' + self._translateDigits(inst, inst._periods[period]) + '</span><br/>' + (labelsNum ? labelsNum[period] : labels[period]) + '</span>' : '');
             };
-            return (inst.options.layout ? this._buildLayout(inst, show, inst.options.layout, inst.options.compact, inst.options.significant, showSignificant) : ((inst.options.compact ? '<span class="' + this._rowClass + ' ' + this._amountClass + (inst._hold ? ' ' + this._holdingClass : '') + '">' + showCompact(Y) + showCompact(O) + showCompact(W) + showCompact(D) + (show[H] ? this._minDigits(inst, inst._periods[H], 2) : '') + (show[M] ? (show[H] ? inst.options.timeSeparator : '') + this._minDigits(inst, inst._periods[M], 2) : '') + (show[S] ? (show[H] || show[M] ? inst.options.timeSeparator : '') + this._minDigits(inst, inst._periods[S], 2) : '') : '<span class="' + this._rowClass + ' ' + this._showClass + (inst.options.significant || showCount) + (inst._hold ? ' ' + this._holdingClass : '') + '">' + showFull(Y) + showFull(O) + showFull(W) + showFull(D) + showFull(H) + showFull(M) + showFull(S)) + '</span>' + (inst.options.description ? '<span class="' + this._rowClass + ' ' + this._descrClass + '">' + inst.options.description + '</span>' : '')))
+            return (inst.options.layout ? this._buildLayout(inst, show, inst.options.layout, inst.options.compact, inst.options.significant, showSignificant) : ((inst.options.compact ? '<span class="' + this._rowClass + ' ' + this._amountClass + (inst._hold ? ' ' + this._holdingClass : '') + '">' + showCompact(Y) + showCompact(O) + showCompact(W) + showCompact(D) + (show[H] ? this._minDigits(inst, inst._periods[H], 2) : '') + (show[M] ? (show[H] ? inst.options.timeSeparator : '') + this._minDigits(inst, inst._periods[M], 2) : '') + (show[S] ? (show[H] || show[M] ? inst.options.timeSeparator : '') + this._minDigits(inst, inst._periods[S], 2) : '') : '<span class="' + this._rowClass + ' ' + this._showClass + (inst.options.significant || showCount) + (inst._hold ? ' ' + this._holdingClass : '') + '">' + showFull(Y) + showFull(O) + showFull(W) + showFull(D) + showFull(H) + showFull(M) + showFull(S)) + '</span>' + (inst.options.description ? '<span class="' + this._rowClass + ' ' + this._descrClass + '">' + inst.options.description + '</span>' : '')));
         },
         _buildLayout: function(inst, show, layout, compact, significant, showSignificant) {
             var labels = inst.options[compact ? 'compactLabels' : 'labels'];
             var whichLabels = inst.options.whichLabels || this._normalLabels;
             var labelFor = function(index) {
-                return (inst.options[(compact ? 'compactLabels' : 'labels') + whichLabels(inst._periods[index])] || labels)[index]
+                return (inst.options[(compact ? 'compactLabels' : 'labels') + whichLabels(inst._periods[index])] || labels)[index];
             };
             var digit = function(value, position) {
-                return inst.options.digits[Math.floor(value / position) % 10]
+                return inst.options.digits[Math.floor(value / position) % 10];
             };
             var subs = {
                 desc: inst.options.description,
@@ -12278,29 +12366,29 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 s1000: digit(inst._periods[S], 1000)
             };
             var html = layout;
-            for (var i = Y; i <= S; i++) {
+            for (let i = Y; i <= S; i++) {
                 var period = 'yowdhms'.charAt(i);
                 var re = new RegExp('\\{' + period + '<\\}([\\s\\S]*)\\{' + period + '>\\}', 'g');
-                html = html.replace(re, ((!significant && show[i]) || (significant && showSignificant[i]) ? '$1' : ''))
+                html = html.replace(re, ((!significant && show[i]) || (significant && showSignificant[i]) ? '$1' : ''));
             }
             $.each(subs, function(n, v) {
                 var re = new RegExp('\\{' + n + '\\}', 'g');
-                html = html.replace(re, v)
+                html = html.replace(re, v);
             });
-            return html
+            return html;
         },
         _minDigits: function(inst, value, len) {
             value = '' + value;
             if (value.length >= len) {
-                return this._translateDigits(inst, value)
+                return this._translateDigits(inst, value);
             }
             value = '0000000000' + value;
-            return this._translateDigits(inst, value.substr(value.length - len))
+            return this._translateDigits(inst, value.substr(value.length - len));
         },
         _translateDigits: function(inst, value) {
             return ('' + value).replace(/[0-9]/g, function(digit) {
-                return inst.options.digits[digit]
-            })
+                return inst.options.digits[digit];
+            });
         },
         _determineShow: function(inst) {
             var format = inst.options.format;
@@ -12312,7 +12400,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             show[H] = (format.match('h') ? '?' : (format.match('H') ? '!' : null));
             show[M] = (format.match('m') ? '?' : (format.match('M') ? '!' : null));
             show[S] = (format.match('s') ? '?' : (format.match('S') ? '!' : null));
-            return show
+            return show;
         },
         _calculatePeriods: function(inst, show, significant, now) {
             inst._now = now;
@@ -12320,14 +12408,14 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             var until = new Date(inst._now.getTime());
             if (inst._since) {
                 if (now.getTime() < inst._since.getTime()) {
-                    inst._now = now = until
+                    inst._now = now = until;
                 } else {
-                    now = inst._since
+                    now = inst._since;
                 }
             } else {
                 until.setTime(inst._until.getTime());
                 if (now.getTime() > inst._until.getTime()) {
-                    inst._now = now = until
+                    inst._now = now = until;
                 }
             }
             var periods = [0, 0, 0, 0, 0, 0, 0];
@@ -12336,7 +12424,7 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 var lastUntil = plugin._getDaysInMonth(until.getFullYear(), until.getMonth());
                 var sameDay = (until.getDate() == now.getDate() || (until.getDate() >= Math.min(lastNow, lastUntil) && now.getDate() >= Math.min(lastNow, lastUntil)));
                 var getSecs = function(date) {
-                    return (date.getHours() * 60 + date.getMinutes()) * 60 + date.getSeconds()
+                    return (date.getHours() * 60 + date.getMinutes()) * 60 + date.getSeconds();
                 };
                 var months = Math.max(0, (until.getFullYear() - now.getFullYear()) * 12 + until.getMonth() - now.getMonth() + ((until.getDate() < now.getDate() && !sameDay) || (sameDay && getSecs(until) < getSecs(now)) ? -1 : 0));
                 periods[Y] = (show[Y] ? Math.floor(months / 12) : 0);
@@ -12345,18 +12433,18 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 var wasLastDay = (now.getDate() == lastNow);
                 var lastDay = plugin._getDaysInMonth(now.getFullYear() + periods[Y], now.getMonth() + periods[O]);
                 if (now.getDate() > lastDay) {
-                    now.setDate(lastDay)
+                    now.setDate(lastDay);
                 }
                 now.setFullYear(now.getFullYear() + periods[Y]);
                 now.setMonth(now.getMonth() + periods[O]);
                 if (wasLastDay) {
-                    now.setDate(lastDay)
+                    now.setDate(lastDay);
                 }
             }
             var diff = Math.floor((until.getTime() - now.getTime()) / 1000);
             var extractPeriod = function(period, numSecs) {
                 periods[period] = (show[period] ? Math.floor(diff / numSecs) : 0);
-                diff -= periods[period] * numSecs
+                diff -= periods[period] * numSecs;
             };
             extractPeriod(W, 604800);
             extractPeriod(D, 86400);
@@ -12367,59 +12455,59 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                 var multiplier = [1, 12, 4.3482, 7, 24, 60, 60];
                 var lastShown = S;
                 var max = 1;
-                for (var period = S; period >= Y; period--) {
+                for (let period = S; period >= Y; period--) {
                     if (show[period]) {
                         if (periods[lastShown] >= max) {
                             periods[lastShown] = 0;
-                            diff = 1
+                            diff = 1;
                         }
                         if (diff > 0) {
                             periods[period]++;
                             diff = 0;
                             lastShown = period;
-                            max = 1
+                            max = 1;
                         }
                     }
-                    max *= multiplier[period]
+                    max *= multiplier[period];
                 }
             }
             if (significant) {
-                for (var period = Y; period <= S; period++) {
+                for (let period = Y; period <= S; period++) {
                     if (significant && periods[period]) {
-                        significant--
+                        significant--;
                     } else if (!significant) {
-                        periods[period] = 0
+                        periods[period] = 0;
                     }
                 }
             }
-            return periods
+            return periods;
         }
     });
     var getters = ['getTimes'];
 
     function isNotChained(command, otherArgs) {
         if (command == 'option' && (otherArgs.length == 0 || (otherArgs.length == 1 && typeof otherArgs[0] == 'string'))) {
-            return !0
+            return !0;
         }
-        return $.inArray(command, getters) > -1
+        return $.inArray(command, getters) > -1;
     }
     $.fn.countdown = function(options) {
         var otherArgs = Array.prototype.slice.call(arguments, 1);
         if (isNotChained(options, otherArgs)) {
-            return plugin['_' + options + 'Plugin'].apply(plugin, [this[0]].concat(otherArgs))
+            return plugin['_' + options + 'Plugin'].apply(plugin, [this[0]].concat(otherArgs));
         }
         return this.each(function() {
             if (typeof options == 'string') {
                 if (!plugin['_' + options + 'Plugin']) {
-                    throw 'Unknown command: ' + options
+                    throw 'Unknown command: ' + options;
                 }
-                plugin['_' + options + 'Plugin'].apply(plugin, [this].concat(otherArgs))
+                plugin['_' + options + 'Plugin'].apply(plugin, [this].concat(otherArgs));
             } else {
-                plugin._attachPlugin(this, options || {})
+                plugin._attachPlugin(this, options || {});
             }
-        })
+        });
     };
-    var plugin = $.countdown = new Countdown()
+    var plugin = $.countdown = new Countdown();
 })(jQuery);
 (function($) {
     $.fn.aToolTip = function(options) {
@@ -12440,35 +12528,36 @@ simpleAddEvent(document, "keyup", keyUp, !1);
             settings = $.extend({}, defaults, options);
         return this.each(function() {
             var obj = $(this);
+            let tipContent;
             if (obj.attr('data-tooltip')) {
-                var tipContent = obj.attr('data-tooltip')
+                tipContent = obj.attr('data-tooltip');
             }
             var buildaToolTip = function() {
-                    $('body').append("<div id='" + settings.toolTipId + "' class='" + settings.toolTipClass + "'><div class='aToolTip_2'><div class='aToolTip_3'><div class='top_item_image'><img src='./img/thinking5w.gif' height='16px' width='16px' /></div><div class='top_item'>" + obj.text() + "</div><div class='tall_a_17'><a id='" + settings.closeTipBtn + "' alt='Close'><div class='tall_a_18'></div></a></div></div><div class='aToolTipContent'>" + tipContent + "</div></div></div>")
+                    $('body').append("<div id='" + settings.toolTipId + "' class='" + settings.toolTipClass + "'><div class='aToolTip_2'><div class='aToolTip_3'><div class='top_item_image'><img src='./img/thinking5w.gif' height='16px' width='16px' /></div><div class='top_item'>" + obj.text() + "</div><div class='tall_a_17'><a id='" + settings.closeTipBtn + "' alt='Close'><div class='tall_a_18'></div></a></div></div><div class='aToolTipContent'>" + tipContent + "</div></div></div>");
                 },
                 positionaToolTip = function() {
                     var rightEdge = (obj.offset().left + obj.outerWidth() + settings.xOffset) + 252;
                     var overshoot = rightEdge - $(window).width();
                     var leftOffset = 0;
                     if (overshoot > 0) {
-                        leftOffset = overshoot
+                        leftOffset = overshoot;
                     }
                     $('#' + settings.toolTipId).css({
                         top: (obj.offset().top - $('#' + settings.toolTipId).outerHeight() - settings.yOffset) + 'px',
                         left: (obj.offset().left + obj.outerWidth() + settings.xOffset - leftOffset) + 'px'
                     }).stop().fadeIn(settings.inSpeed, function() {
                         if ($.isFunction(settings.onShow)) {
-                            settings.onShow(obj)
+                            settings.onShow(obj);
                         }
-                    })
+                    });
                 },
                 removeaToolTip = function() {
                     $('#' + settings.toolTipId).stop().fadeOut(settings.outSpeed, function() {
                         $(this).remove();
                         if ($.isFunction(settings.onHide)) {
-                            settings.onHide(obj)
+                            settings.onHide(obj);
                         }
-                    })
+                    });
                 };
             if (tipContent && settings.clickIt) {
                 obj.click(function(el) {
@@ -12480,46 +12569,47 @@ simpleAddEvent(document, "keyup", keyUp, !1);
                     positionaToolTip();
                     $('#' + settings.closeTipBtn).click(function() {
                         removeaToolTip();
-                        return !1
+                        return !1;
                     });
-                    return !1
-                })
+                    return !1;
+                });
             }
             if (!settings.fixed && !settings.clickIt) {
                 obj.mousemove(function(el) {
                     $('#' + settings.toolTipId).css({
                         top: (el.pageY - $('#' + settings.toolTipId).outerHeight() - settings.yOffset),
                         left: (el.pageX + settings.xOffset)
-                    })
-                })
+                    });
+                });
             }
-        })
-    }
+        });
+    };
 })(jQuery);
 var elapsedMoveTimeoutW = null;
 var elapsedMoveTimeoutB = null;
 
 function updateElapsedTimeCounterB(whenStartedB) {
     if (!whenStartedB) {
-        whenStartedB = (new Date()).getTime()
+        whenStartedB = (new Date()).getTime();
     }
-    elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedB) / 1000);
+    let elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedB) / 1000);
     elapsedSeconds = Math.floor(elapsedSeconds + diffLastmoveTime);
     if (elapsedSeconds < 0)
     {
        elapsedSeconds = 0;
-    }  
+    }
+    let theObject;
     if ((theObject = document.getElementById("elapsedTimeB")) && gameResult[currentGame] == "*") {
-        seconds = elapsedSeconds % 60;
-        minutes = (elapsedSeconds - seconds) / 60;
-        theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]"
-        clknew = document.getElementById("whiteClock");
-        clknew1 = document.getElementById("whiteClockl");
+        let seconds = elapsedSeconds % 60,
+            minutes = (elapsedSeconds - seconds) / 60;
+        theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]";
+        let clknew = document.getElementById("whiteClock"),
+            clknew1 = document.getElementById("whiteClockl");
         clknew1.innerHTML = clknew.innerHTML;
         if (lastWhitePly == PlyNumber) {
             clknew = document.getElementById("blackClock");
             if (clknew && clknew.innerHTML != "no info") {
-                clksec = parseFloat(clock2sec(clknew.innerHTML));
+                let clksec = parseFloat(clock2sec(clknew.innerHTML));
                 elapsedSeconds = clksec - elapsedSeconds;
                 clknew = document.getElementById("blackClockl");
                 clknew.innerHTML = new Date(elapsedSeconds * 1000).toISOString().substr(11, 8);
@@ -12537,35 +12627,33 @@ function updateElapsedTimeCounterB(whenStartedB) {
         }
     }
     if (elapsedMoveTimeoutB) {
-        clearTimeout(elapsedMoveTimeoutB)
+        clearTimeout(elapsedMoveTimeoutB);
     }
-    elapsedMoveTimeoutB = setTimeout("updateElapsedTimeCounterB(" + whenStartedB + ");", 500)
+    elapsedMoveTimeoutB = setTimeout(() => {updateElapsedTimeCounterB(" + whenStartedB + ");}, 500);
 }
 
 function updateElapsedTimeCounterW(whenStartedW) {
     if (!whenStartedW) {
-        whenStartedW = (new Date()).getTime()
+        whenStartedW = new Date().getTime();
     }
-    if (whenStartedW)
-    {
-        elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedW) / 1000);
-    }
+    let elapsedSeconds = Math.floor(((new Date()).getTime() - whenStartedW) / 1000);
     elapsedSeconds = Math.floor(elapsedSeconds + diffLastmoveTime);
     if (elapsedSeconds < 0)
     {
        elapsedSeconds = 0;
-    }  
+    }
+    let theObject;
     if ((theObject = document.getElementById("elapsedTimeW")) && gameResult[currentGame] == "*") {
-        seconds = elapsedSeconds % 60;
-        minutes = (elapsedSeconds - seconds) / 60;
-        theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]"
-        clknew = document.getElementById("blackClock");
-        clknew1 = document.getElementById("blackClockl");
+        let seconds = elapsedSeconds % 60,
+            minutes = (elapsedSeconds - seconds) / 60;
+        theObject.innerHTML = "[" + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "]";
+        let clknew = document.getElementById("blackClock"),
+            clknew1 = document.getElementById("blackClockl");
         clknew1.innerHTML = clknew.innerHTML;
         if ((lastBlackPly) == PlyNumber) {
             clknew = document.getElementById("whiteClock");
             if (clknew && clknew.innerHTML != "no info") {
-                clksec = parseFloat(clock2sec(clknew.innerHTML));
+                let clksec = parseFloat(clock2sec(clknew.innerHTML));
                 if (clksec)
                 {
                     elapsedSeconds = clksec - elapsedSeconds;
@@ -12586,34 +12674,36 @@ function updateElapsedTimeCounterW(whenStartedW) {
         }
     }
     if (elapsedMoveTimeoutW) {
-        clearTimeout(elapsedMoveTimeoutW)
+        clearTimeout(elapsedMoveTimeoutW);
     }
-    elapsedMoveTimeoutW = setTimeout("updateElapsedTimeCounterW(" + whenStartedW + ");", 500)
+    elapsedMoveTimeoutW = setTimeout(() => {updateElapsedTimeCounterW(" + whenStartedW + ");}, 500);
 }
 
 function startElapsedTimeCounterW() {
-    updateElapsedTimeCounterW()
+    updateElapsedTimeCounterW();
 }
 
 function startElapsedTimeCounterB() {
-    updateElapsedTimeCounterB()
+    updateElapsedTimeCounterB();
 }
 
 function resetElapsedTimeCounterW() {
     if (elapsedMoveTimeoutW) {
-        clearTimeout(elapsedMoveTimeoutW)
+        clearTimeout(elapsedMoveTimeoutW);
     }
-    if (theObject = document.getElementById("elapsedTimeW")) {
-        theObject.innerHTML = ""
+    let theObject;
+    if ((theObject = document.getElementById("elapsedTimeW"))) {
+        theObject.innerHTML = "";
     }
 }
 
 function resetElapsedTimeCounterB() {
     if (elapsedMoveTimeoutB) {
-        clearTimeout(elapsedMoveTimeoutB)
+        clearTimeout(elapsedMoveTimeoutB);
     }
-    if (theObject = document.getElementById("elapsedTimeB")) {
-        theObject.innerHTML = ""
+    let theObject;
+    if ((theObject = document.getElementById("elapsedTimeB"))) {
+        theObject.innerHTML = "";
     }
 }
 var oldLastPgnGameLength = -1;
@@ -12625,33 +12715,33 @@ function customFunctionOnPgnTextLoad() {
         document.getElementById('numGm').innerHTML = numberOfGames;
     }
     if (LiveBroadcastStarted && !LiveBroadcastEnded) {
-        sideToMove = ((StartPly + PlyNumber) % 2 === 0);
-        text = sideToMove ? 'white' : 'black';
+        let sideToMove = ((StartPly + PlyNumber) % 2 === 0),
+            text = sideToMove ? 'white' : 'black';
         if ((oldNumberOfGames != numberOfGames) || (oldLastPgnGameLength != pgnGame[numberOfGames - 1].length)) {
             if (text == "white") {
                 startElapsedTimeCounterW();
-                resetElapsedTimeCounterB()
+                resetElapsedTimeCounterB();
             } else {
                 startElapsedTimeCounterB();
-                resetElapsedTimeCounterW()
+                resetElapsedTimeCounterW();
             }
         }
     } else {
         resetElapsedTimeCounterW();
-        resetElapsedTimeCounterB()
+        resetElapsedTimeCounterB();
     }
     oldNumberOfGames = numberOfGames;
-    oldLastPgnGameLength = pgnGame[numberOfGames - 1].length
+    oldLastPgnGameLength = pgnGame[numberOfGames - 1].length;
 }
 
 function ylcetGetPGnWhite() {
-    var pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
+    let pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
     //////console.log ("ylcetGetPGnWhite:" + pvPgn);
     return pvPgn;
 }
 
 function ylcetGetPGnBlack() {
-    pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
+    let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
     return pvPgn;
 }
 
@@ -12674,7 +12764,7 @@ window.Clipboard = (function(window, document, navigator) {
     }
 
     function selectText() {
-        var range,
+        let range,
             selection;
 
         if (isOS()) {
@@ -12683,7 +12773,7 @@ window.Clipboard = (function(window, document, navigator) {
             var readOnly = el.readOnly;
             el.contentEditable = true;
             el.readOnly = true;
-            var range = document.createRange();
+            range = document.createRange();
             range.selectNodeContents(el);
             var sel = window.getSelection();
             sel.removeAllRanges();
@@ -12714,7 +12804,6 @@ window.Clipboard = (function(window, document, navigator) {
 })(window, document, navigator);
 
 $(function() {
- 
     $(".drag").draggable({
 
       // ドラッグ開始時
@@ -12724,14 +12813,14 @@ $(function() {
       },
 
       // ドラッグ終了時
-      stop : function (event , ui){
+      stop : function (event , ui) {
           // ////console.log(event , ui);
 
-          var nowPosition = new Object();
-          var newPosition = new Array();
+          var nowPosition = {};
+          var newPosition = [];
 
           // 現在のポジションを取得する
-          for (var i = 1; i <= 3; i++) {
+          for (let i = 1; i <= 3; i++) {
               var positionData = getPosition(i);
               nowPosition = {'name':'order'+i,'position':positionData};
 
@@ -12740,14 +12829,14 @@ $(function() {
 
           // ソート
           newPosition.sort(function(a,b){
-                  if( a['position'] > b['position'] ) return -1;
-                  if( a['position'] < b['position'] ) return 1;
-                  return 0;
+                if (a.position > b.position) return -1;
+                if (a.position < b.position) return 1;
+                return 0;
           });
 
           // Orderを入れる
           var number = 0;
-          for (var i = newPosition.length; i--; ) {
+          for (let i = newPosition.length; i--; ) {
 
               var tmpItem = document.getElementById(newPosition[i].name);
               tmpItem.style.order = number;

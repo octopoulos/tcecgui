@@ -1,3 +1,9 @@
+/*
+globals
+_, $, Chart, console, document, liveEngineEval1, liveEngineEval2, plog, prevPgnData, showLivEng1, showLivEng2
+*/
+'use strict';
+
 var evalChart;
 var whiteEvalL = 0;
 var blackEvalL = 0;
@@ -227,7 +233,7 @@ function drawEval()
          stacked: false,
          legend: {
             display: true,
-            position: 'bottom',     
+            position: 'bottom',
             fontSize: 5,
             labels: {
                boxWidth: 1
@@ -239,7 +245,7 @@ function drawEval()
          tooltips: {
             callbacks: {
                label: function(tooltipItem, data) {
-                  evall= [];
+                  let evall= [];
                   if (typeof data.datasets[0].data[tooltipItem.index] != 'undefined') {
                      evall= _.union(evall, ['White Eval: ' + data.datasets[0].data[tooltipItem.index].eval]);
                   }
@@ -332,10 +338,10 @@ function initializeCharts()
                      var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                      if (nodes >= 1000000000) {
                         nodes = Math.round (nodes / 100000000) / 10;
-                        nodes += 'B'
+                        nodes += 'B';
                      } else {
                         nodes = Math.round (nodes / 100000) / 10;
-                        nodes += 'M'
+                        nodes += 'M';
                      }
                      return ' (' + nodes + ' nodes)';
                   }
@@ -354,10 +360,10 @@ function initializeCharts()
                            value += 'B';
                         } else if ((value >= (1000000*1))) {
                            value = Math.round (value / 100000) / 10;
-                           value += 'M'
+                           value += 'M';
                         } else {
                            value = Math.round (value / 100) / 10;
-                           value += 'K'
+                           value += 'K';
                         }
                         return value;
                      }
@@ -376,13 +382,13 @@ function initializeCharts()
                      callback: function(value, index, values) {
                         if (value >= 1000000*1000) {
                            value = Math.round (value / (100000 * 1000)) / 10;
-                           value += 'B'
+                           value += 'B';
                         } else if ((value >= (1000000*1))) {
                            value = Math.round (value / 100000) / 10;
-                           value += 'M'
+                           value += 'M';
                         } else {
                            value = Math.round (value / 100) / 10;
-                           value += 'K'
+                           value += 'K';
                         }
                         return value;
                      }
@@ -417,19 +423,19 @@ function initializeCharts()
                   var value = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                   if (value >= 1000000) {
                      value = Math.round (value / 10000) / 100;
-                     value += 'Mnps'
+                     value += 'Mnps';
                   } else {
                      value = Math.round (value / 10) / 100;
-                     value += 'Knps'
+                     value += 'Knps';
                   }
 
                   var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                   if (nodes >= 1000000000) {
                      nodes = Math.round (nodes / 100000000) / 10;
-                     nodes += 'B'
+                     nodes += 'B';
                   } else {
                      nodes = Math.round (nodes / 100000) / 10;
-                     nodes += 'M'
+                     nodes += 'M';
                   }
                   return value + ' (' + nodes + ' nodes)';
                }
@@ -445,10 +451,10 @@ function initializeCharts()
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
                         value = Math.round (value / 100000) / 10;
-                        value += 'M'
+                        value += 'M';
                      } else {
                         value = Math.round (value / 100) / 10;
-                        value += 'K'
+                        value += 'K';
                      }
                      return value;
                   }
@@ -467,10 +473,10 @@ function initializeCharts()
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
                         value = Math.round (value / 100000) / 10;
-                        value += 'M'
+                        value += 'M';
                      } else {
                         value = Math.round (value / 100) / 10;
-                        value += 'K'
+                        value += 'K';
                      }
                      return value;
                   }
@@ -494,7 +500,7 @@ function initializeCharts()
          stacked: false,
          legend: {
             display: true,
-            position: 'bottom',     
+            position: 'bottom',
             fontSize: 5,
             labels: {
                boxWidth: 1
@@ -542,10 +548,10 @@ function initializeCharts()
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
                         value = Math.round (value / 100000) / 10;
-                        value += 'M'
+                        value += 'M';
                      } else {
                         value = Math.round (value / 100) / 10;
-                        value += 'K'
+                        value += 'K';
                      }
                      return value;
                   }
@@ -563,10 +569,10 @@ function initializeCharts()
                   callback: function(value, index, values) {
                      if (value >= 1000000) {
                         value = Math.round (value / 100000) / 10;
-                        value += 'M'
+                        value += 'M';
                      } else {
                         value = Math.round (value / 100) / 10;
-                        value += 'K'
+                        value += 'K';
                      }
                      return value;
                   }
@@ -583,10 +589,10 @@ function initializeCharts()
    });
 }
 
-function addDataOld(chart, data, black) 
+function addDataOld(chart, data, black)
 {
    if (black)
-   { 
+   {
       chart.data.datasets[1].data.pop();
       chart.data.datasets[1].data.push(data);
    }
@@ -601,7 +607,7 @@ function addDataOld(chart, data, black)
    chart.update();
 }
 
-function addDataLive(chart, data, black, contno) 
+function addDataLive(chart, data, black, contno)
 {
    var length = 0;
 
@@ -636,7 +642,7 @@ function addDataLive(chart, data, black, contno)
    }
 
    if (black)
-   { 
+   {
       chart.data.datasets[contno+1].data[whiteEvalL - 1] = data;
    }
    else
@@ -645,13 +651,13 @@ function addDataLive(chart, data, black, contno)
       chart.data.datasets[contno+1].data[length] = data;
    }
 
-   plog ("GRAPH: Came to add data::W:" + "black:::" + black + " ," + " ,blackEvalL:" + 
+   plog ("GRAPH: Came to add data::W:" + "black:::" + black + " ," + " ,blackEvalL:" +
          blackEvalL  + " ,whiteEvalL:" + whiteEvalL + " ,lengthhhh:" + length + " ,blackStarted:" + blackStarted, 0);
 
    chart.update();
 }
 
-function addData(chart, data, black) 
+function addData(chart, data, black)
 {
    var length = 0;
 
@@ -680,7 +686,7 @@ function addData(chart, data, black)
    }
 
    if (black)
-   { 
+   {
       chart.data.datasets[1].data[blackEvalL] = data;
       length = blackEvalL;
    }
@@ -696,7 +702,7 @@ function addData(chart, data, black)
 var blackPop = 1;
 var whitePop = 1;
 
-function removeData(chart, data, black) 
+function removeData(chart, data, black)
 {
    addData(chart, data, black);
 }
@@ -714,7 +720,7 @@ function getLiveEval(key, moveNumber, isBlack, contno)
       engineEval = liveEngineEval2;
    }
 
-   evalObject = _.find(engineEval, function(ev) {
+   let evalObject = _.find(engineEval, function(ev) {
       return ev.ply == key;
    });
 
@@ -723,9 +729,9 @@ function getLiveEval(key, moveNumber, isBlack, contno)
       {
          evalObject.eval = -evalObject.eval;
       }
-      evall = evalObject.eval;
+      let evall = evalObject.eval;
       evalObject.eval = getEval(evalObject.eval);
-      var evalObj = 
+      var evalObj =
       {
          'x': moveNumber,
          'y': evalObject.eval,
@@ -806,23 +812,23 @@ function getEval(evalVal)
 {
    var retEvalVal = evalVal;
 
-   if (!isNaN(evalVal)) 
+   if (!isNaN(evalVal))
    {
-      if (evalVal > evalconstant) 
+      if (evalVal > evalconstant)
       {
          retEvalVal = evalconstant;
-      } 
-      else if (evalVal < -evalconstant) 
+      }
+      else if (evalVal < -evalconstant)
       {
          retEvalVal = -evalconstant;
       }
-   } 
-   else 
+   }
+   else
    {
-      if (evalVal && evalVal.substring(0,1) == '-') 
+      if (evalVal && evalVal.substring(0,1) == '-')
       {
          retEvalVal = -evalconstant;
-      } 
+      }
       else if (evalVal != undefined)
       {
          retEvalVal = evalconstant;
@@ -860,17 +866,17 @@ function updateChartDataLiveEval2()
       {
          return;
       }
-   
+
       if (prevPgnData.Moves[0].didliveEval2 == undefined)
       {
          prevPgnData.Moves[0].didliveEval2 = 0;
       }
-   
+
       var endVal = Math.min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
 
       prevPgnData.Moves[0].didliveEval2 = 0;
-   
-      for (var ctr = startEval; ctr >= endVal; ctr = ctr - 1)
+
+      for (let ctr = startEval; ctr >= endVal; ctr = ctr - 1)
       {
          var dataToUse = evalChart.data.datasets[0].data[ctr];
          var key = 0;
@@ -893,7 +899,7 @@ function updateChartDataLiveEval2()
          {
             needtoUpdate = 1;
             var moveNumber = dataToUse.x;
-            evalObject = getLiveEval(key, moveNumber, isBlack, 2);
+            let evalObject = getLiveEval(key, moveNumber, isBlack, 2);
             /*plog ("RRR: cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack, 0);*/
             if (!prevPgnData.Moves[0].didliveEval2)
             {
@@ -910,7 +916,7 @@ function updateChartDataLiveEval2()
             }
          }
       }
-   
+
       if (needtoUpdate)
       {
          evalChart.update();
@@ -931,21 +937,21 @@ function updateChartDataLiveEval1()
    try {
       var needtoUpdate = 0;
       var startEval = whiteEvalL;
-   
+
       if (!whiteEvalL)
       {
          return;
       }
-   
+
       if (prevPgnData.Moves[0].didliveEval1 == undefined)
       {
          prevPgnData.Moves[0].didliveEval1 = 0;
       }
-   
+
       var endVal = Math.min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
       prevPgnData.Moves[0].didliveEval1 = 0;
-   
-      for (var ctr = startEval; ctr >= endVal; ctr = ctr - 1)
+
+      for (let ctr = startEval; ctr >= endVal; ctr = ctr - 1)
       {
          var dataToUse = evalChart.data.datasets[0].data[ctr];
          var isBlack = 0;
@@ -968,7 +974,7 @@ function updateChartDataLiveEval1()
          {
             needtoUpdate = 1;
             var moveNumber = dataToUse.x;
-            evalObject = getLiveEval(key, moveNumber, isBlack, 1);
+            let evalObject = getLiveEval(key, moveNumber, isBlack, 1);
             /*plog ("RRR: cont1 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack, 0);*/
             if (!prevPgnData.Moves[0].didliveEval1)
             {
@@ -984,7 +990,7 @@ function updateChartDataLiveEval1()
             }
          }
       }
-   
+
       if (needtoUpdate)
       {
          evalChart.update();
@@ -1013,11 +1019,11 @@ function updateChartData()
 {
    try {
       setevalChartData();
-   
+
       var plyNum = 0;
-   
+
       plog ("GRAPH: Entered updateChartData with whiteEvalL:" + whiteEvalL, 0);
-   
+
       if (prevPgnData.Moves)
       {
          plog ("GRAPH: prevPgnData.Moves length:" + prevPgnData.Moves.length + " ,whiteEvalL::" + whiteEvalL + " ,evalChart.data.labels:" + evalChart.data.labels.length, 0);
@@ -1034,7 +1040,7 @@ function updateChartData()
          clearChartData();
          return;
       }
-   
+
       var needtoUpdate = 0;
       var arrayCtrW = prevPgnData.Moves[0].arrayStartW;
       var arrayCtrB = prevPgnData.Moves[0].arrayStartB;
@@ -1046,23 +1052,23 @@ function updateChartData()
          prevPgnData.Moves[0].completed -= 4;
          plog ("GRAPH: prevPgnData.Moves reduced length:" + prevPgnData.Moves.length + " ,whiteEvalL::" + whiteEvalL + " ,evalChart.data.labels:" + evalChart.data.labels.length, 0);
       }
-   
+
       whiteEvalL = 0;
       blackEvalL = 0;
-   
-      for (var moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr++)
+
+      for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr++)
       {
          var move = prevPgnData.Moves[moveCtr];
          var key = moveCtr;
-   
+
          if (move.book)
          {
             prevPgnData.Moves[moveCtr].done = 1;
             continue;
          }
-   
-         moveNumber = Math.round(moveCtr / 2) + 1;
-   
+
+         let moveNumber = Math.round(moveCtr / 2) + 1;
+
          if (moveCtr % 2 != 0) {
             plyNum = moveCtr + 1;
             moveNumber--;
@@ -1071,63 +1077,57 @@ function updateChartData()
          {
             plyNum = moveCtr + 1;
          }
-   
+
          if (plyNum < prevPgnData.Moves[0].completed)
          {
             continue;
          }
-   
+
          if (!move.book) {
             needtoUpdate = 1;
             prevPgnData.Moves[0].completed = moveCtr + 1;
-            depth = move.d;
-   
+            let ydepth = move.d;
+
             move.cwv = getEval(move.wv);
-   
-            evall= 
+
+            let evall =
             {
                'x': moveNumber,
                'y': move.cwv,
                'ply': plyNum,
                'eval': move.wv
-            };
-   
-            time = 
+            },
+            time =
             {
                'x': moveNumber,
                'y': Math.round(move.mt / 1000),
                'ply': plyNum
-            };
-   
+            },
             speed =
             {
                'x': moveNumber,
                'y': move.s,
                'nodes': move.n,
                'ply': plyNum
-            };
-   
+            },
             depth =
             {
                'x': moveNumber,
-               'y': depth,
+               'y': ydepth,
                'ply': plyNum
-            };
-   
+            },
             seldepth =
             {
                'x': moveNumber,
                'y': move.sd,
                'ply': plyNum
-            };
-   
+            },
             tbHits =
             {
                'x': moveNumber,
                'y': move.tb,
                'ply': plyNum
-            };
-   
+            },
             nodes =
             {
                'x': moveNumber,
@@ -1146,11 +1146,11 @@ function updateChartData()
                   arrayCtrW = arrayCtrW + 1;
                }
             }
-   
-            plog ("LLL: doing for key:" + key + " ,prevPgnData.Moves[0].arrayStartW:" + 
-                  prevPgnData.Moves[0].arrayStartW + " ,prevPgnData.Moves[0].arrayStartB:" + prevPgnData.Moves[0].arrayStartB + 
+
+            plog ("LLL: doing for key:" + key + " ,prevPgnData.Moves[0].arrayStartW:" +
+                  prevPgnData.Moves[0].arrayStartW + " ,prevPgnData.Moves[0].arrayStartB:" + prevPgnData.Moves[0].arrayStartB +
                   " ,blackStarted:" + blackStarted, 1);
-   
+
             if (key % 2 == 0) {
                evalChart.data.labels[arrayCtrW] = moveNumber;
                evalChart.data.datasets[0].data[arrayCtrW] = evall;
@@ -1162,8 +1162,8 @@ function updateChartData()
                arrayPush(tbHitsChart, 0, tbHits, arrayCtrW, moveNumber);
                arrayCtrW = arrayCtrW + 1;
                prevPgnData.Moves[0].arrayStartW = arrayCtrW;
-            } 
-            else 
+            }
+            else
             {
                evalChart.data.datasets[1].data[arrayCtrB] = evall;
                arrayPush(nodesChart, 1, nodes, arrayCtrB, moveNumber);
@@ -1177,7 +1177,7 @@ function updateChartData()
             }
          }
       }
-   
+
       evalChart.update();
       if (arrayCtrW)
       {
@@ -1195,9 +1195,9 @@ function updateChartData()
       }
       depthChart.update();
       tbHitsChart.update();
-   
-      plog ("GRAPH: Exiting updateChartData with updating required:" + needtoUpdate + 
-            " ,arrayCtrW:" + arrayCtrW + ",arrayCtrB:" + arrayCtrB + ",prevPgnData.Moves[0].completed:" + prevPgnData.Moves[0].completed + 
+
+      plog ("GRAPH: Exiting updateChartData with updating required:" + needtoUpdate +
+            " ,arrayCtrW:" + arrayCtrW + ",arrayCtrB:" + arrayCtrB + ",prevPgnData.Moves[0].completed:" + prevPgnData.Moves[0].completed +
             " ,evalChart.data.labels:" + evalChart.data.labels.length, 0);
    }
    catch (e) {

@@ -1,3 +1,9 @@
+/*
+globals
+console, require
+*/
+'use strict';
+
 const fs = require("fs");
 const shlib = require("./lib.js");
 const argv = require('yargs').argv;

@@ -1,3 +1,5 @@
+'use strict';
+
 var roundDate = [];
 /* All times in GST, maintain proper formatting, if date is not decide just put 0 */
 var roundDateMan = [
@@ -61,23 +63,23 @@ var teamsx =
   [["Chiron ", 11], ["Booot ", 22]],
 ];
 
-var bigData = {           
- teams : [            
- ],            
- results : [[ /* WINNER BRACKET */          
+var bigData = {
+ teams : [
+ ],
+ results : [[ /* WINNER BRACKET */
  [[1,0, "empty-bye"], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0], [1,0, "arun"], [0,1], [1,0], [1,0], [1,0], [0,1], [1,0], [1,0]],
- [[0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],        
- [[0,0], [0,0], [0,0], [0,0]],          
- [[0,0], [0,0]],           
- [[0,0],           
-  [0,0]]            
- ]            
- ]            
-}            
+ [[0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
+ [[0,0], [0,0], [0,0], [0,0]],
+ [[0,0], [0,0]],
+ [[0,0],
+  [0,0]]
+ ]
+ ]
+};
 
 var roundResults = [];
 
-var dummyCross = 
+var dummyCross =
 {
 	"Event" : "",
 	"Order" : [
@@ -128,15 +130,15 @@ var dummyCross =
 			"WinsAsWhite" : 0
 		}
 	}
-}
+};
 
 var gamesEachMatch = [];
 var columnsEvent = [
      {
        field: 'match',
        title: 'Round',
-       width: '4%'
-       ,sortable: true
+       width: '4%',
+       sortable: true,
      },
      {
        field: 'Winner',
@@ -156,9 +158,9 @@ var columnsEvent = [
      },
      {
        field: 'Score',
-       title: 'Score'
-      ,formatter: 'formatterEvent'
-      ,cellStyle: 'cellformatterEvent'
+       title: 'Score',
+       formatter: 'formatterEvent',
+       cellStyle: 'cellformatterEvent',
      }
    ];
 

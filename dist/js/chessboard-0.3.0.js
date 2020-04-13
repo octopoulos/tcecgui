@@ -8,10 +8,14 @@
  * Date: 10 Aug 2013
  */
 
-// start anonymous scope
-;(function() {
+/*
+globals
+$, console, document, navigator, window
+*/
 'use strict';
 
+// start anonymous scope
+;(function() {
 //------------------------------------------------------------------------------
 // Chess Util Functions
 //------------------------------------------------------------------------------
@@ -51,7 +55,7 @@ function validFen(fen) {
   if (chunks.length !== 8) return false;
 
   // check the piece sections
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     if (chunks[i] === '' ||
         chunks[i].length > 8 ||
         chunks[i].search(/[^kqrbnpKQRNBP1-8]/) !== -1) {
@@ -65,7 +69,7 @@ function validFen(fen) {
 function validPositionObject(pos) {
   if (typeof pos !== 'object') return false;
 
-  for (var i in pos) {
+  for (let i in pos) {
     if (pos.hasOwnProperty(i) !== true) continue;
 
     if (validSquare(i) !== true || validPieceCode(pos[i]) !== true) {
@@ -115,12 +119,12 @@ function fenToObj(fen) {
   var position = {};
 
   var currentRow = 8;
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     var row = rows[i].split('');
     var colIndex = 0;
 
     // loop through each character in the FEN section
-    for (var j = 0; j < row.length; j++) {
+    for (let j = 0; j < row.length; j++) {
       // number / empty squares
       if (row[j].search(/[1-8]/) !== -1) {
         var emptySquares = parseInt(row[j], 10);
@@ -150,8 +154,8 @@ function objToFen(obj) {
   var fen = '';
 
   var currentRow = 8;
-  for (var i = 0; i < 8; i++) {
-    for (var j = 0; j < 8; j++) {
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
       var square = COLUMNS[j] + currentRow;
 
       // piece exists
@@ -185,8 +189,7 @@ function objToFen(obj) {
   return fen;
 }
 
-window['ChessBoard'] = window['ChessBoard'] || function(containerElOrId, cfg) {
-'use strict';
+window.ChessBoard = window.ChessBoard || function(containerElOrId, cfg) {
 
 cfg = cfg || {};
 
@@ -519,8 +522,8 @@ function calculateSquareSize() {
 // create random IDs for elements
 function createElIds() {
   // squares on the board
-  for (var i = 0; i < COLUMNS.length; i++) {
-    for (var j = 1; j <= 8; j++) {
+  for (let i = 0; i < COLUMNS.length; i++) {
+    for (let j = 1; j <= 8; j++) {
       var square = COLUMNS[i] + j;
       SQUARE_ELS_IDS[square] = square + '-' + createId();
     }
@@ -528,7 +531,7 @@ function createElIds() {
 
   // spare pieces
   var pieces = 'KQRBNP'.split('');
-  for (var i = 0; i < pieces.length; i++) {
+  for (let i = 0; i < pieces.length; i++) {
     var whitePiece = 'w' + pieces[i];
     var blackPiece = 'b' + pieces[i];
     SPARE_PIECE_ELS_IDS[whitePiece] = whitePiece + '-' + createId();
@@ -592,9 +595,9 @@ function buildBoard(orientation) {
   }
 
   var squareColor = 'white';
-  for (var i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) {
     html += '<div class="' + CSS.row + '">';
-    for (var j = 0; j < 8; j++) {
+    for (let j = 0; j < 8; j++) {
       var square = alpha[j] + row;
 
       html += '<div class="' + CSS.square + ' ' + CSS[squareColor] + ' ' +
@@ -676,7 +679,7 @@ function buildSparePieces(color) {
   }
 
   var html = '';
-  for (var i = 0; i < pieces.length; i++) {
+  for (let i = 0; i < pieces.length; i++) {
     html += buildPiece(pieces[i], false, SPARE_PIECE_ELS_IDS[pieces[i]]);
   }
 
@@ -791,7 +794,7 @@ function doAnimations(a, oldPos, newPos) {
     }
   }
 
-  for (var i = 0; i < a.length; i++) {
+  for (let i = 0; i < a.length; i++) {
     // clear a piece
     if (a[i].type === 'clear') {
       $('#' + SQUARE_ELS_IDS[a[i].square] + ' .' + CSS.piece)
@@ -841,8 +844,8 @@ function createRadius(square) {
   var squares = [];
 
   // calculate distance of all squares
-  for (var i = 0; i < 8; i++) {
-    for (var j = 0; j < 8; j++) {
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
       var s = COLUMNS[i] + (j + 1);
 
       // skip the square we're starting from
@@ -862,7 +865,7 @@ function createRadius(square) {
 
   // just return the square code
   var squares2 = [];
-  for (var i = 0; i < squares.length; i++) {
+  for (let i = 0; i < squares.length; i++) {
     squares2.push(squares[i].square);
   }
 
@@ -876,7 +879,7 @@ function findClosestPiece(position, piece, square) {
   var closestSquares = createRadius(square);
 
   // search through the position in order of distance for the piece
-  for (var i = 0; i < closestSquares.length; i++) {
+  for (let i = 0; i < closestSquares.length; i++) {
     var s = closestSquares[i];
 
     if (position.hasOwnProperty(s) === true && position[s] === piece) {
@@ -898,7 +901,7 @@ function calculateAnimations(pos1, pos2) {
   var squaresMovedTo = {};
 
   // remove pieces that are the same in both positions
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     if (pos1.hasOwnProperty(i) === true && pos1[i] === pos2[i]) {
@@ -908,7 +911,7 @@ function calculateAnimations(pos1, pos2) {
   }
 
   // find all the "move" animations
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     var closestPiece = findClosestPiece(pos1, pos2[i], i);
@@ -927,20 +930,20 @@ function calculateAnimations(pos1, pos2) {
   }
 
   // add pieces to pos2
-  for (var i in pos2) {
+  for (let i in pos2) {
     if (pos2.hasOwnProperty(i) !== true) continue;
 
     animations.push({
       type: 'add',
       square: i,
       piece: pos2[i]
-    })
+    });
 
     delete pos2[i];
   }
 
   // clear pieces from pos1
-  for (var i in pos1) {
+  for (let i in pos1) {
     if (pos1.hasOwnProperty(i) !== true) continue;
 
     // do not clear a piece if it is on a square that is the result
@@ -968,7 +971,7 @@ function drawPositionInstant() {
   boardEl.find('.' + CSS.piece).remove();
 
   // add the pieces
-  for (var i in CURRENT_POSITION) {
+  for (let i in CURRENT_POSITION) {
     if (CURRENT_POSITION.hasOwnProperty(i) !== true) continue;
 
     $('#' + SQUARE_ELS_IDS[i]).append(buildPiece(CURRENT_POSITION[i]));
@@ -996,7 +999,7 @@ function drawBoard() {
 function calculatePositionFromMoves(position, moves) {
   position = deepCopy(position);
 
-  for (var i in moves) {
+  for (let i in moves) {
     if (moves.hasOwnProperty(i) !== true) continue;
 
     // skip the move if the position doesn't have a piece on the source square
@@ -1030,7 +1033,7 @@ function setCurrentPosition(position) {
 }
 
 function isXYOnSquare(x, y) {
-  for (var i in SQUARE_ELS_OFFSETS) {
+  for (let i in SQUARE_ELS_OFFSETS) {
     if (SQUARE_ELS_OFFSETS.hasOwnProperty(i) !== true) continue;
 
     var s = SQUARE_ELS_OFFSETS[i];
@@ -1047,7 +1050,7 @@ function isXYOnSquare(x, y) {
 function captureSquareOffsets() {
   SQUARE_ELS_OFFSETS = {};
 
-  for (var i in SQUARE_ELS_IDS) {
+  for (let i in SQUARE_ELS_IDS) {
     if (SQUARE_ELS_IDS.hasOwnProperty(i) !== true) continue;
 
     SQUARE_ELS_OFFSETS[i] = $('#' + SQUARE_ELS_IDS[i]).offset();
@@ -1341,7 +1344,7 @@ widget.move = function() {
 
   // collect the moves into an object
   var moves = {};
-  for (var i = 0; i < arguments.length; i++) {
+  for (let i = 0; i < arguments.length; i++) {
     // any "false" to this function means no animations
     if (arguments[i] === false) {
       useAnimation = false;

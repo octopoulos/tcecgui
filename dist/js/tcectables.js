@@ -1,3 +1,9 @@
+/*
+globals
+_, $, axios, cellformatter, formatter, getImg, plog, standColumns, tourInfo
+*/
+'use strict';
+
 /* Global Variables */
 var crosstableData = null;
 var crossTimeout = null;
@@ -82,9 +88,9 @@ function newUpdateCrossData()
    }
 
    for (let x = 0 ; x < standtableData.Order.length; x ++) {
-      let engName = standtableData.Order[x];
-      let engineDetails = standtableData.Table[engName];
-      wins = (engineDetails.WinsAsBlack + engineDetails.WinsAsWhite);
+      let engName = standtableData.Order[x],
+          engineDetails = standtableData.Table[engName];
+         //  wins = (engineDetails.WinsAsBlack + engineDetails.WinsAsWhite);
       var entry = {
          rank: engineDetails.Rank,
          name: getImg(engName),
@@ -94,27 +100,26 @@ function newUpdateCrossData()
       for (let j = 0 ; j < abbreviations.length ; j++) {
          let abbreviation = abbreviations[j];
          var score2 = '';
-         engineName = abbreviation.name;
-         engineAbbreviation = abbreviation.abbr;
-         engineCount = standtableData.Order.length;
+         let engineName = abbreviation.name,
+            engineAbbreviation = abbreviation.abbr,
+            engineCount = standtableData.Order.length;
 
          if (engineCount < 1) {
             engineCount = 1;
          }
 
-         rounds = Math.floor(engineDetails.Games / engineCount) + 1;
-
+         let rounds = Math.floor(engineDetails.Games / engineCount) + 1;
          if (engineDetails.Abbreviation == engineAbbreviation) {
-            for (i = 0; i < rounds; i++) {
+            for (let i = 0; i < rounds; i++) {
                score2 = '';
             }
          } else {
-            matchDetails = engineDetails.Results[engineName];
+            let matchDetails = engineDetails.Results[engineName];
             score2 =
             {
                Score: matchDetails.Scores,
                Text: matchDetails.Text
-            }
+            };
          }
          _.set(entry, engineAbbreviation, score2);
       }

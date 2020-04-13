@@ -16,7 +16,7 @@
    Fix onge game pgn
    --------------------
    1. to fix a given game or set of games use
-      
+
       node server.js --port 0 --games x,y
 
    Fix till game x
@@ -25,39 +25,45 @@
 
 */
 
-var https = require("https");
+/*
+globals
+console, process, require, setInterval, setTimeout
+*/
+'use strict';
+
+// var https = require("https");
 var http = require("http");
-var url = require('url');
+// var url = require('url');
 var fs = require('fs');
 var io = require('socket.io')();
 var express = require('express');
 var app = express();
-var path = require('path');
-const md5 = require('md5');
-const axios = require('axios');
+// var path = require('path');
+// const md5 = require('md5');
+// const axios = require('axios');
 var chokidar = require('chokidar');
 var _ = require('lodash');
 var lastPgnTime = Date.now();
 const Tail = require('nodejs-tail');
-const pid = process.pid;
+// const pid = process.pid;
 const exec = require('child_process').exec;
 const argv = require('yargs').argv;
 var deepEqual = require('deep-equal');
 var globalid = 0;
 var liveeval = 'data.json';
 var livejson = 'live.json';
-var pgnDir = '/var/www/json/archive/'
+var pgnDir = '/var/www/json/archive/';
 var json = '/var/www/json/archive/';
 var archroot = '/var/www/archive.tcec-chess.com/';
 var gameJson = 'gamelist.json';
 var singlePerl = archroot + 'single.pl';
-var prevpgn = 0;
+// var prevpgn = 0;
 var prevData = 0;
 var prevliveData = 0;
 var prevevalData = 0;
 var prevliveData1 = 0;
 var prevevalData1 = 0;
-var prevCrossData = 0;
+// var prevCrossData = 0;
 var prevSchedData = 0;
 var delta = {};
 var inprogress = 0;
@@ -74,10 +80,13 @@ var userCountFactor = 1;
 /* Deltapgn: Configure this to less value for less data */
 var numMovesToSend = 2;
 var liveChartInterval = setInterval(function() { sendlines(); }, 3000);
-let retPgn = 0;
+let retPgn = {};
 const shlib = require("./lib.js");
 let jsonMenuData = 0;
 let frc = 0;
+
+let _TEST = true,
+    portnum;
 
 function setArgs()
 {
@@ -129,18 +138,18 @@ function startServer()
    }
 
    /* Encryption keys */
-   
-   var options = 
-   {
-      key: fs.readFileSync('/etc/letsencrypt/live/tcec-chess.com/privkey.pem'),
-      cert: fs.readFileSync('/etc/letsencrypt/live/tcec-chess.com/fullchain.pem')
-   };
 
-   /*var server = https.createServer(options, app).listen(parseInt(portnum), function() 
+   // var options =
+   // {
+   //    key: fs.readFileSync('/etc/letsencrypt/live/tcec-chess.com/privkey.pem'),
+   //    cert: fs.readFileSync('/etc/letsencrypt/live/tcec-chess.com/fullchain.pem')
+   // };
+
+   /*var server = https.createServer(options, app).listen(parseInt(portnum), function()
    {
       console.log('Express server listening on port ' + portnum);
    });*/
-   var server = http.createServer(app).listen(parseInt(portnum), function() 
+   var server = http.createServer(app).listen(parseInt(portnum), function()
    {
       console.log('Express server listening on port ' + portnum);
    });
@@ -150,31 +159,31 @@ function startServer()
       pingTimeout: 5000
    });
 
-   app.get('/api/gameState', function (req, res) 
+   app.get('/api/gameState', function (req, res)
    {
       console.log('api gameState request');
       var currentFen = '';
       var liveData = fs.readFileSync('live.json');
       var liveJsonData = JSON.parse(liveData);
 
-      if (liveJsonData.Moves.length > 0) 
+      if (liveJsonData.Moves.length > 0)
       {
          currentFen = liveJsonData.Moves[(liveJsonData.Moves.length - 1)].fen;
       }
 
-      var response = 
+      var response =
       {
          'White': liveJsonData.Headers.White,
          'Black': liveJsonData.Headers.Black,
          'CurrentPosition': currentFen,
          'Result': liveJsonData.Headers.Result,
          'Event': liveJsonData.Headers.Event
-      }
+      };
       res.setHeader('Content-Type', 'application/json');
-      res.status(200).send(JSON.stringify(response))
+      res.status(200).send(JSON.stringify(response));
    });
 
-   app.get('/api/currentPosition', function (req, res) 
+   app.get('/api/currentPosition', function (req, res)
    {
       console.log('api currentPosition request');
       var currentFen = 'No game in progress';
@@ -218,7 +227,7 @@ function startWatcherSlow()
 
 function startWatcherFast()
 {
-   watcherFast = 
+   watcherFast =
    chokidar.watch(livejson, {
       persistent: true,
       ignoreInitial: false,
@@ -229,7 +238,7 @@ function startWatcherFast()
       binaryInterval: 100,
       alwaysStat: false,
       depth: 3,
-      atomic: 100
+      atomic: 100,
    });
 
    if (!retPgn.bonus)
@@ -246,7 +255,7 @@ function startWatcherFast()
    }
 }
 
-function arrayRemove(arr, value) 
+function arrayRemove(arr, value)
 {
    return arr.filter(function(ele){
       return ele != value;
@@ -257,14 +266,14 @@ function showDuplicates(names)
 {
    var uniq = names
    .map((name) => {
-      return {count: 1, name: name}
+      return {count: 1, name: name};
    })
    .reduce((a, b) => {
-      a[b.name] = (a[b.name] || 0) + b.count
-      return a
-   }, {})
+      a[b.name] = (a[b.name] || 0) + b.count;
+      return a;
+   }, {});
 
-   var duplicates = Object.keys(uniq).filter((a) => uniq[a] > 1)
+   var duplicates = Object.keys(uniq).filter((a) => uniq[a] > 1);
 
    console.log(duplicates);
 }
@@ -291,9 +300,11 @@ function userCountActual()
 
 function checkLatestArchive()
 {
+    if (_TEST)
+        return {};
    if (!globalid)
    {
-      return;
+      return {};
    }
 
    if (retPgn)
@@ -307,7 +318,7 @@ function checkLatestArchive()
 
    if (retPgn.found == 0)
    {
-      return 0;
+      return {};
    }
 
    retPgn.pgnFile = pgnDir + retPgn.pgnfile;
@@ -317,6 +328,8 @@ function checkLatestArchive()
 
 function touchFile(fileName)
 {
+    if (_TEST)
+        return;
    fs.appendFileSync(fileName, '');
 }
 
@@ -450,12 +463,14 @@ function exitNode()
 
 function runPerlArchive()
 {
+    if (_TEST)
+        return;
    if (inprogress == 0)
    {
       inprogress = 1;
       var perlrun = "perl " + singlePerl;
 
-      if (retPgn.eventtag != undefined) 
+      if (retPgn.eventtag != undefined)
       {
          perlrun += " --eve " + retPgn.eventtag;
       }
@@ -514,6 +529,8 @@ function runPerlArchive()
 
 function makeLink()
 {
+    if (_TEST)
+        return;
    if (!retPgn.bonus)
    {
       var makeLink = '/scratch/tcec/Commonscripts/Divlink/makelnk.sh';
@@ -570,7 +587,7 @@ function Misc()
          socketArray.push(socketId);
       }
 
-      socket.on('room', function(room) 
+      socket.on('room', function(room)
       {
          if (room == 'room5')
          {
@@ -586,7 +603,7 @@ function Misc()
          }
       });
 
-      socket.on('noroom', function(room) 
+      socket.on('noroom', function(room)
       {
          socket.leave('room5');
          socket.leave('room10');
@@ -626,7 +643,7 @@ function Misc()
 
    });
 
-   watcherFast.on('change', (path, stats) => 
+   watcherFast.on('change', (path, stats) =>
    {
       var content = fs.readFileSync(path, "utf8");
       try
@@ -680,16 +697,16 @@ function Misc()
       if (path.match(/liveeval.*/))
       {
          console.log ("Trying to add path:" + path);
-         setTimeout(function() { watcherFast.add(path)}, 30000);
-         setTimeout(function() { watcherFast.add(path)}, 60000);
-         setTimeout(function() { watcherFast.add(path)}, 90000);
-         setTimeout(function() { watcherFast.add(path)}, 130000);
+         setTimeout(function() { watcherFast.add(path);}, 30000);
+         setTimeout(function() { watcherFast.add(path);}, 60000);
+         setTimeout(function() { watcherFast.add(path);}, 90000);
+         setTimeout(function() { watcherFast.add(path);}, 130000);
          watcherFast.add(path);
       }
    })
    .on('error', error => console.log(`Watcher error: ${error}`));
 
-   watcherSlow.on('change', (path, stats) => 
+   watcherSlow.on('change', (path, stats) =>
    {
       console.log ("slow path changed:" + path);
       if (globalid && (path == retPgn.pgnFile))
@@ -698,7 +715,7 @@ function Misc()
       }
       if (globalid && path.match(/gamelist/))
       {
-         retPgn = 0;
+         retPgn = {};
          addLatestArch();
          runPerlArchive();
          if (!retPgn.bonus)
@@ -728,10 +745,12 @@ function Misc()
             }
             if (path.match(/enginerating/))
             {
-               io.local.emit('enginerating', data);
-               exec("cp /var/www/json/shared/enginerating.json /var/www/json/archive/" + retPgn.abb + "_Enginerating.egjson", function(err, stdout, stderr) {
-                  console.log ("Doing it:" + stdout + stderr);
-               });
+                if (!_TEST) {
+                    io.local.emit('enginerating', data);
+                    exec("cp /var/www/json/shared/enginerating.json /var/www/json/archive/" + retPgn.abb + "_Enginerating.egjson", function(err, stdout, stderr) {
+                        console.log ("Doing it:" + stdout + stderr);
+                    });
+                }
             }
             if (path.match(/banner/))
             {

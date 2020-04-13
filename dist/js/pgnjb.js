@@ -1,4 +1,9 @@
 // Created by Steven Xia  --  Contributed to TCEC
+/*
+globals
+console, exports, require
+*/
+'use strict';
 
 const Chess = require("./chess.js");
 const pgnParse = require("./lib.js");
@@ -73,7 +78,7 @@ function pv_to_json(chess, pv) {
          "m": move_notation,
          "from": moveFrom,
          "to": moveTo
-      })
+      });
    }
 
    return moves;
@@ -373,7 +378,7 @@ for (let i = 0; i < res.length ; i++)
       return;
    }
 
-   if ((force || 
+   if ((force ||
         (games.length && (games.includes(j)))) ||
        !fs.existsSync(filename))
    {
@@ -382,7 +387,7 @@ for (let i = 0; i < res.length ; i++)
       fs.writeFileSync(filename,  output_json);
    }
 
-   if ((force || 
+   if ((force ||
         (games.length && (games.includes(j)))) ||
        !fs.existsSync(pgnName))
    {

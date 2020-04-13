@@ -4,3 +4,15 @@
 *.tmp
 *.log
 /package-lock.json
+
+*.mp3
+archive/
+crash.json
+crosstable.json
+data*.json
+enginerating.json
+gamelist.json
+live*.json
+schedule.json
+tournament.json
+winners.json
