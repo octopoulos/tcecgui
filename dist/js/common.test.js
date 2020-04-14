@@ -1,4 +1,4 @@
-// game.test.js
+// common.test
 //
 /* globals
 __dirname, expect, require, test,
@@ -14,7 +14,9 @@ create_module(IMPORT_PATH, [
     'common',
 ], OUTPUT_MODULE);
 
-let {Clamp, FormatFloat, FromSeconds, FromTimestamp, HashText, QueryString, Stringify} = require(OUTPUT_MODULE);
+let {
+        Clamp, DefaultFloat, FormatFloat, FromSeconds, FromTimestamp, HashText, QueryString, Stringify,
+    } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,6 +30,21 @@ let {Clamp, FormatFloat, FromSeconds, FromTimestamp, HashText, QueryString, Stri
 ].forEach(([number, min, max, min_set, answer], id) => {
     test(`Clamp:${id}`, () => {
         expect(Clamp(number, min, max, min_set)).toEqual(answer);
+    });
+});
+
+// DefaultFloat
+[
+    [undefined, undefined, undefined],
+    [undefined, 0, 0],
+    [0, 1, 0],
+    ['-0.5', 1, -0.5],
+    ['5 or 1', 1, 5],
+    ['5', 1, 5],
+    ['text 9', null, null],
+].forEach(([value, def, answer], id) => {
+    test(`DefaultFloat:${id}`, () => {
+        expect(DefaultFloat(value, def)).toEqual(answer);
     });
 });
 

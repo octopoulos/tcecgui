@@ -2,7 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 2020-04-14 : 2020-04-13 : gamepad support
-2020-04-14 : 2020-04-14 : default_float => when isNaN, takes the default value
+2020-04-14 : 2020-04-14 : DefaultFloat => when isNaN, takes the default value
 2020-04-14 : 2020-04-13 : add a few Jest tests
 2020-04-14 : 2020-04-14 : a bit larger navigation items on mobile
 2020-04-14 : 2020-04-13 : download_json.py to download all json files

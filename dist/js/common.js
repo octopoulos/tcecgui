@@ -508,59 +508,6 @@ function Prop(sel, prop, value, parent) {
 }
 
 /**
- * URL get query string, ordered + keep/discard/replace some elements
- * @param {boolean=} [stringify=false] true to have a sorted string, otherwise get a sorted object
- * @param {string[]} keep list of keys to keep
- * @param {string[]} discard list of keys to discard
- * @param {Object=} [replaces={}] add or replace items
- * @param {string=} [key='search'] hash, search
- * @returns {string|Object} result object or string
- * @example
- * 'index.html/?q=query&lan=eng#dev=x2&mode=5'
- * QueryString()                                        // {lan: "eng", q: "query"}
- * QueryString(true)                                    // "lan=eng&q=query"
- * QueryString(null, ['lan'])                           // {lan: "eng"}
- * QueryString(null, null, ['lan'])                     // {q: "query"}
- * QueryString(null, null, null, {lan: 'fra'})          // {lan: "fra", q: "query"}
- * QueryString(null, null, null, null, 'hash')          // {dev: "x2", mode: "5"}
- * QueryString(null, null, null, {lan: 'fra'}, 'hash')  // {dev: "x2", lan: "fra", mode: "5"}
- */
-function QueryString(stringify=false, keep=null, discard=null, replaces={}, key='search')
-{
-    let dico = {},
-        items = key? location[key].slice(1).split('&'): [],
-        vector = [];
-
-    for (let item of items) {
-        let parts = item.split('=');
-        if (parts.length == 2) {
-            if ((!keep || keep.includes(parts[0])) && (!discard || !discard.includes(parts[0]))) {
-                let value = decodeURIComponent(parts[1].replace(/\+/g," "));
-                dico[parts[0]] = (value == 'undefined')? undefined: value;
-            }
-        }
-    }
-    Assign(dico, replaces);
-
-    // language=eng&section=1
-    if (stringify) {
-        Keys(dico).forEach(key => {
-            if (dico[key] !== undefined)
-                vector.push(`${key}=${encodeURIComponent(dico[key])}`);
-        });
-        vector.sort();
-        return vector.join('&');
-    }
-
-    // {'language': 'eng', 'section': '1'}
-    Keys(dico).forEach(key => {
-        vector.push([key, dico[key]]);
-    });
-    vector.sort();
-    return Assign({}, ...vector.map(([key, value]) => ({[key]: value})));
-}
-
-/**
  * Show / hide nodes
  * + handle dn
  * @param {string|Node} sel CSS selector or node
@@ -842,6 +789,19 @@ function DateOffset(offset) {
 }
 
 /**
+ * Default float conversion
+ * @param {string|number} value
+ * @param {number} def default value when the value is not a valid number
+ * @returns {number}
+ */
+function DefaultFloat(value, def) {
+    if (Number.isFinite(value))
+        return value;
+    value = parseFloat(value);
+    return isNaN(value)? def: value;
+}
+
+/**
  * Download a JSON object
  * @param {Object} object
  * @param {string} name output filename
@@ -1028,6 +988,59 @@ function LS(text='') {
 function Now(as_float) {
     let seconds = Date.now() / 1000;
     return as_float? seconds: Floor(seconds);
+}
+
+/**
+ * URL get query string, ordered + keep/discard/replace some elements
+ * @param {boolean=} [stringify=false] true to have a sorted string, otherwise get a sorted object
+ * @param {string[]} keep list of keys to keep
+ * @param {string[]} discard list of keys to discard
+ * @param {Object=} [replaces={}] add or replace items
+ * @param {string=} [key='search'] hash, search
+ * @returns {string|Object} result object or string
+ * @example
+ * 'index.html/?q=query&lan=eng#dev=x2&mode=5'
+ * QueryString()                                        // {lan: "eng", q: "query"}
+ * QueryString(true)                                    // "lan=eng&q=query"
+ * QueryString(null, ['lan'])                           // {lan: "eng"}
+ * QueryString(null, null, ['lan'])                     // {q: "query"}
+ * QueryString(null, null, null, {lan: 'fra'})          // {lan: "fra", q: "query"}
+ * QueryString(null, null, null, null, 'hash')          // {dev: "x2", mode: "5"}
+ * QueryString(null, null, null, {lan: 'fra'}, 'hash')  // {dev: "x2", lan: "fra", mode: "5"}
+ */
+function QueryString(stringify=false, keep=null, discard=null, replaces={}, key='search')
+{
+    let dico = {},
+        items = key? location[key].slice(1).split('&'): [],
+        vector = [];
+
+    for (let item of items) {
+        let parts = item.split('=');
+        if (parts.length == 2) {
+            if ((!keep || keep.includes(parts[0])) && (!discard || !discard.includes(parts[0]))) {
+                let value = decodeURIComponent(parts[1].replace(/\+/g," "));
+                dico[parts[0]] = (value == 'undefined')? undefined: value;
+            }
+        }
+    }
+    Assign(dico, replaces);
+
+    // language=eng&section=1
+    if (stringify) {
+        Keys(dico).forEach(key => {
+            if (dico[key] !== undefined)
+                vector.push(`${key}=${encodeURIComponent(dico[key])}`);
+        });
+        vector.sort();
+        return vector.join('&');
+    }
+
+    // {'language': 'eng', 'section': '1'}
+    Keys(dico).forEach(key => {
+        vector.push([key, dico[key]]);
+    });
+    vector.sort();
+    return Assign({}, ...vector.map(([key, value]) => ({[key]: value})));
 }
 
 /**

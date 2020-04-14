@@ -3,45 +3,53 @@
 /*
 globals
 _, $, Abs, addDataLive, Assign, Attrs, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
-clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date, depthChart, document, drawEval, dummyCross,
-engine2colorno:true, evalChart, Exp, Floor, Hide, HTML, initializeCharts, Keys, localStorage, LS, Max, moment, Now,
-PIECE_THEMES, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan, roundResults:true, S, setInterval,
-setTimeout, Show, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart, teamsx, timeChart, updateChartData,
-updateChartDataLive, updateCrosstable, window
+clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date, DefaultFloat, depthChart, document, drawEval,
+dummyCross, engine2colorno:true, evalChart, Exp, Floor, Hide, HTML, initializeCharts, Keys, localStorage, LS, Max,
+moment, Now, PIECE_THEMES, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan, roundResults:true, S,
+setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart, teamsx,
+timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
 let _BLACK = 'black',
     _WHITE = 'white',
     activePly = 0,
+    all_engines = ['w', 'b'],          // w,b full engine names
+    all_pvs = [[], []],
     isAutoplay,
     BL = 1,
     BLACK_WHITE = [_BLACK, _WHITE],     // TODO: remove it
     board,
-    boardEl = $('#board'),
     COLORS = {
         black: 1,
         Black: 1,
+        live: 2,
         white: 0,
         White: 0,
     },
     currentGameActive,
     currentLastMove,                    // used for debugging
+    currentMove,
+    currentPositions = [],
+    ENGINE_FEATURES = {
+        AllieStein: 1,                  // & 1 => NN engine
+        LCZero: 3,                      // & 2 => Leela variations
+    },
     engine2LiveData,
-    full_engines = ['w', 'b'],          // w,b full engine names
+    FEATURE_LEELA = 2,
+    FEATURE_NN = 1,
     game = new Chess(),
+    LIVE = 2,
+    moveFrom,
+    moveFromPvs = [],
+    moveTo,
+    moveToPvs = [],
     newMovesCount = 0,
     pvBoarda,
     pvBoardb,
     pvBoardbc,
     pvBoardw,
     pvBoardwc,
-    pvBoardElb = $('#pv-boardb'),
-    pvBoardElbc = $('#pv-boardbc'),
-    pvBoardElw = $('#pv-boardw'),
-    pvBoardElwc = $('#pv-boardwc'),
-    pvBoardEla = $('#pv-boarda'),
-    pvBoardElac = $('#pv-boardac'),
     WH = 0,
     WHITE_BLACK = [_WHITE, _BLACK];
 
@@ -53,6 +61,7 @@ var gameActive = false;
 
 var squareClass = 'square-55d63';
 
+// change those
 var whiteToPlay = true;
 var whiteTimeRemaining = 0;
 var blackTimeRemaining = 0;
@@ -71,8 +80,6 @@ var loadedPlies = 0;
 var activeFen = '';
 var lastMove = '';
 var currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-var currentPositionWhite = currentPosition;
-var currentPositionBlack = currentPosition;
 var analysFen = currentPosition;
 var bookmove = 0;
 
@@ -84,6 +91,7 @@ var timeDiffRead = 0;
 var prevPgnData = 0;
 var playSound = 1;
 var globalGameno = 1;
+var choosePv;
 
 var liveEngineEval1 = [];
 var liveEngineEval2 = [];
@@ -92,8 +100,6 @@ var h2hRetryCount = 0;
 var h2hScoreRetryCount = 0;
 
 var livePVHist = [];
-var whitePv = [];
-var blackPv = [];
 var livePvs = [];
 var activePv = [];
 var highlightpv = 0;
@@ -116,14 +122,6 @@ var ptheme = "chess24";
 var oldSchedData = null;
 var activePvH = [];
 
-var moveFrom = null;
-var moveFromPvW = null;
-var moveFromPvB = null;
-var moveFromPvL = null;
-var moveTo = null;
-var moveToPvW = null;
-var moveToPvB = null;
-var moveToPvL = null;
 var hideDownPv = 0;
 
 var crossCrash = 0;
@@ -147,12 +145,17 @@ var gameDiff = 0;
 var eventCross = [];
 /***************************** CUP ***************************************************/
 
+var isPvAutoplay = [false, false];
+var engineScores = [];
+var crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/; // All possible valid terminations (hopefully).
+
+
 var onMoveEnd = function() {
-   boardEl.find('.square-' + squareToHighlight).addClass(highlightClass);
+    Class(`#board .square-${squareToHighlight}`, highlightClass);
 };
 
 var onMoveEndPv = function() {
-   pvBoardElb.find('.square-' + pvSquareToHighlight).addClass(highlightClassPv);
+    Class(`#pv-boardb .square-${pvSquareToHighlight}`, highlightClassPv);
 };
 
 function getUserS()
@@ -234,6 +237,7 @@ function updatePgn(resettime)
     });
 }
 
+// TODO: merge B&W
 function startClock(color, currentMove, previousMove) {
    stopClock(_BLACK);
    stopClock(_WHITE);
@@ -242,18 +246,8 @@ function startClock(color, currentMove, previousMove) {
        currentTime = currentMove.tl;
 
    if (color == _WHITE) {
-      whiteTimeRemaining = Ceil(previousTime / 1000) * 1000 + 1000;
-      blackTimeRemaining = Ceil(currentTime / 1000) * 1000;
-
-      if (isNaN(blackTimeRemaining))
-      {
-         blackTimeRemaining = defaultStartTime;
-      }
-
-      if (isNaN(whiteTimeRemaining))
-      {
-         whiteTimeRemaining = defaultStartTime;
-      }
+      whiteTimeRemaining = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
+      blackTimeRemaining = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
 
       setTimeRemaining(_BLACK, blackTimeRemaining);
 
@@ -268,23 +262,12 @@ function startClock(color, currentMove, previousMove) {
 
       Show('.white-to-move');
    } else {
-      whiteTimeRemaining = Ceil(currentTime / 1000) * 1000;
-      blackTimeRemaining = Ceil(previousTime / 1000) * 1000 + 1000;
-
-      if (isNaN(blackTimeRemaining))
-      {
-         blackTimeRemaining = defaultStartTime;
-      }
-
-      if (isNaN(whiteTimeRemaining))
-      {
-         whiteTimeRemaining = defaultStartTime;
-      }
+      whiteTimeRemaining = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
+      blackTimeRemaining = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
 
       setTimeRemaining(_WHITE, whiteTimeRemaining);
 
       blackMoveStarted = moment();
-
       updateClock(_BLACK);
 
       blackClockInterval = setInterval(function() {updateClock(_BLACK);}, 1000);
@@ -408,6 +391,22 @@ function listPosition()
       }
    }
    return '-';
+}
+
+/**
+ * Show a chess move
+ * @param {string} sel node selector, ex: #board
+ * @param {number} moveFrom
+ * @param {number} moveTo
+ * @param {string=} class_
+ */
+function show_move(sel, moveFrom, moveTo, class_) {
+    if (!class_)
+        class_ = highlightClass;
+
+    Class(`${sel} .${squareClass}`, class_, false);
+    Class(`${sel} .square-${moveFrom}`, class_);
+    Class(`${sel} .square-${moveTo}`, class_);
 }
 
 function setPgn(pgn)
@@ -541,7 +540,6 @@ function setPgn(pgn)
       initializeCharts();
    }
 
-   let currentMove;
    var whiteEval = {};
    var blackEval = {};
 
@@ -611,15 +609,13 @@ function setPgn(pgn)
         stopClock(_BLACK);
     }
 
-   if (viewingActiveMove) {
-      if (pgn.Moves.length > 0) {
-         boardEl.find('.' + squareClass).removeClass(highlightClass);
-         boardEl.find('.square-' + moveFrom).addClass(highlightClass);
-         boardEl.find('.square-' + moveTo).addClass(highlightClass);
-         squareToHighlight = moveTo;
-      }
-      board.position(currentPosition, false);
-   }
+    if (viewingActiveMove) {
+        if (pgn.Moves.length > 0) {
+            show_move('#board', moveFrom, moveTo);
+            squareToHighlight = moveTo;
+        }
+        board.position(currentPosition, false);
+    }
 
    if (typeof pgn.Headers == 'undefined') {
       LS("XXX: Returning here because headers not defined");
@@ -703,8 +699,7 @@ function setPgn(pgn)
       } else {
          pgn.Headers.Termination = pgn.Headers.TerminationDetails;
          LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
-         if ((pgn.Headers.Termination == 'undefined') ||
-            (pgn.Headers.Termination == undefined))
+         if (pgn.Headers.Termination == 'undefined' || pgn.Headers.Termination == undefined)
          {
             $('#event-overview').bootstrapTable('hideColumn', 'Termination');
             $('#event-overview').bootstrapTable('showColumn', 'movesToDraw');
@@ -829,7 +824,7 @@ function setInfoFromCurrentHeaders()
         let color = WHITE_BLACK[id],
             header = prevPgnData.Headers[key],
             name = getShortEngineName(header);
-        full_engines[id] = header;
+         all_engines[id] = header;
 
         HTML(`.${color}-engine-name`, name);
         HTML(`.${color}-engine-name-full`, header);
@@ -866,6 +861,7 @@ function getNodes(nodes)
    return nodes;
 }
 
+// TODO: improve this
 function getTBHits(tbhits)
 {
    var tbHits = 'N/A';
@@ -882,7 +878,7 @@ function getTBHits(tbhits)
       }
       else
       {
-         tbHits = fixedDeci(parseFloat(tbhits/ (1000000* 1))) + 'M';
+         tbHits = fixedDeci(parseFloat(tbhits/ (1000000 * 1))) + 'M';
       }
    }
    return tbHits;
@@ -891,10 +887,7 @@ function getTBHits(tbhits)
 function getEvalFromPly(ply)
 {
     let selectedMove = prevPgnData.Moves[ply],
-        side = 'White';
-   if (whiteToPlay) {
-      side = 'Black';
-   }
+        side = whiteToPlay? 'Black': 'White';
 
    if (ply < 0)
    {
@@ -928,7 +921,7 @@ function getEvalFromPly(ply)
    }
 
    //arun
-   if ((typeof selectedMove == 'undefined') || (typeof (selectedMove.pv) == 'undefined'))
+   if (selectedMove == undefined || selectedMove.pv == undefined)
    {
       return {
          'side': side,
@@ -943,10 +936,7 @@ function getEvalFromPly(ply)
       };
    }
 
-   if (typeof selectedMove == 'undefined') {
-      return '';
-   }
-    let clockPreviousMove = selectedMove,
+    let //clockPreviousMove = selectedMove,
         speed = selectedMove.s;
    if (speed < 1000000) {
       speed = Round(speed / 1000) + ' knps';
@@ -954,22 +944,13 @@ function getEvalFromPly(ply)
       speed = Round(speed / 1000000) + ' Mnps';
    }
 
-   let nodes = getNodes(selectedMove.n);
+    let nodes = getNodes(selectedMove.n),
+        depth = selectedMove.d + '/' + selectedMove.sd,
+        tbHits = getTBHits(selectedMove.tb),
+        evalRet = DefaultFloat(selectedMove.wv, 'N/A');
 
-   var depth = selectedMove.d + '/' + selectedMove.sd;
-   var tbHits = 0;
-   tbHits = getTBHits(selectedMove.tb);
-
-   var evalRet = '';
-
-   if (!isNaN(selectedMove.wv))
-   {
-      evalRet = parseFloat(selectedMove.wv).toFixed(2);
-   }
-   else
-   {
-      evalRet = selectedMove.wv;
-   }
+    if (Number.isFinite(evalRet))
+        evalRet = evalRet.toFixed(2);
 
    return {
       'side': side,
@@ -982,37 +963,6 @@ function getEvalFromPly(ply)
       'tbhits': tbHits,
       'timeleft': secFormat(selectedMove.tl),
    };
-}
-
-function getScorePct(reverse, engineName, draEval, winEval, egEval)
-{
-   var retStr = engineName;
-   retStr = retStr + ' ' + egEval + ' ';
-
-   if (!reverse)
-   {
-      if (winEval == 0)
-      {
-         retStr += " [" + draEval + "% D]";
-      }
-      else
-      {
-         retStr += " [" + winEval + "% W | " + draEval + "% D]";
-      }
-   }
-   else
-   {
-      if (winEval == 0)
-      {
-         retStr += " [" + draEval + "% D]";
-      }
-      else
-      {
-         retStr += " [" + winEval + "% B | " + draEval + "% D]";
-      }
-   }
-
-   return retStr;
 }
 
 // The function was posted by "ya" in the Leela Chess Zero Discord channel
@@ -1036,68 +986,51 @@ function leelaCpToQ(cp) {
 }
 
 function leelaEvalToWinPct(eval_) {
-   var q;
-   if (eval_ >= 0) q = leelaCpToQ(eval_ * 100);
-   else q = -leelaCpToQ(-eval_ * 100);
-   return Round(100 * 100 * q) / 200;
+    let q = Sign(eval_) * leelaCpToQ(Abs(eval_) * 100);
+    return Round(100 * 100 * q) / 200;
 }
 
-function getNNPct(engineName, egEval) {
-   var reverse = 0;
-   var whiteWinPct;
-
-   if (engineName === "LCZero") {
-      whiteWinPct = leelaEvalToWinPct(egEval);
-   } else {
-      whiteWinPct =
-         (Math.atan((egEval * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 -
-         50;
-   }
-
-   if (egEval < 0) {
-      reverse = 1;
-      whiteWinPct = -whiteWinPct;
-   }
-
-   var winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1);
-   var losEval = 0;
-   var draEval = parseFloat(100 - Max(winEval, losEval)).toFixed(1);
-   var retStr = getScorePct(reverse, engineName, draEval, winEval, egEval);
-   return retStr;
-}
-
-function getABPct(engineName, egEval)
-{
-   var reverse = 0;
-   var whiteWinPct = (50 - (100/(1 + Pow(10, egEval/4))));
-   if (egEval <= 0)
-   {
-      reverse = 1;
-      whiteWinPct = -whiteWinPct;
-   }
-   var winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1);
-   var losEval = 0;
-   var draEval = parseFloat(100 - Max(winEval, losEval)).toFixed(1);
-   var retStr = getScorePct(reverse, engineName, draEval, winEval, egEval);
-   return (retStr);
-}
-
+/**
+ * Get eval points
+ * - works for AA and NN engines
+ * @param {string} engineName full engine name
+ * @param {number} eval_
+ * @returns {string}
+ */
 function getPct(engineName, eval_)
 {
-   var shortName = getShortEngineName(engineName);
+    if (isNaN(eval_))
+        return `${engineName} ${eval_}`;
 
-   if (isNaN(eval_)) {
-      return (engineName + ' ' + eval_);
-   }
+    let whiteWinPct,
+        shortName = getShortEngineName(engineName),
+        feature = ENGINE_FEATURES[shortName];
 
-   if ((shortName == "LCZero") || (shortName == "AllieStein"))
-   {
-      return (getNNPct(shortName, eval_));
-   }
-   else
-   {
-      return (getABPct(shortName, eval_));
-   }
+    // adjust the score
+    if (feature & FEATURE_NN) {
+        if (feature & FEATURE_LEELA)
+            whiteWinPct = leelaEvalToWinPct(eval_);
+        else
+            whiteWinPct = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 - 50;
+    }
+    else
+        whiteWinPct = (50 - (100 / (1 + Pow(10, eval_/ 4))));
+
+    // final output
+    let reverse = 0;
+    if (eval_ < 0)
+    {
+        reverse = 1;
+        whiteWinPct = -whiteWinPct;
+    }
+    let winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1),
+        drawEval = parseFloat(100 - Max(winEval, 0)).toFixed(1),
+        text = `${shortName} ${eval_} `;
+    if (winEval == 0)
+        text += ` [${drawEval}% D]`;
+    else
+        text += ` [${winEval}% ${reverse? 'B': 'W'} | ${drawEval}% D]`;
+    return text;
 }
 
 function updateMoveValues(whiteToPlay, whiteEval, blackEval)
@@ -1161,26 +1094,26 @@ function updateEnginePv(color, whiteToPlay, moves)
         return;
     }
 
-    var classhigh = '';
-    let currentMove = Floor(activePly / 2);
+    let classhigh = '',
+        current = Floor(activePly / 2);
 
       if (color == _WHITE) {
-         whitePv = moves;
+         all_pvs[WH] = moves;
       } else {
-         blackPv = moves;
+         all_pvs[BL] = moves;
       }
 
       let keyOffset = 0;
       if (color == _BLACK && !whiteToPlay) {
-         currentMove -= 2;
+        current -= 2;
          // keyOffset = 1;
       }
 
       if (!whiteToPlay) {
-         currentMove++;
+        current ++;
       }
       if (!whiteToPlay && color == "black") {
-         currentMove++;
+        current ++;
       }
       let setpvmove = -1;
       HTML('#' + color + '-engine-pv', '');
@@ -1192,8 +1125,9 @@ function updateEnginePv(color, whiteToPlay, moves)
 
          classhigh = "";
          let effectiveKey = key + keyOffset,
-            pvMove = currentMove + Floor(effectiveKey / 2),
-            pvMoveNofloor = currentMove + effectiveKey;
+            pvMove = current + Floor(effectiveKey / 2),
+            pvMoveNofloor = current + effectiveKey;
+
          if (whiteToPlay)
          {
             if (color == "white" && (highlightpv == key))
@@ -1267,7 +1201,7 @@ function updateEnginePv(color, whiteToPlay, moves)
                $('#' + color + '-engine-pv').append(' .. ');
                $('#' + color + '-engine-pv2').append(' .. ');
                $('#' + color + '-engine-pv3').append(' .. ');
-               currentMove++;
+               current ++;
             }
             else if (effectiveKey % 2 == 0 )
             {
@@ -1276,7 +1210,6 @@ function updateEnginePv(color, whiteToPlay, moves)
                $('#' + color + '-engine-pv2').append(atsymbol);
             }
          }
-         LS("classhigh: " + classhigh);
          if (color == _BLACK)
          {
             classhigh += ' blue';
@@ -1297,15 +1230,15 @@ function updateEnginePv(color, whiteToPlay, moves)
       Class('#white-engine-pv3', 'alert');
       Class('#white-engine-pv3', 'alert-dark');
       Show('#white-name-dynamic');
-      whitePv = moves;
-      if (whitePv.length > 0)
+      all_pvs[WH] = moves;
+      if (all_pvs[WH].length > 0)
       {
          if (plyDiff == 2)
          {
-            setpvmove = whitePv.length - 1;
-            LS("plyDiff in white:" + whitePv.length);
+            setpvmove = all_pvs[WH].length - 1;
+            LS("plyDiff in white:" + all_pvs[WH].length);
          }
-         activePv = whitePv.slice();
+         activePv = all_pvs[WH].slice();
          setPvFromKey(setpvmove, _WHITE);
       }
    }
@@ -1315,27 +1248,27 @@ function updateEnginePv(color, whiteToPlay, moves)
       Class('#black-engine-pv3', 'alert');
       Class('#black-engine-pv3', 'alert-dark');
       Show('#black-name-dynamic');
-      blackPv = moves;
-      if (blackPv.length > 0)
+      all_pvs[BL] = moves;
+      if (all_pvs[BL].length > 0)
       {
-         activePv = blackPv.slice();
+         activePv = all_pvs[BL].slice();
          if (plyDiff == 2)
          {
-            setpvmove = blackPv.length - 1;
+            setpvmove = all_pvs[BL].length - 1;
          }
          setPvFromKey(setpvmove, _BLACK);
       }
    }
 
-   set_ui_events();
+   // set_ui_events();
 }
 
 function setPlyDiv(plyDiffL)
 {
    plyDiff = plyDiffL;
-   findDiffPv(whitePv, blackPv);
-   updateEnginePv(_WHITE, whiteToPlay, whitePv);
-   updateEnginePv(_BLACK, whiteToPlay, blackPv);
+   findDiffPv(all_pvs[WH], all_pvs[BL]);
+   updateEnginePv(_WHITE, whiteToPlay, all_pvs[WH]);
+   updateEnginePv(_BLACK, whiteToPlay, all_pvs[BL]);
    localStorage.setItem('tcec-ply-div', plyDiff);
    Prop(`input[value="ply${plyDiffL}"]`, 'checked', true);
 }
@@ -1358,17 +1291,14 @@ function findDiffPv(whitemoves, blackmoves)
       return;
    }
 
-   if (typeof whitemoves != 'undefined')
+   if (whitemoves)
    {
-      let currentMove = Floor(activePly / 2);
-
-      if (!whiteToPlay)
-      {
-         currentMove++;
-      }
+      // let current = Floor(activePly / 2);
+      // if (!whiteToPlay)
+      //    current ++;
 
       Keys(whitemoves).forEach(key => {
-         // let pvMove = currentMove + key;
+         // let pvMove = current + key;
          if (whiteToPlay)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
@@ -1408,14 +1338,9 @@ function onLastMove()
    handlePlyChange();
 }
 
-function handlePlyChange(handleclick)
+function handlePlyChange(handleclick=true)
 {
    selectedId = 0;
-   if (typeof handleclick == 'undefined')
-   {
-      handleclick = true;
-   }
-
    whiteToPlay = (activePly % 2 == 0);
 
     let blackEval = '',
@@ -1431,14 +1356,11 @@ function handlePlyChange(handleclick)
    }
 
    /* Arun: we should get move from ply - 1 as index starts at 0 */
-   let currentMove = getMoveFromPly(activePly - 1);
+   currentMove = getMoveFromPly(activePly - 1);
 
    if (activePly > 1)
    {
       let prevMove = getMoveFromPly(activePly - 2);
-      LS(`activePly=${activePly}`);
-      LS(currentMove);
-      LS(prevMove);
       for (let yy = 1 ; yy <= livePVHist.length ; yy ++)
       {
          if (livePVHist[yy])
@@ -1457,9 +1379,8 @@ function handlePlyChange(handleclick)
    }
 
    /* Arun: why do we need to keep swappging the pieces captured */
-   if (typeof currentMove != 'undefined') {
+   if (currentMove)
       setMoveMaterial(currentMove.material, 0);
-   }
 
    updateMoveValues(whiteToPlay, whiteEval, blackEval);
 
@@ -1496,247 +1417,99 @@ function scrollDiv(container, element)
    }
 }
 
-var choosePv;
-
-function setPvFromKey(moveKey, pvColor, choosePvx)
+/**
+ * Set PV from a move key
+ * @param {number} moveKey
+ * @param {string} color
+ * @param {Object} choosePvx
+ */
+function setPvFromKey(moveKey, color, choosePvx)
 {
-   var activePv;
+    let activePv,
+        id = COLORS[color];     // 0 for white, 1 for black
 
-   if (pvColor == undefined || pvColor == _WHITE)
-   {
-      activePv = whitePv.slice();
-   }
-   else if (pvColor == _BLACK)
-   {
-      activePv  = blackPv.slice();
-      LS("choosePvx is :" + JSON.stringify(activePv));
-   }
-   else if (pvColor == 'live')
-   {
-      if (choosePvx != undefined)
-      {
-         activePv = choosePvx;
-         LS("choosePvx is :" + JSON.stringify(choosePvx));
-         choosePv = choosePvx;
-      }
-      else
-      {
-         activePv = choosePv;
-         LS('live choseny:' + activePv.length + " ,moveKey:" + moveKey);
-      }
-   }
+    if (color == 'live') {
+        if (choosePvx)
+        {
+            activePv = choosePvx;
+            // LS("choosePvx is :" + JSON.stringify(choosePvx));
+            choosePv = choosePvx;
+        }
+        else
+        {
+            activePv = choosePv;
+            LS('live choseny:' + activePv.length + " ,moveKey:" + moveKey);
+        }
+    }
+    else {
+        if (!color)
+            color = _WHITE;
+        activePv = all_pvs[id].slice();
+    }
 
-   if (activePv.length < 1) {
-      setActiveKey(pvColor, 0);
-      return;
-   }
-
-   if (moveKey >= activePv.length) {
-      return;
-   }
-   setActiveKey(pvColor, moveKey);
+    if (activePv.length < 1) {
+        setActiveKey(color, 0);
+        return;
+    }
+    if (moveKey >= activePv.length)
+        return;
+    setActiveKey(color, moveKey);
 
     let moveFromPv = activePv[moveKey].from,
         moveToPv = activePv[moveKey].to,
         fen = activePv[moveKey].fen;
-   game.load(fen);
-   var pvBoardElbL = null;
 
-   Class('.active-pv-move', '-active-pv-move');
+    // could this be slow?
+    game.load(fen);
 
-   let pvBoardL;
-   if (pvColor == _WHITE)
-   {
-      if (pvBoardw != undefined)
-      {
-         pvBoardL = pvBoardw;
-         pvBoardElbL = pvBoardElw;
-         $('#white-engine-pv').find('#'+pvColor+'-'+moveKey).addClass('active-pv-move');
-         $('#white-engine-pv2').find('#'+pvColor+'-'+moveKey).addClass('active-pv-move');
-         $('#white-engine-pv3').find('#c'+pvColor+'-'+moveKey).addClass('active-pv-move');
-         $('#black-engine-pv').find('#black-'+activePvKey[1]).addClass('active-pv-move');
-         $('#black-engine-pv2').find('#black-'+activePvKey[1]).addClass('active-pv-move');
-         $('#black-engine-pv3').find('#cblack-'+activePvKey[1]).addClass('active-pv-move');
-         scrollDiv('#white-engine-pv3', '#c'+pvColor+'-'+moveKey);
-         scrollDiv('#white-engine-pv2', '#'+pvColor+'-'+moveKey);
-         scrollDiv('#white-engine-pv', '#'+pvColor+'-'+moveKey);
-         currentPositionWhite = fen;
-      }
-      moveFromPvW = moveFromPv;
-      moveToPvW = moveToPv;
-   }
-   else if (pvColor == _BLACK)
-   {
-      pvBoardL = pvBoardb;
-      pvBoardElbL = pvBoardElb;
-      $('#black-engine-pv').find('#'+pvColor+'-'+moveKey).addClass('active-pv-move');
-      $('#black-engine-pv2').find('#'+pvColor+'-'+moveKey).addClass('active-pv-move');
-      $('#black-engine-pv3').find('#c'+pvColor+'-'+moveKey).addClass('active-pv-move');
-      $('#white-engine-pv').find('#white-'+activePvKey[0]).addClass('active-pv-move');
-      $('#white-engine-pv2').find('#white-'+activePvKey[0]).addClass('active-pv-move');
-      $('#white-engine-pv3').find('#cwhite-'+activePvKey[0]).addClass('active-pv-move');
-      scrollDiv('#black-engine-pv', '#'+pvColor+'-'+moveKey);
-      scrollDiv('#black-engine-pv3', '#c'+pvColor+'-'+moveKey);
-      scrollDiv('#black-engine-pv2', '#'+pvColor+'-'+moveKey);
-      currentPositionBlack = fen;
-      moveFromPvB = moveFromPv;
-      moveToPvB = moveToPv;
-   }
-   else if (pvColor == 'live')
-   {
-      pvBoardL = pvBoarda;
-      pvBoardElbL = pvBoardEla;
-      //$('#black-engine-pv').addClass('active-pv-move');
-      //$('#black-engine-pv').find('#'+pvColor+'-'+moveKey).addClass('active-pv-move');
-      //$('#white-engine-pv').find('#white-'+activePvKey[0]).addClass('active-pv-move');
-      //scrollDiv('#black-engine-pv', '#'+pvColor+'-'+moveKey);
-      moveFromPvL = moveFromPv;
-      moveToPvL = moveToPv;
-   }
+    Class('.active-pv-move', '-active-pv-move');
 
-   if (pvBoardElbL == null)
-   {
-      return;
-   }
-   analysFen = fen;
-   pvBoardElbL.find('.' + squareClass).removeClass(highlightClassPv);
-   pvBoardElbL.find('.square-' + moveFromPv).addClass(highlightClassPv);
-   pvBoardElbL.find('.square-' + moveToPv).addClass(highlightClassPv);
-   pvSquareToHighlight = moveToPv;
+    let pvBoardElbL, pvBoardL;
 
-   pvBoardL.position(fen, false);
-   if (pvColor == _WHITE)
-   {
-      pvBoardL = pvBoardwc;
-      pvBoardElbL = pvBoardElwc;
-      pvBoardElbL.find('.' + squareClass).removeClass(highlightClassPv);
-      pvBoardElbL.find('.square-' + moveFromPv).addClass(highlightClassPv);
-      pvBoardElbL.find('.square-' + moveToPv).addClass(highlightClassPv);
-      pvBoardL.position(fen, false);
-   }
-   if (pvColor == _BLACK)
-   {
-      pvBoardL = pvBoardbc;
-      pvBoardElbL = pvBoardElbc;
-      pvBoardElbL.find('.' + squareClass).removeClass(highlightClassPv);
-      pvBoardElbL.find('.square-' + moveFromPv).addClass(highlightClassPv);
-      pvBoardElbL.find('.square-' + moveToPv).addClass(highlightClassPv);
-      pvBoardL.position(fen, false);
-   }
+    if (id == LIVE) {
+        pvBoardL = pvBoarda;
+        pvBoardElbL = '#pv-boarda';
+    }
+    else {
+        pvBoardL = (id == WH)? pvBoardw: pvBoardb;
+        pvBoardElbL = (id == WH)? '#pv-boardw': '#pv-boardb';
+
+        let other = WHITE_BLACK[1 - id];
+        Class(`#${color}-engine-pv #${color}-${moveKey}`, 'active-pv-move');
+        Class(`#${color}-engine-pv2 #${color}-${moveKey}`, 'active-pv-move');
+        Class(`#${color}-engine-pv3 #c${color}-${moveKey}`, 'active-pv-move');
+        Class(`#${other}-engine-pv #${other}-${activePvKey[1]}`, 'active-pv-move');
+        Class(`#${other}-engine-pv2 #${other}-${activePvKey[1]}`, 'active-pv-move');
+        Class(`#${other}-engine-pv3 #c${other}-${activePvKey[1]}`, 'active-pv-move');
+        scrollDiv(`#${color}-engine-pv`, `#${color}-${moveKey}`);
+        scrollDiv(`#${color}-engine-pv2`, `#${color}-${moveKey}`);
+        scrollDiv(`#${color}-engine-pv3`, `#c${color}-${moveKey}`);
+
+        currentPositions[id] = fen;
+    }
+    moveFromPvs[id] = moveFromPv;
+    moveToPvs[id] = moveToPv;
+
+    if (!pvBoardElbL)
+        return;
+    analysFen = fen;
+
+    // show moves
+    show_move(pvBoardElbL, moveFromPv, moveToPv, highlightClassPv);
+    pvSquareToHighlight = moveToPv;
+
+    pvBoardL.position(fen, false);
+    if (id == WH) {
+        show_move('#pv-boardwc', moveFromPv, moveToPv, highlightClassPv);
+        pvBoardwc.position(fen, false);
+    }
+    else if (id == BL) {
+        show_move('#pv-boardbc', moveFromPv, moveToPv, highlightClassPv);
+        pvBoardbc.position(fen, false);
+    }
 }
 
-$('#pv-board-black').click(function(e) {
-   activePv = blackPv;
-   setPvFromKey(0, 'live', blackPv);
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-white').click(function(e) {
-   activePv = whitePv;
-   setPvFromKey(0, 'live', whitePv);
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-live1').click(function(e) {
-   setPvFromKey(0, 'live', livePvs[1]);
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-live2').click(function(e) {
-   setPvFromKey(0, 'live', livePvs[2]);
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-to-first').click(function(e) {
-   setPvFromKey(0, 'live');
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-previous').click(function(e) {
-   if (activePvKey[2] > 0) {
-      setPvFromKey(activePvKey[2] - 1, 'live');
-   }
-   e.preventDefault();
-
-   return false;
-});
-
-$('#pv-board-next').click(function(e) {
-   if (activePvKey[2] < choosePv.length) {
-      setPvFromKey(activePvKey[2] + 1, 'live');
-   }
-   e.preventDefault();
-
-   return false;
-});
-
-$('.pv-board-to-first1').click(function(e) {
-   setPvFromKey(0, _WHITE);
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-to-first2').click(function(e) {
-   setPvFromKey(0, _BLACK);
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-previous1').click(function(e) {
-   if (activePvKey[0] > 0) {
-      setPvFromKey(activePvKey[0] - 1, _WHITE);
-   }
-   e.preventDefault();
-
-   return false;
-});
-
-$('.pv-board-previous2').click(function(e) {
-   if (activePvKey[1] > 0) {
-      setPvFromKey(activePvKey[1] - 1, _BLACK);
-   }
-   e.preventDefault();
-
-   return false;
-});
-
-var isPvAutoplay = [];
-isPvAutoplay[1] = false;
-isPvAutoplay[0] = false;
-
-$('.pv-board-autoplay1').click(function(e) {
-    Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[0]);
-   if (isPvAutoplay[0]) {
-      isPvAutoplay[0] = false;
-   } else {
-      isPvAutoplay[0] = true;
-      pvBoardautoplay(0, _WHITE, whitePv);
-   }
-   e.preventDefault();
-
-   return false;
-});
-
-$('.pv-board-autoplay2').click(function(e) {
-    Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[1]);
-   if (isPvAutoplay[1]) {
-      isPvAutoplay[1] = false;
-   } else {
-      isPvAutoplay[1] = true;
-      pvBoardautoplay(1, _BLACK, blackPv);
-   }
-   e.preventDefault();
-
-   return false;
-});
-
 //hack
-
 function pvBoardautoplay(value, color, activePv)
 {
    if (isPvAutoplay[value] && activePvKey[value] >= 0 && activePvKey[value] < activePv.length - 1) {
@@ -1754,54 +1527,6 @@ function pvBoardautoplay(value, color, activePv)
       }
    }
 }
-
-$('.pv-board-next1').click(function(e) {
-   if (activePvKey[0] < whitePv.length) {
-      setPvFromKey(activePvKey[0] + 1, _WHITE);
-   }
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-next2').click(function(e) {
-   if (activePvKey[1] < blackPv.length) {
-      setPvFromKey(activePvKey[1] + 1, _BLACK);
-   }
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-to-last1').click(function(e) {
-   setPvFromKey(whitePv.length - 1, _WHITE);
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-to-last2').click(function(e) {
-   setPvFromKey(blackPv.length - 1, _BLACK);
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-reverse1').click(function(e) {
-   pvBoardw.flip();
-   pvBoardwc.flip();
-   e.preventDefault();
-   return false;
-});
-
-$('.pv-board-reverse2').click(function(e) {
-   pvBoardb.flip();
-   pvBoardbc.flip();
-   e.preventDefault();
-   return false;
-});
-
-$('#pv-board-reverse').click(function(e) {
-   pvBoarda.flip();
-   e.preventDefault();
-   return false;
-});
 
 function setMoveMaterial(material, whiteToPlay)
 {
@@ -2026,29 +1751,17 @@ function formatter(value, _row, index, _field) {
 
 function crossCellformatter(value, row, index, field)
 {
-   if (row.crashes >= 3)
-   {
-      return {classes: 'strike'};
-   }
-   return {classes: 'normal'};
+   return {classes: (row.crashes >= 3)? 'strike': 'normal'};
 }
 
 function cellformatter(value, row, index, field) {
-   if (!value.hasOwnProperty("Score")) // true
-   {
-      return {classes: _BLACK};
-   }
-   return {classes: 'monofont'};
+   return {classes: (value.Score != undefined)? 'monofont': _BLACK};
 }
-
-var engineScores = [];
 
 function sleep(ms)
 {
    return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-var crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/; // All possible valid terminations (hopefully).
 
 function updateScoreHeadersData()
 {
@@ -2058,27 +1771,22 @@ function updateScoreHeadersData()
       {
          setTimeout(function() { updateScoreHeadersData(); }, 5000);
          LS("H2h score did not get updated:" + h2hScoreRetryCount);
-         h2hScoreRetryCount = h2hScoreRetryCount + 1;
+         h2hScoreRetryCount ++;
          return;
       }
    }
 
-   if ((crosstableData.whiteCurrent === full_engines[WH]) &&
-      (crosstableData.blackCurrent === full_engines[BL]))
-   {
+   if (crosstableData.whiteCurrent === all_engines[WH] && crosstableData.blackCurrent === all_engines[BL])
       return;
-   }
-
-   LS("H2H scores updated");
 
    var scores = {};
-   var whiteRes = crosstableData.Table[full_engines[WH]];
-   var blackRes = crosstableData.Table[full_engines[BL]];
+   var whiteRes = crosstableData.Table[all_engines[WH]];
+   var blackRes = crosstableData.Table[all_engines[BL]];
 
    if (whiteRes.Rating)
    {
       HTML('#white-engine-elo', whiteRes.Rating);
-      scores = getScoreText(crosstableData.Table[full_engines[WH]].Results[full_engines[BL]].Text);
+      scores = getScoreText(crosstableData.Table[all_engines[WH]].Results[all_engines[BL]].Text);
       HTML('.white-engine-score', scores.w.toFixed(1));
       HTML('.black-engine-score', scores.b.toFixed(1));
    }
@@ -2088,8 +1796,8 @@ function updateScoreHeadersData()
       HTML('#black-engine-elo', blackRes.Rating);
    }
 
-   crosstableData.whiteCurrent = full_engines[WH];
-   crosstableData.blackCurrent = full_engines[BL];
+   crosstableData.whiteCurrent = all_engines[WH];
+   crosstableData.blackCurrent = all_engines[BL];
 
    return 0;
 }
@@ -2157,13 +1865,11 @@ function updateH2hData()
       return;
    }
 
-   if ((oldSchedData.WhiteEngCurrent === full_engines[WH]) &&
-      (oldSchedData.BlackEngCurrent === full_engines[BL]))
+   if ((oldSchedData.WhiteEngCurrent === all_engines[WH]) &&
+      (oldSchedData.BlackEngCurrent === all_engines[BL]))
    {
       return;
    }
-
-   LS("H2h got updated");
 
    h2hRetryCount = 0;
 
@@ -2226,13 +1932,13 @@ function updateH2hData()
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
          }
       }
-      if ((engine.Black == full_engines[BL] && engine.White == full_engines[WH]) ||
-         (engine.Black == full_engines[WH] && engine.White == full_engines[BL]))
+      if ((engine.Black == all_engines[BL] && engine.White == all_engines[WH]) ||
+         (engine.Black == all_engines[WH] && engine.White == all_engines[BL]))
       {
          engine.h2hrank = engine.Game;
          if (engine.Result != undefined)
          {
-            h2hrank += 1;
+            h2hrank ++;
             if (h2hrank%2 == 0)
             {
                engine.h2hrank = engine.Game + ' (R)';
@@ -2241,8 +1947,8 @@ function updateH2hData()
          h2hdata.push(engine);
       }
    });
-   oldSchedData.WhiteEngCurrent = full_engines[WH];
-   oldSchedData.BlackEngCurrent = full_engines[BL];
+   oldSchedData.WhiteEngCurrent = all_engines[WH];
+   oldSchedData.BlackEngCurrent = all_engines[BL];
 
    $('#h2h').bootstrapTable('load', h2hdata);
 }
@@ -2290,7 +1996,6 @@ function updateTourStat(data)
 
 function updateScheduleData(scdatainput)
 {
-   LS("Updating schedule:");
    let scdata = [];
    var prevDate = 0;
    var momentDate = 0;
@@ -2385,7 +2090,6 @@ function scheduleHighlight(_noscroll)
 
 function updateWinnersData(winnerData)
 {
-   LS("Updating winners:");
    let scdata = [];
 //    var prevDate = 0;
 //    var momentDate = 0;
@@ -2422,12 +2126,6 @@ function updateSchedule()
     });
 }
 
-function pad(pad, str) {
-   if (typeof str === 'undefined')
-      return pad;
-   return (pad + str).slice(-pad.length);
-}
-
 var onDragStart = function(source, piece, position, orientation)
 {
    if (game.game_over() === true ||
@@ -2456,12 +2154,10 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
       activePv[0] = {};
       activePv[0].fen = fen;
    }
-   var moveFrom = oldLocation;
-   var moveTo = newLocation;
+   moveFrom = oldLocation;
+   moveTo = newLocation;
    if (newLocation == oldLocation)
-   {
       return;
-   }
 
    var str = newLocation + '-' + oldLocation;   // + '-' + newLocation;
    pvBoarda.move(str);
@@ -2471,10 +2167,10 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
    activePv[pvLen].from = oldLocation;
    activePv[pvLen].to = newLocation;
    Class(this, 'active-pv-move');
-   pvBoardEla.find('.' + squareClass).removeClass(highlightClassPv);
-   pvBoardEla.find('.square-' + moveFrom).addClass(highlightClassPv);
-   pvBoardEla.find('.square-' + moveTo).addClass(highlightClassPv);
+
+   show_move('#pv-boarda', moveFrom, moveTo, highlightClassPv);
    pvSquareToHighlight = moveTo;
+
    activePvKey[2] = pvLen;
    analysFen = fen;
 };
@@ -2575,29 +2271,15 @@ function setBoard()
    Prop(`input[value="${btheme}b"]`, 'checked', true);
    Prop(`input[value="${ptheme}p"]`, 'checked', true);
 
-   if (prevPgnData && prevPgnData.Moves.length > 0)
-   {
-      boardEl.find('.' + squareClass).removeClass(highlightClass);
-      boardEl.find('.square-' + moveFrom).addClass(highlightClass);
-      boardEl.find('.square-' + moveTo).addClass(highlightClass);
-      if (moveFromPvB)
-      {
-         pvBoardElb.find('.' + squareClass).removeClass(highlightClassPv);
-         pvBoardElb.find('.square-' + moveFromPvB).addClass(highlightClassPv);
-         pvBoardElb.find('.square-' + moveToPvB).addClass(highlightClassPv);
-      }
-      if (moveFromPvW)
-      {
-         pvBoardElw.find('.' + squareClass).removeClass(highlightClassPv);
-         pvBoardElw.find('.square-' + moveFromPvW).addClass(highlightClassPv);
-         pvBoardElw.find('.square-' + moveToPvW).addClass(highlightClassPv);
-      }
-      if (moveFromPvL)
-      {
-         pvBoardEla.find('.' + squareClass).removeClass(highlightClassPv);
-         pvBoardEla.find('.square-' + moveFromPvL).addClass(highlightClassPv);
-         pvBoardEla.find('.square-' + moveToPvL).addClass(highlightClassPv);
-      }
+    if (prevPgnData && prevPgnData.Moves.length > 0)
+    {
+        show_move('#board', moveFrom, moveTo);
+        if (moveFromPvs[1])
+            show_move('#pv-boardb', moveFromPvs[1], moveToPvs[1], highlightClassPv);
+        if (moveFromPvs[0])
+            show_move('#pv-boardw', moveFromPvs[0], moveToPvs[0], highlightClassPv);
+        if (moveFromPvs[2])
+            show_move('#pv-boarda', moveFromPvs[2], moveToPvs[2], highlightClassPv);
    }
 }
 
@@ -2702,7 +2384,6 @@ function setDark()
     Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark');
     Prop('#themecheck', 'checked', false);
     Class('.graphs', 'blackcanvas -whitecanvas');
-    Style('#v-pills-tabContent', 'background:transparent');
     setDarkMode(1);
 }
 
@@ -2793,31 +2474,17 @@ function setEngineColor(color)
    updateChartData();
 }
 
-
-
 function updateLiveEvalDataHistory(datum, fen, container, contno)
 {
-    let score;
-   if (!isNaN(datum.eval))
-   {
-      score = parseFloat(datum.eval);
-   }
-   else
-   {
-      score = datum.eval;
-   }
+    let score = DefaultFloat(datum.eval, `${datum.eval}`);
 
-   /* Check if black */
+   // Check if black
    if (datum.pv.search(/.*\.\.\..*/i) == 0)
    {
       if (!isNaN(score))
       {
-         /* Invert the score */
-         score = parseFloat(score) * -1;
-         if (score === 0)
-         {
-            score = 0;
-         }
+         // Invert the score
+         score = -parseFloat(score);
       }
    }
 
@@ -2835,7 +2502,7 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
       var split = datum.pv.replace("...","... ").split(' ');
       var length = split.length;
       for (let i = 0, moveCount = 0; i < length; i++) {
-         var str = split[i];
+         let str = split[i];
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
             if (!moveResponse || typeof moveResponse == 'undefined') {
@@ -2898,10 +2565,10 @@ var clearedAnnotation = 0;
  * Updates the Kibitzings' engine PV and arrow if enabled.
  * Called by the socket when new PV info comes in.
  * @param {Object} datum object: {engine: String, pv:String, tbHits:String, Nodes:String/Integer, eval:String/Integer, speed:String/Integer, depth:String}
- * @param {Boolean} update has to do with updating
- * @param {String} fen fen of current position
- * @param {Integer} contno index of kibitzing engine
- * @param {Boolean} initial Unknown behavior
+ * @param {boolean} update has to do with updating
+ * @param {string} fen fen of current position
+ * @param {number} contno index of kibitzing engine
+ * @param {boolean} initial Unknown behavior
  */
 function updateLiveEvalData(datum, update, fen, contno, initial) {
     if (!datum)
@@ -2919,7 +2586,6 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       clearedAnnotation = 1;
    }
 
-   LS("Annotation did not get cleared" + clearedAnnotation + ", contno:" + contno);
    if (clearedAnnotation < 1 && contno == 2) {
       board.clearAnnotation();
    }
@@ -3034,7 +2700,6 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
 function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
     if (!datum)
         return;
-   var classhigh = '';
 
    if (!livepvupdate)
    {
@@ -3045,8 +2710,9 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
       return;
    }
 
-   var container = '#white-engine-pv3';
-   var color = _WHITE;
+   let classhigh = '',
+      container = '#white-engine-pv3',
+      color = _WHITE;
 
    if (datum.color == 1)
    {
@@ -3070,45 +2736,44 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    var pvs = [];
 
    var moveContainer = [];
-   if (datum.pv.length > 0 && datum.pv.trim() != "no info") {
-      fen = fen ? fen : activeFen;
-      var chess = new Chess(fen);
-      var currentFen = fen;
-
-      var split = datum.pv.replace("...","... ").split(' ');
-      var length = split.length;
-      for (let i = 0, moveCount = 0; i < length; i++) {
-         let str = split[i];
-         if (isNaN(str.charAt(0))) {
-            let moveResponse = chess.move(str);
-            if (!moveResponse || typeof moveResponse == 'undefined') {
-               LS("undefine move" + str);
-               return;
-            } else {
-               currentFen = chess.fen();
-               let newPv = {
-                  'from': moveResponse.from,
-                  'to': moveResponse.to,
-                  'm': moveResponse.san,
-                  'fen': currentFen
-               };
-
-               //we can build the html and the PV in the same loop. no need to do it three times
-               moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                  "' engine='" + (contno) +
-                  "' color='live'>" + moveResponse.san +
-                  '</a>');
-               currentLastMove = str.slice(-2);
-               //pushing is the same as a union of an array with one item...
-               pvs.push(newPv);
-               moveCount++;
-            }
-         } else {
-            moveContainer.push(str);
-         }
-      }
-   } else {
+   if (!datum.pv.length || datum.pv.trim() == "no info")
       return;
+
+   fen = fen ? fen : activeFen;
+   var chess = new Chess(fen);
+   var currentFen = fen;
+
+   var split = datum.pv.replace("...","... ").split(' ');
+   var length = split.length;
+   for (let i = 0, moveCount = 0; i < length; i++) {
+      let str = split[i];
+      if (isNaN(str.charAt(0))) {
+         let moveResponse = chess.move(str);
+         if (!moveResponse || typeof moveResponse == 'undefined') {
+            LS("undefine move" + str);
+            return;
+         } else {
+            currentFen = chess.fen();
+            let newPv = {
+               'from': moveResponse.from,
+               'to': moveResponse.to,
+               'm': moveResponse.san,
+               'fen': currentFen
+            };
+
+            //we can build the html and the PV in the same loop. no need to do it three times
+            moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
+               "' engine='" + (contno) +
+               "' color='live'>" + moveResponse.san +
+               '</a>');
+            currentLastMove = str.slice(-2);
+            //pushing is the same as a union of an array with one item...
+            pvs.push(newPv);
+            moveCount++;
+         }
+      } else {
+         moveContainer.push(str);
+      }
    }
 
    var evalStr = getPct(datum.engine, datum.eval);
@@ -3129,23 +2794,15 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6>');
    $(container).append('<div class="' + addClass + ' ' + classhigh + ' alert alert-dark">' + moveContainer.join(' ') + '</div>');
    //updateChartData();
-   var x = 0;
-   datum.plynum = datum.plynum + 1;
-   if (datum.plynum % 2 == 0)
-   {
-      x = datum.plynum/2;
-   }
-   else
-   {
-      x = (datum.plynum + 1)/2;
-   }
-   var evalData =
-	{
-		'x': x,
-		'y': score,
-		'ply': datum.plynum,
-		'eval': score
-	};
+
+   datum.plynum ++;
+   let x = Floor((datum.plynum + 1) / 2),
+      evalData = {
+         x: x,
+         y: score,
+         ply: datum.plynum,
+         eval: score
+      };
 
    if (prevevalData.ply != datum.plynum)
    {
@@ -3154,7 +2811,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
 
    if (prevevalData.eval != evalData.eval)
    {
-      LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
+      // LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
       if (livepvupdate)
       {
          removeData(evalChart, evalData, datum.color);
@@ -4345,13 +4002,8 @@ function toggleTheme()
    $(".navbar-toggle").click();
 }
 
-function hideBanner(timeDispl)
+function hideBanner(timeDispl=30000)
 {
-   if (timeDispl == undefined)
-   {
-      timeDispl = 30000;
-   }
-
    setTimeout(function()
    {
       let note = _("#note");
@@ -4449,11 +4101,11 @@ function scheduleToTournamentInfo(schedJson)
       let cur = schedJson[i];
       cur.Game = i + 1;
       if (typeof cur.Moves != 'undefined' && !crash_re.test(cur.Termination)) {
-         data.crashes[0] += 1;
+         data.crashes[0] ++;
          data.crashes[1].push(cur.Game);
       }
       if (cur.Moves != null) {
-         compGames += 1;
+         compGames ++;
          if (cur.Moves < data.minMoves[0])  {
             data.minMoves = [cur.Moves, cur.Game];
          }
@@ -4475,9 +4127,9 @@ function scheduleToTournamentInfo(schedJson)
       }
 
       if (cur.Result == "1-0") {
-         data.whiteWins+=1;
+         data.whiteWins ++;
       } else if (cur.Result == "0-1") {
-         data.blackWins+=1;
+         data.blackWins ++;
       }
    }
    data.avgMoves = Round(data.avgMoves/compGames);
@@ -4515,7 +4167,7 @@ function hmsToSecondsOnly(str) {
 
 function pad(num)
 {
-   return ("0"+num).slice(-2);
+   return ("0" + num).slice(-2);
 }
 
 function hhmm(secs)
@@ -4633,33 +4285,32 @@ function getImg(engine)
    return('<div class="right-align"><img class="right-align-pic" src="img/engines/'+ getShortEngineName(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>');
 }
 
-function getScoreText(strText)
-{
-   var blackScore = 0;
-   var whiteScore = 0;
+/**
+ * Calculate White and Black points
+ * @param {string} text
+ * @returns {Object}
+ */
+function getScoreText(text) {
+    let black = 0,
+        white = 0;
 
-   for (let i = 0; i < strText.length; i++)
-   {
-      if (strText.charAt(i) == '0')
-      {
-         blackScore = blackScore + 1;
-      }
-      else if (strText.charAt(i) == '1')
-      {
-         whiteScore = whiteScore + 1;
-      }
-      else if (strText.charAt(i) == '=')
-      {
-         blackScore = blackScore + 0.5;
-         whiteScore = whiteScore + 0.5;
-      }
-   }
-   return {"w":whiteScore, "b": blackScore};
+    for (let i=0, length=text.length; i<length; i++) {
+        let char = text[i];
+        if (char == '0')
+            black ++;
+        else if (char == '1')
+            white ++;
+        else if (char == '=') {
+            black += 0.5;
+            white += 0.5;
+        }
+    }
+
+    return {w: white, b: black};
 }
 
 function updateCrashData(data)
 {
-   LS("Updating crash:");
    let scdata = [];
 //    var crashEntry = {};
 
@@ -5090,10 +4741,10 @@ function set_ui_events() {
         activePvColor = pvColor;
 
         if (pvColor == _WHITE) {
-           activePv = whitePv.slice();
+           activePv = all_pvs[WH].slice();
            setPvFromKey(moveKey, pvColor);
         } else if (pvColor == _BLACK) {
-           activePv = blackPv.slice();
+           activePv = all_pvs[BL].slice();
            setPvFromKey(moveKey, pvColor);
         } else {
            let liveKey = $(this).attr('engine');
@@ -5129,9 +4780,7 @@ function set_ui_events() {
        Class('.active-move', '-active-move');
        Class(this, 'active-move');
 
-       boardEl.find('.' + squareClass).removeClass(highlightClass);
-       boardEl.find('.square-' + moveFrom).addClass(highlightClass);
-       boardEl.find('.square-' + moveTo).addClass(highlightClass);
+       show_move('#board', moveFrom, moveTo);
        squareToHighlight = moveTo;
 
        board.position(clickedFen, false);
@@ -5233,4 +4882,160 @@ function set_ui_events() {
            openCross(0, $el.agame);
         }
      });
+
+     //
+     $('#pv-board-black').click(function(e) {
+      activePv = all_pvs[BL];
+      setPvFromKey(0, 'live', all_pvs[BL]);
+      e.preventDefault();
+      return false;
+   });
+
+   $('#pv-board-white').click(function(e) {
+      activePv = all_pvs[WH];
+      setPvFromKey(0, 'live', all_pvs[WH]);
+      e.preventDefault();
+      return false;
+   });
+
+   $('#pv-board-live1').click(function(e) {
+      setPvFromKey(0, 'live', livePvs[1]);
+      e.preventDefault();
+      return false;
+   });
+
+   $('#pv-board-live2').click(function(e) {
+      setPvFromKey(0, 'live', livePvs[2]);
+      e.preventDefault();
+      return false;
+   });
+
+   $('#pv-board-to-first').click(function(e) {
+      setPvFromKey(0, 'live');
+      e.preventDefault();
+      return false;
+   });
+
+   $('#pv-board-previous').click(function(e) {
+      if (activePvKey[2] > 0) {
+         setPvFromKey(activePvKey[2] - 1, 'live');
+      }
+      e.preventDefault();
+
+      return false;
+   });
+
+   $('#pv-board-next').click(function(e) {
+      if (activePvKey[2] < choosePv.length) {
+         setPvFromKey(activePvKey[2] + 1, 'live');
+      }
+      e.preventDefault();
+
+      return false;
+   });
+
+   $('.pv-board-to-first1').click(function(e) {
+      setPvFromKey(0, _WHITE);
+      e.preventDefault();
+      return false;
+   });
+
+   $('.pv-board-to-first2').click(function(e) {
+      setPvFromKey(0, _BLACK);
+      e.preventDefault();
+      return false;
+   });
+
+   $('.pv-board-previous1').click(function(e) {
+      if (activePvKey[0] > 0) {
+         setPvFromKey(activePvKey[0] - 1, _WHITE);
+      }
+      e.preventDefault();
+
+      return false;
+   });
+
+   $('.pv-board-previous2').click(function(e) {
+      if (activePvKey[1] > 0) {
+         setPvFromKey(activePvKey[1] - 1, _BLACK);
+      }
+      e.preventDefault();
+
+      return false;
+   });
+
+   $('.pv-board-autoplay1').click(function(e) {
+      Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[0]);
+     if (isPvAutoplay[0]) {
+        isPvAutoplay[0] = false;
+     } else {
+        isPvAutoplay[0] = true;
+        pvBoardautoplay(0, _WHITE, all_pvs[WH]);
+     }
+     e.preventDefault();
+
+     return false;
+  });
+
+  $('.pv-board-autoplay2').click(function(e) {
+      Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[1]);
+     if (isPvAutoplay[1]) {
+        isPvAutoplay[1] = false;
+     } else {
+        isPvAutoplay[1] = true;
+        pvBoardautoplay(1, _BLACK, all_pvs[BL]);
+     }
+     e.preventDefault();
+
+     return false;
+  });
+
+  //
+  $('.pv-board-next1').click(function(e) {
+    if (activePvKey[0] < all_pvs[WH].length) {
+       setPvFromKey(activePvKey[0] + 1, _WHITE);
+    }
+    e.preventDefault();
+    return false;
+ });
+
+ $('.pv-board-next2').click(function(e) {
+    if (activePvKey[1] < all_pvs[BL].length) {
+       setPvFromKey(activePvKey[1] + 1, _BLACK);
+    }
+    e.preventDefault();
+    return false;
+ });
+
+ $('.pv-board-to-last1').click(function(e) {
+    setPvFromKey(all_pvs[WH].length - 1, _WHITE);
+    e.preventDefault();
+    return false;
+ });
+
+ $('.pv-board-to-last2').click(function(e) {
+    setPvFromKey(all_pvs[BL].length - 1, _BLACK);
+    e.preventDefault();
+    return false;
+ });
+
+ $('.pv-board-reverse1').click(function(e) {
+    pvBoardw.flip();
+    pvBoardwc.flip();
+    e.preventDefault();
+    return false;
+ });
+
+ $('.pv-board-reverse2').click(function(e) {
+    pvBoardb.flip();
+    pvBoardbc.flip();
+    e.preventDefault();
+    return false;
+ });
+
+ $('#pv-board-reverse').click(function(e) {
+    pvBoarda.flip();
+    e.preventDefault();
+    return false;
+ });
 }
