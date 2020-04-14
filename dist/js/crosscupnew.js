@@ -74,7 +74,7 @@ function pgn2crosstable(pgn, eventtable=false) {
 
     // process the PGNs --------------------------------------------------------
     for (let index = 0; index < pgn.length; index++) {
-        crosstable.Game += 1;
+        crosstable.Game ++;
         parse_pgn_for_crosstable(crosstable, pgn[index]);
     }
     delete crosstable.Game;
@@ -109,7 +109,7 @@ function get_eventtable(pgn) {
         engines_array = [game_info.White, game_info.Black].sort();
         engines_string = engines_array.join(EVENTTABLE_SPLIT_CHARS);
         if (!seen_matchups.includes(engines_string)) {
-            pairing_number += 1;
+            pairing_number ++;
             pairing_string = String(`Match ${pairing_number}`);
             eventtable.EventTable[pairing_string] = {
                 "Engines": engines_string
@@ -119,7 +119,7 @@ function get_eventtable(pgn) {
         } else {
             pairing_string = String(`Match ${seen_matchups.indexOf(engines_string) + 1}`);
         }
-        game_number += 1;
+        game_number ++;
         eventtable.CrossTable[pairing_string].Game = game_number;
         parse_pgn_for_crosstable(eventtable.CrossTable[pairing_string], pgn[index]);
         delete eventtable.CrossTable[pairing_string].Game;
@@ -291,12 +291,12 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
     try {
         if (!game.TerminationDetails.match(NOT_CRASH_REGEX)) {
             if (RESULT_LOOKUP[game.Result] === 1) {
-                crosstable.Table[game.Black].Strikes += 1;
+                crosstable.Table[game.Black].Strikes ++;
             } else if (RESULT_LOOKUP[game.Result] === 0) {
-                crosstable.Table[game.White].Strikes += 1;
+                crosstable.Table[game.White].Strikes ++;
             } else {
-                crosstable.Table[game.White].Strikes += 1;
-                crosstable.Table[game.Black].Strikes += 1;
+                crosstable.Table[game.White].Strikes ++;
+                crosstable.Table[game.Black].Strikes ++;
             }
         }
     } catch (err) {
@@ -415,25 +415,25 @@ function get_score_and_games(crosstable, engine, ignore_engines=[]) {
         opponent_table = engine_table.Results[opponent].Scores;
         for (let index = 0; index < opponent_table.length; index++) {
             if (opponent_table[index].Side === "White") {
-                engine_table.GamesAsWhite += 1;
+                engine_table.GamesAsWhite ++;
             } else {
-                engine_table.GamesAsBlack += 1;
+                engine_table.GamesAsBlack ++;
             }
 
-            engine_table.Games += 1;
+            engine_table.Games ++;
             score += opponent_table[index].Result;
 
             if (opponent_table[index].Result === 1) {
                 if (opponent_table[index].Winner === "White") {
-                    engine_table.WinsAsWhite += 1;
+                    engine_table.WinsAsWhite ++;
                 } else {
-                    engine_table.WinsAsBlack += 1;
+                    engine_table.WinsAsBlack ++;
                 }
             } else if (opponent_table[index].Result === 0) {
                 if (opponent_table[index].Winner === "White") {
-                    engine_table.LossesAsBlack += 1;
+                    engine_table.LossesAsBlack ++;
                 } else {
-                    engine_table.LossesAsWhite += 1;
+                    engine_table.LossesAsWhite ++;
                 }
             }
         }
@@ -624,7 +624,7 @@ function splitPgnsString(text) {
     let arr = text.split(/((?:1-0|1\/2-1\/2|0-1|\*)\n\n)/);
     let res = [];
     let j = 0;
-    for (let i = 0; i < arr.length; i = i + 2) {
+    for (let i = 0; i < arr.length; i += 2) {
         res[j++] = arr[i] + arr[i + 1];
     }
     return res;
@@ -792,7 +792,7 @@ function generateResult(output_json)
                results[4][0] = getResultPair(object[key]);
                matchResArray.splice(matchResArray.length-2, 1, getMatchResPair(object[key]));
             }
-            totalMatches = totalMatches + 1;
+            totalMatches ++;
             if ((totalMatches == 16) ||
                 (totalMatches == 24) ||
                 (totalMatches == 28) ||

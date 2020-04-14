@@ -20,6 +20,7 @@ let _BLACK = 'black',
     BL = 1,
     BLACK_WHITE = [_BLACK, _WHITE],     // TODO: remove it
     board,
+    clock_intervals = ['', ''],
     COLORS = {
         black: 1,
         Black: 1,
@@ -30,7 +31,8 @@ let _BLACK = 'black',
     currentGameActive,
     currentLastMove,                    // used for debugging
     currentMove,
-    currentPositions = [],
+    current_positions = [],
+    defaultStartTime = 0,
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
@@ -50,6 +52,9 @@ let _BLACK = 'black',
     pvBoardbc,
     pvBoardw,
     pvBoardwc,
+    remain_times = [0, 0],
+    started_moves = [0, 0],
+    used_times = [0, 0],
     WH = 0,
     WHITE_BLACK = [_WHITE, _BLACK];
 
@@ -59,20 +64,7 @@ var pvSquareToHighlight = '';
 var crossTableInitialized = false;
 var gameActive = false;
 
-var squareClass = 'square-55d63';
-
-// change those
 var whiteToPlay = true;
-var whiteTimeRemaining = 0;
-var blackTimeRemaining = 0;
-var whiteTimeUsed = 0;
-var blackTimeUsed = 0;
-var whiteMoveStarted = 0;
-var blackMoveStarted = 0;
-var blackClockInterval = '';
-var whiteClockInterval = '';
-
-var defaultStartTime = 0;
 
 var viewingActiveMove = true;
 var loadedPlies = 0;
@@ -83,7 +75,13 @@ var currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 var analysFen = currentPosition;
 var bookmove = 0;
 
+// use Y.theme instead
 var darkMode = 0;
+// use Y.board_theme
+var btheme = "chess24";
+// use Y.piece_theme
+var ptheme = "chess24";
+
 var pageNum = 1;
 var gamesDone = 0;
 var timeDiff = 0;
@@ -117,8 +115,6 @@ var boardArrows = true;
 var tcecElo = 1;
 var engineRatingGlobalData = 0;
 var tourInfo = {};
-var btheme = "chess24";
-var ptheme = "chess24";
 var oldSchedData = null;
 var activePvH = [];
 
@@ -146,9 +142,21 @@ var eventCross = [];
 /***************************** CUP ***************************************************/
 
 var isPvAutoplay = [false, false];
-var engineScores = [];
 var crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/; // All possible valid terminations (hopefully).
 
+var gameArrayClass = ['#39FF14', 'red', 'whitesmoke', 'orange'];
+var numberEngines = 0;
+var regexBlackMove = /^[0-9]{1,3}\.\.\./;
+var clearedAnnotation = 0;
+
+var columnsEng = [
+    {
+       field: 'Name'
+    },
+    {
+       field: 'Value'
+    }
+    ];
 
 var onMoveEnd = function() {
     Class(`#board .square-${squareToHighlight}`, highlightClass);
@@ -239,74 +247,75 @@ function updatePgn(resettime)
 
 // TODO: merge B&W
 function startClock(color, currentMove, previousMove) {
-   stopClock(_BLACK);
-   stopClock(_WHITE);
+    stopClock(_BLACK);
+    stopClock(_WHITE);
 
-   let previousTime = previousMove.tl,
-       currentTime = currentMove.tl;
+    let previousTime = previousMove.tl,
+        currentTime = currentMove.tl;
 
-   if (color == _WHITE) {
-      whiteTimeRemaining = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
-      blackTimeRemaining = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
+    if (color == _WHITE) {
+        remain_times[WH] = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
+        remain_times[BL] = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
 
-      setTimeRemaining(_BLACK, blackTimeRemaining);
+        setTimeRemaining(_BLACK, remain_times[BL]);
 
-      whiteMoveStarted = moment();
-      updateClock(_WHITE);
+        started_moves[WH] = moment();
+        updateClock(_WHITE);
 
-      whiteClockInterval = setInterval(function() {updateClock(_WHITE);}, 1000);
-      if (currentMove.mt != undefined)
-      {
-         setTimeUsed(_BLACK, currentMove.mt);
-      }
+        clock_intervals[WH] = setInterval(function() {updateClock(_WHITE);}, 1000);
+        if (currentMove.mt != undefined)
+        {
+            setTimeUsed(_BLACK, currentMove.mt);
+        }
 
-      Show('.white-to-move');
-   } else {
-      whiteTimeRemaining = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
-      blackTimeRemaining = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
+        Show('.white-to-move');
+    } else {
+        remain_times[WH] = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
+        remain_times[BL] = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
 
-      setTimeRemaining(_WHITE, whiteTimeRemaining);
+        setTimeRemaining(_WHITE, remain_times[WH]);
 
-      blackMoveStarted = moment();
-      updateClock(_BLACK);
+        started_moves[BL] = moment();
+        updateClock(_BLACK);
 
-      blackClockInterval = setInterval(function() {updateClock(_BLACK);}, 1000);
-      if (currentMove.mt != undefined)
-      {
-         setTimeUsed(_WHITE, currentMove.mt);
-      }
+        clock_intervals[BL] = setInterval(function() {updateClock(_BLACK);}, 1000);
+        if (currentMove.mt != undefined)
+        {
+            setTimeUsed(_WHITE, currentMove.mt);
+        }
    }
 
    Show(`.${color}-to-move`);
 }
 
 function stopClock(color) {
-    clearInterval((color == _WHITE)? whiteClockInterval: blackClockInterval);
+    clearInterval((color == _WHITE)? clock_intervals[WH]: clock_intervals[BL]);
     Hide(`.${color}-to-move`);
 }
 
+// TODO: merge B&W
 function updateClock(color) {
-   let currentTime = moment();
+    let currentTime = moment();
 
-   if (color == _WHITE) {
-        let diff = currentTime.diff(whiteMoveStarted-timeDiff),
+    if (color == _WHITE) {
+        let diff = currentTime.diff(started_moves[WH] - timeDiff),
             ms = moment.duration(diff);
 
-      whiteTimeUsed = ms;
-      let tempTimeRemaning = whiteTimeRemaining - whiteTimeUsed + 3000;
+        used_times[WH] = ms;
+        let tempTimeRemaning = remain_times[WH] - used_times[WH] + 3000;
 
-      setTimeUsed(color, whiteTimeUsed);
-      setTimeRemaining(color, tempTimeRemaning);
-   } else {
-        let diff = currentTime.diff(blackMoveStarted-timeDiff),
+        setTimeUsed(color, used_times[WH]);
+        setTimeRemaining(color, tempTimeRemaning);
+    } else {
+        let diff = currentTime.diff(started_moves[BL] - timeDiff),
             ms = moment.duration(diff);
 
-      blackTimeUsed = ms;
-      let tempTimeRemaning = blackTimeRemaining - blackTimeUsed + 3000;
+        used_times[BL] = ms;
+        let tempTimeRemaning = remain_times[BL] - used_times[BL] + 3000;
 
-      setTimeUsed(color, blackTimeUsed);
-      setTimeRemaining(color, tempTimeRemaning);
-   }
+        setTimeUsed(color, used_times[BL]);
+        setTimeRemaining(color, tempTimeRemaning);
+    }
 }
 
 function secFormatNoH(timeip)
@@ -404,7 +413,7 @@ function show_move(sel, moveFrom, moveTo, class_) {
     if (!class_)
         class_ = highlightClass;
 
-    Class(`${sel} .${squareClass}`, class_, false);
+    Class(`${sel} .square-55d63`, class_, false);
     Class(`${sel} .square-${moveFrom}`, class_);
     Class(`${sel} .square-${moveTo}`, class_);
 }
@@ -416,7 +425,7 @@ function setPgn(pgn)
    if (!viewingActiveMove)
    {
       Class('#newmove', '-d-none');
-      newMovesCount = newMovesCount + 1;
+      newMovesCount ++;
       Attrs('#newmove', 'data-count', newMovesCount);
    }
    else
@@ -776,9 +785,9 @@ function copyFenAnalysis()
 
 function copyFenWhite()
 {
-   var clip = new ClipboardJS('.btn', {
+    let clip = new ClipboardJS('.btn', {
       text: function(trigger) {
-         return currentPositionWhite;
+         return current_positions[WH];
       }
    });
    return false;
@@ -786,9 +795,9 @@ function copyFenWhite()
 
 function copyFenBlack()
 {
-   var clip = new ClipboardJS('.btn', {
+    let clip = new ClipboardJS('.btn', {
       text: function(trigger) {
-         return currentPositionBlack;
+         return current_positions[BL];
       }
    });
    return false;
@@ -1138,7 +1147,7 @@ function updateEnginePv(color, whiteToPlay, moves)
             }
             if (color == "black" && key == 0)
             {
-               pvMoveNofloor = pvMoveNofloor + 1;
+               pvMoveNofloor ++;
             }
             if (color == "black" && (highlightpv == key + 1))
             {
@@ -1485,7 +1494,7 @@ function setPvFromKey(moveKey, color, choosePvx)
         scrollDiv(`#${color}-engine-pv2`, `#${color}-${moveKey}`);
         scrollDiv(`#${color}-engine-pv3`, `#c${color}-${moveKey}`);
 
-        currentPositions[id] = fen;
+        current_positions[id] = fen;
     }
     moveFromPvs[id] = moveFromPv;
     moveToPvs[id] = moveToPv;
@@ -1566,7 +1575,7 @@ function getLinkArch()
 
 function openCrossCup(index, gamen)
 {
-   index = index + 1;
+   index ++;
    LS("XXX: Index is :" + index + ",:::" + eventCross[index]);
    var link = getLinkArch();
    var tourLink = '';
@@ -1606,7 +1615,7 @@ function openCrossCup(index, gamen)
    }
 
    globalGameno = gamen;
-   localGame = localGame - eventCross[selindex];
+   localGame -= eventCross[selindex];
 
    link = link + "?" + tourLink + "&game=" + localGame;
    window.open(link,'_blank');
@@ -1640,8 +1649,6 @@ function openLinks(link)
 {
    window.open(link,'_blank');
 }
-
-var gameArrayClass = ['#39FF14', 'red', 'whitesmoke', 'orange'];
 
 function setDarkMode(value)
 {
@@ -1689,16 +1696,14 @@ function crossFormatter(value, row, index, field) {
       {
          retStr += ' ' + '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
       }
-      countGames = countGames + 1;
-      if (countGames%10 == 0)
+      countGames ++;
+      if (countGames % 10 == 0)
       {
          retStr += '<br />';
       }
    });
    return retStr;
 }
-
-var numberEngines = 0;
 
 function formatter(value, _row, index, _field) {
    if (!value.hasOwnProperty("Score")) // true
@@ -1738,9 +1743,9 @@ function formatter(value, _row, index, _field) {
       {
          retStr += ' ' + '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
       }
-      countGames = countGames + 1;
-      rowcountGames = rowcountGames + 1;
-      if (countGames%splitcount == 0)
+      countGames ++;
+      rowcountGames ++;
+      if (countGames % splitcount == 0)
       {
          rowcountGames = 0;
          retStr += '<br />';
@@ -1891,7 +1896,7 @@ function updateH2hData()
          momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
          if (prevDate)
          {
-            diff = diff + momentDate.diff(prevDate);
+            diff += momentDate.diff(prevDate);
             gameDiff = diff/(engine.Game-1);
          }
          momentDate.add(timezoneDiff);
@@ -2011,14 +2016,14 @@ function updateScheduleData(scdatainput)
    Keys(data).forEach(key => {
        let engine = data[key];
       engine.Game = gameLocalno;
-      gameLocalno = gameLocalno + 1;
+      gameLocalno ++;
       engine.Gamesort = engine.Game;
       if (engine.Start)
       {
          momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
          if (prevDate)
          {
-            diff = diff + momentDate.diff(prevDate);
+            diff += momentDate.diff(prevDate);
             gameDiff = diff/(engine.Game-1);
          }
          momentDate.add(timezoneDiff);
@@ -2557,9 +2562,6 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
    activePvH[contno] =pvs;
    datum.eval = datum.origeval;
 }
-
-var regexBlackMove = /^[0-9]{1,3}\.\.\./;
-var clearedAnnotation = 0;
 
 /**
  * Updates the Kibitzings' engine PV and arrow if enabled.
@@ -3232,15 +3234,6 @@ function addToolTip(divx, divimg)
    var htmlx = '<table class="table table-dark table-striped table-dark">' + HTML(divx) + '</table>';
    $(divimg).tooltipster('content', htmlx);
 }
-
-var columnsEng = [
-{
-   field: 'Name'
-},
-{
-   field: 'Value'
-}
-];
 
 function updateEngineInfo(divx, divimg, data)
 {
@@ -4002,13 +3995,9 @@ function toggleTheme()
    $(".navbar-toggle").click();
 }
 
-function hideBanner(timeDispl=30000)
+function hideBanner(timeout=30000)
 {
-   setTimeout(function()
-   {
-      let note = _("#note");
-      note.style.display = 'none';
-   }, timeDispl);
+    setTimeout(function() {Hide('#note');}, timeout);
 }
 
 function showBanner(data)
@@ -4036,28 +4025,13 @@ function setCheckBoardMiddle(value, id)
 
 function checkBoardMiddle(checkbox)
 {
-   if (checkbox.checked)
-   {
-      setCheckBoardMiddle(1, '#middlecheck');
-   }
-   else
-   {
-      setCheckBoardMiddle(0, '#middlecheck');
-   }
+    setCheckBoardMiddle(checkbox.checked? 1: 0, '#middlecheck');
 }
 
 function loadBoardMiddle()
 {
-   var midd = localStorage.getItem('tcec-board-middle');
-
-   if ((midd == undefined) || (midd == 0))
-   {
-      setCheckBoardMiddle(0, '#middlecheck');
-   }
-   else
-   {
-      setCheckBoardMiddle(1, '#middlecheck');
-   }
+    let midd = localStorage.getItem('tcec-board-middle') || 0;
+    setCheckBoardMiddle(midd? 1: 0, '#middlecheck');
 }
 
 function scheduleToTournamentInfo(schedJson)
@@ -4432,7 +4406,7 @@ function drawBracket1()
             if (roundNox%2 == 1)
             {
                let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRound + 1) + '</a> ';
-               befStr = befStr + '</div>';
+               befStr += '</div>';
                $(befStr).insertBefore(container);
             }
             container.append("TBD");
@@ -4504,12 +4478,12 @@ function drawBracket1()
                   let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
                   if (roundDate[localRound] != undefined)
                   {
-                     //befStr = befStr + '<a> ' + roundDate[localRound] + '</a> </div>';
-                     befStr = befStr + '</div>';
+                     //befStr += '<a> ' + roundDate[localRound] + '</a> </div>';
+                     befStr += '</div>';
                   }
                   else
                   {
-                     befStr = befStr + '</div>';
+                     befStr += '</div>';
                   }
                   $(befStr).insertBefore(container);
                }
@@ -4529,7 +4503,7 @@ function drawBracket1()
                if (roundNox%2 == 1)
                {
                   let befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
-                  befStr = befStr + '</div>';
+                  befStr += '</div>';
                   $(befStr).insertBefore(container);
                }
                container
@@ -4708,7 +4682,7 @@ function formatterEvent(value, row, index, _field) {
       {
          retStr += ' ' + '<a title="' + gameNum + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' +  index + ',' + gameNum + ')">' + engine + '</a>';
       }
-      countGames = countGames + 1;
+      countGames ++;
       if (countGames % 8 == 0)
       {
          retStr += '<br />';

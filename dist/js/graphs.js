@@ -1,6 +1,6 @@
 /*
 globals
-_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, LS, Min, plog, prevPgnData, Round,
+_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, LS, Max, Min, plog, prevPgnData, Round,
 showLivEng1, showLivEng2
 */
 'use strict';
@@ -44,6 +44,11 @@ var whiteSelDepth = [];
 var blackSelDepth = [];
 var whiteTBHits = [];
 var blackTBHits = [];
+var blackPop = 1;
+var whitePop = 1;
+
+var blackStarted = 0;
+var firstPly = 0;
 
 function setevalChartData()
 {
@@ -590,34 +595,10 @@ function initializeCharts()
    });
 }
 
-function addDataOld(chart, data, black)
-{
-   if (black)
-   {
-      chart.data.datasets[1].data.pop();
-      chart.data.datasets[1].data.push(data);
-   }
-   else
-   {
-      chart.data.datasets[0].data.pop();
-      chart.data.datasets[0].data.push(data);
-   }
-
-   LS("XXX: Came to add data::W:" + chart.data.datasets[0].data.length);
-   LS("XXX: Came to add data::B:" + chart.data.datasets[1].data.length);
-   chart.update();
-}
-
 function addDataLive(chart, data, black, contno)
 {
-   var length = 0;
-
    if (!whiteEvalL)
-   {
       return;
-   }
-
-   LS("GRAPH: Entering to add data with array count:" + whiteEvalL);
 
    if (chart.data.datasets[contno+1].data.length == 0)
    {
@@ -626,15 +607,7 @@ function addDataLive(chart, data, black, contno)
    }
 
    data.y = getEval(data.eval);
-
-   if (whiteEvalL > blackEvalL)
-   {
-      length = whiteEvalL;
-   }
-   else
-   {
-      length = blackEvalL;
-   }
+   let length = Max(whiteEvalL, blackEvalL);
 
    if (length == 0)
    {
@@ -652,34 +625,17 @@ function addDataLive(chart, data, black, contno)
       chart.data.datasets[contno+1].data[length] = data;
    }
 
-   LS("GRAPH: Came to add data::W:" + "black:::" + black + " ," + " ,blackEvalL:" +
-         blackEvalL  + " ,whiteEvalL:" + whiteEvalL + " ,lengthhhh:" + length + " ,blackStarted:" + blackStarted);
-
    chart.update();
 }
 
 function addData(chart, data, black)
 {
-   var length = 0;
-
    data.y = getEval(data.eval);
 
    if (!whiteEvalL)
-   {
       return;
-   }
 
-   LS("GRAPH: Entering to add data with array count:" + whiteEvalL);
-
-   if (whiteEvalL > blackEvalL)
-   {
-      length = whiteEvalL;
-   }
-   else
-   {
-      length = blackEvalL;
-   }
-
+   let length = Max(whiteEvalL, blackEvalL);
    if (length == 0)
    {
       LS("XXX: Chart not yet updated, so exiting");
@@ -699,9 +655,6 @@ function addData(chart, data, black)
 
    chart.update();
 }
-
-var blackPop = 1;
-var whitePop = 1;
 
 function removeData(chart, data, black)
 {
@@ -824,8 +777,6 @@ function arrayPush (chart, number, datax, index, movenum)
    }
 }
 
-var blackStarted = 0;
-
 function updateChartDataLiveEval2()
 {
    if (!showLivEng2)
@@ -850,7 +801,7 @@ function updateChartDataLiveEval2()
 
       prevPgnData.Moves[0].didliveEval2 = 0;
 
-      for (let ctr = startEval; ctr >= endVal; ctr = ctr - 1)
+      for (let ctr = startEval; ctr >= endVal; ctr --)
       {
          var dataToUse = evalChart.data.datasets[0].data[ctr];
          var key = 0;
@@ -925,7 +876,7 @@ function updateChartDataLiveEval1()
       var endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
       prevPgnData.Moves[0].didliveEval1 = 0;
 
-      for (let ctr = startEval; ctr >= endVal; ctr = ctr - 1)
+      for (let ctr = startEval; ctr >= endVal; ctr --)
       {
          var dataToUse = evalChart.data.datasets[0].data[ctr];
          var isBlack = 0;
@@ -987,7 +938,6 @@ function updateChartDataLive(contno)
       updateChartDataLiveEval2();
    }
 }
-var firstPly = 0;
 
 function updateChartData()
 {
@@ -1021,8 +971,8 @@ function updateChartData()
 
       if (0 && (arrayCtrW - 2) > 0)
       {
-         arrayCtrW = arrayCtrW - 2;
-         arrayCtrB = arrayCtrB - 2;
+         arrayCtrW -= 2;
+         arrayCtrB -= 2;
          prevPgnData.Moves[0].completed -= 4;
          LS("GRAPH: prevPgnData.Moves reduced length:" + prevPgnData.Moves.length + " ,whiteEvalL::" + whiteEvalL + " ,evalChart.data.labels:" + evalChart.data.labels.length);
       }
@@ -1117,7 +1067,7 @@ function updateChartData()
                {
                   blackStarted = 1;
                   evalChart.data.labels[arrayCtrW] = moveNumber;
-                  arrayCtrW = arrayCtrW + 1;
+                  arrayCtrW ++;
                }
             }
 
@@ -1134,7 +1084,7 @@ function updateChartData()
                arrayPush(depthChart, 0, depth, arrayCtrW, moveNumber);
                arrayPush(depthChart, 2, seldepth, arrayCtrW, moveNumber);
                arrayPush(tbHitsChart, 0, tbHits, arrayCtrW, moveNumber);
-               arrayCtrW = arrayCtrW + 1;
+               arrayCtrW ++;
                prevPgnData.Moves[0].arrayStartW = arrayCtrW;
             }
             else
@@ -1146,7 +1096,7 @@ function updateChartData()
                arrayPush(depthChart, 1, depth, arrayCtrB, moveNumber);
                arrayPush(depthChart, 3, seldepth, arrayCtrB, moveNumber);
                arrayPush(tbHitsChart, 1, tbHits, arrayCtrB, moveNumber);
-               arrayCtrB = arrayCtrB + 1;
+               arrayCtrB ++;
                prevPgnData.Moves[0].arrayStartB = arrayCtrB;
             }
          }

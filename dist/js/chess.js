@@ -34,7 +34,7 @@
  */
 /*
 globals
-define, exports
+define, exports, LS
 */
 'use strict';
 
@@ -167,14 +167,9 @@ var Chess = function(fen) {
   var history = [];
   var header = {};
 
-  /* if the user passes in a fen string, load it, else default to
-   * starting position
-   */
-  if (typeof fen === 'undefined') {
-    load(DEFAULT_POSITION);
-  } else {
-    load(fen);
-  }
+  // if the user passes in a fen string, load it, else default to starting position
+  LS(`Chess: ${fen}`);
+  load((fen == undefined)? DEFAULT_POSITION: fen);
 
   function clear() {
     board = new Array(128);
@@ -317,7 +312,7 @@ var Chess = function(fen) {
           if (!/^[prnbqkPRNBQK]$/.test(rows[i][k])) {
             return {valid: false, error_number: 9, error: errors[9]};
           }
-          sum_fields += 1;
+          sum_fields ++;
           previous_was_number = false;
         }
       }

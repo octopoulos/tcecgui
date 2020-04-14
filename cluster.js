@@ -47,7 +47,7 @@ if (cluster.isMaster)
          {
             console.log ("CLUSTER: Count is :" + count + " ,got count:" + parseInt(msg.workers) + ",clientCount:" + clientCount);
             count = parseInt(count) + parseInt(msg.workers);
-            clientCount = clientCount + 1;
+            clientCount ++;
          }
       });
    }

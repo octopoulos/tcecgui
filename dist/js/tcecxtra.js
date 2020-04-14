@@ -17,7 +17,7 @@ function fixOrder()
     Keys(engines).forEach(key => {
         let engine = engines[key];
         arr[count] = engine.Score;
-        count = count + 1;
+        count ++;
         engine.Rank = 0;
     });
 
@@ -30,7 +30,7 @@ function fixOrder()
     Keys(engines).forEach(key => {
         let engine = engines[key];
         engine.Rank = ranks[count];
-        count = count + 1;
+        count ++;
     });
 
    count = 0;
@@ -48,15 +48,14 @@ function fixOrder()
             {
                if (engine.Results[ikey].Text[i] == '=')
                {
-                  sbCount = sbCount + 0.5;
+                  sbCount += 0.5;
                }
                else if (engine.Results[ikey].Text[i] == '0')
                {
-                  sbCount = sbCount + 0;
                }
                else
                {
-                  sbCount = sbCount + 1;
+                  sbCount ++;
                }
             }
             if (!engineDisqualified(key))
@@ -73,7 +72,7 @@ function fixOrder()
             {
                if (engine.Strikes)
                {
-                  tiePoints = tiePoints + -engine.Strikes;
+                  tiePoints -= engine.Strikes;
                }
                else
                {
@@ -81,30 +80,30 @@ function fixOrder()
                   if (sbCount > engine.Results[ikey].Text.length/2)
                   {
                      LS("key won:" + key);
-                     tiePoints = tiePoints + 1/100;
+                     tiePoints += 1/100;
                   }
                   else if (sbCount < engine.Results[ikey].Text.length/2)
                   {
                      LS("key lost:" + key);
-                     tiePoints = tiePoints + 0/100;
+                     tiePoints += 0/100;
                   }
                   else
                   {
                      LS("key drew:" + key);
-                     tiePoints = tiePoints + 0.5/100;
+                     tiePoints += 0.5/100;
                   }
                }
             }
          }
       });
-      tiePoints = tiePoints + (engine.WinsAsBlack + engine.WinsAsWhite)/(100 * 100);
+      tiePoints += (engine.WinsAsBlack + engine.WinsAsWhite)/(100 * 100);
       LS("tiePoints is :" + tiePoints + ", count is :" + arr[count] + " , name is :" + key + ", score:" + engine.Score);
-      //tiePoints = tiePoints + engine.WinAsBlack/(100 * 100 * 100);
-      tiePoints = tiePoints + engine.Neustadtl/(100 * 100 * 1000);
-      tiePoints = tiePoints + engine.Rating/(100 * 100 * 1000 * 1000);
-      tiePoints = tiePoints + count/(100 * 100 * 1000 * 1000 * 1000);
+      //tiePoints += engine.WinAsBlack/(100 * 100 * 100);
+      tiePoints += engine.Neustadtl/(100 * 100 * 1000);
+      tiePoints += engine.Rating/(100 * 100 * 1000 * 1000);
+      tiePoints += count/(100 * 100 * 1000 * 1000 * 1000);
       arr[count] = parseFloat(parseFloat(engine.Score) + parseFloat(tiePoints/10));
-      count = count + 1;
+      count ++;
    });
 
    sorted = arr.slice().sort((b, a) => (a - b));
@@ -118,7 +117,7 @@ function fixOrder()
         let engine = engines[key];
         engine.Rank = ranks[count];
         LS("engine.Rank-1 is :" + ranks[count] + " ,count:" + count);
-        count = count + 1;
+        count ++;
         crosstableData.Order[engine.Rank-1] = key;
     });
 }

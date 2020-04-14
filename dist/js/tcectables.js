@@ -23,7 +23,6 @@ function updateCrosstable()
  */
 function newUpdateStandData(data)
 {
-   LS("Updating standtable:");
    crosstableData = data;
 
    if (tourInfo)
@@ -72,7 +71,6 @@ function newUpdateStandData(data)
  */
 function newUpdateCrossData()
 {
-    LS("Updating crossdata:");
     let abbreviations = [],
         standtableData = crosstableData,
         engine_names = standtableData.Order,

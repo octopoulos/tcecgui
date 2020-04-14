@@ -1,15 +1,13 @@
 /*
 globals
-_, $, A, Abs, ActiveXObject, alert, Ceil, clearTimeout, confirm, console, document, engineWin, engineWinCheck,
-engineWinOnMove, Floor, google, HTML, Image, jQuery, Keys, localStorage, location, Max, Min, navigator, Pow, prompt,
-Random, RandomInt, Round, setInterval, setTimeout, Sign, Style, window, XMLHttpRequest
+_, $, A, Abs, ActiveXObject, alert, all_pvs, BL, Ceil, clearTimeout, confirm, console, document, engineWin,
+engineWinCheck, engineWinOnMove, Floor, google, HTML, Hide, Image, jQuery, Keys, localStorage, location, Max, Min,
+navigator, Pow, prompt, Random, RandomInt, Round, setInterval, setTimeout, Show, Sign, Style, WH, window, XMLHttpRequest
 */
 'use strict';
 
-let blackPvMoves = '',
-    lastBlackPly,
-    lastWhitePly,
-    whitePvMoves = '';
+let last_plies = [0, 0],            // W,B last plies
+    pv_moves = ['', ''];            // W,B pv moves
 
 var InitLoad;
 var ClockCount;
@@ -7344,7 +7342,7 @@ function PrintHTML() {
             theO2 = _("#GameMovesA");
         if (GameMovesA == "1") {
             theObh = theO2;
-            theO1.style.display = "none";
+            Hide(theO1);
             theO1.innerHTTML = "";
             _("#info_row_data_2_mo").style.background = "none";
             if (localStorage.getItem('TCEC_Nigh') == 'Off') {
@@ -7352,7 +7350,7 @@ function PrintHTML() {
             } else {
                 _("#tall_a_26").style.background = "#cccccc";
             }
-            theO2.style.display = "block";
+            Show(theO2);
         } else {
             theObh = theO1;
             theO1.style.display = "block";
@@ -7632,19 +7630,19 @@ function ylcetFlipBoard1() {
     if ((theObj = _("#whitespv1"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
-        if (window.whitePv) {
-            window.whitePv.IsRotated = IsRotated;
-            if (window.whitePv.FlipBoard)
-                window.whitePv.FlipBoard();
+        if (all_pvs[WH]) {
+            all_pvs[WH].IsRotated = IsRotated;
+            if (all_pvs[WH].FlipBoard)
+                all_pvs[WH].FlipBoard();
         }
     }
     if ((theObj = _("#whitespv2"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
-        if (window.blackPv) {
-            window.blackPv.IsRotated = IsRotated;
-            if (window.blackPv.FlipBoard)
-                window.blackPv.FlipBoard();
+        if (all_pvs[BL]) {
+            all_pvs[BL].IsRotated = IsRotated;
+            if (all_pvs[BL].FlipBoard)
+                all_pvs[BL].FlipBoard();
         }
     }
     if ((theObj = _("#black_pv"))) {
@@ -7681,19 +7679,19 @@ function ylcetFlipBoard() {
     if ((theObj = _("#whitespv1"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "250px" : "0";
-        if (window.whitePv) {
-            window.whitePv.IsRotated = IsRotated;
-            if (window.whitePv.FlipBoard)
-                window.whitePv.FlipBoard();
+        if (all_pvs[WH]) {
+            all_pvs[WH].IsRotated = IsRotated;
+            if (all_pvs[WH].FlipBoard)
+                all_pvs[WH].FlipBoard();
         }
     }
     if ((theObj = _("#whitespv2"))) {
         theObj.style.position = "relative";
         theObj.style.top = IsRotated ? "-250px" : "0";
-        if (window.blackPv) {
-            window.blackPv.IsRotated = IsRotated;
-            if (window.blackPv.FlipBoard)
-                window.blackPv.FlipBoard();
+        if (all_pvs[BL]) {
+            all_pvs[BL].IsRotated = IsRotated;
+            if (all_pvs[BL].FlipBoard)
+                all_pvs[BL].FlipBoard();
         }
     }
     //////console.log ("entered ylcetFlipBoard2");
@@ -9196,95 +9194,96 @@ function customFunctionOnPgnGameLoad() {
         theObjecty.src = blacksrc;
         theObjecty.alt = blackalt;
     }
-    var engineSite = {
-        Alfil: "https://chessprogramming.wikispaces.com/Alfil",
-        Andscacs: "https://chessprogramming.wikispaces.com/Andscacs",
-        Arasan: "https://chessprogramming.wikispaces.com/Arasan",
-        Arminius: "https://chessprogramming.wikispaces.com/Arminius",
-        Bobcat: "https://chessprogramming.wikispaces.com/Bobcat",
-        Booot: "https://chessprogramming.wikispaces.com/Booot",
-        Bouquet: "https://chessprogramming.wikispaces.com/Bouquet",
-        Bugchess2: "https://chessprogramming.wikispaces.com/BugChess+FR",
-        Cheng4: "https://chessprogramming.wikispaces.com/Cheng",
-        ChessBrainVB: "https://chessprogramming.wikispaces.com/ChessBrainVB",
-        Chiron: "https://chessprogramming.wikispaces.com/Chiron",
-        Chronos: "https://chessprogramming.wikispaces.com",
-        Crafty: "https://chessprogramming.wikispaces.com/Crafty",
-        Critter: "https://chessprogramming.wikispaces.com/Critter",
-        Cuckoo: "https://chessprogramming.wikispaces.com/Cuckoochess",
-        Danasah: "https://chessprogramming.wikispaces.com/Danasah",
-        Daydreamer: "https://chessprogramming.wikispaces.com/Daydreamer",
-        Defenchess: "https://bitbucket.org/nitro_can/defenchess/overview",
-        Delphil: "https://chessprogramming.wikispaces.com/Delphil",
-        Deuterium: "https://chessprogramming.wikispaces.com/Deuterium",
-        Dirty: "https://chessprogramming.wikispaces.com/Dirty",
-        DisasterArea: "https://chessprogramming.wikispaces.com/DisasterArea",
-        Ethereal: "https://chessprogramming.wikispaces.com/ethereal",
-        Equinox: "https://chessprogramming.wikispaces.com/Equinox",
-        Exchess: "https://chessprogramming.wikispaces.com/Exchess",
-        Fire: "https://chessprogramming.wikispaces.com/Fire",
-        Firefly: "https://chessprogramming.wikispaces.com/Firefly",
-        Fizbo: "https://chessprogramming.wikispaces.com/Fizbo",
-        Francesca: "https://chessprogramming.wikispaces.com/Francesca",
-        Fridolin: "https://chessprogramming.wikispaces.com/Fridolin",
-        Fritz: "https://chessprogramming.wikispaces.com/Fritz",
-        Fruit: "https://chessprogramming.wikispaces.com/Fruit+Reloaded",
-        Gaviota: "https://chessprogramming.wikispaces.com/Gaviota",
-        Ginkgo: "https://chessprogramming.wikispaces.com/Ginkgo",
-        Glass: "https://chessprogramming.wikispaces.com/Glass",
-        Gnu: "https://chessprogramming.wikispaces.com/GNU+Chess",
-        Greko: "https://chessprogramming.wikispaces.com/Greko",
-        Gull: "https://chessprogramming.wikispaces.com/Gullchess",
-        Hakkapeliitta: "https://chessprogramming.wikispaces.com/Hakkapeliitta",
-        Hamsters: "https://chessprogramming.wikispaces.com/Hamsters",
-        Hannibal: "https://chessprogramming.wikispaces.com/Hannibal",
-        Hiarcs: "https://chessprogramming.wikispaces.com/Hiarcs",
-        Houdini: "https://chessprogramming.wikispaces.com/Houdini",
-        Ivanhoe: "https://chessprogramming.wikispaces.com/Ivanhoe",
-        Jazz: "https://chessprogramming.wikispaces.com/Jazz",
-        Jellyfish: "https://chessprogramming.wikispaces.com/Jellyfish",
-        Jonny: "https://chessprogramming.wikispaces.com/Jonny",
-        Junior: "https://chessprogramming.wikispaces.com/Junior",
-        Komodo: "https://chessprogramming.wikispaces.com/Komodo",
-        Laser: "https://chessprogramming.wikispaces.com/Laser",
-        Minkochess: "https://chessprogramming.wikispaces.com/MinkoChess",
-        Myrddin: "https://chessprogramming.wikispaces.com/Myrddin",
-        Naraku: "https://chessprogramming.wikispaces.com",
-        Naum: "https://chessprogramming.wikispaces.com/Naum",
-        Nebula: "https://chessprogramming.wikispaces.com/Nebula",
-        Nemo: "https://chessprogramming.wikispaces.com/Nemo",
-        Nemorino: "https://chessprogramming.wikispaces.com/Nemorino",
-        Nightmare: "https://chessprogramming.wikispaces.com/Nightmare+NL",
-        Nirvana: "https://chessprogramming.wikispaces.com/Nirvanachess",
-        Octochess: "https://chessprogramming.wikispaces.com/Octochess",
-        Onno: "https://chessprogramming.wikispaces.com/Onno",
-        Pawny: "https://chessprogramming.wikispaces.com/Pawny",
-        Pedone: "https://chessprogramming.wikispaces.com/Pedone",
-        Philou: "https://chessprogramming.wikispaces.com",
-        Prodeo: "https://chessprogramming.wikispaces.com/Pro+deo",
-        Protector: "https://chessprogramming.wikispaces.com/Protector",
-        Quazar: "https://chessprogramming.wikispaces.com/Quazar",
-        Raptor: "https://chessprogramming.wikispaces.com/Raptor+LU",
-        Redqueen: "https://chessprogramming.wikispaces.com/Redqueen",
-        Rodent: "https://chessprogramming.wikispaces.com/Rodent",
-        Rotor: "https://chessprogramming.wikispaces.com",
-        Rybka: "https://chessprogramming.wikispaces.com/Rybka",
-        Scorpio: "https://chessprogramming.wikispaces.com/Scorpio",
-        Senpai: "https://chessprogramming.wikispaces.com/Senpai",
-        Shredder: "https://chessprogramming.wikispaces.com/Shredder",
-        Sjeng: "https://chessprogramming.wikispaces.com/Deep+Sjeng",
-        Spark: "https://chessprogramming.wikispaces.com/Spark",
-        Spike: "https://chessprogramming.wikispaces.com/Spike",
-        Stockfish: "https://chessprogramming.wikispaces.com/Stockfish",
-        Texel: "https://chessprogramming.wikispaces.com/Texel",
-        The: "https://chessprogramming.wikispaces.com/The+Baron",
-        Toga: "https://chessprogramming.wikispaces.com/Toga",
-        Tornado: "https://chessprogramming.wikispaces.com/Tornado",
-        Umko: "https://chessprogramming.wikispaces.com/MinkoChess",
-        Vajolet2: "https://chessprogramming.wikispaces.com/Vajolet",
-        Vitruvius: "https://chessprogramming.wikispaces.com/Vitruvius",
-        Wasp: "https://chessprogramming.wikispaces.com/Wasp",
-        Zappa: "https://chessprogramming.wikispaces.com/Zappa",
+    // https://chessprogramming.wikispaces.com/
+    let engineSite = {
+        Alfil: 'Alfil',
+        Andscacs: 'Andscacs',
+        Arasan: 'Arasan',
+        Arminius: 'Arminius',
+        Bobcat: 'Bobcat',
+        Booot: 'Booot',
+        Bouquet: 'Bouquet',
+        Bugchess2: 'BugChess+FR',
+        Cheng4: 'Cheng',
+        ChessBrainVB: 'ChessBrainVB',
+        Chiron: 'Chiron',
+        Chronos: 'https://chessprogramming.wikispaces.com',
+        Crafty: 'Crafty',
+        Critter: 'Critter',
+        Cuckoo: 'Cuckoochess',
+        Danasah: 'Danasah',
+        Daydreamer: 'Daydreamer',
+        Defenchess: 'https://bitbucket.org/nitro_can/defenchess/overview',
+        Delphil: 'Delphil',
+        Deuterium: 'Deuterium',
+        Dirty: 'Dirty',
+        DisasterArea: 'DisasterArea',
+        Ethereal: 'ethereal',
+        Equinox: 'Equinox',
+        Exchess: 'Exchess',
+        Fire: 'Fire',
+        Firefly: 'Firefly',
+        Fizbo: 'Fizbo',
+        Francesca: 'Francesca',
+        Fridolin: 'Fridolin',
+        Fritz: 'Fritz',
+        Fruit: 'Fruit+Reloaded',
+        Gaviota: 'Gaviota',
+        Ginkgo: 'Ginkgo',
+        Glass: 'Glass',
+        Gnu: 'GNU+Chess',
+        Greko: 'Greko',
+        Gull: 'Gullchess',
+        Hakkapeliitta: 'Hakkapeliitta',
+        Hamsters: 'Hamsters',
+        Hannibal: 'Hannibal',
+        Hiarcs: 'Hiarcs',
+        Houdini: 'Houdini',
+        Ivanhoe: 'Ivanhoe',
+        Jazz: 'Jazz',
+        Jellyfish: 'Jellyfish',
+        Jonny: 'Jonny',
+        Junior: 'Junior',
+        Komodo: 'Komodo',
+        Laser: 'Laser',
+        Minkochess: 'MinkoChess',
+        Myrddin: 'Myrddin',
+        Naraku: 'https://chessprogramming.wikispaces.com',
+        Naum: 'Naum',
+        Nebula: 'Nebula',
+        Nemo: 'Nemo',
+        Nemorino: 'Nemorino',
+        Nightmare: 'Nightmare+NL',
+        Nirvana: 'Nirvanachess',
+        Octochess: 'Octochess',
+        Onno: 'Onno',
+        Pawny: 'Pawny',
+        Pedone: 'Pedone',
+        Philou: 'https://chessprogramming.wikispaces.com',
+        Prodeo: 'Pro+deo',
+        Protector: 'Protector',
+        Quazar: 'Quazar',
+        Raptor: 'Raptor+LU',
+        Redqueen: 'Redqueen',
+        Rodent: 'Rodent',
+        Rotor: 'https://chessprogramming.wikispaces.com',
+        Rybka: 'Rybka',
+        Scorpio: 'Scorpio',
+        Senpai: 'Senpai',
+        Shredder: 'Shredder',
+        Sjeng: 'Deep+Sjeng',
+        Spark: 'Spark',
+        Spike: 'Spike',
+        Stockfish: 'Stockfish',
+        Texel: 'Texel',
+        The: 'The+Baron',
+        Toga: 'Toga',
+        Tornado: 'Tornado',
+        Umko: 'MinkoChess',
+        Vajolet2: 'Vajolet',
+        Vitruvius: 'Vitruvius',
+        Wasp: 'Wasp',
+        Zappa: 'Zappa',
     };
 
     let blkImg;
@@ -10062,39 +10061,39 @@ function customFunctionOnMove() {
         PVCount = PlyNumber;
     }
     if (PlyNumber >= PVCount) {
-        if (window.whitePv) {
+        if (all_pvs[WH]) {
             if ((!fenPositions[CurrentPly]) || (fenPositions[CurrentPly] !== CurrentFEN())) {
                 scanGameForFen();
                 PVCount = PlyNumber + 1;
             }
         }
     }
-    lastWhitePly = CurrentPly % 2 ? CurrentPly : CurrentPly - 1;
-    if (lastWhitePly < StartPly) {
-        lastWhitePly = StartPly;
+    last_plies[WH] = CurrentPly % 2 ? CurrentPly : CurrentPly - 1;
+    if (last_plies[WH] < StartPly) {
+        last_plies[WH] = StartPly;
     }
-    lastBlackPly = CurrentPly % 2 ? CurrentPly - 1 : CurrentPly;
-    if (lastBlackPly < StartPly) {
-        lastBlackPly = StartPly;
+    last_plies[BL] = CurrentPly % 2 ? CurrentPly - 1 : CurrentPly;
+    if (last_plies[BL] < StartPly) {
+        last_plies[BL] = StartPly;
     }
-    let lastPlyForPv = Min(lastWhitePly, lastBlackPly);
-    whitePvMoves = '';
-    blackPvMoves = '';
+    let lastPlyForPv = Min(last_plies[WH], last_plies[BL]);
+    pv_moves[WH] = '';
+    pv_moves[BL] = '';
     var movesRegExp = new RegExp("^(\\s*([KQRBNP]?[a-h1-8]?x?[a-h][1-8](=[QRNB])?|O-O-O|O-O)\\b[#+]?)*\\s*$", "g");
     if (lastPlyForPv > StartPly) {
-        let pvMatch = MoveComments[lastWhitePly] ? MoveComments[lastWhitePly].match(/pv=([^,]+)/) : "";
+        let pvMatch = MoveComments[last_plies[WH]] ? MoveComments[last_plies[WH]].match(/pv=([^,]+)/) : "";
         if (pvMatch && pvMatch[1].match(movesRegExp)) {
-            whitePvMoves = pvMatch[1];
+            pv_moves[WH] = pvMatch[1];
         }
         pvMatch = MoveComments[lastBlackPly] ? MoveComments[lastBlackPly].match(/pv=([^,]+)/) : "";
         if (pvMatch && pvMatch[1].match(movesRegExp)) {
-            blackPvMoves = pvMatch[1];
+            pv_moves[BL] = pvMatch[1];
         }
     }
-    if (whitePvMoves && blackPvMoves) {
-        let whitePvMovesArray = whitePvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' '),
-            blackPvMovesArray = blackPvMoves.replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' ');
-        if (lastPlyForPv < lastWhitePly) {
+    if (pv_moves[WH] && pv_moves[BL]) {
+        let whitePvMovesArray = pv_moves[WH].replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' '),
+            blackPvMovesArray = pv_moves[BL].replace(/^\s+|\s+$/, '').replace(/\s+/, ' ').split(' ');
+        if (lastPlyForPv < last_plies[WH]) {
             whitePvMovesArray.unshift(blackPvMovesArray[0]);
         } else if (lastPlyForPv < lastBlackPly) {
             blackPvMovesArray.unshift(whitePvMovesArray[0]);
@@ -10107,32 +10106,32 @@ function customFunctionOnMove() {
             }
             idxEqual = idxCurr;
         }
-        whitePvMoves = '';
-        blackPvMoves = '';
-        for (let idxCurr = lastPlyForPv === lastWhitePly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
-            whitePvMoves += whitePvMovesArray[idxCurr] + ' ';
+        pv_moves[WH] = '';
+        pv_moves[BL] = '';
+        for (let idxCurr = lastPlyForPv === last_plies[WH] ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
+            pv_moves[WH] += whitePvMovesArray[idxCurr] + ' ';
         }
         for (let idxCurr = lastPlyForPv === lastBlackPly ? 0 : 1; idxCurr <= idxEqual; idxCurr++) {
-            blackPvMoves += blackPvMovesArray[idxCurr] + ' ';
+            pv_moves[BL] += blackPvMovesArray[idxCurr] + ' ';
         }
-        whitePvMoves += '{@} ';
-        blackPvMoves += '{@} ';
+        pv_moves[WH] += '{@} ';
+        pv_moves[BL] += '{@} ';
         for (let idxCurr = idxEqual + 1; idxCurr < whitePvMovesArray.length; idxCurr++) {
-            whitePvMoves += whitePvMovesArray[idxCurr] + ' ';
+            pv_moves[WH] += whitePvMovesArray[idxCurr] + ' ';
         }
         for (let idxCurr = idxEqual + 1; idxCurr < blackPvMovesArray.length; idxCurr++) {
-            blackPvMoves += blackPvMovesArray[idxCurr] + ' ';
+            pv_moves[BL] += blackPvMovesArray[idxCurr] + ' ';
         }
     }
 
-    if (window && window.whitePv && window.whitePv.updatePgn) {
-        let pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
-        window.whitePv.updatePgn(pvPgn);
+    if (window && all_pvs[WH] && all_pvs[WH].updatePgn) {
+        let pvPgn = '[FEN "' + fenPositions[last_plies[WH] - 1] + '"] ' + (pv_moves[WH] || ' { no info} ');
+        all_pvs[WH].updatePgn(pvPgn);
         PvSel();
     }
-    if (window && window.blackPv && window.blackPv.updatePgn) {
-        let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
-        window.blackPv.updatePgn(pvPgn);
+    if (window && all_pvs[BL] && all_pvs[BL].updatePgn) {
+        let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (pv_moves[BL] || ' { no info} ');
+        all_pvs[BL].updatePgn(pvPgn);
         PvSel();
     }
 
@@ -10552,8 +10551,8 @@ function An_check(selector) {
         annot2_box = _("#tcec_gui_game_info_9");
     if (annot.checked) {
         a_main_box.style.height = "200px";
-        annot1_box.style.display = "block";
-        annot2_box.style.display = "block";
+        Show(annot1_box);
+        Show(annot2_box);
     } else {
         a_main_box.style.height = "612px";
         annot1_box.style.display = "none";
@@ -11404,7 +11403,7 @@ function Graphs() {
     } else {
         if (egra) {
             egra.src = "./img/check.png";
-            egra2.style.display = "block";
+            Show(egra2);
         }
     }
     if (localStorage.getItem('TCEC_GraT') == 'Off') {
@@ -11415,7 +11414,7 @@ function Graphs() {
     } else {
         if (tgra) {
             tgra.src = "./img/check.png";
-            tgra2.style.display = "block";
+            Show(tgra2);
         }
     }
     if (localStorage.getItem('TCEC_GraD') == 'Off') {
@@ -11426,7 +11425,7 @@ function Graphs() {
     } else {
         if (dgra) {
             dgra.src = "./img/check.png";
-            dgra2.style.display = "block";
+            Show(dgra2);
         }
     }
     if (localStorage.getItem('TCEC_GraS') == 'Off') {
@@ -11437,7 +11436,7 @@ function Graphs() {
     } else {
         if (sgra) {
             sgra.src = "./img/check.png";
-            sgra2.style.display = "block";
+            Show(sgra2);
         }
     }
     if (localStorage.getItem('TCEC_GraTB') == 'Off') {
@@ -11448,7 +11447,7 @@ function Graphs() {
     } else {
         if (tbgra) {
             tbgra.src = "./img/check.png";
-            tbgra2.style.display = "block";
+            Show(tbgra2);
         }
     }
 
@@ -11535,8 +11534,8 @@ function NighTog() {
 }
 
 function FontTog(id) {
-    let hvitPV = window.whitePv,
-        sortPV = window.blackPv,
+    let hvitPV = all_pvs[WH],
+        sortPV = all_pvs[BL],
         boardAna = window.analysisBoard;
     switch (id) {
         case "ME":
@@ -11660,8 +11659,8 @@ function PvsTog(id) {
 
 function PvSel()
 {
-   let wPv = window.whitePv,
-       bPv = window.blackPv;
+   let wPv = all_pvs[WH],
+       bPv = all_pvs[BL];
    if (wPv && wPv.SetInitialHalfmove)
    {
       wPv.SetInitialHalfmove("commentplusone");
@@ -11681,54 +11680,6 @@ function SounTog() {
     } else {
         localStorage.setItem('TCEC_Soun', 'On');
         Soun();
-    }
-}
-
-function About() {
-    let theObj = _("#about_1"),
-        theObz = _("#credits_1");
-    if (theObj) {
-        if (theObj.style.display == "none") {
-            theObj.style.display = "block";
-        } else {
-            theObj.style.display = "none";
-        }
-        if (theObz.style.display == "block") {
-            theObz.style.display = "none";
-        }
-    }
-}
-
-function OBook() {
-    let theObj = _("#opening_1");
-    if (theObj) {
-        if (theObj.style.display == "none") {
-            theObj.style.display = "block";
-        } else {
-            theObj.style.display = "none";
-        }
-    }
-}
-
-function Rules() {
-    let theObj = _("#rules_1");
-    if (theObj) {
-        if (theObj.style.display == "none") {
-            theObj.style.display = "block";
-        } else {
-            theObj.style.display = "none";
-        }
-    }
-}
-
-function Credits() {
-    let theObj = _("#credits_1");
-    if (theObj) {
-        if (theObj.style.display == "none") {
-            theObj.style.display = "block";
-        } else {
-            theObj.style.display = "none";
-        }
     }
 }
 
@@ -12487,7 +12438,7 @@ function updateElapsedTimeCounterB(whenStartedB) {
         let clknew = _("#whiteClock"),
             clknew1 = _("#whiteClockl");
         clknew1.innerHTML = clknew.innerHTML;
-        if (lastWhitePly == PlyNumber) {
+        if (last_plies[WH] == PlyNumber) {
             clknew = _("#blackClock");
             if (clknew && clknew.innerHTML != "no info") {
                 let clksec = parseFloat(clock2sec(clknew.innerHTML));
@@ -12603,13 +12554,13 @@ function customFunctionOnPgnTextLoad() {
 }
 
 function ylcetGetPGnWhite() {
-    let pvPgn = '[FEN "' + fenPositions[lastWhitePly - 1] + '"] ' + (whitePvMoves || ' { no info} ');
+    let pvPgn = '[FEN "' + fenPositions[last_plies[WH] - 1] + '"] ' + (pv_moves[WH] || ' { no info} ');
     //////console.log ("ylcetGetPGnWhite:" + pvPgn);
     return pvPgn;
 }
 
 function ylcetGetPGnBlack() {
-    let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (blackPvMoves || ' { no info} ');
+    let pvPgn = '[FEN "' + fenPositions[lastBlackPly - 1] + '"] ' + (pv_moves[BL] || ' { no info} ');
     return pvPgn;
 }
 
