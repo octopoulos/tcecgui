@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-14 : 2020-04-14 : replace setTimeout with add_timeout: safer and cancellable
 2020-04-14 : 2020-04-13 : fix audio exceptions
 2020-04-14 : 2020-04-13 : add DEV in the hash for fine debugging
 2020-04-14 : 2020-04-13 : add multi language support, starting with: eng, jpn, fra, rus, ukr, dynamically loaded
@@ -17,6 +18,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : correct table height (no internal vertical scroll)
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
+-          : 2020-04-13 : remove onClick = ... from live.html
 ~          : 2020-04-13 : get rid of multiple big copy/paste in the code, if a code appears x times => in a function
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
@@ -24,7 +26,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-04-13 : merge B&W functions
 ~          : 2020-04-12 : remove all `var` = sources of bugs
 ~          : 2020-04-13 : remove as much jquery as possible
--          : 2020-04-13 : remove all click events
+-          : 2020-04-13 : remove all click triggers (they're hacks)
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-13 : accelerate table generation, too many memory allocs + expensive selectors with jQuery
@@ -32,7 +34,6 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
 -          : 2020-04-13 : extra audio events => boom, check, draw, win ... ? or when favorite engine plays/winning
--          : 2020-04-13 : remove onClick = ... from live.html
 -          : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : create own chessboard js in 2d + possibility to have 3d

@@ -4,11 +4,11 @@ globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, board, bracketDataMain,
 C, check_hash, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Min, newUpdateStandData, parse_dev, Round,
-S, save_option, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTimeout, setTwitch,
-setTwitchChange, setUsers, setUsersMain, showBanner, startup_3d, Style, toggleTheme, translate_node, translates:true,
-unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData,
-updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData,
-updateTables, updateWinners, window
+S, save_option, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
+setUsers, setUsersMain, showBanner, startup_3d, Style, toggleTheme, translate_node, translates:true, unlistenLogMain,
+updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData, updateLiveEval,
+updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData, updateTables,
+updateWinners, window
 */
 'use strict';
 
@@ -93,18 +93,19 @@ function init_globals() {
 
     initToolTip();
     updatePgn(0);
-
     setDefaults();
-    setTimeout(() => {setTwitch();}, 10000);
-    setTimeout(() => {getUserS();}, 5000);
-    setTimeout(() => {updateWinners();}, 12000);
+
+    // timeouts
+    add_timeout('twitch', () => {setTwitch();}, 10000);
+    add_timeout('get_users', () => {getUserS();}, 5000);
+    add_timeout('update_winners', () => {updateWinners();}, 12000);
     hideBanner();
-    setTimeout(() => {
+    add_timeout('update_live', () => {
         updateLiveChart();
         updateLiveEval();
     }, 2000);
-    setTimeout(() => {updateTables();}, 3000);
-    setTimeout(() => {
+    add_timeout('update_tables', () => {updateTables();}, 3000);
+    add_timeout('adblock', () => {
         S('.encouragement', ((_('#google_adverts') || {}).height || 0) <= 0);
     }, 15000);
 

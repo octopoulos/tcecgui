@@ -2,11 +2,13 @@
 // included after: common, engine
 /*
 globals
-_, $, Abs, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
-clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date, DefaultFloat, depthChart, document, drawEval,
-dummyCross, engine2colorno:true, evalChart, Exp, Floor, Hide, HTML, initializeCharts, Keys, localStorage, LS, Max,
-moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan,
-roundResults:true, S, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
+_, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
+C, Ceil, Chess, ChessBoard, Class, clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date,
+DefaultFloat, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart, Exp, Floor, Hide, HTML,
+initializeCharts, Keys,
+localStorage, LS, Max, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
+roundDateMan, roundResults:true,
+S, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
 tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
@@ -173,31 +175,31 @@ function getUserS()
 
 function updateRefresh()
 {
-   var reSyncInterval = 30;
-   if (!lastRefreshTime)
+   if (lastRefreshTime)
+      return;
+
+   socket.emit('refreshdata', 'data is emitted');
+   lastRefreshTime = moment();
+   eventCrosstableWrap();
+   if (prevPgnData && prevPgnData.Moves)
    {
-      socket.emit('refreshdata', 'data is emitted');
-      lastRefreshTime = moment();
-      eventCrosstableWrap();
-      if (prevPgnData && prevPgnData.Moves)
-      {
-         //prevPgnData.Moves[0].completed = 0;
-      }
-      Class('#board-to-sync i', '-fa-retweet fa-ban');
-      Class('#board-to-sync', 'disabled');
-      setTimeout(function() {
-          Class('#board-to-sync i', '-fa-ban fa-retweet');
-          Class('#board-to-sync', '-disabled');
-         lastRefreshTime = 0;
-      }, reSyncInterval * 1000);
+      //prevPgnData.Moves[0].completed = 0;
    }
+   Class('#board-to-sync i', '-fa-retweet fa-ban');
+   Class('#board-to-sync', 'disabled');
+
+   add_timeout('update_refresh', () => {
+      Class('#board-to-sync i', '-fa-ban fa-retweet');
+      Class('#board-to-sync', '-disabled');
+      lastRefreshTime = 0;
+   }, 30000);
 }
 
 function updateAll()
 {
    eventNameHeader = 0;
    updatePgn(1);
-   setTimeout(function() { updateTables(); }, 5000);
+   add_timeout('update_all', () => {updateTables();}, 5000);
 }
 
 function updatePgnDataMain(data)
@@ -454,13 +456,13 @@ function setPgn(pgn)
       if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
       {
          eventNameHeader = 0;
-         setTimeout(function() { updatePgn(1); }, 100);
+         add_timeout('update_pgn', () => {updatePgn(1);}, 100);
          return;
       }
       if (prevPgnData.Moves.length < pgn.lastMoveLoaded)
       {
          eventNameHeader = 0;
-         setTimeout(function() { updateAll(); }, 100);
+         add_timeout('update_all', () => {updateAll();}, 100);
          return;
       }
       updateH2hData();
@@ -1328,14 +1330,14 @@ function findDiffPv(whitemoves, blackmoves)
 
 function boardAutoplay()
 {
-   if (isAutoplay && activePly >= 1 && activePly < loadedPlies) {
-      activePly++;
-      handlePlyChange();
-      setTimeout(function() { boardAutoplay(); }, 750);
-   } else {
-      isAutoplay = false;
-      Class('#board-autoplay i', '-fa-pause fa-play');
-   }
+    if (isAutoplay && activePly >= 1 && activePly < loadedPlies) {
+        activePly++;
+        handlePlyChange();
+        add_timeout('autoplay', () => {boardAutoplay();}, 750);
+    } else {
+        isAutoplay = false;
+        Class('#board-autoplay i', '-fa-pause fa-play');
+    }
 }
 
 function onLastMove()
@@ -1519,20 +1521,20 @@ function setPvFromKey(moveKey, color, choosePvx)
 //hack
 function pvBoardautoplay(value, color, activePv)
 {
-   if (isPvAutoplay[value] && activePvKey[value] >= 0 && activePvKey[value] < activePv.length - 1) {
-      setPvFromKey(activePvKey[value] + 1, color);
-      setTimeout(function() { pvBoardautoplay(value, color, activePv); }, 750);
-   } else {
-      isPvAutoplay[value] = false;
-      if (value == 0)
-      {
-          Class('.pv-board-autoplay1 i', '-fa-pause fa-play');
-      }
-      else
-      {
-          Class('.pv-board-autoplay2 i', '-fa-pause fa-play');
-      }
-   }
+    if (isPvAutoplay[value] && activePvKey[value] >= 0 && activePvKey[value] < activePv.length - 1) {
+        setPvFromKey(activePvKey[value] + 1, color);
+        add_timeout('pv_autoplay', () => {pvBoardautoplay(value, color, activePv);}, 750);
+    } else {
+        isPvAutoplay[value] = false;
+        if (value == 0)
+        {
+            Class('.pv-board-autoplay1 i', '-fa-pause fa-play');
+        }
+        else
+        {
+            Class('.pv-board-autoplay2 i', '-fa-pause fa-play');
+        }
+    }
 }
 
 function setMoveMaterial(material, whiteToPlay)
@@ -1768,16 +1770,16 @@ function sleep(ms)
 
 function updateScoreHeadersData()
 {
-   if (!crosstableData)
-   {
-      if (h2hScoreRetryCount < 10)
-      {
-         setTimeout(function() { updateScoreHeadersData(); }, 5000);
-         LS("H2h score did not get updated:" + h2hScoreRetryCount);
-         h2hScoreRetryCount ++;
-         return;
-      }
-   }
+    if (!crosstableData)
+    {
+        if (h2hScoreRetryCount < 10)
+        {
+            add_timeout('update_h2hscore', () => {updateScoreHeadersData();}, 5000);
+            LS("H2h score did not get updated:" + h2hScoreRetryCount);
+            h2hScoreRetryCount ++;
+            return;
+        }
+    }
 
    if (crosstableData.whiteCurrent === all_engines[WH] && crosstableData.blackCurrent === all_engines[BL])
       return;
@@ -1808,13 +1810,7 @@ function updateScoreHeadersData()
 function updateEngRatingData(data)
 {
    engineRatingGlobalData = data;
-   /*
-   if (crossTimeout)
-   {
-      clearTimeout(crossTimeout);
-   }
-   setTimeout(function() { newUpdateStandNoData(); }, 3000);
-   */
+   clear_timeout('cross');
 }
 
 function updateTourInfo(data)
@@ -1845,33 +1841,28 @@ function shallowCopy(data)
 
 function updateH2hData()
 {
-   if (tourInfo && tourInfo.cup == 1)
-   {
-      Hide('#h2hdiv');
-      return;
-   }
+    if (tourInfo && tourInfo.cup == 1)
+    {
+        Hide('#h2hdiv');
+        return;
+    }
 
-   if (!oldSchedData)
-   {
-      if (h2hRetryCount < 10)
-      {
-         setTimeout(function() { updateH2hData(); }, 5000);
-         LS("H2h did not get updated:" + h2hRetryCount);
-         h2hRetryCount = h2hRetryCount + 1;
-         return;
-      }
-   }
+    if (!oldSchedData)
+    {
+        if (h2hRetryCount < 10)
+        {
+            add_timeout('update_h2h', () => {updateH2hData();}, 5000);
+            LS("H2h did not get updated:" + h2hRetryCount);
+            h2hRetryCount = h2hRetryCount + 1;
+            return;
+        }
+    }
 
 
-   if (!oldSchedData)
-   {
-      return;
-   }
-
-   if (oldSchedData.WhiteEngCurrent === all_engines[WH] && oldSchedData.BlackEngCurrent === all_engines[BL])
-   {
-      return;
-   }
+    if (!oldSchedData)
+        return;
+    if (oldSchedData.WhiteEngCurrent === all_engines[WH] && oldSchedData.BlackEngCurrent === all_engines[BL])
+        return;
 
    h2hRetryCount = 0;
 
@@ -2285,15 +2276,15 @@ function setBoard()
 
 function updateTables()
 {
-   readTourInfo();
-   updateEngRating();
-   updateSchedule();
-   setTimeout(function()
-   {
-      updateCrosstable();
-      eventCrosstableWrap();
-   }, 1000);
-   updateCrash();
+    readTourInfo();
+    updateEngRating();
+    updateSchedule();
+    updateCrash();
+
+    add_timeout('update_tables', () => {
+        updateCrosstable();
+        eventCrosstableWrap();
+    }, 1000);
 }
 
 function setTwitchChatUrl(darkmode)
@@ -3992,7 +3983,7 @@ function toggleTheme()
 
 function hideBanner(timeout=30000)
 {
-    setTimeout(function() {Hide('#note');}, timeout);
+    add_timeout('banner', () => {Hide('#note');}, timeout);
 }
 
 function showBanner(data)

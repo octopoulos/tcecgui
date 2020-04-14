@@ -1,8 +1,8 @@
 /*
 globals
-_, $, activeFen, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash, crosstableData:true,
-crossTimeout:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
-Keys, livePvs, LS, newUpdateStandData, plog, Pow, setTimeout, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
+_, $, activeFen, add_timeout, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash,
+crosstableData:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
+Keys, livePvs, LS, newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
 viewingActiveMove
 */
 'use strict';
@@ -345,6 +345,6 @@ function newUpdateStandNoData()
 function newUpdateStandDataTimeout(data)
 {
    crosstableData = data;
-   crossTimeout = setTimeout(function(){ newUpdateStandData(data); }, 7000);
+   add_timeout('cross', () => {newUpdateStandData(data);}, 7000);
 }
 /********************************* End Extra functions *****************************/
