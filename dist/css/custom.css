@@ -622,6 +622,11 @@ table.table.table-striped tr.whitetds td
 }
 
 /* extras */
+i {
+   display: inline-block;
+   font-style: normal;
+   line-height: 0;
+}
 .nav-item {
    padding: 4px 0;
 }

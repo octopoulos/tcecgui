@@ -1,11 +1,14 @@
 // startup script
 /*
 globals
-_, $, board, bracketDataMain, C, document, Events, getUserS, hideBanner, initTables, initToolTip, io, localStorage, LS,
-Max, Min, newUpdateStandData, Round, S, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTimeout,
-setTwitch, setTwitchChange, setUsers, setUsersMain, showBanner, Style, toggleTheme, unlistenLogMain, updateCrashData,
-updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData, updateLiveEval, updateLiveEvalData,
-updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData, updateTables, updateWinners, window
+_, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, board, bracketDataMain,
+C, check_hash, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
+LANGUAGES:true, load_defaults, localStorage, LS, Max, Min, newUpdateStandData, parse_dev, Round,
+S, save_option, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTimeout, setTwitch,
+setTwitchChange, setUsers, setUsersMain, showBanner, Style, toggleTheme, translate_node, translates:true,
+unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData,
+updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData,
+updateTables, updateWinners, window
 */
 'use strict';
 
@@ -152,13 +155,57 @@ function set_global_events() {
     C('.refreshBoard', () => {
         updateRefresh();
     });
+
+    // language
+    Events('#language', 'change', function() {
+        let lan = this.value;
+        save_option('lan', lan);
+        if (lan == 'eng' || translates._lan == lan)
+            translate_node('body');
+        else if (lan != 'eng')
+            add_timeout('lan', api_translate_get, 100);
+    });
 }
 
-window.onload = function() {
+/**
+ * Load settings from Local Storage
+ */
+function load_settings() {
+    load_defaults();
+
+    api_times = get_object('times') || {};
+    translates = get_object('trans') || {};
+
+    check_hash();
+    parse_dev();
+    // update_theme();
+    api_translate_get();
+}
+
+/**
+ * Startup
+ */
+function startup() {
+    // engine overrides
+    __PREFIX = 'tc_';
+    LANGUAGES = {
+        eng: 'English',
+        fra: 'français',
+        jpn: '日本語',
+        rus: 'русский',
+        ukr: 'українська',
+    };
+
     set_global_events();
     set_ui_events();
     init_sockets();
     init_globals();
+    load_settings();
+    fill_languages('#language');
     resize();
     initTables();
+}
+
+window.onload = function() {
+    startup();
 };

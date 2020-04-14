@@ -45,25 +45,29 @@
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link py-0" href="#" data-toggle="modal" data-target="#info-modal">Info</a>
+            <a class="nav-link py-0" href="#" data-toggle="modal" data-target="#info-modal" data-t="Info">
+              Info
+            </a>
           </li>
           <li class="nav-item">
-             <a class="nav-link py-0" href="https://wiki.chessdom.org/Rules" target="_blank">
+             <a class="nav-link py-0" href="https://wiki.chessdom.org/Rules" target="_blank" data-t="Rules">
                  Rules
              </a>
           </li>
           <li class="nav-item">
-             <a class="nav-link py-0" href="http://www.tcec-chess.com/archive.html" target="_blank">
+             <a class="nav-link py-0" href="http://www.tcec-chess.com/archive.html" target="_blank" data-t="Archive">
                  Archive
              </a>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle py-0" href="/" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Navigate</a>
+            <a class="nav-link dropdown-toggle py-0" href="/" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-t="Navigate">
+              Navigate
+            </a>
             <div class="dropdown-menu" aria-labelledby="dd-download">
-               <a class="dropdown-item" href="http://tcec-chess.com/live.html" target="_blank">
+               <a class="dropdown-item" href="http://tcec-chess.com/live.html" target="_blank" data-t="Main live">
                  Main live
                </a>
-               <a class="dropdown-item" href="https://www.twitch.tv/tcec_chess_tv" target="_blank">
+               <a class="dropdown-item" href="https://www.twitch.tv/tcec_chess_tv" target="_blank" data-t="Twitch Stream">
                  Twitch Stream
                </a>
             </div>
@@ -71,7 +75,9 @@
           <li class="nav-item">
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle py-0" href="/" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Download</a>
+            <a class="nav-link dropdown-toggle py-0" href="/" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-t="Download">
+              Download
+            </a>
             <div class="dropdown-menu" aria-labelledby="dd-download">
               <a class="dropdown-item" href="http://tcec-chess.com/crosstable.json" target="_blank">Crosstable</a>
               <a class="dropdown-item" href="http://tcec-chess.com/schedule.json" target="_blank">Schedule</a>
@@ -81,7 +87,7 @@
           </li>
           <li class="nav-item dropdown">
             <!-- TODO: generate options dynamically -->
-            <a class="py-0 nav-link dropdown-toggle" href="/" id="dd-themes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <a class="py-0 nav-link dropdown-toggle" href="/" id="dd-themes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-t="Options">
               Options
             </a>
             <ul class="bg-dark dropdown-menu" aria-labelledby="dd-themes">
@@ -523,7 +529,9 @@
               </ul>
             </li>
             <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle py-0" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">TCEC Links</a>
+            <a class="nav-link dropdown-toggle py-0" id="dd-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-t="TCEC {Links}">
+              TCEC Links
+            </a>
                <ul class="dropdown-menu bg-dark whitefont">
                   <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Articles</a>
                     <div class="dropdown-menu" aria-labelledby="dd-download">
@@ -578,6 +586,10 @@
                     Book FAQ
                   </a>
                </ul>
+              </li>
+              <li>
+                <select id="language"></select>
+              </li>
           </ul>
         </div>
       </nav>
@@ -743,12 +755,12 @@
            <ul class="nav nav-pills mb-4 nav-fill" id="pills-tab" role="tablist" style="height:10px;">
              <li class="nav-item">
                <a class="nav-link active" id="v-pills-gameinfo-tab" data-toggle="pill"
-                   href="#v-pills-gameinfo" role="tab" aria-controls="v-pills-gameinfo" aria-selected="true" onClick="hideEngInfo()">
+                   href="#v-pills-gameinfo" role="tab" aria-controls="v-pills-gameinfo" aria-selected="true" onClick="hideEngInfo()" data-t="Engine Info">
                   Engine Info
                </a>
              </li>
              <li class="nav-item">
-               <a class="nav-link" id="v-pills-pv-top-tab" data-toggle="pill" href="#v-pills-pv-top" role="tab" aria-controls="v-pills-pv-top" aria-selected="false" onClick="showEngInfo()">
+               <a class="nav-link" id="v-pills-pv-top-tab" data-toggle="pill" href="#v-pills-pv-top" role="tab" aria-controls="v-pills-pv-top" aria-selected="false" onClick="showEngInfo()" data-t="PV">
                  PV
                </a>
              </li>
@@ -860,7 +872,7 @@
                            <td>
                              <span class="align-middle h1 d-inline white-engine-eval"></span>
                            </td>
-                           <td>Evaluation</td>
+                           <td data-t="Evaluation">Evaluation</td>
                            <td>
                              <span class="align-middle h1 d-inline black-engine-eval"></span>
                            </td>
@@ -869,7 +881,7 @@
                            <td>
                              <span class="white-engine-depth"></span>
                            </td>
-                           <td>Depth/SD</td>
+                           <td data-t="{Depth}/SD">Depth/SD</td>
                            <td>
                              <span class="black-engine-depth"></span>
                            </td>
@@ -878,7 +890,7 @@
                            <td>
                              <span class="white-engine-speed"></span>
                            </td>
-                           <td>Speed</td>
+                           <td data-t="Speed">Speed</td>
                            <td>
                              <span class="black-engine-speed"></span>
                            </td>
@@ -887,7 +899,7 @@
                            <td>
                              <span class="white-engine-nodes"></span>
                            </td>
-                           <td>Nodes</td>
+                           <td data-t="Nodes">Nodes</td>
                            <td>
                              <span class="black-engine-nodes"></span>
                            </td>
@@ -896,7 +908,7 @@
                            <td>
                              <span class="white-engine-tbhits"></span>
                            </td>
-                           <td>TB Hits</td>
+                           <td data-t="TB Hits">TB Hits</td>
                            <td>
                              <span class="black-engine-tbhits"></span>
                            </td>
@@ -905,7 +917,7 @@
                            <td>
                              <span class="white-engine-score"></span> (<span id="white-engine-elo"></span>)
                            </td>
-                           <td>Score(Elo)</td>
+                           <td data-t="{Score}(Elo)">Score(Elo)</td>
                            <td>
                              <span class="black-engine-score"></span> (<span id="black-engine-elo"></span>)
                            </td>
@@ -965,43 +977,43 @@
               <div class="col-12 justify-content-around d-flex">
                   <ul class="nav nav-pills mb-3 nav-fill" id="pills-tab" role="tablist">
                     <li class="nav-item">
-                  <a class="nav-link active" id="v-pills-eval-tab" data-toggle="pill" href="#v-pills-eval" role="tab" aria-controls="v-pills-eval" aria-selected="true">
+                  <a class="nav-link active" id="v-pills-eval-tab" data-toggle="pill" href="#v-pills-eval" role="tab" aria-controls="v-pills-eval" aria-selected="true" data-t="Eval">
                     Eval
                   </a>
                     </li>
                     <li class="nav-item">
-                  <a class="nav-link" id="v-pills-time-tab" data-toggle="pill" href="#v-pills-time" role="tab" aria-controls="v-pills-time" aria-selected="false">
+                  <a class="nav-link" id="v-pills-time-tab" data-toggle="pill" href="#v-pills-time" role="tab" aria-controls="v-pills-time" aria-selected="false" data-t="Time">
                     Time
                   </a>
                     </li>
                     <li class="nav-item">
-                  <a class="nav-link" id="v-pills-speed-tab" data-toggle="pill" href="#v-pills-speed" role="tab" aria-controls="v-pills-speed" aria-selected="false">
+                  <a class="nav-link" id="v-pills-speed-tab" data-toggle="pill" href="#v-pills-speed" role="tab" aria-controls="v-pills-speed" aria-selected="false" data-t="Speed">
                     Speed
                   </a>
                     </li>
                     <li class="nav-item">
-                  <a class="nav-link" id="v-pills-nodes-tab" data-toggle="pill" href="#v-pills-nodes" role="tab" aria-controls="v-pills-nodes" aria-selected="false">
+                  <a class="nav-link" id="v-pills-nodes-tab" data-toggle="pill" href="#v-pills-nodes" role="tab" aria-controls="v-pills-nodes" aria-selected="false" data-t="Nodes">
                     Nodes
                   </a>
                     </li>
 
                     <li class="nav-item">
-                  <a class="nav-link" id="v-pills-depth-tab" data-toggle="pill" href="#v-pills-depth" role="tab" aria-controls="v-pills-depth" aria-selected="false">
+                  <a class="nav-link" id="v-pills-depth-tab" data-toggle="pill" href="#v-pills-depth" role="tab" aria-controls="v-pills-depth" aria-selected="false" data-t="{Depth}/{SD}">
                     Depth/SD
                   </a>
                     </li>
                     <li class="nav-item">
-                  <a class="nav-link" id="v-pills-tbhits-tab" data-toggle="pill" href="#v-pills-tbhits" role="tab" aria-controls="v-pills-tbhits" aria-selected="false">
+                  <a class="nav-link" id="v-pills-tbhits-tab" data-toggle="pill" href="#v-pills-tbhits" role="tab" aria-controls="v-pills-tbhits" aria-selected="false" data-t="TB">
                     TB
                   </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" id="v-pills-pv-tab" data-toggle="pill" href="#v-pills-pv" role="tab" aria-controls="v-pills-pv" aria-selected="false">
+                      <a class="nav-link" id="v-pills-pv-tab" data-toggle="pill" href="#v-pills-pv" role="tab" aria-controls="v-pills-pv" aria-selected="false" data-t="PV">
                         PV
                       </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" id="v-pills-pv-analys-tab" data-toggle="pill" href="#v-pills-pvanalys" role="tab" aria-controls="v-pills-pvanalys" aria-selected="false">
+                      <a class="nav-link" id="v-pills-pv-analys-tab" data-toggle="pill" href="#v-pills-pvanalys" role="tab" aria-controls="v-pills-pvanalys" aria-selected="false" data-t="PV(A)">
                         PV(A)
                       </a>
                     </li>
@@ -1165,16 +1177,20 @@
         <div class="col-md-4 order-last">
          <ul class="nav nav-pills mb-1 nav-justified" id="pills-tab" role="tablist">
             <li class="nav-item">
-               <a class="nav-link active" id="pills-chat-tab" data-toggle="pill" href="#pills-chat" role="tab" aria-controls="pills-chat" aria-selected="true">Chat</a>
+               <a class="nav-link active" id="pills-chat-tab" data-toggle="pill" href="#pills-chat" role="tab" aria-controls="pills-chat" aria-selected="true" data-t="Chat">
+                 Chat
+                </a>
             </li>
             <li class="nav-item">
                <a class="nav-link" id="pills-win-tab" data-toggle="pill" href="#pills-win" role="tab" aria-controls="pills-win" aria-selected="true">
-               <div class="d-none d-sm-block d-md-block">&ensp; Winners</div>
+               <div class="d-none d-sm-block d-md-block">&ensp;<i data-t="Winners">Winners</i></div>
                <div class="fa fa-trophy d-block d-sm-none d-md-none"></div>
                </a>
             </li>
             <li class="nav-item">
-               <a class="nav-link" id="pills-info-tab" data-toggle="pill" href="#pills-info" role="tab" aria-controls="pills-info" aria-selected="true">Information</a>
+               <a class="nav-link" id="pills-info-tab" data-toggle="pill" href="#pills-info" role="tab" aria-controls="pills-info" aria-selected="true" data-t="Information">
+                 Information
+                </a>
             </li>
          </ul>
          <div class="tab-content" id="pills-tabContent">
@@ -1183,8 +1199,12 @@
                   <iframe frameborder="0" style="width: 100%" scrolling="no" id="chatright"></iframe>
                </div>
                <div class="text-center">
-                  <a target="_blank" href="https://www.twitch.tv/products/tcecpoc/ticket" class="btn btn-primary">Subscribe</a>
-                  <a target="_blank" href="https://streamlabs.com/TCEC_Chess_TV" class="btn btn-primary">Donate</a>
+                  <a target="_blank" href="https://www.twitch.tv/products/tcecpoc/ticket" class="btn btn-primary" data-t="Subscribe">
+                    Subscribe
+                  </a>
+                  <a target="_blank" href="https://streamlabs.com/TCEC_Chess_TV" class="btn btn-primary" data-t="Donate">
+                    Donate
+                  </a>
                </div>
             </div>
             <div class="tab-pane fade smallfont" id="pills-win" role="tabpanel" aria-labelledby="pills-win-tab">
@@ -1216,55 +1236,55 @@
       <ul class="nav nav-pills mb-3 nav-justified" id="pills-tab" role="tablist">
         <li id="bracketdiv" class="nav-item">
           <a class="nav-link active" id="pills-trial-tab" data-toggle="pill" href="#pills-trial" role="tab" aria-controls="pills-trial" aria-selected="true">
-             <div class="fmedium fa  fa-medal d-none d-sm-block d-md-block">&ensp; Brackets</div>
+             <div class="fmedium fa  fa-medal d-none d-sm-block d-md-block">&ensp;<i data-t="Brackets"></i></div>
              <div class="fmedium fa  fa-medal d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li id="eventdiv" class="nav-item">
           <a class="nav-link" id="pills-event-tab" data-toggle="pill" href="#pills-event" role="tab" aria-controls="pills-event" aria-selected="true">
-             <div class="fmedium fa  fa-times d-none d-sm-block d-md-block">&ensp; EventTable</div>
+             <div class="fmedium fa  fa-times d-none d-sm-block d-md-block">&ensp;<i data-t="EventTable"></i></div>
              <div class="fmedium fa  fa-times d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li id="standdiv" class="nav-item">
           <a class="nav-link" id="pills-stand-tab" data-toggle="pill" href="#pills-stand" role="tab" aria-controls="pills-stand" onclick="unlistenLog()" aria-selected="true">
-             <div class="fmedium fa  fa-medal d-none d-sm-block d-md-block">&ensp; Standings</div>
+             <div class="fmedium fa  fa-medal d-none d-sm-block d-md-block">&ensp;<i data-t="Standings"></i></div>
              <div class="fmedium fa  fa-medal d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li id="crossdiv" class="nav-item">
           <a class="nav-link" id="pills-cross-tab" data-toggle="pill" href="#pills-cross" role="tab" aria-controls="pills-cross" onclick="unlistenLog()" aria-selected="true">
-             <div class="fmedium fa  fa-times d-none d-sm-block d-md-block">&ensp; Crosstable</div>
+             <div class="fmedium fa  fa-times d-none d-sm-block d-md-block">&ensp;<i data-t="Crosstable"></i></div>
              <div class="fmedium fa  fa-times d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li id="h2hdiv" class="nav-item">
           <a class="nav-link" id="pills-h2h-tab" data-toggle="pill" href="#pills-h2h" role="tab" aria-controls="pills-h2h" onclick="unlistenLog()" aria-selected="true">
-             <div class="fmedium fa  fa-theater-masks d-none d-sm-block d-md-block">&ensp; H2H</div>
+             <div class="fmedium fa  fa-theater-masks d-none d-sm-block d-md-block">&ensp;<i data-t="H2H"></i></div>
              <div class="fmedium fa  fa-theater-masks d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" id="pills-sched-tab" data-toggle="pill" href="#pills-sched" role="tab" aria-controls="pills-sched" onclick="unlistenLog()" aria-selected="false">
-             <div class="fmedium fa  fa-calendar-alt d-none d-sm-block d-md-block">&ensp; Schedule</div>
+             <div class="fmedium fa  fa-calendar-alt d-none d-sm-block d-md-block">&ensp;<i data-t="Schedule"></i></div>
              <div class="fmedium fa  fa-calendar-alt d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li>
           <a class="nav-link" id="pills-tf-tab" data-toggle="pill" href="#pills-tf" role="tab" aria-controls="pills-tf" aria-selected="true">
-             <div class="fmedium fa  fa-info-circle d-none d-sm-block d-md-block">&ensp; Event Stats</div>
+             <div class="fmedium fa  fa-info-circle d-none d-sm-block d-md-block">&ensp;<i data-t="Event Stats"></i></div>
              <div class="fmedium fa  fa-info-circle d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" id="pills-log-tab" data-toggle="pill" href="#pills-log" role="tab" aria-controls="pills-sched" onclick="listenLog()" aria-selected="false">
-             <div class="fmedium fa  fa-book d-none d-sm-block d-md-block">&ensp; Livelog</div>
+             <div class="fmedium fa  fa-book d-none d-sm-block d-md-block">&ensp;<i data-t="Livelog"></i></div>
              <div class="fmedium fa  fa-book d-block d-sm-none d-md-none"></div>
           </a>
         </li>
         <li>
           <a class="nav-link" id="pills-crash-tab" data-toggle="pill" href="#pills-crash" role="tab" aria-controls="pills-crash" aria-selected="true">
-             <div class="fmedium fa  fa-car-crash d-none d-sm-block d-md-block">&ensp; Crash info</div>
+             <div class="fmedium fa  fa-car-crash d-none d-sm-block d-md-block">&ensp;<i data-t="Crash info"></i></div>
              <div class="fmedium fa  fa-car-crash d-block d-sm-none d-md-none"></div>
           </a>
         </li>
@@ -1273,11 +1293,11 @@
         <div class="tab-pane show active fade smallfont scheduleclass darkback" id="pills-trial" role="tabpanel" aria-labelledby="pills-trial-tab">
            <table class="table-dark table-noborder" width="1290" border=0 id="normaltable" style="font-size:medium;background-color:transparent">
               <tr>
-                 <td style="width: 15%; color: green">Round of 32</th>
-                 <td style="width: 15%; color: grey">OctoFinal</th>
-                 <td style="width: 15%; color: grey">QuarterFinal</th>
-                 <td style="width: 15%; color: grey">SemiFinal</th>
-                 <td style="width: 15%; color: grey">Final</th>
+                 <td style="width: 15%; color: green" data-t="Round of 32"></th>
+                 <td style="width: 15%; color: grey" data-t="OctoFinal"></th>
+                 <td style="width: 15%; color: grey" data-t="QuarterFinal"></th>
+                 <td style="width: 15%; color: grey" data-t="SemiFinal"></th>
+                 <td style="width: 15%; color: grey" data-t="Final"></th>
                 </tr>
            </table>
            <div id="bracket" style="background-color: transparent; height:1450px; width:1350px"></div>
@@ -1411,7 +1431,7 @@
                     <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
                     <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
                   </div>
-                  <h5>Copyright © 2010-2020</h5>
+                  <h5><i data-t="Copyright"></i> © 2010-2020</h5>
                 </div>
               </div>
             </div>
@@ -1439,8 +1459,8 @@
     <script src="dist/js/chessboard.js?v=10000000000000000000042"></script>
     <script src="dist/js/cup.js?v=10000000000000000000042"></script>
     <script src="dist/js/tcectables.js"></script>
-    <script src="dist/js/global.js"></script>
     <script src="dist/js/engine.js"></script>
+    <script src="dist/js/global.js"></script>
     <script src="dist/js/3d.js"></script>
     <script src="dist/js/board.js"></script>
     <script src="dist/js/themes.js"></script>
