@@ -2,12 +2,12 @@
 // included after: common, engine
 /*
 globals
-_, $, Abs, addDataLive, Assign, Attrs, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
+_, $, Abs, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES, C, Ceil, Chess, ChessBoard, Class,
 clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date, DefaultFloat, depthChart, document, drawEval,
 dummyCross, engine2colorno:true, evalChart, Exp, Floor, Hide, HTML, initializeCharts, Keys, localStorage, LS, Max,
-moment, Now, PIECE_THEMES, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan, roundResults:true, S,
-setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart, teamsx,
-timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate, roundDateMan,
+roundResults:true, S, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
+tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
@@ -540,9 +540,7 @@ function setPgn(pgn)
    if (viewingActiveMove && activePly != currentPlyCount) {
       activePly = currentPlyCount;
       if (playSound)
-      {
-         $('#move_sound')[0].play();
-      }
+         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
    }
 
    if (previousPlies > currentPlyCount) {
@@ -1870,8 +1868,7 @@ function updateH2hData()
       return;
    }
 
-   if ((oldSchedData.WhiteEngCurrent === all_engines[WH]) &&
-      (oldSchedData.BlackEngCurrent === all_engines[BL]))
+   if (oldSchedData.WhiteEngCurrent === all_engines[WH] && oldSchedData.BlackEngCurrent === all_engines[BL])
    {
       return;
    }
@@ -1920,8 +1917,7 @@ function updateH2hData()
       engine.FixWhite = engine.White;
       engine.FixBlack = engine.Black;
 
-      if (engine.Result != undefined)
-      {
+
          if (engine.Result == "1/2-1/2")
          {
             /* do nothing */
@@ -1936,7 +1932,7 @@ function updateH2hData()
             engine.FixWhite = '<div style="color:' + gameArrayClass[0] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
          }
-      }
+
       if ((engine.Black == all_engines[BL] && engine.White == all_engines[WH]) ||
          (engine.Black == all_engines[WH] && engine.White == all_engines[BL]))
       {
@@ -2048,8 +2044,7 @@ function updateScheduleData(scdatainput)
       engine.FixWhite = engine.White;
       engine.FixBlack = engine.Black;
 
-      if (engine.Result != undefined)
-      {
+
          if (engine.Result == "1/2-1/2")
          {
             /* do nothing */
@@ -2064,7 +2059,7 @@ function updateScheduleData(scdatainput)
             engine.FixWhite = '<div style="color:' + gameArrayClass[0] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
          }
-      }
+
       scdata.push(engine);
    });
 

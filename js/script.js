@@ -5,7 +5,7 @@ _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, board, brac
 C, check_hash, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Min, newUpdateStandData, parse_dev, Round,
 S, save_option, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTimeout, setTwitch,
-setTwitchChange, setUsers, setUsersMain, showBanner, Style, toggleTheme, translate_node, translates:true,
+setTwitchChange, setUsers, setUsersMain, showBanner, startup_3d, Style, toggleTheme, translate_node, translates:true,
 unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData,
 updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData,
 updateTables, updateWinners, window
@@ -133,8 +133,15 @@ function resize() {
  * Global events
  */
 function set_global_events() {
+    // general
     Events(window, 'resize', () => {
         resize();
+    });
+    // it won't be triggered by pushState and replaceState
+    Events(window, 'hashchange', () => {
+        LS('hash change');
+        check_hash();
+        parse_dev();
     });
 
     $(document).click(function (event) {
@@ -196,6 +203,7 @@ function startup() {
         ukr: 'українська',
     };
 
+    startup_3d();
     set_global_events();
     set_ui_events();
     init_sockets();

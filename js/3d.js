@@ -4,14 +4,17 @@
 //
 // general 3d rendering code
 //
-// included after: common, engine
+// included after: common, engine, global
 /*
 globals
-Abs, Audio, Exp, KEY_TIMES, KEYS, navigator, Now, Y
+Abs, Assign, Audio, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, Y
 */
 'use strict';
 
-let axes = [0, 0, 0, 0],
+let audiobox = {
+        sounds: {},
+    },
+    axes = [0, 0, 0, 0],
     AXIS_DEAD_ZONE = 0.2,
     AXIS_MAPPING = [
         [37, 39],
@@ -47,7 +50,14 @@ let axes = [0, 0, 0, 0],
     now,
     vibration,
     virtual_game_action_key,
-    virtual_game_action_keyup;
+    virtual_game_action_keyup,
+    X_SETTINGS = {
+        audio: {
+            sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
+            voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
+            volume: [{min: 0, max: 10, type: 'number'}, 5],
+        },
+    };
 
 /**
  * Check gamepad inputs
@@ -134,7 +144,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
         return;
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
-    if (audio && audio.frame == frame)
+    if (audio && frame && audio.frame == frame)
         return;
 
     if (voice)
@@ -181,5 +191,15 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
     })
     .catch(() => {
         audio.pause();
+    });
+}
+
+/**
+ * Initialise structures
+ */
+function startup_3d() {
+    Keys(X_SETTINGS).forEach(name => {
+        let settings = X_SETTINGS[name];
+        Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
     });
 }

@@ -34,7 +34,7 @@ def main():
     """Download all necessary JSON files
     """
     start = time()
-    this_path = os.path.dirname(__file__)
+    this_path = os.path.dirname(os.path.dirname(__file__))
 
     for source, age in SOURCE_TIMES.items():
         output = os.path.join(this_path, f'{source}.json')
