@@ -27,7 +27,7 @@
 
 /*
 globals
-console, process, require, setInterval, setTimeout
+__dirname, console, process, require, setInterval, setTimeout
 */
 'use strict';
 

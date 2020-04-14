@@ -80,12 +80,11 @@
             </div>
           </li>
           <li class="nav-item dropdown">
+            <!-- TODO: generate options dynamically -->
             <a class="py-0 nav-link dropdown-toggle" href="/" id="dd-themes" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               Options
             </a>
             <ul class="bg-dark dropdown-menu" aria-labelledby="dd-themes">
-
-
                 <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Dark Theme</a>
                   <ul class="dropdown-menu bg-dark whitefont">
                     <div class="form-check" style="margin-left: 10px">
@@ -96,9 +95,7 @@
                     </div>
                   </ul>
                 </li>
-
                 <div class="dropdown-divider"></div>
-
               <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Board</a>
                <ul class="bg-dark dropdown-menu" aria-labelledby="dd-themes">
                 <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Middle</a>
@@ -111,7 +108,6 @@
                     </div>
                   </ul>
                 </li>
-
                  <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Piece Theme</a>
                    <ul class="dropdown-menu bg-dark whitefont">
                      <li class="radio">
@@ -761,7 +757,7 @@
            </div>
            <div class="row">
               <div class="col-12">
-                <div class="tab-content" id="v-pills-tabContent">
+                <div class="tab-content" id="engine-content">
                   <div class="tab-pane fade" id="v-pills-pv-top" role="tabpanel" aria-labelledby="v-pills-pv-top-tab">
                     <div class="row">
                       <div class="col-12 col-md-12">
@@ -1012,7 +1008,7 @@
                   </ul>
               </div>
               <div class="col-12">
-                <div class="tab-content" id="v-pills-tabContent2">
+                <div class="tab-content" id="eval-content">
                   <div class="tab-pane fade show active" id="v-pills-eval" role="tabpanel" aria-labelledby="v-pills-eval-tab">
                     <canvas style="height: 250px;" class="graphs" id="eval-graph"></canvas>
                   </div>

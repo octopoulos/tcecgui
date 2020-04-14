@@ -2,7 +2,7 @@ body {
 	background-color: #dcdcdc;
 }
 
-.tab-content {
+#eval-content {
 	background-color: #dcdcdc;
 	margin-bottom: 5px;
 }
@@ -621,3 +621,7 @@ table.table.table-striped tr.whitetds td
    clear:right;
 }
 
+/* extras */
+.nav-item {
+   padding: 4px 0;
+}

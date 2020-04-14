@@ -1,4 +1,8 @@
-// common utility JS functions used in all the sites
+// common
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2020-04-13
+//
+// utility JS functions used in all the sites
 // no state is being required
 //
 /* globals
@@ -804,6 +808,9 @@ function Choice(array, length) {
 
 /**
  * Clamp a number between min and max
+ * Notes:
+ * - null acts as 0, so 1 > null and -1 < null
+ * - comparisons with undefined return false
  * @param {number} number
  * @param {number} min
  * @param {number} max
@@ -817,53 +824,6 @@ function Choice(array, length) {
  */
 function Clamp(number, min, max, min_set) {
     return (number < min)? (Number.isFinite(min_set)? min_set: min): (number > max? max: number);
-}
-
-/**
- * Collect cell dataset
- * @param {Node} cell
- * @returns {Object} extracted dictionary
- * @example
- * data-z="e=2050:event-2;n=feisar_2097"    // {e: '2050:event-2', n: 'feisar_2097'}
- */
-function CollectCellData(cell) {
-    let data = cell.dataset.z,
-        dico = {};
-    if (data) {
-        data.split(';').forEach(item => {
-            let [key, value] = item.split('=');
-            dico[key] = value;
-        });
-    }
-    return dico;
-}
-
-/**
- * Collect row dataset
- * @param {string|Node[]} cells
- * @param {boolean=} one_letter store the data as the first letter, class => c
- * @param {Object=} skip letters to skip, ex: {ship: 1}
- * @returns {Object} filters object
- * @example
- * dico = CollectRowData('td', true, {ship: 1});    // get data from all td, but skips 'ship'
- */
-function CollectRowData(cells, one_letter, skip) {
-    if (typeof(cells) == 'string')
-        cells = A(cells);
-    let dico = {};
-    for (let cell of cells) {
-        let data = cell.dataset.z;
-        if (!data)
-            continue;
-        for (let item of data.split(';')) {
-            let [key, value] = item.split('=');
-            if (skip && skip[key])
-                continue;
-            let letter = one_letter? key[0]: key;
-            dico[letter] = value;
-        }
-    }
-    return dico;
 }
 
 /**
@@ -938,7 +898,7 @@ function Format(vector, sep=', ', align=null) {
  * @param {number} text
  * @param {number=} align
  * @example
- * FormatFloat(-0.0001)     // 0.000
+ * FormatFloat(-0.0001)     // 0
  * FormatFloat(Math.PI)     // 3.142
  */
 function FormatFloat(text, align) {
@@ -974,7 +934,7 @@ function FromSeconds(time) {
  * @param {number} stamp timestamp in seconds
  * @returns {string[]} [date, time] string
  * @example
- * FromTimestamp(1576574884)    // ['19-12-17', '11:28']
+ * FromTimestamp(1576574884)    // ['19-12-17', '10:28']
  */
 function FromTimestamp(stamp) {
     if (!stamp)
@@ -1071,36 +1031,6 @@ function Now(as_float) {
 }
 
 /**
- * Get the form data in a dictionary
- * @param {string} sel CSS selector of the form
- * @returns {Object} the dictionary
- * @example
- * dico = ParseForm('form')
- */
-function ParseForm(sel) {
-    // 1) convert form to dico
-    let dico = {},
-        rows = Array.from(new FormData(_(sel)));
-    for (let [key, value] of rows) {
-        if (key.slice(-2) == '[]') {
-            key = key.slice(0, -2);
-            SetDefault(dico, key, []).push(value);
-        }
-        else
-            dico[key] = value;
-    }
-
-    // 2) colors: convert [1, 2] to '1|2'
-    Keys(dico).forEach(key => {
-        let value = dico[key];
-        if (Array.isArray(value))
-            dico[key] = value.join('|');
-    });
-
-    return dico;
-}
-
-/**
  * Random from [low to high[
  * @param {number=} high
  * @param {number=} low
@@ -1138,7 +1068,7 @@ function RandomSpread(range) {
  * @param {string=} type arraybuffer, blob, document, json, text
  * @example
  * // get the context of the file
- * Resource('./fragment.glsl', (status, text) => {LS(text)}, {type: 'text'})
+ * Resource('./fragment.frag', (status, text) => {LS(text)}, {type: 'text'})
  * // api call
  * Resource('api/user_login', (status, result) => {
  *     LS(result)}, JSON.stringify({user: 'David'}
@@ -1204,37 +1134,4 @@ function Stringify(object, depth=0, max_depth=2) {
     }
 
     return depth? obj: JSON.stringify(obj);
-}
-
-/**
- * Choose a random element in an array, with weights
- * @param {number[]} array
- * @param {number} total total weight
- * @param {number=} start
- * @param {number=} end
- * @param {boolean=} feather
- * @returns {number} index
- * @example
- * WeightedChoice([1, 2, 10], 13, 0, 2)     // probably returns 2
- */
-function WeightedChoice(array, total, start, end, feather) {
-    let rand = Random() * total,
-        sum = 0;
-
-    if (!end)
-        end = array.length;
-
-    for (let i=start || 0; i<end; i++) {
-        let value = array[i];
-        if (!value)
-            continue;
-        sum += value;
-        if (sum >= rand) {
-            if (feather)
-                i += 0.5 - Random();
-            return i;
-        }
-    }
-
-    return -1;
 }
