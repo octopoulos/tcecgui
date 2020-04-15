@@ -4,12 +4,12 @@
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, Ceil, Chess, ChessBoard, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console, crosstableData,
-Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp, Floor, Hide,
-HTML, initializeCharts, Keys,
-localStorage, LS, Max, Min, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
+Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp, Floor, get_int,
+get_string, Hide, HTML, initializeCharts, Keys,
+LS, Max, Min, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
 roundDateMan, roundResults:true,
-S, screen, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart,
-teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
+tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
@@ -1244,15 +1244,14 @@ function setPlyDiv(plyDiffL)
    findDiffPv(all_pvs[WH], all_pvs[BL]);
    updateEnginePv(_WHITE, whiteToPlay, all_pvs[WH]);
    updateEnginePv(_BLACK, whiteToPlay, all_pvs[BL]);
-   localStorage.setItem('tcec-ply-div', plyDiff);
-   Prop(`input[value="ply${plyDiffL}"]`, 'checked', true);
+   save_option('ply_diff', plyDiff);
+   Prop(`input[value="ply${plyDiff}"]`, 'checked', true);
 }
 
 function setPlyDivDefault()
 {
-   var plyDiffL = localStorage.getItem('tcec-ply-div');
-   plyDiff = parseInt(plyDiffL) || 0;
-   Prop(`input[value="ply${plyDiff}"]`, 'checked', true);
+    let ply_diff = get_int('ply_diff', 0);
+    Prop(`input[value="ply${ply_diff}"]`, 'checked', true);
 }
 
 function findDiffPv(whitemoves, blackmoves)
@@ -2161,72 +2160,64 @@ function createBoard(cont, boardNotation, drag)
     return ChessBoard(cont, options);
 }
 
+/**
+ * Create all the boards
+ */
 function setBoardInit()
 {
-   var boardTheme = localStorage.getItem('tcec-board-theme');
-   var pieceTheme = localStorage.getItem('tcec-piece-theme');
+    btheme = get_string('board_theme', btheme);
+    ptheme = get_string('piece_theme', ptheme);
 
-   if (boardTheme != undefined)
-   {
-      btheme = boardTheme;
-   }
+    pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
+    board = createBoard('board', boardNotation);
 
-   if (pieceTheme != undefined)
-   {
-      ptheme = pieceTheme;
-   }
+    if (!boardArrows)
+        board.clearAnnotation();
 
-   pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
-   board = createBoard('board', boardNotation);
+    pvBoardw = createBoard('pv-boardw', boardNotationPv);
+    pvBoardb = createBoard('pv-boardb', boardNotationPv);
+    pvBoardwc = createBoard('pv-boardwc', boardNotationPv);
+    pvBoardbc = createBoard('pv-boardbc', boardNotationPv);
 
-   if (!boardArrows) {
-      board.clearAnnotation();
-   }
+    save_option('board_theme', btheme);
+    save_option('piece_theme', ptheme);
+    Prop(`input[value="${btheme}b"]`, 'checked', true);
+    Prop(`input[value="${ptheme}p"]`, 'checked', true);
 
-   pvBoardw = createBoard('pv-boardw', boardNotationPv);
-   pvBoardb = createBoard('pv-boardb', boardNotationPv);
-   pvBoardwc = createBoard('pv-boardwc', boardNotationPv);
-   pvBoardbc = createBoard('pv-boardbc', boardNotationPv);
-
-   localStorage.setItem('tcec-board-theme', btheme);
-   localStorage.setItem('tcec-piece-theme', ptheme);
-   Prop(`input[value="${btheme}b"]`, 'checked', true);
-   Prop(`input[value="${ptheme}p"]`, 'checked', true);
-
-   return {board, pvBoardw, pvBoardb, pvBoarda, pvBoardwc, pvBoardbc};
+    return {board, pvBoardw, pvBoardb, pvBoarda, pvBoardwc, pvBoardbc};
 }
 
 function setBoard()
 {
-   var fen = board.fen();
-   board = createBoard('board', boardNotation);
-   board.position(fen, false);
+    let fen = board.fen();
+    board = createBoard('board', boardNotation);
+    board.position(fen, false);
 
-   fen = pvBoardb.fen();
-   pvBoardb = createBoard('pv-boardb', boardNotationPv);
-   pvBoardb.position(fen, false);
+    fen = pvBoardb.fen();
+    pvBoardb = createBoard('pv-boardb', boardNotationPv);
+    pvBoardb.position(fen, false);
 
-   fen = pvBoardw.fen();
-   pvBoardw = createBoard('pv-boardw', boardNotationPv);
-   pvBoardw.position(fen, false);
+    fen = pvBoardw.fen();
+    pvBoardw = createBoard('pv-boardw', boardNotationPv);
+    pvBoardw.position(fen, false);
 
-   fen = pvBoarda.fen();
-   pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
-   pvBoarda.position(fen, false);
+    fen = pvBoarda.fen();
+    pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
+    pvBoarda.position(fen, false);
 
-   fen = pvBoardwc.fen();
-   pvBoardwc = createBoard('pv-boardwc', boardNotationPv, true);
-   pvBoardwc.position(fen, false);
+    fen = pvBoardwc.fen();
+    pvBoardwc = createBoard('pv-boardwc', boardNotationPv, true);
+    pvBoardwc.position(fen, false);
 
-   fen = pvBoardbc.fen();
-   pvBoardbc = createBoard('pv-boardbc', boardNotationPv, true);
-   pvBoardbc.position(fen, false);
+    fen = pvBoardbc.fen();
+    pvBoardbc = createBoard('pv-boardbc', boardNotationPv, true);
+    pvBoardbc.position(fen, false);
 
-   localStorage.setItem('tcec-board-theme', btheme);
-   localStorage.setItem('tcec-piece-theme', ptheme);
+    save_option('board_theme', btheme);
+    save_option('piece_theme', ptheme);
 
-   Prop(`input[value="${btheme}b"]`, 'checked', true);
-   Prop(`input[value="${ptheme}p"]`, 'checked', true);
+    Prop(`input[value="${btheme}b"]`, 'checked', true);
+    Prop(`input[value="${ptheme}p"]`, 'checked', true);
 
     if (prevPgnData && prevPgnData.Moves.length > 0)
     {
@@ -2273,62 +2264,41 @@ function setTwitchBackgroundInit(backg)
    }
    else
    {
-      var darkMode = localStorage.getItem('tcec-dark-mode');
-      if (darkMode == 20)
-      {
-         setTwitchChatUrl(true);
-         setValue = 2;
-      }
-      else
-      {
-         setTwitchChatUrl(false);
-         setValue = 1;
-      }
+        let dark_mode = get_int('dark_mode', 10);
+        if (darkMode == 20)
+        {
+            setTwitchChatUrl(true);
+            setValue = 2;
+        }
+        else
+        {
+            setTwitchChatUrl(false);
+            setValue = 1;
+        }
    }
-   localStorage.setItem('tcec-twitch-back-mode', setValue);
+   save_option('twitch_back_mode', setValue);
 }
 
 function setTwitchBackground(backg)
 {
-   var setValue = 0;
-   var darkMode = localStorage.getItem('tcec-twitch-back-mode');
-   if (darkMode != undefined)
-   {
-      if (darkMode == 1)
-      {
-         setTwitchChatUrl(false);
-         setValue = 1;
-      }
-      else if (darkMode == 2)
-      {
-         setTwitchChatUrl(true);
-         setValue = 2;
-      }
-      else if (darkMode == 0)
-      {
-         if (backg == 1)
-         {
-            setTwitchChatUrl(false);
-         }
-         else
-         {
-            setTwitchChatUrl(true);
-         }
-      }
-   }
-   else
-   {
-      if (backg == 1)
-      {
-         setTwitchChatUrl(false);
-      }
-      else
-      {
-         setTwitchChatUrl(true);
-      }
-   }
-   localStorage.setItem('tcec-twitch-back-mode', setValue);
-   Prop(`input[value="${setValue}"]`, 'checked', true);
+    let setValue = 0,
+        twitch_back_mode = get_string('twitch_back_mode');
+
+    if (twitch_back_mode == 1)
+    {
+        setTwitchChatUrl(false);
+        setValue = 1;
+    }
+    else if (twitch_back_mode == 2)
+    {
+        setTwitchChatUrl(true);
+        setValue = 2;
+    }
+    else
+        setTwitchChatUrl(backg != 1);
+
+    save_option('twitch_back_mode', setValue);
+    Prop(`input[value="${setValue}"]`, 'checked', true);
 }
 
 function setDark()
@@ -2378,17 +2348,12 @@ function setDefaults()
 
 function setDefaultThemes()
 {
-   var darkMode = localStorage.getItem('tcec-dark-mode');
-
-   if (darkMode == 20)
-   {
-      setDark();
-   }
-   else
-   {
-      setLight();
-   }
-   setPlyDivDefault();
+    let dark_mode = get_int('dark_mode', 10);
+    if (dark_mode == 20)
+        setDark();
+    else
+        setLight();
+    setPlyDivDefault();
 }
 
 function setBoardUser(boardTheme)
@@ -2409,7 +2374,7 @@ function setPieceUser(ptheme_)
 
 function setDefaultEnginecolor()
 {
-    let color = localStorage.getItem('tcec-engine-color') || 0;
+    let color = get_string('engine_color', engine_colors[3]);
     if ((color + '').length > 1)
         engine_colors[3] = color;
     color = 'engcolor'+color;
@@ -2422,7 +2387,7 @@ function setEngineColor(color)
 {
     if ((color + '').length > 1)
         engine_colors[3] = color;
-    localStorage.setItem('tcec-engine-color', color);
+    save_option('engine_color', color);
     drawEval();
     updateChartData();
 }
@@ -2830,17 +2795,12 @@ function setLastMoveTime(data)
 
 function checkTwitch(checkbox)
 {
-   if (checkbox.checked)
-   {
-      Hide('iframe#twitchvid');
-      localStorage.setItem('tcec-twitch-video', 1);
-   }
-   else
-   {
-      Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
-      Show('iframe#twitchvid');
-      localStorage.setItem('tcec-twitch-video', 0);
-   }
+    let checked = checkbox.checked;
+    if (!checked)
+        Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
+
+   S('iframe#twitchvid', !checked);
+   save_option('twitch_video', checked? 1: 0);
 }
 
 /**
@@ -2854,18 +2814,12 @@ function resize() {
 
 function setTwitch()
 {
-    let getVideoCheck = localStorage.getItem('tcec-twitch-video');
-    if (getVideoCheck == undefined || getVideoCheck == 0)
-    {
+    let twitch_video = get_int('twitch_video', 0);
+    if (!twitch_video)
         Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
-        Show('iframe#twitchvid');
-        Prop('#twitchcheck', 'checked', false);
-    }
-    else
-    {
-        Hide('iframe#twitchvid');
-        Prop('#twitchcheck', 'checked', true);
-    }
+
+    S('iframe#twitchvid', !twitch_video);
+    Prop('#twitchcheck', 'checked', !!twitch_video);
     resize();
 }
 
@@ -2886,76 +2840,53 @@ function showEvalCont()
 
 function liveEngine(checkbox, checknum)
 {
-   var config = 'tcec-live-engine' + checknum;
-//    var evalcont = '#evalcont';
+    let ichecked = checkbox.checked? 1: 0,
+        config = `live_engine${checknum}`;
 
-   if (checkbox.checked)
-   {
-      localStorage.setItem(config, 1);
-      if (checknum == 1)
-      {
-         showLivEng1 = 1;
-      }
-      else
-      {
-         showLivEng2 = 1;
-      }
-   }
-   else
-   {
-      localStorage.setItem(config, 0);
-      if (checknum == 1)
-      {
-         showLivEng1 = 0;
-      }
-      else
-      {
-         showLivEng2 = 0;
-      }
-   }
+    save_option(config, ichecked);
+    if (checknum == 1)
+        showLivEng1 = ichecked;
+    else
+        showLivEng2 = ichecked;
 
-   showEvalCont();
-   updateLiveEval();
-   updateChartData();
+    showEvalCont();
+    updateLiveEval();
+    updateChartData();
 }
 
 function setliveEngineInit(value)
 {
-   var config = 'tcec-live-engine' + value;
-   var getlive = localStorage.getItem(config);
-   var cont = '#liveenginecheck' + value;
-   var checknum = value;
-//    var evalcont = '#evalcont';
+    let config = `live_engine${value}`,
+        getlive = get_int(config, 1),
+        cont = `#liveenginecheck${value}`,
+        checknum = value;
 
-   if (getlive == undefined || getlive == 1)
-   {
-      if (checknum == 1)
-      {
-         showLivEng1 = 1;
-         $('#pills-tab a[href="#pills-eval' + 1 + '"]').tab('show');
-      }
-      else
-      {
-         showLivEng2 = 1;
-         if (!showLivEng1)
-         {
-            $('#pills-tab a[href="#pills-eval' + 2 + '"]').tab('show');
-         }
-      }
-      Prop(cont, 'checked', true);
-   }
-   else
-   {
-      if (checknum == 1)
-      {
-         showLivEng1 = 0;
-      }
-      else
-      {
-         showLivEng2 = 0;
-      }
-      Prop(cont, 'checked', false);
-   }
+    if (getlive == 1)
+    {
+        if (checknum == 1)
+        {
+            showLivEng1 = 1;
+            $('#pills-tab a[href="#pills-eval' + 1 + '"]').tab('show');
+        }
+        else
+        {
+            showLivEng2 = 1;
+            if (!showLivEng1)
+            {
+                $('#pills-tab a[href="#pills-eval' + 2 + '"]').tab('show');
+            }
+        }
+        Prop(cont, 'checked', true);
+    }
+    else
+    {
+        if (checknum == 1)
+            showLivEng1 = 0;
+        else
+            showLivEng2 = 0;
+
+        Prop(cont, 'checked', false);
+    }
 }
 
 function setliveEngine()
@@ -2967,96 +2898,58 @@ function setliveEngine()
 
 function checkSort(checkbox)
 {
-   if (checkbox.checked)
-   {
-      localStorage.setItem('tcec-cross-crash', 1);
-      crossCrash = 0;
-   }
-   else
-   {
-      localStorage.setItem('tcec-cross-crash', 0);
-      crossCrash = 1;
-   }
-   updateTables();
+    crossCrash = checkbox.checked? 1: 0;
+    save_option('cross_crash', crossCrash);
+    updateTables();
 }
 
 function checkLivePv(checkbox)
 {
-   if (checkbox.checked)
-   {
-      localStorage.setItem('tcec-livepv-upd', 0);
-      livepvupdate = 0;
-   }
-   else
-   {
-      localStorage.setItem('tcec-livepv-upd', 1);
-      livepvupdate = 1;
-   }
+    livepvupdate = checkbox.checked? 0: 1;
+    save_option('livepv_upd', livepvupdate);
 }
 
 function checkSound(checkbox)
 {
-   if (checkbox.checked)
-   {
-      localStorage.setItem('tcec-sound-video', 1);
-      playSound = 0;
-   }
-   else
-   {
-      localStorage.setItem('tcec-sound-video', 0);
-      playSound = 1;
-   }
+    let checked = checkbox.checked;
+    save_option('sound_video', checked? 1: 0);
+    playSound = checked? 0: 1;
 }
 
 function setCrash()
 {
-    let getSound = localStorage.getItem('tcec-cross-crash'),
-        is_crash = (getSound == undefined || getSound == 0);
-
-    crossCrash = is_crash * 1;
-    Prop('#crosscheck', 'checked', !is_crash);
+    crossCrash = get_int('cross_crash', 1);
+    Prop('#crosscheck', 'checked', !crossCrash);
 }
 
 function setSound()
 {
-    let getSound = localStorage.getItem('tcec-sound-video'),
-        is_sound = (getSound == undefined || getSound == 0);
-
-    playSound = is_sound * 1;
-    Prop('#soundcheck', 'checked', !is_sound);
+    playSound = get_int('sound_video', 1);
+    Prop('#soundcheck', 'checked', !playSound);
 }
 
 function setLivePvUpdate()
 {
-    let getSound = localStorage.getItem('tcec-livepv-upd'),
-        is_update = (getSound == undefined || getSound == 1);
-
-    livepvupdate = is_update * 1;
-    Prop('#livepvcheck', 'checked', !is_update);
+    livepvupdate = get_int('livepv_upd', 1);
+    Prop('#livepvcheck', 'checked', !livepvupdate);
 }
 
 function setNotationPvDefault()
 {
-    let getHighL = localStorage.getItem('tcec-notation-pvx'),
-        is_notation = (getHighL == undefined || getHighL == 0);
-
-    boardNotationPv = !is_notation;
-    Prop('#nottcheckpv', 'checked', is_notation);
+    boardNotationPv = !get_int('notation_pvx', 0);
+    Prop('#nottcheckpv', 'checked', !boardNotationPv);
 }
 
 function setNotationDefault()
 {
-    let getHighL = localStorage.getItem('tcec-notation'),
-        is_notation = (getHighL == undefined || getHighL == 0);
-
-    boardNotation = is_notation;
-    Prop('#nottcheck', 'checked', !is_notation);
+    boardNotation = !get_int('notation', 0);
+    Prop('#nottcheck', 'checked', !boardNotation);
 }
 
 function setNotationPv(checkbox)
 {
     let is_check = checkbox.checked;
-    localStorage.setItem('tcec-notation-pvx', is_check? 0: 1);
+    save_option('notation_pvx', is_check? 0: 1);
     boardNotationPv = !is_check;
     setBoard();
 }
@@ -3064,91 +2957,59 @@ function setNotationPv(checkbox)
 function setNotation(checkbox)
 {
     let is_check = checkbox.checked;
-    localStorage.setItem('tcec-notation', is_check? 1: 0);
+    save_option('notation', is_check? 1: 0);
     boardNotation = !is_check;
     setBoard();
 }
 
 function setHighLightMainPv(getHighL)
 {
-   if (getHighL == 0)
-   {
-      highlightClassPv = 'highlight-white highlight-none';
-   }
-   else
-   {
-      highlightClassPv = 'highlight-white highlight-' + getHighL;
-   }
+    highlightClassPv = `highlight-white highlight-${(getHighL == 0)? 'none': getHighL}`;
 }
 
 function setHighlightDefaultPv()
 {
-   var getHighL = localStorage.getItem('tcec-highlight-pv');
-
-   if (getHighL == undefined)
-   {
-      getHighL = 2;
-   }
-
-   setHighLightMainPv(getHighL);
-
-   Prop(`input[value="highlightPvRadio${getHighL}"]`, 'checked', true);
+    let getHighL = get_int('highlight_pv', 2);
+    setHighLightMainPv(getHighL);
+    Prop(`input[value="highlightPvRadio${getHighL}"]`, 'checked', true);
 }
 
 function setHighlightPv(value)
 {
-   localStorage.setItem('tcec-highlight-pv', value);
-   setHighLightMainPv(value);
-   setBoard();
+    save_option('highlight_pv', value);
+    setHighLightMainPv(value);
+    setBoard();
 }
 
 function setHighLightMain(getHighL)
 {
-   if (getHighL == 0)
-   {
-      highlightClass = 'highlight-white highlight-none';
-   }
-   else
-   {
-      highlightClass = 'highlight-white highlight-' + getHighL;
-   }
+    highlightClass = `highlight-white highlight-${(getHighL == 0)? 'none': getHighL}`;
 }
 
 function setHighlightDefault()
 {
-   var getHighL = localStorage.getItem('tcec-highlight');
-
-   if (getHighL == undefined)
-   {
-      getHighL = 2;
-   }
-
-   setHighLightMain(getHighL);
-
-   Prop(`input[value="highlightRadio${getHighL}"]`, 'checked', true);
+    let getHighL = get_int('highlight', 2);
+    setHighLightMain(getHighL);
+    Prop(`input[value="highlightRadio${getHighL}"]`, 'checked', true);
 }
 
 function setHighlight(value)
 {
-   localStorage.setItem('tcec-highlight', value);
-   setHighLightMain(value);
-   setBoard();
+    save_option('highlight', value);
+    setHighLightMain(value);
+    setBoard();
 }
 
 function setMoveArrowsDefault()
 {
-    let getHighL = localStorage.getItem('tcec-move-arrows'),
-        is_arrow = (getHighL == undefined || getHighL == 1);
-
-    boardArrows = is_arrow;
-    Prop('#notacheck', 'checked', !is_arrow);
+    boardArrows = get_int('tcec-move-arrows', 1);
+    Prop('#notacheck', 'checked', !boardArrows);
 }
 
 function setMoveArrows(checkbox)
 {
-    let is_check = checkbox.checked;
-    localStorage.setItem('tcec-move-arrows', is_check? 0: 1);
-    boardArrows = !is_check;
+    boardArrows = checkbox.checked? 0: 1;
+    save_option('move_arrows', boardArrows);
     setBoard();
 }
 
@@ -3884,50 +3745,42 @@ function addClassEngineInfo(cont)
 
 function showEngInfo()
 {
-   hideDownPv = 1;
-   for (let i = 1 ; i < 5 ; i++)
-   {
-      removeClassEngineInfo('#boardinfod2' + i);
-      removeClassEngineInfo('#boardinfod1' + i);
-   }
-   localStorage.setItem('tcec-top-tab', 2);
+    hideDownPv = 1;
+    for (let i = 1 ; i < 5 ; i++)
+    {
+        removeClassEngineInfo('#boardinfod2' + i);
+        removeClassEngineInfo('#boardinfod1' + i);
+    }
+    save_option('top_tab', 2);
 }
 
 function hideEngInfo()
 {
-   hideDownPv = 0;
-   for (let i = 1 ; i < 5 ; i++)
-   {
-      addClassEngineInfo('#boardinfod2' + i);
-      addClassEngineInfo('#boardinfod1' + i);
-   }
-   localStorage.setItem('tcec-top-tab', 1);
+    hideDownPv = 0;
+    for (let i = 1 ; i < 5 ; i++)
+    {
+        addClassEngineInfo('#boardinfod2' + i);
+        addClassEngineInfo('#boardinfod1' + i);
+    }
+    save_option('top_tab', 1);
 }
 
 function showTabDefault()
 {
-   var topTab = localStorage.getItem('tcec-top-tab');
-   if (topTab == undefined || topTab == 1)
-   {
-      _('#v-pills-gameinfo-tab').click();
-   }
-   else
-   {
-      _('#v-pills-pv-top-tab').click();
-   }
+    let topTab = get_int('top_tab', 1);
+    if (topTab == 1)
+        _('#v-pills-gameinfo-tab').click();
+    else
+        _('#v-pills-pv-top-tab').click();
 }
 
 function toggleTheme()
 {
-   var darkMode = localStorage.getItem('tcec-dark-mode');
-   if (darkMode == 20) {
-      localStorage.setItem('tcec-dark-mode', 10);
-   } else {
-      localStorage.setItem('tcec-dark-mode', 20);
-   }
-   setDefaultThemes();
-   updateTables();
-   $(".navbar-toggle").click();
+    let dark_mode = get_int('dark_mode', 10);
+    save_option('dark_mode', (dark_mode == 20)? 10: 20);
+    setDefaultThemes();
+    updateTables();
+    $(".navbar-toggle").click();
 }
 
 function hideBanner(timeout=30000)
@@ -3955,7 +3808,7 @@ function setCheckBoardMiddle(value, id)
 {
     Class('#middle-data-column', 'order-first', value);
     Prop(id, 'checked', !!value);
-    localStorage.setItem('tcec-board-middle', value? 1: 0);
+    save_option('board_middle', value? 1: 0);
 }
 
 function checkBoardMiddle(checkbox)
@@ -3965,8 +3818,8 @@ function checkBoardMiddle(checkbox)
 
 function loadBoardMiddle()
 {
-    let midd = localStorage.getItem('tcec-board-middle') || 0;
-    setCheckBoardMiddle(midd? 1: 0, '#middlecheck');
+    let middle = get_int('board_middle', 0);
+    setCheckBoardMiddle(middle? 1: 0, '#middlecheck');
 }
 
 function scheduleToTournamentInfo(schedJson)
@@ -4121,28 +3974,18 @@ function getLocalDate(startDate, minutes)
 
 function setDefaultLiveLog()
 {
-   var roomNo = localStorage.getItem('tcec-engine-loglive');
-
-   if (roomNo != undefined)
-   {
-      globalRoom = roomNo;
-   }
-   else
-   {
-      globalRoom = 'room10';
-   }
-   Prop(`input[value="${globalRoom}"]`, 'checked', true);
+    globalRoom = get_string('engine_livelog', 'room10');
+    Prop(`input[value="${globalRoom}"]`, 'checked', true);
 }
 
 function setLiveLog(livelog)
 {
-   localStorage.setItem('tcec-engine-loglive', livelog.value);
-   unlistenLogMain(0);
-   if (livelog.value)
-   {
-      globalRoom = livelog.value;
-   }
-   listenLog();
+    save_option('engine_livelog', livelog.value);
+    unlistenLogMain(0);
+    if (livelog.value)
+        globalRoom = livelog.value;
+
+    listenLog();
 }
 
 function listenLogMain(room)

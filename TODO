@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-15 : 2020-04-15 : replace all localStorage code
 2020-04-15 : 2020-04-15 : improved format units + charts
 2020-04-14 : 2020-04-13 : convert translatable text to <tag data-t="some text"></tag>
 2020-04-14 : 2020-04-14 : replace setTimeout with add_timeout: safer and cancellable
@@ -20,41 +21,41 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : correct table height (no internal vertical scroll)
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
+-          : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
+~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
+-          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-13 : remove 80x onClick = ... from live.html
 ~          : 2020-04-13 : X_SETTINGS = much better settings system than what's now
+-          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
 ~          : 2020-04-13 : get rid of multiple big copy/paste in the code, if a code appears x times => in a function
-~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 ~          : 2020-04-12 : convert all White and Black vars to arrays [w, b]
+-          : 2020-04-13 : add more Jest tests
 ~          : 2020-04-13 : merge B&W functions
 ~          : 2020-04-12 : remove all `var` = sources of bugs
 ~          : 2020-04-13 : remove as much jquery as possible
 -          : 2020-04-13 : make a Python script to compress the css / js and embed the necessary ones in the html
 -          : 2020-04-13 : remove all click triggers (they're hacks)
--          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
--          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-13 : accelerate table generation, too many memory allocs + expensive selectors with jQuery
+-          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
+-          : 2020-04-13 : convert themes to combo + dynamically load 1 theme at a time (save network)
+-          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-13 : add 3d rendering option to the chessboard
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
 -          : 2020-04-13 : extra audio events => boom, check, draw, win ... ? or when favorite engine plays/winning
--          : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : create own chessboard js in 2d + possibility to have 3d
 -          : 2020-04-13 : only load the 3d library/files when the user wants to use it
 -          : 2020-04-13 : click on PV => keyboard should move in PV
--          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-13 : add 3d rendering options: shadow, texture quality, output, resolution
 -          : 2020-04-13 : remove as much bootstrap as possible => faster + save space
 -          : 2020-04-13 : remove bootstrap locale folder
 -          : 2020-04-13 : remove most specific settings code: thousands of lines + difficult to add more settings
--          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
 -          : 2020-04-13 : replace several tables with grid/flex
--          : 2020-04-13 : convert themes to combo + dynamically load 1 theme at a time (save network)
 -          : 2020-04-13 : add an SVG theme for the pieces
 -          : 2020-04-13 : only keep fontawesome icons that are being used => faster loading
 -          : 2020-04-13 : add title + params + returns documentation for all functions, JsDoc format
--          : 2020-04-13 : add more Jest tests
 -          : 2020-04-13 : add 3d players moving the pieces
 -          : 2020-04-13 : add 3d crowd based on the number of viewers
 -          : 2020-04-13 : add 3d tables + room
