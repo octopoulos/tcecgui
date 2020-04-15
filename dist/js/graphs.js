@@ -1,237 +1,121 @@
 /*
 globals
-_, $, Chart, Clamp, console, DEV, document, formatUnit, liveEngineEval1, liveEngineEval2, LS, Max, Min, plog,
-prevPgnData, Round, showLivEng1, showLivEng2
+_, $, Assign, Chart, Clamp, console, DEV, document, formatUnit, FromSeconds, Keys, liveEngineEval1, liveEngineEval2,
+LS, Max, Min, Pad, prevPgnData, Round, showLivEng1, showLivEng2
 */
 'use strict';
 
 // you can modify these
-let engine_colors = ['#efefef', '#000000', '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'],
+let COLOR_BLACK = '#000000',
+    COLOR_WHITE = '#efefef',
+    engine_colors = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'],
     engine_names = ['White', 'Black', 'Blueleela', '7Fish'];
 
 let all_evals = [],
-    // charts = {},
-    // chart_data = {},
-    evalChartData = {};
+    chart_data = {},
+    charts = {};
 
-var evalChart;
-var whiteEvalL = 0;
-var blackEvalL = 0;
-var timeChart;
-var speedChart;
-var nodesChart = null;
-var depthChart;
-var tbHitsChart;
-var evalconstant = 10.0;
+//
+let blackEvalL = 0,
+    evalconstant = 10.0,
+    whiteEvalL = 0,
 
-var evalLabels = [];
-var labels = [];
-var whiteEval = [];
-var blackEval = [];
-var liveEval1 = [];
-var liveEval2 = [];
-var whiteTime = [];
-var blackTime = [];
-var whiteSpeed = [];
-var blackSpeed = [];
-var whiteNodes = [];
-var blackNodes = [];
-var whiteDepth = [];
-var blackDepth = [];
-var whiteSelDepth = [];
-var blackSelDepth = [];
-var whiteTBHits = [];
-var blackTBHits = [];
-var blackPop = 1;
-var whitePop = 1;
+    blackDepth = [],
+    blackEval = [],
+    blackNodes = [],
+    blackPop = 1,
+    blackSelDepth = [],
+    blackSpeed = [],
+    blackTBHits = [],
+    blackTime = [],
+    evalLabels = [],
+    labels = [],
+    liveEval1 = [],
+    liveEval2 = [],
+    whiteDepth = [],
+    whiteEval = [],
+    whiteNodes = [],
+    whitePop = 1,
+    whiteSelDepth = [],
+    whiteSpeed = [],
+    whiteTBHits = [],
+    whiteTime = [],
 
-var blackStarted = 0;
-var firstPly = 0;
+    blackStarted = 0,
+    firstPly = 0;
 
 /**
- * Create eval chart data, supports any number of engines
+ * Create a dataset
+ * - prevents excessive copy/pasting => makes the code a lot shorter!
+ * @param {string} label
+ * @param {string} color
+ * @param {string=} yaxis
+ * @param {Object=} dico
+ * @returns {Object}
  */
-function setEvalChartData()
-{
-    evalChartData = {
-        labels: [],
-        datasets: engine_names.map((name, id) => ({
-            backgroundColor: engine_colors[id],
-            borderColor: engine_colors[id],
-            data: [],
-            fill: false,
-            label: name,
-            lineTension: 0,
-            spanGaps: true,
-        })),
+function new_dataset(label, color, yaxis, dico) {
+    let dataset = {
+        backgroundColor: color,
+        borderColor: color,
+        data: [],
+        fill: false,
+        label: label,
+        lineTension: 0,
+        yAxisID: yaxis,
     };
+
+    if (dico)
+        Assign(dataset, dico);
+    return dataset;
 }
 
-var timeChartData = {
-   labels: [],
-   datasets: [{
-      label: 'White Time',
-      lineTension: 0,
-      borderColor: '#EFEFEF',
-      backgroundColor: '#EFEFEF',
-      fill: false,
-      data: []
-   }, {
-      label: 'Black Time',
-      lineTension: 0,
-      borderColor: '#000000',
-      backgroundColor: '#000000',
-      fill: false,
-      data: []
-   }]
-};
-
-var speedChartData = {
-   labels: [],
-   datasets: [{
-      label: 'White Speeds',
-      lineTension: 0,
-      borderColor: '#EFEFEF',
-      backgroundColor: '#EFEFEF',
-      fill: false,
-      data: [],
-      yAxisID: 'y-axis-1',
-   }, {
-      label: 'Black Speed',
-      lineTension: 0,
-      borderColor: '#000000',
-      backgroundColor: '#000000',
-      fill: false,
-      data: [],
-      yAxisID: 'y-axis-2'
-   }]
-};
-
-var depthChartData = {
-   labels: [],
-   datasets: [{
-      label: 'White Depth',
-      lineTension: 0,
-      borderColor: '#EFEFEF',
-      backgroundColor: '#EFEFEF',
-      fill: false,
-      data: []
-   }, {
-      label: 'Black Depth',
-      lineTension: 0,
-      borderColor: '#1a1a1a',
-      backgroundColor: '#1a1a1a',
-      borderDash: [10,5],
-      fill: false,
-      data: []
-   }, {
-      label: 'W. Sel Depth',
-      lineTension: 0,
-      borderColor: '#b1b1b1',
-      backgroundColor: '#b1b1b1',
-      fill: false,
-      data: []
-   }, {
-      label: 'B. Sel Depth',
-      lineTension: 0,
-      borderColor: '#7e7e7e',
-      backgroundColor: '#7e7e7e',
-      borderDash: [10,5],
-      fill: false,
-      data: []
-   }]
-};
-
-var tbHitsChartData = {
-   labels: [],
-   datasets: [{
-      label: 'White TB Hits',
-      lineTension: 0,
-      borderColor: '#EFEFEF',
-      backgroundColor: '#EFEFEF',
-      fill: false,
-      yAxisID: 'tb-y-axis-1',
-      data: []
-   }, {
-      label: 'Black TB Hits',
-      lineTension: 0,
-      borderColor: '#000000',
-      backgroundColor: '#000000',
-      fill: false,
-      yAxisID: 'tb-y-axis-2',
-      data: []
-   }]
-};
-
-var nodesChartData = {
-   labels: [],
-   datasets: [{
-      label: 'White Speeds',
-      lineTension: 0,
-      borderColor: '#EFEFEF',
-      backgroundColor: '#EFEFEF',
-      fill: false,
-      data: [],
-      yAxisID: 'y-axis-1',
-   }, {
-      label: 'Black Speed',
-      lineTension: 0,
-      borderColor: '#000000',
-      backgroundColor: '#000000',
-      fill: false,
-      data: [],
-      yAxisID: 'y-axis-2'
-   }]
-};
-
-function drawEval()
-{
-   setEvalChartData();
-   evalChart = Chart.Line($('#eval-graph'), {
-      data: evalChartData,
-      options: {
-         responsive: true,
-         bezierCurve: false,
-         hoverMode: 'index',
-         spanGaps: true,
-         stacked: false,
-         legend: {
-            display: true,
-            position: 'bottom',
-            fontSize: 5,
-            labels: {
-               boxWidth: 1
-            },
-         },
-         title: {
-            display: false
-         },
-         tooltips: {
-            callbacks: {
-               label: (tooltipItem, data) => {
-                    let index = tooltipItem.index;
-                    return data.datasets
-                        .filter(dataset => dataset.data[index])
-                        .map((dataset, id) => [`${engine_names[id]} Eval: ${dataset.data[index].eval}`]);
-               }
-            }
-         },
-         scales: {
-            yAxes: [{
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'left',
-               id: 'e-y-axis-1',
-            }],
-            xAxes: [{
-               ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 25
-               }
-            }]
-         }
-      }
-   });
+/**
+ * Create all chart data
+ */
+function create_chart_data() {
+    Assign(chart_data, {
+        depth: {
+            labels: [],
+            datasets: [
+                new_dataset('White Depth', COLOR_WHITE),
+                new_dataset('Black Depth', '#1a1a1a', '', {borderDash: [10, 5]}),
+                new_dataset('W. Sel Depth', '#b1b1b1'),
+                new_dataset('B. Sel Depth', '#7e7e7e', '', {borderDash: [10, 5]}),
+            ],
+        },
+        eval: {
+            labels: [],
+            datasets: engine_names.map((name, id) => new_dataset(name, engine_colors[id])),
+        },
+        node: {
+            labels: [],
+            datasets: [
+                new_dataset('White Speeds', COLOR_WHITE, 'y-axis-1'),
+                new_dataset('Black Speed', COLOR_BLACK, 'y-axis-2'),
+            ],
+        },
+        speed: {
+            labels: [],
+            datasets: [
+                new_dataset('White Speeds',COLOR_WHITE, 'y-axis-1'),
+                new_dataset('Black Speed', COLOR_BLACK, 'y-axis-2'),
+            ],
+        },
+        tb: {
+            labels: [],
+            datasets: [
+                new_dataset('White TB Hits', COLOR_WHITE, 'tb-y-axis-1'),
+                new_dataset('Black TB Hits', COLOR_BLACK, 'tb-y-axis-2'),
+            ],
+        },
+        time: {
+            labels: [],
+            datasets: [
+                new_dataset('White Time', COLOR_WHITE),
+                new_dataset('Black Time', COLOR_BLACK),
+            ],
+        },
+    });
 }
 
 // format axes scale
@@ -243,226 +127,295 @@ function formatScale(value) {
     return value;
 }
 
-function initializeCharts()
+/**
+ * Create all charts
+ * - only linear but allow scale type registration.
+ * - This allows extensions to exist solely for log scale for instance
+ */
+function create_charts()
 {
-    timeChart = Chart.Line($('#time-graph'), {
-      data: timeChartData,
-      options: {
-         backgroundColor:'rgb(10,10,10)',
-         responsive: true,
-         hoverMode: 'index',
-         stacked: false,
-         legend: {
-            display: false
-         },
-         title: {
-            display: false
-         },
-         scales: {
-            yAxes: [{
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'left',
-               id: 't-y-axis-1',
-            }],
-            xAxes: [{
-               ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 25
-               }
-            }]
-         }
-      }
-   });
-
-   var nodesChartIs = _("#nodes-graph");
-   if (nodesChartIs)
-   {
-      nodesChart = Chart.Line($('#nodes-graph'), {
-         data: nodesChartData,
-         options: {
+    charts.depth = new Chart('chart-depth', {
+        type: 'line',
+        data: chart_data.depth,
+        options: {
             responsive: true,
             hoverMode: 'index',
             stacked: false,
             legend: {
-               display: false
+                display: true,
+                position: 'bottom',
+                fontSize: 5,
+                labels: {
+                    boxWidth: 1,
+                },
             },
             title: {
-               display: false
-            },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
-                        return ` (${nodes} nodes)`;
-                    }
-                }
+                display: false,
             },
             scales: {
-               yAxes: [{
-                  type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-                  display: true,
-                  position: 'left',
-                  id: 'y-axis-1',
-                  ticks: {
-                     callback: formatUnit
-                  }
-               }, {
-                  type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-                  display: true,
-                  position: 'right',
-                  id: 'y-axis-2',
-
-                  // grid line settings
-                  gridLines: {
-                     drawOnChartArea: false, // only want the grid lines for one axis to show up
-                  },
-                  ticks: {
-                     callback: formatUnit
-                  }
-               }],
-               xAxes: [{
-                  ticks: {
-                     autoSkip: true,
-                     maxTicksLimit: 25
-                  }
-               }]
-            }
-         }
-      });
-   }
-
-   speedChart = Chart.Line($('#speed-graph'), {
-      data: speedChartData,
-      options: {
-         responsive: true,
-         hoverMode: 'index',
-         stacked: false,
-         legend: {
-            display: false
-         },
-         title: {
-            display: false
-         },
-         tooltips: {
-            callbacks: {
-               label: function(tooltipItem, data) {
-                    let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
-                        speed = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
-                    return `${speed}nps (${nodes} nodes)`;
-               }
-            }
-         },
-         scales: {
-            yAxes: [{
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'left',
-               id: 'y-axis-1',
-                ticks: {
-                    callback: formatScale,
-                }
-            }, {
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'right',
-               id: 'y-axis-2',
-
-               // grid line settings
-               gridLines: {
-                  drawOnChartArea: false, // only want the grid lines for one axis to show up
-               },
-               ticks: {
-                callback: formatScale,
-            }
-            }],
-            xAxes: [{
-               ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 25
-               }
-            }]
-         }
-      }
-   });
-
-   depthChart = Chart.Line($('#depth-graph'), {
-      data: depthChartData,
-      options: {
-         responsive: true,
-         hoverMode: 'index',
-         stacked: false,
-         legend: {
-            display: true,
-            position: 'bottom',
-            fontSize: 5,
-            labels: {
-               boxWidth: 1
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 'd-y-axis-1',
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
             },
-         },
-         title: {
-            display: false
-         },
-         scales: {
-            yAxes: [{
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'left',
-               id: 'd-y-axis-1',
-            }],
-            xAxes: [{
-               ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 25
-               }
-            }]
-         }
-      }
-   });
+            tooltips: {
+                mode: 'index',
+            },
+        },
+    });
 
-   tbHitsChart = Chart.Line($('#tbhits-graph'), {
-      data: tbHitsChartData,
-      options: {
-         responsive: true,
-         hoverMode: 'index',
-         stacked: false,
-         legend: {
-            display: false
-         },
-         title: {
-            display: false
-         },
-         scales: {
-            yAxes: [{
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'left',
-               id: 'tb-y-axis-1',
-               ticks: {
-                  callback: formatScale,
-               }
-            }, {
-               type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-               display: true,
-               position: 'right',
-               id: 'tb-y-axis-2',
-               // grid line settings
-               gridLines: {
-                  drawOnChartArea: false, // only want the grid lines for one axis to show up
-               },
-               ticks: {
-                  callback: formatScale,
-               }
-            }],
-            xAxes: [{
-               ticks: {
-                  autoSkip: true,
-                  maxTicksLimit: 25
-               }
-            }]
-         }
-      }
-   });
+    charts.eval = new Chart('chart-eval', {
+        type: 'line',
+        data: chart_data.eval,
+        options: {
+            responsive: true,
+            bezierCurve: false,
+            hoverMode: 'index',
+            spanGaps: true,
+            stacked: false,
+            legend: {
+                display: true,
+                position: 'bottom',
+                fontSize: 5,
+                labels: {
+                    boxWidth: 1
+                },
+            },
+            title: {
+                display: false
+            },
+            tooltips: {
+                mode: 'index',
+            },
+            scales: {
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 'e-y-axis-1',
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
+            },
+        },
+    });
+
+    charts.node = new Chart('chart-node', {
+        type: 'line',
+        data: chart_data.node,
+        options: {
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            legend: {
+                display: false
+            },
+            title: {
+                display: false
+            },
+            scales: {
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 'y-axis-1',
+                    ticks: {
+                        callback: formatUnit
+                    }
+                }, {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    id: 'y-axis-2',
+
+                    // grid line settings
+                    gridLines: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
+                    ticks: {
+                        callback: formatUnit,
+                    },
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
+            },
+            tooltips: {
+                mode: 'index',
+                callbacks: {
+                    label: (tooltipItem, data) => {
+                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
+                        return nodes;
+                    },
+                },
+            },
+        },
+    });
+
+    charts.speed = new Chart('chart-speed', {
+        type: 'line',
+        data: chart_data.speed,
+        options: {
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            legend: {
+                display: false
+            },
+            title: {
+                display: false
+            },
+            scales: {
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 'y-axis-1',
+                    ticks: {
+                        callback: formatScale,
+                    }
+                }, {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    id: 'y-axis-2',
+
+                    // grid line settings
+                    gridLines: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
+                    ticks: {
+                        callback: formatScale,
+                    },
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
+            },
+            tooltips: {
+                mode: 'index',
+                callbacks: {
+                    label: (tooltipItem, data) => {
+                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
+                            speed = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        return `${speed}nps (${nodes} nodes)`;
+                    },
+                },
+            },
+        },
+    });
+
+    charts.tb = new Chart('chart-tb', {
+        type: 'line',
+        data: chart_data.tb,
+        options: {
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            legend: {
+                display: false,
+            },
+            title: {
+                display: false,
+            },
+            scales: {
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 'tb-y-axis-1',
+                    ticks: {
+                        callback: formatScale,
+                    }
+                }, {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    id: 'tb-y-axis-2',
+                    // grid line settings
+                    gridLines: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
+                    ticks: {
+                        callback: formatScale,
+                    },
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
+            },
+            tooltips: {
+                mode: 'index',
+                callbacks: {
+                    label: (tooltipItem, data) => {
+                        let hits = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        return hits;
+                    },
+                },
+            },
+        },
+    });
+
+    charts.time = new Chart('chart-time', {
+        type: 'line',
+        data: chart_data.time,
+        options: {
+            backgroundColor: 'rgb(10,10,10)',
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            legend: {
+                display: false,
+            },
+            title: {
+                display: false,
+            },
+            scales: {
+                yAxes: [{
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    id: 't-y-axis-1',
+                }],
+                xAxes: [{
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 25,
+                    },
+                }],
+            },
+            tooltips: {
+                mode: 'index',
+                callbacks: {
+                    label: (tooltipItem, data) => {
+                        let [min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        return `${min}:${Pad(sec)}`;
+                    },
+                },
+            },
+        },
+    });
 }
 
 function addDataLive(chart, data, black, contno)
@@ -470,7 +423,8 @@ function addDataLive(chart, data, black, contno)
     if (!whiteEvalL)
         return;
 
-    if (chart.data.datasets[contno+1].data.length == 0)
+    let chart_data = chart.data;
+    if (chart_data.datasets[contno+1].data.length == 0)
     {
         if (DEV.graph & 1)
             LS("YYY: Chart not yet updated, so exiting");
@@ -487,17 +441,11 @@ function addDataLive(chart, data, black, contno)
         return;
     }
 
-   if (black)
-   {
-      chart.data.datasets[contno+1].data[whiteEvalL - 1] = data;
-   }
-   else
-   {
-      chart.data.labels[length] = data.x;
-      chart.data.datasets[contno+1].data[length] = data;
-   }
+    if (!black)
+        chart_data.labels[length] = data.x;
 
-   chart.update();
+    chart_data.datasets[contno + 1].data[black? (whiteEvalL - 1): length] = data;
+    chart.update();
 }
 
 function addData(chart, data, black)
@@ -526,12 +474,12 @@ function addData(chart, data, black)
         chart.data.datasets[0].data[length] = data;
     }
 
-   chart.update();
+    chart.update();
 }
 
 function removeData(chart, data, black)
 {
-   addData(chart, data, black);
+    addData(chart, data, black);
 }
 
 function getLiveEval(key, moveNumber, isBlack, contno)
@@ -585,6 +533,7 @@ function clearChartData()
     blackTBHits = [];
     blackTime = [];
     evalLabels = [];
+    firstPly = 0;
     labels = [];
     liveEval1 = [];
     liveEval2 = [];
@@ -596,14 +545,9 @@ function clearChartData()
     whiteTBHits = [];
     whiteTime = [];
 
-    reset_chart(evalChart);
-    reset_chart(timeChart);
-    reset_chart(speedChart);
-    reset_chart(nodesChart);
-    reset_chart(depthChart);
-    reset_chart(tbHitsChart);
-
-    firstPly = 0;
+    Keys(charts, key => {
+        reset_chart(charts[key]);
+    });
 }
 
 /**
@@ -616,7 +560,7 @@ function getEval(eval_)
     if (!isNaN(eval_))
         return Clamp(eval_, -evalconstant, evalconstant);
 
-    if (eval_ && eval_.substring(0,1) == '-')
+    if (eval_ && eval_[0] == '-')
         eval_ = -evalconstant;
     else if (eval_ != undefined)
         eval_ = evalconstant;
@@ -638,10 +582,11 @@ function arrayPush(chart, number, datax, index, movenum)
 // TODO: merge with Eval1
 function updateChartDataLiveEval2()
 {
-   if (!showLivEng2)
-      return;
+    if (!showLivEng2)
+        return;
 
-    let needtoUpdate = 0,
+    let eval_data = charts.eval.data,
+        needtoUpdate = 0,
         startEval = whiteEvalL;
 
     if (!startEval)
@@ -655,7 +600,7 @@ function updateChartDataLiveEval2()
 
     for (let ctr = startEval; ctr >= endVal; ctr --)
     {
-        let dataToUse = evalChart.data.datasets[0].data[ctr],
+        let dataToUse = eval_data.datasets[0].data[ctr],
             key = 0,
             isBlack = 0;
 
@@ -664,9 +609,9 @@ function updateChartDataLiveEval2()
 
         // LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);
 
-        if (evalChart.data.datasets[1].data[ctr] != undefined)
+        if (eval_data.datasets[1].data[ctr] != undefined)
         {
-            dataToUse = evalChart.data.datasets[1].data[ctr];
+            dataToUse = eval_data.datasets[1].data[ctr];
             key = dataToUse.ply;
             isBlack = 1;
         }
@@ -685,20 +630,21 @@ function updateChartDataLiveEval2()
             if (evalObject.y == null)
                 prevPgnData.Moves[0].didliveEval2 = ctr;
             else
-                evalChart.data.datasets[3].data[ctr] = evalObject;
+                eval_data.datasets[3].data[ctr] = evalObject;
         }
     }
 
     if (needtoUpdate)
-        evalChart.update();
+        charts.eval.update();
 }
 
 function updateChartDataLiveEval1()
 {
-   if (!showLivEng1)
-      return;
+    if (!showLivEng1)
+        return;
 
-    let needtoUpdate = 0,
+    let eval_data = charts.eval.data,
+        needtoUpdate = 0,
         startEval = whiteEvalL;
 
     if (!whiteEvalL)
@@ -712,7 +658,7 @@ function updateChartDataLiveEval1()
 
     for (let ctr = startEval; ctr >= endVal; ctr --)
     {
-        let dataToUse = evalChart.data.datasets[0].data[ctr],
+        let dataToUse = eval_data.datasets[0].data[ctr],
             isBlack = 0,
             key = 0;
 
@@ -721,9 +667,9 @@ function updateChartDataLiveEval1()
 
         /*LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);*/
 
-        if (evalChart.data.datasets[1].data[ctr] != undefined)
+        if (eval_data.datasets[1].data[ctr] != undefined)
         {
-            dataToUse = evalChart.data.datasets[1].data[ctr];
+            dataToUse = eval_data.datasets[1].data[ctr];
             key = dataToUse.ply;
             isBlack = 1;
         }
@@ -740,36 +686,32 @@ function updateChartDataLiveEval1()
             if (evalObject.y == null)
                 prevPgnData.Moves[0].didliveEval1 = ctr;
             else
-                evalChart.data.datasets[2].data[ctr] = evalObject;
+                eval_data.datasets[2].data[ctr] = evalObject;
         }
     }
 
     if (needtoUpdate)
-        evalChart.update();
+        charts.eval.update();
 }
 
 function updateChartDataLive(contno)
 {
-   if (contno == 1)
-      updateChartDataLiveEval1();
-   else
-      updateChartDataLiveEval2();
+    if (contno == 1)
+        updateChartDataLiveEval1();
+    else
+        updateChartDataLiveEval2();
 }
 
 function updateChartData()
 {
-    setEvalChartData();
-
-    var plyNum = 0;
-
     if (DEV.graph & 1)
         LS(`GRAPH: updateChartData : whiteEvalL=${whiteEvalL}`);
 
     if (prevPgnData.Moves)
     {
         if (DEV.graph & 1)
-            LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
-        if (prevPgnData.Moves[0].completed == undefined || evalChart.data.labels.length == 0)
+            LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
+        if (prevPgnData.Moves[0].completed == undefined || charts.eval.data.labels.length == 0)
         {
             clearChartData();
             prevPgnData.Moves[0].completed = 0;
@@ -793,7 +735,7 @@ function updateChartData()
         arrayCtrB -= 2;
         prevPgnData.Moves[0].completed -= 4;
         if (DEV.graph & 1)
-            LS(`GRAPH: prevPgnData.Moves.length=$prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
+            LS(`GRAPH: prevPgnData.Moves.length=$prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
     }
 
     whiteEvalL = 0;
@@ -810,7 +752,8 @@ function updateChartData()
             continue;
         }
 
-        let moveNumber = Round(moveCtr / 2) + 1;
+        let moveNumber = Round(moveCtr / 2) + 1,
+            plyNum = 0;
 
         if (moveCtr % 2 != 0) {
             plyNum = moveCtr + 1;
@@ -859,20 +802,20 @@ function updateChartData()
             {
                 'x': moveNumber,
                 'y': move.sd,
-                'ply': plyNum
+                'ply': plyNum,
             },
             tbHits =
             {
                 'x': moveNumber,
                 'y': move.tb,
-                'ply': plyNum
+                'ply': plyNum,
             },
             nodes =
             {
                 'x': moveNumber,
                 'y': move.n,
                 'nodes': move.n,
-                'ply': plyNum
+                'ply': plyNum,
             };
 
             if (!firstPly)
@@ -881,7 +824,7 @@ function updateChartData()
                 if (firstPly % 2 == 0)
                 {
                     blackStarted = 1;
-                    evalChart.data.labels[arrayCtrW] = moveNumber;
+                    charts.eval.data.labels[arrayCtrW] = moveNumber;
                     arrayCtrW ++;
                 }
             }
@@ -891,57 +834,51 @@ function updateChartData()
                     + ` : prevPgnData.Moves[0].arrayStartB=${prevPgnData.Moves[0].arrayStartB} : blackStarted=${blackStarted}`);
 
             if (key % 2 == 0) {
-                evalChart.data.labels[arrayCtrW] = moveNumber;
-                evalChart.data.datasets[0].data[arrayCtrW] = evall;
-                arrayPush(nodesChart, 0, nodes, arrayCtrW, moveNumber);
-                arrayPush(timeChart, 0, time, arrayCtrW, moveNumber);
-                arrayPush(speedChart, 0, speed, arrayCtrW, moveNumber);
-                arrayPush(depthChart, 0, depth, arrayCtrW, moveNumber);
-                arrayPush(depthChart, 2, seldepth, arrayCtrW, moveNumber);
-                arrayPush(tbHitsChart, 0, tbHits, arrayCtrW, moveNumber);
+                charts.eval.data.labels[arrayCtrW] = moveNumber;
+                charts.eval.data.datasets[0].data[arrayCtrW] = evall;
+                arrayPush(charts.node, 0, nodes, arrayCtrW, moveNumber);
+                arrayPush(charts.time, 0, time, arrayCtrW, moveNumber);
+                arrayPush(charts.speed, 0, speed, arrayCtrW, moveNumber);
+                arrayPush(charts.depth, 0, depth, arrayCtrW, moveNumber);
+                arrayPush(charts.depth, 2, seldepth, arrayCtrW, moveNumber);
+                arrayPush(charts.tb, 0, tbHits, arrayCtrW, moveNumber);
                 arrayCtrW ++;
                 prevPgnData.Moves[0].arrayStartW = arrayCtrW;
             }
             else
             {
-                evalChart.data.datasets[1].data[arrayCtrB] = evall;
-                arrayPush(nodesChart, 1, nodes, arrayCtrB, moveNumber);
-                arrayPush(timeChart, 1, time, arrayCtrB, moveNumber);
-                arrayPush(speedChart, 1, speed, arrayCtrB, moveNumber);
-                arrayPush(depthChart, 1, depth, arrayCtrB, moveNumber);
-                arrayPush(depthChart, 3, seldepth, arrayCtrB, moveNumber);
-                arrayPush(tbHitsChart, 1, tbHits, arrayCtrB, moveNumber);
+                charts.eval.data.datasets[1].data[arrayCtrB] = evall;
+                arrayPush(charts.node, 1, nodes, arrayCtrB, moveNumber);
+                arrayPush(charts.time, 1, time, arrayCtrB, moveNumber);
+                arrayPush(charts.speed, 1, speed, arrayCtrB, moveNumber);
+                arrayPush(charts.depth, 1, depth, arrayCtrB, moveNumber);
+                arrayPush(charts.depth, 3, seldepth, arrayCtrB, moveNumber);
+                arrayPush(charts.tb, 1, tbHits, arrayCtrB, moveNumber);
                 arrayCtrB ++;
                 prevPgnData.Moves[0].arrayStartB = arrayCtrB;
             }
         }
     }
 
-    evalChart.update();
+    // update all charts
+    Keys(charts, key => {
+        charts[key].update();
+    });
 
     if (arrayCtrW)
         whiteEvalL = arrayCtrW;
     if (arrayCtrB)
         blackEvalL = arrayCtrB;
 
-    timeChart.update();
-    speedChart.update();
-    if (nodesChart)
-        nodesChart.update();
-
-    depthChart.update();
-    tbHitsChart.update();
-
     if (DEV.graph & 1)
         LS(`GRAPH: ~updateChartData : needtoUpdate=${needtoUpdate} : arrayCtrW=${arrayCtrW} : arrayCtrB=${arrayCtrB}`
-            + `prevPgnData.Moves[0].completed=${prevPgnData.Moves[0].completed} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
+            + `prevPgnData.Moves[0].completed=${prevPgnData.Moves[0].completed} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
 }
 
 /**
  * Startup graphs
  */
 function startup_graphs() {
-    setEvalChartData();
-    drawEval();
-    initializeCharts();
+    create_chart_data();
+    create_charts();
 }

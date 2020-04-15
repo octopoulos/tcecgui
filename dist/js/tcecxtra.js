@@ -2,7 +2,7 @@
 globals
 _, $, activeFen, add_timeout, board, Chess, clearedAnnotation:true, crash_re, crosstableData:true,
 currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys, livePvs, LS,
-newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove, Y
+newUpdateStandData, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove, Y
 */
 'use strict';
 
@@ -24,7 +24,7 @@ function fixOrder()
         ranks = arr.slice().map(function(v) {return sorted.indexOf(v) + 1;});
    LS("Ranks is :" + ranks);
    count = 0;
-   var tiePoints = 0;
+    let tiePoints = 0;
 
     Keys(engines).forEach(key => {
         let engine = engines[key];
@@ -42,7 +42,7 @@ function fixOrder()
             let iengine = engines[ikey];
          if (ikey != key)
          {
-            var sbCount = 0;
+            let sbCount = 0;
             for (let i = 0; i < engine.Results[ikey].Text.length ; i++)
             {
                if (engine.Results[ikey].Text[i] == '=')
@@ -123,24 +123,24 @@ function fixOrder()
 
 function getEngRecSched(data, engineName)
 {
-   var resultData = {
-      name: engineName,
-      LossAsBlack: 0,
-      WinAsBlack: 0,
-      LossAsWhite: 0,
-      LossAsStrike: 0,
-      WinAsWhite: 0,
-      Games: 0,
-      Score: 0
-   };
+    let resultData = {
+        name: engineName,
+        LossAsBlack: 0,
+        WinAsBlack: 0,
+        LossAsWhite: 0,
+        LossAsStrike: 0,
+        WinAsWhite: 0,
+        Games: 0,
+        Score: 0
+    };
 
-   Keys(data).forEach(key => {
+    Keys(data).forEach(key => {
        let engine = data[key];
       if (typeof engine.Moves == 'undefined')
       {
          return false;
       }
-      var dQ = engineDisqualified(engineName);
+      let dQ = engineDisqualified(engineName);
       if (dQ)
       {
          resultData.LossAsStrike = dQ;
@@ -198,14 +198,14 @@ function getEngRecSched(data, engineName)
    return resultData;
 }
 
-function findEloDiffOld (whiteEngine, blackEngine, whiteEngName, blackEngName, score)
+function findEloDiffOld(whiteEngine, blackEngine, whiteEngName, blackEngName, score)
 {
-   var k = 10;
-   var b_rating = blackEngine.Rating;
-   var w_rating = whiteEngine.Rating;
-   var expected_score = 1 / (1 + Pow(10, (b_rating - w_rating) / 400 ));
-   var rating_diff = k * (score - expected_score);
-   return rating_diff;
+    let k = 10,
+        b_rating = blackEngine.Rating,
+        w_rating = whiteEngine.Rating,
+        expected_score = 1 / (1 + Pow(10, (b_rating - w_rating) / 400 ));
+
+    return k * (score - expected_score);
 }
 
 function getRating(engine, engName)
@@ -220,59 +220,51 @@ function getRating(engine, engName)
 
 function findEloDiff(whiteEngine, blackEngine, whiteEngName, blackEngName, score1, score2, gameno)
 {
-   var k = 10;
-   var r1 = Pow(10, (whiteEngine.Rating/400));
-   var r2 = Pow(10, (blackEngine.Rating/400));
-   var e1 = r1/(r1+r2);
-   var e2 = r2/(r1+r2);
-   var w_rating = whiteEngine.Rating + k * (score1 - e1);
-   var b_rating = blackEngine.Rating + k * (score2 - e2);
+    let k = 10,
+        r1 = Pow(10, (whiteEngine.Rating / 400)),
+        r2 = Pow(10, (blackEngine.Rating / 400)),
+        e1 = r1/(r1+r2),
+        e2 = r2/(r1+r2),
+        w_rating = whiteEngine.Rating + k * (score1 - e1),
+        b_rating = blackEngine.Rating + k * (score2 - e2);
 
    whiteEngine.Rating = w_rating;
    blackEngine.Rating = b_rating;
 }
 
-function getOverallElo(data)
+function getOverallElo()
 {
     let engines = crosstableData.Table;
-    for (let engName of crosstableData.Order) {
-        let engDetails = engines[engName];
-        // engines[engName].Rating = getRating(engDetails, engName);
-    }
 
     Keys(engines).forEach(key => {
         let engine = engines[key],
             eloDiff = 0;
-      engine.OrigRating = engine.Rating;
-      Keys(engine.Results).forEach(oppkey => {
-          let oppEngine = engine.Results[oppkey];
-         LS("Opp engine is " + oppkey + " ,oppEngine is " + engines[oppkey].Rating);
-         var blackEngine = engines[oppkey];
-         var strText = oppEngine.Text;
-         var blackRating = blackEngine.Rating;
-         for (let i = 0; i < strText.length; i++)
-         {
-            LS("strText.charAt(i): " + strText.charAt(i));
-            if (strText.charAt(i) == '0')
+
+        engine.OrigRating = engine.Rating;
+        Keys(engine.Results).forEach(oppkey => {
+            let oppEngine = engine.Results[oppkey];
+            LS("Opp engine is " + oppkey + " ,oppEngine is " + engines[oppkey].Rating);
+            let blackEngine = engines[oppkey],
+                text = oppEngine.Text,
+                blackRating = blackEngine.Rating;
+            for (let i = 0; i < text.length; i++)
             {
-               findEloDiff (engine, blackEngine, key, oppkey, 0, 1, i);
+                let letter = text[i];
+                if (letter == '0')
+                    findEloDiff(engine, blackEngine, key, oppkey, 0, 1, i);
+                else if (letter == '1')
+                    findEloDiff(engine, blackEngine, key, oppkey, 1, 0, i);
+                else if (letter == '=')
+                    findEloDiff(engine, blackEngine, key, oppkey, 0.5, 0.5, i);
             }
-            else if (strText.charAt(i) == '1')
-            {
-               findEloDiff (engine, blackEngine, key, oppkey, 1, 0, i);
-            }
-            else if (strText.charAt(i) == '=')
-            {
-               findEloDiff (engine, blackEngine, key, oppkey, 0.5, 0.5, i);
-            }
-         }
-         eloDiff = engine.Rating - engine.OrigRating;
-         blackEngine.Rating = blackRating;
-      });
-      engine.Rating = engine.OrigRating;
-      engine.elo = eloDiff;
-      LS("Final eloDiff: " + eloDiff + " ,fscore: " + parseInt(engine.Rating + eloDiff));
-   });
+            eloDiff = engine.Rating - engine.OrigRating;
+            blackEngine.Rating = blackRating;
+        });
+
+        engine.Rating = engine.OrigRating;
+        engine.elo = eloDiff;
+        LS(`Final eloDiff=${eloDiff} : fscore=${parseInt(engine.Rating + eloDiff)}`);
+    });
 }
 
 function eliminateCrash(data)

@@ -883,7 +883,7 @@ function FormatFloat(text, align) {
 function FromSeconds(time) {
     let secs = Floor(time),
         // !!important not to do (time - secs) * 100
-        cs = ('00' + Floor(time * 100 - secs * 100)).slice(-2),
+        cs = Pad(Floor(time * 100 - secs * 100)),
         mins = Floor(secs / 60);
     secs -= mins * 60;
     return [mins, secs, cs];
@@ -900,8 +900,8 @@ function FromTimestamp(stamp) {
     if (!stamp)
         return '???';
     let date = new Date(stamp * 1000),
-        day = `${('' + date.getFullYear()).slice(-2)}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)}`,
-        time = `${('0' + date.getHours()).slice(-2)}:${('0' + date.getMinutes()).slice(-2)}`;
+        day = `${Pad(date.getFullYear())}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
+        time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}`;
     return [day, time];
 }
 
@@ -988,6 +988,16 @@ function LS(text='') {
 function Now(as_float) {
     let seconds = Date.now() / 1000;
     return as_float? seconds: Floor(seconds);
+}
+
+/**
+ * Left pad with zeroes or something else
+ * @param {string|number} value
+ * @param {number=} size
+ * @param {string=} pad
+ */
+function Pad(value, size=2, pad='00') {
+    return (pad + value).slice(-size);
 }
 
 /**

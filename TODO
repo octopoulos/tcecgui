@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-15 : 2020-04-15 : optimise graphs.js
 2020-04-15 : 2020-04-13 : add 3d rendering options: shadow, texture quality, output, resolution
 2020-04-15 : 2020-04-15 : replace all localStorage code
 2020-04-15 : 2020-04-15 : improved format units + charts
@@ -26,6 +27,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
+-          : 2020-04-15 : use the common 4 spaces indent
 -          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-13 : remove 80x onClick = ... from live.html
 -          : 2020-04-13 : add a flex + grid system instead of col-12, col-6

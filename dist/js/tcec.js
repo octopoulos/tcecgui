@@ -3,13 +3,13 @@
 /*
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
-C, Ceil, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
-crosstableData, Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp,
-Floor, get_int, get_string, Hide, HTML, initializeCharts, Keys,
-LS, Max, Min, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
+C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
+create_charts, crosstableData, Date, DefaultFloat, DEV, document, dummyCross, engine_colors, Exp, Floor, get_int,
+get_string, Hide, HTML, Keys,
+LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
 roundDateMan, roundResults:true,
-S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
-tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window, Y
+S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, startDateR1, startDateR2, Style, teamsx,
+updateChartData, updateChartDataLive, updateCrosstable, window, Y
 */
 'use strict';
 
@@ -456,41 +456,41 @@ function setPgn(pgn)
     if (timeDiffRead > 0)
         timeDiff = 0;
 
-   let previousPlies = loadedPlies;
+    let previousPlies = loadedPlies;
 
-   loadedPlies = currentPlyCount;
-   gameActive = currentGameActive;
+    loadedPlies = currentPlyCount;
+    gameActive = currentGameActive;
 
-   if (activePly == 0) {
-      activePly = currentPlyCount;
-      viewingActiveMove = true;
-   }
-   if (activePly == currentPlyCount) {
-      viewingActiveMove = true;
-      Class('#newmove', 'd-none');
-      newMovesCount = 0;
-      Attrs('#newmove', 'data-count', 0);
-      board.clearAnnotation();
-   }
+    if (activePly == 0) {
+        activePly = currentPlyCount;
+        viewingActiveMove = true;
+    }
+    if (activePly == currentPlyCount) {
+        viewingActiveMove = true;
+        Class('#newmove', 'd-none');
+        newMovesCount = 0;
+        Attrs('#newmove', 'data-count', 0);
+        board.clearAnnotation();
+    }
     if (viewingActiveMove && activePly != currentPlyCount) {
         activePly = currentPlyCount;
         if (Y.sound)
             play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
     }
 
-   if (previousPlies > currentPlyCount) {
-      initializeCharts();
-   }
+    // new game has started?
+    if (previousPlies > currentPlyCount)
+        create_charts();
 
-   var whiteEval = {};
-   var blackEval = {};
+    let whiteEval = {},
+        blackEval = {};
 
-   activeFen = pgn.Moves[pgn.Moves.length - 1].fen;
-   if (viewingActiveMove) {
-      currentMove = pgn.Moves[pgn.Moves.length - 1];
-      lastMove = currentMove.to;
-      setMoveMaterial(currentMove.material, 0);
-   }
+    activeFen = pgn.Moves[pgn.Moves.length - 1].fen;
+    if (viewingActiveMove) {
+        currentMove = pgn.Moves[pgn.Moves.length - 1];
+        lastMove = currentMove.to;
+        setMoveMaterial(currentMove.material, 0);
+    }
 
     let eval_ = getEvalFromPly(pgn.Moves.length - 1);
     if (turn)
@@ -501,23 +501,23 @@ function setPgn(pgn)
     let clockCurrentMove = currentMove,
         clockPreviousMove = '';
 
-   if (pgn.Moves.length > 1) {
+    if (pgn.Moves.length > 1) {
         let eval_ = getEvalFromPly(pgn.Moves.length-2),
             selectedMove = pgn.Moves[pgn.Moves.length-2];
-      clockPreviousMove = selectedMove;
+        clockPreviousMove = selectedMove;
 
         if (!turn)
             whiteEval = eval_;
         else
             blackEval = eval_;
-   }
+    }
 
-   if (viewingActiveMove) {
-      updateMoveValues(whiteEval, blackEval);
-      findDiffPv(whiteEval.pv, blackEval.pv);
-      updateEnginePv(WH, whiteEval.pv);
-      updateEnginePv(BL, blackEval.pv);
-   }
+    if (viewingActiveMove) {
+        updateMoveValues(whiteEval, blackEval);
+        findDiffPv(whiteEval.pv, blackEval.pv);
+        updateEnginePv(WH, whiteEval.pv);
+        updateEnginePv(BL, blackEval.pv);
+    }
 
     if (!turn)
     {
@@ -527,12 +527,12 @@ function setPgn(pgn)
     else if (pgn.Headers.BlackTimeControl)
         pgn.Headers.TimeControl = pgn.Headers.BlackTimeControl;
 
-   var TC = pgn.Headers.TimeControl.split("+");
-   var base = Round(TC[0] / 60);
-   TC = base + "'+" + TC[1] + '"';
-   pgn.Headers.TimeControl = TC;
+    let TC = pgn.Headers.TimeControl.split("+"),
+        base = Round(TC[0] / 60);
 
-   defaultStartTime = (base * 60 * 1000);
+    TC = base + "'+" + TC[1] + '"';
+    pgn.Headers.TimeControl = TC;
+    defaultStartTime = (base * 60 * 1000);
 
     if (currentGameActive)
         startClock(turn, clockCurrentMove, clockPreviousMove);
@@ -556,137 +556,126 @@ function setPgn(pgn)
         return;
     }
 
-   listPosition();
+    listPosition();
 
-   // title + favicon
-   let title = "TCEC - Live Computer Chess Broadcast";
-   if (pgn.Moves.length > 0) {
-      title = pgn.Headers.White + ' vs. ' + pgn.Headers.Black + ' - ' + title;
-      let is_black = (pgn.Moves.PlyCount % 2 == 0 || pgn.Headers.Termination != 'unterminated');
-      Attrs('#favicon', 'href', `img/favicon${is_black? 'b': ''}.ico`);
-   }
-   document.title = title;
+    // title + favicon
+    let title = "TCEC - Live Computer Chess Broadcast";
+    if (pgn.Moves.length > 0) {
+        title = pgn.Headers.White + ' vs. ' + pgn.Headers.Black + ' - ' + title;
+        let is_black = (pgn.Moves.PlyCount % 2 == 0 || pgn.Headers.Termination != 'unterminated');
+        Attrs('#favicon', 'href', `img/favicon${is_black? 'b': ''}.ico`);
+    }
+    document.title = title;
 
-   var termination = pgn.Headers.Termination;
-   if (pgn.Moves.length > 0) {
-      var adjudication = pgn.Moves[pgn.Moves.length - 1].adjudication;
-      var piecesleft = listPosition();
-      pgn.Headers.piecesleft = piecesleft;
-      if (eventNameHeader == 0)
-      {
-         eventNameHeader = pgn.Headers.Event;
-         let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
-         if (eventTmp)
-         {
-             if (DEV.ply & 1)
-                LS(eventTmp[1]);
-            pgn.Headers.Event = "S" + eventTmp[1];
+    let termination = pgn.Headers.Termination;
+    if (pgn.Moves.length > 0) {
+        let adjudication = pgn.Moves[pgn.Moves.length - 1].adjudication,
+            piecesleft = listPosition();
+        pgn.Headers.piecesleft = piecesleft;
+
+        if (eventNameHeader == 0)
+        {
             eventNameHeader = pgn.Headers.Event;
-         }
-      }
-      else
-      {
-         pgn.Headers.Event = eventNameHeader;
-      }
-      if (termination == 'unterminated' && adjudication) {
-         termination = '-';
-         let movesToDraw = 50,
-            movesToResignOrWin = 50,
-            movesTo50R = 50;
+            let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
+            if (eventTmp)
+            {
+                if (DEV.ply & 1)
+                    LS(eventTmp[1]);
+                pgn.Headers.Event = "S" + eventTmp[1];
+                eventNameHeader = pgn.Headers.Event;
+            }
+        }
+        else
+            pgn.Headers.Event = eventNameHeader;
 
-         if (Abs(adjudication.Draw) <= 10 && pgn.Moves.length > 58)
-         {
-            movesToDraw = Max(Abs(adjudication.Draw), 69 - pgn.Moves.length);
-         }
+        let finished;
 
-         if (Abs(adjudication.ResignOrWin) < 11)
-         {
-            movesToResignOrWin = Abs(adjudication.ResignOrWin);
-         }
+        if (termination == 'unterminated' && adjudication) {
+            termination = '-';
+            let movesToDraw = 50,
+                movesToResignOrWin = 50,
+                movesTo50R = 50;
 
-         if (adjudication.FiftyMoves < 51)
-         {
-            movesTo50R = adjudication.FiftyMoves;
-         }
+            if (Abs(adjudication.Draw) <= 10 && pgn.Moves.length > 58)
+                movesToDraw = Max(Abs(adjudication.Draw), 69 - pgn.Moves.length);
 
-         if (movesTo50R < 50 && movesTo50R < movesToResignOrWin)
-         {
-             termination = `${movesTo50R} move${(movesTo50R > 1)? 's': ''} 50mr`;
-             pgn.Headers.movesTo50R = movesTo50R;
-         }
+            if (Abs(adjudication.ResignOrWin) < 11)
+                movesToResignOrWin = Abs(adjudication.ResignOrWin);
 
-         if (movesToResignOrWin < 50 && movesToResignOrWin < movesToDraw && movesToResignOrWin < movesTo50R)
-         {
-             termination = `${movesToResignOrWin} pl${(movesToDraw > 1)? 'ies': 'y'} win`;
-             pgn.Headers.movesToResignOrWin = movesToResignOrWin;
-         }
+            if (adjudication.FiftyMoves < 51)
+                movesTo50R = adjudication.FiftyMoves;
 
-         if (movesToDraw < 50 && movesToDraw <= movesTo50R && movesToDraw <= movesToResignOrWin)
-         {
-            termination = `${movesToDraw} pl${(movesToDraw > 1)? 'ies': 'y'} draw`;
-            pgn.Headers.movesToDraw = movesToDraw + 'p';
-         }
+            if (movesTo50R < 50 && movesTo50R < movesToResignOrWin)
+            {
+                termination = `${movesTo50R} move${(movesTo50R > 1)? 's': ''} 50mr`;
+                pgn.Headers.movesTo50R = movesTo50R;
+            }
 
-         $('#event-overview').bootstrapTable('hideColumn', 'Termination');
-         $('#event-overview').bootstrapTable('showColumn', 'movesToDraw');
-         $('#event-overview').bootstrapTable('showColumn', 'movesToResignOrWin');
-         $('#event-overview').bootstrapTable('showColumn', 'movesTo50R');
-      } else {
-         pgn.Headers.Termination = pgn.Headers.TerminationDetails;
+            if (movesToResignOrWin < 50 && movesToResignOrWin < movesToDraw && movesToResignOrWin < movesTo50R)
+            {
+                termination = `${movesToResignOrWin} pl${(movesToDraw > 1)? 'ies': 'y'} win`;
+                pgn.Headers.movesToResignOrWin = movesToResignOrWin;
+            }
+
+            if (movesToDraw < 50 && movesToDraw <= movesTo50R && movesToDraw <= movesToResignOrWin)
+            {
+                termination = `${movesToDraw} pl${(movesToDraw > 1)? 'ies': 'y'} draw`;
+                pgn.Headers.movesToDraw = movesToDraw + 'p';
+            }
+        }
+        else {
+            pgn.Headers.Termination = pgn.Headers.TerminationDetails;
             if (DEV.ply & 1)
                 LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
-         if (pgn.Headers.Termination == 'undefined' || pgn.Headers.Termination == undefined)
-         {
-            $('#event-overview').bootstrapTable('hideColumn', 'Termination');
-            $('#event-overview').bootstrapTable('showColumn', 'movesToDraw');
-            $('#event-overview').bootstrapTable('showColumn', 'movesToResignOrWin');
-            $('#event-overview').bootstrapTable('showColumn', 'movesTo50R');
-         }
-         else
-         {
-            $('#event-overview').bootstrapTable('showColumn', 'Termination');
-            $('#event-overview').bootstrapTable('hideColumn', 'movesToDraw');
-            $('#event-overview').bootstrapTable('hideColumn', 'movesToResignOrWin');
-            $('#event-overview').bootstrapTable('hideColumn', 'movesTo50R');
-         }
-      }
-   }
 
-   $('#event-overview').bootstrapTable('load', [pgn.Headers]);
-   setUsersMain(pgn.Users);
-   HTML('#event-name', pgn.Headers.Event);
+            if (pgn.Headers.Termination && pgn.Headers.Termination != 'undefined')
+                finished = true;
+        }
 
-   if (viewingActiveMove)
-      setInfoFromCurrentHeaders();
+        // show/hide
+        let class1 = finished? 'show': 'hide',
+            class2 = finished? 'hide': 'show';
+        $('#event-overview').bootstrapTable(`${class1}Column`, 'Termination');
+        $('#event-overview').bootstrapTable(`${class2}Column`, 'movesToDraw');
+        $('#event-overview').bootstrapTable(`${class2}Column`, 'movesToResignOrWin');
+        $('#event-overview').bootstrapTable(`${class2}Column`, 'movesTo50R');
+    }
 
-   updateChartData();
+    $('#event-overview').bootstrapTable('load', [pgn.Headers]);
+    setUsersMain(pgn.Users);
+    HTML('#event-name', pgn.Headers.Event);
+
+    if (viewingActiveMove)
+        setInfoFromCurrentHeaders();
+
+    updateChartData();
 
     HTML('#engine-history', '');
     Keys(pgn.Moves).forEach(key => {
         key *= 1;
         let move = pgn.Moves[key],
             ply = key + 1;
-      if (key % 2 == 0) {
-         let number = (key / 2) + 1;
-         var numlink = "<a class='numsmall'>" + number + ". </a>";
-         $('#engine-history').append(numlink);
-      }
-      var linkClass = "";
-      if (activePly == ply) {
-         linkClass = "active-move";
-      }
+        if (key % 2 == 0) {
+            let number = (key / 2) + 1,
+                numlink = "<a class='numsmall'>" + number + ". </a>";
+            $('#engine-history').append(numlink);
+        }
 
-      if (move.book == true)
-      {
-         linkClass += " green";
-         bookmove = ply;
-      }
+        let linkClass = "";
+        if (activePly == ply)
+            linkClass = "active-move";
+
+        if (move.book == true)
+        {
+            linkClass += " green";
+            bookmove = ply;
+        }
 
         let link = "<a href='#' ply='" + ply + "' fen='" + move.fen + "' from='" + move.from + "' to='" + move.to + "' class='change-move " + linkClass + "'>" + move.m + "</a>";
         $('#engine-history').append(link + ' ');
-   });
-   $('#engine-history').append(pgn.Headers.Result);
-   $("#engine-history").scrollTop($("#engine-history")[0].scrollHeight);
+    });
+    $('#engine-history').append(pgn.Headers.Result);
+    $("#engine-history").scrollTop($("#engine-history")[0].scrollHeight);
 
     if (pgn.gameChanged && (DEV.ply & 1))
         LS("Came to setpgn need to reread data at end");
@@ -2190,7 +2179,6 @@ function setDefaults()
    setHighlightDefaultPv();
    setDefaultThemes();
    setliveEngine();
-   setDefaultEnginecolor();
    setNotationDefault();
    setNotationPvDefault();
    setMoveArrowsDefault();
@@ -2222,26 +2210,6 @@ function setPieceUser(piece_theme)
     if (piece_theme)
         Y.piece_theme = piece_theme;
     setBoard();
-}
-
-function setDefaultEnginecolor()
-{
-    let color = get_string('engine_color', engine_colors[3]);
-    if ((color + '').length > 1)
-        engine_colors[3] = color;
-    color = 'engcolor'+color;
-    Prop(`input[value="${color}"]`, 'checked', true);
-    drawEval();
-    updateChartData();
-}
-
-function setEngineColor(color)
-{
-    if ((color + '').length > 1)
-        engine_colors[3] = color;
-    save_option('engine_color', color);
-    drawEval();
-    updateChartData();
 }
 
 function updateLiveEvalDataHistory(datum, fen, container, contno)
@@ -2459,7 +2427,7 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
    }
     datum.x = x;
     if (Y.live_pv)
-        addDataLive(evalChart, datum, colorx, contno);
+        addDataLive(charts.eval, datum, colorx, contno);
 }
 
 function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
@@ -2566,7 +2534,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
     {
         // LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
         if (Y.live_pv)
-            removeData(evalChart, evalData, datum.color);
+            removeData(charts.eval, evalData, datum.color);
     }
     else if (DEV.eval & 1)
         LS(`XXX: not updating movecount=${x} : datum.plynum=${datum.plynum}`);
@@ -3762,19 +3730,13 @@ function hmsToSecondsOnly(str) {
    return s;
 }
 
-function pad(num)
-{
-   return ("0" + num).slice(-2);
-}
-
 function hhmm(secs)
 {
    var minutes = Floor(secs / 60);
    secs = secs%60;
    var hours = Floor(minutes/60);
    minutes = minutes%60;
-   return `${pad(hours)}:${pad(minutes)}`;
-   // return pad(hours)+":"+pad(minutes)+":"+pad(secs); for old browsers
+   return `${Pad(hours)}:${Pad(minutes)}`;
 }
 
 function hhmmss(secs)
@@ -3787,13 +3749,12 @@ function hhmmss(secs)
    hours = hours%24;
    if (days > 0)
    {
-      return `${pad(days)}d, ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+      return `${Pad(days)}d, ${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
    }
    else
    {
-      return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+      return `${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
    }
-   // return pad(hours)+":"+pad(minutes)+":"+pad(secs); for old browsers
 }
 
 function getLocalDate(startDate, minutes)
@@ -4167,7 +4128,7 @@ function getSeededName(name)
          engineName = "#" + engine[0][1] + " " + engine[0][0];
          if (engineName.length > 24)
          {
-            engineName = engineName.substring(0,22) + "..";
+            engineName = engineName.slice(0, 22) + "..";
          }
          return false;
       }
@@ -4178,7 +4139,7 @@ function getSeededName(name)
          engineName = "#" + engine[1][1] + " " + engine[1][0];
          if (engineName.length > 24)
          {
-            engineName = engineName.substring(0,22) + "..";
+            engineName = engineName.slice(0, 22) + "..";
          }
          return false;
       }
@@ -4607,21 +4568,11 @@ function set_ui_events() {
     return false;
  });
 
-    // clicks
-    C('#eval-graph', e => {
-        goMoveFromChart(evalChart, e);
-    });
-    C('#time-graph', e => {
-        goMoveFromChart(timeChart, e);
-    });
-    C('#speed-graph', e => {
-        goMoveFromChart(speedChart, e);
-    });
-    C('#tbhits-graph', e => {
-        goMoveFromChart(tbHitsChart, e);
-    });
-    C('#depth-graph', e => {
-        goMoveFromChart(depthChart, e);
+    // charts
+    Keys(charts).forEach(key => {
+        C(`#chart-${key}`, e => {
+            goMoveFromChart(charts[key], e);
+        });
     });
 }
 

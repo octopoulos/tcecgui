@@ -477,53 +477,6 @@
                         256 Threads
                       </label>
                     </div>
-                    <li><a class="dropdown-item dropdown-toggle whitefont" href="#">Engine2 color</a>
-                      <ul class="dropdown-menu bg-dark whitefont">
-                        <li class="radio">
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio1" value="engcolor0" onclick="setEngineColor(0);">
-                            <label class="form-check-label" for="EngineColorRadio1">
-                              Dark Red
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio2" value="engcolor1" onclick="setEngineColor(1);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Red
-                            </label>
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio3" value="engcolor2" onclick="setEngineColor(2);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Green
-                            </label>
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio4" value="engcolor3" onclick="setEngineColor(3);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Dark Green
-                            </label>
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio5" value="engcolor4" onclick="setEngineColor(4);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Yellow
-                            </label>
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio6" value="engcolor5" onclick="setEngineColor(5);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Purple
-                            </label>
-                          </div>
-                          <div class="form-check classpad">
-                            <input class="form-check-input" type="radio" name="EngineColorRadio" id="EngineColorRadio6" value="engcolor6" onclick="setEngineColor(6);">
-                            <label class="form-check-label" for="EngineColorRadio2">
-                              Orange
-                            </label>
-                          </div>
-                        </li>
-                        </ul>
-                    </li>
                   </ul>
                 </li>
               </ul>
@@ -1022,22 +975,22 @@
               <div class="col-12">
                 <div class="tab-content" id="eval-content">
                   <div class="tab-pane fade show active" id="v-pills-eval" role="tabpanel" aria-labelledby="v-pills-eval-tab">
-                    <canvas style="height: 250px;" class="graphs" id="eval-graph"></canvas>
+                    <canvas height="260 class="graphs" id="chart-eval"></canvas>
                   </div>
                   <div class="tab-pane fade show" id="v-pills-time" role="tabpanel" aria-labelledby="v-pills-time-tab">
-                    <canvas style="height: 250px;" class="graphs" id="time-graph"></canvas>
+                    <canvas height="260" class="graphs" id="chart-time"></canvas>
                   </div>
                   <div class="tab-pane fade" id="v-pills-speed" role="tabpanel" aria-labelledby="v-pills-speed-tab">
-                    <canvas style="height: 250px;" class="graphs" id="speed-graph"></canvas>
+                    <canvas height="260 class="graphs" id="chart-speed"></canvas>
                   </div>
                   <div class="tab-pane fade" id="v-pills-nodes" role="tabpanel" aria-labelledby="v-pills-nodes-tab">
-                    <canvas style="height: 250px;" class="graphs"  id="nodes-graph"></canvas>
+                    <canvas height="260 class="graphs"  id="chart-node"></canvas>
                   </div>
                   <div class="tab-pane fade" id="v-pills-depth" role="tabpanel" aria-labelledby="v-pills-depth-tab">
-                    <canvas style="height: 250px;" class="graphs"  id="depth-graph"></canvas>
+                    <canvas height="260 class="graphs"  id="chart-depth"></canvas>
                   </div>
                   <div class="tab-pane fade" id="v-pills-tbhits" role="tabpanel" aria-labelledby="v-pills-tbhits-tab">
-                    <canvas style="height: 250px;" class="graphs" id="tbhits-graph"></canvas>
+                    <canvas height="260 class="graphs" id="chart-tb"></canvas>
                   </div>
 
                   <div class="tab-pane fade" id="v-pills-pvanalys" role="tabpanel" aria-labelledby="v-pills-pv-analys-tab">
@@ -1452,7 +1405,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.12.1/bootstrap-table.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
     <script src="dist/js/graphs.js?v=10000000000000000000042"></script>
