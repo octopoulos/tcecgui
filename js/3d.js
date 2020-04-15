@@ -7,7 +7,7 @@
 // included after: common, engine, global
 /*
 globals
-Abs, Assign, Audio, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, Y
+Abs, Assign, Audio, BOARD_THEMES, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, PIECE_THEMES, Y
 */
 'use strict';
 
@@ -48,14 +48,55 @@ let audiobox = {
     gamepads = {},
     is_paused,
     now,
+    ON_OFF = ['on', 'off'],
+    SHADOW_QUALITIES = {
+        off: [0, 0, 0],
+        'very low': [1, 33, 512],       // 15.52
+        low: [1, 53, 1024],             // 19.32
+        medium: [2, 80, 2048],          // 25.6
+        high: [2, 106, 4096],           // 38.64
+        'very high': [2, 166, 8192],    // 49.35
+    },
     vibration,
     virtual_game_action_key,
     virtual_game_action_keyup,
     X_SETTINGS = {
         audio: {
             sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
+            sound: [ON_OFF, 1],
             voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
             volume: [{min: 0, max: 10, type: 'number'}, 5],
+        },
+        board: {
+            arrows: [ON_OFF, 1],
+            board_middle: [ON_OFF, 0],
+            board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
+            notation: [ON_OFF, 1],
+            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
+        },
+        board_pv: {
+            highlight_pv: [['off', 'thin', 'standard', 'big'], 'standard'],
+            live_pv: [ON_OFF, 1],
+            notation_pv: [ON_OFF, 1],
+            ply_diff: [['first', 'diverging', 'last'], 'first'],
+        },
+        extra: {
+            cross_crash: [ON_OFF, 0],
+            live_log: [[5, 10, 'all'], 10],
+        },
+        twitch: {
+            twitch_back_mode: [ON_OFF, 1],
+            twitch_video: [ON_OFF, 1],
+        },
+        video: {
+            encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
+            exposure: [{min: 0.1, max: 10, step: 0.1, type: 'number'}, 1],
+            gamma: [{min: 0, max: 10, step: 0.1, type: 'number'}, 1.5],
+            lighting: [['low', 'medium', 'high'], 'high'],
+            resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
+            shadow: [Keys(SHADOW_QUALITIES), 'high'],
+            texture: [['auto', 'on', 'off'], 'auto'],
         },
     };
 

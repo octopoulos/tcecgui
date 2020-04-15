@@ -1,8 +1,8 @@
 /*
 globals
-_, $, activeFen, add_timeout, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash,
-crosstableData:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys,
-livePvs, LS, newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove
+_, $, activeFen, add_timeout, board, Chess, clearedAnnotation:true, crash_re, crosstableData:true,
+currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys, livePvs, LS,
+newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove, Y
 */
 'use strict';
 
@@ -325,25 +325,23 @@ function engineDisqualified(engineName)
     let engine = crosstableData.Table[engineName],
         crashed = (engine && engine.Strikes > 2)? engine.Strikes: 0;
 
-   if (crashed)
-   {
-      LS("engineName crashed:" + engineName + ":" + crashed);
-   }
-   if (!crossCrash)
-   {
-      crashed = 0;
-   }
-   return crashed;
+    if (crashed)
+        LS("engineName crashed:" + engineName + ":" + crashed);
+
+    if (!Y.cross_crash)
+        crashed = 0;
+
+    return crashed;
 }
 
 function newUpdateStandNoData()
 {
-   newUpdateStandData(crosstableData);
+    newUpdateStandData(crosstableData);
 }
 
 function newUpdateStandDataTimeout(data)
 {
-   crosstableData = data;
-   add_timeout('cross', () => {newUpdateStandData(data);}, 7000);
+    crosstableData = data;
+    add_timeout('cross', () => {newUpdateStandData(data);}, 7000);
 }
 /********************************* End Extra functions *****************************/

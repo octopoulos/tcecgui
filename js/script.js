@@ -4,11 +4,12 @@ globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, bracketDataMain,
 C, check_hash, DEV, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, newUpdateStandData, parse_dev, resize, Round,
-S, save_option, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
+S, save_option, set_ui_events, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
 setUsers, setUsersMain, showBanner, startup_3d, startup_graphs, startup_tcec, Style, toggleTheme, translate_node,
-translates:true, unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart,
-updateLiveChartData, updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData,
-updateRefresh, updateScheduleData, updateTables, updateWinners, window
+translates:true,
+unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData,
+updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData,
+updateTables, updateWinners, window
 */
 'use strict';
 
@@ -87,7 +88,6 @@ function init_sockets() {
  * First initialisation
  */
 function init_globals() {
-    setBoardInit();
     startup_tcec();
     startup_graphs();
 

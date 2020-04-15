@@ -3,24 +3,24 @@
 /*
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
-C, Ceil, Chess, ChessBoard, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console, crosstableData,
-Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp, Floor, get_int,
-get_string, Hide, HTML, initializeCharts, Keys,
+C, Ceil, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
+crosstableData, Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp,
+Floor, get_int, get_string, Hide, HTML, initializeCharts, Keys,
 LS, Max, Min, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
 roundDateMan, roundResults:true,
 S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
-tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window, Y
 */
 'use strict';
 
 let _BLACK = 'black',
     _WHITE = 'white',
     activePly = 0,
+    activePvKey = [],
     all_engines = ['w', 'b'],          // w,b full engine names
     all_pvs = [[], []],
     isAutoplay,
     BL = 1,
-    BLACK_WHITE = [_BLACK, _WHITE],     // TODO: remove it
     board,
     clock_intervals = ['', ''],
     COLORS = {
@@ -56,17 +56,16 @@ let _BLACK = 'black',
     pvBoardwc,
     remain_times = [0, 0],
     started_moves = [0, 0],
+    turn = 0,                           // 0:white to play, 1:black to play
     used_times = [0, 0],
     WH = 0,
-    WHITE_BLACK = [_WHITE, _BLACK];
+    WHITE_BLACK = [_WHITE, _BLACK, 'live'];
 
 var timezoneDiffH = -8;
 var squareToHighlight = '';
 var pvSquareToHighlight = '';
 var crossTableInitialized = false;
 var gameActive = false;
-
-var whiteToPlay = true;
 
 var viewingActiveMove = true;
 var loadedPlies = 0;
@@ -79,17 +78,12 @@ var bookmove = 0;
 
 // use Y.theme instead
 var darkMode = 0;
-// use Y.board_theme
-var btheme = "chess24";
-// use Y.piece_theme
-var ptheme = "chess24";
 
 var pageNum = 1;
 var gamesDone = 0;
 var timeDiff = 0;
 var timeDiffRead = 0;
 var prevPgnData = 0;
-var playSound = 1;
 var globalGameno = 1;
 var choosePv;
 
@@ -105,15 +99,9 @@ var activePv = [];
 var highlightpv = 0;
 var showLivEng1 = 1;
 var showLivEng2 = 1;
-var activePvKey = [];
-var activePvColor = '';
-var plyDiff = 0;
 var selectedId = 0;
 var highlightClass = 'highlight-white highlight-none';
 var highlightClassPv = 'highlight-white highlight-none';
-var boardNotation = true;
-var boardNotationPv = true;
-var boardArrows = true;
 var tcecElo = 1;
 var engineRatingGlobalData = 0;
 var tourInfo = {};
@@ -121,9 +109,6 @@ var oldSchedData = null;
 var activePvH = [];
 
 var hideDownPv = 0;
-
-var crossCrash = 0;
-var livepvupdate = 0;
 
 var twitchAccount = 'TCEC_Chess_TV';
 var twitchChatUrl = 'https://www.twitch.tv/embed/' + twitchAccount + '/chat';
@@ -188,11 +173,11 @@ function updateRefresh()
    Class('#board-to-sync i', '-fa-retweet fa-ban');
    Class('#board-to-sync', 'disabled');
 
-   add_timeout('update_refresh', () => {
-      Class('#board-to-sync i', '-fa-ban fa-retweet');
-      Class('#board-to-sync', '-disabled');
-      lastRefreshTime = 0;
-   }, 30000);
+    add_timeout('update_refresh', () => {
+        Class('#board-to-sync i', '-fa-ban fa-retweet');
+        Class('#board-to-sync', '-disabled');
+        lastRefreshTime = 0;
+    }, 30000);
 }
 
 function updateAll()
@@ -247,77 +232,56 @@ function updatePgn(resettime)
     });
 }
 
-// TODO: merge B&W
+/**
+ * Start the clock
+ * @param {number} color
+ * @param {Object} currentMove
+ * @param {Object} previousMove
+ */
 function startClock(color, currentMove, previousMove) {
-    stopClock(_BLACK);
-    stopClock(_WHITE);
+    stopClock(BL);
+    stopClock(WH);
 
-    let previousTime = previousMove.tl,
+    let other = 1 - color,
+        previousTime = previousMove.tl,
         currentTime = currentMove.tl;
 
-    if (color == _WHITE) {
-        remain_times[WH] = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
-        remain_times[BL] = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
+    remain_times[color] = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
+    remain_times[other] = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
 
-        setTimeRemaining(_BLACK, remain_times[BL]);
+    setTimeRemaining(other, remain_times[other]);
 
-        started_moves[WH] = moment();
-        updateClock(_WHITE);
+    started_moves[color] = moment();
+    updateClock(color);
 
-        clock_intervals[WH] = setInterval(function() {updateClock(_WHITE);}, 1000);
-        if (currentMove.mt != undefined)
-        {
-            setTimeUsed(_BLACK, currentMove.mt);
-        }
+    clock_intervals[color] = setInterval(function() {updateClock(color);}, 1000);
+    if (currentMove.mt != undefined)
+        setTimeUsed(other, currentMove.mt);
 
-        Show('.white-to-move');
-    } else {
-        remain_times[WH] = DefaultFloat(Ceil(currentTime / 1000) * 1000, defaultStartTime);
-        remain_times[BL] = DefaultFloat(Ceil(previousTime / 1000) * 1000 + 1000, defaultStartTime);
-
-        setTimeRemaining(_WHITE, remain_times[WH]);
-
-        started_moves[BL] = moment();
-        updateClock(_BLACK);
-
-        clock_intervals[BL] = setInterval(function() {updateClock(_BLACK);}, 1000);
-        if (currentMove.mt != undefined)
-        {
-            setTimeUsed(_WHITE, currentMove.mt);
-        }
-   }
-
-   Show(`.${color}-to-move`);
+   Show(`.${WHITE_BLACK[color]}-to-move`);
 }
 
+/**
+ * Stop the clock
+ * @param {number} color
+ */
 function stopClock(color) {
-    clearInterval((color == _WHITE)? clock_intervals[WH]: clock_intervals[BL]);
-    Hide(`.${color}-to-move`);
+    clearInterval(clock_intervals[color]);
+    Hide(`.${WHITE_BLACK[color]}-to-move`);
 }
 
-// TODO: merge B&W
+/**
+ * Update the clock
+ * @param {number} color
+ */
 function updateClock(color) {
-    let currentTime = moment();
+    let currentTime = moment(),
+        diff = currentTime.diff(started_moves[color] - timeDiff),
+        ms = moment.duration(diff);
 
-    if (color == _WHITE) {
-        let diff = currentTime.diff(started_moves[WH] - timeDiff),
-            ms = moment.duration(diff);
-
-        used_times[WH] = ms;
-        let tempTimeRemaning = remain_times[WH] - used_times[WH] + 3000;
-
-        setTimeUsed(color, used_times[WH]);
-        setTimeRemaining(color, tempTimeRemaning);
-    } else {
-        let diff = currentTime.diff(started_moves[BL] - timeDiff),
-            ms = moment.duration(diff);
-
-        used_times[BL] = ms;
-        let tempTimeRemaning = remain_times[BL] - used_times[BL] + 3000;
-
-        setTimeUsed(color, used_times[BL]);
-        setTimeRemaining(color, tempTimeRemaning);
-    }
+    used_times[color] = ms;
+    setTimeUsed(color, ms);
+    setTimeRemaining(color, remain_times[color] - ms + 3000);
 }
 
 function secFormatNoH(timeip)
@@ -348,46 +312,29 @@ function secFormat(timeip)
 
 function setTimeRemaining(color, time)
 {
-   if (time < 0) {
-      time = 0;
-   }
-
-   if (viewingActiveMove) {
-      HTML('.' + color + '-time-remaining', secFormat(time));
-   }
+    if (viewingActiveMove)
+        HTML(`.${WHITE_BLACK[color]}-time-remaining`, secFormat(Max(0, time)));
 }
 
 function setTimeUsed(color, time) {
-   if (viewingActiveMove) {
-      HTML('.' + color + '-time-used', secFormatNoH(time));
-   }
+   if (viewingActiveMove)
+      HTML(`.${WHITE_BLACK[color]}-time-used`, secFormatNoH(time));
 }
 
 function setUsers(data)
 {
-   userCount = data.count;
-   if (data.count != undefined)
-   {
-      userCount = data.count;
-   }
-   setUsersMain(userCount);
+    if (data.count != undefined)
+        userCount = data.count;
+
+    setUsersMain(userCount);
 }
 
 function setUsersMain(count)
 {
-   if (count != undefined)
-   {
-      userCount = count;
-   }
+    if (count != undefined)
+        userCount = count;
 
-   try
-   {
-      $('#event-overview').bootstrapTable('updateCell', {index: 0, field: 'Viewers', value: userCount});
-   }
-   catch(err)
-   {
-      LS("Unable to update usercount");
-   }
+    $('#event-overview').bootstrapTable('updateCell', {index: 0, field: 'Viewers', value: userCount});
 }
 
 function listPosition()
@@ -482,37 +429,32 @@ function setPgn(pgn)
    if (pgn.Moves)
       currentPlyCount = pgn.Moves.length;
 
-   if (pgn.Headers) {
-      if (pgn.Moves && pgn.Moves.length > 0) {
-         currentPosition = pgn.Moves[pgn.Moves.length-1].fen;
-         moveFrom = pgn.Moves[pgn.Moves.length-1].from;
-         moveTo = pgn.Moves[pgn.Moves.length-1].to;
+    if (pgn.Headers) {
+        if (pgn.Moves && pgn.Moves.length > 0) {
+            currentPosition = pgn.Moves[pgn.Moves.length-1].fen;
+            moveFrom = pgn.Moves[pgn.Moves.length-1].from;
+            moveTo = pgn.Moves[pgn.Moves.length-1].to;
 
-         currentGameActive = (pgn.Headers.Termination == 'unterminated');
-         whiteToPlay = (currentPlyCount % 2 == 0);
-      }
-   }
+            currentGameActive = (pgn.Headers.Termination == 'unterminated');
+            turn = currentPlyCount % 2;
+        }
+    }
 
-   if (!currentGameActive) {
-      stopClock(_WHITE);
-      stopClock(_BLACK);
-   }
-
-   if (currentGameActive) {
-       stopClock(BLACK_WHITE[whiteToPlay * 1]);
-   }
+    if (!currentGameActive) {
+        stopClock(WH);
+        stopClock(BL);
+    }
+    else
+        stopClock(turn);
 
     if (DEV.ply & 1)
         LS(`XXX: loadedPlies=${loadedPlies} : currentPlyCount=${currentPlyCount} : currentGameActive=${currentGameActive}`
             + `gameActive=${gameActive} : gameChanged=${pgn.gameChanged}`);
-   if (loadedPlies == currentPlyCount && (currentGameActive == gameActive)) {
-      return;
-   }
+    if (loadedPlies == currentPlyCount && (currentGameActive == gameActive))
+        return;
 
-   if (timeDiffRead > 0)
-   {
-      timeDiff = 0;
-   }
+    if (timeDiffRead > 0)
+        timeDiff = 0;
 
    let previousPlies = loadedPlies;
 
@@ -530,11 +472,11 @@ function setPgn(pgn)
       Attrs('#newmove', 'data-count', 0);
       board.clearAnnotation();
    }
-   if (viewingActiveMove && activePly != currentPlyCount) {
-      activePly = currentPlyCount;
-      if (playSound)
-         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
-   }
+    if (viewingActiveMove && activePly != currentPlyCount) {
+        activePly = currentPlyCount;
+        if (Y.sound)
+            play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+    }
 
    if (previousPlies > currentPlyCount) {
       initializeCharts();
@@ -551,11 +493,10 @@ function setPgn(pgn)
    }
 
     let eval_ = getEvalFromPly(pgn.Moves.length - 1);
-   if (!whiteToPlay) {
-      whiteEval = eval_;
-   } else {
-      blackEval = eval_;
-   }
+    if (turn)
+        whiteEval = eval_;
+    else
+        blackEval = eval_;
 
     let clockCurrentMove = currentMove,
         clockPreviousMove = '';
@@ -565,34 +506,26 @@ function setPgn(pgn)
             selectedMove = pgn.Moves[pgn.Moves.length-2];
       clockPreviousMove = selectedMove;
 
-      if (whiteToPlay) {
-         whiteEval = eval_;
-      } else {
-         blackEval = eval_;
-      }
+        if (!turn)
+            whiteEval = eval_;
+        else
+            blackEval = eval_;
    }
 
    if (viewingActiveMove) {
-      updateMoveValues(whiteToPlay, whiteEval, blackEval);
+      updateMoveValues(whiteEval, blackEval);
       findDiffPv(whiteEval.pv, blackEval.pv);
-      updateEnginePv(_WHITE, whiteToPlay, whiteEval.pv);
-      updateEnginePv(_BLACK, whiteToPlay, blackEval.pv);
+      updateEnginePv(WH, whiteEval.pv);
+      updateEnginePv(BL, blackEval.pv);
    }
 
-   if (whiteToPlay)
-   {
-      if (pgn.Headers.WhiteTimeControl)
-      {
-         pgn.Headers.TimeControl = pgn.Headers.WhiteTimeControl;
-      }
-   }
-   else
-   {
-      if (pgn.Headers.BlackTimeControl)
-      {
-         pgn.Headers.TimeControl = pgn.Headers.BlackTimeControl;
-      }
-   }
+    if (!turn)
+    {
+        if (pgn.Headers.WhiteTimeControl)
+            pgn.Headers.TimeControl = pgn.Headers.WhiteTimeControl;
+    }
+    else if (pgn.Headers.BlackTimeControl)
+        pgn.Headers.TimeControl = pgn.Headers.BlackTimeControl;
 
    var TC = pgn.Headers.TimeControl.split("+");
    var base = Round(TC[0] / 60);
@@ -602,11 +535,11 @@ function setPgn(pgn)
    defaultStartTime = (base * 60 * 1000);
 
     if (currentGameActive)
-        startClock(BLACK_WHITE[whiteToPlay * 1], clockCurrentMove, clockPreviousMove);
+        startClock(turn, clockCurrentMove, clockPreviousMove);
     else
     {
-        stopClock(_WHITE);
-        stopClock(_BLACK);
+        stopClock(WH);
+        stopClock(BL);
     }
 
     if (viewingActiveMove) {
@@ -856,7 +789,7 @@ function formatUnit(number)
 function getEvalFromPly(ply)
 {
     let selectedMove = prevPgnData.Moves[ply],
-        side = whiteToPlay? 'Black': 'White';
+        side = turn? 'White': 'Black';
 
    if (ply < 0)
    {
@@ -1002,273 +935,219 @@ function getPct(engineName, eval_)
     return text;
 }
 
-function updateMoveValues(whiteToPlay, whiteEval, blackEval)
+function updateMoveValues(whiteEval, blackEval)
 {
-   /* Ben: Not sure why we need to update only if we are not viewing active move */
-   if (!viewingActiveMove)
-   {
-      HTML('.white-time-used', whiteEval.mtime);
-      HTML('.black-time-used', blackEval.mtime);
-      HTML('.white-time-remaining', whiteEval.timeleft);
-      HTML('.black-time-remaining', blackEval.timeleft);
-   }
-   else
-   {
-      if (whiteToPlay)
-      {
-         HTML('.black-time-remaining', blackEval.timeleft);
-         HTML('.black-time-used', blackEval.mtime);
-      }
-      else
-      {
-         HTML('.white-time-used', whiteEval.mtime);
-         HTML('.white-time-remaining', whiteEval.timeleft);
-      }
-   }
+    /* Ben: Not sure why we need to update only if we are not viewing active move */
+    if (!viewingActiveMove)
+    {
+        HTML('.white-time-used', whiteEval.mtime);
+        HTML('.black-time-used', blackEval.mtime);
+        HTML('.white-time-remaining', whiteEval.timeleft);
+        HTML('.black-time-remaining', blackEval.timeleft);
+    }
+    else
+    {
+        if (!turn)
+        {
+            HTML('.black-time-remaining', blackEval.timeleft);
+            HTML('.black-time-used', blackEval.mtime);
+        }
+        else
+        {
+            HTML('.white-time-used', whiteEval.mtime);
+            HTML('.white-time-remaining', whiteEval.timeleft);
+        }
+    }
 
-   HTML('.white-engine-eval', whiteEval.eval);
+    HTML('.white-engine-eval', whiteEval.eval);
 
-   var blackEvalPt = getPct(prevPgnData.Headers.Black, blackEval.eval);
-   var whiteEvalPt = getPct(prevPgnData.Headers.White, whiteEval.eval);
-   HTML('.black-engine-name-full-new', blackEvalPt);
-   HTML('.white-engine-name-full-new', whiteEvalPt);
-   //$(eval a=(((((Math.atan(($(query)100)/290.680623072))/3.096181612)+0.5)100)-50);
-   //lose=Max(0,a-2); draw=(100-Max(win,lose)).toFixed(2); win=win.toFixed(2); lose=lose.toFixed(2);
-   HTML('.white-engine-speed', whiteEval.speed);
-   HTML('.white-engine-nodes', whiteEval.nodes);
-   HTML('.white-engine-depth', whiteEval.depth);
-   HTML('.white-engine-tbhits', whiteEval.tbhits);
-   findDiffPv(whiteEval.pv, blackEval.pv);
-   updateEnginePv(_WHITE, whiteToPlay, whiteEval.pv);
+    let blackEvalPt = getPct(prevPgnData.Headers.Black, blackEval.eval),
+        whiteEvalPt = getPct(prevPgnData.Headers.White, whiteEval.eval);
+    HTML('.black-engine-name-full-new', blackEvalPt);
+    HTML('.white-engine-name-full-new', whiteEvalPt);
+    //$(eval a=(((((Math.atan(($(query)100)/290.680623072))/3.096181612)+0.5)100)-50);
+    //lose=Max(0,a-2); draw=(100-Max(win,lose)).toFixed(2); win=win.toFixed(2); lose=lose.toFixed(2);
+    HTML('.white-engine-speed', whiteEval.speed);
+    HTML('.white-engine-nodes', whiteEval.nodes);
+    HTML('.white-engine-depth', whiteEval.depth);
+    HTML('.white-engine-tbhits', whiteEval.tbhits);
+    findDiffPv(whiteEval.pv, blackEval.pv);
+    updateEnginePv(WH, whiteEval.pv);
 
-   HTML('.black-engine-eval', blackEval.eval);
-   HTML('.black-engine-speed', blackEval.speed);
-   HTML('.black-engine-nodes', blackEval.nodes);
-   HTML('.black-engine-depth', blackEval.depth);
-   HTML('.black-engine-tbhits', blackEval.tbhits);
-   updateEnginePv(_BLACK, whiteToPlay, blackEval.pv);
+    HTML('.black-engine-eval', blackEval.eval);
+    HTML('.black-engine-speed', blackEval.speed);
+    HTML('.black-engine-nodes', blackEval.nodes);
+    HTML('.black-engine-depth', blackEval.depth);
+    HTML('.black-engine-tbhits', blackEval.tbhits);
+    updateEnginePv(BL, blackEval.pv);
 }
 
 /**
  * Update engine PV
- * @param {string} color
- * @param {boolean} whiteToPlay
+ * @param {number} color
  * @param {Object} moves
  */
-function updateEnginePv(color, whiteToPlay, moves)
+function updateEnginePv(color, moves)
 {
+    // 0) skip
+    let scolor = WHITE_BLACK[color];
     if (!moves) {
-        HTML(`#${color}-engine-pv`, '');
-        HTML(`.${color}-engine-pv`, '');
+        HTML(`#${scolor}-engine-pv`, '');
+        HTML(`.${scolor}-engine-pv`, '');
         return;
     }
 
+    // 1)
     let classhigh = '',
-        current = Floor(activePly / 2);
+        current = Floor(activePly / 2),
+        other = 1 - turn;
 
-      if (color == _WHITE) {
-         all_pvs[WH] = moves;
-      } else {
-         all_pvs[BL] = moves;
-      }
+    all_pvs[color] = moves;
 
-      let keyOffset = 0;
-      if (color == _BLACK && !whiteToPlay) {
+    let keyOffset = 0;
+    if (color == BL && turn)
         current -= 2;
-         // keyOffset = 1;
-      }
 
-      if (!whiteToPlay) {
+    if (turn)
         current ++;
-      }
-      if (!whiteToPlay && color == "black") {
+    if (turn && color == BL)
         current ++;
-      }
-      let setpvmove = -1;
-      HTML('#' + color + '-engine-pv', '');
-      HTML('.' + color + '-engine-pv', '');
 
-      Keys(moves).forEach(key => {
-          key *= 1;
-          let move = moves[key];
+    let setpvmove = -1;
+    HTML(`#${scolor}-engine-pv`, '');
+    HTML(`.${scolor}-engine-pv`, '');
 
-         classhigh = "";
-         let effectiveKey = key + keyOffset,
+    // 2)
+    Keys(moves).forEach(key => {
+        key *= 1;
+        let move = moves[key];
+
+        classhigh = "";
+        let effectiveKey = key + keyOffset,
             pvMove = current + Floor(effectiveKey / 2);
             // pvMoveNofloor = current + effectiveKey;
 
-         if (whiteToPlay)
-         {
-            if (color == "white" && (highlightpv == key))
-            {
-                if (DEV.pv &  1)
-                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
-               classhigh = "active-pv-move";
-               setpvmove = effectiveKey;
-            }
-            if (color == "black" && key == 0)
-            {
-            //    pvMoveNofloor ++;
-            }
-            if (color == "black" && (highlightpv == key + 1))
-            {
-                if (DEV.pv & 1)
-                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
-               classhigh = "active-pv-move";
-               setpvmove = effectiveKey;
-            }
-         }
-         else
-         {
-            if (color == "white" && (highlightpv - 1 == key))
-            {
-                if (DEV.pv & 1)
-                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
-               classhigh = "active-pv-move";
-               setpvmove = effectiveKey;
-            }
-            if (color == "black" && (highlightpv == key))
-            {
-                if (DEV.pv & 1)
-                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
-               classhigh = "active-pv-move";
-               setpvmove = effectiveKey;
-            }
-         }
-         var atsymbol = '';
-         if (setpvmove > -1 && effectiveKey == setpvmove)
-         {
+        if (color == turn && highlightpv == key)
+        {
+            if (DEV.pv &  1)
+                LS(`Need to highlight: ${pvMove} : move=${move.m}`);
+            classhigh = "active-pv-move";
+            setpvmove = effectiveKey;
+        }
+        if (color == other && highlightpv == key + 1)
+        {
+            if (DEV.pv & 1)
+                LS(`Need to highlight: ${pvMove} : move=${move.m}`);
+            classhigh = "active-pv-move";
+            setpvmove = effectiveKey;
+        }
+
+        let atsymbol = '';
+        if (setpvmove > -1 && effectiveKey == setpvmove)
+        {
             pvMove = ' @ ' + pvMove;
             // LS("pvMove is : " + pvMove + " setpvmove:" + setpvmove + ", effectiveKey:" + effectiveKey);
             atsymbol = ' @ ';
-         }
-         if (color == "white")
-         {
+        }
+        if (color == WH)
+        {
             if (effectiveKey % 2 == 0 )
             {
-               $('#' + color + '-engine-pv').append(pvMove + '. ');
-               $('#' + color + '-engine-pv2').append(pvMove + '. ');
-               $('#' + color + '-engine-pv3').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv2').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv3').append(pvMove + '. ');
             }
             else if (effectiveKey % 2 != 0 )
             {
-               $('#' + color + '-engine-pv').append(atsymbol);
-               $('#' + color + '-engine-pv2').append(atsymbol);
-               $('#' + color + '-engine-pv3').append(atsymbol);
+                $('#' + scolor + '-engine-pv').append(atsymbol);
+                $('#' + scolor + '-engine-pv2').append(atsymbol);
+                $('#' + scolor + '-engine-pv3').append(atsymbol);
             }
-         }
+        }
 
-         if (color == "black" && effectiveKey % 2 != 0 ) {
-            $('#' + color + '-engine-pv3').append(pvMove + '. ');
-            $('#' + color + '-engine-pv').append(pvMove + '. ');
-            $('#' + color + '-engine-pv2').append(pvMove + '. ');
-         }
+        if (color == BL && effectiveKey % 2 != 0 ) {
+            $('#' + scolor + '-engine-pv3').append(pvMove + '. ');
+            $('#' + scolor + '-engine-pv').append(pvMove + '. ');
+            $('#' + scolor + '-engine-pv2').append(pvMove + '. ');
+        }
 
-         if (color == "black")
-         {
-            if (color == "black" && key == 0 )
+        if (color == BL)
+        {
+            if (color == BL && key == 0 )
             {
-               $('#' + color + '-engine-pv').append(pvMove + '. ');
-               $('#' + color + '-engine-pv2').append(pvMove + '. ');
-               $('#' + color + '-engine-pv3').append(pvMove + '. ');
-               $('#' + color + '-engine-pv').append(' .. ');
-               $('#' + color + '-engine-pv2').append(' .. ');
-               $('#' + color + '-engine-pv3').append(' .. ');
-               current ++;
+                $('#' + scolor + '-engine-pv').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv2').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv3').append(pvMove + '. ');
+                $('#' + scolor + '-engine-pv').append(' .. ');
+                $('#' + scolor + '-engine-pv2').append(' .. ');
+                $('#' + scolor + '-engine-pv3').append(' .. ');
+                current ++;
             }
             else if (effectiveKey % 2 == 0 )
             {
-               $('#' + color + '-engine-pv3').append(atsymbol);
-               $('#' + color + '-engine-pv').append(atsymbol);
-               $('#' + color + '-engine-pv2').append(atsymbol);
+                $('#' + scolor + '-engine-pv3').append(atsymbol);
+                $('#' + scolor + '-engine-pv').append(atsymbol);
+                $('#' + scolor + '-engine-pv2').append(atsymbol);
             }
-         }
-         if (color == _BLACK)
-         {
+        }
+        if (color == BL)
             classhigh += ' blue';
-         }
-         $('#' + color + '-engine-pv').append("<a href='#' id='" + color + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + color + "'>" + move.m + '</a> ');
-         $('#' + color + '-engine-pv2').append("<a href='#' id='" + color + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + color + "'>" + move.m + '</a> ');
-         $('#' + color + '-engine-pv3').append("<a href='#' id='c" + color + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + color + "'>" + move.m + '</a> ');
-      });
+
+        $('#' + scolor + '-engine-pv').append("<a href='#' id='" + scolor + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + scolor + "'>" + move.m + '</a> ');
+        $('#' + scolor + '-engine-pv2').append("<a href='#' id='" + scolor + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + scolor + "'>" + move.m + '</a> ');
+        $('#' + scolor + '-engine-pv3').append("<a href='#' id='c" + scolor + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + scolor + "'>" + move.m + '</a> ');
+    });
 
     if (DEV.pv & 1)
         LS(`highlightpv=${highlightpv}`);
-   if (highlightpv == 0)
-   {
-      setpvmove = 0;
-   }
-   if (color == _WHITE)
-   {
-      Class('#white-engine-pv3', 'white-engine-pv');
-      Class('#white-engine-pv3', 'alert');
-      Class('#white-engine-pv3', 'alert-dark');
-      Show('#white-name-dynamic');
-      all_pvs[WH] = moves;
-      if (all_pvs[WH].length > 0)
-      {
-         if (plyDiff == 2)
-         {
-            setpvmove = all_pvs[WH].length - 1;
-            if (DEV.pv & 1)
-                LS(`plyDiff in white: ${all_pvs[WH].length}`);
-         }
-         activePv = all_pvs[WH].slice();
-         setPvFromKey(setpvmove, _WHITE);
-      }
-   }
-   else
-   {
-      Class('#black-engine-pv3', 'black-engine-pv');
-      Class('#black-engine-pv3', 'alert');
-      Class('#black-engine-pv3', 'alert-dark');
-      Show('#black-name-dynamic');
-      all_pvs[BL] = moves;
-      if (all_pvs[BL].length > 0)
-      {
-         activePv = all_pvs[BL].slice();
-         if (plyDiff == 2)
-         {
-            setpvmove = all_pvs[BL].length - 1;
-         }
-         setPvFromKey(setpvmove, _BLACK);
-      }
-   }
+    if (highlightpv == 0)
+        setpvmove = 0;
 
-   // set_ui_events();
+    // 3)
+    Class(`#${scolor}-engine-pv3`, `${scolor}-engine-pv`);
+    Class(`#${scolor}-engine-pv3`, 'alert');
+    Class(`#${scolor}-engine-pv3`, 'alert-dark');
+    Show(`#${scolor}-name-dynamic`);
+    all_pvs[color] = moves;
+    if (all_pvs[color].length > 0)
+    {
+        if (Y.ply_diff == 'last')
+        {
+            setpvmove = all_pvs[color].length - 1;
+            if (DEV.pv & 1)
+                LS(`ply_diff in white: ${all_pvs[color].length}`);
+        }
+        activePv = all_pvs[color].slice();
+        setPvFromKey(setpvmove, color);
+    }
 }
 
-function setPlyDiv(plyDiffL)
+function setPlyDiv(ply_diff)
 {
-   plyDiff = plyDiffL;
-   findDiffPv(all_pvs[WH], all_pvs[BL]);
-   updateEnginePv(_WHITE, whiteToPlay, all_pvs[WH]);
-   updateEnginePv(_BLACK, whiteToPlay, all_pvs[BL]);
-   save_option('ply_diff', plyDiff);
-   Prop(`input[value="ply${plyDiff}"]`, 'checked', true);
+    save_option('ply_diff', ply_diff);
+    findDiffPv(all_pvs[WH], all_pvs[BL]);
+    updateEnginePv(WH, all_pvs[WH]);
+    updateEnginePv(BL, all_pvs[BL]);
+    Prop(`input[value="ply${ply_diff}"]`, 'checked', true);
 }
 
 function setPlyDivDefault()
 {
-    let ply_diff = get_int('ply_diff', 0);
-    Prop(`input[value="ply${ply_diff}"]`, 'checked', true);
+    Y.ply_diff = get_string('ply_diff', 'first');
+    Prop(`input[value="ply${Y.ply_diff}"]`, 'checked', true);
 }
 
 function findDiffPv(whitemoves, blackmoves)
 {
-   highlightpv = 0;
-   if (plyDiff == 0)
-      return;
+    highlightpv = 0;
+    if (Y.ply_diff == 'first')
+        return;
 
    if (whitemoves)
    {
-      // let current = Floor(activePly / 2);
-      // if (!whiteToPlay)
-      //    current ++;
-
       Keys(whitemoves).forEach(key => {
          // let pvMove = current + key;
-         if (whiteToPlay)
+         if (!turn)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
             {
@@ -1311,95 +1190,75 @@ function onLastMove()
 
 function handlePlyChange(handleclick=true)
 {
-   selectedId = 0;
-   whiteToPlay = (activePly % 2 == 0);
+    selectedId = 0;
+    turn = activePly % 2;
 
     let blackEval = '',
         whiteEval = '';
 
-   /* Ben: since index starts at 0, active ply should be -1 and -2 to be correct */
-   if (whiteToPlay) {
-      whiteEval = getEvalFromPly(activePly - 2);
-      blackEval = getEvalFromPly(activePly - 1);
-   } else {
-      blackEval = getEvalFromPly(activePly - 2);
-      whiteEval = getEvalFromPly(activePly - 1);
-   }
+    /* Ben: since index starts at 0, active ply should be -1 and -2 to be correct */
+    if (!turn) {
+        whiteEval = getEvalFromPly(activePly - 2);
+        blackEval = getEvalFromPly(activePly - 1);
+    } else {
+        blackEval = getEvalFromPly(activePly - 2);
+        whiteEval = getEvalFromPly(activePly - 1);
+    }
 
-   /* Arun: we should get move from ply - 1 as index starts at 0 */
-   currentMove = getMoveFromPly(activePly - 1);
+    /* Arun: we should get move from ply - 1 as index starts at 0 */
+    currentMove = getMoveFromPly(activePly - 1);
 
-   if (activePly > 1)
-   {
-      let prevMove = getMoveFromPly(activePly - 2);
-      for (let yy = 1 ; yy <= livePVHist.length ; yy ++)
-      {
-         if (livePVHist[yy])
-         {
+    if (activePly > 1)
+    {
+        let prevMove = getMoveFromPly(activePly - 2);
+        for (let yy = 1 ; yy <= livePVHist.length ; yy ++)
+        {
+            if (!livePVHist[yy])
+                continue;
             for (let xx = 0 ; xx < livePVHist[yy].moves.length ; xx ++)
             {
-               if (parseInt(livePVHist[yy].moves[xx].ply) == activePly)
-               {
-                  livePVHist[yy].moves[xx].engine = livePVHist[yy].engine;
-                  updateLiveEvalData(livePVHist[yy].moves[xx], 0, prevMove.fen, yy, 0);
-                  break;
-               }
+                if (parseInt(livePVHist[yy].moves[xx].ply) == activePly)
+                {
+                    livePVHist[yy].moves[xx].engine = livePVHist[yy].engine;
+                    updateLiveEvalData(livePVHist[yy].moves[xx], 0, prevMove.fen, yy, 0);
+                    break;
+                }
             }
-         }
-      }
-   }
+        }
+    }
 
-   /* Arun: why do we need to keep swappging the pieces captured */
-   if (currentMove)
-      setMoveMaterial(currentMove.material, 0);
+    /* Arun: why do we need to keep swappging the pieces captured */
+    if (currentMove)
+        setMoveMaterial(currentMove.material, 0);
 
-   updateMoveValues(whiteToPlay, whiteEval, blackEval);
+    updateMoveValues(whiteEval, blackEval);
 
-   // TODO: skip the click
-   if (handleclick)
-      _(`a[ply="${activePly}"]`).click();
-}
-
-function setActiveKey(pvColor, value)
-{
-   if (pvColor == undefined || pvColor == _WHITE)
-   {
-      activePvKey[0] = value;
-   }
-   else if (pvColor == _BLACK)
-   {
-      activePvKey[1] = value;
-   }
-   else if (pvColor == 'live')
-   {
-      activePvKey[2] = value;
-      LS("setting live to:" + value);
-   }
+    // TODO: skip the click
+    if (handleclick)
+        _(`a[ply="${activePly}"]`).click();
 }
 
 function scrollDiv(container, element)
 {
    try {
-      $(container).scrollTop(
-         $(element).offset().top - $(container).offset().top + $(container).scrollTop()
-         );
-   }
-   catch (e) {
-   }
+        $(container).scrollTop(
+            $(element).offset().top - $(container).offset().top + $(container).scrollTop()
+        );
+    }
+    catch (e) {
+    }
 }
 
 /**
  * Set PV from a move key
  * @param {number} moveKey
- * @param {string} color
+ * @param {number} color
  * @param {Object} choosePvx
  */
 function setPvFromKey(moveKey, color, choosePvx)
 {
-    let activePv,
-        id = COLORS[color];     // 0 for white, 1 for black
-
-    if (color == 'live') {
+    let activePv;
+    if (color == LIVE) {
         if (choosePvx)
         {
             activePv = choosePvx;
@@ -1412,19 +1271,17 @@ function setPvFromKey(moveKey, color, choosePvx)
             LS('live choseny:' + activePv.length + " ,moveKey:" + moveKey);
         }
     }
-    else {
-        if (!color)
-            color = _WHITE;
-        activePv = all_pvs[id].slice();
-    }
+    else
+        activePv = all_pvs[color].slice();
 
     if (activePv.length < 1) {
-        setActiveKey(color, 0);
+        activePvKey[color] = 0;
         return;
     }
     if (moveKey >= activePv.length)
         return;
-    setActiveKey(color, moveKey);
+
+    activePvKey[color] = moveKey;
 
     let moveFromPv = activePv[moveKey].from,
         moveToPv = activePv[moveKey].to,
@@ -1437,29 +1294,31 @@ function setPvFromKey(moveKey, color, choosePvx)
 
     let pvBoardElbL, pvBoardL;
 
-    if (id == LIVE) {
+    if (color == LIVE) {
         pvBoardL = pvBoarda;
         pvBoardElbL = '#pv-boarda';
     }
     else {
-        pvBoardL = (id == WH)? pvBoardw: pvBoardb;
-        pvBoardElbL = (id == WH)? '#pv-boardw': '#pv-boardb';
+        pvBoardL = (color == WH)? pvBoardw: pvBoardb;
+        pvBoardElbL = (color == WH)? '#pv-boardw': '#pv-boardb';
 
-        let other = WHITE_BLACK[1 - id];
-        Class(`#${color}-engine-pv #${color}-${moveKey}`, 'active-pv-move');
-        Class(`#${color}-engine-pv2 #${color}-${moveKey}`, 'active-pv-move');
-        Class(`#${color}-engine-pv3 #c${color}-${moveKey}`, 'active-pv-move');
-        Class(`#${other}-engine-pv #${other}-${activePvKey[1]}`, 'active-pv-move');
-        Class(`#${other}-engine-pv2 #${other}-${activePvKey[1]}`, 'active-pv-move');
-        Class(`#${other}-engine-pv3 #c${other}-${activePvKey[1]}`, 'active-pv-move');
-        scrollDiv(`#${color}-engine-pv`, `#${color}-${moveKey}`);
-        scrollDiv(`#${color}-engine-pv2`, `#${color}-${moveKey}`);
-        scrollDiv(`#${color}-engine-pv3`, `#c${color}-${moveKey}`);
+        let scolor = WHITE_BLACK[color],
+            sother = WHITE_BLACK[1 - color];
 
-        current_positions[id] = fen;
+        Class(`#${scolor}-engine-pv #${scolor}-${moveKey}`, 'active-pv-move');
+        Class(`#${scolor}-engine-pv2 #${scolor}-${moveKey}`, 'active-pv-move');
+        Class(`#${scolor}-engine-pv3 #c${scolor}-${moveKey}`, 'active-pv-move');
+        Class(`#${sother}-engine-pv #${sother}-${activePvKey[1]}`, 'active-pv-move');
+        Class(`#${sother}-engine-pv2 #${sother}-${activePvKey[1]}`, 'active-pv-move');
+        Class(`#${sother}-engine-pv3 #c${sother}-${activePvKey[1]}`, 'active-pv-move');
+        scrollDiv(`#${scolor}-engine-pv`, `#${scolor}-${moveKey}`);
+        scrollDiv(`#${scolor}-engine-pv2`, `#${scolor}-${moveKey}`);
+        scrollDiv(`#${scolor}-engine-pv3`, `#c${scolor}-${moveKey}`);
+
+        current_positions[color] = fen;
     }
-    moveFromPvs[id] = moveFromPv;
-    moveToPvs[id] = moveToPv;
+    moveFromPvs[color] = moveFromPv;
+    moveToPvs[color] = moveToPv;
 
     if (!pvBoardElbL)
         return;
@@ -1470,11 +1329,11 @@ function setPvFromKey(moveKey, color, choosePvx)
     pvSquareToHighlight = moveToPv;
 
     pvBoardL.position(fen, false);
-    if (id == WH) {
+    if (color == WH) {
         show_move('#pv-boardwc', moveFromPv, moveToPv, highlightClassPv);
         pvBoardwc.position(fen, false);
     }
-    else if (id == BL) {
+    else if (color == BL) {
         show_move('#pv-boardbc', moveFromPv, moveToPv, highlightClassPv);
         pvBoardbc.position(fen, false);
     }
@@ -1499,6 +1358,7 @@ function pvBoardautoplay(value, color, activePv)
     }
 }
 
+// CHECK THIS
 function setMoveMaterial(material, whiteToPlay)
 {
     Keys(material).forEach(key => {
@@ -1507,6 +1367,7 @@ function setMoveMaterial(material, whiteToPlay)
     });
 }
 
+// CHECK THIS
 function setPieces(piece, value, whiteToPlay) {
    var target = 'black-material';
    var color = 'b';
@@ -1722,11 +1583,6 @@ function crossCellformatter(value, row, index, field)
 
 function cellformatter(value, row, index, field) {
    return {classes: (value.Score != undefined)? 'monofont': _BLACK};
-}
-
-function sleep(ms)
-{
-   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function updateScoreHeadersData()
@@ -2134,20 +1990,20 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
 /**
  * Create a new board, with or without drag
  * @param {string} cont
- * @param {boolean} boardNotation
+ * @param {boolean} notation
  * @param {boolean=} drag
  */
-function createBoard(cont, boardNotation, drag)
+function createBoard(cont, notation, drag)
 {
     let options = {
         appearSpeed: 1,
-        boardTheme: BOARD_THEMES[btheme],
+        boardTheme: BOARD_THEMES[Y.board_theme],
         moveSpeed: 1,
         onMoveEnd: onMoveEnd,
         overlay: true,
-        pieceTheme: piece => PIECE_THEMES[ptheme][piece],
+        pieceTheme: piece => PIECE_THEMES[Y.piece_theme][piece],
         position: 'start',
-        showNotation: boardNotation,
+        showNotation: notation,
     };
 
     if (drag)
@@ -2163,61 +2019,59 @@ function createBoard(cont, boardNotation, drag)
 /**
  * Create all the boards
  */
-function setBoardInit()
+function create_boards()
 {
-    btheme = get_string('board_theme', btheme);
-    ptheme = get_string('piece_theme', ptheme);
+    Y.board_theme = get_string('board_theme', Y.board_theme);
+    Y.piece_theme = get_string('piece_theme', Y.piece_theme);
 
-    pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
-    board = createBoard('board', boardNotation);
+    pvBoarda = createBoard('pv-boarda', Y.notation_pv, true);
+    board = createBoard('board', Y.notation);
 
-    if (!boardArrows)
+    if (!Y.arrows)
         board.clearAnnotation();
 
-    pvBoardw = createBoard('pv-boardw', boardNotationPv);
-    pvBoardb = createBoard('pv-boardb', boardNotationPv);
-    pvBoardwc = createBoard('pv-boardwc', boardNotationPv);
-    pvBoardbc = createBoard('pv-boardbc', boardNotationPv);
+    pvBoardw = createBoard('pv-boardw', Y.notation_pv);
+    pvBoardb = createBoard('pv-boardb', Y.notation_pv);
+    pvBoardwc = createBoard('pv-boardwc', Y.notation_pv);
+    pvBoardbc = createBoard('pv-boardbc', Y.notation_pv);
 
-    save_option('board_theme', btheme);
-    save_option('piece_theme', ptheme);
-    Prop(`input[value="${btheme}b"]`, 'checked', true);
-    Prop(`input[value="${ptheme}p"]`, 'checked', true);
-
-    return {board, pvBoardw, pvBoardb, pvBoarda, pvBoardwc, pvBoardbc};
+    save_option('board_theme', Y.board_theme);
+    save_option('piece_theme', Y.piece_theme);
+    Prop(`input[value="${Y.board_theme}b"]`, 'checked', true);
+    Prop(`input[value="${Y.piece_theme}p"]`, 'checked', true);
 }
 
 function setBoard()
 {
     let fen = board.fen();
-    board = createBoard('board', boardNotation);
+    board = createBoard('board', Y.notation);
     board.position(fen, false);
 
     fen = pvBoardb.fen();
-    pvBoardb = createBoard('pv-boardb', boardNotationPv);
+    pvBoardb = createBoard('pv-boardb', Y.notation_pv);
     pvBoardb.position(fen, false);
 
     fen = pvBoardw.fen();
-    pvBoardw = createBoard('pv-boardw', boardNotationPv);
+    pvBoardw = createBoard('pv-boardw', Y.notation_pv);
     pvBoardw.position(fen, false);
 
     fen = pvBoarda.fen();
-    pvBoarda = createBoard('pv-boarda', boardNotationPv, true);
+    pvBoarda = createBoard('pv-boarda', Y.notation_pv, true);
     pvBoarda.position(fen, false);
 
     fen = pvBoardwc.fen();
-    pvBoardwc = createBoard('pv-boardwc', boardNotationPv, true);
+    pvBoardwc = createBoard('pv-boardwc', Y.notation_pv, true);
     pvBoardwc.position(fen, false);
 
     fen = pvBoardbc.fen();
-    pvBoardbc = createBoard('pv-boardbc', boardNotationPv, true);
+    pvBoardbc = createBoard('pv-boardbc', Y.notation_pv, true);
     pvBoardbc.position(fen, false);
 
-    save_option('board_theme', btheme);
-    save_option('piece_theme', ptheme);
+    save_option('board_theme', Y.board_theme);
+    save_option('piece_theme', Y.piece_theme);
 
-    Prop(`input[value="${btheme}b"]`, 'checked', true);
-    Prop(`input[value="${ptheme}p"]`, 'checked', true);
+    Prop(`input[value="${Y.board_theme}b"]`, 'checked', true);
+    Prop(`input[value="${Y.piece_theme}p"]`, 'checked', true);
 
     if (prevPgnData && prevPgnData.Moves.length > 0)
     {
@@ -2228,7 +2082,7 @@ function setBoard()
             show_move('#pv-boardw', moveFromPvs[0], moveToPvs[0], highlightClassPv);
         if (moveFromPvs[2])
             show_move('#pv-boarda', moveFromPvs[2], moveToPvs[2], highlightClassPv);
-   }
+    }
 }
 
 function updateTables()
@@ -2356,19 +2210,17 @@ function setDefaultThemes()
     setPlyDivDefault();
 }
 
-function setBoardUser(boardTheme)
+function setBoardUser(board_theme)
 {
-   if (boardTheme != undefined)
-   {
-      btheme = boardTheme;
-   }
-   setBoard();
+    if (board_theme)
+        Y.board_theme = board_theme;
+    setBoard();
 }
 
-function setPieceUser(ptheme_)
+function setPieceUser(piece_theme)
 {
-    if (ptheme_)
-        ptheme = ptheme_;
+    if (piece_theme)
+        Y.piece_theme = piece_theme;
     setBoard();
 }
 
@@ -2396,85 +2248,84 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
 {
     let score = DefaultFloat(datum.eval, `${datum.eval}`);
 
-   // Check if black
-   if (datum.pv.search(/.*\.\.\..*/i) == 0)
-   {
-      if (!isNaN(score))
-      {
-         // Invert the score
-         score = -parseFloat(score);
-      }
-   }
+    // Check if black
+    if (datum.pv.search(/.*\.\.\..*/i) == 0)
+    {
+        if (!isNaN(score))
+        {
+            // Invert the score
+            score = -parseFloat(score);
+        }
+    }
 
-   datum.eval = score;
-   datum.tbhits = formatUnit(datum.tbhits);
-   datum.nodes = formatUnit(datum.nodes);
+    datum.eval = score;
+    datum.tbhits = formatUnit(datum.tbhits);
+    datum.nodes = formatUnit(datum.nodes);
 
-   var pvs = [];
-   var moveContainer = [];
+    if (!datum.pv.length || datum.pv.trim() == "no info")
+        return;
 
-   if (datum.pv.length > 0 && datum.pv.trim() != "no info") {
-      var chess = new Chess(fen);
-      var currentFen = fen;
+    let chess = new Chess(fen),
+        currentFen = fen,
+        moveContainer = [],
+        pvs = [],
+        split = datum.pv.replace("...","... ").split(' '),
+        length = split.length;
 
-      var split = datum.pv.replace("...","... ").split(' ');
-      var length = split.length;
-      for (let i = 0, moveCount = 0; i < length; i++) {
-         let str = split[i];
-         if (isNaN(str.charAt(0))) {
+    for (let i = 0, moveCount = 0; i < length; i++) {
+        let str = split[i];
+        if (isNaN(str[0])) {
             let moveResponse = chess.move(str);
             if (!moveResponse || !moveResponse) {
                 if (DEV.eval & 1)
                     LS("undefine move" + str);
-               return;
-            } else {
-               currentFen = chess.fen();
-               let newPv = {
-                  'from': moveResponse.from,
-                  'to': moveResponse.to,
-                  'm': moveResponse.san,
-                  'fen': currentFen
-               };
-
-               //we can build the html and the PV in the same loop. no need to do it three times
-               moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                  "' engine='" + (contno) +
-                  "' color='live'>" + moveResponse.san +
-                  '</a>');
-               currentLastMove = str.slice(-2);
-               //pushing is the same as a union of an array with one item...
-               pvs.push(newPv);
-               moveCount++;
+                return;
             }
-         } else {
-            moveContainer.push(str);
-         }
-      }
-   }else {
-      return;
-   }
-   livePvs[contno] = [];
-   HTML(container, '');
-   board.clearAnnotation();
+            else {
+                currentFen = chess.fen();
+                let newPv = {
+                    from: moveResponse.from,
+                    to: moveResponse.to,
+                    m: moveResponse.san,
+                    fen: currentFen
+                };
 
-   var evalStr = getPct(datum.engine, score);
-   $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
-   if (boardArrows) {
-       let color;
-      if (contno == 2) {
-         color = 'reds';
-      }
-      else {
-         color = 'blues';
-      }
-      if (pvs[0]) {
-         board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
-      }
-   }
-   $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-   livePvs[contno] = pvs;
-   activePvH[contno] =pvs;
-   datum.eval = datum.origeval;
+                //we can build the html and the PV in the same loop. no need to do it three times
+                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
+                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
+                currentLastMove = str.slice(-2);
+                //pushing is the same as a union of an array with one item...
+                pvs.push(newPv);
+                moveCount++;
+            }
+        }
+        else
+            moveContainer.push(str);
+    }
+
+    livePvs[contno] = [];
+    HTML(container, '');
+    board.clearAnnotation();
+
+    let evalStr = getPct(datum.engine, score);
+    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
+    if (Y.arrows) {
+        let color;
+        if (contno == 2) {
+            color = 'reds';
+        }
+        else {
+            color = 'blues';
+        }
+        if (pvs[0]) {
+            board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
+        }
+    }
+
+    $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
+    livePvs[contno] = pvs;
+    activePvH[contno] =pvs;
+    datum.eval = datum.origeval;
 }
 
 /**
@@ -2572,14 +2423,13 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       return;
    }
 
-
    livePvs[contno] = [];
    HTML(container, '');
 
    var evalStr = getPct(datum.engine, datum.eval);
    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
 
-   if (boardArrows) {
+   if (Y.arrows) {
        let color;
       if (contno == 2) {
          color = 'reds';
@@ -2607,128 +2457,117 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       x = (datum.plynum + 1)/2;
       colorx = 0;
    }
-   datum.x = x;
-   if (livepvupdate)
-   {
-      addDataLive(evalChart, datum, colorx, contno);
-   }
+    datum.x = x;
+    if (Y.live_pv)
+        addDataLive(evalChart, datum, colorx, contno);
 }
 
 function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
-    if (!datum)
-        return;
-    if (!livepvupdate)
-        return;
-    if (!viewingActiveMove)
+    if (!datum || !Y.live_pv || !viewingActiveMove)
         return;
 
-   let classhigh = '',
-      container = '#white-engine-pv3',
-      color = _WHITE;
+    let classhigh = '',
+        container = '#white-engine-pv3',
+        scolor = _WHITE;
 
-   if (datum.color == 1)
-   {
-      color = _BLACK;
-      container = '#black-engine-pv3';
-      classhigh += ' lightblue';
-   }
-
-    for (let key of ['eval', 'speed', 'nodes', 'depth', 'tbhits']) {
-        HTML(`.${color}-engine-${key}`, datum[key]);
+    if (datum.color == 1)
+    {
+        scolor = _BLACK;
+        container = '#black-engine-pv3';
+        classhigh += ' lightblue';
     }
+
+    for (let key of ['eval', 'speed', 'nodes', 'depth', 'tbhits'])
+        HTML(`.${scolor}-engine-${key}`, datum[key]);
 
     if (DEV.eval & 1)
         LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
 
-   let score = '';
-   if (datum)
-       score = (parseFloat(datum.eval || 0)).toFixed(2);
-   score = "" + score;
-   datum.eval = score;
+    let score = '';
+    if (datum)
+        score = (parseFloat(datum.eval || 0)).toFixed(2);
+    score = "" + score;
+    datum.eval = score;
 
-   var pvs = [];
+    let pvs = [],
+        moveContainer = [];
+    if (!datum.pv.length || datum.pv.trim() == "no info")
+        return;
 
-   var moveContainer = [];
-   if (!datum.pv.length || datum.pv.trim() == "no info")
-      return;
+    fen = fen || activeFen;
+    let chess = new Chess(fen),
+        currentFen = fen;
 
-   fen = fen ? fen : activeFen;
-   var chess = new Chess(fen);
-   var currentFen = fen;
+    let split = datum.pv.replace("...","... ").split(' '),
+        length = split.length;
+    for (let i = 0, moveCount = 0; i < length; i++) {
+        let str = split[i];
+        if (isNaN(str[0])) {
+            let moveResponse = chess.move(str);
+            if (!moveResponse || !moveResponse) {
+                if (DEV.eval & 1)
+                    LS("undefine move" + str);
+                return;
+            }
+            else {
+                currentFen = chess.fen();
+                let newPv = {
+                    from: moveResponse.from,
+                    to: moveResponse.to,
+                    m: moveResponse.san,
+                    fen: currentFen
+                };
 
-   var split = datum.pv.replace("...","... ").split(' ');
-   var length = split.length;
-   for (let i = 0, moveCount = 0; i < length; i++) {
-      let str = split[i];
-      if (isNaN(str[0])) {
-         let moveResponse = chess.move(str);
-         if (!moveResponse || !moveResponse) {
-            if (DEV.eval & 1)
-                LS("undefine move" + str);
-            return;
-         } else {
-            currentFen = chess.fen();
-            let newPv = {
-               'from': moveResponse.from,
-               'to': moveResponse.to,
-               'm': moveResponse.san,
-               'fen': currentFen
-            };
+                // we can build the html and the PV in the same loop. no need to do it three times
+                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
+                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
 
-            //we can build the html and the PV in the same loop. no need to do it three times
-            moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-               "' engine='" + (contno) +
-               "' color='live'>" + moveResponse.san +
-               '</a>');
-            currentLastMove = str.slice(-2);
-            //pushing is the same as a union of an array with one item...
-            pvs.push(newPv);
-            moveCount++;
-         }
-      } else {
-         moveContainer.push(str);
-      }
-   }
+                currentLastMove = str.slice(-2);
+                pvs.push(newPv);
+                moveCount ++;
+            }
+        }
+        else
+            moveContainer.push(str);
+    }
 
-   var evalStr = getPct(datum.engine, datum.eval);
-   var addClass = 'white-engine-pv';
-   HTML(container, '');
-   if (datum.color == 0)
-   {
-      Class(container, '-white-engine-pv');
-      Hide('#white-name-dynamic');
-   }
-   else
-   {
-      Class(container, '-black-engine-pv');
-      Hide('#black-name-dynamic');
-      addClass = 'black-engine-pv';
-   }
-   Class(container, '-alert -alert-dark');
-   $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6>');
-   $(container).append('<div class="' + addClass + ' ' + classhigh + ' alert alert-dark">' + moveContainer.join(' ') + '</div>');
-   //updateChartData();
+    let evalStr = getPct(datum.engine, datum.eval),
+        addClass = 'white-engine-pv';
+    HTML(container, '');
+    if (datum.color == 0)
+    {
+        Class(container, '-white-engine-pv');
+        Hide('#white-name-dynamic');
+    }
+    else
+    {
+        Class(container, '-black-engine-pv');
+        Hide('#black-name-dynamic');
+        addClass = 'black-engine-pv';
+    }
+    Class(container, '-alert -alert-dark');
+    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6>');
+    $(container).append('<div class="' + addClass + ' ' + classhigh + ' alert alert-dark">' + moveContainer.join(' ') + '</div>');
+    //updateChartData();
 
-   datum.plynum ++;
-   let x = Floor((datum.plynum + 1) / 2),
-      evalData = {
-         x: x,
-         y: score,
-         ply: datum.plynum,
-         eval: score
-      };
+    datum.plynum ++;
+    let x = Floor((datum.plynum + 1) / 2),
+        evalData = {
+            x: x,
+            y: score,
+            ply: datum.plynum,
+            eval: score
+        };
 
     if (prevevalData.ply != datum.plynum)
         prevevalData = {};
 
-   if (prevevalData.eval != evalData.eval)
-   {
-      // LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
-      if (livepvupdate)
-      {
-         removeData(evalChart, evalData, datum.color);
-      }
-   }
+    if (prevevalData.eval != evalData.eval)
+    {
+        // LS("XXX: movecount:" + x + "datum.plynum," + datum.plynum + " ,prevevalData.eval:" + prevevalData.eval + " ,evalData.eval:" + evalData.eval);
+        if (Y.live_pv)
+            removeData(evalChart, evalData, datum.color);
+    }
     else if (DEV.eval & 1)
         LS(`XXX: not updating movecount=${x} : datum.plynum=${datum.plynum}`);
 
@@ -2898,59 +2737,56 @@ function setliveEngine()
 
 function checkSort(checkbox)
 {
-    crossCrash = checkbox.checked? 1: 0;
-    save_option('cross_crash', crossCrash);
+    save_option('cross_crash', checkbox.checked? 1: 0);
     updateTables();
 }
 
 function checkLivePv(checkbox)
 {
-    livepvupdate = checkbox.checked? 0: 1;
-    save_option('livepv_upd', livepvupdate);
+    save_option('live_pv', checkbox.checked? 0: 1);
 }
 
 function checkSound(checkbox)
 {
     let checked = checkbox.checked;
-    save_option('sound_video', checked? 1: 0);
-    playSound = checked? 0: 1;
+    save_option('sound', checked? 1: 0);
 }
 
 function setCrash()
 {
-    crossCrash = get_int('cross_crash', 1);
-    Prop('#crosscheck', 'checked', !crossCrash);
+    Y.cross_crash = get_int('cross_crash', 0);
+    Prop('#crosscheck', 'checked', !Y.cross_crash);
 }
 
 function setSound()
 {
-    playSound = get_int('sound_video', 1);
-    Prop('#soundcheck', 'checked', !playSound);
+    Y.sound = get_int('sound', 1);
+    Prop('#soundcheck', 'checked', !Y.sound);
 }
 
 function setLivePvUpdate()
 {
-    livepvupdate = get_int('livepv_upd', 1);
-    Prop('#livepvcheck', 'checked', !livepvupdate);
+    Y.live_pv = get_int('live_pv', 1);
+    Prop('#livepvcheck', 'checked', !Y.live_pv);
 }
 
 function setNotationPvDefault()
 {
-    boardNotationPv = !get_int('notation_pvx', 0);
-    Prop('#nottcheckpv', 'checked', !boardNotationPv);
+    Y.notation_pv = get_int('notation_pv', 1);
+    Prop('#nottcheckpv', 'checked', !Y.notation_pv);
 }
 
 function setNotationDefault()
 {
-    boardNotation = !get_int('notation', 0);
-    Prop('#nottcheck', 'checked', !boardNotation);
+    Y.notation = get_int('notation', 1);
+    Prop('#nottcheck', 'checked', !Y.notation);
 }
 
 function setNotationPv(checkbox)
 {
     let is_check = checkbox.checked;
-    save_option('notation_pvx', is_check? 0: 1);
-    boardNotationPv = !is_check;
+    save_option('notation_pv', is_check? 0: 1);
+    Y.notation_pv = !is_check;
     setBoard();
 }
 
@@ -2958,7 +2794,7 @@ function setNotation(checkbox)
 {
     let is_check = checkbox.checked;
     save_option('notation', is_check? 1: 0);
-    boardNotation = !is_check;
+    Y.notation = !is_check;
     setBoard();
 }
 
@@ -3002,14 +2838,13 @@ function setHighlight(value)
 
 function setMoveArrowsDefault()
 {
-    boardArrows = get_int('tcec-move-arrows', 1);
-    Prop('#notacheck', 'checked', !boardArrows);
+    Y.arrows = get_int('tcec-move-arrows', 1);
+    Prop('#notacheck', 'checked', !Y.arrows);
 }
 
 function setMoveArrows(checkbox)
 {
-    boardArrows = checkbox.checked? 0: 1;
-    save_option('move_arrows', boardArrows);
+    save_option('arrows', checkbox.checked? 0: 1);
     setBoard();
 }
 
@@ -4469,49 +4304,36 @@ function formatterEvent(value, row, index, _field) {
  */
 function set_ui_events() {
     $(document).on('click', '.set-pv-board', function(e) {
-        let // selectedId = $(this).closest('div').attr('id'),
-            moveKey = $(this).attr('move-key') * 1,
+        let moveKey = $(this).attr('move-key') * 1,
             pvColor = $(this).attr('color'),
+            color = COLORS[pvColor],
             hist = $(this).attr('hist');
-        if (pvColor == 'live')
+
+        if (color == LIVE)
         {
-           $('#v-pills-pv-analys-tab').click();
+            $('#v-pills-pv-analys-tab').click();
+
+            let liveKey = $(this).attr('engine');
+            LS("liveKey is :" + liveKey);
+            activePv = livePvs[liveKey];
+            if (hist)
+            {
+                if (activePvH && activePvH[liveKey] && (activePvH[liveKey].length > 0))
+                    setPvFromKey(moveKey, color, activePvH[liveKey]);
+            }
+            else
+                setPvFromKey(moveKey, color, activePv);
         }
         else
         {
-           if (hideDownPv == 0)
-           {
-              $('#v-pills-pv-tab').click();
-           }
-        }
+            if (hideDownPv == 0)
+                $('#v-pills-pv-tab').click();
 
-        activePvColor = pvColor;
-
-        if (pvColor == _WHITE) {
-           activePv = all_pvs[WH].slice();
-           setPvFromKey(moveKey, pvColor);
-        } else if (pvColor == _BLACK) {
-           activePv = all_pvs[BL].slice();
-           setPvFromKey(moveKey, pvColor);
-        } else {
-           let liveKey = $(this).attr('engine');
-           LS("liveKey is :" + liveKey);
-           activePv = livePvs[liveKey];
-           if (hist)
-           {
-              if (activePvH && activePvH[liveKey] && (activePvH[liveKey].length > 0))
-              {
-                 setPvFromKey(moveKey, pvColor, activePvH[liveKey]);
-              }
-           }
-           else
-           {
-              setPvFromKey(moveKey, pvColor, activePv);
-           }
+            activePv = all_pvs[color].slice();
+            setPvFromKey(moveKey, color);
         }
 
         e.preventDefault();
-
         return false;
      });
 
@@ -4545,7 +4367,6 @@ function set_ui_events() {
        }
 
        handlePlyChange(false);
-
        return false;
     });
 
@@ -4633,39 +4454,39 @@ function set_ui_events() {
      //
      $('#pv-board-black').click(function(e) {
       activePv = all_pvs[BL];
-      setPvFromKey(0, 'live', all_pvs[BL]);
+      setPvFromKey(0, LIVE, all_pvs[BL]);
       e.preventDefault();
       return false;
    });
 
    $('#pv-board-white').click(function(e) {
       activePv = all_pvs[WH];
-      setPvFromKey(0, 'live', all_pvs[WH]);
+      setPvFromKey(0, LIVE, all_pvs[WH]);
       e.preventDefault();
       return false;
    });
 
    $('#pv-board-live1').click(function(e) {
-      setPvFromKey(0, 'live', livePvs[1]);
+      setPvFromKey(0, LIVE, livePvs[1]);
       e.preventDefault();
       return false;
    });
 
    $('#pv-board-live2').click(function(e) {
-      setPvFromKey(0, 'live', livePvs[2]);
+      setPvFromKey(0, LIVE, livePvs[2]);
       e.preventDefault();
       return false;
    });
 
    $('#pv-board-to-first').click(function(e) {
-      setPvFromKey(0, 'live');
+      setPvFromKey(0, LIVE);
       e.preventDefault();
       return false;
    });
 
    $('#pv-board-previous').click(function(e) {
       if (activePvKey[2] > 0) {
-         setPvFromKey(activePvKey[2] - 1, 'live');
+         setPvFromKey(activePvKey[2] - 1, LIVE);
       }
       e.preventDefault();
 
@@ -4674,7 +4495,7 @@ function set_ui_events() {
 
    $('#pv-board-next').click(function(e) {
       if (activePvKey[2] < choosePv.length) {
-         setPvFromKey(activePvKey[2] + 1, 'live');
+         setPvFromKey(activePvKey[2] + 1, LIVE);
       }
       e.preventDefault();
 
@@ -4682,20 +4503,20 @@ function set_ui_events() {
    });
 
    $('.pv-board-to-first1').click(function(e) {
-      setPvFromKey(0, _WHITE);
+      setPvFromKey(0, WH);
       e.preventDefault();
       return false;
    });
 
    $('.pv-board-to-first2').click(function(e) {
-      setPvFromKey(0, _BLACK);
+      setPvFromKey(0, BL);
       e.preventDefault();
       return false;
    });
 
    $('.pv-board-previous1').click(function(e) {
       if (activePvKey[0] > 0) {
-         setPvFromKey(activePvKey[0] - 1, _WHITE);
+         setPvFromKey(activePvKey[0] - 1, WH);
       }
       e.preventDefault();
 
@@ -4704,7 +4525,7 @@ function set_ui_events() {
 
    $('.pv-board-previous2').click(function(e) {
       if (activePvKey[1] > 0) {
-         setPvFromKey(activePvKey[1] - 1, _BLACK);
+         setPvFromKey(activePvKey[1] - 1, BL);
       }
       e.preventDefault();
 
@@ -4717,7 +4538,7 @@ function set_ui_events() {
         isPvAutoplay[0] = false;
      } else {
         isPvAutoplay[0] = true;
-        pvBoardautoplay(0, _WHITE, all_pvs[WH]);
+        pvBoardautoplay(0, WH, all_pvs[WH]);
      }
      e.preventDefault();
 
@@ -4730,7 +4551,7 @@ function set_ui_events() {
         isPvAutoplay[1] = false;
      } else {
         isPvAutoplay[1] = true;
-        pvBoardautoplay(1, _BLACK, all_pvs[BL]);
+        pvBoardautoplay(1, BL, all_pvs[BL]);
      }
      e.preventDefault();
 
@@ -4740,7 +4561,7 @@ function set_ui_events() {
   //
   $('.pv-board-next1').click(function(e) {
     if (activePvKey[0] < all_pvs[WH].length) {
-       setPvFromKey(activePvKey[0] + 1, _WHITE);
+       setPvFromKey(activePvKey[0] + 1, WH);
     }
     e.preventDefault();
     return false;
@@ -4748,20 +4569,20 @@ function set_ui_events() {
 
  $('.pv-board-next2').click(function(e) {
     if (activePvKey[1] < all_pvs[BL].length) {
-       setPvFromKey(activePvKey[1] + 1, _BLACK);
+       setPvFromKey(activePvKey[1] + 1, BL);
     }
     e.preventDefault();
     return false;
  });
 
  $('.pv-board-to-last1').click(function(e) {
-    setPvFromKey(all_pvs[WH].length - 1, _WHITE);
+    setPvFromKey(all_pvs[WH].length - 1, WH);
     e.preventDefault();
     return false;
  });
 
  $('.pv-board-to-last2').click(function(e) {
-    setPvFromKey(all_pvs[BL].length - 1, _BLACK);
+    setPvFromKey(all_pvs[BL].length - 1, BL);
     e.preventDefault();
     return false;
  });
@@ -4809,4 +4630,5 @@ function set_ui_events() {
  */
 function startup_tcec() {
     game = new Chess();
+    create_boards();
 }
