@@ -1,9 +1,8 @@
 /*
 globals
 _, $, activeFen, add_timeout, board, boardArrows, Chess, clearedAnnotation:true, crash_re, crossCrash,
-crosstableData:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, getTBHits,
-Keys, livePvs, LS, newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory,
-viewingActiveMove
+crosstableData:true, currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys,
+livePvs, LS, newUpdateStandData, plog, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove
 */
 'use strict';
 

@@ -3,13 +3,13 @@
 /*
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
-C, Ceil, Chess, ChessBoard, Class, clearInterval, ClipboardJS, columnsEvent, console, crosstableData, Date,
-DefaultFloat, depthChart, document, drawEval, dummyCross, engine2colorno:true, evalChart, Exp, Floor, Hide, HTML,
-initializeCharts, Keys,
-localStorage, LS, Max, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
+C, Ceil, Chess, ChessBoard, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console, crosstableData,
+Date, DefaultFloat, depthChart, DEV, document, drawEval, dummyCross, engine_colors, evalChart, Exp, Floor, Hide,
+HTML, initializeCharts, Keys,
+localStorage, LS, Max, Min, moment, Now, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
 roundDateMan, roundResults:true,
-S, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style,
-tbHitsChart, teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
+S, screen, setInterval, setTimeout, Show, Sign, socket, speedChart, startDateR1, startDateR2, Style, tbHitsChart,
+teamsx, timeChart, updateChartData, updateChartDataLive, updateCrosstable, window
 */
 'use strict';
 
@@ -42,7 +42,7 @@ let _BLACK = 'black',
     engine2LiveData,
     FEATURE_LEELA = 2,
     FEATURE_NN = 1,
-    game = new Chess(),
+    game,
     LIVE = 2,
     moveFrom,
     moveFromPvs = [],
@@ -394,12 +394,9 @@ function listPosition()
 {
    if (board)
    {
-      var getPos = board.position();
-      if (getPos != null)
-      {
-         LS("Number of pieces for leela:" + Keys(getPos).length);
+      let getPos = board.position();
+      if (getPos)
          return Keys(getPos).length - 6;
-      }
    }
    return '-';
 }
@@ -437,10 +434,8 @@ function setPgn(pgn)
       Attrs('#newmove', 'data-count', 0);
    }
 
-   if (typeof pgn.Moves != 'undefined')
-   {
-      LS("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round);
-   }
+    if (pgn.Moves && (DEV.ply & 1))
+        LS("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round);
 
    if (pgn.gameChanged) {
       eventNameHeader = 0;
@@ -449,10 +444,12 @@ function setPgn(pgn)
       setInfoFromCurrentHeaders();
       updateH2hData();
       updateScoreHeadersData();
-      LS("New game, round is :" + parseFloat(pgn.Headers.Round));
+        if (DEV.ply & 1)
+            LS("New game, round is :" + parseFloat(pgn.Headers.Round));
    }
    else {
-      LS("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded);
+        if (DEV.ply & 1)
+            LS("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded);
       if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
       {
          eventNameHeader = 0;
@@ -479,21 +476,14 @@ function setPgn(pgn)
       prevPgnData.Users = pgn.Users;
       pgn = prevPgnData;
    }
-   else
-   {
-      if (typeof pgn.Moves != 'undefined')
-      {
-         prevPgnData = pgn;
-      }
-   }
+    else if (pgn.Moves)
+        prevPgnData = pgn;
 
-   if (typeof pgn.Moves != 'undefined')
-   {
+   if (pgn.Moves)
       currentPlyCount = pgn.Moves.length;
-   }
 
-   if (typeof pgn.Headers != 'undefined') {
-      if (typeof pgn.Moves != 'undefined' && pgn.Moves.length > 0) {
+   if (pgn.Headers) {
+      if (pgn.Moves && pgn.Moves.length > 0) {
          currentPosition = pgn.Moves[pgn.Moves.length-1].fen;
          moveFrom = pgn.Moves[pgn.Moves.length-1].from;
          moveTo = pgn.Moves[pgn.Moves.length-1].to;
@@ -512,8 +502,9 @@ function setPgn(pgn)
        stopClock(BLACK_WHITE[whiteToPlay * 1]);
    }
 
-   LS("XXX: loadedPlies: " + loadedPlies + " ,currentPlyCount:" + currentPlyCount +
-      " ,currentGameActive:" + currentGameActive + " ,gameActive:" + gameActive + " :gamechanged:" + pgn.gameChanged);
+    if (DEV.ply & 1)
+        LS(`XXX: loadedPlies=${loadedPlies} : currentPlyCount=${currentPlyCount} : currentGameActive=${currentGameActive}`
+            + `gameActive=${gameActive} : gameChanged=${pgn.gameChanged}`);
    if (loadedPlies == currentPlyCount && (currentGameActive == gameActive)) {
       return;
    }
@@ -626,10 +617,11 @@ function setPgn(pgn)
         board.position(currentPosition, false);
     }
 
-   if (typeof pgn.Headers == 'undefined') {
-      LS("XXX: Returning here because headers not defined");
-      return;
-   }
+    if (pgn.Headers == undefined) {
+        if (DEV.ply & 1)
+            LS("XXX: Returning here because headers not defined");
+        return;
+    }
 
    listPosition();
 
@@ -653,7 +645,8 @@ function setPgn(pgn)
          let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
          if (eventTmp)
          {
-            LS(eventTmp[1]);
+             if (DEV.ply & 1)
+                LS(eventTmp[1]);
             pgn.Headers.Event = "S" + eventTmp[1];
             eventNameHeader = pgn.Headers.Event;
          }
@@ -662,7 +655,7 @@ function setPgn(pgn)
       {
          pgn.Headers.Event = eventNameHeader;
       }
-      if (termination == 'unterminated' && typeof adjudication != 'undefined') {
+      if (termination == 'unterminated' && adjudication) {
          termination = '-';
          let movesToDraw = 50,
             movesToResignOrWin = 50,
@@ -707,7 +700,8 @@ function setPgn(pgn)
          $('#event-overview').bootstrapTable('showColumn', 'movesTo50R');
       } else {
          pgn.Headers.Termination = pgn.Headers.TerminationDetails;
-         LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
+            if (DEV.ply & 1)
+                LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
          if (pgn.Headers.Termination == 'undefined' || pgn.Headers.Termination == undefined)
          {
             $('#event-overview').bootstrapTable('hideColumn', 'Termination');
@@ -729,9 +723,8 @@ function setPgn(pgn)
    setUsersMain(pgn.Users);
    HTML('#event-name', pgn.Headers.Event);
 
-   if (viewingActiveMove) {
+   if (viewingActiveMove)
       setInfoFromCurrentHeaders();
-   }
 
    updateChartData();
 
@@ -756,21 +749,14 @@ function setPgn(pgn)
          bookmove = ply;
       }
 
-      var moveNotation = move.m;
-      if (moveNotation.length != 2) {
-         moveNotation = move.m.charAt(0) + move.m.slice(1);
-      }
-
-    //   let from = move.to;
-      var link = "<a href='#' ply='" + ply + "' fen='" + move.fen + "' from='" + move.from + "' to='" + move.to + "' class='change-move " + linkClass + "'>" + moveNotation + "</a>";
-      $('#engine-history').append(link + ' ');
+        let link = "<a href='#' ply='" + ply + "' fen='" + move.fen + "' from='" + move.from + "' to='" + move.to + "' class='change-move " + linkClass + "'>" + move.m + "</a>";
+        $('#engine-history').append(link + ' ');
    });
    $('#engine-history').append(pgn.Headers.Result);
    $("#engine-history").scrollTop($("#engine-history")[0].scrollHeight);
-   if (pgn.gameChanged)
-   {
-      LS("Came to setpgn need to reread dataa at end");
-   }
+
+    if (pgn.gameChanged && (DEV.ply & 1))
+        LS("Came to setpgn need to reread data at end");
 }
 
 function copyFenAnalysis()
@@ -813,18 +799,14 @@ function copyFen()
    return false;
 }
 
+/**
+ * Get the short name of an engine
+ * @param {string} engine Stockfish 20200407DC
+ * @returns {string} Stockfish
+ */
 function getShortEngineName(engine)
 {
-   var name = engine;
-   if (engine.match(/Baron/))
-   {
-      return 'Baron';
-   }
-   else if (engine.indexOf(' ') > 0)
-   {
-      name = engine.substring(0, engine.indexOf(' '));
-   }
-   return name;
+    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
 }
 
 function setInfoFromCurrentHeaders()
@@ -848,49 +830,27 @@ function getMoveFromPly(ply)
    return prevPgnData.Moves[ply];
 }
 
-function fixedDeci(value)
+/**
+ * Format a number:
+ * - B: billion, M: million, K: thousand
+ * - NaN => n/a
+ * @param {number} number
+ * @returns {number}
+ */
+function formatUnit(number)
 {
-   return value.toFixed(1);
-}
+    if (isNaN(number))
+        number = 'N/A';
+    else if (number > 1e9)
+        number = `${Floor(number / 1e8) / 10}B`;
+    else if (number > 1e6)
+        number = `${Floor(number / 1e5) / 10}M`;
+    else if (number > 1000)
+        number = `${Floor(number / 100) / 10}k`;
+    else
+        number = `${Floor(number)}`;
 
-function getNodes(nodes)
-{
-   if (nodes > 1000000 * 1000)
-   {
-      nodes = fixedDeci(parseFloat(nodes / (1000000 * 1000))) + 'B';
-   }
-   else if (nodes > 1000000)
-   {
-      nodes = fixedDeci(parseFloat(nodes / (1000000 * 1))) + 'M';
-   }
-   else
-   {
-      nodes = fixedDeci(parseFloat(nodes / (1000* 1))) + 'K';
-   }
-   return nodes;
-}
-
-// TODO: improve this
-function getTBHits(tbhits)
-{
-   var tbHits = 'N/A';
-
-   if (!isNaN(tbhits))
-   {
-      if (tbhits < 1000)
-      {
-         tbHits = tbhits;
-      }
-      else if (tbhits < 1000000)
-      {
-         tbHits = fixedDeci(parseFloat(tbhits/ (1000* 1))) + 'K';
-      }
-      else
-      {
-         tbHits = fixedDeci(parseFloat(tbhits/ (1000000 * 1))) + 'M';
-      }
-   }
-   return tbHits;
+    return number;
 }
 
 function getEvalFromPly(ply)
@@ -953,9 +913,9 @@ function getEvalFromPly(ply)
       speed = Round(speed / 1000000) + ' Mnps';
    }
 
-    let nodes = getNodes(selectedMove.n),
+    let nodes = formatUnit(selectedMove.n),
         depth = selectedMove.d + '/' + selectedMove.sd,
-        tbHits = getTBHits(selectedMove.tb),
+        tbHits = formatUnit(selectedMove.tb),
         evalRet = DefaultFloat(selectedMove.wv, 'N/A');
 
     if (Number.isFinite(evalRet))
@@ -1134,24 +1094,26 @@ function updateEnginePv(color, whiteToPlay, moves)
 
          classhigh = "";
          let effectiveKey = key + keyOffset,
-            pvMove = current + Floor(effectiveKey / 2),
-            pvMoveNofloor = current + effectiveKey;
+            pvMove = current + Floor(effectiveKey / 2);
+            // pvMoveNofloor = current + effectiveKey;
 
          if (whiteToPlay)
          {
             if (color == "white" && (highlightpv == key))
             {
-               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
+                if (DEV.pv &  1)
+                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
             if (color == "black" && key == 0)
             {
-               pvMoveNofloor ++;
+            //    pvMoveNofloor ++;
             }
             if (color == "black" && (highlightpv == key + 1))
             {
-               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
+                if (DEV.pv & 1)
+                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
@@ -1160,13 +1122,15 @@ function updateEnginePv(color, whiteToPlay, moves)
          {
             if (color == "white" && (highlightpv - 1 == key))
             {
-               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
+                if (DEV.pv & 1)
+                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
             if (color == "black" && (highlightpv == key))
             {
-               LS("Need to highlight:" + pvMove + ", move is :" + move.m);
+                if (DEV.pv & 1)
+                    LS(`Need to highlight: ${pvMove} : move=${move.m}`);
                classhigh = "active-pv-move";
                setpvmove = effectiveKey;
             }
@@ -1175,7 +1139,7 @@ function updateEnginePv(color, whiteToPlay, moves)
          if (setpvmove > -1 && effectiveKey == setpvmove)
          {
             pvMove = ' @ ' + pvMove;
-            //console.log ("pvMove is : " + pvMove + " setpvmove:" + setpvmove + ", effectiveKey:" + effectiveKey);
+            // LS("pvMove is : " + pvMove + " setpvmove:" + setpvmove + ", effectiveKey:" + effectiveKey);
             atsymbol = ' @ ';
          }
          if (color == "white")
@@ -1228,7 +1192,8 @@ function updateEnginePv(color, whiteToPlay, moves)
          $('#' + color + '-engine-pv3').append("<a href='#' id='c" + color + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + color + "'>" + move.m + '</a> ');
       });
 
-   LS("highlightpv is :" + highlightpv);
+    if (DEV.pv & 1)
+        LS(`highlightpv=${highlightpv}`);
    if (highlightpv == 0)
    {
       setpvmove = 0;
@@ -1245,7 +1210,8 @@ function updateEnginePv(color, whiteToPlay, moves)
          if (plyDiff == 2)
          {
             setpvmove = all_pvs[WH].length - 1;
-            LS("plyDiff in white:" + all_pvs[WH].length);
+            if (DEV.pv & 1)
+                LS(`plyDiff in white: ${all_pvs[WH].length}`);
          }
          activePv = all_pvs[WH].slice();
          setPvFromKey(setpvmove, _WHITE);
@@ -1292,13 +1258,8 @@ function setPlyDivDefault()
 function findDiffPv(whitemoves, blackmoves)
 {
    highlightpv = 0;
-
    if (plyDiff == 0)
-   {
-      highlightpv = 0;
-      LS("returning here:" + plyDiff);
       return;
-   }
 
    if (whitemoves)
    {
@@ -1312,7 +1273,8 @@ function findDiffPv(whitemoves, blackmoves)
          {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
             {
-               LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m);
+                if (DEV.pv & 1)
+                    LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m);
                highlightpv = key;
             }
          }
@@ -1320,7 +1282,8 @@ function findDiffPv(whitemoves, blackmoves)
          {
             if (!highlightpv && blackmoves && blackmoves[key + 1] && (blackmoves[key + 1].m != whitemoves[key].m))
             {
-               LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m);
+                if (DEV.pv & 1)
+                    LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m);
                highlightpv = key + 1;
             }
          }
@@ -1664,7 +1627,6 @@ function setDarkMode(value)
 }
 
 function crossFormatter(value, row, index, field) {
-   LS("Came here:");
    if (!value.hasOwnProperty("Score")) // true
    {
       return value;
@@ -1777,8 +1739,8 @@ function updateScoreHeadersData()
             add_timeout('update_h2hscore', () => {updateScoreHeadersData();}, 5000);
             LS("H2h score did not get updated:" + h2hScoreRetryCount);
             h2hScoreRetryCount ++;
-            return;
         }
+        return;
     }
 
    if (crosstableData.whiteCurrent === all_engines[WH] && crosstableData.blackCurrent === all_engines[BL])
@@ -1900,7 +1862,7 @@ function updateH2hData()
             engine.Start = "Estd: " + prevDate.format('HH:mm:ss on YYYY.MM.DD');
          }
       }
-      if (typeof engine.Moves != 'undefined')
+      if (engine.Moves)
       {
          gamesDone = engine.Game;
          engine.Game = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.Game + ')">' + engine.Game + '</a>';
@@ -2025,7 +1987,7 @@ function updateScheduleData(scdatainput)
             engine.Start = "Estd: " + prevDate.format('HH:mm:ss on YYYY.MM.DD');
          }
       }
-      if (typeof engine.Moves != 'undefined')
+      if (engine.Moves)
       {
          gamesDone = engine.Game;
          globalGameno = gamesDone;
@@ -2060,23 +2022,27 @@ function updateScheduleData(scdatainput)
 
 function scheduleHighlight(_noscroll)
 {
-   var options = $('#schedule').bootstrapTable('getOptions');
-   var classSet = 'blacktds';
-   pageNum = parseInt(globalGameno/options.pageSize) + 1;
-   $('#schedule').bootstrapTable('selectPage', pageNum);
-   var index = globalGameno - (pageNum - 1) * options.pageSize;
-   var top = 0;
-   $('#schedule').find('tbody tr').each(function (i) {
-      if (i < index) {
-         top += $(this).height();
-      }
-   });
-   if (!darkMode)
-   {
-      classSet = 'whitetds';
-   }
-   Class('#schedule tr', classSet, false);
-   Class(`#schedule tr:nth-child(${index})`, classSet);
+    let options = $('#schedule').bootstrapTable('getOptions'),
+        classSet = 'blacktds';
+
+    pageNum = parseInt(globalGameno / options.pageSize) + 1;
+    $('#schedule').bootstrapTable('selectPage', pageNum);
+
+    let index = globalGameno - (pageNum - 1) * options.pageSize;
+    if (isNaN(index))
+        return;
+
+    // let top = 0;
+    // $('#schedule').find('tbody tr').each(function (i) {
+    //     if (i < index)
+    //         top += $(this).height();
+    // });
+
+    if (!darkMode)
+        classSet = 'whitetds';
+
+    Class('#schedule tr', classSet, false);
+    Class(`#schedule tr:nth-child(${index})`, classSet);
 }
 
 function updateWinnersData(winnerData)
@@ -2434,35 +2400,31 @@ function setBoardUser(boardTheme)
    setBoard();
 }
 
-function setPieceUser(pTheme)
+function setPieceUser(ptheme_)
 {
-   if (pTheme != undefined)
-   {
-      ptheme = pTheme;
-   }
-   setBoard();
+    if (ptheme_)
+        ptheme = ptheme_;
+    setBoard();
 }
 
 function setDefaultEnginecolor()
 {
-   var color = localStorage.getItem('tcec-engine-color');
-   if (color == undefined)
-   {
-      color = 0;
-   }
-   engine2colorno = color;
-   color = 'engcolor'+color;
-   Prop(`input[value="${color}"]`, 'checked', true);
-   drawEval();
-   updateChartData();
+    let color = localStorage.getItem('tcec-engine-color') || 0;
+    if ((color + '').length > 1)
+        engine_colors[3] = color;
+    color = 'engcolor'+color;
+    Prop(`input[value="${color}"]`, 'checked', true);
+    drawEval();
+    updateChartData();
 }
 
 function setEngineColor(color)
 {
-   engine2colorno = color;
-   localStorage.setItem('tcec-engine-color', color);
-   drawEval();
-   updateChartData();
+    if ((color + '').length > 1)
+        engine_colors[3] = color;
+    localStorage.setItem('tcec-engine-color', color);
+    drawEval();
+    updateChartData();
 }
 
 function updateLiveEvalDataHistory(datum, fen, container, contno)
@@ -2480,8 +2442,8 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
    }
 
    datum.eval = score;
-   datum.tbhits = getTBHits(datum.tbhits);
-   datum.nodes = getNodes(datum.nodes);
+   datum.tbhits = formatUnit(datum.tbhits);
+   datum.nodes = formatUnit(datum.nodes);
 
    var pvs = [];
    var moveContainer = [];
@@ -2496,8 +2458,9 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
          let str = split[i];
          if (isNaN(str.charAt(0))) {
             let moveResponse = chess.move(str);
-            if (!moveResponse || typeof moveResponse == 'undefined') {
-               LS("undefine move" + str);
+            if (!moveResponse || !moveResponse) {
+                if (DEV.eval & 1)
+                    LS("undefine move" + str);
                return;
             } else {
                currentFen = chess.fen();
@@ -2596,8 +2559,8 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
     score = "" + score;
     datum.eval = score;
 
-    datum.tbhits = getTBHits(datum.tbhits);
-    datum.nodes = getNodes(datum.nodes);
+    datum.tbhits = formatUnit(datum.tbhits);
+    datum.nodes = formatUnit(datum.nodes);
 
    var pvs = [];
 
@@ -2611,10 +2574,11 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
       var length = split.length;
       for (let i = 0, moveCount = 0; i < length; i++) {
          let str = split[i];
-         if (isNaN(str.charAt(0))) {
+         if (isNaN(str[0])) {
             let moveResponse = chess.move(str);
-            if (!moveResponse || typeof moveResponse == 'undefined') {
-               LS("undefine move" + str);
+            if (!moveResponse || !moveResponse) {
+                if (DEV.eval & 1)
+                    LS("undefine move" + str);
                return;
             } else {
                currentFen = chess.fen();
@@ -2688,15 +2652,10 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
 function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
     if (!datum)
         return;
-
-   if (!livepvupdate)
-   {
-      return;
-   }
-
-   if (!viewingActiveMove) {
-      return;
-   }
+    if (!livepvupdate)
+        return;
+    if (!viewingActiveMove)
+        return;
 
    let classhigh = '',
       container = '#white-engine-pv3',
@@ -2713,7 +2672,8 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
         HTML(`.${color}-engine-${key}`, datum[key]);
     }
 
-   LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
+    if (DEV.eval & 1)
+        LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
 
    let score = '';
    if (datum)
@@ -2735,10 +2695,11 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
    var length = split.length;
    for (let i = 0, moveCount = 0; i < length; i++) {
       let str = split[i];
-      if (isNaN(str.charAt(0))) {
+      if (isNaN(str[0])) {
          let moveResponse = chess.move(str);
-         if (!moveResponse || typeof moveResponse == 'undefined') {
-            LS("undefine move" + str);
+         if (!moveResponse || !moveResponse) {
+            if (DEV.eval & 1)
+                LS("undefine move" + str);
             return;
          } else {
             currentFen = chess.fen();
@@ -2792,10 +2753,8 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
          eval: score
       };
 
-   if (prevevalData.ply != datum.plynum)
-   {
-      prevevalData = {};
-   }
+    if (prevevalData.ply != datum.plynum)
+        prevevalData = {};
 
    if (prevevalData.eval != evalData.eval)
    {
@@ -2805,11 +2764,10 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
          removeData(evalChart, evalData, datum.color);
       }
    }
-   else
-   {
-      LS("XXX: not updating movecount:" + x + "datum.plynum," + datum.plynum);
-   }
-   prevevalData = evalData;
+    else if (DEV.eval & 1)
+        LS(`XXX: not updating movecount=${x} : datum.plynum=${datum.plynum}`);
+
+    prevevalData = evalData;
 }
 
 function updateLiveEval() {
@@ -2827,7 +2785,7 @@ function updateLiveEval() {
 
 function updateLiveChartData(data, contno)
 {
-   if (typeof data.moves != 'undefined')
+   if (data.moves)
    {
       if (contno == 1)
       {
@@ -2870,9 +2828,6 @@ function setLastMoveTime(data)
    LS("Setting last move time:" + data);
 }
 
-let twitchDiv = $("#twitchvid");
-let twitchPlayer;
-
 function checkTwitch(checkbox)
 {
    if (checkbox.checked)
@@ -2888,20 +2843,30 @@ function checkTwitch(checkbox)
    }
 }
 
+/**
+ * Resize the window
+ */
+function resize() {
+    board.resize();
+    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 80));
+    Style('#chatright', `height:${height}px;width:100%`);
+}
+
 function setTwitch()
 {
-   var getVideoCheck = localStorage.getItem('tcec-twitch-video');
-   if (getVideoCheck == undefined || getVideoCheck == 0)
-   {
-      Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
-      Show('iframe#twitchvid');
-      Prop('#twitchcheck', 'checked', false);
-   }
-   else
-   {
-      Hide('iframe#twitchvid');
-      Prop('#twitchcheck', 'checked', true);
-   }
+    let getVideoCheck = localStorage.getItem('tcec-twitch-video');
+    if (getVideoCheck == undefined || getVideoCheck == 0)
+    {
+        Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
+        Show('iframe#twitchvid');
+        Prop('#twitchcheck', 'checked', false);
+    }
+    else
+    {
+        Hide('iframe#twitchvid');
+        Prop('#twitchcheck', 'checked', true);
+    }
+    resize();
 }
 
 function showEvalCont()
@@ -3189,31 +3154,15 @@ function setMoveArrows(checkbox)
 
 function goMoveFromChart(chartx, evt)
 {
-   var activePoints = chartx.getElementAtEvent(evt);
-   var firstPoint = activePoints[0];
-   var plyNum = chartx.data.datasets[firstPoint._datasetIndex].data[firstPoint._index].ply;
-   if (plyNum != undefined)
-   {
-      $('a[ply=' + plyNum + ']').click();
-   }
-}
+    let activePoints = chartx.getElementAtEvent(evt),
+        firstPoint = activePoints[0];
+    if (!firstPoint)
+        return;
 
-// clicks
-C('#eval-graph', e => {
-   goMoveFromChart(evalChart, e);
-});
-C('#time-graph', e => {
-   goMoveFromChart(timeChart, e);
-});
-C('#speed-graph', e => {
-   goMoveFromChart(speedChart, e);
-});
-C('#tbhits-graph', e => {
-   goMoveFromChart(tbHitsChart, e);
-});
-C('#depth-graph', e => {
-   goMoveFromChart(depthChart, e);
-});
+    let plyNum = chartx.data.datasets[firstPoint._datasetIndex].data[firstPoint._index].ply;
+    if (plyNum)
+        $('a[ply=' + plyNum + ']').click();
+}
 
 function addToolTip(divx, divimg)
 {
@@ -4060,7 +4009,7 @@ function scheduleToTournamentInfo(schedJson)
    {
       let cur = schedJson[i];
       cur.Game = i + 1;
-      if (typeof cur.Moves != 'undefined' && !crash_re.test(cur.Termination)) {
+      if (cur.Moves && !crash_re.test(cur.Termination)) {
          data.crashes[0] ++;
          data.crashes[1].push(cur.Game);
       }
@@ -4163,10 +4112,9 @@ function getLocalDate(startDate, minutes)
 {
    let momentDate = moment(startDate, 'HH:mm:ss on YYYY.MM.DD');
    var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-   if (minutes != 'undefined')
-   {
+   if (minutes)
       momentDate.add(minutes * 60 * 1000);
-   }
+
    momentDate.add(timezoneDiff);
    return(momentDate.format('HH:mm:ss on YYYY.MM.DD'));
 }
@@ -4343,7 +4291,6 @@ function bracketDataMain(data)
 
 function drawBracket1()
 {
-   LS("Came to drawBracket");
    var roundNox = 2;
    getDateRound();
 
@@ -4521,11 +4468,11 @@ function drawBracket1()
          });
       });
    }
-   catch (err)
-   {
-      console.log ("error in bracket us :" + err);
-   }
-   console.log ("Drawn brackets");
+    catch (err)
+    {
+        LS(`Error in bracket`);
+        LS(err);
+    }
 }
 
 function getSeededName(name)
@@ -4581,7 +4528,7 @@ function getDateRound()
          let y = x + 1;
          if (diffData)
          {
-            if (y%2 == 1)
+            if (y % 2 == 1)
             {
                roundDate[x] = getCurrDate(startDateR1, 1440 * (parseInt(y/2)));
             }
@@ -4594,7 +4541,7 @@ function getDateRound()
          {
             let gameDiffL = gameDiff * 8 / (60 * 1000);
             //gameDiffL = gameDiffL/1.5;
-            roundDate[x] = getCurrDate(startDateR1, gameDiffL * (x/2));
+            roundDate[x] = getCurrDate(startDateR1, gameDiffL * x / 2);
          }
       }
    }
@@ -4612,8 +4559,6 @@ async function eventCrosstable(data)
 {
     let divname = '#crosstableevent',
         standings = [];
-
-    LS("Camee tp eventCrosstable");
 
     $(divname).bootstrapTable({
         classes: 'table table-striped table-no-bordered',
@@ -4636,7 +4581,6 @@ async function eventCrosstable(data)
         eventCross[id + 1] = eventCross[id] + parseInt(matchdum.Games);
     });
 
-    LS("drawing standings");
     $(divname).bootstrapTable('load', standings);
 }
 
@@ -4998,4 +4942,28 @@ function set_ui_events() {
     e.preventDefault();
     return false;
  });
+
+    // clicks
+    C('#eval-graph', e => {
+        goMoveFromChart(evalChart, e);
+    });
+    C('#time-graph', e => {
+        goMoveFromChart(timeChart, e);
+    });
+    C('#speed-graph', e => {
+        goMoveFromChart(speedChart, e);
+    });
+    C('#tbhits-graph', e => {
+        goMoveFromChart(tbHitsChart, e);
+    });
+    C('#depth-graph', e => {
+        goMoveFromChart(depthChart, e);
+    });
+}
+
+/**
+ * First initialisation of TCEC
+ */
+function startup_tcec() {
+    game = new Chess();
 }

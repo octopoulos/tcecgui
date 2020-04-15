@@ -1,9 +1,18 @@
 /*
 globals
-_, $, Chart, Clamp, console, document, liveEngineEval1, liveEngineEval2, LS, Max, Min, plog, prevPgnData, Round,
-showLivEng1, showLivEng2
+_, $, Chart, Clamp, console, DEV, document, formatUnit, liveEngineEval1, liveEngineEval2, LS, Max, Min, plog,
+prevPgnData, Round, showLivEng1, showLivEng2
 */
 'use strict';
+
+// you can modify these
+let engine_colors = ['#efefef', '#000000', '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'],
+    engine_names = ['White', 'Black', 'Blueleela', '7Fish'];
+
+let all_evals = [],
+    // charts = {},
+    // chart_data = {},
+    evalChartData = {};
 
 var evalChart;
 var whiteEvalL = 0;
@@ -13,18 +22,7 @@ var speedChart;
 var nodesChart = null;
 var depthChart;
 var tbHitsChart;
-var engine2colorno = 0;
-var engine2color = '#FF0000';
-engine2color = '#66CC00';
-engine2color = '#A44BC0';
-var evalChartData = {};
-var engineColorArray = ['darkred', 'red', 'green', 'darkgreen', 'yellow', 'purple', 'orange'];
 var evalconstant = 10.0;
-var eng1L = 'Bluefish';
-eng1L = 'Blueleela';
-var eng2L = 'Redmodo';
-eng2L = 'Redfish';
-eng2L = '7Fish';
 
 var evalLabels = [];
 var labels = [];
@@ -50,93 +48,61 @@ var whitePop = 1;
 var blackStarted = 0;
 var firstPly = 0;
 
-function setevalChartData()
+/**
+ * Create eval chart data, supports any number of engines
+ */
+function setEvalChartData()
 {
-   engine2color = engineColorArray[engine2colorno];
-   evalChartData = {
-      labels: [],
-      datasets: [{
-         label: 'White',
-         lineTension: 0,
-         spanGaps: true,
-         borderColor: '#EFEFEF',
-         backgroundColor: '#EFEFEF',
-         fill: false,
-         data: [
-         ]
-      }, {
-         label: 'Black',
-         lineTension: 0,
-         borderColor: '#000000',
-         spanGaps: true,
-         backgroundColor: '#000000',
-         fill: false,
-         data: [
-         ]
-      }, {
-         label: eng1L,
-         lineTension: 0,
-         borderColor: '#007bff',
-         backgroundColor: '#007bff',
-         spanGaps: true,
-         fill: false,
-         data: [
-         ]
-      }, {
-         label: eng2L,
-         lineTension: 0,
-         borderColor: engine2color,
-         backgroundColor: engine2color,
-         spanGaps: true,
-         fill: false,
-         data: [
-         ]
-      }
-      ]
-   };
+    evalChartData = {
+        labels: [],
+        datasets: engine_names.map((name, id) => ({
+            backgroundColor: engine_colors[id],
+            borderColor: engine_colors[id],
+            data: [],
+            fill: false,
+            label: name,
+            lineTension: 0,
+            spanGaps: true,
+        })),
+    };
 }
-setevalChartData();
 
 var timeChartData = {
    labels: [],
    datasets: [{
-      label: 'White Engine Time',
+      label: 'White Time',
       lineTension: 0,
       borderColor: '#EFEFEF',
       backgroundColor: '#EFEFEF',
       fill: false,
-      data: [
-      ]
+      data: []
    }, {
-      label: 'Black Engine Time',
+      label: 'Black Time',
       lineTension: 0,
       borderColor: '#000000',
       backgroundColor: '#000000',
       fill: false,
-      data: [
-      ]
+      data: []
    }]
 };
 
 var speedChartData = {
    labels: [],
    datasets: [{
-      label: 'White Engine Speeds',
+      label: 'White Speeds',
       lineTension: 0,
       borderColor: '#EFEFEF',
       backgroundColor: '#EFEFEF',
       fill: false,
-      data: [
-      ],
+      data: [],
       yAxisID: 'y-axis-1',
    }, {
-      label: 'Black Engine Speed',
+      label: 'Black Speed',
       lineTension: 0,
       borderColor: '#000000',
       backgroundColor: '#000000',
       fill: false,
-      data: [
-      ],
+      data: [],
       yAxisID: 'y-axis-2'
    }]
 };
@@ -149,8 +115,7 @@ var depthChartData = {
       borderColor: '#EFEFEF',
       backgroundColor: '#EFEFEF',
       fill: false,
-      data: [
-      ]
+      data: []
    }, {
       label: 'Black Depth',
       lineTension: 0,
@@ -158,16 +123,14 @@ var depthChartData = {
       backgroundColor: '#1a1a1a',
       borderDash: [10,5],
       fill: false,
-      data: [
-      ]
+      data: []
    }, {
       label: 'W. Sel Depth',
       lineTension: 0,
       borderColor: '#b1b1b1',
       backgroundColor: '#b1b1b1',
       fill: false,
-      data: [
-      ]
+      data: []
    }, {
       label: 'B. Sel Depth',
       lineTension: 0,
@@ -175,60 +138,55 @@ var depthChartData = {
       backgroundColor: '#7e7e7e',
       borderDash: [10,5],
       fill: false,
-      data: [
-      ]
+      data: []
    }]
 };
 
 var tbHitsChartData = {
    labels: [],
    datasets: [{
-      label: 'White Engine TB Hits',
+      label: 'White TB Hits',
       lineTension: 0,
       borderColor: '#EFEFEF',
       backgroundColor: '#EFEFEF',
       fill: false,
       yAxisID: 'tb-y-axis-1',
-      data: [
-      ]
+      data: []
    }, {
-      label: 'Black Engine TB Hits',
+      label: 'Black TB Hits',
       lineTension: 0,
       borderColor: '#000000',
       backgroundColor: '#000000',
       fill: false,
       yAxisID: 'tb-y-axis-2',
-      data: [
-      ]
+      data: []
    }]
 };
 
 var nodesChartData = {
    labels: [],
    datasets: [{
-      label: 'White Engine Speeds',
+      label: 'White Speeds',
       lineTension: 0,
       borderColor: '#EFEFEF',
       backgroundColor: '#EFEFEF',
       fill: false,
-      data: [
-      ],
+      data: [],
       yAxisID: 'y-axis-1',
    }, {
-      label: 'Black Engine Speed',
+      label: 'Black Speed',
       lineTension: 0,
       borderColor: '#000000',
       backgroundColor: '#000000',
       fill: false,
-      data: [
-      ],
+      data: [],
       yAxisID: 'y-axis-2'
    }]
 };
 
 function drawEval()
 {
-   setevalChartData();
+   setEvalChartData();
    evalChart = Chart.Line($('#eval-graph'), {
       data: evalChartData,
       options: {
@@ -250,23 +208,13 @@ function drawEval()
          },
          tooltips: {
             callbacks: {
-               label: function(tooltipItem, data) {
-                  let evall= [];
-                  if (typeof data.datasets[0].data[tooltipItem.index] != 'undefined') {
-                      evall.push(['White Eval: ' + data.datasets[0].data[tooltipItem.index].eval]);
-                  }
-                  if (typeof data.datasets[1].data[tooltipItem.index] != 'undefined') {
-                      evall.push(['Black Eval: ' + data.datasets[1].data[tooltipItem.index].eval]);
-                  }
-                  if (typeof data.datasets[2].data[tooltipItem.index] != 'undefined') {
-                      evall.push([eng1L + 'Eval: ' + data.datasets[2].data[tooltipItem.index].eval]);
-                  }
-                  if (typeof data.datasets[3].data[tooltipItem.index] != 'undefined') {
-                      evall.push([eng2L + ' Eval: ' + data.datasets[3].data[tooltipItem.index].eval]);
-                  }
-                  return evall;
+               label: (tooltipItem, data) => {
+                    let index = tooltipItem.index;
+                    return data.datasets
+                        .filter(dataset => dataset.data[index])
+                        .map((dataset, id) => [`${engine_names[id]} Eval: ${dataset.data[index].eval}`]);
                }
-            } // end callbacks:
+            }
          },
          scales: {
             yAxes: [{
@@ -286,14 +234,18 @@ function drawEval()
    });
 }
 
-$(function() {
-   drawEval();
-   initializeCharts();
-});
+// format axes scale
+function formatScale(value) {
+    if (value >= 1000000)
+        value = `${Round(value / 100000) / 10}M`;
+    else
+        value = `${Round(value / 100) / 10}k`;
+    return value;
+}
 
 function initializeCharts()
 {
-   timeChart = Chart.Line($('#time-graph'), {
+    timeChart = Chart.Line($('#time-graph'), {
       data: timeChartData,
       options: {
          backgroundColor:'rgb(10,10,10)',
@@ -339,19 +291,12 @@ function initializeCharts()
                display: false
             },
             tooltips: {
-               callbacks: {
-                  label: function(tooltipItem, data) {
-                     var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
-                     if (nodes >= 1000000000) {
-                        nodes = Round(nodes / 100000000) / 10;
-                        nodes += 'B';
-                     } else {
-                        nodes = Round(nodes / 100000) / 10;
-                        nodes += 'M';
-                     }
-                     return ' (' + nodes + ' nodes)';
-                  }
-               } // end callbacks:
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
+                        return ` (${nodes} nodes)`;
+                    }
+                }
             },
             scales: {
                yAxes: [{
@@ -360,19 +305,7 @@ function initializeCharts()
                   position: 'left',
                   id: 'y-axis-1',
                   ticks: {
-                     callback: function(value, index, values) {
-                        if (value >= (1000000*1000)) {
-                           value = Round(value / (100000 * 1000)) / 10;
-                           value += 'B';
-                        } else if ((value >= (1000000*1))) {
-                           value = Round(value / 100000) / 10;
-                           value += 'M';
-                        } else {
-                           value = Round(value / 100) / 10;
-                           value += 'K';
-                        }
-                        return value;
-                     }
+                     callback: formatUnit
                   }
                }, {
                   type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
@@ -385,19 +318,7 @@ function initializeCharts()
                      drawOnChartArea: false, // only want the grid lines for one axis to show up
                   },
                   ticks: {
-                     callback: function(value, index, values) {
-                        if (value >= 1000000*1000) {
-                           value = Round(value / (100000 * 1000)) / 10;
-                           value += 'B';
-                        } else if ((value >= (1000000*1))) {
-                           value = Round(value / 100000) / 10;
-                           value += 'M';
-                        } else {
-                           value = Round(value / 100) / 10;
-                           value += 'K';
-                        }
-                        return value;
-                     }
+                     callback: formatUnit
                   }
                }],
                xAxes: [{
@@ -426,26 +347,11 @@ function initializeCharts()
          tooltips: {
             callbacks: {
                label: function(tooltipItem, data) {
-                  var value = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
-                  if (value >= 1000000) {
-                     value = Round(value / 10000) / 100;
-                     value += 'Mnps';
-                  } else {
-                     value = Round(value / 10) / 100;
-                     value += 'Knps';
-                  }
-
-                  var nodes = parseInt(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
-                  if (nodes >= 1000000000) {
-                     nodes = Round(nodes / 100000000) / 10;
-                     nodes += 'B';
-                  } else {
-                     nodes = Round(nodes / 100000) / 10;
-                     nodes += 'M';
-                  }
-                  return value + ' (' + nodes + ' nodes)';
+                    let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
+                        speed = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                    return `${speed}nps (${nodes} nodes)`;
                }
-            } // end callbacks:
+            }
          },
          scales: {
             yAxes: [{
@@ -453,18 +359,9 @@ function initializeCharts()
                display: true,
                position: 'left',
                id: 'y-axis-1',
-               ticks: {
-                  callback: function(value, index, values) {
-                     if (value >= 1000000) {
-                        value = Round(value / 100000) / 10;
-                        value += 'M';
-                     } else {
-                        value = Round(value / 100) / 10;
-                        value += 'K';
-                     }
-                     return value;
-                  }
-               }
+                ticks: {
+                    callback: formatScale,
+                }
             }, {
                type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
                display: true,
@@ -476,17 +373,8 @@ function initializeCharts()
                   drawOnChartArea: false, // only want the grid lines for one axis to show up
                },
                ticks: {
-                  callback: function(value, index, values) {
-                     if (value >= 1000000) {
-                        value = Round(value / 100000) / 10;
-                        value += 'M';
-                     } else {
-                        value = Round(value / 100) / 10;
-                        value += 'K';
-                     }
-                     return value;
-                  }
-               }
+                callback: formatScale,
+            }
             }],
             xAxes: [{
                ticks: {
@@ -551,16 +439,7 @@ function initializeCharts()
                position: 'left',
                id: 'tb-y-axis-1',
                ticks: {
-                  callback: function(value, index, values) {
-                     if (value >= 1000000) {
-                        value = Round(value / 100000) / 10;
-                        value += 'M';
-                     } else {
-                        value = Round(value / 100) / 10;
-                        value += 'K';
-                     }
-                     return value;
-                  }
+                  callback: formatScale,
                }
             }, {
                type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
@@ -572,16 +451,7 @@ function initializeCharts()
                   drawOnChartArea: false, // only want the grid lines for one axis to show up
                },
                ticks: {
-                  callback: function(value, index, values) {
-                     if (value >= 1000000) {
-                        value = Round(value / 100000) / 10;
-                        value += 'M';
-                     } else {
-                        value = Round(value / 100) / 10;
-                        value += 'K';
-                     }
-                     return value;
-                  }
+                  callback: formatScale,
                }
             }],
             xAxes: [{
@@ -597,23 +467,25 @@ function initializeCharts()
 
 function addDataLive(chart, data, black, contno)
 {
-   if (!whiteEvalL)
-      return;
+    if (!whiteEvalL)
+        return;
 
-   if (chart.data.datasets[contno+1].data.length == 0)
-   {
-      LS("YYY: Chart not yet updated, so exiting");
-      return;
-   }
+    if (chart.data.datasets[contno+1].data.length == 0)
+    {
+        if (DEV.graph & 1)
+            LS("YYY: Chart not yet updated, so exiting");
+        return;
+    }
 
-   data.y = getEval(data.eval);
-   let length = Max(whiteEvalL, blackEvalL);
+    data.y = getEval(data.eval);
+    let length = Max(whiteEvalL, blackEvalL);
 
-   if (length == 0)
-   {
-      LS("XXX: Chart not yet updated, so exiting");
-      return;
-   }
+    if (length == 0)
+    {
+        if (DEV.graph & 1)
+            LS("XXX: Chart not yet updated, so exiting");
+        return;
+    }
 
    if (black)
    {
@@ -630,28 +502,29 @@ function addDataLive(chart, data, black, contno)
 
 function addData(chart, data, black)
 {
-   data.y = getEval(data.eval);
+    data.y = getEval(data.eval);
 
-   if (!whiteEvalL)
-      return;
+    if (!whiteEvalL)
+        return;
 
-   let length = Max(whiteEvalL, blackEvalL);
-   if (length == 0)
-   {
-      LS("XXX: Chart not yet updated, so exiting");
-      return;
-   }
+    let length = Max(whiteEvalL, blackEvalL);
+    if (length == 0)
+    {
+        if (DEV.graph & 1)
+            LS("XXX: Chart not yet updated, so exiting");
+        return;
+    }
 
-   if (black)
-   {
-      chart.data.datasets[1].data[blackEvalL] = data;
-      length = blackEvalL;
-   }
-   else
-   {
-      chart.data.labels[length] = data.x;
-      chart.data.datasets[0].data[length] = data;
-   }
+    if (black)
+    {
+        chart.data.datasets[1].data[blackEvalL] = data;
+        length = blackEvalL;
+    }
+    else
+    {
+        chart.data.labels[length] = data.x;
+        chart.data.datasets[0].data[length] = data;
+    }
 
    chart.update();
 }
@@ -683,69 +556,54 @@ function getLiveEval(key, moveNumber, isBlack, contno)
     return {x: moveNumber, y: null, eval: null};
 }
 
+/**
+ * Reset a chart
+ * @param {Object} chart
+ */
+function reset_chart(chart) {
+    if (!chart)
+        return;
+
+    let data = chart.data;
+    data.labels.length = 0;
+    for (let dataset of data.datasets)
+        dataset.length = 0;
+
+    chart.update();
+}
+
+/**
+ * Reset all charts
+ */
 function clearChartData()
 {
-   console.log ("GRAPH: Clearing the chart");
-   evalChart.data.labels = [];
-   evalChart.data.datasets[0].data = [];
-   evalChart.data.datasets[1].data = [];
-   evalChart.data.datasets[2].data = [];
-   evalChart.data.datasets[3].data = [];
+    blackDepth = [];
+    blackEval = [];
+    blackNodes = [];
+    blackSelDepth = [];
+    blackSpeed = [];
+    blackTBHits = [];
+    blackTime = [];
+    evalLabels = [];
+    labels = [];
+    liveEval1 = [];
+    liveEval2 = [];
+    whiteDepth = [];
+    whiteEval = [];
+    whiteNodes = [];
+    whiteSelDepth = [];
+    whiteSpeed = [];
+    whiteTBHits = [];
+    whiteTime = [];
 
-   timeChart.data.labels = [];
-   timeChart.data.datasets[0].data = [];
-   timeChart.data.datasets[1].data = [];
+    reset_chart(evalChart);
+    reset_chart(timeChart);
+    reset_chart(speedChart);
+    reset_chart(nodesChart);
+    reset_chart(depthChart);
+    reset_chart(tbHitsChart);
 
-   speedChart.data.labels = [];
-   speedChart.data.datasets[0].data = [];
-   speedChart.data.datasets[1].data = [];
-
-   if (nodesChart)
-   {
-      nodesChart.data.labels = [];
-      nodesChart.data.datasets[0].data = [];
-      nodesChart.data.datasets[1].data = [];
-   }
-
-   depthChart.data.labels = [];
-   depthChart.data.datasets[0].data = [];
-   depthChart.data.datasets[1].data = [];
-   depthChart.data.datasets[2].data = [];
-   depthChart.data.datasets[3].data = [];
-
-   tbHitsChart.data.labels = [];
-   tbHitsChart.data.datasets[0].data = [];
-   tbHitsChart.data.datasets[1].data = [];
-
-   evalLabels = [];
-   labels = [];
-   whiteEval = [];
-   blackEval = [];
-   liveEval1 = [];
-   liveEval2 = [];
-   whiteTime = [];
-   blackTime = [];
-   whiteSpeed = [];
-   blackSpeed = [];
-   whiteNodes = [];
-   blackNodes = [];
-   whiteDepth = [];
-   blackDepth = [];
-   whiteSelDepth = [];
-   blackSelDepth = [];
-   whiteTBHits = [];
-   blackTBHits = [];
-
-   evalChart.update();
-   timeChart.update();
-   speedChart.update();
-   if (nodesChart)
-   {
-      nodesChart.update();
-   }
-   depthChart.update();
-   tbHitsChart.update();
-   firstPly = 0;
+    firstPly = 0;
 }
 
 /**
@@ -768,7 +626,7 @@ function getEval(eval_)
     return eval_;
 }
 
-function arrayPush (chart, number, datax, index, movenum)
+function arrayPush(chart, number, datax, index, movenum)
 {
    if (chart)
    {
@@ -777,237 +635,194 @@ function arrayPush (chart, number, datax, index, movenum)
    }
 }
 
+// TODO: merge with Eval1
 function updateChartDataLiveEval2()
 {
    if (!showLivEng2)
-   {
       return;
-   }
-   try {
-      var needtoUpdate = 0;
-      var startEval = whiteEvalL;
 
-      if (!startEval)
-      {
-         return;
-      }
+    let needtoUpdate = 0,
+        startEval = whiteEvalL;
 
-      if (prevPgnData.Moves[0].didliveEval2 == undefined)
-      {
-         prevPgnData.Moves[0].didliveEval2 = 0;
-      }
+    if (!startEval)
+        return;
 
-      var endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
+    if (prevPgnData.Moves[0].didliveEval2 == undefined)
+        prevPgnData.Moves[0].didliveEval2 = 0;
 
-      prevPgnData.Moves[0].didliveEval2 = 0;
+    let endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
+    prevPgnData.Moves[0].didliveEval2 = 0;
 
-      for (let ctr = startEval; ctr >= endVal; ctr --)
-      {
-         var dataToUse = evalChart.data.datasets[0].data[ctr];
-         var key = 0;
-         var isBlack = 0;
-         if (dataToUse)
-         {
+    for (let ctr = startEval; ctr >= endVal; ctr --)
+    {
+        let dataToUse = evalChart.data.datasets[0].data[ctr],
+            key = 0,
+            isBlack = 0;
+
+        if (dataToUse)
             key = dataToUse.ply;
-         }
 
-         // LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);
+        // LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);
 
-         if (evalChart.data.datasets[1].data[ctr] != undefined)
-         {
+        if (evalChart.data.datasets[1].data[ctr] != undefined)
+        {
             dataToUse = evalChart.data.datasets[1].data[ctr];
             key = dataToUse.ply;
             isBlack = 1;
-         }
+        }
 
-         if (dataToUse != undefined)
-         {
+        if (dataToUse != undefined)
+        {
             needtoUpdate = 1;
-            var moveNumber = dataToUse.x;
-            let evalObject = getLiveEval(key, moveNumber, isBlack, 2);
+            let moveNumber = dataToUse.x,
+                evalObject = getLiveEval(key, moveNumber, isBlack, 2);
             /*LS("RRR: cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
             if (!prevPgnData.Moves[0].didliveEval2)
             {
-               prevPgnData.Moves[0].didliveEval2 = ctr;
-               /*LS("RRR:X setting cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
+                prevPgnData.Moves[0].didliveEval2 = ctr;
+                /*LS("RRR:X setting cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
             }
             if (evalObject.y == null)
-            {
-               prevPgnData.Moves[0].didliveEval2 = ctr;
-            }
+                prevPgnData.Moves[0].didliveEval2 = ctr;
             else
-            {
-               evalChart.data.datasets[3].data[ctr] = evalObject;
-            }
-         }
-      }
+                evalChart.data.datasets[3].data[ctr] = evalObject;
+        }
+    }
 
-      if (needtoUpdate)
-      {
-         evalChart.update();
-      }
-   }
-   catch (e)
-   {
-      console.log ("Error in updating live:" + e);
-   }
+    if (needtoUpdate)
+        evalChart.update();
 }
 
 function updateChartDataLiveEval1()
 {
    if (!showLivEng1)
-   {
       return;
-   }
-   try {
-      var needtoUpdate = 0;
-      var startEval = whiteEvalL;
 
-      if (!whiteEvalL)
-      {
-         return;
-      }
+    let needtoUpdate = 0,
+        startEval = whiteEvalL;
 
-      if (prevPgnData.Moves[0].didliveEval1 == undefined)
-      {
-         prevPgnData.Moves[0].didliveEval1 = 0;
-      }
+    if (!whiteEvalL)
+        return;
 
-      var endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
-      prevPgnData.Moves[0].didliveEval1 = 0;
+    if (prevPgnData.Moves[0].didliveEval1 == undefined)
+        prevPgnData.Moves[0].didliveEval1 = 0;
 
-      for (let ctr = startEval; ctr >= endVal; ctr --)
-      {
-         var dataToUse = evalChart.data.datasets[0].data[ctr];
-         var isBlack = 0;
-         var key = 0;
-         if (dataToUse)
-         {
+    let endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
+    prevPgnData.Moves[0].didliveEval1 = 0;
+
+    for (let ctr = startEval; ctr >= endVal; ctr --)
+    {
+        let dataToUse = evalChart.data.datasets[0].data[ctr],
+            isBlack = 0,
+            key = 0;
+
+        if (dataToUse)
             key = dataToUse.ply;
-         }
 
-         /*LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);*/
+        /*LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);*/
 
-         if (evalChart.data.datasets[1].data[ctr] != undefined)
-         {
+        if (evalChart.data.datasets[1].data[ctr] != undefined)
+        {
             dataToUse = evalChart.data.datasets[1].data[ctr];
             key = dataToUse.ply;
             isBlack = 1;
-         }
+        }
 
-         if (dataToUse != undefined)
-         {
+        if (dataToUse != undefined)
+        {
             needtoUpdate = 1;
-            var moveNumber = dataToUse.x;
-            let evalObject = getLiveEval(key, moveNumber, isBlack, 1);
+            let moveNumber = dataToUse.x,
+                evalObject = getLiveEval(key, moveNumber, isBlack, 1);
             /*LS("RRR: cont1 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
             if (!prevPgnData.Moves[0].didliveEval1)
-            {
-               prevPgnData.Moves[0].didliveEval1 = ctr;
-            }
-            if (evalObject.y == null)
-            {
-               prevPgnData.Moves[0].didliveEval1 = ctr;
-            }
-            else
-            {
-               evalChart.data.datasets[2].data[ctr] = evalObject;
-            }
-         }
-      }
+                prevPgnData.Moves[0].didliveEval1 = ctr;
 
-      if (needtoUpdate)
-      {
-         evalChart.update();
-      }
-   }
-   catch (e)
-   {
-      console.log ("Error in updating live:" + e);
-   }
+            if (evalObject.y == null)
+                prevPgnData.Moves[0].didliveEval1 = ctr;
+            else
+                evalChart.data.datasets[2].data[ctr] = evalObject;
+        }
+    }
+
+    if (needtoUpdate)
+        evalChart.update();
 }
 
 function updateChartDataLive(contno)
 {
    if (contno == 1)
-   {
       updateChartDataLiveEval1();
-   }
    else
-   {
       updateChartDataLiveEval2();
-   }
 }
 
 function updateChartData()
 {
-   try {
-      setevalChartData();
+    setEvalChartData();
 
-      var plyNum = 0;
+    var plyNum = 0;
 
-      LS("GRAPH: Entered updateChartData with whiteEvalL:" + whiteEvalL);
+    if (DEV.graph & 1)
+        LS(`GRAPH: updateChartData : whiteEvalL=${whiteEvalL}`);
 
-      if (prevPgnData.Moves)
-      {
-         LS("GRAPH: prevPgnData.Moves length:" + prevPgnData.Moves.length + " ,whiteEvalL::" + whiteEvalL + " ,evalChart.data.labels:" + evalChart.data.labels.length);
-         if (prevPgnData.Moves[0].completed == undefined || evalChart.data.labels.length == 0)
-         {
+    if (prevPgnData.Moves)
+    {
+        if (DEV.graph & 1)
+            LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
+        if (prevPgnData.Moves[0].completed == undefined || evalChart.data.labels.length == 0)
+        {
             clearChartData();
             prevPgnData.Moves[0].completed = 0;
             prevPgnData.Moves[0].arrayStartW = 0;
             prevPgnData.Moves[0].arrayStartB = 0;
-         }
-      }
-      else
-      {
-         clearChartData();
-         return;
-      }
+        }
+    }
+    else
+    {
+        clearChartData();
+        return;
+    }
 
-      var needtoUpdate = 0;
-      var arrayCtrW = prevPgnData.Moves[0].arrayStartW;
-      var arrayCtrB = prevPgnData.Moves[0].arrayStartB;
+    let needtoUpdate = 0,
+        arrayCtrW = prevPgnData.Moves[0].arrayStartW,
+        arrayCtrB = prevPgnData.Moves[0].arrayStartB;
 
-      if (0 && (arrayCtrW - 2) > 0)
-      {
-         arrayCtrW -= 2;
-         arrayCtrB -= 2;
-         prevPgnData.Moves[0].completed -= 4;
-         LS("GRAPH: prevPgnData.Moves reduced length:" + prevPgnData.Moves.length + " ,whiteEvalL::" + whiteEvalL + " ,evalChart.data.labels:" + evalChart.data.labels.length);
-      }
+    if (0 && (arrayCtrW - 2) > 0)
+    {
+        arrayCtrW -= 2;
+        arrayCtrB -= 2;
+        prevPgnData.Moves[0].completed -= 4;
+        if (DEV.graph & 1)
+            LS(`GRAPH: prevPgnData.Moves.length=$prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
+    }
 
-      whiteEvalL = 0;
-      blackEvalL = 0;
+    whiteEvalL = 0;
+    blackEvalL = 0;
 
-      for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr++)
-      {
-         var move = prevPgnData.Moves[moveCtr];
-         var key = moveCtr;
+    for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr++)
+    {
+        let key = moveCtr,
+            move = prevPgnData.Moves[moveCtr];
 
-         if (move.book)
-         {
+        if (move.book)
+        {
             prevPgnData.Moves[moveCtr].done = 1;
             continue;
-         }
+        }
 
-         let moveNumber = Round(moveCtr / 2) + 1;
+        let moveNumber = Round(moveCtr / 2) + 1;
 
-         if (moveCtr % 2 != 0) {
+        if (moveCtr % 2 != 0) {
             plyNum = moveCtr + 1;
             moveNumber--;
-         }
-         else
-         {
+        }
+        else
             plyNum = moveCtr + 1;
-         }
 
-         if (plyNum < prevPgnData.Moves[0].completed)
-         {
+        if (plyNum < prevPgnData.Moves[0].completed)
             continue;
-         }
 
-         if (!move.book) {
+        if (!move.book) {
             needtoUpdate = 1;
             prevPgnData.Moves[0].completed = moveCtr + 1;
             let ydepth = move.d;
@@ -1016,116 +831,117 @@ function updateChartData()
 
             let evall =
             {
-               'x': moveNumber,
-               'y': move.cwv,
-               'ply': plyNum,
-               'eval': move.wv
+                'x': moveNumber,
+                'y': move.cwv,
+                'ply': plyNum,
+                'eval': move.wv
             },
             time =
             {
-               'x': moveNumber,
-               'y': Round(move.mt / 1000),
-               'ply': plyNum
+                'x': moveNumber,
+                'y': Round(move.mt / 1000),
+                'ply': plyNum
             },
             speed =
             {
-               'x': moveNumber,
-               'y': move.s,
-               'nodes': move.n,
-               'ply': plyNum
+                'x': moveNumber,
+                'y': move.s,
+                'nodes': move.n,
+                'ply': plyNum
             },
             depth =
             {
-               'x': moveNumber,
-               'y': ydepth,
-               'ply': plyNum
+                'x': moveNumber,
+                'y': ydepth,
+                'ply': plyNum
             },
             seldepth =
             {
-               'x': moveNumber,
-               'y': move.sd,
-               'ply': plyNum
+                'x': moveNumber,
+                'y': move.sd,
+                'ply': plyNum
             },
             tbHits =
             {
-               'x': moveNumber,
-               'y': move.tb,
-               'ply': plyNum
+                'x': moveNumber,
+                'y': move.tb,
+                'ply': plyNum
             },
             nodes =
             {
-               'x': moveNumber,
-               'y': move.n,
-               'nodes': move.n,
-               'ply': plyNum
+                'x': moveNumber,
+                'y': move.n,
+                'nodes': move.n,
+                'ply': plyNum
             };
 
             if (!firstPly)
             {
-               firstPly = plyNum;
-               if (firstPly%2 == 0)
-               {
-                  blackStarted = 1;
-                  evalChart.data.labels[arrayCtrW] = moveNumber;
-                  arrayCtrW ++;
-               }
+                firstPly = plyNum;
+                if (firstPly % 2 == 0)
+                {
+                    blackStarted = 1;
+                    evalChart.data.labels[arrayCtrW] = moveNumber;
+                    arrayCtrW ++;
+                }
             }
 
-            LS("LLL: doing for key:" + key + " ,prevPgnData.Moves[0].arrayStartW:" +
-                  prevPgnData.Moves[0].arrayStartW + " ,prevPgnData.Moves[0].arrayStartB:" + prevPgnData.Moves[0].arrayStartB +
-                  " ,blackStarted:" + blackStarted);
+            if (DEV.graph & 1)
+                LS(`LLL: doing for key=${key} : prevPgnData.Moves[0].arrayStartW=${prevPgnData.Moves[0].arrayStartW}`
+                    + ` : prevPgnData.Moves[0].arrayStartB=${prevPgnData.Moves[0].arrayStartB} : blackStarted=${blackStarted}`);
 
             if (key % 2 == 0) {
-               evalChart.data.labels[arrayCtrW] = moveNumber;
-               evalChart.data.datasets[0].data[arrayCtrW] = evall;
-               arrayPush(nodesChart, 0, nodes, arrayCtrW, moveNumber);
-               arrayPush(timeChart, 0, time, arrayCtrW, moveNumber);
-               arrayPush(speedChart, 0, speed, arrayCtrW, moveNumber);
-               arrayPush(depthChart, 0, depth, arrayCtrW, moveNumber);
-               arrayPush(depthChart, 2, seldepth, arrayCtrW, moveNumber);
-               arrayPush(tbHitsChart, 0, tbHits, arrayCtrW, moveNumber);
-               arrayCtrW ++;
-               prevPgnData.Moves[0].arrayStartW = arrayCtrW;
+                evalChart.data.labels[arrayCtrW] = moveNumber;
+                evalChart.data.datasets[0].data[arrayCtrW] = evall;
+                arrayPush(nodesChart, 0, nodes, arrayCtrW, moveNumber);
+                arrayPush(timeChart, 0, time, arrayCtrW, moveNumber);
+                arrayPush(speedChart, 0, speed, arrayCtrW, moveNumber);
+                arrayPush(depthChart, 0, depth, arrayCtrW, moveNumber);
+                arrayPush(depthChart, 2, seldepth, arrayCtrW, moveNumber);
+                arrayPush(tbHitsChart, 0, tbHits, arrayCtrW, moveNumber);
+                arrayCtrW ++;
+                prevPgnData.Moves[0].arrayStartW = arrayCtrW;
             }
             else
             {
-               evalChart.data.datasets[1].data[arrayCtrB] = evall;
-               arrayPush(nodesChart, 1, nodes, arrayCtrB, moveNumber);
-               arrayPush(timeChart, 1, time, arrayCtrB, moveNumber);
-               arrayPush(speedChart, 1, speed, arrayCtrB, moveNumber);
-               arrayPush(depthChart, 1, depth, arrayCtrB, moveNumber);
-               arrayPush(depthChart, 3, seldepth, arrayCtrB, moveNumber);
-               arrayPush(tbHitsChart, 1, tbHits, arrayCtrB, moveNumber);
-               arrayCtrB ++;
-               prevPgnData.Moves[0].arrayStartB = arrayCtrB;
+                evalChart.data.datasets[1].data[arrayCtrB] = evall;
+                arrayPush(nodesChart, 1, nodes, arrayCtrB, moveNumber);
+                arrayPush(timeChart, 1, time, arrayCtrB, moveNumber);
+                arrayPush(speedChart, 1, speed, arrayCtrB, moveNumber);
+                arrayPush(depthChart, 1, depth, arrayCtrB, moveNumber);
+                arrayPush(depthChart, 3, seldepth, arrayCtrB, moveNumber);
+                arrayPush(tbHitsChart, 1, tbHits, arrayCtrB, moveNumber);
+                arrayCtrB ++;
+                prevPgnData.Moves[0].arrayStartB = arrayCtrB;
             }
-         }
-      }
+        }
+    }
 
-      evalChart.update();
-      if (arrayCtrW)
-      {
-         whiteEvalL = arrayCtrW;
-      }
-      if (arrayCtrB)
-      {
-         blackEvalL = arrayCtrB;
-      }
-      timeChart.update();
-      speedChart.update();
-      if (nodesChart)
-      {
-         nodesChart.update();
-      }
-      depthChart.update();
-      tbHitsChart.update();
+    evalChart.update();
 
-      LS("GRAPH: Exiting updateChartData with updating required:" + needtoUpdate +
-            " ,arrayCtrW:" + arrayCtrW + ",arrayCtrB:" + arrayCtrB + ",prevPgnData.Moves[0].completed:" + prevPgnData.Moves[0].completed +
-            " ,evalChart.data.labels:" + evalChart.data.labels.length);
-   }
-   catch (e) {
-      console.log ("GRAPH: Error unable to draw graph:" + e);
-   }
+    if (arrayCtrW)
+        whiteEvalL = arrayCtrW;
+    if (arrayCtrB)
+        blackEvalL = arrayCtrB;
+
+    timeChart.update();
+    speedChart.update();
+    if (nodesChart)
+        nodesChart.update();
+
+    depthChart.update();
+    tbHitsChart.update();
+
+    if (DEV.graph & 1)
+        LS(`GRAPH: ~updateChartData : needtoUpdate=${needtoUpdate} : arrayCtrW=${arrayCtrW} : arrayCtrB=${arrayCtrB}`
+            + `prevPgnData.Moves[0].completed=${prevPgnData.Moves[0].completed} : evalChart.data.labels.length=${evalChart.data.labels.length}`);
 }
 
+/**
+ * Startup graphs
+ */
+function startup_graphs() {
+    setEvalChartData();
+    drawEval();
+    initializeCharts();
+}

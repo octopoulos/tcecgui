@@ -18,5 +18,6 @@ gamelist.json
 live*.json
 model/
 schedule.json
+tempCodeRunnerFile.py
 tournament.json
 winners.json

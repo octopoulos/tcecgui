@@ -12,14 +12,42 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
-    'tcec',
+    '../dist/js/tcec',
 ], OUTPUT_MODULE);
 
 let {
-        getScoreText,
+        formatUnit, getShortEngineName, getScoreText,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// formatUnit
+[
+    [7841319402, '7.8B'],
+    [58335971.81109362, '58.3M'],
+    [58335971, '58.3M'],
+    ['58335971', '58.3M'],
+    [318315, '318.3K'],
+    [1259, '1.2k'],
+    [725.019, '725'],
+    [NaN, 'N/A'],
+    [Infinity, 'InfinityB'],
+].forEach(([nodes, answer], id) => {
+    test(`formatUnit:${id}`, () => {
+        expect(formatUnit(nodes)).toEqual(answer);
+    });
+});
+
+// getShortEngineName
+[
+    ['LCZero v0.24-sv-t60-3010', 'LCZero'],
+    ['Stockfish 20200407DC', 'Stockfish'],
+    ['SuperBaronizer', 'Baron'],
+].forEach(([text, answer], id) => {
+    test(`getShortEngineName:${id}`, () => {
+        expect(getShortEngineName(text)).toEqual(answer);
+    });
+});
 
 // getScoreText
 [

@@ -810,18 +810,14 @@ function generateResult(output_json)
     console.log ("Results is :" + JSON.stringify(results, null, '\t'));
 }
 
+/**
+ * Get the short name of an engine
+ * @param {string} engine Stockfish 20200407DC
+ * @returns {string} Stockfish
+ */
 function getShortEngineName(engine)
 {
-   let name = engine;
-   if (engine.match(/Baron/))
-   {
-      return 'Baron';
-   }
-   else if (engine.indexOf(' ') > 0)
-   {
-      name = engine.substring(0, engine.indexOf(' '));
-   }
-   return name;
+    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
 }
 
 function retArg(argVal, origVal)

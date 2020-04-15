@@ -17,7 +17,12 @@ DEV:true, LS, Y
 function parse_dev() {
     let names = {
             d: 'debug',
+            g: 'graph',
             i: 'input',                 // gamepad input
+            p: 'pv',
+            s: 'socket',
+            t: 'time',                  // function execution time
+            y: 'ply',
         },
         text = Y.dev || '';
 

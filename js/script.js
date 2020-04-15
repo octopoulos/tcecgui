@@ -1,14 +1,14 @@
 // startup script
 /*
 globals
-_, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, board, bracketDataMain,
-C, check_hash, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
-LANGUAGES:true, load_defaults, localStorage, LS, Max, Min, newUpdateStandData, parse_dev, Round,
-S, save_option, screen, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
-setUsers, setUsersMain, showBanner, startup_3d, Style, toggleTheme, translate_node, translates:true, unlistenLogMain,
-updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData, updateLiveEval,
-updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData, updateTables,
-updateWinners, window
+_, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, bracketDataMain,
+C, check_hash, DEV, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
+LANGUAGES:true, load_defaults, localStorage, LS, Max, newUpdateStandData, parse_dev, resize, Round,
+S, save_option, set_ui_events, setBoardInit, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
+setUsers, setUsersMain, showBanner, startup_3d, startup_graphs, startup_tcec, Style, toggleTheme, translate_node,
+translates:true, unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart,
+updateLiveChartData, updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData,
+updateRefresh, updateScheduleData, updateTables, updateWinners, window
 */
 'use strict';
 
@@ -27,7 +27,8 @@ function init_sockets() {
             div = document.getElementById('log-wrapper'),
             text = data.split(/\n|\s\n/).join("<br>");
 
-        LS("XXX: recieving data from log:" + datal.room);
+        if (DEV.socket & 1)
+            LS(`XXX: recieving data from log: ${datal.room}`);
         div.innerHTML += `<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`;
         div.scrollTop = div.scrollHeight;
     });
@@ -44,7 +45,8 @@ function init_sockets() {
         updateLiveEvalDataNew(data, 1, null, 2);
     });
     socket.on('pgn', data => {
-        LS("Got move:" + data.lastMoveLoaded + " ,users:" + data.Users);
+        if (DEV.socket & 1)
+            LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
         setUsersMain(data.Users);
         updatePgnData(data, 0);
     });
@@ -86,6 +88,8 @@ function init_sockets() {
  */
 function init_globals() {
     setBoardInit();
+    startup_tcec();
+    startup_graphs();
 
     let sliderVale = localStorage.getItem('tcec-chat-slider');
     if (sliderVale == undefined)
@@ -110,8 +114,8 @@ function init_globals() {
     }, 15000);
 
     $('#chatsize').bootstrapSlider({
-        min:40,
-        max:150,
+        min: 40,
+        max: 150,
         value: sliderVale,
         handle: 'round',
         formatter: function(value) {
@@ -119,15 +123,6 @@ function init_globals() {
             localStorage.setItem('tcec-chat-slider', value);
         }
     });
-}
-
-/**
- * Resize the window
- */
-function resize() {
-    board.resize();
-    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 80));
-    Style('#chatright', `height:${height}px;width:100%`);
 }
 
 /**

@@ -16,17 +16,17 @@ HOST = 'https://tcec-chess.com/'
 # files to get + how old can they be (in seconds) before a refresh
 SOURCE_TIMES = {
     'crash': 1800,
-    'crosstable': 180,
-    'data': 120,
-    'data1': 120,
+    'crosstable': 1200,
+    'data': 240,
+    'data1': 240,
     'enginerating': 3600,
     'gamelist': 3600,
     'live': 1,
     'liveeval': 1,
     'liveeval1': 1,
-    'schedule': 360,
-    'tournament': 360,
-    'winners': 360,
+    'schedule': 1200,
+    'tournament': 1200,
+    'winners': 1200,
 }
 
 
