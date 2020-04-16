@@ -15,7 +15,7 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        Clamp, DefaultFloat, FormatFloat, FromSeconds, FromTimestamp, HashText, QueryString, Stringify,
+        Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Stringify,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +55,23 @@ let {
 ].forEach(([text, align, answer], id) => {
     test(`FormatFloat:${id}`, () => {
         expect(FormatFloat(text, align)).toEqual(answer);
+    });
+});
+
+// FormatUnit
+[
+    [7841319402, '7.8B'],
+    [58335971.81109362, '58.3M'],
+    [58335971, '58.3M'],
+    ['58335971', '58.3M'],
+    [318315, '318.3k'],
+    [1259, '1.2k'],
+    [725.019, '725'],
+    [NaN, 'N/A'],
+    [Infinity, 'InfinityB'],
+].forEach(([nodes, answer], id) => {
+    test(`FormatUnit:${id}`, () => {
+        expect(FormatUnit(nodes)).toEqual(answer);
     });
 });
 

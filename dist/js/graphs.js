@@ -1,6 +1,6 @@
 /*
 globals
-_, $, Assign, Chart, Clamp, console, DEV, document, formatUnit, FromSeconds, Keys, liveEngineEval1, liveEngineEval2,
+_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEval1, liveEngineEval2,
 LS, Max, Min, Pad, prevPgnData, Round, showLivEng1, showLivEng2
 */
 'use strict';
@@ -232,20 +232,18 @@ function create_charts()
                     position: 'left',
                     id: 'y-axis-1',
                     ticks: {
-                        callback: formatUnit
-                    }
+                        callback: FormatUnit,
+                    },
                 }, {
                     type: 'linear',
                     display: true,
                     position: 'right',
                     id: 'y-axis-2',
-
-                    // grid line settings
                     gridLines: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        drawOnChartArea: false,
                     },
                     ticks: {
-                        callback: formatUnit,
+                        callback: FormatUnit,
                     },
                 }],
                 xAxes: [{
@@ -259,7 +257,7 @@ function create_charts()
                 mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
-                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
+                        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                         return nodes;
                     },
                 },
@@ -294,10 +292,8 @@ function create_charts()
                     display: true,
                     position: 'right',
                     id: 'y-axis-2',
-
-                    // grid line settings
                     gridLines: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        drawOnChartArea: false,
                     },
                     ticks: {
                         callback: formatScale,
@@ -314,8 +310,8 @@ function create_charts()
                 mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
-                        let nodes = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
-                            speed = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
+                            speed = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                         return `${speed}nps (${nodes} nodes)`;
                     },
                 },
@@ -350,9 +346,8 @@ function create_charts()
                     display: true,
                     position: 'right',
                     id: 'tb-y-axis-2',
-                    // grid line settings
                     gridLines: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        drawOnChartArea: false,
                     },
                     ticks: {
                         callback: formatScale,
@@ -369,7 +364,7 @@ function create_charts()
                 mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
-                        let hits = formatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        let hits = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                         return hits;
                     },
                 },

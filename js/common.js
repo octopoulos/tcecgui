@@ -876,6 +876,29 @@ function FormatFloat(text, align) {
 }
 
 /**
+ * Format a number:
+ * - B: billion, M: million, K: thousand
+ * - NaN => n/a
+ * @param {number} number
+ * @returns {number}
+ */
+function FormatUnit(number)
+{
+    if (isNaN(number))
+        number = 'N/A';
+    else if (number > 1e9)
+        number = `${Floor(number / 1e8) / 10}B`;
+    else if (number > 1e6)
+        number = `${Floor(number / 1e5) / 10}M`;
+    else if (number > 1000)
+        number = `${Floor(number / 100) / 10}k`;
+    else
+        number = `${Floor(number)}`;
+
+    return number;
+}
+
+/**
  * Extract the minutes, seconds and 1/100th of seconds from a time in seconds
  * @param {number} time
  * @returns {number[]} mins, secs, cs

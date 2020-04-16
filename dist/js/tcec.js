@@ -4,14 +4,22 @@
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
-create_charts, crosstableData, Date, DefaultFloat, DEV, document, dummyCross, engine_colors, Exp, Floor, get_int,
-get_string, Hide, HTML, Keys,
+create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Exp, Floor,
+FormatUnit, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
-S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, startDateR1, startDateR2, Style, teamsx,
-updateChartData, updateChartDataLive, updateCrosstable, window, Y
+S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_POSITION, startDateR1,
+startDateR2, Style, teamsx, updateChartData, updateChartDataLive, updateCrosstable, window, XBoard, Y
 */
 'use strict';
+
+/***************************** CUP ***************************************************/
+
+let eventCross = [],
+    gameDiff = 0,
+    totalEvents = 32;
+
+/***************************** CUP ***************************************************/
 
 let _BLACK = 'black',
     _WHITE = 'white',
@@ -19,6 +27,7 @@ let _BLACK = 'black',
     activePvKey = [],
     all_engines = ['w', 'b'],          // w,b full engine names
     all_pvs = [[], []],
+    ARCHIVE_LINK = 'http://www.tcec-chess.com/archive.html',
     isAutoplay,
     BL = 1,
     board,
@@ -61,96 +70,76 @@ let _BLACK = 'black',
     WH = 0,
     WHITE_BLACK = [_WHITE, _BLACK, 'live'];
 
-var timezoneDiffH = -8;
-var squareToHighlight = '';
-var pvSquareToHighlight = '';
-var crossTableInitialized = false;
-var gameActive = false;
-
-var viewingActiveMove = true;
-var loadedPlies = 0;
-
-var activeFen = '';
-var lastMove = '';
-var currentPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-var analysFen = currentPosition;
-var bookmove = 0;
-
-// use Y.theme instead
-var darkMode = 0;
-
-var pageNum = 1;
-var gamesDone = 0;
-var timeDiff = 0;
-var timeDiffRead = 0;
-var prevPgnData = 0;
-var globalGameno = 1;
-var choosePv;
-
-var liveEngineEval1 = [];
-var liveEngineEval2 = [];
-var debug = 0;
-var h2hRetryCount = 0;
-var h2hScoreRetryCount = 0;
-
-var livePVHist = [];
-var livePvs = [];
-var activePv = [];
-var highlightpv = 0;
-var showLivEng1 = 1;
-var showLivEng2 = 1;
-var selectedId = 0;
-var highlightClass = 'highlight-white highlight-none';
-var highlightClassPv = 'highlight-white highlight-none';
-var tcecElo = 1;
-var engineRatingGlobalData = 0;
-var tourInfo = {};
-var oldSchedData = null;
-var activePvH = [];
-
-var hideDownPv = 0;
-
-var twitchAccount = 'TCEC_Chess_TV';
-var twitchChatUrl = 'https://www.twitch.tv/embed/' + twitchAccount + '/chat';
-var twitchSRCIframe = 'https://player.twitch.tv/?channel=' + twitchAccount;
-
-var eventNameHeader = 0;
-var lastRefreshTime = 0;
-var userCount = 0;
-var globalRoom = 0;
-
-var standColumns = [];
-var prevevalData = {};
-
-/***************************** CUP ***************************************************/
-var totalEvents = 32;
-var gameDiff = 0;
-var eventCross = [];
-/***************************** CUP ***************************************************/
-
-var isPvAutoplay = [false, false];
-var crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/; // All possible valid terminations (hopefully).
-
-var gameArrayClass = ['#39FF14', 'red', 'whitesmoke', 'orange'];
-var numberEngines = 0;
-var regexBlackMove = /^[0-9]{1,3}\.\.\./;
-var clearedAnnotation = 0;
-
-var columnsEng = [
-    {
-       field: 'Name'
-    },
-    {
-       field: 'Value'
-    }
-    ];
+// CHECK THOSE VARS
+let activeFen = '',
+    activePv = [],
+    activePvH = [],
+    analysFen = START_POSITION,
+    bookmove = 0,
+    choosePv,
+    clearedAnnotation = 0,
+    columnsEng = [
+        {
+            field: 'Name',
+        },
+        {
+            field: 'Value',
+        },
+    ],
+    // All possible valid terminations (hopefully)
+    crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/,
+    crossTableInitialized = false,
+    currentPosition = START_POSITION,
+    darkMode = 0,
+    debug = 0,
+    engineRatingGlobalData = 0,
+    eventNameHeader = 0,
+    gameActive = false,
+    gameArrayClass = ['#39FF14', 'red', 'whitesmoke', 'orange'],
+    gamesDone = 0,
+    globalGameno = 1,
+    h2hRetryCount = 0,
+    h2hScoreRetryCount = 0,
+    hideDownPv = 0,
+    highlightpv = 0,
+    isPvAutoplay = [false, false],
+    lastMove = '',
+    lastRefreshTime = 0,
+    liveEngineEval1 = [],
+    liveEngineEval2 = [],
+    livePVHist = [],
+    livePvs = [],
+    loadedPlies = 0,
+    numberEngines = 0,
+    oldSchedData = null,
+    pageNum = 1,
+    prevevalData = {},
+    prevPgnData = 0,
+    pvSquareToHighlight = '',
+    regexBlackMove = /^[0-9]{1,3}\.\.\./,
+    selectedId = 0,
+    showLivEng1 = 1,
+    showLivEng2 = 1,
+    squareToHighlight = '',
+    standColumns = [],
+    tcecElo = 1,
+    timeDiff = 0,
+    timeDiffRead = 0,
+    timezoneDiffH = -8,
+    tourInfo = {},
+    twitchAccount = 'TCEC_Chess_TV',
+    twitchChatUrl = 'https://www.twitch.tv/embed/' + twitchAccount + '/chat',
+    twitchSRCIframe = 'https://player.twitch.tv/?channel=' + twitchAccount,
+    userCount = 0,
+    viewingActiveMove = true,
+    xboard;
 
 var onMoveEnd = function() {
-    Class(`#board .square-${squareToHighlight}`, highlightClass);
+    Class(`#board .square-${squareToHighlight}`, get_highlight());
 };
 
 var onMoveEndPv = function() {
-    Class(`#pv-boardb .square-${pvSquareToHighlight}`, highlightClassPv);
+    Class(`#pv-boardb .square-${pvSquareToHighlight}`, get_highlight(true));
 };
 
 function getUserS()
@@ -182,36 +171,36 @@ function updateRefresh()
 
 function updateAll()
 {
-   eventNameHeader = 0;
-   updatePgn(1);
-   add_timeout('update_all', () => {updateTables();}, 5000);
+    eventNameHeader = 0;
+    updatePgn(1);
+    add_timeout('update_all', () => {updateTables();}, 5000);
 }
 
 function updatePgnDataMain(data)
 {
-   if (!prevPgnData)
-   {
-      updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
-      updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
-   }
-   else
-   {
-      if (data.WhiteEngineOptions != prevPgnData.WhiteEngineOptions)
-      {
-         updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
-      }
-      if (data.BlackEngineOptions != prevPgnData.BlackEngineOptions)
-      {
-         updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
-      }
-   }
-   setPgn(data);
+    if (!prevPgnData)
+    {
+        updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
+        updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
+    }
+    else
+    {
+        if (data.WhiteEngineOptions != prevPgnData.WhiteEngineOptions)
+        {
+            updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
+        }
+        if (data.BlackEngineOptions != prevPgnData.BlackEngineOptions)
+        {
+            updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
+        }
+    }
+    setPgn(data);
 }
 
 function updatePgnData(data, read)
 {
-   timeDiff = 0;
-   updatePgnDataMain(data);
+    timeDiff = 0;
+    updatePgnDataMain(data);
 }
 
 function updatePgn(resettime)
@@ -286,23 +275,23 @@ function updateClock(color) {
 
 function secFormatNoH(timeip)
 {
-   var sec_num = parseInt(timeip/1000, 10); // don't forget the second param
-   var hours   = Floor(sec_num / 3600);
-   var minutes = Floor((sec_num - (hours * 3600)) / 60);
-   var seconds = sec_num - (hours * 3600) - (minutes * 60);
+    let sec_num = parseInt(timeip/1000, 10), // don't forget the second param
+        hours   = Floor(sec_num / 3600),
+        minutes = Floor((sec_num - (hours * 3600)) / 60),
+        seconds = sec_num - (hours * 3600) - (minutes * 60);
 
-   if (hours   < 10) {hours   = "0"+hours;}
-   if (minutes < 10) {minutes = "0"+minutes;}
-   if (seconds < 10) {seconds = "0"+seconds;}
-   return minutes+':'+seconds;
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return minutes+':'+seconds;
 }
 
 function secFormat(timeip)
 {
-   var sec_num = parseInt(timeip/1000, 10); // don't forget the second param
-   var hours   = Floor(sec_num / 3600);
-   var minutes = Floor((sec_num - (hours * 3600)) / 60);
-   var seconds = sec_num - (hours * 3600) - (minutes * 60);
+    let sec_num = parseInt(timeip/1000, 10), // don't forget the second param
+        hours   = Floor(sec_num / 3600),
+        minutes = Floor((sec_num - (hours * 3600)) / 60),
+        seconds = sec_num - (hours * 3600) - (minutes * 60);
 
    if (hours   < 10) {hours   = "0"+hours;}
    if (minutes < 10) {minutes = "0"+minutes;}
@@ -317,8 +306,8 @@ function setTimeRemaining(color, time)
 }
 
 function setTimeUsed(color, time) {
-   if (viewingActiveMove)
-      HTML(`.${WHITE_BLACK[color]}-time-used`, secFormatNoH(time));
+    if (viewingActiveMove)
+        HTML(`.${WHITE_BLACK[color]}-time-used`, secFormatNoH(time));
 }
 
 function setUsers(data)
@@ -353,12 +342,10 @@ function listPosition()
  * @param {string} sel node selector, ex: #board
  * @param {number} moveFrom
  * @param {number} moveTo
- * @param {string=} class_
+ * @param {boolean=} is_pv
  */
-function show_move(sel, moveFrom, moveTo, class_) {
-    if (!class_)
-        class_ = highlightClass;
-
+function show_move(sel, moveFrom, moveTo, is_pv) {
+    let class_ = get_highlight(is_pv);
     Class(`${sel} .square-55d63`, class_, false);
     Class(`${sel} .square-${moveFrom}`, class_);
     Class(`${sel} .square-${moveTo}`, class_);
@@ -366,68 +353,68 @@ function show_move(sel, moveFrom, moveTo, class_) {
 
 function setPgn(pgn)
 {
-   var currentPlyCount = 0;
+    let currentPlyCount = 0;
 
-   if (!viewingActiveMove)
-   {
-      Class('#newmove', '-d-none');
-      newMovesCount ++;
-      Attrs('#newmove', 'data-count', newMovesCount);
-   }
-   else
-   {
-      Class('#newmove', 'd-none');
-      newMovesCount = 0;
-      Attrs('#newmove', 'data-count', 0);
-   }
+    if (!viewingActiveMove)
+    {
+        Class('#newmove', '-d-none');
+        newMovesCount ++;
+        Attrs('#newmove', 'data-count', newMovesCount);
+    }
+    else
+    {
+        Class('#newmove', 'd-none');
+        newMovesCount = 0;
+        Attrs('#newmove', 'data-count', 0);
+    }
 
     if (pgn.Moves && (DEV.ply & 1))
         LS("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round);
 
-   if (pgn.gameChanged) {
-      eventNameHeader = 0;
-      prevPgnData = pgn;
-      prevPgnData.gameChanged = 0;
-      setInfoFromCurrentHeaders();
-      updateH2hData();
-      updateScoreHeadersData();
+    if (pgn.gameChanged) {
+        eventNameHeader = 0;
+        prevPgnData = pgn;
+        prevPgnData.gameChanged = 0;
+        setInfoFromCurrentHeaders();
+        updateH2hData();
+        updateScoreHeadersData();
         if (DEV.ply & 1)
             LS("New game, round is :" + parseFloat(pgn.Headers.Round));
-   }
-   else {
+    }
+    else {
         if (DEV.ply & 1)
             LS("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded);
-      if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
-      {
-         eventNameHeader = 0;
-         add_timeout('update_pgn', () => {updatePgn(1);}, 100);
-         return;
-      }
-      if (prevPgnData.Moves.length < pgn.lastMoveLoaded)
-      {
-         eventNameHeader = 0;
-         add_timeout('update_all', () => {updateAll();}, 100);
-         return;
-      }
-      updateH2hData();
-      updateScoreHeadersData();
-   }
+        if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
+        {
+            eventNameHeader = 0;
+            add_timeout('update_pgn', () => {updatePgn(1);}, 100);
+            return;
+        }
+        if (prevPgnData.Moves.length < pgn.lastMoveLoaded)
+        {
+            eventNameHeader = 0;
+            add_timeout('update_all', () => {updateAll();}, 100);
+            return;
+        }
+        updateH2hData();
+        updateScoreHeadersData();
+    }
 
-   if (prevPgnData) {
-      for (let i = 0 ; i < pgn.totalSent ; i++) {
-         prevPgnData.Moves[i + pgn.lastMoveLoaded] = pgn.Moves[i];
-      }
-      prevPgnData.BlackEngineOptions = pgn.BlackEngineOptions;
-      prevPgnData.WhiteEngineOptions = pgn.WhiteEngineOptions;
-      prevPgnData.Headers = pgn.Headers;
-      prevPgnData.Users = pgn.Users;
-      pgn = prevPgnData;
-   }
+    if (prevPgnData) {
+        for (let i = 0 ; i < pgn.totalSent ; i++)
+            prevPgnData.Moves[i + pgn.lastMoveLoaded] = pgn.Moves[i];
+
+        prevPgnData.BlackEngineOptions = pgn.BlackEngineOptions;
+        prevPgnData.WhiteEngineOptions = pgn.WhiteEngineOptions;
+        prevPgnData.Headers = pgn.Headers;
+        prevPgnData.Users = pgn.Users;
+        pgn = prevPgnData;
+    }
     else if (pgn.Moves)
         prevPgnData = pgn;
 
-   if (pgn.Moves)
-      currentPlyCount = pgn.Moves.length;
+    if (pgn.Moves)
+        currentPlyCount = pgn.Moves.length;
 
     if (pgn.Headers) {
         if (pgn.Moves && pgn.Moves.length > 0) {
@@ -550,6 +537,7 @@ function setPgn(pgn)
             squareToHighlight = moveTo;
         }
         board.position(currentPosition, false);
+        xboard.set_fen(currentPosition);
     }
 
     if (pgn.Headers == undefined) {
@@ -683,44 +671,45 @@ function setPgn(pgn)
         LS("Came to setpgn need to reread data at end");
 }
 
+// TODO: 1 function for all
 function copyFenAnalysis()
 {
-   var clip = new ClipboardJS('.btn', {
-      text: function(trigger) {
-         return analysFen;
-      }
-   });
-   return false;
+    let clip = new ClipboardJS('.btn', {
+        text: function(trigger) {
+            return analysFen;
+        }
+    });
+    return false;
 }
 
 function copyFenWhite()
 {
     let clip = new ClipboardJS('.btn', {
-      text: function(trigger) {
-         return current_positions[WH];
-      }
-   });
-   return false;
+        text: function(trigger) {
+            return current_positions[WH];
+        }
+    });
+    return false;
 }
 
 function copyFenBlack()
 {
     let clip = new ClipboardJS('.btn', {
-      text: function(trigger) {
-         return current_positions[BL];
-      }
-   });
-   return false;
+        text: function(trigger) {
+            return current_positions[BL];
+        }
+    });
+    return false;
 }
 
 function copyFen()
 {
-   var clip = new ClipboardJS('.btn', {
-      text: function(trigger) {
-         return currentPosition;
-      }
-   });
-   return false;
+    let clip = new ClipboardJS('.btn', {
+        text: function(trigger) {
+            return currentPosition;
+        }
+    });
+    return false;
 }
 
 /**
@@ -739,7 +728,7 @@ function setInfoFromCurrentHeaders()
         let color = WHITE_BLACK[id],
             header = prevPgnData.Headers[key],
             name = getShortEngineName(header);
-         all_engines[id] = header;
+        all_engines[id] = header;
 
         HTML(`.${color}-engine-name`, name);
         HTML(`.${color}-engine-name-full`, header);
@@ -751,111 +740,88 @@ function setInfoFromCurrentHeaders()
 
 function getMoveFromPly(ply)
 {
-   return prevPgnData.Moves[ply];
+    return prevPgnData.Moves[ply];
 }
 
-/**
- * Format a number:
- * - B: billion, M: million, K: thousand
- * - NaN => n/a
- * @param {number} number
- * @returns {number}
- */
-function formatUnit(number)
-{
-    if (isNaN(number))
-        number = 'N/A';
-    else if (number > 1e9)
-        number = `${Floor(number / 1e8) / 10}B`;
-    else if (number > 1e6)
-        number = `${Floor(number / 1e5) / 10}M`;
-    else if (number > 1000)
-        number = `${Floor(number / 100) / 10}k`;
-    else
-        number = `${Floor(number)}`;
-
-    return number;
-}
-
+// TODO: simplify this
 function getEvalFromPly(ply)
 {
     let selectedMove = prevPgnData.Moves[ply],
         side = turn? 'White': 'Black';
 
-   if (ply < 0)
-   {
-      return {
-         'side': side,
-         'eval': "n/a",
-         'pv': {},
-         'speed': "n/a",
-         'nodes': "n/a",
-         'mtime': "n/a",
-         'depth': "n/a",
-         'tbhits': "n/a",
-         'timeleft': "n/a"
-      };
-   }
+    if (ply < 0)
+    {
+        return {
+            depth: "n/a",
+            eval: "n/a",
+            mtime: "n/a",
+            nodes: "n/a",
+            pv: {},
+            side: side,
+            speed: "n/a",
+            tbhits: "n/a",
+            timeleft: "n/a",
+        };
+    }
 
-   //arun
-   if (ply < bookmove)
-   {
-      return {
-         'side': side,
-         'eval': "book",
-         'pv': {},
-         'speed': "book",
-         'nodes': "book",
-         'mtime': "book",
-         'depth': "book",
-         'tbhits': "book",
-         'timeleft': "book"
-      };
-   }
+    // arun
+    if (ply < bookmove)
+    {
+        return {
+            depth: "book",
+            eval: "book",
+            mtime: "book",
+            nodes: "book",
+            pv: {},
+            side: side,
+            speed: "book",
+            tbhits: "book",
+            timeleft: "book"
+        };
+    }
 
-   //arun
-   if (selectedMove == undefined || selectedMove.pv == undefined)
-   {
-      return {
-         'side': side,
-         'eval': 0,
-         'pv': {},
-         'speed': "n/a",
-         'nodes': "n/a",
-         'mtime': "n/a",
-         'depth': "n/a",
-         'tbhits': "n/a",
-         'timeleft': "n/a"
-      };
-   }
+    //arun
+    if (selectedMove == undefined || selectedMove.pv == undefined)
+    {
+        return {
+            depth: "n/a",
+            eval: 0,
+            mtime: "n/a",
+            nodes: "n/a",
+            pv: {},
+            side: side,
+            speed: "n/a",
+            tbhits: "n/a",
+            timeleft: "n/a",
+        };
+    }
 
-    let //clockPreviousMove = selectedMove,
-        speed = selectedMove.s;
-   if (speed < 1000000) {
-      speed = Round(speed / 1000) + ' knps';
-   } else {
-      speed = Round(speed / 1000000) + ' Mnps';
-   }
+    let speed = selectedMove.s;
+    if (speed < 1000000) {
+        speed = Round(speed / 1000) + ' knps';
+    } else {
+        speed = Round(speed / 1000000) + ' Mnps';
+    }
 
-    let nodes = formatUnit(selectedMove.n),
+    let nodes = FormatUnit(selectedMove.n),
         depth = selectedMove.d + '/' + selectedMove.sd,
-        tbHits = formatUnit(selectedMove.tb),
+        tbHits = FormatUnit(selectedMove.tb),
         evalRet = DefaultFloat(selectedMove.wv, 'N/A');
 
     if (Number.isFinite(evalRet))
         evalRet = evalRet.toFixed(2);
 
-   return {
-      'side': side,
-      'eval': evalRet,
-      'pv': selectedMove.pv.Moves,
-      'speed': speed,
-      'nodes': nodes,
-      'mtime': secFormatNoH(selectedMove.mt),
-      'depth': depth,
-      'tbhits': tbHits,
-      'timeleft': secFormat(selectedMove.tl),
-   };
+    return {
+        depth: depth,
+        eval: evalRet,
+        mtime: secFormatNoH(selectedMove.mt),
+        nodes: nodes,
+        pv: selectedMove.pv.Moves,
+        side: side,
+        speed: speed,
+        tbhits: tbHits,
+        timeleft: secFormat(selectedMove.tl),
+    };
 }
 
 // The function was posted by "ya" in the Leela Chess Zero Discord channel
@@ -1122,42 +1088,36 @@ function setPlyDiv(ply_diff)
     Prop(`input[value="ply${ply_diff}"]`, 'checked', true);
 }
 
-function setPlyDivDefault()
-{
-    Y.ply_diff = get_string('ply_diff', 'first');
-    Prop(`input[value="ply${Y.ply_diff}"]`, 'checked', true);
-}
-
 function findDiffPv(whitemoves, blackmoves)
 {
     highlightpv = 0;
     if (Y.ply_diff == 'first')
         return;
 
-   if (whitemoves)
-   {
-      Keys(whitemoves).forEach(key => {
-         // let pvMove = current + key;
-         if (!turn)
-         {
+    if (!whitemoves)
+        return;
+
+    Keys(whitemoves).forEach(key => {
+        // let pvMove = current + key;
+        if (!turn)
+        {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
             {
                 if (DEV.pv & 1)
                     LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m);
-               highlightpv = key;
+                highlightpv = key;
             }
-         }
-         else
-         {
+        }
+        else
+        {
             if (!highlightpv && blackmoves && blackmoves[key + 1] && (blackmoves[key + 1].m != whitemoves[key].m))
             {
                 if (DEV.pv & 1)
                     LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m);
-               highlightpv = key + 1;
+                highlightpv = key + 1;
             }
-         }
-      });
-   }
+        }
+    });
 }
 
 function boardAutoplay()
@@ -1166,7 +1126,8 @@ function boardAutoplay()
         activePly++;
         handlePlyChange();
         add_timeout('autoplay', () => {boardAutoplay();}, 750);
-    } else {
+    }
+    else {
         isAutoplay = false;
         Class('#board-autoplay i', '-fa-pause fa-play');
     }
@@ -1174,9 +1135,9 @@ function boardAutoplay()
 
 function onLastMove()
 {
-   activePly = loadedPlies;
-   viewingActiveMove = true;
-   handlePlyChange();
+    activePly = loadedPlies;
+    viewingActiveMove = true;
+    handlePlyChange();
 }
 
 function handlePlyChange(handleclick=true)
@@ -1231,7 +1192,7 @@ function handlePlyChange(handleclick=true)
 
 function scrollDiv(container, element)
 {
-   try {
+    try {
         $(container).scrollTop(
             $(element).offset().top - $(container).offset().top + $(container).scrollTop()
         );
@@ -1316,16 +1277,16 @@ function setPvFromKey(moveKey, color, choosePvx)
     analysFen = fen;
 
     // show moves
-    show_move(pvBoardElbL, moveFromPv, moveToPv, highlightClassPv);
+    show_move(pvBoardElbL, moveFromPv, moveToPv, true);
     pvSquareToHighlight = moveToPv;
 
     pvBoardL.position(fen, false);
     if (color == WH) {
-        show_move('#pv-boardwc', moveFromPv, moveToPv, highlightClassPv);
+        show_move('#pv-boardwc', moveFromPv, moveToPv, true);
         pvBoardwc.position(fen, false);
     }
     else if (color == BL) {
-        show_move('#pv-boardbc', moveFromPv, moveToPv, highlightClassPv);
+        show_move('#pv-boardbc', moveFromPv, moveToPv, true);
         pvBoardbc.position(fen, false);
     }
 }
@@ -1336,7 +1297,8 @@ function pvBoardautoplay(value, color, activePv)
     if (isPvAutoplay[value] && activePvKey[value] >= 0 && activePvKey[value] < activePv.length - 1) {
         setPvFromKey(activePvKey[value] + 1, color);
         add_timeout('pv_autoplay', () => {pvBoardautoplay(value, color, activePv);}, 750);
-    } else {
+    }
+    else {
         isPvAutoplay[value] = false;
         if (value == 0)
         {
@@ -1360,80 +1322,69 @@ function setMoveMaterial(material, whiteToPlay)
 
 // CHECK THIS
 function setPieces(piece, value, whiteToPlay) {
-   var target = 'black-material';
-   var color = 'b';
-   if ((whiteToPlay && value < 0) || (!whiteToPlay && value > 0)) {
-      target = 'white-material';
-      color = 'w';
-   }
+    let target = 'black-material',
+        color = 'b';
+    if ((whiteToPlay && value < 0) || (!whiteToPlay && value > 0)) {
+        target = 'white-material';
+        color = 'w';
+    }
 
-   value = Abs(value);
+    HTML('#white-material span.' + piece, '');
+    HTML('#black-material span.' + piece, '');
 
-   HTML('#white-material span.' + piece, '');
-   HTML('#black-material span.' + piece, '');
-
-   for (let i = 0; i < value; i++) {
-      let imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
-      $('#' + target + ' span.' + piece).append('<img src="' + imgPath + '" class="engine-material" />');
-   }
-}
-
-function getLinkArch()
-{
-   var retLink;
-
-   retLink = "http://www.tcec-chess.com/archive.html";
-
-   return (retLink);
+    for (let i = 0; i < Abs(value); i++) {
+        let imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
+        $('#' + target + ' span.' + piece).append('<img src="' + imgPath + '" class="engine-material" />');
+    }
 }
 
 function openCrossCup(index, gamen)
 {
-   index ++;
-   LS("XXX: Index is :" + index + ",:::" + eventCross[index]);
-   var link = getLinkArch();
-   var tourLink = '';
-   var localGame = gamen;
-   var cupname = tourInfo.season;
-   var selindex = 0;
+    index ++;
+    LS("XXX: Index is :" + index + ",:::" + eventCross[index]);
+    let link = ARCHIVE_LINK,
+        tourLink = '',
+        localGame = gamen,
+        cupname = tourInfo.season,
+        selindex = 0;
 
-   if (index < 17)
-   {
-      tourLink = 'season=' + cupname + '&round=round32';
-      selindex = 0;
-   }
-   else if (index < 25)
-   {
-      tourLink = 'season=' + cupname + '&round=round16';
-      selindex = 16;
-   }
-   else if (index < 29)
-   {
-      tourLink = 'season=' + cupname + '&round=qf';
-      selindex = 24;
-   }
-   else if (index < 31)
-   {
-      tourLink = 'season=' + cupname + '&round=sf';
-      selindex = 28;
-   }
-   else if (index == 31)
-   {
-      tourLink = 'season=' + cupname + '&round=bz';
-      selindex = 30;
-   }
-   else if (index == 32)
-   {
-      tourLink = 'season=' + cupname + '&round=fl';
-      selindex = 31;
-   }
+    if (index < 17)
+    {
+        tourLink = 'season=' + cupname + '&round=round32';
+        selindex = 0;
+    }
+    else if (index < 25)
+    {
+        tourLink = 'season=' + cupname + '&round=round16';
+        selindex = 16;
+    }
+    else if (index < 29)
+    {
+        tourLink = 'season=' + cupname + '&round=qf';
+        selindex = 24;
+    }
+    else if (index < 31)
+    {
+        tourLink = 'season=' + cupname + '&round=sf';
+        selindex = 28;
+    }
+    else if (index == 31)
+    {
+        tourLink = 'season=' + cupname + '&round=bz';
+        selindex = 30;
+    }
+    else if (index == 32)
+    {
+        tourLink = 'season=' + cupname + '&round=fl';
+        selindex = 31;
+    }
 
-   globalGameno = gamen;
-   localGame -= eventCross[selindex];
+    globalGameno = gamen;
+    localGame -= eventCross[selindex];
 
-   link = link + "?" + tourLink + "&game=" + localGame;
-   window.open(link,'_blank');
-   scheduleHighlight();
+    link = link + "?" + tourLink + "&game=" + localGame;
+    window.open(link,'_blank');
+    scheduleHighlight();
 }
 
 function openCross(index, gamen)
@@ -1443,7 +1394,7 @@ function openCross(index, gamen)
       openCrossCup(index, gamen);
       return;
    }
-   var link = getLinkArch();
+   var link = ARCHIVE_LINK;
    var season = 1;
    var div = "di";
    var divno = 1;
@@ -1931,12 +1882,12 @@ function updateSchedule()
 
 var onDragStart = function(source, piece, position, orientation)
 {
-   if (game.game_over() === true ||
-      (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-      (game.turn() === 'b' && piece.search(/^w/) !== -1))
-   {
-      return false;
-   }
+    if (game.game_over() === true ||
+        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (game.turn() === 'b' && piece.search(/^w/) !== -1))
+    {
+        return false;
+    }
 };
 
 var onDragMove = function(newLocation, oldLocation, source, piece, position, orientation)
@@ -1971,7 +1922,7 @@ var onDragMove = function(newLocation, oldLocation, source, piece, position, ori
    activePv[pvLen].to = newLocation;
    Class(this, 'active-pv-move');
 
-   show_move('#pv-boarda', moveFrom, moveTo, highlightClassPv);
+   show_move('#pv-boarda', moveFrom, moveTo, true);
    pvSquareToHighlight = moveTo;
 
    activePvKey[2] = pvLen;
@@ -2012,11 +1963,12 @@ function createBoard(cont, notation, drag)
  */
 function create_boards()
 {
-    Y.board_theme = get_string('board_theme', Y.board_theme);
-    Y.piece_theme = get_string('piece_theme', Y.piece_theme);
-
     pvBoarda = createBoard('pv-boarda', Y.notation_pv, true);
     board = createBoard('board', Y.notation);
+    xboard = new XBoard({
+        notation: 15,
+        target: 'text',
+    });
 
     if (!Y.arrows)
         board.clearAnnotation();
@@ -2037,6 +1989,7 @@ function setBoard()
     let fen = board.fen();
     board = createBoard('board', Y.notation);
     board.position(fen, false);
+    xboard.set_fen(fen);
 
     fen = pvBoardb.fen();
     pvBoardb = createBoard('pv-boardb', Y.notation_pv);
@@ -2068,11 +2021,11 @@ function setBoard()
     {
         show_move('#board', moveFrom, moveTo);
         if (moveFromPvs[1])
-            show_move('#pv-boardb', moveFromPvs[1], moveToPvs[1], highlightClassPv);
+            show_move('#pv-boardb', moveFromPvs[1], moveToPvs[1], true);
         if (moveFromPvs[0])
-            show_move('#pv-boardw', moveFromPvs[0], moveToPvs[0], highlightClassPv);
+            show_move('#pv-boardw', moveFromPvs[0], moveToPvs[0], true);
         if (moveFromPvs[2])
-            show_move('#pv-boarda', moveFromPvs[2], moveToPvs[2], highlightClassPv);
+            show_move('#pv-boarda', moveFromPvs[2], moveToPvs[2], true);
     }
 }
 
@@ -2096,108 +2049,66 @@ function setTwitchChatUrl(darkmode)
 
 function setTwitchBackgroundInit(backg)
 {
-   var setValue = 0;
-   if (backg == 1)
-   {
-      setTwitchChatUrl(false);
-      setValue = 1;
-   }
-   else if (backg == 2)
-   {
-      setTwitchChatUrl(true);
-      setValue = 2;
-   }
-   else
-   {
-        let dark_mode = get_int('dark_mode', 10);
-        if (darkMode == 20)
-        {
-            setTwitchChatUrl(true);
-            setValue = 2;
-        }
-        else
-        {
-            setTwitchChatUrl(false);
-            setValue = 1;
-        }
-   }
-   save_option('twitch_back_mode', setValue);
+    let value = backg;
+    if (![1, 2].includes(value))
+        value = (Y.dark_mode == 20)? 2: 1;
+
+    setTwitchChatUrl(value == 2);
+    save_option('twitch_back_mode', backg);
 }
 
 function setTwitchBackground(backg)
 {
-    let setValue = 0,
-        twitch_back_mode = get_string('twitch_back_mode');
+    // not set to auto => don't change the background
+    let value = Y.twitch_back_mode;
+    if (value)
+        return;
 
-    if (twitch_back_mode == 1)
-    {
-        setTwitchChatUrl(false);
-        setValue = 1;
-    }
-    else if (twitch_back_mode == 2)
-    {
-        setTwitchChatUrl(true);
-        setValue = 2;
-    }
-    else
-        setTwitchChatUrl(backg != 1);
-
-    save_option('twitch_back_mode', setValue);
-    Prop(`input[value="${setValue}"]`, 'checked', true);
+    // auto => twitch background will match the main theme
+    setTwitchChatUrl(backg != 1);
+    Prop(`input[value="${value}"]`, 'checked', true);
 }
 
-function setDark()
+function setDarkLight()
 {
-    Class('.toggleDark i', '-fa-moon fa-sun');
-    Class('body', 'dark');
-    setTwitchBackground(2);
-    setTwitchChatUrl(true);
-    Attrs('#info-frame', 'src', 'info.html?body=dark');
-    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark');
-    Prop('#themecheck', 'checked', false);
-    Class('.graphs', 'blackcanvas -whitecanvas');
-    setDarkMode(1);
-}
+    let is_dark = (Y.dark_mode == 20);
 
-function setLight()
-{
-    Class('.toggleDark i', 'fa-moon -fa-sun');
-    Class('body', '-dark');
-    Prop('input.toggleDark', 'checked', false);
-    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', '-table-dark');
-    setTwitchBackground(1);
-    Attrs('#info-frame', 'src', 'info.html?body=light');
-    Prop('#themecheck', 'checked', true);
-    Class('.graphs', 'whitecanvas -blackcanvas');
-    setDarkMode(0);
+    Class('.toggleDark i', '-fa-moon fa-sun', is_dark);
+    Class('body', 'dark', is_dark);
+    setTwitchBackground(is_dark? 2: 1);
+    setTwitchChatUrl(Y.twitch_back_mode || is_dark);
+    Attrs('#info-frame', 'src', `info.html?body=${is_dark? 'dark': 'light'}`);
+    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark', is_dark);
+    Prop('#themecheck', 'checked', !is_dark);
+    Class('.graphs', 'blackcanvas -whitecanvas', is_dark);
+    Prop('input.toggleDark', 'checked', is_dark);
+    setDarkMode(is_dark? 1: 0);
 }
 
 function setDefaults()
 {
-   setSound();
-   setLivePvUpdate();
-   showTabDefault();
-   setHighlightDefault();
-   setHighlightDefaultPv();
-   setDefaultThemes();
-   setliveEngine();
-   setNotationDefault();
-   setNotationPvDefault();
-   setMoveArrowsDefault();
-   setBoard();
-   setCrash();
-   loadBoardMiddle();
-   setDefaultLiveLog();
-}
+    setLiveEngine();
+    setBoard();
+    setDefaultLiveLog();
 
-function setDefaultThemes()
-{
-    let dark_mode = get_int('dark_mode', 10);
-    if (dark_mode == 20)
-        setDark();
+    if (Y.top_tab == 1)
+        _('#v-pills-gameinfo-tab').click();
     else
-        setLight();
-    setPlyDivDefault();
+        _('#v-pills-pv-top-tab').click();
+
+    // checkboxes
+    Prop('#notacheck', 'checked', !Y.arrows);
+    Prop('#crosscheck', 'checked', !Y.cross_crash);
+    Prop(`input[value="highlightRadio${Y.highlight}"]`, 'checked', true);
+    Prop(`input[value="highlightPvRadio${Y.highlight_pv}"]`, 'checked', true);
+    Prop('#livepvcheck', 'checked', !Y.live_pv);
+    Prop('#nottcheck', 'checked', !Y.notation);
+    Prop('#nottcheckpv', 'checked', !Y.notation_pv);
+    Prop(`input[value="ply${Y.ply_diff}"]`, 'checked', true);
+    Prop('#soundcheck', 'checked', !Y.sound);
+
+    setCheckBoardMiddle(Y.board_middle? 1: 0, '#middlecheck');
+    setDarkLight();
 }
 
 function setBoardUser(board_theme)
@@ -2229,8 +2140,8 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
     }
 
     datum.eval = score;
-    datum.tbhits = formatUnit(datum.tbhits);
-    datum.nodes = formatUnit(datum.nodes);
+    datum.tbhits = FormatUnit(datum.tbhits);
+    datum.nodes = FormatUnit(datum.nodes);
 
     if (!datum.pv.length || datum.pv.trim() == "no info")
         return;
@@ -2345,8 +2256,8 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
     score = "" + score;
     datum.eval = score;
 
-    datum.tbhits = formatUnit(datum.tbhits);
-    datum.nodes = formatUnit(datum.nodes);
+    datum.tbhits = FormatUnit(datum.tbhits);
+    datum.nodes = FormatUnit(datum.nodes);
 
    var pvs = [];
 
@@ -2623,12 +2534,11 @@ function resize() {
 
 function setTwitch()
 {
-    let twitch_video = get_int('twitch_video', 0);
-    if (!twitch_video)
+    if (!Y.twitch_video)
         Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
 
-    S('iframe#twitchvid', !twitch_video);
-    Prop('#twitchcheck', 'checked', !!twitch_video);
+    S('iframe#twitchvid', !Y.twitch_video);
+    Prop('#twitchcheck', 'checked', !!Y.twitch_video);
     resize();
 }
 
@@ -2663,10 +2573,9 @@ function liveEngine(checkbox, checknum)
     updateChartData();
 }
 
-function setliveEngineInit(value)
+function setLiveEngineInit(value)
 {
-    let config = `live_engine${value}`,
-        getlive = get_int(config, 1),
+    let getlive = Y[`live_engine${value}`],
         cont = `#liveenginecheck${value}`,
         checknum = value;
 
@@ -2698,10 +2607,10 @@ function setliveEngineInit(value)
     }
 }
 
-function setliveEngine()
+function setLiveEngine()
 {
-   setliveEngineInit(1);
-   setliveEngineInit(2);
+   setLiveEngineInit(1);
+   setLiveEngineInit(2);
    showEvalCont();
 }
 
@@ -2722,36 +2631,6 @@ function checkSound(checkbox)
     save_option('sound', checked? 1: 0);
 }
 
-function setCrash()
-{
-    Y.cross_crash = get_int('cross_crash', 0);
-    Prop('#crosscheck', 'checked', !Y.cross_crash);
-}
-
-function setSound()
-{
-    Y.sound = get_int('sound', 1);
-    Prop('#soundcheck', 'checked', !Y.sound);
-}
-
-function setLivePvUpdate()
-{
-    Y.live_pv = get_int('live_pv', 1);
-    Prop('#livepvcheck', 'checked', !Y.live_pv);
-}
-
-function setNotationPvDefault()
-{
-    Y.notation_pv = get_int('notation_pv', 1);
-    Prop('#nottcheckpv', 'checked', !Y.notation_pv);
-}
-
-function setNotationDefault()
-{
-    Y.notation = get_int('notation', 1);
-    Prop('#nottcheck', 'checked', !Y.notation);
-}
-
 function setNotationPv(checkbox)
 {
     let is_check = checkbox.checked;
@@ -2768,48 +2647,24 @@ function setNotation(checkbox)
     setBoard();
 }
 
-function setHighLightMainPv(getHighL)
-{
-    highlightClassPv = `highlight-white highlight-${(getHighL == 0)? 'none': getHighL}`;
-}
-
-function setHighlightDefaultPv()
-{
-    let getHighL = get_int('highlight_pv', 2);
-    setHighLightMainPv(getHighL);
-    Prop(`input[value="highlightPvRadio${getHighL}"]`, 'checked', true);
+/**
+ * Get a highlight class
+ * @param {boolean} is_pv
+ */
+function get_highlight(is_pv) {
+    return `highlight-white highlight-${(is_pv? Y.highlight_pv: Y.highlight) || 'none'}`;
 }
 
 function setHighlightPv(value)
 {
     save_option('highlight_pv', value);
-    setHighLightMainPv(value);
     setBoard();
-}
-
-function setHighLightMain(getHighL)
-{
-    highlightClass = `highlight-white highlight-${(getHighL == 0)? 'none': getHighL}`;
-}
-
-function setHighlightDefault()
-{
-    let getHighL = get_int('highlight', 2);
-    setHighLightMain(getHighL);
-    Prop(`input[value="highlightRadio${getHighL}"]`, 'checked', true);
 }
 
 function setHighlight(value)
 {
     save_option('highlight', value);
-    setHighLightMain(value);
     setBoard();
-}
-
-function setMoveArrowsDefault()
-{
-    Y.arrows = get_int('tcec-move-arrows', 1);
-    Prop('#notacheck', 'checked', !Y.arrows);
 }
 
 function setMoveArrows(checkbox)
@@ -3570,43 +3425,28 @@ function hideEngInfo()
     save_option('top_tab', 1);
 }
 
-function showTabDefault()
-{
-    let topTab = get_int('top_tab', 1);
-    if (topTab == 1)
-        _('#v-pills-gameinfo-tab').click();
-    else
-        _('#v-pills-pv-top-tab').click();
-}
-
 function toggleTheme()
 {
-    let dark_mode = get_int('dark_mode', 10);
-    save_option('dark_mode', (dark_mode == 20)? 10: 20);
-    setDefaultThemes();
+    save_option('dark_mode', (Y.dark_mode == 20)? 10: 20);
+    setDarkLight();
     updateTables();
     $(".navbar-toggle").click();
 }
 
-function hideBanner(timeout=30000)
+/**
+ * Hide the banner
+ * @param {number} timeout in seconds
+ */
+function hideBanner(timeout=30)
 {
-    add_timeout('banner', () => {Hide('#note');}, timeout);
+    add_timeout('banner', () => {Hide('#note');}, timeout * 1000);
 }
 
 function showBanner(data)
 {
-   let note = _("#note");
-   note.style.display = 'inline';
-   _("#notetext").textContent = data.message;
-   if (data.timeout == undefined)
-   {
-      data.timeout = 30000;
-   }
-   else
-   {
-      data.timeout = data.timeout * 1000;
-   }
-   hideBanner(data.timeout);
+    Show('#note');
+    _("#notetext").textContent = data.message;
+    hideBanner(data.timeout);
 }
 
 function setCheckBoardMiddle(value, id)
@@ -3621,217 +3461,154 @@ function checkBoardMiddle(checkbox)
     setCheckBoardMiddle(checkbox.checked? 1: 0, '#middlecheck');
 }
 
-function loadBoardMiddle()
-{
-    let middle = get_int('board_middle', 0);
-    setCheckBoardMiddle(middle? 1: 0, '#middlecheck');
-}
-
 function scheduleToTournamentInfo(schedJson)
 {
-   let start = null;
-   let end = null;
-   if (schedJson.length > 0)
-   {
-      let s = schedJson[0];
-      let l = schedJson[schedJson.length-1];
-      start = s.Start;
-      if (l.Start)
-      {
-         end = l.Start;
-      }
-   }
+    let end, start;
+    if (schedJson.length > 0)
+    {
+        let first = schedJson[0],
+            last = schedJson[schedJson.length - 1];
+        start = first.Start;
+        if (last.Start)
+            end = last.Start;
+    }
 
-   let data = {
-      startTime: getLocalDate(start),
-      endTime: 0,
-      minMoves: [9999999,-1],
-      maxMoves: [0,-1],
-      avgMoves: 0,
-      minTime: ["99:59:59",-1],
-      maxTime: ["00:00:00",-1],
-      avgTime: new Date(0),
-      totalTime: -1,
-      winRate: 0,
-      drawRate: 0,
-      whiteWins: 0,
-      blackWins: 0,
-      crashes: [0, []],
-   };
+    let data = {
+        avgMoves: 0,
+        avgTime: new Date(0),
+        blackWins: 0,
+        crashes: [0, []],
+        drawRate: 0,
+        endTime: 0,
+        maxMoves: [0,-1],
+        maxTime: ["00:00:00", -1],
+        minMoves: [9999999, -1],
+        minTime: ["99:59:59", -1],
+        startTime: getLocalDate(start),
+        totalTime: -1,
+        whiteWins: 0,
+        winRate: 0,
+    };
 
-   let len = schedJson.length;
-   let avgTime = 0;
-   let compGames = 0;
+    let length = schedJson.length,
+        avgTime = 0,
+        compGames = 0;
 
-   for (let i = 0; i < len; i++)
-   {
-      let cur = schedJson[i];
-      cur.Game = i + 1;
-      if (cur.Moves && !crash_re.test(cur.Termination)) {
-         data.crashes[0] ++;
-         data.crashes[1].push(cur.Game);
-      }
-      if (cur.Moves != null) {
-         compGames ++;
-         if (cur.Moves < data.minMoves[0])  {
-            data.minMoves = [cur.Moves, cur.Game];
-         }
-         if (cur.Moves > data.maxMoves[0])  {
-            data.maxMoves = [cur.Moves, cur.Game];
-         }
-         data.avgMoves += cur.Moves;
-      }
+    for (let i = 0; i < length; i++)
+    {
+        let cur = schedJson[i];
+        cur.Game = i + 1;
+        if (cur.Moves && !crash_re.test(cur.Termination)) {
+            data.crashes[0] ++;
+            data.crashes[1].push(cur.Game);
+        }
+        if (cur.Moves != null) {
+            compGames ++;
+            if (cur.Moves < data.minMoves[0])  {
+                data.minMoves = [cur.Moves, cur.Game];
+            }
+            if (cur.Moves > data.maxMoves[0])  {
+                data.maxMoves = [cur.Moves, cur.Game];
+            }
+            data.avgMoves += cur.Moves;
+        }
 
-      if (cur.Duration != null) {
-         if (cur.Duration < data.minTime[0])  {
-            data.minTime = [cur.Duration, cur.Game];
-         }
-         if (cur.Duration > data.maxTime[0])  {
-            data.maxTime = [cur.Duration, cur.Game];
-         }
+        if (cur.Duration != null) {
+            if (cur.Duration < data.minTime[0])  {
+                data.minTime = [cur.Duration, cur.Game];
+            }
+            if (cur.Duration > data.maxTime[0])  {
+                data.maxTime = [cur.Duration, cur.Game];
+            }
+            avgTime += hmsToSecondsOnly(cur.Duration);
+        }
 
-         avgTime += hmsToSecondsOnly(cur.Duration);
-      }
+        if (cur.Result == '1-0')
+            data.whiteWins ++;
+        else if (cur.Result == '0-1')
+            data.blackWins ++;
+    }
 
-      if (cur.Result == "1-0") {
-         data.whiteWins ++;
-      } else if (cur.Result == "0-1") {
-         data.blackWins ++;
-      }
-   }
-   data.avgMoves = Round(data.avgMoves/compGames);
+    let draws = compGames - data.whiteWins - data.blackWins;
 
-   let draws = compGames - data.whiteWins - data.blackWins;
-   data.drawRate = divide2Decimals(draws * 100, compGames) + "%";
-
-   data.winRateW = divide2Decimals(data.whiteWins *100, compGames) + "%";
-   data.winRateB = parseFloat(divide2Decimals(data.blackWins *100, compGames)).toFixed(1) + "%";
-   data.avgTime = hhmm(avgTime/compGames);
-   data.totalTime = hhmmss((avgTime/compGames)*len);
-   data.endTime = getLocalDate(start, (avgTime/compGames)*(len/60));
-   data.whiteWins = data.whiteWins + ' [ ' + data.winRateW + ' ]';
-   data.blackWins = data.blackWins + ' [ ' + data.winRateB + ' ]';
-   return data;
+    Assign(data, {
+        avgMoves: Round(data.avgMoves / compGames),
+        avgTime: hhmm(avgTime / compGames),
+        blackWins: data.blackWins + ' [ ' + data.winRateB + ' ]',
+        drawRate: divide2Decimals(draws * 100, compGames) + "%",
+        endTime: getLocalDate(start, avgTime / compGames * length / 60),
+        totalTime: hhmmss(avgTime / compGames * length),
+        whiteWins: data.whiteWins + ' [ ' + data.winRateW + ' ]',
+        winRateB: parseFloat(divide2Decimals(data.blackWins *100, compGames)).toFixed(1) + "%",
+        winRateW: divide2Decimals(data.whiteWins * 100, compGames) + "%",
+    });
+    return data;
 }
 
 function divide2Decimals(num,div)
 {
-   return Round((num +0.000001) / div * 100) / 100;
+    return Round((num +0.000001) / div * 100) / 100;
 }
 
 function hmsToSecondsOnly(str) {
-   var p = str.split(':'),
-   s = 0,
-   m = 1;
+    let p = str.split(':'),
+        s = 0,
+        m = 1;
 
-   while (p.length > 0) {
-      s += m * parseInt(p.pop(), 10);
-      m *= 60;
-   }
-
-   return s;
+    while (p.length > 0) {
+        s += m * parseInt(p.pop(), 10);
+        m *= 60;
+    }
+    return s;
 }
 
 function hhmm(secs)
 {
-   var minutes = Floor(secs / 60);
-   secs = secs%60;
-   var hours = Floor(minutes/60);
-   minutes = minutes%60;
-   return `${Pad(hours)}:${Pad(minutes)}`;
+    let minutes = Floor(secs / 60);
+    secs = secs % 60;
+    let hours = Floor(minutes / 60);
+    minutes = minutes % 60;
+    return `${Pad(hours)}:${Pad(minutes)}`;
 }
 
 function hhmmss(secs)
 {
-   var minutes = Floor(secs / 60);
-   secs = secs%60;
-   var hours = Floor(minutes/60);
-   minutes = minutes%60;
-   var days = Floor(hours/24);
-   hours = hours%24;
-   if (days > 0)
-   {
-      return `${Pad(days)}d, ${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
-   }
-   else
-   {
-      return `${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
-   }
+    let minutes = Floor(secs / 60);
+    secs = secs % 60;
+    let hours = Floor(minutes / 60);
+    minutes = minutes % 60;
+    let days = Floor(hours / 24);
+    hours = hours % 24;
+    if (days > 0)
+        return `${Pad(days)}d, ${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
+    return `${Pad(hours)}:${Pad(minutes)}:${Pad(secs)}`;
 }
 
 function getLocalDate(startDate, minutes)
 {
-   let momentDate = moment(startDate, 'HH:mm:ss on YYYY.MM.DD');
-   var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-   if (minutes)
-      momentDate.add(minutes * 60 * 1000);
+    let momentDate = moment(startDate, 'HH:mm:ss on YYYY.MM.DD'),
+        timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
+    if (minutes)
+        momentDate.add(minutes * 60 * 1000);
 
-   momentDate.add(timezoneDiff);
-   return(momentDate.format('HH:mm:ss on YYYY.MM.DD'));
-}
-
-function setDefaultLiveLog()
-{
-    globalRoom = get_string('engine_livelog', 'room10');
-    Prop(`input[value="${globalRoom}"]`, 'checked', true);
-}
-
-function setLiveLog(livelog)
-{
-    save_option('engine_livelog', livelog.value);
-    unlistenLogMain(0);
-    if (livelog.value)
-        globalRoom = livelog.value;
-
-    listenLog();
-}
-
-function listenLogMain(room)
-{
-   if (socket)
-   {
-      socket.emit('room', room);
-   }
-}
-
-function unlistenLogMain(room)
-{
-   globalRoom = 0;
-   if (socket)
-   {
-      socket.emit('noroom', room);
-   }
-}
-
-function listenLog()
-{
-   if (globalRoom == 0)
-   {
-      globalRoom = 'room10';
-   }
-   listenLogMain(globalRoom);
-}
-
-function unlistenLog()
-{
-   unlistenLogMain('livelog');
+    momentDate.add(timezoneDiff);
+    return momentDate.format('HH:mm:ss on YYYY.MM.DD');
 }
 
 function setTwitchChange(data)
 {
-   updateTourInfo(data);
-   var newtwitchChatUrl = 'https://www.twitch.tv/embed/' + data.twitchaccount + '/chat';
-   if (newtwitchChatUrl == twitchChatUrl)
-   {
-      return;
-   }
-   twitchChatUrl = 'https://www.twitch.tv/embed/' + data.twitchaccount + '/chat';
-   setTwitchChatUrl(darkMode);
+    updateTourInfo(data);
+    let newtwitchChatUrl = 'https://www.twitch.tv/embed/' + data.twitchaccount + '/chat';
+    if (newtwitchChatUrl == twitchChatUrl)
+        return;
+
+    twitchChatUrl = newtwitchChatUrl;
+    setTwitchChatUrl(darkMode);
 }
 
 function getImg(engine)
 {
-   return('<div class="right-align"><img class="right-align-pic" src="img/engines/'+ getShortEngineName(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>');
+    return '<div class="right-align"><img class="right-align-pic" src="img/engines/'+ getShortEngineName(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>';
 }
 
 /**
@@ -3908,22 +3685,25 @@ function eventCrosstableWrap()
 
 function bracketDataMain(data)
 {
-   if (data)
-   {
-      bigData.teams = data.teams;
-      roundResults = data.matchresults;
-      bigData.results = data.results;
-   }
-   for (let i = roundResults.length + 1; i <= 32; i++)
-   {
-      roundResults[i-1] = [{lead:-1, score: -1}, {lead:-1, score: -1}];
-   }
-   for (let i = bigData.teams.length + 1; i <= 16; i++)
-   {
-      bigData.teams[i-1] = [{name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]),
-                             score: -1, rank: '1', date: '', lead: 0},
-                            {name: getSeededName(teamsx[i-1][1][0]), flag: getShortEngineName(teamsx[i-1][1][0]),
-                             score: -1, rank: '2', date: '', lead: 0}];
+    if (data)
+    {
+        bigData.teams = data.teams;
+        roundResults = data.matchresults;
+        bigData.results = data.results;
+    }
+    for (let i = roundResults.length + 1; i <= 32; i++)
+    {
+        roundResults[i-1] = [
+            {lead:-1, score: -1},
+            {lead:-1, score: -1},
+        ];
+    }
+    for (let i = bigData.teams.length + 1; i <= 16; i++)
+    {
+        bigData.teams[i-1] = [
+            {name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]), score: -1, rank: '1', date: '', lead: 0},
+            {name: getSeededName(teamsx[i-1][1][0]), flag: getShortEngineName(teamsx[i-1][1][0]), score: -1, rank: '2', date: '', lead: 0},
+        ];
    }
 
    drawBracket1();
@@ -3932,8 +3712,8 @@ function bracketDataMain(data)
 
 function drawBracket1()
 {
-   var roundNox = 2;
-   getDateRound();
+    let roundNox = 2;
+    getDateRound();
 
 //    function onClick(data)
 //    {
@@ -3955,11 +3735,11 @@ function drawBracket1()
 //        }
 //      });
 //    }
-   function edit_fn(_container, _data, _doneCb) {
-      return;
-   }
+    function edit_fn(_container, _data, _doneCb) {
+        return;
+    }
 
-   function render_fn2(container, data, _score, state) {
+    function render_fn2(container, data, _score, state) {
         var localRound = parseInt(roundNox/2) - 1;
         var isFirst = roundNox%2;
         var dataName = 0;
@@ -4118,82 +3898,69 @@ function drawBracket1()
 
 function getSeededName(name)
 {
-   let engineName = 0;
+    let engineName;
 
     Keys(teamsx).forEach(key => {
         let engine = teamsx[key];
 
         if (getShortEngineName(engine[0][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
-      {
-         //engineName = "S#" + engine[0][1] + " " + engine[0][0];
-         engineName = engine[0][0];
-         engineName = "#" + engine[0][1] + " " + engine[0][0];
-         if (engineName.length > 24)
-         {
-            engineName = engineName.slice(0, 22) + "..";
-         }
-         return false;
-      }
-      else if (getShortEngineName(engine[1][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
-      {
-         //engineName = "S#" + engine[1][1] + " " + engine[1][0];
-         engineName = engine[1][0];
-         engineName = "#" + engine[1][1] + " " + engine[1][0];
-         if (engineName.length > 24)
-         {
-            engineName = engineName.slice(0, 22) + "..";
-         }
-         return false;
-      }
+        {
+            //engineName = "S#" + engine[0][1] + " " + engine[0][0];
+            engineName = engine[0][0];
+            engineName = "#" + engine[0][1] + " " + engine[0][0];
+            if (engineName.length > 24)
+                engineName = engineName.slice(0, 22) + "..";
+            return false;
+        }
+        else if (getShortEngineName(engine[1][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
+        {
+            //engineName = "S#" + engine[1][1] + " " + engine[1][0];
+            engineName = engine[1][0];
+            engineName = "#" + engine[1][1] + " " + engine[1][0];
+            if (engineName.length > 24)
+                engineName = engineName.slice(0, 22) + "..";
+            return false;
+        }
    });
-   if (engineName == 0)
-   {
-      engineName = name;
-   }
-   return engineName;
+
+   return engineName || name;
 }
 
 function getDateRound()
 {
-   let roundDate = [];
-   var diffData = 0;
+    let roundDate = [],
+        diffData = 0;
 
-   for (let x = 0 ; x <= totalEvents; x++)
-   {
-      if (roundDateMan[x])
-      {
-         roundDate[x] = getCurrDate(roundDateMan[x], 0);
-      }
-      else
-      {
-         let y = x + 1;
-         if (diffData)
-         {
-            if (y % 2 == 1)
+    for (let x = 0 ; x <= totalEvents; x++)
+    {
+        if (roundDateMan[x])
+            roundDate[x] = getCurrDate(roundDateMan[x], 0);
+        else
+        {
+            let y = x + 1;
+            if (diffData)
             {
-               roundDate[x] = getCurrDate(startDateR1, 1440 * (parseInt(y/2)));
+                if (y % 2 == 1)
+                    roundDate[x] = getCurrDate(startDateR1, 1440 * (parseInt(y/2)));
+                else
+                    roundDate[x] = getCurrDate(startDateR2, 1440 * (parseInt((y-1)/2)));
             }
             else
             {
-               roundDate[x] = getCurrDate(startDateR2, 1440 * (parseInt((y-1)/2)));
+                let gameDiffL = gameDiff * 8 / (60 * 1000);
+                // gameDiffL = gameDiffL/1.5;
+                roundDate[x] = getCurrDate(startDateR1, gameDiffL * x / 2);
             }
-         }
-         else
-         {
-            let gameDiffL = gameDiff * 8 / (60 * 1000);
-            //gameDiffL = gameDiffL/1.5;
-            roundDate[x] = getCurrDate(startDateR1, gameDiffL * x / 2);
-         }
-      }
-   }
+        }
+    }
 }
 
 function getCurrDate(currdate, mins)
 {
-   var timezoneDiff = moment().utcOffset() * 60 * 1000 + mins * 60 * 1000;
-   let momentDate = moment(currdate, 'HH:mm:ss on YYYY.MM.DD');
-   momentDate.add(timezoneDiff);
-   return momentDate.format('MMM DD YYYY, HH:mm');
+    let timezoneDiff = moment().utcOffset() * 60 * 1000 + mins * 60 * 1000,
+        momentDate = moment(currdate, 'HH:mm:ss on YYYY.MM.DD');
+    momentDate.add(timezoneDiff);
+    return momentDate.format('MMM DD YYYY, HH:mm');
 }
 
 async function eventCrosstable(data)
@@ -4226,40 +3993,34 @@ async function eventCrosstable(data)
 }
 
 function formatterEvent(value, row, index, _field) {
-   var retStr = '';
-   var countGames = 0;
-   var gameArray =  row.Gamesno.split(",");
+    let retStr = '',
+        countGames = 0,
+        gameArray =  row.Gamesno.split(",");
 
     Keys(value).forEach(key => {
         let engine = value[key],
             gameX = parseInt(countGames / 2),
             gameXColor = parseInt(gameX % 3);
 
-      if (engine == "=")
-      {
-         engine = '&frac12';
-         gameXColor = 2;
-      }
-      else
-      {
-         gameXColor = parseInt(engine);
-      }
-      var gameNum = gameArray[key];
-      if (retStr == '')
-      {
-         retStr = '<a title="' + gameNum + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + gameNum + ')">' + engine + '</a>';
-      }
-      else
-      {
-         retStr += ' ' + '<a title="' + gameNum + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' +  index + ',' + gameNum + ')">' + engine + '</a>';
-      }
-      countGames ++;
-      if (countGames % 8 == 0)
-      {
-         retStr += '<br />';
-      }
-   });
-  return retStr;
+        if (engine == "=")
+        {
+            engine = '&frac12';
+            gameXColor = 2;
+        }
+        else
+            gameXColor = parseInt(engine);
+
+        let gameNum = gameArray[key];
+        if (retStr)
+            retStr += ' ';
+        retStr += '<a title="' + gameNum + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + gameNum + ')">' + engine + '</a>';
+
+        countGames ++;
+        if (countGames % 8 == 0)
+            retStr += '<br />';
+    });
+
+    return retStr;
 }
 
 /**
@@ -4298,94 +4059,91 @@ function set_ui_events() {
 
         e.preventDefault();
         return false;
-     });
+    });
 
-     $(document).on('click', '.change-move', function(e) {
+    $(document).on('click', '.change-move', function(e) {
         let clickedPly = $(this).attr('ply'),
             clickedFen = $(this).attr('fen');
         LS(`clickedPly=${clickedPly} : clickedFen=${clickedFen}`);
-       moveFrom = $(this).attr('from');
-       moveTo = $(this).attr('to');
+        moveFrom = $(this).attr('from');
+        moveTo = $(this).attr('to');
 
-       viewingActiveMove = false;
+        viewingActiveMove = false;
 
-       Class('.active-move', '-active-move');
-       Class(this, 'active-move');
+        Class('.active-move', '-active-move');
+        Class(this, 'active-move');
 
-       show_move('#board', moveFrom, moveTo);
-       squareToHighlight = moveTo;
+        show_move('#board', moveFrom, moveTo);
+        squareToHighlight = moveTo;
 
-       board.position(clickedFen, false);
-       currentPosition = clickedFen;
-       activePly = clickedPly;
-       e.preventDefault();
-       listPosition();
+        board.position(clickedFen, false);
+        xboard.set_fen(clickedFen);
 
-       if (clickedPly == loadedPlies)
-       {
-          viewingActiveMove = true;
-          Class('#newmove', 'd-none');
-          newMovesCount = 0;
-          Attrs('#newmove', 'data-count', 0);
-       }
+        currentPosition = clickedFen;
+        activePly = clickedPly;
+        e.preventDefault();
+        listPosition();
 
-       handlePlyChange(false);
-       return false;
+        if (clickedPly == loadedPlies)
+        {
+            viewingActiveMove = true;
+            Class('#newmove', 'd-none');
+            newMovesCount = 0;
+            Attrs('#newmove', 'data-count', 0);
+        }
+
+        handlePlyChange(false);
+        return false;
     });
 
     $(document).on('click', '#board-to-first', function(e) {
-       activePly = 1;
-       handlePlyChange();
-       e.preventDefault();
+        activePly = 1;
+        handlePlyChange();
+        e.preventDefault();
     });
 
     $(document).on('click', '#board-previous', function(e) {
-       if (activePly > 1) {
-          activePly--;
-       }
-       handlePlyChange();
-       e.preventDefault();
-
-       return false;
+        if (activePly > 1)
+            activePly--;
+        handlePlyChange();
+        e.preventDefault();
+        return false;
     });
 
     $(document).on('click', '#board-autoplay', function(e) {
         e.preventDefault();
         Class('#board-autoplay i', '-fa-pause fa-play', isAutoplay);
         if (isAutoplay) {
-           isAutoplay = false;
+            isAutoplay = false;
         } else {
-           isAutoplay = true;
-           boardAutoplay();
+            isAutoplay = true;
+            boardAutoplay();
         }
-
         return false;
-     });
+    });
 
-     $(document).on('click', '#board-next', function(e) {
+    $(document).on('click', '#board-next', function(e) {
         if (activePly < loadedPlies) {
-           activePly++;
+            activePly ++;
         } else {
-           viewingActiveMove = true;
+            viewingActiveMove = true;
         }
         handlePlyChange();
         e.preventDefault();
-
         return false;
-     });
+    });
 
-     $(document).on('click', '#board-to-last', function(e) {
+    $(document).on('click', '#board-to-last', function(e) {
         onLastMove();
         e.preventDefault();
-
         return false;
-     });
+    });
 
-     $(document).on('click', '#board-reverse', function(e) {
+    $(document).on('click', '#board-reverse', function(e) {
         board.flip();
 
-         let oldOrientation = (board.orientation() == _BLACK)? _WHITE: _BLACK,
-             newOrientation = board.orientation();
+        let oldOrientation = (board.orientation() == _BLACK)? _WHITE: _BLACK,
+            newOrientation = board.orientation();
 
         $('.board-bottom-engine-eval.' + oldOrientation + '-engine-name').removeClass(oldOrientation + '-engine-name').addClass(newOrientation + '-engine-name');
         $('.board-bottom-engine-eval.' + oldOrientation + '-time-remaining').removeClass(oldOrientation + '-time-remaining').addClass(newOrientation + '-time-remaining');
@@ -4401,174 +4159,159 @@ function set_ui_events() {
 
         setInfoFromCurrentHeaders();
         handlePlyChange(false);
-
         e.preventDefault();
-
         return false;
-     });
+    });
 
-     $("#schedule").on("click-cell.bs.table", function (field, value, row, $el) {
+    $("#schedule").on("click-cell.bs.table", function (field, value, row, $el) {
         if ($el.agame <= gamesDone)
-        {
            openCross(0, $el.agame);
+    });
+
+    //
+    $('#pv-board-black').click(function(e) {
+        activePv = all_pvs[BL];
+        setPvFromKey(0, LIVE, all_pvs[BL]);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-white').click(function(e) {
+        activePv = all_pvs[WH];
+        setPvFromKey(0, LIVE, all_pvs[WH]);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-live1').click(function(e) {
+        setPvFromKey(0, LIVE, livePvs[1]);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-live2').click(function(e) {
+        setPvFromKey(0, LIVE, livePvs[2]);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-to-first').click(function(e) {
+        setPvFromKey(0, LIVE);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-previous').click(function(e) {
+        if (activePvKey[2] > 0)
+            setPvFromKey(activePvKey[2] - 1, LIVE);
+        e.preventDefault();
+        return false;
+    });
+
+    $('#pv-board-next').click(function(e) {
+        if (activePvKey[2] < choosePv.length)
+            setPvFromKey(activePvKey[2] + 1, LIVE);
+        e.preventDefault();
+        return false;
+    });
+
+    $('.pv-board-to-first1').click(function(e) {
+        setPvFromKey(0, WH);
+        e.preventDefault();
+        return false;
+    });
+
+    $('.pv-board-to-first2').click(function(e) {
+        setPvFromKey(0, BL);
+        e.preventDefault();
+        return false;
+    });
+
+    $('.pv-board-previous1').click(function(e) {
+        if (activePvKey[0] > 0)
+            setPvFromKey(activePvKey[0] - 1, WH);
+        e.preventDefault();
+        return false;
+    });
+
+    $('.pv-board-previous2').click(function(e) {
+        if (activePvKey[1] > 0)
+            setPvFromKey(activePvKey[1] - 1, BL);
+        e.preventDefault();
+        return false;
+    });
+
+    $('.pv-board-autoplay1').click(function(e) {
+        Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[0]);
+        if (isPvAutoplay[0])
+            isPvAutoplay[0] = false;
+        else {
+            isPvAutoplay[0] = true;
+            pvBoardautoplay(0, WH, all_pvs[WH]);
         }
-     });
+        e.preventDefault();
+        return false;
+    });
 
-     //
-     $('#pv-board-black').click(function(e) {
-      activePv = all_pvs[BL];
-      setPvFromKey(0, LIVE, all_pvs[BL]);
-      e.preventDefault();
-      return false;
-   });
+    $('.pv-board-autoplay2').click(function(e) {
+        Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[1]);
+        if (isPvAutoplay[1])
+            isPvAutoplay[1] = false;
+        else {
+            isPvAutoplay[1] = true;
+            pvBoardautoplay(1, BL, all_pvs[BL]);
+        }
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-white').click(function(e) {
-      activePv = all_pvs[WH];
-      setPvFromKey(0, LIVE, all_pvs[WH]);
-      e.preventDefault();
-      return false;
-   });
+    //
+    $('.pv-board-next1').click(function(e) {
+        if (activePvKey[0] < all_pvs[WH].length)
+            setPvFromKey(activePvKey[0] + 1, WH);
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-live1').click(function(e) {
-      setPvFromKey(0, LIVE, livePvs[1]);
-      e.preventDefault();
-      return false;
-   });
+    $('.pv-board-next2').click(function(e) {
+        if (activePvKey[1] < all_pvs[BL].length) {
+            setPvFromKey(activePvKey[1] + 1, BL);
+        }
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-live2').click(function(e) {
-      setPvFromKey(0, LIVE, livePvs[2]);
-      e.preventDefault();
-      return false;
-   });
+    $('.pv-board-to-last1').click(function(e) {
+        setPvFromKey(all_pvs[WH].length - 1, WH);
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-to-first').click(function(e) {
-      setPvFromKey(0, LIVE);
-      e.preventDefault();
-      return false;
-   });
+    $('.pv-board-to-last2').click(function(e) {
+        setPvFromKey(all_pvs[BL].length - 1, BL);
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-previous').click(function(e) {
-      if (activePvKey[2] > 0) {
-         setPvFromKey(activePvKey[2] - 1, LIVE);
-      }
-      e.preventDefault();
+    $('.pv-board-reverse1').click(function(e) {
+        pvBoardw.flip();
+        pvBoardwc.flip();
+        e.preventDefault();
+        return false;
+    });
 
-      return false;
-   });
+    $('.pv-board-reverse2').click(function(e) {
+        pvBoardb.flip();
+        pvBoardbc.flip();
+        e.preventDefault();
+        return false;
+    });
 
-   $('#pv-board-next').click(function(e) {
-      if (activePvKey[2] < choosePv.length) {
-         setPvFromKey(activePvKey[2] + 1, LIVE);
-      }
-      e.preventDefault();
-
-      return false;
-   });
-
-   $('.pv-board-to-first1').click(function(e) {
-      setPvFromKey(0, WH);
-      e.preventDefault();
-      return false;
-   });
-
-   $('.pv-board-to-first2').click(function(e) {
-      setPvFromKey(0, BL);
-      e.preventDefault();
-      return false;
-   });
-
-   $('.pv-board-previous1').click(function(e) {
-      if (activePvKey[0] > 0) {
-         setPvFromKey(activePvKey[0] - 1, WH);
-      }
-      e.preventDefault();
-
-      return false;
-   });
-
-   $('.pv-board-previous2').click(function(e) {
-      if (activePvKey[1] > 0) {
-         setPvFromKey(activePvKey[1] - 1, BL);
-      }
-      e.preventDefault();
-
-      return false;
-   });
-
-   $('.pv-board-autoplay1').click(function(e) {
-      Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[0]);
-     if (isPvAutoplay[0]) {
-        isPvAutoplay[0] = false;
-     } else {
-        isPvAutoplay[0] = true;
-        pvBoardautoplay(0, WH, all_pvs[WH]);
-     }
-     e.preventDefault();
-
-     return false;
-  });
-
-  $('.pv-board-autoplay2').click(function(e) {
-      Class('.pv-board-autoplay1 i', '-fa-pause fa-play', isPvAutoplay[1]);
-     if (isPvAutoplay[1]) {
-        isPvAutoplay[1] = false;
-     } else {
-        isPvAutoplay[1] = true;
-        pvBoardautoplay(1, BL, all_pvs[BL]);
-     }
-     e.preventDefault();
-
-     return false;
-  });
-
-  //
-  $('.pv-board-next1').click(function(e) {
-    if (activePvKey[0] < all_pvs[WH].length) {
-       setPvFromKey(activePvKey[0] + 1, WH);
-    }
-    e.preventDefault();
-    return false;
- });
-
- $('.pv-board-next2').click(function(e) {
-    if (activePvKey[1] < all_pvs[BL].length) {
-       setPvFromKey(activePvKey[1] + 1, BL);
-    }
-    e.preventDefault();
-    return false;
- });
-
- $('.pv-board-to-last1').click(function(e) {
-    setPvFromKey(all_pvs[WH].length - 1, WH);
-    e.preventDefault();
-    return false;
- });
-
- $('.pv-board-to-last2').click(function(e) {
-    setPvFromKey(all_pvs[BL].length - 1, BL);
-    e.preventDefault();
-    return false;
- });
-
- $('.pv-board-reverse1').click(function(e) {
-    pvBoardw.flip();
-    pvBoardwc.flip();
-    e.preventDefault();
-    return false;
- });
-
- $('.pv-board-reverse2').click(function(e) {
-    pvBoardb.flip();
-    pvBoardbc.flip();
-    e.preventDefault();
-    return false;
- });
-
- $('#pv-board-reverse').click(function(e) {
-    pvBoarda.flip();
-    e.preventDefault();
-    return false;
- });
+    $('#pv-board-reverse').click(function(e) {
+        pvBoarda.flip();
+        e.preventDefault();
+        return false;
+    });
 
     // charts
     Keys(charts).forEach(key => {
@@ -4579,9 +4322,20 @@ function set_ui_events() {
 }
 
 /**
- * First initialisation of TCEC
+ * Start TCEC
  */
-function startup_tcec() {
+function start_tcec() {
     game = new Chess();
     create_boards();
+}
+
+/**
+ * Init structures
+ */
+function startup_tcec() {
+    //
+    Assign(DEFAULTS, {
+        dark_mode: 10,
+        top_tab: 1,
+    });
 }

@@ -60,19 +60,19 @@ body {
 }
 
 .highlight-white,
-.highlight-1{
+.highlight-thin {
   -webkit-box-shadow: inset 0 0 1px 1px orange;
   -moz-box-shadow: inset 0 0 1px 1px orange;
   box-shadow: inset 0 0 1px 1px orange;
 }
 
-.highlight-2{
+.highlight-standard {
   -webkit-box-shadow: inset 0 0 2px 2px orange;
   -moz-box-shadow: inset 0 0 2px 2px orange;
   box-shadow: inset 0 0 2px 2px orange;
 }
 
-.highlight-3{
+.highlight-big {
   -webkit-box-shadow: inset 0 0 3px 3px orange;
   -moz-box-shadow: inset 0 0 3px 3px orange;
   box-shadow: inset 0 0 3px 3px orange;

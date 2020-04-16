@@ -17,27 +17,10 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        formatUnit, getShortEngineName, getScoreText,
+        getShortEngineName, getScoreText,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// formatUnit
-[
-    [7841319402, '7.8B'],
-    [58335971.81109362, '58.3M'],
-    [58335971, '58.3M'],
-    ['58335971', '58.3M'],
-    [318315, '318.3k'],
-    [1259, '1.2k'],
-    [725.019, '725'],
-    [NaN, 'N/A'],
-    [Infinity, 'InfinityB'],
-].forEach(([nodes, answer], id) => {
-    test(`formatUnit:${id}`, () => {
-        expect(formatUnit(nodes)).toEqual(answer);
-    });
-});
 
 // getShortEngineName
 [
