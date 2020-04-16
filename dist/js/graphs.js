@@ -134,7 +134,7 @@ function formatScale(value) {
  */
 function create_charts()
 {
-    charts.depth = new Chart('chart-depth', {
+    charts.depth = charts.depth || new Chart('chart-depth', {
         type: 'line',
         data: chart_data.depth,
         options: {
@@ -172,7 +172,7 @@ function create_charts()
         },
     });
 
-    charts.eval = new Chart('chart-eval', {
+    charts.eval = charts.eval || new Chart('chart-eval', {
         type: 'line',
         data: chart_data.eval,
         options: {
@@ -212,7 +212,7 @@ function create_charts()
         },
     });
 
-    charts.node = new Chart('chart-node', {
+    charts.node = charts.node || new Chart('chart-node', {
         type: 'line',
         data: chart_data.node,
         options: {
@@ -267,7 +267,7 @@ function create_charts()
         },
     });
 
-    charts.speed = new Chart('chart-speed', {
+    charts.speed = charts.speed || new Chart('chart-speed', {
         type: 'line',
         data: chart_data.speed,
         options: {
@@ -323,7 +323,7 @@ function create_charts()
         },
     });
 
-    charts.tb = new Chart('chart-tb', {
+    charts.tb = charts.tb || new Chart('chart-tb', {
         type: 'line',
         data: chart_data.tb,
         options: {
@@ -377,7 +377,7 @@ function create_charts()
         },
     });
 
-    charts.time = new Chart('chart-time', {
+    charts.time = charts.time || new Chart('chart-time', {
         type: 'line',
         data: chart_data.time,
         options: {
@@ -515,7 +515,7 @@ function reset_chart(chart) {
     let data = chart.data;
     data.labels.length = 0;
     for (let dataset of data.datasets)
-        dataset.length = 0;
+        dataset.data.length = 0;
 
     chart.update();
 }
@@ -523,7 +523,7 @@ function reset_chart(chart) {
 /**
  * Reset all charts
  */
-function clearChartData()
+function reset_charts()
 {
     blackDepth = [];
     blackEval = [];
@@ -545,7 +545,7 @@ function clearChartData()
     whiteTBHits = [];
     whiteTime = [];
 
-    Keys(charts, key => {
+    Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
 }
@@ -713,7 +713,7 @@ function updateChartData()
             LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
         if (prevPgnData.Moves[0].completed == undefined || charts.eval.data.labels.length == 0)
         {
-            clearChartData();
+            reset_charts();
             prevPgnData.Moves[0].completed = 0;
             prevPgnData.Moves[0].arrayStartW = 0;
             prevPgnData.Moves[0].arrayStartB = 0;
@@ -721,7 +721,7 @@ function updateChartData()
     }
     else
     {
-        clearChartData();
+        reset_charts();
         return;
     }
 
@@ -861,7 +861,7 @@ function updateChartData()
     }
 
     // update all charts
-    Keys(charts, key => {
+    Keys(charts).forEach(key => {
         charts[key].update();
     });
 

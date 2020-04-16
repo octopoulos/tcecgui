@@ -6,12 +6,14 @@
 /package-lock.json
 
 *.jar
+*_.css
+*_.js
 *+.js
 *.mp3
 *.pyc
 *.svg
-all*.css
-all*.js
+4d.js
+all.*
 archive/
 crash.json
 crosstable.json

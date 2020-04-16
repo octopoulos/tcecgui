@@ -6,8 +6,8 @@ _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:tru
 C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
 create_charts, crosstableData, Date, DefaultFloat, DEV, document, dummyCross, engine_colors, Exp, Floor, get_int,
 get_string, Hide, HTML, Keys,
-LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, Resource, Round, roundDate,
-roundDateMan, roundResults:true,
+LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
+roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setInterval, setTimeout, Show, Sign, socket, startDateR1, startDateR2, Style, teamsx,
 updateChartData, updateChartDataLive, updateCrosstable, window, Y
 */
@@ -479,8 +479,10 @@ function setPgn(pgn)
     }
 
     // new game has started?
-    if (previousPlies > currentPlyCount)
+    if (previousPlies > currentPlyCount) {
         create_charts();
+        reset_charts();
+    }
 
     let whiteEval = {},
         blackEval = {};

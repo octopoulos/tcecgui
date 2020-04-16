@@ -1,4 +1,10 @@
-// startup script
+// script
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2020-04-13
+//
+// startup
+//
+// included after: common, engine, global, 3d, board
 /*
 globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, bracketDataMain,
