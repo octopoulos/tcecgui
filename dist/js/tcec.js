@@ -53,6 +53,7 @@ let _BLACK = 'black',
     FEATURE_NN = 1,
     game,
     LIVE = 2,
+    liveEngineEvals = [[], [], []],     // 0 is not used
     moveFrom,
     moveFromPvs = [],
     moveTo,
@@ -90,7 +91,6 @@ let activeFen = '',
     crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/,
     crossTableInitialized = false,
     currentPosition = START_POSITION,
-    darkMode = 0,
     debug = 0,
     engineRatingGlobalData = 0,
     eventNameHeader = 0,
@@ -105,8 +105,6 @@ let activeFen = '',
     isPvAutoplay = [false, false],
     lastMove = '',
     lastRefreshTime = 0,
-    liveEngineEval1 = [],
-    liveEngineEval2 = [],
     livePVHist = [],
     livePvs = [],
     loadedPlies = 0,
@@ -144,23 +142,22 @@ var onMoveEndPv = function() {
 
 function getUserS()
 {
-   socket.emit('getusers', 'd');
+    socket.emit('getusers', 'd');
 }
 
 function updateRefresh()
 {
-   if (lastRefreshTime)
-      return;
+    if (lastRefreshTime)
+        return;
 
-   socket.emit('refreshdata', 'data is emitted');
-   lastRefreshTime = moment();
-   eventCrosstableWrap();
-   if (prevPgnData && prevPgnData.Moves)
-   {
-      //prevPgnData.Moves[0].completed = 0;
-   }
-   Class('#board-to-sync i', '-fa-retweet fa-ban');
-   Class('#board-to-sync', 'disabled');
+    socket.emit('refreshdata', 'data is emitted');
+    lastRefreshTime = moment();
+    eventCrosstableWrap();
+    if (prevPgnData && prevPgnData.Moves) {
+        //prevPgnData.Moves[0].completed = 0;
+    }
+    Class('#board-to-sync i', '-fa-retweet fa-ban');
+    Class('#board-to-sync', 'disabled');
 
     add_timeout('update_refresh', () => {
         Class('#board-to-sync i', '-fa-ban fa-retweet');
@@ -247,7 +244,7 @@ function startClock(color, currentMove, previousMove) {
     if (currentMove.mt != undefined)
         setTimeUsed(other, currentMove.mt);
 
-   Show(`.${WHITE_BLACK[color]}-to-move`);
+    Show(`.${WHITE_BLACK[color]}-to-move`);
 }
 
 /**
@@ -293,10 +290,10 @@ function secFormat(timeip)
         minutes = Floor((sec_num - (hours * 3600)) / 60),
         seconds = sec_num - (hours * 3600) - (minutes * 60);
 
-   if (hours   < 10) {hours   = "0"+hours;}
-   if (minutes < 10) {minutes = "0"+minutes;}
-   if (seconds < 10) {seconds = "0"+seconds;}
-   return hours+':'+minutes+':'+seconds;
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return hours+':'+minutes+':'+seconds;
 }
 
 function setTimeRemaining(color, time)
@@ -328,13 +325,13 @@ function setUsersMain(count)
 
 function listPosition()
 {
-   if (board)
-   {
-      let getPos = board.position();
-      if (getPos)
-         return Keys(getPos).length - 6;
-   }
-   return '-';
+    if (board)
+    {
+        let getPos = board.position();
+        if (getPos)
+            return Keys(getPos).length - 6;
+    }
+    return '-';
 }
 
 /**
@@ -827,21 +824,19 @@ function getEvalFromPly(ply)
 // The function was posted by "ya" in the Leela Chess Zero Discord channel
 // https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
 function leelaCpToQ(cp) {
-   return cp < 234.18
-      ? 0.0033898305085 * cp -
-           (8.76079436769e-38 * Pow(cp, 15)) /
-              (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
-           (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
-              (cp * cp - 487.329812319 * cp + 59486.9337812)
-      : cp < 381.73
-      ? (-17.03267913 * cp + 3342.55947265) /
-           (cp * cp - 360.8419732 * cp + 32568.5395889) +
-        0.995103
-      : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
+    return cp < 234.18?
+        0.0033898305085 * cp -
+            (8.76079436769e-38 * Pow(cp, 15)) /
+                (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
+            (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
+                (cp * cp - 487.329812319 * cp + 59486.9337812)
+        : cp < 381.73?
+            (-17.03267913 * cp + 3342.55947265) /
+                (cp * cp - 360.8419732 * cp + 32568.5395889) + 0.995103
+        : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
         ((0.4182050082072 * cp - 2942.6269998574) /
            (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
-           Exp(-Pow((cp - 400.0) / 7000.0, 3)) -
-        5.727639074137869e-8;
+           Exp(-Pow((cp - 400.0) / 7000.0, 3)) - 5.727639074137869e-8;
 }
 
 function leelaEvalToWinPct(eval_) {
@@ -1389,142 +1384,112 @@ function openCrossCup(index, gamen)
 
 function openCross(index, gamen)
 {
-   if (tourInfo.cup && index)
-   {
-      openCrossCup(index, gamen);
-      return;
-   }
-   var link = ARCHIVE_LINK;
-   var season = 1;
-   var div = "di";
-   var divno = 1;
-   globalGameno = gamen;
+    if (tourInfo.cup && index)
+    {
+        openCrossCup(index, gamen);
+        return;
+    }
+    let link = ARCHIVE_LINK;
+        // season = 1,
+        // div = "di",
+        // divno = 1;
+    globalGameno = gamen;
 
-   if (tourInfo.startgame)
-   {
-      gamen += tourInfo.startgame;
-   }
+    if (tourInfo.startgame)
+        gamen += tourInfo.startgame;
 
-   link = link + "?" + tourInfo.link + "&game=" + gamen;
-   window.open(link,'_blank');
-   scheduleHighlight();
+    link = `${link}?${tourInfo.link}&game=${gamen}`;
+    window.open(link,'_blank');
+    scheduleHighlight();
 }
 
 function openLinks(link)
 {
-   window.open(link,'_blank');
-}
-
-function setDarkMode(value)
-{
-   darkMode = value;
-   if (!darkMode)
-   {
-      gameArrayClass = ['red', 'green', '#696969', 'darkblue'];
-   }
-   else
-   {
-      gameArrayClass = ['red', '#39FF14', 'whitesmoke', 'orange'];
-   }
+    window.open(link,'_blank');
 }
 
 function crossFormatter(value, row, index, field) {
-   if (!value.hasOwnProperty("Score")) // true
-   {
-      return value;
-   }
+    if (!value.hasOwnProperty("Score")) // true
+        return value;
 
-   var retStr = '';
-   let valuex = value.Score;
-   var countGames = 0;
+    let retStr = '',
+        valuex = value.Score,
+        countGames = 0;
 
-   Keys(valuex).forEach(key => {
+    Keys(valuex).forEach(key => {
         let engine = valuex[key],
             gameX = parseInt(countGames / 2),
             gameXColor = parseInt(gameX % 3);
 
-      if (engine.Result == "0.5")
-      {
-         engine.Result = '&frac12';
-         gameXColor = 2;
-      }
-      else
-      {
-         gameXColor = parseInt(engine.Result);
-      }
-      if (retStr == '')
-      {
-         retStr = '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
-      }
-      else
-      {
-         retStr += ' ' + '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
-      }
-      countGames ++;
-      if (countGames % 10 == 0)
-      {
-         retStr += '<br />';
-      }
-   });
-   return retStr;
+        if (engine.Result == "0.5")
+        {
+            engine.Result = '&frac12';
+            gameXColor = 2;
+        }
+        else
+            gameXColor = parseInt(engine.Result);
+
+        if (retStr)
+            retStr += ' ';
+        retStr += '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
+
+        countGames ++;
+        if (countGames % 10 == 0)
+            retStr += '<br />';
+    });
+
+    return retStr;
 }
 
 function formatter(value, _row, index, _field) {
-   if (!value.hasOwnProperty("Score")) // true
-   {
-      return value;
-   }
+    if (!value.hasOwnProperty("Score")) // true
+        return value;
 
-   var retStr = '';
-   let valuex = value.Score;
-   var countGames = 0;
-   var rowcountGames = 0;
-   var splitcount = 10;
+    let retStr = '',
+        valuex = value.Score,
+        countGames = 0,
+        rowcountGames = 0,
+        splitcount = 10;
 
-   Keys(valuex).forEach(key => {
+    Keys(valuex).forEach(key => {
         let engine = valuex[key],
             gameX = parseInt(countGames / 2),
             gameXColor = parseInt(gameX % 3);
 
-      if (engine.Result == "0.5")
-      {
-         engine.Result = '&frac12';
-         gameXColor = 2;
-      }
-      else
-      {
-         gameXColor = parseInt(engine.Result);
-      }
-      if (rowcountGames && (rowcountGames%2 == 0))
-      {
-         retStr += '&nbsp';
-      }
-      if (retStr == '')
-      {
-         retStr = '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
-      }
-      else
-      {
-         retStr += ' ' + '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
-      }
-      countGames ++;
-      rowcountGames ++;
-      if (countGames % splitcount == 0)
-      {
-         rowcountGames = 0;
-         retStr += '<br />';
-      }
-   });
-   return retStr;
+        if (engine.Result == "0.5")
+        {
+            engine.Result = '&frac12';
+            gameXColor = 2;
+        }
+        else
+            gameXColor = parseInt(engine.Result);
+
+        if (rowcountGames && (rowcountGames%2 == 0))
+            retStr += '&nbsp';
+
+        if (retStr)
+            retStr += ' ';
+        retStr += '<a title="' + engine.Game + '" style="cursor:pointer; color: ' + gameArrayClass[gameXColor] + ';"onclick="openCross(' + index + ',' + engine.Game + ')">' + engine.Result + '</a>';
+
+        countGames ++;
+        rowcountGames ++;
+        if (countGames % splitcount == 0)
+        {
+            rowcountGames = 0;
+            retStr += '<br />';
+        }
+    });
+
+    return retStr;
 }
 
 function crossCellformatter(value, row, index, field)
 {
-   return {classes: (row.crashes >= 3)? 'strike': 'normal'};
+    return {classes: (row.crashes >= 3)? 'strike': 'normal'};
 }
 
 function cellformatter(value, row, index, field) {
-   return {classes: (value.Score != undefined)? 'monofont': _BLACK};
+    return {classes: (value.Score != undefined)? 'monofont': _BLACK};
 }
 
 function updateScoreHeadersData()
@@ -1540,41 +1505,38 @@ function updateScoreHeadersData()
         return;
     }
 
-   if (crosstableData.whiteCurrent === all_engines[WH] && crosstableData.blackCurrent === all_engines[BL])
-      return;
+    if (crosstableData.whiteCurrent === all_engines[WH] && crosstableData.blackCurrent === all_engines[BL])
+        return;
 
-   var scores = {};
-   var whiteRes = crosstableData.Table[all_engines[WH]];
-   var blackRes = crosstableData.Table[all_engines[BL]];
+    let scores = {},
+        whiteRes = crosstableData.Table[all_engines[WH]],
+        blackRes = crosstableData.Table[all_engines[BL]];
 
-   if (whiteRes.Rating)
-   {
-      HTML('#white-engine-elo', whiteRes.Rating);
-      scores = getScoreText(crosstableData.Table[all_engines[WH]].Results[all_engines[BL]].Text);
-      HTML('.white-engine-score', scores.w.toFixed(1));
-      HTML('.black-engine-score', scores.b.toFixed(1));
-   }
+    if (whiteRes.Rating)
+    {
+        HTML('#white-engine-elo', whiteRes.Rating);
+        scores = getScoreText(crosstableData.Table[all_engines[WH]].Results[all_engines[BL]].Text);
+        HTML('.white-engine-score', scores.w.toFixed(1));
+        HTML('.black-engine-score', scores.b.toFixed(1));
+    }
 
-   if (blackRes.Rating)
-   {
-      HTML('#black-engine-elo', blackRes.Rating);
-   }
+    if (blackRes.Rating)
+        HTML('#black-engine-elo', blackRes.Rating);
 
-   crosstableData.whiteCurrent = all_engines[WH];
-   crosstableData.blackCurrent = all_engines[BL];
-
-   return 0;
+    crosstableData.whiteCurrent = all_engines[WH];
+    crosstableData.blackCurrent = all_engines[BL];
+    return 0;
 }
 
 function updateEngRatingData(data)
 {
-   engineRatingGlobalData = data;
-   clear_timeout('cross');
+    engineRatingGlobalData = data;
+    clear_timeout('cross');
 }
 
 function updateTourInfo(data)
 {
-   tourInfo = data;
+    tourInfo = data;
 }
 
 function readTourInfo()
@@ -1595,7 +1557,7 @@ function updateEngRating()
 
 function shallowCopy(data)
 {
-   return JSON.parse(JSON.stringify(data));
+    return JSON.parse(JSON.stringify(data));
 }
 
 function updateH2hData()
@@ -1623,90 +1585,83 @@ function updateH2hData()
     if (oldSchedData.WhiteEngCurrent === all_engines[WH] && oldSchedData.BlackEngCurrent === all_engines[BL])
         return;
 
-   h2hRetryCount = 0;
+    h2hRetryCount = 0;
 
-   let h2hdata = [];
-   var prevDate = 0;
-   var momentDate = 0;
-   var diff = 0;
-   var gameDiff = 0;
-   var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-   var h2hrank = 0;
-//    var schedEntry = {};
-   var data = shallowCopy(oldSchedData);
+    let h2hdata = [],
+        prevDate = 0,
+        momentDate = 0,
+        diff = 0,
+        gameDiff = 0,
+        timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000,
+        h2hrank = 0,
+        data = shallowCopy(oldSchedData);
 
-   Keys(data).forEach(key => {
-       let engine = data[key];
-      engine.Gamesort = engine.Game;
-      if (engine.Start)
-      {
-         momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
-         if (prevDate)
-         {
-            diff += momentDate.diff(prevDate);
-            gameDiff = diff/(engine.Game-1);
-         }
-         momentDate.add(timezoneDiff);
-         engine.Start = getLocalDate(engine.Start);
-         prevDate = momentDate;
-         //LS("diff is :" + (CurrentDate2 - CurrentDate1));
-      }
-      else
-      {
-         if (gameDiff)
-         {
+    Keys(data).forEach(key => {
+        let engine = data[key];
+        engine.Gamesort = engine.Game;
+        if (engine.Start)
+        {
+            momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
+            if (prevDate)
+            {
+                diff += momentDate.diff(prevDate);
+                gameDiff = diff/(engine.Game-1);
+            }
+            momentDate.add(timezoneDiff);
+            engine.Start = getLocalDate(engine.Start);
+            prevDate = momentDate;
+            //LS("diff is :" + (CurrentDate2 - CurrentDate1));
+        }
+        else if (gameDiff)
+        {
             prevDate.add(gameDiff + timezoneDiff);
             engine.Start = "Estd: " + prevDate.format('HH:mm:ss on YYYY.MM.DD');
-         }
-      }
-      if (engine.Moves)
-      {
-         gamesDone = engine.Game;
-         engine.Game = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.Game + ')">' + engine.Game + '</a>';
-      }
-      engine.FixWhite = engine.White;
-      engine.FixBlack = engine.Black;
+        }
 
+        if (engine.Moves)
+        {
+            gamesDone = engine.Game;
+            engine.Game = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.Game + ')">' + engine.Game + '</a>';
+        }
+        engine.FixWhite = engine.White;
+        engine.FixBlack = engine.Black;
 
-         if (engine.Result == "1/2-1/2")
-         {
-            /* do nothing */
-         }
-         else if (engine.Result == "1-0")
-         {
+        if (engine.Result == "1/2-1/2") {
+            // do nothing
+        }
+        else if (engine.Result == "1-0")
+        {
             engine.FixWhite = '<div style="color:' + gameArrayClass[1] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[0] + '">' + engine.Black + '</div>';
-         }
-         else if (engine.Result == "0-1")
-         {
+        }
+        else if (engine.Result == "0-1")
+        {
             engine.FixWhite = '<div style="color:' + gameArrayClass[0] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
-         }
+        }
 
-      if ((engine.Black == all_engines[BL] && engine.White == all_engines[WH]) ||
-         (engine.Black == all_engines[WH] && engine.White == all_engines[BL]))
-      {
-         engine.h2hrank = engine.Game;
-         if (engine.Result != undefined)
-         {
-            h2hrank ++;
-            if (h2hrank%2 == 0)
+        if ((engine.Black == all_engines[BL] && engine.White == all_engines[WH]) ||
+            (engine.Black == all_engines[WH] && engine.White == all_engines[BL]))
+        {
+            engine.h2hrank = engine.Game;
+            if (engine.Result != undefined)
             {
-               engine.h2hrank = engine.Game + ' (R)';
+                h2hrank ++;
+                if (h2hrank%2 == 0)
+                    engine.h2hrank = engine.Game + ' (R)';
             }
-         }
-         h2hdata.push(engine);
-      }
-   });
-   oldSchedData.WhiteEngCurrent = all_engines[WH];
-   oldSchedData.BlackEngCurrent = all_engines[BL];
+            h2hdata.push(engine);
+        }
+    });
 
-   $('#h2h').bootstrapTable('load', h2hdata);
+    oldSchedData.WhiteEngCurrent = all_engines[WH];
+    oldSchedData.BlackEngCurrent = all_engines[BL];
+    $('#h2h').bootstrapTable('load', h2hdata);
 }
 
 function updateGame(game)
 {
-   openCross(0, game);
+    openCross(0, game);
 }
 
 function updateTourStat(data)
@@ -1716,105 +1671,99 @@ function updateTourStat(data)
         tinfoData = scheduleToTournamentInfo(scdatainput),
         gameNox = tinfoData.minMoves[1];
 
-   tinfoData.minMoves = tinfoData.minMoves[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
-   gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
-   gameNox = tinfoData.maxMoves[1];
-   tinfoData.maxMoves = tinfoData.maxMoves[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
-   gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
-   gameNox = tinfoData.minTime[1];
-   tinfoData.minTime = tinfoData.minTime[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
-   gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
-   gameNox = tinfoData.maxTime[1];
-   tinfoData.maxTime = tinfoData.maxTime[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
-   gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
+    tinfoData.minMoves = tinfoData.minMoves[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
+    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
+    gameNox = tinfoData.maxMoves[1];
+    tinfoData.maxMoves = tinfoData.maxMoves[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
+    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
+    gameNox = tinfoData.minTime[1];
+    tinfoData.minTime = tinfoData.minTime[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
+    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
+    gameNox = tinfoData.maxTime[1];
+    tinfoData.maxTime = tinfoData.maxTime[0] + ' [' + '<a title="' + gameNox + '" style="cursor:pointer; color: ' +
+    gameArrayClass[1] + ';"onclick="updateGame(' + gameNox + ')">' + gameNox + '</a>' + ']';
 
-   let crashes = tinfoData.crashes[1];
-   // CHECK THIS
-   if (crashes.length)
-   {
-      tinfoData.crashes = tinfoData.crashes[0] + ' [';
-      let lines = crashes.map(crash => `<a title="${crash}" style="cursor:pointer; color:${gameArrayClass[0]};"onclick="updateGame(${gameNox})">${gameNox}</a>`);
-      tinfoData.crashes += lines.join(',') + ']';
-   }
-   else
-   {
-      tinfoData.crashes = 0;
-   }
+    let crashes = tinfoData.crashes[1];
+    // CHECK THIS
+    if (crashes.length)
+    {
+        tinfoData.crashes = tinfoData.crashes[0] + ' [';
+        let lines = crashes.map(crash => `<a title="${crash}" style="cursor:pointer; color:${gameArrayClass[0]};"onclick="updateGame(${gameNox})">${gameNox}</a>`);
+        tinfoData.crashes += lines.join(',') + ']';
+    }
+    else
+        tinfoData.crashes = 0;
 
-   tinfo.push(tinfoData);
-   $('#tf').bootstrapTable('load', tinfo);
+    tinfo.push(tinfoData);
+    $('#tf').bootstrapTable('load', tinfo);
 }
 
 function updateScheduleData(scdatainput)
 {
-   let scdata = [];
-   var prevDate = 0;
-   var momentDate = 0;
-   var diff = 0;
-   var gameDiff = 0;
-   var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-//    var schedEntry = {};
-   oldSchedData = shallowCopy(scdatainput);
-   var data = shallowCopy(scdatainput);
-   updateTourStat(scdatainput);
-   var gameLocalno = 1;
+    let scdata = [],
+        prevDate = 0,
+        momentDate = 0,
+        diff = 0,
+        gameDiff = 0,
+        timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
 
-   Keys(data).forEach(key => {
-       let engine = data[key];
-      engine.Game = gameLocalno;
-      gameLocalno ++;
-      engine.Gamesort = engine.Game;
-      if (engine.Start)
-      {
-         momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
-         if (prevDate)
-         {
-            diff += momentDate.diff(prevDate);
-            gameDiff = diff/(engine.Game-1);
-         }
-         momentDate.add(timezoneDiff);
-         engine.Start = getLocalDate(engine.Start);
-         prevDate = momentDate;
-      }
-      else
-      {
-         if (gameDiff)
-         {
+    oldSchedData = shallowCopy(scdatainput);
+    let data = shallowCopy(scdatainput),
+        gameLocalno = 1;
+    updateTourStat(scdatainput);
+
+    Keys(data).forEach(key => {
+        let engine = data[key];
+        engine.Game = gameLocalno;
+        gameLocalno ++;
+        engine.Gamesort = engine.Game;
+        if (engine.Start)
+        {
+            momentDate = moment(engine.Start, 'HH:mm:ss on YYYY.MM.DD');
+            if (prevDate)
+            {
+                diff += momentDate.diff(prevDate);
+                gameDiff = diff/(engine.Game-1);
+            }
+            momentDate.add(timezoneDiff);
+            engine.Start = getLocalDate(engine.Start);
+            prevDate = momentDate;
+        }
+        else if (gameDiff)
+        {
             prevDate.add(gameDiff + timezoneDiff);
             engine.Start = "Estd: " + prevDate.format('HH:mm:ss on YYYY.MM.DD');
-         }
-      }
-      if (engine.Moves)
-      {
-         gamesDone = engine.Game;
-         globalGameno = gamesDone;
-         engine.agame = engine.Game;
-         engine.Game = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.Game + ')">' + engine.Game + '</a>';
-      }
-      engine.FixWhite = engine.White;
-      engine.FixBlack = engine.Black;
+        }
+        if (engine.Moves)
+        {
+            gamesDone = engine.Game;
+            globalGameno = gamesDone;
+            engine.agame = engine.Game;
+            engine.Game = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.Game + ')">' + engine.Game + '</a>';
+        }
+        engine.FixWhite = engine.White;
+        engine.FixBlack = engine.Black;
 
 
-         if (engine.Result == "1/2-1/2")
-         {
-            /* do nothing */
-         }
-         else if (engine.Result == "1-0")
-         {
+        if (engine.Result == "1/2-1/2") {
+            // do nothing
+        }
+        else if (engine.Result == "1-0")
+        {
             engine.FixWhite = '<div style="color:' + gameArrayClass[1] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[0] + '">' + engine.Black + '</div>';
-         }
-         else if (engine.Result == "0-1")
-         {
+        }
+        else if (engine.Result == "0-1")
+        {
             engine.FixWhite = '<div style="color:' + gameArrayClass[0] + '">' + engine.White + '</div>';
             engine.FixBlack = '<div style="color:' + gameArrayClass[1] + '">' + engine.Black + '</div>';
-         }
+        }
 
-      scdata.push(engine);
-   });
+        scdata.push(engine);
+    });
 
-   $('#schedule').bootstrapTable('load', scdata);
-   scheduleHighlight();
+    $('#schedule').bootstrapTable('load', scdata);
+    scheduleHighlight();
 }
 
 function scheduleHighlight(_noscroll)
@@ -1835,7 +1784,7 @@ function scheduleHighlight(_noscroll)
     //         top += $(this).height();
     // });
 
-    if (!darkMode)
+    if (Y.dark_mode != 20)
         classSet = 'whitetds';
 
     Class('#schedule tr', classSet, false);
@@ -1844,14 +1793,8 @@ function scheduleHighlight(_noscroll)
 
 function updateWinnersData(winnerData)
 {
-   let scdata = [];
-//    var prevDate = 0;
-//    var momentDate = 0;
-//    var diff = 0;
-//    var gameDiff = 0;
-//    var timezoneDiff = moment().utcOffset() * 60 * 1000 + timezoneDiffH * 3600 * 1000;
-//    var schedEntry = {};
-   let data = shallowCopy(winnerData);
+    let scdata = [],
+        data = shallowCopy(winnerData);
 
     Keys(data).forEach(key => {
         let engine = data[key],
@@ -1861,7 +1804,7 @@ function updateWinnersData(winnerData)
         scdata.push(engine);
     });
 
-   $('#winner').bootstrapTable('load', scdata);
+    $('#winner').bootstrapTable('load', scdata);
 }
 
 function updateWinners()
@@ -1892,41 +1835,42 @@ var onDragStart = function(source, piece, position, orientation)
 
 var onDragMove = function(newLocation, oldLocation, source, piece, position, orientation)
 {
-   var move = game.move({
-      from: newLocation,
-      to: oldLocation,
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
-   });
+    let move = game.move({
+        from: newLocation,
+        to: oldLocation,
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+    });
 
-   // illegal move
-   if (move === null) return 'snapback';
+    // illegal move
+    if (move === null)
+        return 'snapback';
 
-   var pvLen = activePvKey[2] + 1;
-   var fen = ChessBoard.objToFen(position);
-   if (activePvKey[2] == 0)
-   {
-      activePv[0] = {};
-      activePv[0].fen = fen;
-   }
-   moveFrom = oldLocation;
-   moveTo = newLocation;
-   if (newLocation == oldLocation)
-      return;
+    let pvLen = activePvKey[2] + 1,
+        fen = ChessBoard.objToFen(position);
+    if (activePvKey[2] == 0)
+    {
+        activePv[0] = {};
+        activePv[0].fen = fen;
+    }
+    moveFrom = oldLocation;
+    moveTo = newLocation;
+    if (newLocation == oldLocation)
+        return;
 
-   var str = newLocation + '-' + oldLocation;   // + '-' + newLocation;
-   pvBoarda.move(str);
-   fen = pvBoarda.fen();
-   activePv[pvLen] = {};
-   activePv[pvLen].fen = fen;
-   activePv[pvLen].from = oldLocation;
-   activePv[pvLen].to = newLocation;
-   Class(this, 'active-pv-move');
+    let str = newLocation + '-' + oldLocation;   // + '-' + newLocation;
+    pvBoarda.move(str);
+    fen = pvBoarda.fen();
+    activePv[pvLen] = {};
+    activePv[pvLen].fen = fen;
+    activePv[pvLen].from = oldLocation;
+    activePv[pvLen].to = newLocation;
+    Class(this, 'active-pv-move');
 
-   show_move('#pv-boarda', moveFrom, moveTo, true);
-   pvSquareToHighlight = moveTo;
+    show_move('#pv-boarda', moveFrom, moveTo, true);
+    pvSquareToHighlight = moveTo;
 
-   activePvKey[2] = pvLen;
-   analysFen = fen;
+    activePvKey[2] = pvLen;
+    analysFen = fen;
 };
 
 /**
@@ -2082,7 +2026,11 @@ function setDarkLight()
     Prop('#themecheck', 'checked', !is_dark);
     Class('.graphs', 'blackcanvas -whitecanvas', is_dark);
     Prop('input.toggleDark', 'checked', is_dark);
-    setDarkMode(is_dark? 1: 0);
+
+    if (is_dark)
+        gameArrayClass = ['red', '#39FF14', 'whitesmoke', 'orange'];
+    else
+        gameArrayClass = ['red', 'green', '#696969', 'darkblue'];
 }
 
 function setDefaults()
@@ -2221,34 +2169,32 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
 function updateLiveEvalData(datum, update, fen, contno, initial) {
     if (!datum)
         return;
-   var container = '#live-eval-cont' + contno;
+    let container = '#live-eval-cont' + contno;
 
-   if (contno == 1 && !showLivEng1)  {
-      HTML(container, '');
-      return;
-   } else if (contno == 2 && !showLivEng2) {
-      HTML(container, '');
-      return;
-   } else if (!initial && contno == 1){
-      board.clearAnnotation();
-      clearedAnnotation = 1;
-   }
+    if (contno == 1 && !showLivEng1)  {
+        HTML(container, '');
+        return;
+    } else if (contno == 2 && !showLivEng2) {
+        HTML(container, '');
+        return;
+    } else if (!initial && contno == 1){
+        board.clearAnnotation();
+        clearedAnnotation = 1;
+    }
 
-   if (clearedAnnotation < 1 && contno == 2) {
-      board.clearAnnotation();
-   }
+    if (clearedAnnotation < 1 && contno == 2)
+        board.clearAnnotation();
 
-   if (contno == 2) {
-      clearedAnnotation = 0;
-   }
+    if (contno == 2)
+        clearedAnnotation = 0;
 
-   if (update && !viewingActiveMove) {
-      return;
-   } else if (!update) {
-      datum.origeval = datum.eval;
-      updateLiveEvalDataHistory(datum, fen, container, contno);
-      return;
-   }
+    if (update && !viewingActiveMove)
+        return;
+    else if (!update) {
+        datum.origeval = datum.eval;
+        updateLiveEvalDataHistory(datum, fen, container, contno);
+        return;
+    }
 
     let score = '';
     if (datum)
@@ -2259,85 +2205,76 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
     datum.tbhits = FormatUnit(datum.tbhits);
     datum.nodes = FormatUnit(datum.nodes);
 
-   var pvs = [];
+    if (!datum.pv.length || datum.pv.trim() == 'no info')
+        return;
 
-   var moveContainer = [];
-   if (datum.pv.length > 0 && datum.pv.trim() != "no info") {
-      fen = fen ? fen : activeFen;
-      var chess = new Chess(fen);
-      var currentFen = fen;
+    let pvs = [],
+        moveContainer = [];
 
-      var split = datum.pv.replace("...","... ").split(' ');
-      var length = split.length;
-      for (let i = 0, moveCount = 0; i < length; i++) {
-         let str = split[i];
-         if (isNaN(str[0])) {
+    fen = fen? fen : activeFen;
+    let chess = new Chess(fen),
+        currentFen = fen,
+        split = datum.pv.replace("...","... ").split(' '),
+        length = split.length;
+
+    for (let i=0, moveCount=0; i<length; i++) {
+        let str = split[i];
+        if (isNaN(str[0])) {
             let moveResponse = chess.move(str);
             if (!moveResponse || !moveResponse) {
                 if (DEV.eval & 1)
                     LS("undefine move" + str);
-               return;
-            } else {
-               currentFen = chess.fen();
-               let newPv = {
-                  from: moveResponse.from,
-                  to: moveResponse.to,
-                  m: moveResponse.san,
-                  fen: currentFen,
-               };
-
-               //we can build the html and the PV in the same loop. no need to do it three times
-               moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                  "' engine='" + (contno) +
-                  "' color='live'>" + moveResponse.san +
-                  '</a>');
-               currentLastMove = str.slice(-2);
-               //pushing is the same as a union of an array with one item...
-               pvs.push(newPv);
-               moveCount++;
+                return;
             }
-         } else {
+            else {
+                currentFen = chess.fen();
+                let newPv = {
+                    from: moveResponse.from,
+                    to: moveResponse.to,
+                    m: moveResponse.san,
+                    fen: currentFen,
+                };
+
+                // we can build the html and the PV in the same loop. no need to do it three times
+                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
+                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
+                currentLastMove = str.slice(-2);
+                // pushing is the same as a union of an array with one item...
+                pvs.push(newPv);
+                moveCount++;
+            }
+        }
+        else
             moveContainer.push(str);
-         }
-      }
-   } else {
-      return;
-   }
+    }
 
-   livePvs[contno] = [];
-   HTML(container, '');
+    livePvs[contno] = [];
+    HTML(container, '');
 
-   var evalStr = getPct(datum.engine, datum.eval);
-   $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
+    let evalStr = getPct(datum.engine, datum.eval);
+    $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
 
-   if (Y.arrows) {
-       let color;
-      if (contno == 2) {
-         color = 'reds';
-      }
-      else {
-         color = 'blues';
-      }
-      if (pvs[0]) {
-         board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
-      }
-   }
+    if (Y.arrows) {
+        let color = (contno == 2)? 'reds': 'blues';
+        if (pvs[0])
+            board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
+    }
 
-   $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-   livePvs[contno] = pvs;
-   var colorx = 0;
-   var x = 0;
-   datum.plynum = datum.ply + 1;
-   if (datum.plynum % 2 == 0)
-   {
-      x = datum.plynum/2;
-      colorx = 1;
-   }
-   else
-   {
-      x = (datum.plynum + 1)/2;
-      colorx = 0;
-   }
+    $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
+    livePvs[contno] = pvs;
+    let colorx = 0,
+        x = 0;
+    datum.plynum = datum.ply + 1;
+    if (datum.plynum % 2 == 0)
+    {
+        x = datum.plynum/2;
+        colorx = 1;
+    }
+    else
+    {
+        x = (datum.plynum + 1)/2;
+        colorx = 0;
+    }
     datum.x = x;
     if (Y.live_pv)
         addDataLive(charts.eval, datum, colorx, contno);
@@ -2470,30 +2407,15 @@ function updateLiveEval() {
 
 function updateLiveChartData(data, contno)
 {
-   if (data.moves)
-   {
-      if (contno == 1)
-      {
-         liveEngineEval1 = data.moves;
-         livePVHist[contno] = data;
-         updateChartDataLive(contno);
-      }
-      else
-      {
-         liveEngineEval2 = data.moves;
-         livePVHist[contno] = data;
-         updateChartDataLive(contno);
-      }
-   } else {
-      if (contno == 1)
-      {
-         liveEngineEval1 = [];
-      }
-      if (contno == 2)
-      {
-         liveEngineEval2 = [];
-      }
-   }
+    if (data.moves)
+    {
+        liveEngineEvals[contno] = data.moves;
+        livePVHist[contno] = data;
+        updateChartDataLive(contno);
+
+    }
+    else
+        liveEngineEvals[contno] = [];
 }
 
 function updateLiveChart()
@@ -2510,7 +2432,7 @@ function updateLiveChart()
 
 function setLastMoveTime(data)
 {
-   LS("Setting last move time:" + data);
+    LS("Setting last move time:" + data);
 }
 
 function checkTwitch(checkbox)
@@ -2519,8 +2441,8 @@ function checkTwitch(checkbox)
     if (!checked)
         Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
 
-   S('iframe#twitchvid', !checked);
-   save_option('twitch_video', checked? 1: 0);
+    S('iframe#twitchvid', !checked);
+    save_option('twitch_video', checked? 1: 0);
 }
 
 /**
@@ -2609,9 +2531,9 @@ function setLiveEngineInit(value)
 
 function setLiveEngine()
 {
-   setLiveEngineInit(1);
-   setLiveEngineInit(2);
-   showEvalCont();
+    setLiveEngineInit(1);
+    setLiveEngineInit(2);
+    showEvalCont();
 }
 
 function checkSort(checkbox)
@@ -2687,720 +2609,636 @@ function goMoveFromChart(chartx, evt)
 
 function addToolTip(divx, divimg)
 {
-   var htmlx = '<table class="table table-dark table-striped table-dark">' + HTML(divx) + '</table>';
-   $(divimg).tooltipster('content', htmlx);
+    let htmlx = '<table class="table table-dark table-striped table-dark">' + HTML(divx) + '</table>';
+    $(divimg).tooltipster('content', htmlx);
 }
 
 function updateEngineInfo(divx, divimg, data)
 {
-   $(divx).bootstrapTable('load', data);
-   addToolTip(divx, divimg);
+    $(divx).bootstrapTable('load', data);
+    addToolTip(divx, divimg);
 }
 
 function addToolTipInit(_divx, divimg, direction)
 {
-   $(divimg).tooltipster({
-      contentAsHTML: true,
-      interactive: true,
-      side: [direction],
-      theme: 'tooltipster-shadow',
-    //   trigger: 'hover',
-      delay: [500, 200],
-      contentCloning: true,
-      delayTouch: [10, 2000],
-      trigger: 'custom',
-      triggerOpen: {
-         mouseenter: true,
-         click: true,
-         touchstart: true,
-         tap: true
-      },
-      triggerClose: {
-         mouseleave: true,
-         click: true,
-         touchleave: true,
-         tap: true,
-         originClick: true
-      }
-   });
+    $(divimg).tooltipster({
+        contentAsHTML: true,
+        interactive: true,
+        side: [direction],
+        theme: 'tooltipster-shadow',
+        // trigger: 'hover',
+        delay: [500, 200],
+        contentCloning: true,
+        delayTouch: [10, 2000],
+        trigger: 'custom',
+        triggerOpen: {
+            mouseenter: true,
+            click: true,
+            touchstart: true,
+            tap: true
+        },
+        triggerClose: {
+            mouseleave: true,
+            click: true,
+            touchleave: true,
+            tap: true,
+            originClick: true
+        },
+    });
 }
 
 function initToolTip()
 {
-   $('#whiteenginetable').bootstrapTable({
-      columns: columnsEng,
-      showHeader: false
-   });
-   $('#blackenginetable').bootstrapTable({
-      columns: columnsEng,
-      showHeader: false
-   });
-   addToolTipInit('#whiteenginetable', '#white-engine-info', 'right');
-   addToolTipInit('#blackenginetable', '#black-engine-info', 'left');
-}
-
-function stopEvProp(e) {
-   e.cancelBubble = !0;
-   if (e.stopPropagation) {
-      e.stopPropagation();
-   }
-   if (e.preventDefault) {
-      e.preventDefault();
-   }
-   return !1;
+    $('#whiteenginetable').bootstrapTable({
+        columns: columnsEng,
+        showHeader: false
+    });
+    $('#blackenginetable').bootstrapTable({
+        columns: columnsEng,
+        showHeader: false
+    });
+    addToolTipInit('#whiteenginetable', '#white-engine-info', 'right');
+    addToolTipInit('#blackenginetable', '#black-engine-info', 'left');
 }
 
 function firstButtonMain()
 {
-   activePly = 1;
-   handlePlyChange();
+    activePly = 1;
+    handlePlyChange();
 }
 
 function firstButton()
 {
-   if (selectedId == 0)
-   {
-      firstButtonMain();
-   }
-   else
-   {
-      if (selectedId == 'white-engine-pv')
-      {
-         $('.pv-board-to-first1').click();
-      }
-      else if (selectedId == 'black-engine-pv')
-      {
-         $('.pv-board-to-first2').click();
-      }
-   }
+    if (selectedId == 0)
+        firstButtonMain();
+    else if (selectedId == 'white-engine-pv')
+        $('.pv-board-to-first1').click();
+    else if (selectedId == 'black-engine-pv')
+        $('.pv-board-to-first2').click();
 }
 
 function backButtonMain()
 {
-   if (activePly > 1) {
-      activePly--;
-   }
-   handlePlyChange();
-
-   return false;
+    if (activePly > 1)
+        activePly--;
+    handlePlyChange();
+    return false;
 }
 
 function backButton()
 {
-   if (selectedId == 0)
-   {
-      backButtonMain();
-   }
-   else
-   {
-      if (selectedId == 'white-engine-pv')
-      {
-         $('.pv-board-previous1').click();
-      }
-      else if (selectedId == 'black-engine-pv')
-      {
-         $('.pv-board-previous2').click();
-      }
-   }
+    if (selectedId == 0)
+        backButtonMain();
+    else if (selectedId == 'white-engine-pv')
+        $('.pv-board-previous1').click();
+    else if (selectedId == 'black-engine-pv')
+        $('.pv-board-previous2').click();
 }
 
 function forwardButtonMain()
 {
-   if (activePly < loadedPlies) {
-      activePly++;
-   } else {
-      viewingActiveMove = true;
-   }
-   handlePlyChange();
+    if (activePly < loadedPlies)
+        activePly++;
+    else
+        viewingActiveMove = true;
 
-   return false;
+    handlePlyChange();
+    return false;
 }
 
 function forwardButton()
 {
-   if (selectedId == 0)
-   {
-      forwardButtonMain();
-   }
-   else
-   {
-      if (selectedId == 'white-engine-pv')
-      {
-         $('.pv-board-next1').click();
-      }
-      else if (selectedId == 'black-engine-pv')
-      {
-         $('.pv-board-next2').click();
-      }
-   }
+    if (selectedId == 0)
+        forwardButtonMain();
+    else if (selectedId == 'white-engine-pv')
+        $('.pv-board-next1').click();
+    else if (selectedId == 'black-engine-pv')
+        $('.pv-board-next2').click();
 }
 
 function endButtonMain()
 {
-   onLastMove();
+    onLastMove();
 }
 
 function endButton()
 {
-   if (selectedId == 0)
-   {
-      endButtonMain();
-   }
-   else
-   {
-      if (selectedId == 'white-engine-pv')
-      {
-         $('.pv-board-to-last1').click();
-      }
-      else if (selectedId == 'black-engine-pv')
-      {
-         $('.pv-board-to-last2').click();
-      }
-   }
+    if (selectedId == 0)
+        endButtonMain();
+    else if (selectedId == 'white-engine-pv')
+        $('.pv-board-to-last1').click();
+    else if (selectedId == 'black-engine-pv')
+        $('.pv-board-to-last2').click();
 }
 
+// TODO: remove this
 function tcecHandleKey(e)
 {
-   var keycode;     // , oldPly, oldVar, colRow, colRowList;
-   if (!e)
-   {
-      e = window.event;
-   }
-   keycode = e.keyCode;
-   if (e.altKey || e.ctrlKey || e.metaKey) {
-      return !0;
-   }
+    let keycode;
+    if (!e)
+        e = window.event;
+    if (!e)
+        return;
 
-   switch (keycode)
-   {
-      case 37:
-      backButton();
-      break;
-      case 38:
-      firstButton();
-      break;
-      case 39:
-      forwardButton();
-      break;
-      case 40:
-      endButton();
-      break;
-      default:
-      return !0;
-   }
-   return stopEvProp(e);
-}
+    keycode = e.keyCode;
+    if (e.altKey || e.ctrlKey || e.metaKey)
+        return !0;
 
-function simpleAddEvent(obj, evt, cbk)
-{
-   if (obj.addEventListener)
-   {
-      obj.addEventListener(evt, cbk, !1);
-   }
-   else if (obj.attachEvent)
-   {
-      obj.attachEvent("on" + evt, cbk);
-   }
-}
-simpleAddEvent(document, "keydown", tcecHandleKey);
+    switch (keycode)
+    {
+    case 37:
+        backButton();
+        break;
+    case 38:
+        firstButton();
+        break;
+    case 39:
+        forwardButton();
+        break;
+    case 40:
+        endButton();
+        break;
+    default:
+        return !0;
+    }
 
-function schedSorted(a,b)
-{
-   if (a < b) return -1;
-   if (a > b) return 1;
-   return 0;
-}
-
-function crossSorted(a,b)
-{
-   if (a < b) return -1;
-   if (a > b) return 1;
-   return 0;
+    e.preventDefault();
 }
 
 function initTables()
 {
-   $('#event-overview').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      columns: [
-      {
-         field: 'TimeControl',
-         title: 'TC'
-      },
-      {
-         field: 'Termination',
-         title: 'Adj Rule'
-      },
-      {
-         field: 'movesTo50R',
-         title: '50'
-      },
-      {
-         field: 'movesToDraw',
-         title: 'Draw'
-      },
-      {
-         field: 'movesToResignOrWin',
-         title: 'Win'
-      },
-      {
-         field: 'piecesleft',
-         title: 'TB'
-      },
-      {
-         field: 'Result',
-         title: 'Result'
-      },
-      {
-         field: 'Round',
-         title: 'Round'
-      },
-      {
-         field: 'Opening',
-         title: 'Opening'
-      },
-      {
-         field: 'ECO',
-         title: 'ECO'
-      },
-      {
-         field: 'Event',
-         title: 'Event'
-      },
-      {
-         field: 'Viewers',
-         title: 'Viewers'
-      }
-      ]
-   });
+    $('#event-overview').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        columns: [
+        {
+            field: 'TimeControl',
+            title: 'TC'
+        },
+        {
+            field: 'Termination',
+            title: 'Adj Rule'
+        },
+        {
+            field: 'movesTo50R',
+            title: '50'
+        },
+        {
+            field: 'movesToDraw',
+            title: 'Draw'
+        },
+        {
+            field: 'movesToResignOrWin',
+            title: 'Win'
+        },
+        {
+            field: 'piecesleft',
+            title: 'TB'
+        },
+        {
+            field: 'Result',
+            title: 'Result'
+        },
+        {
+            field: 'Round',
+            title: 'Round'
+        },
+        {
+            field: 'Opening',
+            title: 'Opening'
+        },
+        {
+            field: 'ECO',
+            title: 'ECO'
+        },
+        {
+            field: 'Event',
+            title: 'Event'
+        },
+        {
+            field: 'Viewers',
+            title: 'Viewers'
+        }],
+    });
 
-   $('#h2h').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      pagination: true,
-      paginationLoop: true,
-      striped: true,
-      smartDisplay: true,
-      sortable: true,
-      pageList: [10,20,50,100],
-      pageSize:10,
-      rememberOrder: true,
-      columns: [
-      {
-         field: 'Gamesort',
-         title: 'sortnumber',
-         visible: false,
-      },
-      {
-         field: 'h2hrank',
-         title: 'Game#',
-         sortable: true,
-         sorter: schedSorted,
-         sortName: 'Gamesort',
-         align: 'left',
-      },
-      {
-         field: 'FixWhite',
-         title: 'White',
-         sortable: true,
-      },
-      {
-         field: 'WhiteEv',
-         title: 'W.Ev',
-         sortable: true,
-      },
-      {
-         field: 'BlackEv',
-         title: 'B.Ev',
-         sortable: true,
-      },
-      {
-         field: 'FixBlack',
-         title: 'Black',
-         sortable: true,
-      },
-      {
-         field: 'Result',
-         title: 'Result',
-         sortable: true,
-      },
-      {
-         field: 'Moves',
-         title: 'Moves',
-         sortable: true,
-      },
-      {
-         field: 'Duration',
-         title: 'Duration',
-         sortable: true,
-      },
-      {
-         field: 'Opening',
-         title: 'Opening',
-         sortable: true,
-         align: 'left',
-      },
-      {
-         field: 'Termination',
-         title: 'Termination',
-         sortable: true,
-      },
-      {
-         field: 'ECO',
-         title: 'ECO',
-         sortable: true,
-      },
-      {
-         field: 'FinalFen',
-         title: 'Final Fen',
-         align: 'left',
-      },
-      {
-         field: 'Start',
-         title: 'Start',
-      }
-      ]
-   });
+    $('#h2h').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        pagination: true,
+        paginationLoop: true,
+        striped: true,
+        smartDisplay: true,
+        sortable: true,
+        pageList: [10,20,50,100],
+        pageSize:10,
+        rememberOrder: true,
+        columns: [
+        {
+            field: 'Gamesort',
+            title: 'sortnumber',
+            visible: false,
+        },
+        {
+            field: 'h2hrank',
+            title: 'Game#',
+            sortable: true,
+            sorter: (a, b) => (a<b? -1: (a>b? 1: 0)),
+            sortName: 'Gamesort',
+            align: 'left',
+        },
+        {
+            field: 'FixWhite',
+            title: 'White',
+            sortable: true,
+        },
+        {
+            field: 'WhiteEv',
+            title: 'W.Ev',
+            sortable: true,
+        },
+        {
+            field: 'BlackEv',
+            title: 'B.Ev',
+            sortable: true,
+        },
+        {
+            field: 'FixBlack',
+            title: 'Black',
+            sortable: true,
+        },
+        {
+            field: 'Result',
+            title: 'Result',
+            sortable: true,
+        },
+        {
+            field: 'Moves',
+            title: 'Moves',
+            sortable: true,
+        },
+        {
+            field: 'Duration',
+            title: 'Duration',
+            sortable: true,
+        },
+        {
+            field: 'Opening',
+            title: 'Opening',
+            sortable: true,
+            align: 'left',
+        },
+        {
+            field: 'Termination',
+            title: 'Termination',
+            sortable: true,
+        },
+        {
+            field: 'ECO',
+            title: 'ECO',
+            sortable: true,
+        },
+        {
+            field: 'FinalFen',
+            title: 'Final Fen',
+            align: 'left',
+        },
+        {
+            field: 'Start',
+            title: 'Start',
+        }]
+    });
 
-   $('#schedule').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      pagination: true,
-      paginationLoop: true,
-      striped: true,
-      smartDisplay: true,
-      sortable: true,
-      pageList: [10,20,50,100],
-      pageSize:10,
-      rememberOrder: true,
-      search: true,
-      columns: [
-      {
-         field: 'Gamesort',
-         title: 'sortnumber',
-         visible: false
-      },
-      {
-         field: 'Game',
-         title: 'Game#',
-         sortable: true,
-         sorter: schedSorted,
-         sortName: 'Gamesort',
-      },
-      {
-         field: 'FixWhite',
-         title: 'White',
-         sortable: true,
-      },
-      {
-         field: 'WhiteEv',
-         title: 'Ev',
-         sortable: true,
-      },
-      {
-         field: 'FixBlack',
-         title: 'Black',
-         sortable: true,
-      },
-      {
-         field: 'BlackEv',
-         title: 'Ev',
-         sortable: true,
-      },
-      {
-         field: 'Result',
-         title: 'Result',
-         sortable: true,
-      },
-      {
-         field: 'Moves',
-         title: 'Moves',
-         sortable: true,
-      },
-      {
-         field: 'Duration',
-         title: 'Duration',
-         sortable: true,
-      },
-      {
-         field: 'Opening',
-         title: 'Opening',
-         sortable: true,
-         align: 'left',
-      },
-      {
-         field: 'Termination',
-         title: 'Termination',
-         sortable: true,
-      },
-      {
-         field: 'ECO',
-         title: 'ECO',
-         sortable: true,
-      },
-      {
-         field: 'FinalFen',
-         title: 'Final Fen',
-         align: 'left',
-      },
-      {
-         field: 'Start',
-         title: 'Start',
-      }
-      ]
-   });
+    $('#schedule').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        pagination: true,
+        paginationLoop: true,
+        striped: true,
+        smartDisplay: true,
+        sortable: true,
+        pageList: [10,20,50,100],
+        pageSize:10,
+        rememberOrder: true,
+        search: true,
+        columns: [
+        {
+            field: 'Gamesort',
+            title: 'sortnumber',
+            visible: false
+        },
+        {
+            field: 'Game',
+            title: 'Game#',
+            sortable: true,
+            sorter: (a, b) => (a<b? -1: (a>b? 1: 0)),
+            sortName: 'Gamesort',
+        },
+        {
+            field: 'FixWhite',
+            title: 'White',
+            sortable: true,
+        },
+        {
+            field: 'WhiteEv',
+            title: 'Ev',
+            sortable: true,
+        },
+        {
+            field: 'FixBlack',
+            title: 'Black',
+            sortable: true,
+        },
+        {
+            field: 'BlackEv',
+            title: 'Ev',
+            sortable: true,
+        },
+        {
+            field: 'Result',
+            title: 'Result',
+            sortable: true,
+        },
+        {
+            field: 'Moves',
+            title: 'Moves',
+            sortable: true,
+        },
+        {
+            field: 'Duration',
+            title: 'Duration',
+            sortable: true,
+        },
+        {
+            field: 'Opening',
+            title: 'Opening',
+            sortable: true,
+            align: 'left',
+        },
+        {
+            field: 'Termination',
+            title: 'Termination',
+            sortable: true,
+        },
+        {
+            field: 'ECO',
+            title: 'ECO',
+            sortable: true,
+        },
+        {
+            field: 'FinalFen',
+            title: 'Final Fen',
+            align: 'left',
+        },
+        {
+            field: 'Start',
+            title: 'Start',
+        }]
+    });
 
-   $('#tf').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      striped: true,
-      smartDisplay: true,
-      sortable: true,
-      rememberOrder: true,
-      columns: [
-      {
-         field: 'startTime',
-         title: 'Start time'
-      },
-      {
-         field: 'endTime',
-         title: 'End time'
-      },
-      {
-         field: 'totalTime',
-         title: 'Duration',
-      },
-      {
-         field: 'avgMoves',
-         title: 'Avg Moves'
-      },
-      {
-         field: 'avgTime',
-         title: 'Avg Time'
-      },
-      {
-         field: 'whiteWins',
-         title: 'White wins'
-      },
-      {
-         field: 'blackWins',
-         title: 'Black wins'
-      },
-      {
-         field: 'drawRate',
-         title: 'Draw Rate'
-      },
-      {
-         field: 'crashes',
-         title: 'Crashes'
-      },
-      {
-         field: 'minMoves',
-         title: 'Min Moves'
-      },
-      {
-         field: 'maxMoves',
-         title: 'Max Moves'
-      },
-      {
-         field: 'minTime',
-         title: 'Min Time'
-      },
-      {
-         field: 'maxTime',
-         title: 'Max Time'
-      }
-      ]
-   });
+    $('#tf').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        striped: true,
+        smartDisplay: true,
+        sortable: true,
+        rememberOrder: true,
+        columns: [
+        {
+            field: 'startTime',
+            title: 'Start time'
+        },
+        {
+            field: 'endTime',
+            title: 'End time'
+        },
+        {
+            field: 'totalTime',
+            title: 'Duration',
+        },
+        {
+            field: 'avgMoves',
+            title: 'Avg Moves'
+        },
+        {
+            field: 'avgTime',
+            title: 'Avg Time'
+        },
+        {
+            field: 'whiteWins',
+            title: 'White wins'
+        },
+        {
+            field: 'blackWins',
+            title: 'Black wins'
+        },
+        {
+            field: 'drawRate',
+            title: 'Draw Rate'
+        },
+        {
+            field: 'crashes',
+            title: 'Crashes'
+        },
+        {
+            field: 'minMoves',
+            title: 'Min Moves'
+        },
+        {
+            field: 'maxMoves',
+            title: 'Max Moves'
+        },
+        {
+            field: 'minTime',
+            title: 'Min Time'
+        },
+        {
+            field: 'maxTime',
+            title: 'Max Time'
+        }]
+    });
 
+    $('#winner').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        pagination: true,
+        paginationLoop: true,
+        striped: true,
+        smartDisplay: true,
+        sortable: true,
+        pageList: [10,20,50,100],
+        pageSize:10,
+        rememberOrder: true,
+        search: true,
+        columns: [
+        {
+            field: 'name',
+            title: 'S#',
+            visible: true
+        },
+        {
+            field: 'winner',
+            title: 'Champion',
+            sortable: true
+        },
+        {
+            field: 'runner',
+            title: 'Runner-up',
+            sortable: true
+        },
+        {
+            field: 'score',
+            title: 'Score',
+            sortable: true
+        },
+        {
+            field: 'date',
+            title: 'Date',
+            sortable: false
+        }]
+    });
 
-   $('#winner').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      pagination: true,
-      paginationLoop: true,
-      striped: true,
-      smartDisplay: true,
-      sortable: true,
-      pageList: [10,20,50,100],
-      pageSize:10,
-      rememberOrder: true,
-      search: true,
-      columns: [
-      {
-         field: 'name',
-         title: 'S#',
-         visible: true
-      },
-      {
-         field: 'winner',
-         title: 'Champion',
-         sortable: true
-      },
-      {
-         field: 'runner',
-         title: 'Runner-up',
-         sortable: true
-      },
-      {
-         field: 'score',
-         title: 'Score',
-         sortable: true
-      },
-      {
-         field: 'date',
-         title: 'Date',
-         sortable: false
-      }
-      ]
-   });
+    standColumns = [
+    {
+        field: 'rank',
+        title: 'Rank',
+        sortable: true,
+        width: '4%',
+    },
+    {
+        field: 'name',
+        title: 'Engine',
+        sortable: true,
+        width: '18%',
+    },
+    {
+        field: 'points',
+        title: 'Points',
+        sortable: true,
+        width: '7%',
+    }];
 
-   standColumns = [
-   {
-      field: 'rank',
-      title: 'Rank',
-      sortable: true,
-      width: '4%',
-   },
-   {
-      field: 'name',
-      title: 'Engine',
-      sortable: true,
-      width: '18%',
-   },
-   {
-      field: 'points',
-      title: 'Points',
-      sortable: true,
-      width: '7%',
-   }
-   ];
+    $('#crash').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        striped: true,
+        smartDisplay: true,
+        sortable: true,
+        rememberOrder: true,
+        columns: [
+        {
+            field: 'gameno',
+            title: 'G#',
+        },
+        {
+            field: _WHITE,
+            title: 'White',
+        },
+        {
+            field: _BLACK,
+            title: 'Black',
+        },
+        {
+            field: 'reason',
+            title: 'Reason',
+            width: '55%'
+        },
+        {
+            field: 'decision',
+            title: 'Final decision',
+            width: '15%'
+        },
+        {
+            field: 'action',
+            title: 'Action taken',
+        },
+        {
+            field: 'result',
+            title: 'Result',
+        },
+        {
+            field: 'log',
+            title: 'Log',
+        }]
+    });
 
-   $('#crash').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      striped: true,
-      smartDisplay: true,
-      sortable: true,
-      rememberOrder: true,
-      columns: [
-      {
-         field: 'gameno',
-         title: 'G#',
-      },
-      {
-         field: _WHITE,
-         title: 'White',
-      },
-      {
-         field: _BLACK,
-         title: 'Black',
-      },
-      {
-         field: 'reason',
-         title: 'Reason',
-         width: '55%'
-      },
-      {
-         field: 'decision',
-         title: 'Final decision',
-         width: '15%'
-      },
-      {
-         field: 'action',
-         title: 'Action taken',
-      },
-      {
-         field: 'result',
-         title: 'Result',
-      },
-      {
-         field: 'log',
-         title: 'Log',
-      }
-      ]
-   });
+    let crossColumns = [
+    {
+        field: 'rank',
+        title: 'Rank',
+        sortable: true,
+        width: '4%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'name',
+        title: 'Engine',
+        sortable: true,
+        width: '28%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'games',
+        title: '# Games',
+        sortable: true,
+        width: '4%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'points',
+        title: 'Points',
+        sortable: true,
+        width: '7%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'crashes',
+        title: 'Crashes',
+        sortable: true,
+        width: '4%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'wins',
+        title: 'Wins [W/B]',
+        width: '10%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'loss',
+        title: 'Loss [W/B]',
+        width: '10%',
+        cellStyle: crossCellformatter,
+    },
+    {
+        field: 'sb',
+        title: 'SB',
+        sortable: true,
+        cellStyle: crossCellformatter,
+        width: '4%',
+    },
+    {
+        field: 'elo',
+        title: 'Elo',
+        cellStyle: crossCellformatter,
+        sortable: true,
+        width: '5%',
+    },
+    {
+        field: 'elo_diff',
+        title: 'Diff [Live]',
+        width: '7%',
+        cellStyle: crossCellformatter,
+    }];
 
-   let crossColumns = [
-   {
-      field: 'rank',
-      title: 'Rank',
-      sortable: true,
-      width: '4%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'name',
-      title: 'Engine',
-      sortable: true,
-      width: '28%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'games',
-      title: '# Games',
-      sortable: true,
-      width: '4%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'points',
-      title: 'Points',
-      sortable: true,
-      width: '7%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'crashes',
-      title: 'Crashes',
-      sortable: true,
-      width: '4%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'wins',
-      title: 'Wins [W/B]',
-      width: '10%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'loss',
-      title: 'Loss [W/B]',
-      width: '10%',
-      cellStyle: crossCellformatter,
-   },
-   {
-      field: 'sb',
-      title: 'SB',
-      sortable: true,
-      cellStyle: crossCellformatter,
-      width: '4%',
-   },
-   {
-      field: 'elo',
-      title: 'Elo',
-      cellStyle: crossCellformatter,
-      sortable: true,
-      width: '5%',
-   },
-   {
-      field: 'elo_diff',
-      title: 'Diff [Live]',
-      width: '7%',
-      cellStyle: crossCellformatter,
-   }
-   ];
-
-   $('#crosstable').bootstrapTable({
-      classes: 'table table-striped table-no-bordered',
-      columns: crossColumns,
-      sortName: 'rank'
-   });
+    $('#crosstable').bootstrapTable({
+        classes: 'table table-striped table-no-bordered',
+        columns: crossColumns,
+        sortName: 'rank'
+    });
 }
 
 function removeClassEngineInfo(cont)
 {
-   Class(cont, '-d-sm-none -d-md-none -d-lg-none -d-xl-none');
+    Class(cont, '-d-sm-none -d-md-none -d-lg-none -d-xl-none');
 }
 
 function addClassEngineInfo(cont)
 {
-   Class(cont, 'd-sm-none d-md-none d-lg-none d-xl-none');
+    Class(cont, 'd-sm-none d-md-none d-lg-none d-xl-none');
 }
 
 function showEngInfo()
@@ -3603,7 +3441,7 @@ function setTwitchChange(data)
         return;
 
     twitchChatUrl = newtwitchChatUrl;
-    setTwitchChatUrl(darkMode);
+    setTwitchChatUrl(Y.dark_mode == 20);
 }
 
 function getImg(engine)
@@ -3637,24 +3475,23 @@ function getScoreText(text) {
 
 function updateCrashData(data)
 {
-   let scdata = [];
-//    var crashEntry = {};
+    let scdata = [];
 
     Keys(data).forEach(key => {
         let engine = data[key];
 
-      engine.gameno = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.gameno + ')">' + engine.gameno + '</a>';
-      let link = "\'" + engine.log + "\'";
-      engine.log = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.log + '</a>';
-      if (engine.gpulog != undefined)
-      {
-         link = "\'" + engine.gpulog + "\'";
-         engine.gpulog = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.gpulog + '</a>';
-      }
-      scdata.push(engine);
-   });
+        engine.gameno = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[3] + ';"onclick="openCross(' + 0 + ',' + engine.gameno + ')">' + engine.gameno + '</a>';
+        let link = "\'" + engine.log + "\'";
+        engine.log = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.log + '</a>';
+        if (engine.gpulog != undefined)
+        {
+            link = "\'" + engine.gpulog + "\'";
+            engine.gpulog = '<a title="TBD" style="cursor:pointer; color: ' + gameArrayClass[1] + ';"onclick="openLinks(' + link + ')">' + engine.gpulog + '</a>';
+        }
+        scdata.push(engine);
+    });
 
-   $('#crash').bootstrapTable('load', scdata);
+    $('#crash').bootstrapTable('load', scdata);
 }
 
 function updateCrash()
@@ -3667,15 +3504,15 @@ function updateCrash()
 
 function eventCrosstableWrap()
 {
-   if (tourInfo)
-   {
-      if (tourInfo.cup != 1)
-      {
-         Hide('#bracketdiv, #eventdiv');
-         Show('.nav-pills a[href="#pills-stand"]');
-         return;
-      }
-   }
+    if (tourInfo)
+    {
+        if (tourInfo.cup != 1)
+        {
+            Hide('#bracketdiv, #eventdiv');
+            Show('.nav-pills a[href="#pills-stand"]');
+            return;
+        }
+    }
 
     Resource('crash.json', (_code, data) => {
         // handle success + error
@@ -3704,10 +3541,10 @@ function bracketDataMain(data)
             {name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]), score: -1, rank: '1', date: '', lead: 0},
             {name: getSeededName(teamsx[i-1][1][0]), flag: getShortEngineName(teamsx[i-1][1][0]), score: -1, rank: '2', date: '', lead: 0},
         ];
-   }
+    }
 
-   drawBracket1();
-   eventCrosstable(data.EventTable);
+    drawBracket1();
+    eventCrosstable(data.EventTable);
 }
 
 function drawBracket1()
@@ -3871,24 +3708,24 @@ function drawBracket1()
             }
             return;
         }
-   }
+    }
 
-   var direction = 'lr';
-   try {
-      $(function () {
-         $('#bracket').bracket({
-            centerConnectors: true,
-            dir: direction,
-            teamWidth: 220,
-            scoreWidth: 35,
-            matchMargin: 45,
-            roundMargin: 18,
-            init: bigData,
-            //skipConsolationRound: true,
-            decorator: {edit: edit_fn, render: render_fn2}
-         });
-      });
-   }
+    let direction = 'lr';
+    try {
+        $(function () {
+            $('#bracket').bracket({
+                centerConnectors: true,
+                dir: direction,
+                teamWidth: 220,
+                scoreWidth: 35,
+                matchMargin: 45,
+                roundMargin: 18,
+                init: bigData,
+                // skipConsolationRound: true,
+                decorator: {edit: edit_fn, render: render_fn2}
+            });
+        });
+    }
     catch (err)
     {
         LS(`Error in bracket`);
@@ -3921,9 +3758,9 @@ function getSeededName(name)
                 engineName = engineName.slice(0, 22) + "..";
             return false;
         }
-   });
+    });
 
-   return engineName || name;
+    return engineName || name;
 }
 
 function getDateRound()

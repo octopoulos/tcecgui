@@ -1,7 +1,7 @@
 /*
 globals
-_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEval1, liveEngineEval2,
-LS, Max, Min, Pad, prevPgnData, Round, showLivEng1, showLivEng2
+_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEvals, LS, Max, Min, Pad,
+prevPgnData, Round, showLivEng1, showLivEng2
 */
 'use strict';
 
@@ -480,7 +480,7 @@ function removeData(chart, data, black)
 function getLiveEval(key, moveNumber, isBlack, contno)
 {
     // CHECK THIS
-    let engineEval = (contno == 1)? liveEngineEval1: liveEngineEval2,
+    let engineEval = liveEngineEvals[contno],
         evalObject = engineEval.find(ev => ev.ply == key);
 
     if (typeof(evalObject) == 'object') {
@@ -567,11 +567,10 @@ function getEval(eval_)
 
 function arrayPush(chart, number, datax, index, movenum)
 {
-   if (chart)
-   {
-      chart.data.labels[index] = movenum;
-      chart.data.datasets[number].data[index] = datax;
-   }
+    if (chart) {
+        chart.data.labels[index] = movenum;
+        chart.data.datasets[number].data[index] = datax;
+    }
 }
 
 // TODO: merge with Eval1

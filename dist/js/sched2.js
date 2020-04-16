@@ -16,17 +16,17 @@ let gamesReqd = 0;
 
 if (argv.tag)
 {
-   filename = argv.tag;
+    filename = argv.tag;
 }
 
 if (argv.filename)
 {
-   seasonFileName = argv.filename;
+    seasonFileName = argv.filename;
 }
 
 if (argv.crossgames != undefined)
 {
-   gamesReqd = argv.crossgames;
+    gamesReqd = argv.crossgames;
 }
 
 let seasonFileNameFull = pgnPath + seasonFileName;
@@ -39,14 +39,14 @@ var force = argv.force;
 
 if (force == undefined || force == 'undefined')
 {
-   force = 0;
+    force = 0;
 }
 
 console.log ("Res lenght is :" + res.length);
 
 if (force || !fs.existsSync(schedName))
 {
-   console.log ("Generating schedule file:" + schedName);
-   const output_json = shlib.pgn2schedule(res);
-   fs.writeFileSync(schedName, output_json);
+    console.log ("Generating schedule file:" + schedName);
+    output_json = shlib.pgn2schedule(res);
+    fs.writeFileSync(schedName, output_json);
 }

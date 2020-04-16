@@ -10,8 +10,8 @@ globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, C, check_hash, DEV, document, Events,
 fill_languages, get_object, getUserS, hideBanner, init_sockets, initTables, initToolTip, LANGUAGES:true, load_defaults,
 localStorage, LS, Max, parse_dev, resize, Round, S, save_option, set_ui_events, setDefaults, setTwitch, start_tcec,
-startup_3d, startup_graphs, startup_tcec, Style, toggleTheme, translate_node, translates:true, unlistenLogMain,
-updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners, window
+startup_3d, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node, translates:true,
+unlistenLogMain, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners, window
 */
 'use strict';
 
@@ -66,6 +66,11 @@ function set_global_events() {
         LS('hash change');
         check_hash();
         parse_dev();
+    });
+
+    // keys
+    Events(window, 'keydown', e => {
+        tcecHandleKey(e);
     });
 
     // $(document).click(function (event) {
