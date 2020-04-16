@@ -1,7 +1,7 @@
 // tcec.test
 //
 /* globals
-__dirname, expect, require, test,
+__dirname, expect, require, test
 */
 'use strict';
 
@@ -12,6 +12,7 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'xboard',
     '../dist/js/tcec',
 ], OUTPUT_MODULE);
 

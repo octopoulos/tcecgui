@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-16 : 2020-04-16 : basic XBoard with text rendering
 2020-04-16 : 2020-04-13 : make a Python script to compress the css / js and embed the necessary ones in the html
 2020-04-15 : 2020-04-15 : optimise graphs.js
 2020-04-15 : 2020-04-13 : add 3d rendering options: shadow, texture quality, output, resolution

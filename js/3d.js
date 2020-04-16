@@ -7,7 +7,7 @@
 // included after: common, engine, global
 /*
 globals
-Abs, Assign, Audio, BOARD_THEMES, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, PIECE_THEMES, Y
+Abs, Assign, Audio, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, PIECE_THEMES, Y
 */
 'use strict';
 
@@ -22,6 +22,7 @@ let audiobox = {
         [37, 39],
         [38, 40],
     ],
+    BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
     BUTTON_MAPPING = {
         0: 83,          // X
         1: 69,          // O
@@ -49,6 +50,7 @@ let audiobox = {
     is_paused,
     now,
     ON_OFF = ['on', 'off'],
+    PIECE_KEYS  = 'alpha chess24 dilena leipzig metro symbol uscf wikipedia'.split(' '),
     SHADOW_QUALITIES = {
         off: [0, 0, 0],
         'very low': [1, 33, 512],       // 15.52
@@ -70,10 +72,10 @@ let audiobox = {
         board: {
             arrows: [ON_OFF, 1],
             board_middle: [ON_OFF, 0],
-            board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            board_theme: [BOARD_KEYS, 'chess24'],
             highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
             notation: [ON_OFF, 1],
-            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
+            piece_theme: [PIECE_KEYS, 'chess24'],
         },
         board_pv: {
             highlight_pv: [['off', 'thin', 'standard', 'big'], 'standard'],

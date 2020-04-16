@@ -1,7 +1,7 @@
 // common.test
 //
 /* globals
-__dirname, expect, require, test,
+__dirname, expect, require, test
 */
 'use strict';
 
