@@ -20,23 +20,25 @@ SOURCE_TIMES = {
     'data': 240,
     'data1': 240,
     'enginerating': 3600,
-    'gamelist': 3600,
+    'gamelist': 2400,
     'live': 1,
-    'liveeval': 1,
-    'liveeval1': 1,
+    'liveeval': 2,
+    'liveeval1': 3,
     'schedule': 1200,
     'tournament': 1200,
     'winners': 1200,
 }
 
 
-def main():
+def download_json():
     """Download all necessary JSON files
     """
-    start = time()
     this_path = os.path.dirname(os.path.dirname(__file__))
 
-    for source, age in SOURCE_TIMES.items():
+    # download the most critical files at the ned
+    alphas = sorted(SOURCE_TIMES.items(), key=lambda x: x[1], reverse=True)
+
+    for source, age in alphas:
         output = os.path.join(this_path, f'{source}.json')
         # file is recent => don't download
         if os.path.isfile(output):
@@ -58,8 +60,9 @@ def main():
             with open(output, 'w+') as file:
                 file.write(text)
 
-    print(f'Done, {time() - start:.04} seconds elapsed.')
-
 
 if __name__ == '__main__':
-    main()
+    start = time()
+    download_json()
+    end = time()
+    print(f'\nELAPSED: {end-start:.3f} seconds')

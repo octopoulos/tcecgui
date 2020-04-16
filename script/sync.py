@@ -1,0 +1,261 @@
+# coding: utf-8
+# @author octopoulo <polluxyz@gmail.com>
+# @version 2020-04-13
+
+"""
+Sync
+"""
+
+from logging import getLogger
+import os
+import re
+import shutil
+from subprocess import run
+from time import time
+from typing import Any
+
+from common import makedirs_safe, read_text_safe, write_text_safe
+from css_minify import css_minify
+
+
+# folders, might want to edit these
+BASE = os.path.dirname(os.path.dirname(__file__))
+COMPILER = os.path.join(BASE, 'script/closure-compiler-v20200406.jar')
+CSS_FOLDER = os.path.join(BASE, 'css')
+JAVA = 'java'
+JS_FOLDER = os.path.join(BASE, 'js')
+LOCAL = BASE
+
+
+# edit these files
+CSS_FILES = [
+    'common',
+]
+
+JS_FILES = {
+    '4d': [
+        '3d',
+    ],
+    'all': [
+        'common',
+        'engine',
+        'global',
+        '3d',
+        'board',
+        'script',
+    ],
+}
+
+
+class Sync:
+    """Sync
+    """
+
+    #
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+        self.host = kwargs.get('host')                                  # type: str
+        self.no_compress = kwargs.get('no_compress')                    # type: bool
+        self.no_debug = kwargs.get('no_debug')                          # type: bool
+        self.no_process = kwargs.get('no_process')                      # type: bool
+
+        self.logger = getLogger(self.__class__.__name__)
+
+    def compress_3d(self, data: str) -> str:
+        """Compress THREE javascript
+        """
+        data = re.sub(r'\bTHREE\b', 'T', data)
+        data = re.sub(r'console\.(error|warn)\(.+?\);', '', data, flags=re.S)
+        return data
+
+    def compress_js(self, filename: str) -> str:
+        """Compress javascript
+        """
+        base, ext = os.path.splitext(filename)
+        output = f'{base}_{ext}'
+
+        if self.no_compress:
+            shutil.copy(filename, output)
+            return output
+
+        args = [
+            JAVA,
+            '-jar', COMPILER,
+            '--js', filename,
+            '--js_output_file', output,
+            '--language_in', 'ECMASCRIPT_2018',
+            '--language_out', 'ECMASCRIPT_2018',
+        ]
+        if self.kwargs.get('advanced'):
+            args.extend(['--compilation_level', 'ADVANCED'])
+        run(args)
+        return output
+
+    @staticmethod
+    def import_file(match: Any) -> str:
+        """@import {common.js}
+        """
+        source = match.group(1)
+        filename = os.path.join(JS_FOLDER, source)
+        data = read_text_safe(filename) or ''
+        if source.endswith('.js'):
+            data = re.sub(r'["\']use strict["\'];?', '', data)
+        return data
+
+    def normalise_folders(self):
+        """Add the missing / (slash) at the end of the folder
+        """
+        global CSS_FOLDER, JS_FOLDER, LOCAL
+        if CSS_FOLDER[-1] != '/':
+            CSS_FOLDER += '/'
+        if JS_FOLDER[-1] != '/':
+            JS_FOLDER += '/'
+        if LOCAL[-1] != '/':
+            LOCAL += '/'
+
+    def create_index(self):
+        """Create the new index.html
+        """
+        base = os.path.join(LOCAL, 'index_base.html')
+        base_time = os.path.getmtime(base)
+        index = os.path.join(LOCAL, 'index.html')
+        index_time = os.path.getmtime(index) if os.path.isfile(index) else 0
+        change = 0
+        if base_time >= index_time:
+            change += 1
+
+        # 1) minimise JS
+        for js_output, js_files in JS_FILES.items():
+            all_js = os.path.join(JS_FOLDER, f'{js_output}.js')
+            all_min_js = os.path.join(JS_FOLDER, f'{js_output}_.js')
+            # common/engine changed => need to update, even though we're not using those files
+            js_dates = [os.path.abspath(f"{JS_FOLDER}{js_file.strip(':')}.js") for js_file in js_files]
+            js_names = [os.path.abspath(f'{JS_FOLDER}{js_file}.js') for js_file in js_files if js_file[0] != ':']
+
+            if js_output == 'all':
+                # script_js = os.path.join(JS_FOLDER, 'script.js')
+                extras = []
+            else:
+                extras = []
+
+            # skip?
+            update = True
+            if os.path.isfile(all_min_js) and os.path.isfile(all_js):
+                all_time = os.path.getmtime(all_min_js)
+                update = False
+                for js_date in js_dates + extras:
+                    update |= os.path.isfile(js_date) and os.path.getmtime(js_date) >= all_time
+
+            if not update:
+                print('J', end='')
+                continue
+
+            datas = []
+            for js_name in js_names:
+                print(js_name)
+                script_data = read_text_safe(js_name)
+                if not script_data:
+                    continue
+
+                # process the script.js
+                if js_name.endswith('script.js'):
+                    script_data = re.sub('@import {(.*?)}', self.import_file, script_data);
+                    script_data = re.sub('// BEGIN.*?// END', '', script_data, flags=re.S)
+
+                    if self.no_debug:
+                        script_data = re.sub('// <<.*?// >>', '', script_data, flags=re.S)
+
+                    # use HOST
+                    print(f'host={self.host}')
+                    if self.host != '/':
+                        script_data = script_data.replace("HOST = '/',", f"HOST = '{self.host}',")
+
+                datas.append(script_data)
+
+            data = '\n'.join(datas)
+
+            if '4d' in js_output:
+                data = self.compress_3d(data)
+
+            write_text_safe(all_js, data)
+            self.compress_js(all_js)
+            print('j', end='')
+            change += 1
+
+        # 2) minimise CSS
+        all_css = os.path.join(CSS_FOLDER, 'all.css')
+        all_min_css = os.path.join(CSS_FOLDER, 'all_.css')
+        css_names = [os.path.abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
+
+        update = True
+        if os.path.isfile(all_min_css) and os.path.isfile(all_css):
+            all_time = os.path.getmtime(all_min_css)
+            update = False
+            for css_name in css_names:
+                update |= os.path.isfile(css_name) and os.path.getmtime(css_name) >= all_time
+
+        if update:
+            datas = []
+            for css_name in css_names:
+                datas.append(read_text_safe(css_name) or '')
+
+            data = '\n'.join(datas)
+            write_text_safe(all_css, data)
+            css_data = css_minify(data)
+            write_text_safe(all_min_css, css_data)
+
+            print('c', end='')
+            change += 1
+        else:
+            css_data = read_text_safe(all_min_css) or ''
+            print('C', end='')
+
+        if not change:
+            print('X', end='')
+            return
+
+        # 3) remove BEGIN ... END
+        html = read_text_safe(base)
+        html = re.sub('<!-- BEGIN -->.*?<!-- END -->', '', html, flags=re.S)
+        html = re.sub('// BEGIN.*?// END', '', html, flags=re.S)
+
+        # use the HOST
+        if self.host != '/':
+            replaces = {
+                'href="/': f'href="{self.host}',
+                'src="/': f'src="{self.host}',
+            }
+            for key, value in replaces.items():
+                html = html.replace(key, value)
+
+        # 4) create the new index.html
+        if not self.no_process:
+            all_min_js = os.path.join(JS_FOLDER, 'all_.js')
+            js_data = read_text_safe(all_min_js) or ''
+            replaces = {
+                '<!-- {SCRIPT} -->': f'<script>{js_data}</script>',
+                '<!-- {STYLE} -->': f'<style>{css_data}</style>',
+            }
+            for key, value in replaces.items():
+                html = html.replace(key, value)
+
+            html = re.sub('<!-- .*? -->', '', html, flags=re.S)
+
+        html = re.sub(r'\n\s+', '\n', html)
+        write_text_safe(os.path.join(LOCAL, 'index.html'), html)
+
+    def synchronise(self) -> bool:
+        """Synchronise the files
+        """
+        self.normalise_folders()
+        self.create_index()
+        return True
+
+
+if __name__ == '__main__':
+    start = time()
+    sync = Sync()
+    sync.synchronise()
+    end = time()
+    print(f'\nELAPSED: {end-start:.3f} seconds')

@@ -5,9 +5,13 @@
 *.log
 /package-lock.json
 
+*.jar
 *+.js
 *.mp3
+*.pyc
 *.svg
+all*.css
+all*.js
 archive/
 crash.json
 crosstable.json
@@ -15,6 +19,7 @@ data*.json
 enginerating.json
 export/
 gamelist.json
+index.html
 live*.json
 model/
 schedule.json
