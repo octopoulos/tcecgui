@@ -7,96 +7,18 @@
 // included after: common, engine, global, 3d, board
 /*
 globals
-_, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, bracketDataMain,
-C, check_hash, DEV, document, Events, fill_languages, get_object, getUserS, hideBanner, initTables, initToolTip, io,
-LANGUAGES:true, load_defaults, localStorage, LS, Max, newUpdateStandData, parse_dev, resize, Round,
-S, save_option, set_ui_events, setDefaults, setLastMoveTime, setTwitch, setTwitchChange,
-setUsers, setUsersMain, showBanner, startup_3d, startup_graphs, startup_tcec, Style, toggleTheme, translate_node,
-translates:true,
-unlistenLogMain, updateCrashData, updateEngRatingData, updateH2hData,  updateLiveChart, updateLiveChartData,
-updateLiveEval, updateLiveEvalData, updateLiveEvalDataNew, updatePgn, updatePgnData, updateRefresh, updateScheduleData,
-updateTables, updateWinners, window
+_, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, C, check_hash, DEV, document, Events,
+fill_languages, get_object, getUserS, hideBanner, init_sockets, initTables, initToolTip, LANGUAGES:true, load_defaults,
+localStorage, LS, Max, parse_dev, resize, Round, S, save_option, set_ui_events, setDefaults, setTwitch, start_tcec,
+startup_3d, startup_graphs, startup_tcec, Style, toggleTheme, translate_node, translates:true, unlistenLogMain,
+updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners, window
 */
 'use strict';
-
-let socket;
-
-/**
- * Initialise sockets
- */
-function init_sockets() {
-    socket = io.connect('https://tcec-chess.com/');
-    unlistenLogMain();
-
-    socket.on('htmlread', datal => {
-        let data = datal.data,
-            date = new Date().toLocaleTimeString(),
-            div = document.getElementById('log-wrapper'),
-            text = data.split(/\n|\s\n/).join("<br>");
-
-        if (DEV.socket & 1)
-            LS(`XXX: recieving data from log: ${datal.room}`);
-        div.innerHTML += `<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`;
-        div.scrollTop = div.scrollHeight;
-    });
-    socket.on('crosstable', data => {
-        newUpdateStandData(data);
-    });
-    socket.on('liveeval', data => {
-        updateLiveEvalData(data, 1, null, 1);
-    });
-    socket.on('liveeval1', data => {
-        updateLiveEvalData(data, 1, null, 2);
-    });
-    socket.on('updeng', data => {
-        updateLiveEvalDataNew(data, 1, null, 2);
-    });
-    socket.on('pgn', data => {
-        if (DEV.socket & 1)
-            LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
-        setUsersMain(data.Users);
-        updatePgnData(data, 0);
-    });
-    socket.on('schedule', data => {
-        updateScheduleData(data);
-        updateH2hData(data);
-    });
-    socket.on('livechart', data => {
-        updateLiveChartData(data, 1);
-    });
-    socket.on('livechart1', data => {
-        updateLiveChartData(data, 2);
-    });
-    socket.on('lastpgntime', data => {
-        setLastMoveTime(data);
-    });
-    socket.on('users', data => {
-        setUsers(data);
-    });
-    socket.on('banner', data => {
-        showBanner(data);
-    });
-    socket.on('tournament', data => {
-        setTwitchChange(data);
-    });
-    socket.on('enginerating', data => {
-        updateEngRatingData(data);
-    });
-    socket.on('crash', data => {
-        updateCrashData(data);
-    });
-    socket.on('bracket', data => {
-        bracketDataMain(data);
-    });
-}
 
 /**
  * First initialisation
  */
 function init_globals() {
-    startup_tcec();
-    startup_graphs();
-
     let sliderVale = localStorage.getItem('tcec-chat-slider');
     if (sliderVale == undefined)
         sliderVale = 100;
@@ -119,16 +41,16 @@ function init_globals() {
         S('.encouragement', ((_('#google_adverts') || {}).height || 0) <= 0);
     }, 15000);
 
-    $('#chatsize').bootstrapSlider({
-        min: 40,
-        max: 150,
-        value: sliderVale,
-        handle: 'round',
-        formatter: function(value) {
-            // $('#chatright').height(parseInt(value/100 * chatHeight));
-            localStorage.setItem('tcec-chat-slider', value);
-        }
-    });
+    // $('#chatsize').bootstrapSlider({
+    //     min: 40,
+    //     max: 150,
+    //     value: sliderVale,
+    //     handle: 'round',
+    //     formatter: function(value) {
+    //         // $('#chatright').height(parseInt(value/100 * chatHeight));
+    //         localStorage.setItem('tcec-chat-slider', value);
+    //     }
+    // });
 }
 
 /**
@@ -146,17 +68,17 @@ function set_global_events() {
         parse_dev();
     });
 
-    $(document).click(function (event) {
-        var clickover = $(event.target);
-        var _opened = $(".navbar-collapse").hasClass("navbar-collapse in");
-        if (_opened === true && !clickover.hasClass("navbar-toggle")) {
-            $("button.navbar-toggle").click();
-        }
-    });
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        var target = $(e.target).attr("href"); // activated tab
-        $(target).show();
-    });
+    // $(document).click(function (event) {
+    //     var clickover = $(event.target);
+    //     var _opened = $(".navbar-collapse").hasClass("navbar-collapse in");
+    //     if (_opened === true && !clickover.hasClass("navbar-toggle")) {
+    //         $("button.navbar-toggle").click();
+    //     }
+    // });
+    // $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    //     var target = $(e.target).attr("href"); // activated tab
+    //     $(target).show();
+    // });
 
     C('.toggleDark', () => {
         toggleTheme();
@@ -208,9 +130,13 @@ function startup() {
     startup_3d();
     set_global_events();
     set_ui_events();
+    startup_tcec();
+    startup_graphs();
+    load_settings();
+    start_tcec();
+
     init_sockets();
     init_globals();
-    load_settings();
     fill_languages('#language');
     resize();
     initTables();
