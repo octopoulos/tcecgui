@@ -5,9 +5,9 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setTwitchChange,
-setUsers, setUsersMain, showBanner, updateCrashData, updateEngRatingData, updateH2hData, updateLiveChartData,
-updateLiveEvalData, updateLiveEvalDataNew, updatePgnData, updateScheduleData, Y
+_, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setPgn,
+setTwitchChange, setUsers, setUsersMain, showBanner, timeDiff:true, updateCrashData, updateEngRatingData,
+updateH2hData, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData, Y
 */
 'use strict';
 
@@ -53,7 +53,8 @@ function init_sockets() {
         if (DEV.socket & 1)
             LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
         setUsersMain(data.Users);
-        updatePgnData(data, 0);
+        timeDiff = 0;
+        setPgn(data);
     });
     socket.on('schedule', data => {
         updateScheduleData(data);

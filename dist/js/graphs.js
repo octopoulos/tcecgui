@@ -1,7 +1,7 @@
 /*
 globals
 _, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEvals, LS, Max, Min, Pad,
-prevPgnData, Round, showLivEng1, showLivEng2
+prevPgnData, Round, Y
 */
 'use strict';
 
@@ -419,7 +419,7 @@ function addDataLive(chart, data, black, contno)
         return;
 
     let chart_data = chart.data;
-    if (chart_data.datasets[contno+1].data.length == 0)
+    if (chart_data.datasets[contno + 1].data.length == 0)
     {
         if (DEV.graph & 1)
             LS("YYY: Chart not yet updated, so exiting");
@@ -573,24 +573,24 @@ function arrayPush(chart, number, datax, index, movenum)
     }
 }
 
-// TODO: merge with Eval1
-function updateChartDataLiveEval2()
+function updateChartDataLive(id)
 {
-    if (!showLivEng2)
+    if (!Y[`live_engine${id}`])
         return;
 
-    let eval_data = charts.eval.data,
+    let done = `didliveEval${id}`,
+        eval_data = charts.eval.data,
         needtoUpdate = 0,
         startEval = whiteEvalL;
 
     if (!startEval)
         return;
 
-    if (prevPgnData.Moves[0].didliveEval2 == undefined)
-        prevPgnData.Moves[0].didliveEval2 = 0;
+    if (prevPgnData.Moves[0][done] == undefined)
+        prevPgnData.Moves[0][done] = 0;
 
-    let endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval2);
-    prevPgnData.Moves[0].didliveEval2 = 0;
+    let endVal = Min(startEval - 2, prevPgnData.Moves[0][done]);
+    prevPgnData.Moves[0][done] = 0;
 
     for (let ctr = startEval; ctr >= endVal; ctr --)
     {
@@ -614,86 +614,22 @@ function updateChartDataLiveEval2()
         {
             needtoUpdate = 1;
             let moveNumber = dataToUse.x,
-                evalObject = getLiveEval(key, moveNumber, isBlack, 2);
+                evalObject = getLiveEval(key, moveNumber, isBlack, id);
             /*LS("RRR: cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
-            if (!prevPgnData.Moves[0].didliveEval2)
+            if (!prevPgnData.Moves[0][done])
             {
-                prevPgnData.Moves[0].didliveEval2 = ctr;
+                prevPgnData.Moves[0][done] = ctr;
                 /*LS("RRR:X setting cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
             }
             if (evalObject.y == null)
-                prevPgnData.Moves[0].didliveEval2 = ctr;
+                prevPgnData.Moves[0][done] = ctr;
             else
-                eval_data.datasets[3].data[ctr] = evalObject;
+                eval_data.datasets[1 + id].data[ctr] = evalObject;
         }
     }
 
     if (needtoUpdate)
         charts.eval.update();
-}
-
-function updateChartDataLiveEval1()
-{
-    if (!showLivEng1)
-        return;
-
-    let eval_data = charts.eval.data,
-        needtoUpdate = 0,
-        startEval = whiteEvalL;
-
-    if (!whiteEvalL)
-        return;
-
-    if (prevPgnData.Moves[0].didliveEval1 == undefined)
-        prevPgnData.Moves[0].didliveEval1 = 0;
-
-    let endVal = Min(startEval - 2, prevPgnData.Moves[0].didliveEval1);
-    prevPgnData.Moves[0].didliveEval1 = 0;
-
-    for (let ctr = startEval; ctr >= endVal; ctr --)
-    {
-        let dataToUse = eval_data.datasets[0].data[ctr],
-            isBlack = 0,
-            key = 0;
-
-        if (dataToUse)
-            key = dataToUse.ply;
-
-        /*LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);*/
-
-        if (eval_data.datasets[1].data[ctr] != undefined)
-        {
-            dataToUse = eval_data.datasets[1].data[ctr];
-            key = dataToUse.ply;
-            isBlack = 1;
-        }
-
-        if (dataToUse != undefined)
-        {
-            needtoUpdate = 1;
-            let moveNumber = dataToUse.x,
-                evalObject = getLiveEval(key, moveNumber, isBlack, 1);
-            /*LS("RRR: cont1 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
-            if (!prevPgnData.Moves[0].didliveEval1)
-                prevPgnData.Moves[0].didliveEval1 = ctr;
-
-            if (evalObject.y == null)
-                prevPgnData.Moves[0].didliveEval1 = ctr;
-            else
-                eval_data.datasets[2].data[ctr] = evalObject;
-        }
-    }
-
-    if (needtoUpdate)
-        charts.eval.update();
-}
-
-function updateChartDataLive(contno)
-{
-    if (contno == 1)
-        updateChartDataLiveEval1();
-    else
-        updateChartDataLiveEval2();
 }
 
 function updateChartData()

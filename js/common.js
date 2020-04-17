@@ -884,8 +884,15 @@ function FormatFloat(text, align) {
  */
 function FormatUnit(number)
 {
-    if (isNaN(number))
-        number = 'N/A';
+    if (isNaN(number)) {
+        // isNaN will return true for 'hello', but Number.isNaN won't
+        if (Number.isNaN(number))
+            number = 'N/A';
+        else
+            number = `${number}`;
+    }
+    else if (number == Infinity)
+        return `${number}`;
     else if (number > 1e9)
         number = `${Floor(number / 1e8) / 10}B`;
     else if (number > 1e6)
@@ -1180,4 +1187,16 @@ function Stringify(object, depth=0, max_depth=2) {
     }
 
     return depth? obj: JSON.stringify(obj);
+}
+
+/**
+ * Title a string:
+ * - make the first letter uppercase and keep the rest as it is
+ * - works on numbers too
+ * @param {string|number} text
+ * @returns {string}
+ */
+function Title(text) {
+    text += '';
+    return text.slice(0, 1).toUpperCase() + text.slice(1);
 }

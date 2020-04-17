@@ -8,7 +8,7 @@
 /*
 globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, C, check_hash, DEV, document, Events,
-fill_languages, get_object, getUserS, hideBanner, init_sockets, initTables, initToolTip, LANGUAGES:true, load_defaults,
+fill_languages, get_object, getUserS, hideBanner, init_sockets, initTables, LANGUAGES:true, load_defaults,
 localStorage, LS, Max, parse_dev, resize, Round, S, save_option, set_ui_events, setDefaults, setTwitch, start_tcec,
 startup_3d, startup_archive, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node,
 translates:true, unlistenLogMain, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables,
@@ -20,7 +20,6 @@ updateWinners, window
  * First initialisation
  */
 function init_globals() {
-    initToolTip();
     updatePgn(0);
     setDefaults();
 

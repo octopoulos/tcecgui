@@ -16,6 +16,7 @@ create_module(IMPORT_PATH, [
 
 let {
         Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Stringify,
+        Title,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,13 @@ let {
     [1259, '1.2k'],
     [725.019, '725'],
     [NaN, 'N/A'],
-    [Infinity, 'InfinityB'],
+    [Infinity, 'Infinity'],
+    // check if we can feed the result back => stability
+    ['7.8B', '7.8B'],
+    ['58.3M', '58.3M'],
+    ['725', '725'],
+    ['N/A', 'N/A'],
+    ['Infinity', 'Infinity'],
 ].forEach(([nodes, answer], id) => {
     test(`FormatUnit:${id}`, () => {
         expect(FormatUnit(nodes)).toEqual(answer);
@@ -122,5 +129,18 @@ let {
 ].forEach(([object, depth, maxdepth, answer], id) => {
     test(`Stringify:${id}`, () => {
         expect(Stringify(object, depth, maxdepth)).toEqual(answer);
+    });
+});
+
+// Title
+[
+    ['', ''],
+    ['white', 'White'],
+    [123, '123'],
+    [null, 'Null'],
+    ['forEach', 'ForEach'],
+].forEach(([text, answer], id) => {
+    test(`Title:${id}`, () => {
+        expect(Title(text)).toEqual(answer);
     });
 });
