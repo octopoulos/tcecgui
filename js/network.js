@@ -14,6 +14,11 @@ updateLiveEvalData, updateLiveEvalDataNew, updatePgnData, updateScheduleData, Y
 let globalRoom = 0,
     socket;
 
+function getUserS()
+{
+    socket.emit('getusers', 'd');
+}
+
 /**
  * Initialise sockets
  */

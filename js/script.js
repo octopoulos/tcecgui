@@ -19,10 +19,6 @@ unlistenLogMain, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, upda
  * First initialisation
  */
 function init_globals() {
-    let sliderVale = localStorage.getItem('tcec-chat-slider');
-    if (sliderVale == undefined)
-        sliderVale = 100;
-
     initToolTip();
     updatePgn(0);
     setDefaults();
@@ -40,17 +36,6 @@ function init_globals() {
     add_timeout('adblock', () => {
         S('.encouragement', ((_('#google_adverts') || {}).height || 0) <= 0);
     }, 15000);
-
-    // $('#chatsize').bootstrapSlider({
-    //     min: 40,
-    //     max: 150,
-    //     value: sliderVale,
-    //     handle: 'round',
-    //     formatter: function(value) {
-    //         // $('#chatright').height(parseInt(value/100 * chatHeight));
-    //         localStorage.setItem('tcec-chat-slider', value);
-    //     }
-    // });
 }
 
 /**
@@ -72,18 +57,6 @@ function set_global_events() {
     Events(window, 'keydown', e => {
         tcecHandleKey(e);
     });
-
-    // $(document).click(function (event) {
-    //     var clickover = $(event.target);
-    //     var _opened = $(".navbar-collapse").hasClass("navbar-collapse in");
-    //     if (_opened === true && !clickover.hasClass("navbar-toggle")) {
-    //         $("button.navbar-toggle").click();
-    //     }
-    // });
-    // $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    //     var target = $(e.target).attr("href"); // activated tab
-    //     $(target).show();
-    // });
 
     C('.toggleDark', () => {
         toggleTheme();

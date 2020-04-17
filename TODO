@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+~          : 2020-04-12 : remove all `var` = sources of bugs
 2020-04-17 : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
 2020-04-17 : 2020-04-15 : use the common 4 spaces indent
 2020-04-17 : 2020-04-16 : improved localStorage settings using Y
@@ -34,14 +35,13 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-04-13 : X_SETTINGS = much better settings system than what's now
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
--          : 2020-04-13 : recode the top navigation bar, without bootstrap
+~          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-13 : remove 80x onClick = ... from live.html
--          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
+~          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
 ~          : 2020-04-13 : get rid of multiple big copy/paste in the code, if a code appears x times => in a function
 ~          : 2020-04-12 : convert all White and Black vars to arrays [w, b]
 -          : 2020-04-13 : add more Jest tests
 ~          : 2020-04-13 : merge B&W functions
-~          : 2020-04-12 : remove all `var` = sources of bugs
 ~          : 2020-04-13 : remove as much jquery as possible
 -          : 2020-04-13 : remove all click triggers (they're hacks)
 -          : 2020-04-13 : accelerate table generation, too many memory allocs + expensive selectors with jQuery
