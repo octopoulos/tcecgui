@@ -22,9 +22,11 @@ enginerating.json
 export/
 gamelist.json
 index.html
+json/
 live*.json
 model/
 schedule.json
+sound/*.js
 tempCodeRunnerFile.py
 tournament.json
 winners.json

@@ -118,6 +118,32 @@ verts {
     color: rgba(255, 255, 255, 0.75);
 }
 
+.grid2 {
+    display: grid;
+    grid-gap: 0.5em 1em;
+    grid-template-columns: 0.5fr 1fr;
+}
+.popup {
+    background: rgba(40, 40, 40, 0.95);
+    box-shadow: 0.2em 0.2em 0.5em 0 rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    color: #fff;
+    opacity: 0;
+    padding: 1em;
+    pointer-events: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: opacity 0.5s;
+    z-index: 9;
+}
+.popup-enable {
+    pointer-events: all;
+}
+.popup-show {
+    opacity: 1;
+}
+
 /* board */
 #board {
     height: 50vmin;

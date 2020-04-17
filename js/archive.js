@@ -5,7 +5,7 @@
 /*
 globals
 $, ARCHIVE_LINK, Assign, eventNameHeader:true, globalGameno:true, Keys, location, LS, Now, pageNum:true, prevPgnData,
-Resource, scheduleHighlight, updateGame, updateH2hData, updateLiveChart, updatePgnDataMain, updateTables, URL,
+Resource, scheduleHighlight, setPgn, updateGame, updateH2hData, updateLiveChart, updateTables, URL,
 virtual_init_tables:true, window, Y
 */
 'use strict';
@@ -287,7 +287,7 @@ function updateGameArchive(gameno, noscroll)
         globalGameno = gameno;
         let navMain = $(".navbar-collapse");
         navMain.collapse('hide');
-        updatePgnDataMain(data);
+        setPgn(data);
         $('html, body').animate({
               scrollTop: $("#event-overview").offset().top
          }, 5);

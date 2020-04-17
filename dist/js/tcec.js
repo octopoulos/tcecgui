@@ -9,7 +9,8 @@ Floor, FormatUnit, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_POSITION, startDateR1,
-startDateR2, Style, teamsx, touch_handle, updateChartData, updateChartDataLive, updateCrosstable, window, XBoard, Y
+startDateR2, Style, teamsx, Title, touch_handle, updateChartData, updateChartDataLive, updateCrosstable, window,
+XBoard, Y
 */
 'use strict';
 
@@ -27,7 +28,7 @@ let _BLACK = 'black',
     activePvKey = [],
     all_engines = ['w', 'b'],          // w,b full engine names
     all_pvs = [[], []],
-    ARCHIVE_LINK = 'http://www.tcec-chess.com/archive.html',
+    ARCHIVE_LINK = '',  // https://www.tcec-chess.com/archive.html',
     isAutoplay,
     BL = 1,
     board,
@@ -68,6 +69,7 @@ let _BLACK = 'black',
     started_moves = [0, 0],
     turn = 0,                           // 0:white to play, 1:black to play
     used_times = [0, 0],
+    virtual_init_tables,
     WH = 0,
     WHITE_BLACK = [_WHITE, _BLACK, 'live'];
 
@@ -79,14 +81,6 @@ let activeFen = '',
     bookmove = 0,
     choosePv,
     clearedAnnotation = 0,
-    columnsEng = [
-        {
-            field: 'Name',
-        },
-        {
-            field: 'Value',
-        },
-    ],
     // All possible valid terminations (hopefully)
     crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/,
     crossTableInitialized = false,
@@ -116,8 +110,6 @@ let activeFen = '',
     pvSquareToHighlight = '',
     regexBlackMove = /^[0-9]{1,3}\.\.\./,
     selectedId = 0,
-    showLivEng1 = 1,
-    showLivEng2 = 1,
     squareToHighlight = '',
     standColumns = [],
     tcecElo = 1,
@@ -160,33 +152,6 @@ function updateAll()
     add_timeout('update_all', () => {updateTables();}, 5000);
 }
 
-function updatePgnDataMain(data)
-{
-    if (!prevPgnData)
-    {
-        updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
-        updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
-    }
-    else
-    {
-        if (data.WhiteEngineOptions != prevPgnData.WhiteEngineOptions)
-        {
-            updateEngineInfo('#whiteenginetable', '#white-engine-info', data.WhiteEngineOptions);
-        }
-        if (data.BlackEngineOptions != prevPgnData.BlackEngineOptions)
-        {
-            updateEngineInfo('#blackenginetable', '#black-engine-info', data.BlackEngineOptions);
-        }
-    }
-    setPgn(data);
-}
-
-function updatePgnData(data, read)
-{
-    timeDiff = 0;
-    updatePgnDataMain(data);
-}
-
 function updatePgn(resettime)
 {
     eventNameHeader = 0;
@@ -201,7 +166,7 @@ function updatePgn(resettime)
         }
         prevPgnData = 0;
         data.gameChanged = 1;
-        updatePgnDataMain(data);
+        setPgn(data);
     });
 }
 
@@ -658,8 +623,9 @@ function setPgn(pgn)
 // TODO: 1 function for all
 function copyFenAnalysis()
 {
-    let clip = new ClipboardJS('.btn', {
-        text: function(trigger) {
+    LS('copy fen a');
+    new ClipboardJS('.btn', {
+        text: () => {
             return analysFen;
         }
     });
@@ -668,6 +634,7 @@ function copyFenAnalysis()
 
 function copyFenWhite()
 {
+    LS('copy white');
     let clip = new ClipboardJS('.btn', {
         text: function(trigger) {
             return current_positions[WH];
@@ -678,6 +645,7 @@ function copyFenWhite()
 
 function copyFenBlack()
 {
+    LS('copy black');
     let clip = new ClipboardJS('.btn', {
         text: function(trigger) {
             return current_positions[BL];
@@ -688,6 +656,7 @@ function copyFenBlack()
 
 function copyFen()
 {
+    LS('copy fen');
     let clip = new ClipboardJS('.btn', {
         text: function(trigger) {
             return currentPosition;
@@ -727,65 +696,53 @@ function getMoveFromPly(ply)
     return prevPgnData.Moves[ply];
 }
 
-// TODO: simplify this
+/**
+ * Make a book or n/a eval
+ * - used by getEvalFromPly
+ * @param {string} value
+ * @param {string} side
+ * @param {Object=} extra override some values
+ * @returns {Object}
+ */
+function make_non_eval(side, value, extra) {
+    let dico = {
+        depth: value,
+        eval: value,
+        mtime: value,
+        nodes: value,
+        pv: {},
+        side: side,
+        speed: value,
+        tbhits: value,
+        timeleft: value,
+    };
+
+    if (extra)
+        Assign(dico, extra);
+    return dico;
+}
+
 function getEvalFromPly(ply)
 {
     let selectedMove = prevPgnData.Moves[ply],
         side = turn? 'White': 'Black';
 
     if (ply < 0)
-    {
-        return {
-            depth: "n/a",
-            eval: "n/a",
-            mtime: "n/a",
-            nodes: "n/a",
-            pv: {},
-            side: side,
-            speed: "n/a",
-            tbhits: "n/a",
-            timeleft: "n/a",
-        };
-    }
+        return make_non_eval(side, 'n/a');
 
     // arun
     if (ply < bookmove)
-    {
-        return {
-            depth: "book",
-            eval: "book",
-            mtime: "book",
-            nodes: "book",
-            pv: {},
-            side: side,
-            speed: "book",
-            tbhits: "book",
-            timeleft: "book"
-        };
-    }
+        return make_non_eval(side, 'book');
 
     //arun
     if (selectedMove == undefined || selectedMove.pv == undefined)
-    {
-        return {
-            depth: "n/a",
-            eval: 0,
-            mtime: "n/a",
-            nodes: "n/a",
-            pv: {},
-            side: side,
-            speed: "n/a",
-            tbhits: "n/a",
-            timeleft: "n/a",
-        };
-    }
+        return make_non_eval(side, 'n/a', {eval: 0});
 
     let speed = selectedMove.s;
-    if (speed < 1000000) {
+    if (speed < 1000000)
         speed = Round(speed / 1000) + ' knps';
-    } else {
+    else
         speed = Round(speed / 1000000) + ' Mnps';
-    }
 
     let nodes = FormatUnit(selectedMove.n),
         depth = selectedMove.d + '/' + selectedMove.sd,
@@ -2011,7 +1968,8 @@ function setDarkLight()
     setTwitchBackground(is_dark? 2: 1);
     setTwitchChatUrl(Y.twitch_back_mode || is_dark);
     Attrs('#info-frame', 'src', `info.html?body=${is_dark? 'dark': 'light'}`);
-    Class('#crosstable, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark', is_dark);
+    Class('#crosstable, #gamelist, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark', is_dark);
+    Class('#seasondiv', 'collapse-dark', is_dark);
     Prop('#themecheck', 'checked', !is_dark);
     Class('.graphs', 'blackcanvas -whitecanvas', is_dark);
     Prop('input.toggleDark', 'checked', is_dark);
@@ -2062,7 +2020,65 @@ function setPieceUser(piece_theme)
     setBoard();
 }
 
-function updateLiveEvalDataHistory(datum, fen, container, contno)
+/**
+ * Update live data - utility function
+ * @param {Object} datum
+ * @param {string} fen
+ * @param {string} container
+ * @param {number} id
+ * @param {string|number} score
+ * @returns {[string, Object[]]}
+ */
+function updateLiveData(datum, fen, container, id, score) {
+    datum.tbhits = FormatUnit(datum.tbhits);
+    datum.nodes = FormatUnit(datum.nodes);
+    datum.eval = score;
+
+    if (!datum.pv.length || datum.pv.trim() == 'no info')
+        return [];
+
+    let chess = new Chess(fen),
+        currentFen = fen,
+        moves = [],
+        pvs = [],
+        split = datum.pv.replace('...', '... ').split(' '),
+        length = split.length;
+
+    for (let i=0, moveCount=0; i<length; i++) {
+        let text = split[i];
+        if (!isNaN(text[0])) {
+            moves.push(text);
+            continue;
+        }
+
+        let move = chess.move(text);
+        if (!move) {
+            if (DEV.eval & 1)
+                LS(`undefined move: ${text}`);
+            return [];
+        }
+
+        currentFen = chess.fen();
+        let newPv = {
+            from: move.from,
+            to: move.to,
+            m: move.san,
+            fen: currentFen,
+        };
+
+        // we can build the html and the PV in the same loop. no need to do it three times
+        moves.push(`<a href="#" class="set-pv-board" live-pv-key="0" move-key="${moveCount}" engine="${id}" color="live">${move.san}</a>`);
+
+        currentLastMove = text.slice(-2);
+        pvs.push(newPv);
+        moveCount ++;
+    }
+
+    HTML(container, '');
+    return [moves.join(' '), pvs];
+}
+
+function updateLiveEvalDataHistory(datum, fen, container, id)
 {
     let score = DefaultFloat(datum.eval, `${datum.eval}`);
 
@@ -2076,73 +2092,25 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
         }
     }
 
-    datum.eval = score;
-    datum.tbhits = FormatUnit(datum.tbhits);
-    datum.nodes = FormatUnit(datum.nodes);
-
-    if (!datum.pv.length || datum.pv.trim() == "no info")
+    let [html, pvs] = updateLiveData(datum, fen, container, id, score);
+    if (!pvs)
         return;
 
-    let chess = new Chess(fen),
-        currentFen = fen,
-        moveContainer = [],
-        pvs = [],
-        split = datum.pv.replace("...","... ").split(' '),
-        length = split.length;
-
-    for (let i = 0, moveCount = 0; i < length; i++) {
-        let str = split[i];
-        if (isNaN(str[0])) {
-            let moveResponse = chess.move(str);
-            if (!moveResponse || !moveResponse) {
-                if (DEV.eval & 1)
-                    LS("undefine move" + str);
-                return;
-            }
-            else {
-                currentFen = chess.fen();
-                let newPv = {
-                    from: moveResponse.from,
-                    to: moveResponse.to,
-                    m: moveResponse.san,
-                    fen: currentFen
-                };
-
-                //we can build the html and the PV in the same loop. no need to do it three times
-                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
-                currentLastMove = str.slice(-2);
-                //pushing is the same as a union of an array with one item...
-                pvs.push(newPv);
-                moveCount++;
-            }
-        }
-        else
-            moveContainer.push(str);
-    }
-
-    livePvs[contno] = [];
-    HTML(container, '');
+    livePvs[id] = [];
     board.clearAnnotation();
 
     let evalStr = getPct(datum.engine, score);
     $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
+
     if (Y.arrows) {
-        let color;
-        if (contno == 2) {
-            color = 'reds';
-        }
-        else {
-            color = 'blues';
-        }
-        if (pvs[0]) {
+        let color = (id == 2)? 'reds': 'blues';
+        if (pvs[0])
             board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
-        }
     }
 
-    $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-    livePvs[contno] = pvs;
-    activePvH[contno] =pvs;
+    $(container).append(`<div class="engine-pv engine-pv-live alert alert-dark">${html}</div>`);
+    livePvs[id] = pvs;
+    activePvH[id] =pvs;
     datum.eval = datum.origeval;
 }
 
@@ -2152,105 +2120,55 @@ function updateLiveEvalDataHistory(datum, fen, container, contno)
  * @param {Object} datum object: {engine: String, pv:String, tbHits:String, Nodes:String/Integer, eval:String/Integer, speed:String/Integer, depth:String}
  * @param {boolean} update has to do with updating
  * @param {string} fen fen of current position
- * @param {number} contno index of kibitzing engine
+ * @param {number} id index of kibitzing engine
  * @param {boolean} initial Unknown behavior
  */
-function updateLiveEvalData(datum, update, fen, contno, initial) {
+function updateLiveEvalData(datum, update, fen, id, initial) {
     if (!datum)
         return;
-    let container = '#live-eval-cont' + contno;
+    let container = `#live-eval-cont${id}`;
 
-    if (contno == 1 && !showLivEng1)  {
+    if (!Y[`live_engine${id}`]) {
         HTML(container, '');
         return;
-    } else if (contno == 2 && !showLivEng2) {
-        HTML(container, '');
-        return;
-    } else if (!initial && contno == 1){
+    }
+    if (!initial && id == 1) {
         board.clearAnnotation();
         clearedAnnotation = 1;
     }
 
-    if (clearedAnnotation < 1 && contno == 2)
+    if (clearedAnnotation < 1 && id == 2)
         board.clearAnnotation();
 
-    if (contno == 2)
+    if (id == 2)
         clearedAnnotation = 0;
 
     if (update && !viewingActiveMove)
         return;
     else if (!update) {
         datum.origeval = datum.eval;
-        updateLiveEvalDataHistory(datum, fen, container, contno);
+        updateLiveEvalDataHistory(datum, fen, container, id);
         return;
     }
 
-    let score = '';
-    if (datum)
-        score = (parseFloat(datum.eval || 0)).toFixed(2);
-    score = "" + score;
-    datum.eval = score;
-
-    datum.tbhits = FormatUnit(datum.tbhits);
-    datum.nodes = FormatUnit(datum.nodes);
-
-    if (!datum.pv.length || datum.pv.trim() == 'no info')
+    let score = (parseFloat(datum.eval || 0)).toFixed(2),
+        [html, pvs] = updateLiveData(datum, fen || activeFen, container, id, score);
+    if (!pvs)
         return;
 
-    let pvs = [],
-        moveContainer = [];
-
-    fen = fen? fen : activeFen;
-    let chess = new Chess(fen),
-        currentFen = fen,
-        split = datum.pv.replace("...","... ").split(' '),
-        length = split.length;
-
-    for (let i=0, moveCount=0; i<length; i++) {
-        let str = split[i];
-        if (isNaN(str[0])) {
-            let moveResponse = chess.move(str);
-            if (!moveResponse || !moveResponse) {
-                if (DEV.eval & 1)
-                    LS("undefine move" + str);
-                return;
-            }
-            else {
-                currentFen = chess.fen();
-                let newPv = {
-                    from: moveResponse.from,
-                    to: moveResponse.to,
-                    m: moveResponse.san,
-                    fen: currentFen,
-                };
-
-                // we can build the html and the PV in the same loop. no need to do it three times
-                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
-                currentLastMove = str.slice(-2);
-                // pushing is the same as a union of an array with one item...
-                pvs.push(newPv);
-                moveCount++;
-            }
-        }
-        else
-            moveContainer.push(str);
-    }
-
-    livePvs[contno] = [];
-    HTML(container, '');
+    livePvs[id] = [];
 
     let evalStr = getPct(datum.engine, datum.eval);
     $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6><small>[D: ' + datum.depth + ' | TB: ' + datum.tbhits + ' | Sp: ' + datum.speed + ' | N: ' + datum.nodes +']</small>');
 
     if (Y.arrows) {
-        let color = (contno == 2)? 'reds': 'blues';
+        let color = (id == 2)? 'reds': 'blues';
         if (pvs[0])
             board.addArrowAnnotation(pvs[0].from, pvs[0].to, color, board.orientation());
     }
 
-    $(container).append('<div class="engine-pv engine-pv-live alert alert-dark">' + moveContainer.join(' ') + '</div>');
-    livePvs[contno] = pvs;
+    $(container).append(`<div class="engine-pv engine-pv-live alert alert-dark">${html}</div>`);
+    livePvs[id] = pvs;
     let colorx = 0,
         x = 0;
     datum.plynum = datum.ply + 1;
@@ -2266,10 +2184,11 @@ function updateLiveEvalData(datum, update, fen, contno, initial) {
     }
     datum.x = x;
     if (Y.live_pv)
-        addDataLive(charts.eval, datum, colorx, contno);
+        addDataLive(charts.eval, datum, colorx, id);
 }
 
-function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
+// TODO: merge the functions
+function updateLiveEvalDataNew(datum, _update, fen, id, _initial) {
     if (!datum || !Y.live_pv || !viewingActiveMove)
         return;
 
@@ -2290,57 +2209,13 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
     if (DEV.eval & 1)
         LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
 
-    let score = '';
-    if (datum)
-        score = (parseFloat(datum.eval || 0)).toFixed(2);
-    score = "" + score;
-    datum.eval = score;
-
-    let pvs = [],
-        moveContainer = [];
-    if (!datum.pv.length || datum.pv.trim() == "no info")
+    let score = (parseFloat(datum.eval || 0)).toFixed(2),
+        [html, pvs] = updateLiveData(datum, fen || activeFen, container, id, score);
+    if (!pvs)
         return;
-
-    fen = fen || activeFen;
-    let chess = new Chess(fen),
-        currentFen = fen;
-
-    let split = datum.pv.replace("...","... ").split(' '),
-        length = split.length;
-    for (let i = 0, moveCount = 0; i < length; i++) {
-        let str = split[i];
-        if (isNaN(str[0])) {
-            let moveResponse = chess.move(str);
-            if (!moveResponse || !moveResponse) {
-                if (DEV.eval & 1)
-                    LS("undefine move" + str);
-                return;
-            }
-            else {
-                currentFen = chess.fen();
-                let newPv = {
-                    from: moveResponse.from,
-                    to: moveResponse.to,
-                    m: moveResponse.san,
-                    fen: currentFen
-                };
-
-                // we can build the html and the PV in the same loop. no need to do it three times
-                moveContainer.push("<a href='#' class='set-pv-board' live-pv-key='0' move-key='" + moveCount +
-                    "' engine='" + (contno) + "' color='live'>" + moveResponse.san + '</a>');
-
-                currentLastMove = str.slice(-2);
-                pvs.push(newPv);
-                moveCount ++;
-            }
-        }
-        else
-            moveContainer.push(str);
-    }
 
     let evalStr = getPct(datum.engine, datum.eval),
         addClass = 'white-engine-pv';
-    HTML(container, '');
     if (datum.color == 0)
     {
         Class(container, '-white-engine-pv');
@@ -2354,7 +2229,7 @@ function updateLiveEvalDataNew(datum, _update, fen, contno, _initial) {
     }
     Class(container, '-alert -alert-dark');
     $(container).append('<h6>' + evalStr + ' PV(A) ' + '</h6>');
-    $(container).append('<div class="' + addClass + ' ' + classhigh + ' alert alert-dark">' + moveContainer.join(' ') + '</div>');
+    $(container).append(`<div class="${addClass} ${classhigh} alert alert-dark">${html}</div>`);
     //updateChartData();
 
     datum.plynum ++;
@@ -2455,13 +2330,13 @@ function setTwitch()
 
 function showEvalCont()
 {
-    S('#evalcont', showLivEng1 || showLivEng2);
-    if (showLivEng1)
+    S('#evalcont', Y.live_engine1 || Y.live_engine2);
+    if (Y.live_engine1)
     {
         Class('#pills-eval-tab1, #pills-eval1', 'active show');
         Class('#pills-eval-tab2, #pills-eval2', '-active');
     }
-    else if (showLivEng2)
+    else if (Y.live_engine2)
     {
         Class('#pills-eval-tab2, #pills-eval2', 'active show');
         Class('#pills-eval-tab1, #pills-eval1', '-active');
@@ -2474,48 +2349,24 @@ function liveEngine(checkbox, checknum)
         config = `live_engine${checknum}`;
 
     save_option(config, ichecked);
-    if (checknum == 1)
-        showLivEng1 = ichecked;
-    else
-        showLivEng2 = ichecked;
-
     showEvalCont();
     updateLiveEval();
     updateChartData();
 }
 
-function setLiveEngineInit(value)
+function setLiveEngineInit(id)
 {
-    let getlive = Y[`live_engine${value}`],
-        cont = `#liveenginecheck${value}`,
-        checknum = value;
+    let getlive = Y[`live_engine${id}`],
+        cont = `#liveenginecheck${id}`;
 
-    if (getlive == 1)
+    if (getlive)
     {
-        if (checknum == 1)
-        {
-            showLivEng1 = 1;
-            $('#pills-tab a[href="#pills-eval' + 1 + '"]').tab('show');
-        }
-        else
-        {
-            showLivEng2 = 1;
-            if (!showLivEng1)
-            {
-                $('#pills-tab a[href="#pills-eval' + 2 + '"]').tab('show');
-            }
-        }
+        if (id == 1 || !Y.live_engine1)
+            $(`#pills-tab a[href="#pills-eval${id}"]`).tab('show');
         Prop(cont, 'checked', true);
     }
     else
-    {
-        if (checknum == 1)
-            showLivEng1 = 0;
-        else
-            showLivEng2 = 0;
-
         Prop(cont, 'checked', false);
-    }
 }
 
 function setLiveEngine()
@@ -2594,60 +2445,6 @@ function goMoveFromChart(chartx, evt)
     let plyNum = chartx.data.datasets[firstPoint._datasetIndex].data[firstPoint._index].ply;
     if (plyNum)
         $('a[ply=' + plyNum + ']').click();
-}
-
-function addToolTip(divx, divimg)
-{
-    let htmlx = '<table class="table table-dark table-striped table-dark">' + HTML(divx) + '</table>';
-    $(divimg).tooltipster('content', htmlx);
-}
-
-function updateEngineInfo(divx, divimg, data)
-{
-    $(divx).bootstrapTable('load', data);
-    addToolTip(divx, divimg);
-}
-
-function addToolTipInit(_divx, divimg, direction)
-{
-    $(divimg).tooltipster({
-        contentAsHTML: true,
-        interactive: true,
-        side: [direction],
-        theme: 'tooltipster-shadow',
-        // trigger: 'hover',
-        delay: [500, 200],
-        contentCloning: true,
-        delayTouch: [10, 2000],
-        trigger: 'custom',
-        triggerOpen: {
-            mouseenter: true,
-            click: true,
-            touchstart: true,
-            tap: true
-        },
-        triggerClose: {
-            mouseleave: true,
-            click: true,
-            touchleave: true,
-            tap: true,
-            originClick: true
-        },
-    });
-}
-
-function initToolTip()
-{
-    $('#whiteenginetable').bootstrapTable({
-        columns: columnsEng,
-        showHeader: false
-    });
-    $('#blackenginetable').bootstrapTable({
-        columns: columnsEng,
-        showHeader: false
-    });
-    addToolTipInit('#whiteenginetable', '#white-engine-info', 'right');
-    addToolTipInit('#blackenginetable', '#black-engine-info', 'left');
 }
 
 function firstButtonMain()
@@ -3218,6 +3015,9 @@ function initTables()
         columns: crossColumns,
         sortName: 'rank'
     });
+
+    if (virtual_init_tables)
+        virtual_init_tables();
 
     // add diagonal scrolling
     Class('.fixed-table-body', 'scroller');
@@ -3826,6 +3626,60 @@ function formatterEvent(value, row, index, _field) {
 }
 
 /**
+ * Show a popup with the engine info
+ * @param {string} scolor white, black
+ * @param {Event} e
+ */
+function popup_engine_info(scolor, e) {
+    let show,
+        popup = _('#popup'),
+        type = e.type;
+
+    if (type == 'mouseleave')
+        show = false;
+    else if (scolor == 'popup')
+        show = true;
+    else {
+        let title = Title(scolor),
+            engine = prevPgnData.Headers[title].split(' '),
+            options = prevPgnData[`${title}EngineOptions`],
+            lines = options.map(option => [option.Name, option.Value]);
+
+        // add engine + version
+        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
+        lines = lines.flat().map(item => `<div>${item}</div>`);
+
+        HTML(popup, `<div class="grid2">${lines.join('')}</div>`);
+
+        // place the popup in a visible area on the screen
+        let x = e.clientX + 10,
+            y = e.clientY + 10,
+            x2 = 0,
+            y2 = 0;
+        if (x >= window.innerWidth / 2) {
+            x -= 20;
+            x2 = -100;
+        }
+        if (y >= window.innerHeight / 2) {
+            y -= 20;
+            y2 = -100;
+        }
+
+        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
+        show = true;
+    }
+
+    Class(popup, 'popup-show', show);
+    // trick to be able to put the mouse on the popup and copy text
+    if (show) {
+        clear_timeout('popup-engine');
+        Class(popup, 'popup-enable');
+    }
+    else
+        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 1000);
+}
+
+/**
  * Set UI events
  */
 function set_ui_events() {
@@ -4121,6 +3975,11 @@ function set_ui_events() {
             goMoveFromChart(charts[key], e);
         });
     });
+
+    // engine info
+    Events('#black-engine-info, #popup, #white-engine-info', 'click mouseenter mousemove mouseleave', function(e) {
+        popup_engine_info(this.id.split('-')[0], e);
+    });
 }
 
 /**
@@ -4138,6 +3997,8 @@ function startup_tcec() {
     //
     Assign(DEFAULTS, {
         dark_mode: 10,
+        live_engine1: 1,
+        live_engine2: 1,
         top_tab: 1,
     });
 }

@@ -266,10 +266,6 @@ canvas {
 	padding: .15rem !important;
 }
 
-#ex1Slider .slider-selection {
-   background: #BABABA;
-}
-
 .black-time-remaining,
 .white-time-remaining,
 .black-time-used,

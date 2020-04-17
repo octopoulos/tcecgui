@@ -12,7 +12,6 @@
     <link href="dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="dist/css/chessboard-0.3.0.min.css" rel="stylesheet">
     <link href="dist/css/chessboard.css" rel="stylesheet">
-    <link href="dist/css/tooltipster.bundle.min.css" rel="stylesheet">
     <link href="dist/bootstrap-table.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
     <!-- Custom styles for this template -->
@@ -24,7 +23,7 @@
   </head>
 
   <body>
-
+    <div id="popup" class="popup"></div>
    <div id="note" class="dn">
         <span id="notetext"></span>
         <a id="close" style="color: whitesmoke !important;" href="#alert">[x]</a>
@@ -1128,11 +1127,16 @@
                 </a>
             </li>
             <li class="nav-item">
-               <a class="nav-link" id="pills-win-tab" data-toggle="pill" href="#pills-win" role="tab" aria-controls="pills-win" aria-selected="true">
-               <div class="d-none d-sm-block d-md-block">&ensp;<i data-t="Winners">Winners</i></div>
-               <div class="fa fa-trophy d-block d-sm-none d-md-none"></div>
-               </a>
-            </li>
+              <a class="nav-link show" id="pills-season-tab" data-toggle="pill" href="#seasondiv" role="tab" aria-controls="seasondiv" aria-selected="false">Seasons</a>
+           </li>
+           <li class="nav-item">
+            <a class="nav-link" id="pills-game-tab" data-toggle="pill" href="#gamediv" role="tab" aria-controls="gamediv" aria-selected="false">Games</a>
+         </li>
+            <li class="nav-item">
+              <a class="nav-link" id="pills-win-tab" data-toggle="pill" href="#pills-win" role="tab" aria-controls="pills-win" aria-selected="false">
+                <i class="fa fa-trophy"></i>
+              </a>
+           </li>
             <li class="nav-item">
                <a class="nav-link" id="pills-info-tab" data-toggle="pill" href="#pills-info" role="tab" aria-controls="pills-info" aria-selected="true" data-t="Information">
                  Information
@@ -1140,6 +1144,7 @@
             </li>
          </ul>
          <div class="tab-content" id="pills-tabContent">
+            <!-- chat -->
             <div class="tab-pane show active fade smallfont" id="pills-chat" role="tabpanel" aria-labelledby="pills-chat-tab">
                <div>
                   <iframe frameborder="0" style="width: 100%" scrolling="no" id="chatright"></iframe>
@@ -1153,12 +1158,26 @@
                   </a>
                </div>
             </div>
+            <!-- season -->
+            <div id="seasondiv" role="tab-panel" aria-labelledby="pills-season-tab" class="tab-pane smallfont text-center collapse-dark active show">
+            </div>
+            <!-- game -->
+            <div id="gamediv" role="tab-panel" aria-labelledby="pills-game-tab" class="tab-pane smallfont text-center collapse-dark active show">
+              <div id="game-wrapper-outer">
+                <div id="game-wrapper">
+                   <table id="gamelist" class="table-hover table-striped gamelistclass table table-no-bordered">
+                     </table>
+                 </div>
+              </div>
+            </div>
+            <!-- win -->
             <div class="tab-pane fade smallfont" id="pills-win" role="tabpanel" aria-labelledby="pills-win-tab">
               <div id="win-wrapper">
                 <table id="winner" class="table-dark table-striped">
                 </table>
               </div>
             </div>
+            <!-- info -->
             <div class="tab-pane show fade smallfont" id="pills-info" role="tabpanel" aria-labelledby="pills-info-tab">
                <center>
                <br>
@@ -1411,7 +1430,7 @@
     <script src="js/xboard.js"></script>
     <script src="dist/js/themes.js"></script>
     <script src="dist/js/tcec.js"></script>
-    <script src="dist/js/tooltipster.bundle.min.js"></script>
+    <script src="js/archive.js"></script>
     <script src="dist/js/bootstrap-4-navbar.js?v=1000000000000000000042"></script>
     <script src="dist/js/clipboard.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>

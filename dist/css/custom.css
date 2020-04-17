@@ -322,10 +322,6 @@ canvas {
 	padding: .15rem !important;
 }
 
-#ex1Slider .slider-selection {
-   background: #BABABA;
-}
-
 .black-time-remaining,
 .white-time-remaining,
 .black-time-used,
@@ -630,3 +626,75 @@ i {
 .nav-item {
    padding: 4px 0;
 }
+
+/* archive */
+.monofontmed {
+   font-family: monospace;
+   font-size: medium;
+   font-style: oblique;
+   /* margin: 1px 0; */
+   white-space: normal;
+}
+
+/** Archive games pgn table **/
+
+#seasondiv > ul div{
+   width:50%;
+   float:right;
+   margin-right:10px;
+ }
+
+ .caret {
+     display: inline-block;
+     width: 0;
+     height: 0;
+     margin-left: .255em;
+     vertical-align: .255em;
+     border-top: .3em solid;
+     border-right: .3em solid transparent;
+     border-bottom: 0;
+     border-left: .3em solid transparent;
+ }
+
+ #seasondiv div.active {
+       background-color: rgba(255,255,255,.4) !important;
+ }
+ #seasondiv {
+   max-height: 500px;
+   overflow:scroll;
+   overflow-x:hidden;
+ }
+ #seasondiv.collapse-dark {
+     color: #fff !important;
+     background-color: #212529;
+ }
+
+ #seasondiv.collapse-dark button[type="button"] {
+     color: #fff !important;
+ }
+
+ #seasondiv button[aria-expanded="true"] > .caret {
+     vertical-align: 0em;
+     margin-left: .446em;
+     border-top: .3em solid transparent;
+     border-right: 0;
+     border-bottom: .3em solid transparent;
+     border-left: .3em solid ;
+ }
+ #seasondiv button{
+   background-color: Transparent;
+ }
+ #seasondiv>div:nth-child(odd){
+ background-color:rgba(0,0,0,.05);
+ }
+
+ #seasondiv > div> div> div:hover {
+       background-color: rgba(255,255,255,.2);
+ }
+
+ #seasondiv.collapse-dark>div:nth-child(odd){
+ background-color:rgba(255,255,255,.05);
+ }
+ .order-last > .row {
+   display:block;
+ }

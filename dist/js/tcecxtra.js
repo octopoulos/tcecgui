@@ -2,7 +2,7 @@
 globals
 _, $, activeFen, add_timeout, board, Chess, clearedAnnotation:true, crash_re, crosstableData:true,
 currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys, livePvs, LS,
-newUpdateStandData, Pow, showLivEng1, showLivEng2, updateLiveEvalDataHistory, viewingActiveMove, Y
+newUpdateStandData, Pow, updateLiveEvalDataHistory, viewingActiveMove, Y
 */
 'use strict';
 
