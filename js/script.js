@@ -10,8 +10,9 @@ globals
 _, __PREFIX:true, $, add_timeout, api_times:true, api_translate_get, C, check_hash, DEV, document, Events,
 fill_languages, get_object, getUserS, hideBanner, init_sockets, initTables, initToolTip, LANGUAGES:true, load_defaults,
 localStorage, LS, Max, parse_dev, resize, Round, S, save_option, set_ui_events, setDefaults, setTwitch, start_tcec,
-startup_3d, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node, translates:true,
-unlistenLogMain, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners, window
+startup_3d, startup_archive, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node,
+translates:true, unlistenLogMain, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables,
+updateWinners, window
 */
 'use strict';
 
@@ -108,6 +109,7 @@ function startup() {
     startup_3d();
     set_global_events();
     set_ui_events();
+    startup_archive();
     startup_tcec();
     startup_graphs();
     load_settings();
