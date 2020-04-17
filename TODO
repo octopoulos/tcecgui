@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-17 : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
+2020-04-17 : 2020-04-15 : use the common 4 spaces indent
 2020-04-17 : 2020-04-16 : improved localStorage settings using Y
 2020-04-16 : 2020-04-16 : network.js
 2020-04-16 : 2020-04-16 : basic XBoard with text rendering
@@ -31,9 +33,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-04-15 : remove redundant hhmm and hhmmss functions
 ~          : 2020-04-13 : X_SETTINGS = much better settings system than what's now
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
--          : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
--          : 2020-04-15 : use the common 4 spaces indent
 -          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-13 : remove 80x onClick = ... from live.html
 -          : 2020-04-13 : add a flex + grid system instead of col-12, col-6

@@ -4,12 +4,12 @@
 globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
-create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Exp, Floor,
-FormatUnit, Hide, HTML, Keys,
+create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Events, Exp,
+Floor, FormatUnit, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_POSITION, startDateR1,
-startDateR2, Style, teamsx, updateChartData, updateChartDataLive, updateCrosstable, window, XBoard, Y
+startDateR2, Style, teamsx, touch_handle, updateChartData, updateChartDataLive, updateCrosstable, window, XBoard, Y
 */
 'use strict';
 
@@ -3229,6 +3229,13 @@ function initTables()
         columns: crossColumns,
         sortName: 'rank'
     });
+
+    // add diagonal scrolling
+    Class('.fixed-table-body', 'scroller');
+    Events('.scroller', '!touchstart touchmove touchend', () => {});
+    Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
+        touch_handle(e);
+    }, {passive: false});
 }
 
 function removeClassEngineInfo(cont)

@@ -1,3 +1,11 @@
+/* common */
+body {
+    background: #dcdcdc;
+    font-family: Roboto, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
 /* flex */
 .fcol,
 .fcols,
@@ -95,4 +103,35 @@ verts {
 .dn,
 .hidden {
     display: none !important;
+}
+
+/* menu */
+#menu {
+    background: #343a40;
+}
+#menu > div {
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0.7em;
+}
+#menu > div:hover {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* board */
+#board {
+    height: 50vmin;
+    width: 50vmin;
+}
+
+/* tables */
+.scroller {
+    overflow-x: auto;
+    pointer-events: auto;
+}
+.scroller th {
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 2px;
+    white-space: nowrap;
 }
