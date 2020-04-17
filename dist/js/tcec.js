@@ -6,7 +6,7 @@ _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:tru
 C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
 create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Events, Exp,
 Floor, FormatUnit, Hide, HTML, Keys,
-LS, Max, Min, moment, Now, Pad, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
+LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_POSITION, startDateR1,
 startDateR2, Style, teamsx, Title, touch_handle, updateChartData, updateChartDataLive, updateCrosstable, window,
@@ -3676,7 +3676,16 @@ function popup_engine_info(scolor, e) {
         Class(popup, 'popup-enable');
     }
     else
-        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 1000);
+        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
+}
+
+/**
+ * Show/hide info
+ * @param {boolean} show
+ */
+function show_info(show) {
+    S('#overlay', show);
+    Class('#popup-info', 'popup-show popup-enable', show);
 }
 
 /**
@@ -3976,9 +3985,21 @@ function set_ui_events() {
         });
     });
 
-    // engine info
+    // popups
     Events('#black-engine-info, #popup, #white-engine-info', 'click mouseenter mousemove mouseleave', function(e) {
         popup_engine_info(this.id.split('-')[0], e);
+    });
+    C('.popup-close', function() {
+        show_info(false);
+        let parent = Parent(this, 'div|vert', 'popup');
+        if (parent)
+            Class(parent, '-popup-enable -popup-show');
+    });
+    C('#info', () => {
+        show_info(true);
+    });
+    C('#overlay', () => {
+        show_info(false);
     });
 }
 

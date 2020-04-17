@@ -22,7 +22,8 @@
     <link href="css/common.css" rel="stylesheet">
   </head>
 
-  <body>
+  <body class="noselect">
+    <div id="overlay" class="dn"></div>
     <div id="popup" class="popup"></div>
    <div id="note" class="dn">
         <span id="notetext"></span>
@@ -43,7 +44,7 @@
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link py-0" href="#" data-toggle="modal" data-target="#info-modal" data-t="Info">
+            <a id="info" class="nav-link py-0" href="#" data-t="Info">
               Info
             </a>
           </li>
@@ -1335,7 +1336,7 @@
                 muted="true">
             </iframe>
           </div>
-          <div class="col-md-12 text-center">
+          <div id="footer" class="col-md-12 text-center">
 	    <div>
 	      TCEC (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom in cooperation with Chessdom Arena. The goal is to provide the viewers with a live broadcast of long time control, quality chess - played strictly between computer chess engines created by different programmers. One Season is divided into several Stages and lasts about 3-4 months. The winner of the Season will be the TCEC Grand Champion.
 	    </div>
@@ -1353,53 +1354,58 @@
           </div>
         </div>
 
+        <vert id="popup-info" class="popup">
+          <hori class="fbetween">
+            <h5>About TCEC</h5>
+            <i class="popup-close fa fa-times"></i>
+          </hori>
+          <hr>
+          <vert>
+            <div>
+             <b>TCEC</b> (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom in cooperation with Chessdom Arena. The goal is to provide the viewers with a live broadcast of long time control, quality chess - played strictly between computer chess engines created by different programmers. One Season is divided into several Stages and lasts about 3-4 months. The winner of the Season will be the TCEC Grand Champion.
+            </div>
+          </vert>
+          <vert>
+            <h4>The TCEC Grand Champions:</h4>
+            <div>
+              Season 16: Stockfish |
+              Season 15: LCZero |
+              Season 14: Stockfish |
+              Season 13: Stockfish |
+              Season 12: Stockfish |
+              Season 11: Stockfish |
+              Season 10: Houdini |
+              Season 9: Stockfish |
+              Season 8: Komodo |
+              Season 7: Komodo |
+              Season 6: Stockfish |
+              Season 5: Komodo |
+              Season 4: Houdini |
+              Season 3: N/A |
+              Season 2: Houdini |
+              Season 1: Houdini
+            </div>
+          </vert>
+          <vert>
+            <h4>Special thanks:</h4>
+            <div>
+              Martin Thoresen,
+              Anton Mihailov,
+              <a href="http://pgn4web.casaschi.net/home.html" target="_blank">Paolo Casaschi</a>,
+              <a href="https://github.com/cutechess/cutechess" target="_blank">Ilari Pihlajisto</a>,
+              <a href="https://github.com/cutechess/cutechess" target="_blank">Arto Jonsson</a>,
+              <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
+              <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
+            </div>
+          </vert>
+          <vert>
+            <h5><i data-t="Copyright"></i> © 2010-2020</h5>
+          </vert>
+        </vert>
+
         <div class="modal" id="info-modal" tabindex="-1" role="dialog">
           <div class="modal-dialog" role="document">
             <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">About TCEC</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-body">
-                <div class="about_4">
-                  <div class="about_row_content" id="about_desc">
-                    <b>TCEC</b> (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom in cooperation with Chessdom Arena. The goal is to provide the viewers with a live broadcast of long time control, quality chess - played strictly between computer chess engines created by different programmers. One Season is divided into several Stages and lasts about 3-4 months. The winner of the Season will be the TCEC Grand Champion.
-                  </div>
-                  <h4>The TCEC Grand Champions</h4>
-                  <div class="about_row_content">
-                    Season 16: Stockfish |
-                    Season 15: LCZero |
-                    Season 14: Stockfish |
-                    Season 13: Stockfish |
-                    Season 12: Stockfish |
-                    Season 11: Stockfish |
-                    Season 10: Houdini |
-                    Season 9: Stockfish |
-                    Season 8: Komodo |
-                    Season 7: Komodo |
-                    Season 6: Stockfish |
-                    Season 5: Komodo |
-                    Season 4: Houdini |
-                    Season 3: N/A |
-                    Season 2: Houdini |
-                    Season 1: Houdini
-                  </div>
-                  <h4>Special thanks:</h4>
-                  <div class="about_row_content">
-                    Martin Thoresen,
-                    Anton Mihailov,
-                    <a href="http://pgn4web.casaschi.net/home.html" target="_blank">Paolo Casaschi</a>,
-                    <a href="https://github.com/cutechess/cutechess" target="_blank">Ilari Pihlajisto</a>,
-                    <a href="https://github.com/cutechess/cutechess" target="_blank">Arto Jonsson</a>,
-                    <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
-                    <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
-                  </div>
-                  <h5><i data-t="Copyright"></i> © 2010-2020</h5>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
         <table id="whiteenginetable" class="dn"></table>

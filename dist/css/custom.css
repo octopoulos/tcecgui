@@ -698,3 +698,24 @@ i {
  .order-last > .row {
    display:block;
  }
+
+/* allow text selection */
+h5,
+h6,
+table td,
+#engine-history,
+#footer,
+#log-wrapper,
+.encouragement {
+   user-select: text;
+}
+
+hr {
+   border-bottom: 1px solid #fff;
+   margin: 0;
+   width: 100%;
+}
+h5 {
+   margin-top: 0.2em;
+}
+
