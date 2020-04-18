@@ -1,4 +1,4 @@
-// common
+// common.js
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-04-13
 //

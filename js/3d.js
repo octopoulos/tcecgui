@@ -7,7 +7,8 @@
 // included after: common, engine, global
 /*
 globals
-Abs, Assign, Audio, DEFAULTS, Exp, KEY_TIMES, Keys, KEYS, navigator, Now, PIECE_THEMES, Y
+_, Abs, add_timeout, Assign, Attrs, Audio, C, Class, clear_timeout, DEFAULTS, DEV, Events, Exp, Format, HTML, KEY_TIMES,
+Keys, KEYS, merge_settings, navigator, Now, S, save_option, translate_node, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -22,7 +23,6 @@ let audiobox = {
         [37, 39],
         [38, 40],
     ],
-    BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
     BUTTON_MAPPING = {
         0: 83,          // X
         1: 69,          // O
@@ -43,14 +43,17 @@ let audiobox = {
         16: 27,         // home
         17: 27,         // touch bar
     },
+    button_repeat,
+    button_repeat_time,
     buttons = {},
+    debugs = {},
     frame = 0,
     gamepad_id,
     gamepads = {},
     is_paused,
+    modal_name,
     now,
     ON_OFF = ['on', 'off'],
-    PIECE_KEYS  = 'alpha chess24 dilena leipzig metro symbol uscf wikipedia'.split(' '),
     SHADOW_QUALITIES = {
         off: [0, 0, 0],
         'very low': [1, 33, 512],       // 15.52
@@ -60,47 +63,15 @@ let audiobox = {
         'very high': [2, 166, 8192],    // 49.35
     },
     vibration,
+    virtual_change_setting_special,
     virtual_game_action_key,
     virtual_game_action_keyup,
-    X_SETTINGS = {
-        audio: {
-            sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
-            sound: [ON_OFF, 1],
-            voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
-            volume: [{min: 0, max: 10, type: 'number'}, 5],
-        },
-        board: {
-            arrows: [ON_OFF, 1],
-            board_middle: [ON_OFF, 0],
-            board_theme: [BOARD_KEYS, 'chess24'],
-            highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
-            notation: [ON_OFF, 1],
-            piece_theme: [PIECE_KEYS, 'chess24'],
-        },
-        board_pv: {
-            highlight_pv: [['off', 'thin', 'standard', 'big'], 'standard'],
-            live_pv: [ON_OFF, 1],
-            notation_pv: [ON_OFF, 1],
-            ply_diff: [['first', 'diverging', 'last'], 'first'],
-        },
-        extra: {
-            cross_crash: [ON_OFF, 0],
-            live_log: [[5, 10, 'all'], 10],
-        },
-        twitch: {
-            twitch_back_mode: [ON_OFF, 1],
-            twitch_video: [ON_OFF, 1],
-        },
-        video: {
-            encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
-            exposure: [{min: 0.1, max: 10, step: 0.1, type: 'number'}, 1],
-            gamma: [{min: 0, max: 10, step: 0.1, type: 'number'}, 1.5],
-            lighting: [['low', 'medium', 'high'], 'high'],
-            resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
-            shadow: [Keys(SHADOW_QUALITIES), 'high'],
-            texture: [['auto', 'on', 'off'], 'auto'],
-        },
-    };
+    virtual_set_modal_events_special,
+    virtual_show_modal_special,
+    virtual_update_debug_special;
+
+// INPUT / OUTPUT
+/////////////////
 
 /**
  * Check gamepad inputs
@@ -237,12 +208,264 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
     });
 }
 
+// UI
+////////
+
+/**
+ * Change a setting
+ * @param {string} name
+ * @param {string|number} value
+ */
+function change_setting(name, value) {
+    if (value != undefined) {
+        if (!isNaN(value))
+            value *= 1;
+        save_option(name, value);
+    }
+
+    if (virtual_change_setting_special && virtual_change_setting_special(name, value))
+        return;
+}
+
+/**
+ * Check gamepad inputs at regular intervals when the menu is visible
+ */
+function gamepad_modal() {
+    if (!Visible('#overlay')) {
+        [37, 38, 39, 40].forEach(code => {
+            KEYS[code] = 0;
+        });
+        return;
+    }
+
+    // forget old buttons
+    let time = Now(true);
+    Keys(buttons).forEach(key => {
+        let button = buttons[key];
+        if (!button)
+            return;
+
+        let code = BUTTON_MAPPING[key];
+        if (code < 37 || code > 40)
+            return;
+
+        let repeat = (key == button_repeat && time < button_repeat_time)? 0: 0.5;
+        if (time > button + repeat) {
+            buttons[key] = 0;
+            button_repeat = key;
+            button_repeat_time = time + 0.1;
+        }
+    });
+
+    gamepad_update();
+    add_timeout('pad', gamepad_modal, 50);
+}
+
+/**
+ * Close the modal and resume the game
+ */
+function resume_game() {
+    is_paused = false;
+    if (Visible('#overlay'))
+        show_modal();
+}
+
+/**
+ * Show the menu
+ * + pause the game unless the session has ended
+ */
+function show_menu() {
+    show_modal(true);
+}
+
+/**
+ * Show / hide the modal
+ * @param {boolean=} show
+ * @param {string=} text show modal2 instead of modal, and use this text
+ * @param {string=} title set the modal2 title
+ * @param {string=} name
+ */
+function show_modal(show, text, title, name) {
+    S('#overlay', show);
+    if (typeof(text) == 'string') {
+        Attrs('#modal-title', 'data-t', title? title: '');
+        HTML('#dynamic', text);
+        translate_node('#modal2');
+    }
+    S('#modal', !text);
+    S('#modal2', !!text);
+
+    if (show) {
+        add_timeout('pad', gamepad_modal, 300);
+        set_modal_events();
+        if (virtual_game_action_key)
+            virtual_game_action_key();
+        if (virtual_show_modal_special)
+            virtual_show_modal_special(false);
+    }
+    else {
+        clear_timeout('pad');
+        if (virtual_show_modal_special)
+            virtual_show_modal_special();
+    }
+
+    modal_name = name;
+}
+
+/**
+ * Show a settings page
+ * @param {string} name
+ */
+function show_settings(name) {
+    let html = '<vert class="grid t24">',
+        settings = X_SETTINGS[name];
+
+    Keys(settings).forEach(key => {
+        let setting = settings[key][0],
+            more = setting? '': ` name="${key}"`;
+        html += `<div${more} class="item" data-t="${key.replace(/_/g, ' ')}"></div>`;
+        if (Array.isArray(setting)) {
+            html
+                += `<select name="${key}">`
+                    + settings[key][0].map(option => {
+                        let value = {off: 0, on: 1}[option];
+                        if (value == undefined)
+                            value = option;
+                        return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
+                    }).join('')
+                + '</select>';
+        }
+        else if (!setting)
+            html += '<div></div>';
+        else
+            html += `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`;
+    });
+    html += '</vert>';
+    show_modal(true, html, `${name} settings`);
+
+    // events
+    let parent = _('#modal2');
+    Events('select, input', 'change', function() {
+        change_setting(this.name, this.value);
+    }, {}, parent);
+    C('div[name]', function() {
+        change_setting(this.getAttribute('name'));
+    }, parent);
+}
+
+/**
+ * Update debug information
+ */
+function update_debug() {
+    // general
+    let lines = [],
+        sep = ' : ';
+
+    // gamepad
+    if (DEV.input & 1) {
+        lines.push('&nbsp;');
+        lines.push(`id=${gamepad_id}`);
+        lines.push(`axes=${Format(axes, sep)}`);
+        let text = Keys(buttons).map(key => `${buttons[key]? `${key} `: ''}`).join('');
+        lines.push(`buttons=${text}`);
+        text = [37, 38, 39, 40].map(code => KEYS[code]);
+        lines.push(`KEYS=${Format(text, sep)}`);
+    }
+
+    // debugs
+    if (DEV.debug & 1) {
+        let debug_keys = Keys(debugs).sort();
+        if (debug_keys.length) {
+            lines.push('&nbsp;');
+            debug_keys.forEach(key => {
+                lines.push(`${key}=${Format(debugs[key], sep)}`);
+            });
+        }
+    }
+
+    if (virtual_update_debug_special)
+        lines = [...lines, ...virtual_update_debug_special()];
+
+    HTML('#debug', `<div>${lines.join('</div><div>')}</div>`);
+    add_timeout('pad', gamepad_modal, 300);
+}
+
+// STARTUP
+//////////
+
+/**
+ * 3d UI events
+ */
+function set_3d_events() {
+    // controller
+    Events(window, 'gamepadconnected', e => {
+        let pad = e.gamepad;
+        if (pad.buttons.length) {
+            gamepads[pad.index] = pad;
+            gamepad_id = pad.index;
+        }
+    });
+    Events(window, 'gamepaddisconnected', e => {
+        let pad = e.gamepad;
+        delete gamepads[pad.index];
+    });
+
+    // game menu
+    C('#menu', () => {
+        if (Visible('#overlay'))
+            resume_game();
+        else
+            show_menu();
+    });
+
+    // modal
+    C('#back', () => {
+        show_modal(true);
+    });
+    C('#play-audio', () => {
+        show_settings('audio');
+    });
+    C('#play-game', () => {
+        show_settings('game');
+    });
+    C('#play-video', () => {
+        show_settings('video');
+    });
+}
+
+/**
+ * Used when showing a modal
+ */
+function set_modal_events() {
+    Events('#overlay .item', '!mouseenter mouseleave', function(e) {
+        Class('#overlay .item.selected', '-selected');
+        if (e.type == 'mouseenter')
+            Class(this, 'selected');
+    });
+
+    if (virtual_set_modal_events_special)
+        virtual_set_modal_events_special();
+}
+
 /**
  * Initialise structures
  */
 function startup_3d() {
-    Keys(X_SETTINGS).forEach(name => {
-        let settings = X_SETTINGS[name];
-        Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
+    merge_settings({
+        audio: {
+            sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
+            sound: [ON_OFF, 1],
+            voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
+            volume: [{min: 0, max: 10, type: 'number'}, 5],
+        },
+        video: {
+            encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
+            exposure: [{min: 0.1, max: 10, step: 0.1, type: 'number'}, 1],
+            gamma: [{min: 0, max: 10, step: 0.1, type: 'number'}, 1.5],
+            lighting: [['low', 'medium', 'high'], 'high'],
+            resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
+            shadow: [Keys(SHADOW_QUALITIES), 'high'],
+            texture: [['auto', 'on', 'off'], 'auto'],
+        },
     });
 }

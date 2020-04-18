@@ -9,7 +9,7 @@
 // included after: common
 /* globals
 _, Abs, Assign, Attrs, clearTimeout, DefaultFloat, document, E, HTML, Keys, localStorage, LS, Min, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, setTimeout, TEXT, window
+Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, window
 */
 'use strict';
 
@@ -54,6 +54,7 @@ let __PREFIX = '_',
     // virtual functions, can be assigned
     virtual_rename_option,
     virtual_set_combo_special,
+    X_SETTINGS = {},
     Y = {};                                             // params
 
 // HELPERS
@@ -139,6 +140,22 @@ function get_object(name) {
 function get_string(name, def) {
     let value = localStorage.getItem(`${__PREFIX}${name}`);
     return (value == 'undefined')? def: (value || def);
+}
+
+/**
+ * Merge settings
+ * @param {Object} x_settings
+ */
+function merge_settings(x_settings) {
+    Keys(x_settings).forEach(name => {
+        let exists = SetDefault(X_SETTINGS, name, {});
+        Assign(exists, x_settings[name]);
+        X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+    });
+    Keys(X_SETTINGS).forEach(name => {
+        let settings = X_SETTINGS[name];
+        Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
+    });
 }
 
 /**

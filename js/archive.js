@@ -1,4 +1,4 @@
-// archive
+// archive.js
 // specific code to the archive
 //
 // included after: common, tcec

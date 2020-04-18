@@ -1,4 +1,6 @@
-// tcec.test
+// tcec.test.js
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2020-04-18
 //
 /* globals
 __dirname, expect, require, test

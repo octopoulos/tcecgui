@@ -121,6 +121,19 @@ verts {
     width: 100%;
 }
 
+/* debug */
+#debug {
+    color: rgba(0, 255, 0, 0.8);
+    flex: 1;
+    font-family: 'Lucida Console';
+    font-size: 12px;
+    line-height: 1.2;
+    max-height: 70vh;
+    position: fixed;
+    top: 15vh;
+    z-index: 2;
+}
+
 /* popups */
 #overlay {
     background: rgba(0, 0, 0, 0.5);
