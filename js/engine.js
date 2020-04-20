@@ -7,7 +7,8 @@
 // contains global vars but the script will be imported in a function => they become local
 //
 // included after: common
-/* globals
+/*
+globals
 _, Abs, Assign, Attrs, clearTimeout, DefaultFloat, document, E, HTML, Keys, localStorage, LS, Min, navigator, Now,
 Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, window
 */
@@ -39,6 +40,7 @@ let __PREFIX = '_',
     },
     Lower = (text) => (text.toLowerCase()),
     scroll_target,
+    THEMES = [],
     TIMEOUT_translate = 3600 * 24,
     timers = {},
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
@@ -479,6 +481,41 @@ function update_svg(parent) {
     }, parent);
 }
 
+/**
+ * Update the theme
+ * @param {function=} callback
+ * @param {number} version CSS version, use Now() to force reload
+ */
+function update_theme(callback, version=15) {
+    let parent = _('#extra-style');
+    if (!parent)
+        return;
+    let child = parent.firstChild,
+        theme = Y.theme;
+
+    // default theme
+    if (theme == THEMES[0]) {
+        if (child) {
+            child.setAttribute('href2', child.href);
+            child.removeAttribute('href');
+        }
+    }
+    else {
+        if (!child) {
+            child = document.createElement('link');
+            child.rel = 'stylesheet';
+            parent.appendChild(child);
+        }
+        child.href = `css/${theme}/${theme}.css?v=${version}`;
+        child.removeAttribute('href2');
+    }
+
+    // post-process
+    update_svg();
+    if (callback)
+        callback();
+}
+
 // BROWSER
 //////////
 
@@ -542,13 +579,17 @@ function is_fullscreen() {
  */
 function load_defaults() {
     Keys(DEFAULTS).forEach(key => {
-        let def = DEFAULTS[key];
+        let value,
+            def = DEFAULTS[key];
         if (Number.isInteger(def))
-            Y[key] = get_int(key, def);
+            value = get_int(key, def);
         else if (Number.isFinite(def))
-            Y[key] = get_float(key, def);
+            value = get_float(key, def);
+        else if (typeof(def) == 'object')
+            value = get_object(key);
         else
-            Y[key] = get_string(key, def);
+            value = get_string(key, def);
+        Y[key] = value;
     });
 
     // use browser language

@@ -5,7 +5,8 @@
 // This module is useful for testing js files without them having any exports.
 // Look at common.test.js for an example.
 //
-/* globals
+/*
+globals
 console, module, require
 */
 'use strict';

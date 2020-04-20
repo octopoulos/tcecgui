@@ -2,7 +2,8 @@
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-04-18
 //
-/* globals
+/*
+globals
 __dirname, expect, require, test
 */
 'use strict';

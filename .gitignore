@@ -18,6 +18,7 @@ archive/
 crash.json
 crosstable.json
 data*.json
+doc/
 enginerating.json
 export/
 gamelist.json

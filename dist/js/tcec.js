@@ -121,8 +121,7 @@ let activeFen = '',
     twitchChatUrl = 'https://www.twitch.tv/embed/' + twitchAccount + '/chat',
     twitchSRCIframe = 'https://player.twitch.tv/?channel=' + twitchAccount,
     userCount = 0,
-    viewingActiveMove = true,
-    xboard;
+    viewingActiveMove = true;
 
 function updateRefresh()
 {
@@ -148,17 +147,21 @@ function updateRefresh()
 function updateAll()
 {
     eventNameHeader = 0;
-    updatePgn(1);
+    updatePgn(true);
     add_timeout('update_all', () => {updateTables();}, 5000);
 }
 
-function updatePgn(resettime)
+/**
+ * Update the PGN
+ * @param {boolean=} reset_time
+ */
+function updatePgn(reset_time)
 {
     eventNameHeader = 0;
     Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
-        if (!resettime)
+        if (!reset_time)
         {
             let curr_time = new Date(xhr.getResponseHeader('date')),
                 last_mod = new Date(xhr.getResponseHeader('last-modified'));
@@ -336,7 +339,7 @@ function setPgn(pgn)
         if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
         {
             eventNameHeader = 0;
-            add_timeout('update_pgn', () => {updatePgn(1);}, 100);
+            add_timeout('update_pgn', () => {updatePgn(true);}, 100);
             return;
         }
         if (prevPgnData.Moves.length < pgn.lastMoveLoaded)

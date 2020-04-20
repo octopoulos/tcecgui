@@ -5,10 +5,24 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, change_setting, Class, merge_settings, ON_OFF, resume_game, set_3d_events, show_info, show_menu, show_modal,
-Visible
+_, A, Assign, change_setting, Class, Keys, LS, merge_settings, ON_OFF, resume_game, set_3d_events, show_info,
+show_menu, show_modal, Visible, XBoard
 */
 'use strict';
+
+let BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
+    BOARDS = {
+        board: {
+            size: 48,
+        },
+        pv1: {
+            target: 'text',
+        },
+        pv2: {},
+        pva: {},
+    },
+    PIECE_KEYS  = 'alpha chess24 dilena leipzig metro symbol uscf wikipedia'.split(' '),
+    xboards = {};
 
 // INPUT / OUTPUT
 /////////////////
@@ -39,6 +53,23 @@ function action_key_no_input(code, active) {
  * @param {number} code hardware keycode
  */
 function action_keyup_no_input(code) {
+}
+
+/**
+ * Create 4 boards
+ */
+function create_boards() {
+    Keys(BOARDS).forEach(key => {
+        let options = Assign({
+            element: `#${key}`,
+            notation: 15,
+            size: 16,
+            target: 'html',
+        }, BOARDS[key]);
+
+        xboards[key] = new XBoard(options);
+        xboards[key].render();
+    });
 }
 
 /**
@@ -139,6 +170,14 @@ function game_action_key(code) {
     }
 }
 
+/**
+ * Handle a keyup
+ * @param {number} code
+ */
+function game_action_keyup(code) {
+    LS(code);
+}
+
 // STARTUP
 //////////
 
@@ -154,6 +193,20 @@ function set_game_events() {
  */
 function startup_game() {
     merge_settings({
+        board: {
+            arrows: [ON_OFF, 1],
+            board_middle: [ON_OFF, 0],
+            board_theme: [BOARD_KEYS, 'chess24'],
+            highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
+            notation: [ON_OFF, 1],
+            piece_theme: [PIECE_KEYS, 'chess24'],
+        },
+        board_pv: {
+            highlight_pv: [['off', 'thin', 'standard', 'big'], 'standard'],
+            live_pv: [ON_OFF, 1],
+            notation_pv: [ON_OFF, 1],
+            ply_diff: [['first', 'diverging', 'last'], 'first'],
+        },
         extra: {
             cross_crash: [ON_OFF, 0],
             live_log: [[5, 10, 'all'], 10],
@@ -163,4 +216,6 @@ function startup_game() {
             twitch_video: [ON_OFF, 1],
         },
     });
+
+    create_boards();
 }

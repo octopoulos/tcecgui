@@ -188,9 +188,29 @@ verts {
 }
 
 /* board */
-#board {
-    height: 50vmin;
-    width: 50vmin;
+.xboard {
+    border: 2px solid #444;
+    line-height: 1em;
+    position: relative;
+}
+.xgrid {
+    display: grid;
+    grid-template-columns: repeat(8, 1em);
+}
+.xpiece {
+    height: 1em;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transition: transform 1s;
+    width: 1em;
+}
+.xpiece > img {
+    height: 100%;
+}
+.xsquare {
+    height: 1em;
+    width: 1em;
 }
 
 /* tables */

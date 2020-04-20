@@ -1,11 +1,12 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-04-18
 //
 // utility JS functions used in all the sites
 // no state is being required
 //
-/* globals
+/*
+globals
 console, document, FormData, location, Node, Window, XMLHttpRequest
 */
 'use strict';
@@ -248,7 +249,8 @@ function Contain(list, pattern) {
  */
 function CreateNode(tag, html) {
     let node = document.createElement(tag);
-    node.innerHTML = html;
+    if (html)
+        node.innerHTML = html;
     return node;
 }
 
@@ -397,7 +399,7 @@ function Input(sel, callback, parent) {
 /**
  * Insert nodes into a parent
  * @param {string|Node} parent
- * @param {Node} nodes
+ * @param {Node[]} nodes
  * @param {boolean=} preprend should the nodes be preprended or appended?
  * @example
  * InsertNodes('#chat', nodes, true)    // preprend
@@ -1115,8 +1117,9 @@ function RandomSpread(range) {
 /**
  * Load a resource
  * @param {string} url
- * @param {function} callback (status, text)
+ * @param {function} callback (status, text, xhr)
  * @param {*=} content
+ * @param {string=} form add the content to a new FormData
  * @param {string=} method GET, POST
  * @param {string=} type arraybuffer, blob, document, json, text
  * @example
@@ -1127,7 +1130,7 @@ function RandomSpread(range) {
  *     LS(result)}, JSON.stringify({user: 'David'}
  * ), {method: 'POST'})
  */
-function Resource(url, callback, {content=null, method='GET', type='json'}={}) {
+function Resource(url, callback, {content=null, form, method='GET', type='json'}={}) {
     let xhr = new XMLHttpRequest();
     if (type)
         xhr.responseType = type;
@@ -1138,7 +1141,13 @@ function Resource(url, callback, {content=null, method='GET', type='json'}={}) {
     };
     xhr.open(method, url, true);
     xhr.setRequestHeader('content-type', 'application/json;charset=UTF-8');
-    xhr.send(content);
+    if (form) {
+        let form_data = new FormData();
+        form_data.append(form, content);
+        xhr.send(form_data);
+    }
+    else
+        xhr.send(content);
 }
 
 /**
