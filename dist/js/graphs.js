@@ -404,7 +404,7 @@ function create_charts()
                 mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
-                        let [min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+                        let [_, min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                         return `${min}:${Pad(sec)}`;
                     },
                 },

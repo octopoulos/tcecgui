@@ -11,9 +11,10 @@ _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add
 api_translate_get, C, check_hash, DEV, document, Events, fill_languages, game_action_key, game_action_keyup,
 get_object, getUserS, hideBanner, init_sockets, initTables, KEY_TIMES, KEYS,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Now, parse_dev, resize, Round,
-S, save_option, set_ui_events, setDefaults, setTwitch, start_tcec, startup_3d, startup_archive, startup_game,
-startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node, translates:true, unlistenLogMain,
-update_debug, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners, window, Y
+S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, start_tcec, startup_3d, startup_archive,
+startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node, translates:true,
+unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners,
+window, Y
 */
 'use strict';
 
@@ -150,6 +151,7 @@ function startup() {
     startup_game();
     set_global_events();
     set_ui_events();
+    set_game_events();
     startup_archive();
     startup_tcec();
     startup_graphs();

@@ -34,14 +34,18 @@ CSS_FILES = [
 
 JS_FILES = {
     '4d': [
-        '3d',
+        # '3d',
     ],
     'all': [
+        'libs/chart.min',
+        'libs/socket.io',
         'common',
         'engine',
         'global',
         '3d',
-        'board',
+        'xboard',
+        'game',
+        'network',
         'script',
     ],
 }

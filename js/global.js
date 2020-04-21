@@ -16,6 +16,7 @@ DEV:true, LS, Y
  */
 function parse_dev() {
     let names = {
+            b: 'board',
             d: 'debug',
             g: 'graph',
             i: 'input',                 // gamepad input

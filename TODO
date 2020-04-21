@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-21 : 2020-04-21 : download chart & socket.io for future embedding
+2020-04-21 : 2020-04-15 : FromSeconds => can remove redundant hhmm and hhmmss functions
 2020-04-21 : 2020-04-13 : replace several tables with grid/flex
 2020-04-21 : 2020-04-20 : make XBoard use the themes.js data
 2020-04-20 : 2020-04-16 : basic HTML rendering for XBoard
@@ -53,7 +55,6 @@ medium:
 -          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 ~          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-17 : remove duplicate ID's in html
--          : 2020-04-13 : create own chessboard js in 2d + possibility to have 3d
 ~          : 2020-04-12 : convert all White and Black vars to arrays [w, b]
 low:
 ~          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
@@ -64,7 +65,6 @@ low:
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 lowest:
-~          : 2020-04-15 : remove redundant hhmm and hhmmss functions
 ~          : 2020-04-13 : merge B&W functions
 ~          : 2020-04-13 : remove as much jquery as possible
 -          : 2020-04-13 : add more Jest tests

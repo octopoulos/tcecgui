@@ -3,7 +3,7 @@
 // temporary replaces tcec.js to test index_base.html
 /*
 globals
-LS, window, xboards
+create_boards, download_pgn, LS, update_pgn, window, xboards
 */
 'use strict';
 
@@ -21,24 +21,12 @@ function initTables() {
 
 }
 
-function resize() {
-
-}
-
 function setDefaults() {
 
 }
 
 function setPgn(pgn) {
-    LS(pgn);
-    window.pgn = pgn;
-
-    if (pgn.Headers) {
-        if (pgn.Moves && pgn.Moves.length > 0) {
-            let fen = pgn.Moves[pgn.Moves.length - 1].fen;
-            xboards.board.set_fen(fen, true);
-        }
-    }
+    update_pgn(pgn);
 }
 
 function setTwitch() {
@@ -50,6 +38,10 @@ function setUsersMain() {
 }
 
 function tcecHandleKey() {
+
+}
+
+function updateEngRatingData() {
 
 }
 
@@ -74,6 +66,10 @@ function updateLiveEvalDataNew() {
 }
 
 function updatePgn() {
+    download_pgn();
+}
+
+function updateScheduleData() {
 
 }
 
@@ -93,7 +89,7 @@ function set_ui_events() {
 }
 
 function start_tcec() {
-
+    create_boards();
 }
 
 function startup_archive() {

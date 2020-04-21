@@ -5,27 +5,252 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Assign, change_setting, Class, Keys, LS, merge_settings, ON_OFF, resume_game, set_3d_events, show_info,
-show_menu, show_modal, Visible, XBoard
+_, A, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
+HTML, Keys, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game, Round, S,
+screen, set_3d_events, show_menu, show_modal, Style, Title, Visible, window, XBoard, Y
 */
 'use strict';
 
-let BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
+let _BLACK = 'black',
+    _WHITE = 'white',
+    BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
     BOARDS = {
         board: {
             size: 48,
         },
-        pv1: {
-            target: 'text',
-        },
-        pv2: {},
-        pva: {},
+        // pv1: {
+        //     target: 'text',
+        // },
+        // pv2: {},
+        // pva: {},
     },
+    num_ply,
     PIECE_KEYS  = 'alpha chess24 dilena leipzig metro symbol uscf wikipedia'.split(' '),
-    xboards = {};
+    pgn_moves = [],
+    prev_pgn,
+    TABLES = {
+        overview: [],
+    },
+    time_delta = 0,
+    turn = 0,               // 0:white to play, 1:black to play
+    xboards = {},
+    WHITE_BLACK = [_WHITE, _BLACK, 'live'];
+
+// NODES
+////////
+
+/**
+ * Create a table
+ * @param {string[]} columns
+ */
+function create_table(columns) {
+    let html = '<table>';
+    html += columns.map(column => (`<th data-t="${column}"></th>`));
+    html += '</table>';
+    return html;
+}
+
+/**
+ * Create all the tables
+ */
+function create_tables() {
+    Keys(TABLES).forEach(name => {
+
+    });
+}
+
+// ACTIONS
+//////////
+
+/**
+ * Create 4 boards
+ */
+function create_boards() {
+    Keys(BOARDS).forEach(key => {
+        let options = Assign({
+            node: `#${key}`,
+            notation: 15,
+            size: 16,
+            target: 'html',
+        }, BOARDS[key]);
+
+        let xboard = new XBoard(options);
+        xboard.initialise();
+        xboard.set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
+        xboards[key] = xboard;
+    });
+}
+
+/**
+ * Update the PGN
+ * @param {boolean=} reset_time
+ */
+function download_pgn(reset_time)
+{
+    Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
+        if (code != 200)
+            return;
+        if (!reset_time)
+        {
+            let curr_time = new Date(xhr.getResponseHeader('date')),
+                last_mod = new Date(xhr.getResponseHeader('last-modified'));
+            time_delta = curr_time.getTime() - last_mod.getTime();
+        }
+        prev_pgn = null;
+        data.gameChanged = 1;
+        update_pgn(data);
+    });
+}
+
+/**
+ * Show a popup with the engine info
+ * @param {string} scolor white, black
+ * @param {Event} e
+ */
+function popup_engine_info(scolor, e) {
+    if (!prev_pgn)
+        return;
+
+    let show,
+        popup = _('#popup'),
+        type = e.type;
+
+    if (type == 'mouseleave')
+        show = false;
+    else if (scolor == 'popup')
+        show = true;
+    else {
+        let title = Title(scolor),
+            engine = prev_pgn.Headers[title].split(' '),
+            options = prev_pgn[`${title}EngineOptions`],
+            lines = options.map(option => [option.Name, option.Value]);
+
+        // add engine + version
+        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
+        lines = lines.flat().map(item => `<div>${item}</div>`);
+
+        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
+
+        // place the popup in a visible area on the screen
+        let x = e.clientX + 10,
+            y = e.clientY + 10,
+            x2 = 0,
+            y2 = 0;
+        if (x >= window.innerWidth / 2) {
+            x -= 20;
+            x2 = -100;
+        }
+        if (y >= window.innerHeight / 2) {
+            y -= 20;
+            y2 = -100;
+        }
+
+        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
+        show = true;
+    }
+
+    Class(popup, 'popup-show', show);
+    // trick to be able to put the mouse on the popup and copy text
+    if (show) {
+        clear_timeout('popup-engine');
+        Class(popup, 'popup-enable');
+    }
+    else
+        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
+}
+
+/**
+ * Resize the window => resize some other elements
+ */
+function resize() {
+    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 80));
+    Style('#chat', `height:${height}px;width:100%`);
+
+    // resize the boards
+    let width = _('#board').clientWidth;
+    xboards.board.resize(width);
+}
+
+/**
+ * Show/hide info
+ * @param {boolean} show
+ */
+function show_info(show) {
+    S('#overlay', show);
+    if (show)
+        HTML('#popup-desc', HTML('#desc'));
+    Class('#popup-info', 'popup-show popup-enable', show);
+}
+
+/**
+ * Update the PGN
+ * - white played => lastMoveLoaded=109
+ * @param {Object} pgn
+ */
+function update_pgn(pgn) {
+    window.pgn = pgn;
+
+    let moves = pgn.Moves,
+        num_move = moves.length,
+        start = pgn.lastMoveLoaded || 0;
+
+    if (pgn.Headers) {
+    }
+
+    if (!num_move)
+        return;
+
+    let move = moves[num_move - 1],
+        last_ply = pgn.numMovesToSend + start;
+
+    xboards.board.set_fen(move.fen, true);
+    // xboards.pv1.set_fen(fen, true);
+    LS(`${start} + ${num_move} = ${start + num_move}. ${(start + num_move) % 2} ${move.m}`);
+    LS(`${(last_ply) / 2}`);
+
+    if (!last_ply || last_ply < num_ply)
+        pgn_moves.length = 0;
+    for (let i=0; i<num_move; i++)
+        pgn_moves[start + i] = moves[i];
+
+    // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
+    num_ply = pgn_moves.length;
+    turn = num_ply % 2;
+    let who = 1 - turn;
+
+    LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
+    prev_pgn = pgn;
+
+    // stats
+    for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
+        LS(`i=${i} : who=${who}`);
+        let move = moves[i],
+            stats = {
+                depth: `${move.d}/${move.sd}`,
+                eval: move.wv,
+                left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
+                node: FormatUnit(move.n),
+                score: '',
+                speed: `${FormatUnit(move.s)}bps`,
+                tb: move.tb,
+                time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
+            };
+        Keys(stats).forEach(key => {
+            HTML(`#${key}${who}`, stats[key]);
+        });
+        who = 1 - who;
+    }
+}
 
 // INPUT / OUTPUT
 /////////////////
+
+/**
+ * Same as action_key_no_input, but when the key is up
+ * @param {number} code hardware keycode
+ */
+function action_keyup_no_input(code) {
+}
 
 /**
  * Handle keys, even when an input is active
@@ -41,35 +266,19 @@ function action_key(code) {
 }
 
 /**
+ * Handle a keyup
+ * @param {number} code
+ */
+function game_action_keyup(code) {
+    LS(code);
+}
+
+/**
  * Handle keys, when input is not active
  * @param {number} code hardware keycode
  * @param {Object=} active active input element, if any
  */
 function action_key_no_input(code, active) {
-}
-
-/**
- * Same as action_key_no_input, but when the key is up
- * @param {number} code hardware keycode
- */
-function action_keyup_no_input(code) {
-}
-
-/**
- * Create 4 boards
- */
-function create_boards() {
-    Keys(BOARDS).forEach(key => {
-        let options = Assign({
-            element: `#${key}`,
-            notation: 15,
-            size: 16,
-            target: 'html',
-        }, BOARDS[key]);
-
-        xboards[key] = new XBoard(options);
-        xboards[key].render();
-    });
 }
 
 /**
@@ -170,23 +379,35 @@ function game_action_key(code) {
     }
 }
 
-/**
- * Handle a keyup
- * @param {number} code
- */
-function game_action_keyup(code) {
-    LS(code);
-}
-
-// STARTUP
-//////////
+// EVENTS
+/////////
 
 /**
  * Game events
  */
 function set_game_events() {
     set_3d_events();
+
+    // popups
+    Events('#info0, #info1', 'click mouseenter mousemove mouseleave', function(e) {
+        popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
+    });
+    C('.popup-close', function() {
+        show_info(false);
+        let parent = Parent(this, 'div|vert', 'popup');
+        if (parent)
+            Class(parent, '-popup-enable -popup-show');
+    });
+    C('#info', () => {
+        show_info(true);
+    });
+    C('#overlay', () => {
+        show_info(false);
+    });
 }
+
+// STARTUP
+//////////
 
 /**
  * Initialise structures with game specific data
@@ -216,6 +437,4 @@ function startup_game() {
             twitch_video: [ON_OFF, 1],
         },
     });
-
-    create_boards();
 }
