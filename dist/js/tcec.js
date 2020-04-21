@@ -2,15 +2,15 @@
 // included after: common, engine
 /*
 globals
-_, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
+_, _BLACK, _WHITE, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
 create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Events, Exp,
 Floor, FormatUnit, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
-S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_POSITION, startDateR1,
-startDateR2, Style, teamsx, Title, touch_handle, updateChartData, updateChartDataLive, updateCrosstable, window,
-XBoard, Y
+S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_FEN, startDateR1,
+startDateR2, Style, teamsx, Title, touch_handle, turn:true, updateChartData, updateChartDataLive, updateCrosstable,
+WHITE_BLACK, window, xboards, XBoard, Y
 */
 'use strict';
 
@@ -22,9 +22,7 @@ let eventCross = [],
 
 /***************************** CUP ***************************************************/
 
-let _BLACK = 'black',
-    _WHITE = 'white',
-    activePly = 0,
+let activePly = 0,
     activePvKey = [],
     all_engines = ['w', 'b'],          // w,b full engine names
     all_pvs = [[], []],
@@ -67,24 +65,22 @@ let _BLACK = 'black',
     pvBoardwc,
     remain_times = [0, 0],
     started_moves = [0, 0],
-    turn = 0,                           // 0:white to play, 1:black to play
     used_times = [0, 0],
     virtual_init_tables,
-    WH = 0,
-    WHITE_BLACK = [_WHITE, _BLACK, 'live'];
+    WH = 0;
 
 // CHECK THOSE VARS
 let activeFen = '',
     activePv = [],
     activePvH = [],
-    analysFen = START_POSITION,
+    analysFen = START_FEN,
     bookmove = 0,
     choosePv,
     clearedAnnotation = 0,
     // All possible valid terminations (hopefully)
-    crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) resigns|Manual|(?:White|Black) mates|Stale|Insuff|Fifty|3-[fF]old)/,
+    crash_re = /^(?:TCEC|Syzygy|TB pos|.*to be resumed|in progress|(?:White|Black) (?:mates|resigns)|Manual|Stale|Insuff|Fifty|3-[fF]old)/,
     crossTableInitialized = false,
-    currentPosition = START_POSITION,
+    currentPosition = START_FEN,
     debug = 0,
     engineRatingGlobalData = 0,
     eventNameHeader = 0,
@@ -155,6 +151,7 @@ function updateAll()
  * Update the PGN
  * @param {boolean=} reset_time
  */
+// TODO: REMOVE
 function updatePgn(reset_time)
 {
     eventNameHeader = 0;
@@ -305,7 +302,7 @@ function show_move(sel, moveFrom, moveTo, is_pv) {
 
 function setPgn(pgn)
 {
-    let currentPlyCount = 0;
+    let num_ply = 0;
 
     if (!viewingActiveMove)
     {
@@ -366,7 +363,7 @@ function setPgn(pgn)
         prevPgnData = pgn;
 
     if (pgn.Moves)
-        currentPlyCount = pgn.Moves.length;
+        num_ply = pgn.Moves.length;
 
     if (pgn.Headers) {
         if (pgn.Moves && pgn.Moves.length > 0) {
@@ -375,7 +372,7 @@ function setPgn(pgn)
             moveTo = pgn.Moves[pgn.Moves.length-1].to;
 
             currentGameActive = (pgn.Headers.Termination == 'unterminated');
-            turn = currentPlyCount % 2;
+            turn = num_ply % 2;
         }
     }
 
@@ -387,9 +384,9 @@ function setPgn(pgn)
         stopClock(turn);
 
     if (DEV.ply & 1)
-        LS(`XXX: loadedPlies=${loadedPlies} : currentPlyCount=${currentPlyCount} : currentGameActive=${currentGameActive}`
+        LS(`XXX: loadedPlies=${loadedPlies} : num_ply=${num_ply} : currentGameActive=${currentGameActive}`
             + `gameActive=${gameActive} : gameChanged=${pgn.gameChanged}`);
-    if (loadedPlies == currentPlyCount && (currentGameActive == gameActive))
+    if (loadedPlies == num_ply && (currentGameActive == gameActive))
         return;
 
     if (timeDiffRead > 0)
@@ -397,28 +394,28 @@ function setPgn(pgn)
 
     let previousPlies = loadedPlies;
 
-    loadedPlies = currentPlyCount;
+    loadedPlies = num_ply;
     gameActive = currentGameActive;
 
     if (activePly == 0) {
-        activePly = currentPlyCount;
+        activePly = num_ply;
         viewingActiveMove = true;
     }
-    if (activePly == currentPlyCount) {
+    if (activePly == num_ply) {
         viewingActiveMove = true;
         Class('#newmove', 'd-none');
         newMovesCount = 0;
         Attrs('#newmove', 'data-count', 0);
         board.clearAnnotation();
     }
-    if (viewingActiveMove && activePly != currentPlyCount) {
-        activePly = currentPlyCount;
+    if (viewingActiveMove && activePly != num_ply) {
+        activePly = num_ply;
         if (Y.sound)
             play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
     }
 
     // new game has started?
-    if (previousPlies > currentPlyCount) {
+    if (previousPlies > num_ply) {
         create_charts();
         reset_charts();
     }
@@ -489,7 +486,7 @@ function setPgn(pgn)
             squareToHighlight = moveTo;
         }
         board.position(currentPosition, false);
-        xboard.set_fen(currentPosition);
+        xboards.board.set_fen(currentPosition);
     }
 
     if (pgn.Headers == undefined) {
@@ -592,6 +589,7 @@ function setPgn(pgn)
 
     updateChartData();
 
+    // this is VERY slow code ...
     HTML('#engine-history', '');
     Keys(pgn.Moves).forEach(key => {
         key *= 1;
@@ -1858,10 +1856,6 @@ function create_boards()
 {
     pvBoarda = createBoard('pv-boarda', Y.notation_pv, true);
     board = createBoard('board', Y.notation);
-    xboard = new XBoard({
-        notation: 15,
-        target: 'text',
-    });
 
     if (!Y.arrows)
         board.clearAnnotation();
@@ -1882,7 +1876,7 @@ function setBoard()
     let fen = board.fen();
     board = createBoard('board', Y.notation);
     board.position(fen, false);
-    xboard.set_fen(fen);
+    xboards.board.set_fen(fen);
 
     fen = pvBoardb.fen();
     pvBoardb = createBoard('pv-boardb', Y.notation_pv);
@@ -3652,7 +3646,7 @@ function popup_engine_info(scolor, e) {
         lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
         lines = lines.flat().map(item => `<div>${item}</div>`);
 
-        HTML(popup, `<div class="grid2">${lines.join('')}</div>`);
+        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
 
         // place the popup in a visible area on the screen
         let x = e.clientX + 10,
@@ -3745,7 +3739,7 @@ function set_ui_events() {
         squareToHighlight = moveTo;
 
         board.position(clickedFen, false);
-        xboard.set_fen(clickedFen);
+        xboards.board.set_fen(clickedFen);
 
         currentPosition = clickedFen;
         activePly = clickedPly;

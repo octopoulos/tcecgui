@@ -1,8 +1,13 @@
 /* theme-dark */
 body {
     background: #333;
+    color: #fff;
 }
 
 .popup {
     background: rgba(0, 0, 0, 0.95);
+}
+
+#engines {
+    background: #212529;
 }

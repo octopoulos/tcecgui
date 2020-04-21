@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-21 : 2020-04-13 : replace several tables with grid/flex
+2020-04-21 : 2020-04-20 : make XBoard use the themes.js data
 2020-04-20 : 2020-04-16 : basic HTML rendering for XBoard
 2020-04-18 : 2020-04-13 : X_SETTINGS = much better settings system than what's now
 2020-04-17 : 2020-04-17 : improved INFO, using the new popup sytem
@@ -38,6 +40,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
@@ -47,7 +50,6 @@ high:
 -          : 2020-04-13 : remove 80x onClick = ... from live.html
 medium:
 -          : 2020-04-18 : make < > buttons bigger, remove some buttons like dark mode
--          : 2020-04-13 : replace several tables with grid/flex
 -          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 ~          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-17 : remove duplicate ID's in html
