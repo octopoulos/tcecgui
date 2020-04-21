@@ -908,17 +908,20 @@ function FormatUnit(number)
 }
 
 /**
- * Extract the minutes, seconds and 1/100th of seconds from a time in seconds
+ * Extract the hours, minutes, seconds and 1/100th of seconds from a time in seconds
  * @param {number} time
- * @returns {number[]} mins, secs, cs
+ * @returns {number[]} hours, mins, secs, cs
  */
 function FromSeconds(time) {
     let secs = Floor(time),
         // !!important not to do (time - secs) * 100
         cs = Pad(Floor(time * 100 - secs * 100)),
-        mins = Floor(secs / 60);
+        mins = Floor(secs / 60),
+        hours = Floor(secs / 3600);
+
     secs -= mins * 60;
-    return [mins, secs, cs];
+    mins -= hours * 60;
+    return [hours, mins, secs, cs];
 }
 
 /**

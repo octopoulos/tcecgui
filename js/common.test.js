@@ -87,8 +87,10 @@ let {
 
 // FromSeconds
 [
-    ['0', [0, 0, '00']],
-    ['32.36', [0, 32, '36']],
+    ['0', [0, 0, 0, '00']],
+    ['32.36', [0, 0, 32, '36']],
+    ['4892.737', [1, 21, 32, '73']],
+    [208.963, [0, 3, 28, '96']],
 ].forEach(([time, answer], id) => {
     test(`FromSeconds:${id}`, () => {
         expect(FromSeconds(time)).toEqual(answer);
