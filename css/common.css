@@ -312,13 +312,16 @@ grid {
     background: #07f;
     color: #fff;
 }
-#overview {
+#tables {
+    width: 100%;
+}
+.scroller {
     margin: 1em;
     max-width: calc(100vw - 2em);
     min-width: 90%;
     overflow-x: auto;
 }
-#overview td {
+.scroller td {
     white-space: nowrap;
 }
 

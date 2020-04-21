@@ -1173,6 +1173,18 @@ function SetDefault(dico, key, def) {
 }
 
 /**
+ * Smart split, tries with | and if not found, then with ' '
+ * @param {string} text
+ * @param {string=} char
+ */
+function Split(text, char) {
+    if (char != undefined)
+        return text.split(char);
+    let splits = text.split('|');
+    return (splits.length > 1)? splits: text.split(' ');
+}
+
+/**
  * Stringify an Object, better than JSON.stringify
  * @param {Object} object
  * @param {number=} [depth=0]

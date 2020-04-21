@@ -18,8 +18,8 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Stringify,
-        Title,
+        Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Split,
+        Stringify, Title,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,6 +127,19 @@ let {
         expect(QueryString(stringify, keep, discard, replaces, key)).toEqual(answer);
     });
 });
+
+// Split
+[
+    ['abcd', '', ['a', 'b', 'c', 'd']],
+    ['Rank|Engine|Points', undefined, ['Rank', 'Engine', 'Points']],
+    ['Rank Engine Points', undefined, ['Rank', 'Engine', 'Points']],
+    ['Rank|Engine Points', undefined, ['Rank', 'Engine Points']],
+].forEach(([text, char, answer], id) => {
+    test(`Split:${id}`, () => {
+        expect(Split(text, char)).toEqual(answer);
+    });
+});
+
 
 // Stringify
 [

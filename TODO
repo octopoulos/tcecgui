@@ -1,6 +1,12 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-21 : 2020-04-21 : new bootstrapTables without jquery nor bootstrap
+2020-04-21 : 2020-04-13 : remove as much bootstrap as possible => faster + save space
+2020-04-21 : 2020-04-13 : remove as much jquery as possible
+2020-04-21 : 2020-04-17 : remove duplicate ID's in html
+2020-04-21 : 2020-04-13 : remove all click triggers (they're hacks) in the js files
+2020-04-21 : 2020-04-13 : remove 80x onClick = ... from live.html
 2020-04-21 : 2020-04-21 : responsive layout for desktop and mobile
 2020-04-21 : 2020-04-13 : new overview table
 2020-04-21 : 2020-04-21 : download chart & socket.io for future embedding
@@ -47,17 +53,13 @@ high:
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
--          : 2020-04-21 : new bootstrapTables without jquery nor bootstrap
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 -          : 2020-04-17 : play archive games without loading a new page
--          : 2020-04-13 : remove all click triggers (they're hacks) in the js files
--          : 2020-04-13 : remove 80x onClick = ... from live.html
 medium:
 -          : 2020-04-18 : make < > buttons bigger, remove some buttons like dark mode
 -          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 ~          : 2020-04-13 : recode the top navigation bar, without bootstrap
--          : 2020-04-17 : remove duplicate ID's in html
 ~          : 2020-04-12 : convert all White and Black vars to arrays [w, b]
 low:
 -          : 2020-04-21 : embed ICONS to save requests
@@ -68,7 +70,6 @@ low:
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 lowest:
 ~          : 2020-04-13 : merge B&W functions
-~          : 2020-04-13 : remove as much jquery as possible
 -          : 2020-04-13 : add more Jest tests
 -          : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
 -          : 2020-04-13 : add 3d rendering option to the chessboard
@@ -76,7 +77,6 @@ lowest:
 ~          : 2020-04-13 : add 3d pieces
 -          : 2020-04-13 : extra audio events => boom, check, draw, win ... ? or when favorite engine plays/winning
 -          : 2020-04-13 : only load the 3d library/files when the user wants to use it
--          : 2020-04-13 : remove as much bootstrap as possible => faster + save space
 -          : 2020-04-13 : remove bootstrap locale folder
 -          : 2020-04-13 : add an SVG theme for the pieces
 -          : 2020-04-13 : only keep fontawesome icons that are being used => faster loading

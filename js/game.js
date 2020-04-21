@@ -6,15 +6,15 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
-HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game, Round,
-S, screen, set_3d_events, show_menu, show_modal, Style, Title, touch_handle, translate_node, Upper, Visible, window,
-XBoard, Y
+Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game,
+Round, S, screen, set_3d_events, Show, show_menu, show_modal, Split, Style, Title, touch_handle, translate_node, Upper,
+Visible, window, XBoard, Y
 */
 'use strict';
 
 let _BLACK = 'black',
     _WHITE = 'white',
-    BOARD_KEYS = 'blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'.split(' '),
+    BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'),
     BOARDS = {
         board: {
             size: 48,
@@ -26,11 +26,20 @@ let _BLACK = 'black',
         // pva: {},
     },
     num_ply,
-    PIECE_KEYS  = 'alpha chess24 dilena leipzig metro symbol uscf wikipedia'.split(' '),
+    PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
     prev_pgn,
     TABLES = {
-        overview: 'TC|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers'.split('|'),
+        crash: 'G#|White|Black|Reason|Final decision|Action taken|Result',
+        cross: 'Rank|Engine|Points|1|2',
+        game: 'G#|PGN|White|Black|Moves|Result',
+        h2h: 'Game#|White|W.ev|B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
+        log: 'Text|Date',
+        sched: 'Game#|White|wev=Ev|Black|bev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
+        stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
+        stats: 'Start time|End time|Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
+        view: 'TC|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
+        winner: 'S#|Champion|Runner-up|Score|Date',
     },
     time_delta = 0,
     turn = 0,               // 0:white to play, 1:black to play
@@ -72,11 +81,24 @@ function calculate_score(text) {
  */
 function get_short_name(engine)
 {
-    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
+    return engine.includes('Baron')? 'Baron': Split(engine)[0];
 }
 
 // TABLES
 /////////
+
+/**
+ * Create a key for a table field
+ * @param {string} text Wins [W/B]
+ * @returns {string[]} [wins_w_b, Wins [W/B]]
+ */
+function create_key_field(text) {
+    let items = text.split('=');
+    if (items.length > 1)
+        return [items[0], items.slice(1).join('=')];
+
+    return [Lower(text.replace(/[_[\]() ./#-]+/g, '_')).replace(/_+$/, ''), text];
+}
 
 /**
  * Create a table
@@ -86,12 +108,13 @@ function create_table(columns) {
     let html =
         '<table><thead>'
         + columns.map((column, id) => {
-                let items = column.split('|');
-                return `<th ${id? '': 'class="rounded" '}data-x="${Lower(items[0])}" data-t="${items.slice(-1)[0]}"></th>`;
+                let [key, field] = create_key_field(column);
+                return `<th ${id? '': 'class="rounded" '}data-x="${key}" data-t="${field}"></th>`;
             }).join('')
         + '</thead><tbody></tbody>'
-        + columns.map(column => (`<td data-x="${Lower(column.split('|')[0])}">&nbsp;</td>`)).join('')
+        + columns.map(column => (`<td data-x="${create_key_field(column)[0]}">&nbsp;</td>`)).join('')
         + '</table>';
+
     return html;
 }
 
@@ -101,8 +124,8 @@ function create_table(columns) {
 function create_tables() {
     Keys(TABLES).forEach(name => {
         let table = TABLES[name],
-            html = create_table(table);
-        HTML(`#${name}`, html);
+            html = create_table(Split(table));
+        HTML(`#table-${name}`, html);
     });
     translate_node('body');
 
@@ -175,7 +198,7 @@ function popup_engine_info(scolor, e) {
         show = true;
     else {
         let title = Title(scolor),
-            engine = prev_pgn.Headers[title].split(' '),
+            engine = Split(prev_pgn.Headers[title]),
             options = prev_pgn[`${title}EngineOptions`],
             lines = options.map(option => [option.Name, option.Value]);
 
@@ -251,14 +274,14 @@ function update_pgn(pgn) {
 
     // 1) overview
     if (pgn.Users)
-        HTML('#overview td[data-x="viewers"]', pgn.Users);
+        HTML('#table-view td[data-x="viewers"]', pgn.Users);
     if (headers) {
-        'ECO|Event|Opening|Result|Round'.split('|').forEach(key => {
-            HTML(`#overview td[data-x="${Lower(key)}"]`, headers[key]);
+        Split('ECO|Event|Opening|Result|Round').forEach(key => {
+            HTML(`#table-view td[data-x="${Lower(key)}"]`, headers[key]);
         });
 
         let items = headers.TimeControl.split('+');
-        HTML('#overview td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`);
+        HTML('#table-view td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`);
     }
 
     if (!num_move)
@@ -506,9 +529,12 @@ function set_game_events() {
 
     // tabs
     C('div.tab', function() {
-        let parent = Parent(this, 'horis', 'tabs');
-        Class('div.tab', '-active', true, parent);
+        let parent = Parent(this, 'horis', 'tabs'),
+            active = _('div.active', parent);
+        Class(active, '-active');
         Class(this, 'active');
+        Hide(`#table-${active.dataset.x}`);
+        Show(`#table-${this.dataset.x}`);
     });
 }
 
