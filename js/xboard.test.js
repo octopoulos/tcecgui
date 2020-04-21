@@ -15,6 +15,7 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'engine',
     'xboard',
 ], OUTPUT_MODULE, 'Assign XBoard'.split(' '));
 
