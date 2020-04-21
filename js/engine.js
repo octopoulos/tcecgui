@@ -475,7 +475,7 @@ function update_svg(parent) {
         let name = node.dataset.svg,
             image = ICONS[name.split(' ')[0]];
         if (image) {
-            image = `<svg class="${name}" xmlns="http://www.w3.org/2000/svg" ${image}</svg>`;
+            image = `<svg class="svg ${name}" xmlns="http://www.w3.org/2000/svg" ${image}</svg>`;
             HTML(node, image);
             delete node.dataset.svg;
         }

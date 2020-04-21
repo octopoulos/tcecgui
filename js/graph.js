@@ -1,3 +1,4 @@
+// graph.js
 /*
 globals
 _, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEvals, LS, Max, Min, Pad,
@@ -16,18 +17,13 @@ let all_evals = [],
     charts = {};
 
 //
-let blackEvalL = 0,
-    evalconstant = 10.0,
-    whiteEvalL = 0,
-
-    blackEval = [],
-    blackPop = 1,
-    labels = [],
-    whiteEval = [],
-    whitePop = 1,
-
+let blackEval = [],
+    blackEvalL = 0,
     blackStarted = 0,
-    firstPly = 0;
+    evalconstant = 10.0,
+    firstPly = 0,
+    whiteEval = [],
+    whiteEvalL = 0;
 
 /**
  * Create a dataset
@@ -119,7 +115,7 @@ function formatScale(value) {
  */
 function create_charts()
 {
-    charts.depth = charts.depth || new Chart('chart-depth', {
+    charts.depth = charts.depth || new Chart('table-depth', {
         type: 'line',
         data: chart_data.depth,
         options: {
@@ -157,7 +153,7 @@ function create_charts()
         },
     });
 
-    charts.eval = charts.eval || new Chart('chart-eval', {
+    charts.eval = charts.eval || new Chart('table-eval', {
         type: 'line',
         data: chart_data.eval,
         options: {
@@ -197,7 +193,7 @@ function create_charts()
         },
     });
 
-    charts.node = charts.node || new Chart('chart-node', {
+    charts.node = charts.node || new Chart('table-node', {
         type: 'line',
         data: chart_data.node,
         options: {
@@ -250,7 +246,7 @@ function create_charts()
         },
     });
 
-    charts.speed = charts.speed || new Chart('chart-speed', {
+    charts.speed = charts.speed || new Chart('table-speed', {
         type: 'line',
         data: chart_data.speed,
         options: {
@@ -304,7 +300,7 @@ function create_charts()
         },
     });
 
-    charts.tb = charts.tb || new Chart('chart-tb', {
+    charts.tb = charts.tb || new Chart('table-tb', {
         type: 'line',
         data: chart_data.tb,
         options: {
@@ -357,7 +353,7 @@ function create_charts()
         },
     });
 
-    charts.time = charts.time || new Chart('chart-time', {
+    charts.time = charts.time || new Chart('table-time', {
         type: 'line',
         data: chart_data.time,
         options: {
@@ -507,7 +503,6 @@ function reset_charts()
 {
     blackEval = [];
     firstPly = 0;
-    labels = [];
     whiteEval = [];
 
     Keys(charts).forEach(key => {

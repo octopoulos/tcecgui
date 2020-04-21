@@ -15,14 +15,15 @@ Visible, window, XBoard, Y
 let _BLACK = 'black',
     _WHITE = 'white',
     BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'),
+    board_target = 'board',
     BOARDS = {
         board: {
             size: 48,
         },
-        // pv1: {
+        // pv0: {
         //     target: 'text',
         // },
-        // pv2: {},
+        // pv1: {},
         // pva: {},
     },
     num_ply,
@@ -530,11 +531,18 @@ function set_game_events() {
     // tabs
     C('div.tab', function() {
         let parent = Parent(this, 'horis', 'tabs'),
-            active = _('div.active', parent);
+            active = _('div.active', parent),
+            key = this.dataset.x,
+            node = _(`#table-${key}`);
+
         Class(active, '-active');
         Class(this, 'active');
         Hide(`#table-${active.dataset.x}`);
-        Show(`#table-${this.dataset.x}`);
+        Show(node);
+
+        // special handling
+        if (key == 'info')
+            HTML(node, HTML('#desc'));
     });
 }
 

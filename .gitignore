@@ -27,6 +27,7 @@ live*.json
 model/
 schedule.json
 sound/*.js
+svg/
 tempCodeRunnerFile.py
 tournament.json
 winners.json

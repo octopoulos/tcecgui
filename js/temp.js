@@ -33,6 +33,11 @@ function setTwitch() {
 
 }
 
+function setUsers(data) {
+    LS('setUsers:');
+    LS(data);
+}
+
 function setUsersMain() {
 
 }

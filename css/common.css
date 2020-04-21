@@ -303,7 +303,7 @@ grid {
     color: #07f;
     cursor: pointer;
     font-size: 0.9em;
-    padding: 0.1em 1em;
+    padding: 0.2em 1em;
 }
 .tab:hover {
     color: #05b;
@@ -324,18 +324,22 @@ grid {
 .scroller td {
     white-space: nowrap;
 }
+#table-info {
+    font-size: 1.1em;
+    padding: 1em;
+}
 
 /* engines */
-#engines {
+#table-engine {
     width: 100%;
 }
-#engines > div {
+#table-engine > div {
     padding: 0.2em;
 }
-#engines > * {
+#table-engine > * {
     text-align: center;
 }
-#engines [data-t] {
+#table-engine [data-t] {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
@@ -382,7 +386,6 @@ grid {
 #left {
     background: yellow;
     flex: 3;
-    height: 90vh;
     margin: 4px;
     max-width: calc(100vw - 4px);
     min-width: 244px;
@@ -426,17 +429,33 @@ grid {
     max-height: 10vw;
     min-height: 30px;
 }
+#google_ad {
+    cursor: pointer;
+    margin: 1em;
+}
 
 /* allow text selection */
-td,
-#engines,
-#footer {
+#footer,
+.scroller,
+#table-engine,
+#table-info,
+td {
    user-select: text;
 }
 
 /* media */
+@media (max-width: 639px) {
+    .google_ad {
+        display: none;
+    }
+}
 @media (max-width: 767px) {
     #main {
         flex-wrap: wrap;
     }
+}
+
+/* svg */
+.svg {
+    height: 1em;
 }

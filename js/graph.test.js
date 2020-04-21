@@ -1,4 +1,4 @@
-// graphs.test.js
+// graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-04-18
 //
@@ -11,11 +11,11 @@ __dirname, expect, require, test,
 let {create_module} = require('./create-module');
 
 let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/graphs+`;
+    OUTPUT_MODULE = `${IMPORT_PATH}/test/graph+`;
 
 create_module(IMPORT_PATH, [
     'common',
-    '../dist/js/graphs',
+    '../dist/js/graph',
 ], OUTPUT_MODULE);
 
 let {getEval} = require(OUTPUT_MODULE);

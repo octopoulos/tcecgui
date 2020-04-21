@@ -11,12 +11,13 @@
     <script src="dist/js/themes.js"></script>
     <script src="js/xboard.js"></script>
     <script src="js/libs/chart.min.js"></script>
-    <script src="dist/js/graphs.js"></script>
+    <script src="js/graph.js"></script>
     <script src="js/game.js"></script>
     <script src="js/libs/socket.io.js"></script>
-    <script src="js/network.js"></script>
     <script src="js/temp.js"></script>
     <script src="dist/js/tcectables.js"></script>
+    <script src="js/network.js"></script>
+    <script src="js/startup.js"></script>
     <script src="js/script.js"></script>
     <link href="css/common.css" rel="stylesheet">
     <!-- END -->
@@ -32,20 +33,51 @@
             <div id="info" class="nav" data-t="Info"></div>
             <a class="nav" href="https://wiki.chessdom.org/Rules" target="_blank" data-t="Rules"></a>
             <a class="nav" href="http://www.tcec-chess.com/archive.html" target="_blank" data-t="Archive"></a>
-            <div class="nav" data-t="Navigate"></div>
-            <div class="nav" data-t="Download"></div>
-            <div class="nav" data-t="Options"></div>
-            <div class="nav" data-t="TCEC Links"></div>
+            <div class="nav">
+                <i data-t="Navigate"></i>
+                <i data-svg="down"></i>
+            </div>
+            <div class="nav">
+                <i data-t="Download"></i>
+                <i data-svg="down"></i>
+            </div>
+            <div class="nav">
+                <i data-t="Options"></i>
+                <i data-svg="down"></i>
+            </div>
+            <div class="nav">
+                <i data-t="TCEC Links"></i>
+                <i data-svg="down"></i>
+            </div>
         </horis>
         <select id="language"></select>
     </horis>
     <vert>
         <!-- banners -->
-        <horis id="banners" class="fbetween">
+        <horis id="banners" class="faround fastart">
             <div>
                 <img src="image/tcec.jpg" class="banner" alt="TCEC">
                 <img src="image/cd.jpg" class="banner" alt="Chessdom">
             </div>
+            <!-- ad1 -->
+            <hori class="google_ad">
+                <ins class="adsbygoogle"
+                    style="display:block;"
+                    data-ad-client="ca-pub-6544406400639567"
+                    data-ad-slot="4926769371"
+                    data-ad-format="auto"
+                    data-full-width-responsive="true">
+                    <img src="image/ad1.png">
+                </ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <div class="adblock dn">
+                    TCEC is based on voluntary work.
+                    Please consider whitelisting http://tcec-chess.com in your ad blocker - or send a donation.
+                    Thank you!
+                </div>
+            </hori>
             <form target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
                 <input type="hidden" name="cmd" value="_s-xclick">
                 <input type="hidden" name="hosted_button_id" value="L84QRRQJ88CYQ">
@@ -63,10 +95,10 @@
             <vert id="center">
                 <!-- engines -->
                 <horis class="tabs">
-                    <div class="tab active" data-t="Engine Info"></div>
-                    <div class="tab" data-t="PV"></div>
+                    <div class="tab active" data-x="engine" data-t="Engine Info"></div>
+                    <div class="tab" data-x="pv" data-t="PV"></div>
                 </horis>
-                <grid id="engines" class="grid3">
+                <grid id="table-engine" class="grid3">
                     <i id="info0" class="icon">
                         <img src="theme/wikipedia/wK.svg">
                     </i>
@@ -114,41 +146,98 @@
                     <i id="material"></i>
                     <horis id="material1" class="fcenter"></horis>
                 </grid>
-                <div id="pv1" class="xboard"></div>
-                <div id="pv2" class="xboard"></div>
+                <!-- pv -->
+                <vert id="table-pv">
+                    <div id="pv0" class="xboard"></div>
+                    <div id="pv1" class="xboard"></div>
+                </vert>
                 <!-- charts -->
-                <canvas id="chart-eval" height="260" class="graphs"></canvas>
-                <canvas id="chart-time" height="260" class="graphs dn"></canvas>
-                <canvas id="chart-speed" height="260" class="graphs dn"></canvas>
-                <canvas id="chart-node" height="260" class="graphs dn"></canvas>
-                <canvas id="chart-depth" height="260" class="graphs dn"></canvas>
-                <canvas id="chart-tb" height="260" class="graphs dn"></canvas>
-                <div id="pva" class="xboard" class="dn"></div>
+                <horis class="tabs">
+                    <div class="tab active" data-x="eval" data-t="Eval"></div>
+                    <div class="tab" data-x="time" data-t="Time"></div>
+                    <div class="tab" data-x="speed" data-t="Speed"></div>
+                    <div class="tab" data-x="node" data-t="Nodes"></div>
+                    <div class="tab" data-x="depth" data-t="Depth/SD"></div>
+                    <div class="tab" data-x="tb" data-t="TB"></div>
+                    <div class="tab" data-x="pv" data-t="PV"></div>
+                    <div class="tab" data-x="pva" data-t="PV(A)"></div>
+                </horis>
+                <canvas id="table-eval" height="260" class="graphs"></canvas>
+                <canvas id="table-time" height="260" class="graphs dn"></canvas>
+                <canvas id="table-speed" height="260" class="graphs dn"></canvas>
+                <canvas id="table-node" height="260" class="graphs dn"></canvas>
+                <canvas id="table-depth" height="260" class="graphs dn"></canvas>
+                <canvas id="table-tb" height="260" class="graphs dn"></canvas>
+                <div id="table-pva" class="xboard" class="dn"></div>
             </vert>
             <!-- right -->
             <vert id="right">
                 <horis class="tabs">
-                    <div class="tab active" data-t="Chat"></div>
-                    <div class="tab" data-t="Seasons"></div>
-                    <div class="tab" data-t="Games"></div>
-                    <div class="tab" data-t="Winners"></div>
-                    <div class="tab" data-t="Information"></div>
+                    <div class="tab active" data-x="chat" data-t="Chat"></div>
+                    <div class="tab" data-x="season" data-t="Seasons"></div>
+                    <div class="tab" data-x="game" data-t="Games"></div>
+                    <div class="tab" data-x="winner" data-t="Winners"></div>
+                    <div class="tab" data-x="info" data-t="Information"></div>
                 </horis>
-                <vert id="chat">
+                <vert id="table-chat">
                     TWITCH
                 </vert>
+                <div id="table-season" class="dn">Seasons</div>
+                <div id="table-game" class="dn"></div>
+                <div id="table-winner" class="dn"></div>
+                <div id="table-info" class="dn">INFO</div>
             </vert>
+        </hori>
+        <!-- ad2 -->
+        <hori class="google_ad">
+            <ins class="adsbygoogle"
+                style="display:block;"
+                data-ad-client="ca-pub-6544406400639567"
+                data-ad-slot="4926769371"
+                data-ad-format="auto"
+                data-full-width-responsive="true">
+                <img src="image/ad2.png">
+            </ins>
+            <script>
+                (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            <div class="adblock dn">
+                TCEC is based on voluntary work.
+                Please consider whitelisting http://tcec-chess.com in your ad blocker - or send a donation.
+                Thank you!
+            </div>
         </hori>
         <!-- tables -->
         <div id="tables">
             <horis class="tabs">
-                <div class="tab active" data-x="stand" data-t="Standings"></div>
-                <div class="tab" data-x="cross" data-t="Crosstable"></div>
-                <div class="tab" data-x="h2h" data-t="H2H"></div>
-                <div class="tab" data-x="sched" data-t="Schedule"></div>
-                <div class="tab" data-x="stats" data-t="Event Stats"></div>
-                <div class="tab" data-x="log" data-t="Livelog"></div>
-                <div class="tab" data-x="crash" data-t="Crash info"></div>
+                <div class="tab active" data-x="stand">
+                    <i data-svg="medal"></i>
+                    <i data-t="Standings"></i>
+                </div>
+                <div class="tab" data-x="cross">
+                    <i data-svg="x"></i>
+                    <i data-t="Crosstable"></i>
+                </div>
+                <div class="tab" data-x="h2h">
+                    <i data-svg="theater"></i>
+                    <i data-t="H2H"></i>
+                </div>
+                <div class="tab" data-x="sched">
+                    <i data-svg="calendar"></i>
+                    <i data-t="Schedule"></i>
+                </div>
+                <div class="tab" data-x="stats">
+                    <i data-svg="info"></i>
+                    <i data-t="Event Stats"></i>
+                </div>
+                <div class="tab" data-x="log">
+                    <i data-svg="book"></i>
+                    <i data-t="Livelog"></i>
+                </div>
+                <div class="tab" data-x="crash">
+                    <i data-svg="crash"></i>
+                    <i data-t="Crash info"></i>
+                </div>
             </horis>
             <div id="table-stand" class="scroller"></div>
             <div id="table-cross" class="scroller dn"></div>
@@ -179,7 +268,7 @@
     <vert id="popup-info" class="popup">
         <hori class="fbetween">
             <h5>About TCEC</h5>
-            <div class="popup-close">🗙</div>
+            <i class="popup-close" data-svg="x"></i>
         </hori>
         <hr>
         <vert>
