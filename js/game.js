@@ -6,8 +6,8 @@
 /*
 globals
 _, A, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
-HTML, Keys, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game, Round, S,
-screen, set_3d_events, show_menu, show_modal, Style, Title, Visible, window, XBoard, Y
+HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game, Round,
+S, screen, set_3d_events, show_menu, show_modal, Style, Title, touch_handle, translate_node, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -29,7 +29,7 @@ let _BLACK = 'black',
     pgn_moves = [],
     prev_pgn,
     TABLES = {
-        overview: [],
+        overview: 'TC|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers'.split('|'),
     },
     time_delta = 0,
     turn = 0,               // 0:white to play, 1:black to play
@@ -44,9 +44,15 @@ let _BLACK = 'black',
  * @param {string[]} columns
  */
 function create_table(columns) {
-    let html = '<table>';
-    html += columns.map(column => (`<th data-t="${column}"></th>`));
-    html += '</table>';
+    let html =
+        '<table><thead>'
+        + columns.map((column, id) => {
+                let items = column.split('|');
+                return `<th ${id? '': 'class="rounded" '}data-x="${Lower(items[0])}" data-t="${items.slice(-1)[0]}"></th>`;
+            }).join('')
+        + '</thead><tbody></tbody>'
+        + columns.map(column => (`<td data-x="${Lower(column.split('|')[0])}">&nbsp;</td>`)).join('')
+        + '</table>';
     return html;
 }
 
@@ -55,8 +61,17 @@ function create_table(columns) {
  */
 function create_tables() {
     Keys(TABLES).forEach(name => {
-
+        let table = TABLES[name],
+            html = create_table(table);
+        HTML(`#${name}`, html);
     });
+    translate_node('body');
+
+    // mouse/touch scroll
+    Events('.scroller', '!touchstart touchmove touchend', () => {});
+    Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
+        touch_handle(e);
+    }, {passive: false});
 }
 
 // ACTIONS
@@ -190,11 +205,21 @@ function show_info(show) {
 function update_pgn(pgn) {
     window.pgn = pgn;
 
-    let moves = pgn.Moves,
+    let headers = pgn.Headers,
+        moves = pgn.Moves,
         num_move = moves.length,
         start = pgn.lastMoveLoaded || 0;
 
-    if (pgn.Headers) {
+    // 1) overview
+    if (pgn.Users)
+        HTML('#overview td[data-x="viewers"]', pgn.Users);
+    if (headers) {
+        'ECO|Event|Opening|Result|Round'.split('|').forEach(key => {
+            HTML(`#overview td[data-x="${Lower(key)}"]`, headers[key]);
+        });
+
+        let items = headers.TimeControl.split('+');
+        HTML('#overview td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`);
     }
 
     if (!num_move)
@@ -221,18 +246,18 @@ function update_pgn(pgn) {
     LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
     prev_pgn = pgn;
 
-    // stats
+    // 2) engines
     for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
-        LS(`i=${i} : who=${who}`);
         let move = moves[i],
+            is_book = move.book,
             stats = {
-                depth: `${move.d}/${move.sd}`,
-                eval: move.wv,
+                depth: is_book? '-': `${move.d}/${move.sd}`,
+                eval: is_book? 'book': move.wv,
                 left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
-                node: FormatUnit(move.n),
+                node: is_book? '-': FormatUnit(move.n),
                 score: '',
-                speed: `${FormatUnit(move.s)}bps`,
-                tb: move.tb,
+                speed: is_book? '-': `${FormatUnit(move.s)}bps`,
+                tb: is_book? '-': move.tb,
                 time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
             };
         Keys(stats).forEach(key => {
@@ -408,6 +433,13 @@ function set_game_events() {
 
 // STARTUP
 //////////
+
+/**
+ * Call this after the structures have been initialised
+ */
+function start_game() {
+    create_tables();
+}
 
 /**
  * Initialise structures with game specific data

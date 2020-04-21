@@ -67,6 +67,8 @@ function init_sockets() {
         updateLiveChartData(data, 2);
     });
     socket.on('lastpgntime', data => {
+        LS(`latpgntime`);
+        LS(data);
         setLastMoveTime(data);
     });
     socket.on('users', data => {
