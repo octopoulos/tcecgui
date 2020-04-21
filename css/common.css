@@ -170,7 +170,7 @@ grid {
 .nav {
     color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
-    padding: 1em;
+    padding: 0.7em;
 }
 .nav:hover {
     color: rgba(255, 255, 255, 0.75);
@@ -317,16 +317,23 @@ grid {
 }
 .scroller {
     margin: 1em;
-    max-width: calc(100vw - 2em);
-    min-width: 90%;
+
     overflow-x: auto;
+    width: 90%;
 }
 .scroller td {
     white-space: nowrap;
 }
+#table-chat {
+    max-width: 510px;
+    width: 100%;
+}
 #table-info {
     font-size: 1.1em;
     padding: 1em;
+}
+#twitch-theme {
+    width: 100%;
 }
 
 /* engines */
@@ -381,30 +388,26 @@ grid {
 
 /* container */
 #main {
-    width: 100%;
+    width: 90%;
 }
 #left {
     background: yellow;
     flex: 3;
     margin: 4px;
     max-width: calc(100vw - 4px);
-    min-width: 244px;
+    min-width: 290px;
 }
 #center {
     flex: 2;
     max-width: 320px;
-    min-width: 244px;
+    margin: 0.5em;
+    min-width: 290px;
 }
 #right {
     flex: 2;
     margin: 4px;
     min-height: 350px;
-    min-width: 244px;
-}
-#chat {
-    background: #559;
-    max-width: 510px;
-    width: 100%;
+    min-width: 290px;
 }
 #lives {
     background: orange;
@@ -433,6 +436,16 @@ grid {
     cursor: pointer;
     margin: 1em;
 }
+#theme0,
+#theme1,
+#twitch0,
+#twitch1 {
+    cursor: pointer;
+    padding: 0.5em;
+}
+#theme1 {
+    color: #fff;
+}
 
 /* allow text selection */
 #footer,
@@ -452,6 +465,7 @@ td {
 @media (max-width: 767px) {
     #main {
         flex-wrap: wrap;
+        width: 100%;
     }
 }
 

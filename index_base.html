@@ -50,7 +50,11 @@
                 <i data-svg="down"></i>
             </div>
         </horis>
-        <select id="language"></select>
+        <hori>
+            <i id="theme0" data-svg="sun" class="dn"></i>
+            <i id="theme1" data-svg="moon" class="dn"></i>
+            <select id="language"></select>
+        </hori>
     </horis>
     <vert>
         <!-- banners -->
@@ -180,7 +184,11 @@
                     <div class="tab" data-x="info" data-t="Information"></div>
                 </horis>
                 <vert id="table-chat">
-                    TWITCH
+                    <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                    <hori id="twitch-theme" class="fend">
+                        <i id="twitch0" data-svg="sun" class="dn"></i>
+                        <i id="twitch1" data-svg="moon" class="dn"></i>
+                    </hori>
                 </vert>
                 <div id="table-season" class="dn">Seasons</div>
                 <div id="table-game" class="dn"></div>
@@ -208,7 +216,7 @@
             </div>
         </hori>
         <!-- tables -->
-        <div id="tables">
+        <vert id="tables">
             <horis class="tabs">
                 <div class="tab active" data-x="stand">
                     <i data-svg="medal"></i>
@@ -246,8 +254,21 @@
             <div id="table-stats" class="scroller dn"></div>
             <div id="table-log" class="scroller dn"></div>
             <div id="table-crash" class="scroller dn"></div>
-        </div>
+        </vert>
     </vert>
+    <!-- twitch video -->
+    <hori class="fcenter">
+        <iframe
+            id="twitch-vid"
+            height="400"
+            width="340"
+            frameborder="0"
+            scrolling="no"
+            allowfullscreen="true"
+            autoplay="true"
+            muted="true">
+        </iframe>
+    </hori>
     <!-- footer -->
     <vert id="footer">
         <div id="desc">

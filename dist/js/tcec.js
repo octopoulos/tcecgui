@@ -113,9 +113,8 @@ let activeFen = '',
     timeDiffRead = 0,
     timezoneDiffH = -8,
     tourInfo = {},
-    twitchAccount = 'TCEC_Chess_TV',
-    twitchChatUrl = 'https://www.twitch.tv/embed/' + twitchAccount + '/chat',
-    twitchSRCIframe = 'https://player.twitch.tv/?channel=' + twitchAccount,
+    twitchChatUrl = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat',
+    twitchSRCIframe = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
     userCount = 0,
     viewingActiveMove = true;
 
@@ -1931,13 +1930,13 @@ function setTwitchBackgroundInit(backg)
         value = (Y.dark_mode == 20)? 2: 1;
 
     setTwitchChatUrl(value == 2);
-    save_option('twitch_back_mode', backg);
+    save_option('twitch_dark', backg);
 }
 
 function setTwitchBackground(backg)
 {
     // not set to auto => don't change the background
-    let value = Y.twitch_back_mode;
+    let value = Y.twitch_dark;
     if (value)
         return;
 
@@ -1953,7 +1952,7 @@ function setDarkLight()
     Class('.toggleDark i', '-fa-moon fa-sun', is_dark);
     Class('body', 'dark', is_dark);
     setTwitchBackground(is_dark? 2: 1);
-    setTwitchChatUrl(Y.twitch_back_mode || is_dark);
+    setTwitchChatUrl(Y.twitch_dark || is_dark);
     Attrs('#info-frame', 'src', `info.html?body=${is_dark? 'dark': 'light'}`);
     Class('#crosstable, #gamelist, #h2h, #infotable, #schedule, #standtable, #winner', 'table-dark', is_dark);
     Class('#seasondiv', 'collapse-dark', is_dark);
@@ -2290,9 +2289,9 @@ function checkTwitch(checkbox)
 {
     let checked = checkbox.checked;
     if (!checked)
-        Attrs('iframe#twitchvid', 'src', twitchSRCIframe);
+        Attrs('#twitchvid', 'src', twitchSRCIframe);
 
-    S('iframe#twitchvid', !checked);
+    S('#twitchvid', !checked);
     save_option('twitch_video', checked? 1: 0);
 }
 

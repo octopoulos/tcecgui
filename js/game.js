@@ -5,10 +5,10 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
-Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game,
-Round, S, screen, set_3d_events, Show, show_menu, show_modal, Split, Style, Title, touch_handle, translate_node, Upper,
-Visible, window, XBoard, Y
+_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit,
+FromSeconds, Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource,
+resume_game, Round, S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Split, Style, Title,
+touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -44,6 +44,8 @@ let _BLACK = 'black',
     },
     time_delta = 0,
     turn = 0,               // 0:white to play, 1:black to play
+    TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
+    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat',
     xboards = {},
     WHITE_BLACK = [_WHITE, _BLACK, 'live'],
     WB_TITLES = ['White', 'Black'];
@@ -502,6 +504,40 @@ function game_action_key(code) {
     }
 }
 
+// SETTINGS
+///////////
+
+/**
+ * Update the theme
+ * @param {string=} theme
+ */
+function change_theme(theme) {
+    if (theme != undefined)
+        save_option('theme', theme);
+
+    S('#theme0', Y.theme);
+    S('#theme1', !Y.theme);
+    update_theme();
+}
+
+/**
+ * Enable/disable twitch video + chat
+ * @param {number=} dark
+ */
+function update_twitch(dark) {
+    if (dark != undefined)
+        save_option('twitch_dark', dark);
+
+    dark = Y.twitch_dark;
+    Attrs('#chat', 'src', TWITCH_CHAT + (dark? '?darkpopout': ''));
+    S('#twitch0', dark);
+    S('#twitch1', !dark);
+
+    if (Y.twitch_video)
+        Attrs('#twitch-vid', 'src', TWITCH_CHANNEL);
+    S('#twitch-vid', Y.twitch_video);
+}
+
 // EVENTS
 /////////
 
@@ -544,6 +580,14 @@ function set_game_events() {
         if (key == 'info')
             HTML(node, HTML('#desc'));
     });
+
+    // theme
+    C('#theme0, #theme1', function() {
+        change_theme((this.id.slice(-1) == '1')? 'dark': '');
+    });
+    C('#twitch0, #twitch1', function() {
+        update_twitch((this.id.slice(-1) == '1')? 1: 0);
+    });
 }
 
 // STARTUP
@@ -554,6 +598,7 @@ function set_game_events() {
  */
 function start_game() {
     create_tables();
+    update_twitch();
 }
 
 /**
@@ -580,7 +625,7 @@ function startup_game() {
             live_log: [[5, 10, 'all'], 10],
         },
         twitch: {
-            twitch_back_mode: [ON_OFF, 1],
+            twitch_dark: [ON_OFF, 1],
             twitch_video: [ON_OFF, 1],
         },
     });

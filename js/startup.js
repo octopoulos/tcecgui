@@ -8,13 +8,13 @@
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, C, check_hash, DEV, document, Events, fill_languages, game_action_key, game_action_keyup,
-get_object, getUserS, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
+api_translate_get, C, change_theme, check_hash, DEV, document, Events, fill_languages, game_action_key,
+game_action_keyup, get_object, getUserS, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Now, parse_dev, resize, Round,
 S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, start_game, start_tcec, startup_3d,
 startup_archive, startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node,
-translates:true, unlistenLogMain, update_debug, update_theme, updateLiveChart, updateLiveEval, updatePgn,
-updateRefresh, updateTables, updateWinners, window, Y
+translates:true, unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn, updateRefresh,
+updateTables, updateWinners, window, Y
 */
 'use strict';
 
@@ -129,7 +129,7 @@ function load_settings() {
 
     check_hash();
     parse_dev();
-    update_theme();
+    change_theme();
     api_translate_get();
 }
 

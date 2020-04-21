@@ -3,7 +3,7 @@
 // temporary replaces tcec.js to test index_base.html
 /*
 globals
-create_boards, download_pgn, LS, update_pgn, window, xboards
+create_boards, download_pgn, HTML, LS, update_pgn, window, xboards
 */
 'use strict';
 
@@ -36,6 +36,7 @@ function setTwitch() {
 function setUsers(data) {
     LS('setUsers:');
     LS(data);
+    HTML('#table-view td[data-x="viewers"]', data.count);
 }
 
 function setUsersMain() {
