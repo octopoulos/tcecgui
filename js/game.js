@@ -312,7 +312,7 @@ function update_pgn(pgn) {
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
             short = get_short_name(name),
-            src = `img/engines/${short}.jpg`;
+            src = `image/engine/${short}.jpg`;
 
         HTML(`#engine${id}`, name);
         HTML(`#score${id}`, headers[`${title}Elo`]);
@@ -351,7 +351,7 @@ function update_pgn(pgn) {
             let id = (value > 0)? 0: 1,
                 color = id? 'b': 'w';
             for (let i=0; i<Abs(value); i++)
-                materials[id].push(`<div><img src="img/chesspieces/wikipedia/${color}${Upper(key)}.png"></div>`);
+                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
         }
     });
 

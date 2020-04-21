@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-21 : 2020-04-21 : optimise images
 2020-04-21 : 2020-04-21 : new bootstrapTables without jquery nor bootstrap
 2020-04-21 : 2020-04-13 : remove as much bootstrap as possible => faster + save space
 2020-04-21 : 2020-04-13 : remove as much jquery as possible

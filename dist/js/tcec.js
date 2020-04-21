@@ -502,7 +502,7 @@ function setPgn(pgn)
     if (pgn.Moves.length > 0) {
         title = pgn.Headers.White + ' vs. ' + pgn.Headers.Black + ' - ' + title;
         let is_black = (pgn.Moves.PlyCount % 2 == 0 || pgn.Headers.Termination != 'unterminated');
-        Attrs('#favicon', 'href', `img/favicon${is_black? 'b': ''}.ico`);
+        Attrs('#favicon', 'href', `image/favicon${is_black? 'b': ''}.ico`);
     }
     document.title = title;
 
@@ -676,7 +676,7 @@ function setInfoFromCurrentHeaders()
 
         HTML(`.${color}-engine-name`, name);
         HTML(`.${color}-engine-name-full`, header);
-        Attrs(`#${color}-engine`, 'src', `img/engines/${name}.jpg`);
+        Attrs(`#${color}-engine`, 'src', `image/engine/${name}.jpg`);
         Attrs(`#${color}-engine`, 'alt', header);
         Attrs(`#${color}-engine-chessprogramming`, 'href', `https://www.chessprogramming.org/${name}`);
     });
@@ -1263,7 +1263,7 @@ function setPieces(piece, value, whiteToPlay) {
     HTML('#black-material span.' + piece, '');
 
     for (let i = 0; i < Abs(value); i++) {
-        let imgPath = 'img/chesspieces/wikipedia/' + color + piece.toUpperCase() + '.png';
+        let imgPath = 'theme/wikipedia/' + color + piece.toUpperCase() + '.svg';
         $('#' + target + ' span.' + piece).append('<img src="' + imgPath + '" class="engine-material" />');
     }
 }
@@ -3232,7 +3232,7 @@ function setTwitchChange(data)
 
 function getImg(engine)
 {
-    return '<div class="right-align"><img class="right-align-pic" src="img/engines/'+ get_short_name(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>';
+    return '<div class="right-align"><img class="right-align-pic" src="image/engine/'+ get_short_name(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>';
 }
 
 function updateCrashData(data)
@@ -3408,7 +3408,7 @@ function drawBracket1()
                     }
                     $(befStr).insertBefore(container);
                 }
-                container.append('<img class="bracket-material" src="img/engines/'+ data.flag +'.jpg" />').append(appendStr);
+                container.append('<img class="bracket-material" src="image/engine/'+ data.flag +'.jpg" />').append(appendStr);
             }
             else
             {
@@ -3428,7 +3428,7 @@ function drawBracket1()
                     $(befStr).insertBefore(container);
                 }
                 container
-                    .append('<img class="bracket-material" src="img/engines/'+data.flag+'.jpg" />')
+                    .append('<img class="bracket-material" src="image/engine/'+data.flag+'.jpg" />')
                     .append('<div class="bracket-name"> <a> ' + dataName + '</a> </div>');
             }
 
