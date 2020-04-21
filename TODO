@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-21 : 2020-04-21 : responsive layout for desktop and mobile
+2020-04-21 : 2020-04-13 : new overview table
 2020-04-21 : 2020-04-21 : download chart & socket.io for future embedding
 2020-04-21 : 2020-04-15 : FromSeconds => can remove redundant hhmm and hhmmss functions
 2020-04-21 : 2020-04-13 : replace several tables with grid/flex
@@ -45,6 +47,7 @@ high:
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
+-          : 2020-04-21 : new bootstrapTables without jquery nor bootstrap
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 -          : 2020-04-17 : play archive games without loading a new page
@@ -57,9 +60,8 @@ medium:
 -          : 2020-04-17 : remove duplicate ID's in html
 ~          : 2020-04-12 : convert all White and Black vars to arrays [w, b]
 low:
-~          : 2020-04-13 : add a flex + grid system instead of col-12, col-6
+-          : 2020-04-21 : embed ICONS to save requests
 -          : 2020-04-13 : convert themes to combo + dynamically load 1 theme at a time (save network)
--          : 2020-04-13 : accelerate table generation, too many memory allocs + expensive selectors with jQuery
 -          : 2020-04-13 : remove most specific settings code: thousands of lines + difficult to add more settings
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen

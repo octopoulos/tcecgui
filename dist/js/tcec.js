@@ -3,9 +3,9 @@
 /*
 globals
 _, _BLACK, _WHITE, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
-C, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS, columnsEvent, console,
-create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross, engine_colors, Events, Exp,
-Floor, FormatUnit, Hide, HTML, Keys,
+C, calculate_score, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS,
+columnsEvent, console, create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross,
+engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_FEN, startDateR1,
@@ -486,7 +486,7 @@ function setPgn(pgn)
             squareToHighlight = moveTo;
         }
         board.position(currentPosition, false);
-        xboards.board.set_fen(currentPosition);
+        // xboards.board.set_fen(currentPosition);
     }
 
     if (pgn.Headers == undefined) {
@@ -666,22 +666,12 @@ function copyFen()
     return false;
 }
 
-/**
- * Get the short name of an engine
- * @param {string} engine Stockfish 20200407DC
- * @returns {string} Stockfish
- */
-function getShortEngineName(engine)
-{
-    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
-}
-
 function setInfoFromCurrentHeaders()
 {
     ['White', 'Black'].forEach((key, id) => {
         let color = WHITE_BLACK[id],
             header = prevPgnData.Headers[key],
-            name = getShortEngineName(header);
+            name = get_short_name(header);
         all_engines[id] = header;
 
         HTML(`.${color}-engine-name`, name);
@@ -802,7 +792,7 @@ function getPct(engineName, eval_)
         return `${engineName} ${eval_}`;
 
     let whiteWinPct,
-        shortName = getShortEngineName(engineName),
+        shortName = get_short_name(engineName),
         feature = ENGINE_FEATURES[shortName];
 
     // adjust the score
@@ -1460,7 +1450,7 @@ function updateScoreHeadersData()
     if (whiteRes.Rating)
     {
         HTML('#white-engine-elo', whiteRes.Rating);
-        scores = getScoreText(crosstableData.Table[all_engines[WH]].Results[all_engines[BL]].Text);
+        scores = calculate_score(crosstableData.Table[all_engines[WH]].Results[all_engines[BL]].Text);
         HTML('.white-engine-score', scores.w.toFixed(1));
         HTML('.black-engine-score', scores.b.toFixed(1));
     }
@@ -1876,7 +1866,7 @@ function setBoard()
     let fen = board.fen();
     board = createBoard('board', Y.notation);
     board.position(fen, false);
-    xboards.board.set_fen(fen);
+    // xboards.board.set_fen(fen);
 
     fen = pvBoardb.fen();
     pvBoardb = createBoard('pv-boardb', Y.notation_pv);
@@ -3242,31 +3232,7 @@ function setTwitchChange(data)
 
 function getImg(engine)
 {
-    return '<div class="right-align"><img class="right-align-pic" src="img/engines/'+ getShortEngineName(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>';
-}
-
-/**
- * Calculate White and Black points
- * @param {string} text
- * @returns {Object}
- */
-function getScoreText(text) {
-    let black = 0,
-        white = 0;
-
-    for (let i=0, length=text.length; i<length; i++) {
-        let char = text[i];
-        if (char == '0')
-            black ++;
-        else if (char == '1')
-            white ++;
-        else if (char == '=') {
-            black += 0.5;
-            white += 0.5;
-        }
-    }
-
-    return {w: white, b: black};
+    return '<div class="right-align"><img class="right-align-pic" src="img/engines/'+ get_short_name(engine) +'.jpg" />' + '<a class="right-align-name">' + engine + '</a></div>';
 }
 
 function updateCrashData(data)
@@ -3334,8 +3300,8 @@ function bracketDataMain(data)
     for (let i = bigData.teams.length + 1; i <= 16; i++)
     {
         bigData.teams[i-1] = [
-            {name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]), score: -1, rank: '1', date: '', lead: 0},
-            {name: getSeededName(teamsx[i-1][1][0]), flag: getShortEngineName(teamsx[i-1][1][0]), score: -1, rank: '2', date: '', lead: 0},
+            {name: getSeededName(teamsx[i-1][0][0]), flag: get_short_name(teamsx[i-1][0][0]), score: -1, rank: '1', date: '', lead: 0},
+            {name: getSeededName(teamsx[i-1][1][0]), flag: get_short_name(teamsx[i-1][1][0]), score: -1, rank: '2', date: '', lead: 0},
         ];
     }
 
@@ -3384,7 +3350,7 @@ function drawBracket1()
         case "entry-complete":
             if (roundResults[localRound][isFirst].name != undefined)
             {
-                if (getShortEngineName(roundResults[localRound][isFirst].name) != getShortEngineName(data.origname))
+                if (get_short_name(roundResults[localRound][isFirst].name) != get_short_name(data.origname))
                     isFirst = isFirst? 0: 1;
             }
             let scoreL = roundResults[localRound][isFirst].score;
@@ -3502,7 +3468,7 @@ function getSeededName(name)
     Keys(teamsx).forEach(key => {
         let engine = teamsx[key];
 
-        if (getShortEngineName(engine[0][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
+        if (get_short_name(engine[0][0]).toUpperCase() == get_short_name(name).toUpperCase())
         {
             //engineName = "S#" + engine[0][1] + " " + engine[0][0];
             engineName = engine[0][0];
@@ -3511,7 +3477,7 @@ function getSeededName(name)
                 engineName = engineName.slice(0, 22) + "..";
             return false;
         }
-        else if (getShortEngineName(engine[1][0]).toUpperCase() == getShortEngineName(name).toUpperCase())
+        else if (get_short_name(engine[1][0]).toUpperCase() == get_short_name(name).toUpperCase())
         {
             //engineName = "S#" + engine[1][1] + " " + engine[1][0];
             engineName = engine[1][0];
@@ -3739,7 +3705,7 @@ function set_ui_events() {
         squareToHighlight = moveTo;
 
         board.position(clickedFen, false);
-        xboards.board.set_fen(clickedFen);
+        // xboards.board.set_fen(clickedFen);
 
         currentPosition = clickedFen;
         activePly = clickedPly;

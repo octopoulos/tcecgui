@@ -5,9 +5,10 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
+_, A, Abs, add_timeout, Assign, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit, FromSeconds,
 HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource, resume_game, Round,
-S, screen, set_3d_events, show_menu, show_modal, Style, Title, touch_handle, translate_node, Visible, window, XBoard, Y
+S, screen, set_3d_events, show_menu, show_modal, Style, Title, touch_handle, translate_node, Upper, Visible, window,
+XBoard, Y
 */
 'use strict';
 
@@ -34,10 +35,48 @@ let _BLACK = 'black',
     time_delta = 0,
     turn = 0,               // 0:white to play, 1:black to play
     xboards = {},
-    WHITE_BLACK = [_WHITE, _BLACK, 'live'];
+    WHITE_BLACK = [_WHITE, _BLACK, 'live'],
+    WB_TITLES = ['White', 'Black'];
 
-// NODES
-////////
+// HELPERS
+//////////
+
+/**
+ * Calculate White and Black points
+ * @param {string} text
+ * @returns {Object}
+ */
+function calculate_score(text) {
+    let black = 0,
+        white = 0;
+
+    for (let i=0, length=text.length; i<length; i++) {
+        let char = text[i];
+        if (char == '0')
+            black ++;
+        else if (char == '1')
+            white ++;
+        else if (char == '=') {
+            black += 0.5;
+            white += 0.5;
+        }
+    }
+
+    return {w: white, b: black};
+}
+
+/**
+ * Get the short name of an engine
+ * @param {string} engine Stockfish 20200407DC
+ * @returns {string} Stockfish
+ */
+function get_short_name(engine)
+{
+    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
+}
+
+// TABLES
+/////////
 
 /**
  * Create a table
@@ -247,6 +286,21 @@ function update_pgn(pgn) {
     prev_pgn = pgn;
 
     // 2) engines
+    WB_TITLES.forEach((title, id) => {
+        let name = headers[title],
+            short = get_short_name(name),
+            src = `img/engines/${short}.jpg`;
+
+        HTML(`#engine${id}`, name);
+        HTML(`#score${id}`, headers[`${title}Elo`]);
+
+        let image = _(`#logo${id}`);
+        if (image.src != src) {
+            image.setAttribute('alt', name);
+            image.src = src;
+        }
+    });
+
     for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
         let move = moves[i],
             is_book = move.book,
@@ -255,15 +309,35 @@ function update_pgn(pgn) {
                 eval: is_book? 'book': move.wv,
                 left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
                 node: is_book? '-': FormatUnit(move.n),
-                score: '',
                 speed: is_book? '-': `${FormatUnit(move.s)}bps`,
-                tb: is_book? '-': move.tb,
+                tb: is_book? '-': FormatUnit(move.tb),
                 time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
             };
         Keys(stats).forEach(key => {
             HTML(`#${key}${who}`, stats[key]);
         });
         who = 1 - who;
+    }
+
+    // material
+    let material = move.material,
+        materials = [[], []];
+    'qrbnp'.split('').forEach(key => {
+        let value = material[key];
+        if (value) {
+            let id = (value > 0)? 0: 1,
+                color = id? 'b': 'w';
+            for (let i=0; i<Abs(value); i++)
+                materials[id].push(`<div><img src="img/chesspieces/wikipedia/${color}${Upper(key)}.png"></div>`);
+        }
+    });
+
+    for (let id=0; id<2; id++) {
+        let node = _(`#material${id}`),
+            html = HTML(node),
+            material = materials[id].join('');
+        if (html != material)
+            HTML(node, material);
     }
 }
 
@@ -428,6 +502,13 @@ function set_game_events() {
     });
     C('#overlay', () => {
         show_info(false);
+    });
+
+    // tabs
+    C('div.tab', function() {
+        let parent = Parent(this, 'horis', 'tabs');
+        Class('div.tab', '-active', true, parent);
+        Class(this, 'active');
     });
 }
 

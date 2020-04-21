@@ -1,7 +1,7 @@
 /*
 globals
 _, $, activeFen, add_timeout, board, Chess, clearedAnnotation:true, crash_re, crosstableData:true,
-currentLastMove:true, engineRatingGlobalData, getNodes, getPct, getShortEngineName, Keys, livePvs, LS,
+currentLastMove:true, engineRatingGlobalData, getNodes, getPct, get_short_name, Keys, livePvs, LS,
 newUpdateStandData, Pow, updateLiveEvalDataHistory, viewingActiveMove, Y
 */
 'use strict';
@@ -131,7 +131,7 @@ function getEngRecSched(data, engineName)
         let dQ = engineDisqualified(engineName);
         if (dQ)
             resultData.LossAsStrike = dQ;
-        else if (getShortEngineName(engineName) == getShortEngineName(engine.Black))
+        else if (get_short_name(engineName) == get_short_name(engine.Black))
         {
             if (!engineDisqualified(engine.White))
             {
@@ -153,7 +153,7 @@ function getEngRecSched(data, engineName)
                 resultData.Games = resultData.Games + 1;
             }
         }
-        else if (getShortEngineName(engineName) == getShortEngineName(engine.White))
+        else if (get_short_name(engineName) == get_short_name(engine.White))
         {
             if (!engineDisqualified(engine.Black))
             {

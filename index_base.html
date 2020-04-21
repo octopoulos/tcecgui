@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- BEGIN -->
     <script src="js/common.js"></script>
     <script src="js/engine.js"></script>
@@ -53,12 +54,18 @@
         </horis>
         <div id="overview" class="scroller"></div>
         <hori id="main" class="fastart">
+            <!-- left -->
             <vert id="left">
                 <div id="board" class="xboard"></div>
                 <div id="lives"></div>
             </vert>
+            <!-- center -->
             <vert id="center">
                 <!-- engines -->
+                <horis class="tabs">
+                    <div class="tab active" data-t="Engine Info"></div>
+                    <div class="tab" data-t="PV"></div>
+                </horis>
                 <grid id="engines" class="grid3">
                     <i id="info0" class="icon">
                         <img src="img/chesspieces/wikipedia/wK.png">
@@ -67,18 +74,20 @@
                     <i id="info1" class="icon">
                         <img src="img/chesspieces/wikipedia/bK.png">
                     </i>
-                    <div id="engine0"></div>
+                    <div id="engine0">&nbsp;</div>
                     <i></i>
-                    <div id="engine1"></div>
-                    <div id="logo0" class="logo">
-                        <img src="img/tcec.jpg">
+                    <div id="engine1">&nbsp;</div>
+                    <div class="logo">
+                        <img id="logo0" src="img/tcec.jpg">
                     </div>
                     <i></i>
-                    <div id="logo1" class="logo">
-                        <img src="img/tcec.jpg">
+                    <div class="logo">
+                        <img id="logo1" src="img/tcec.jpg">
                     </div>
                     <div id="eval0"></div>
-                    <div id="eval" data-t="Evaluation"></div>
+                    <vert class="fcenter">
+                        <div id="eval" data-t="Evaluation"></div>
+                    </vert>
                     <div id="eval1"></div>
                     <div id="depth0"></div>
                     <div data-t="{Depth}/{SD}"></div>
@@ -101,6 +110,9 @@
                     <div id="time0"></div>
                     <i></i>
                     <div id="time1"></div>
+                    <horis id="material0" class="fcenter"></horis>
+                    <i id="material"></i>
+                    <horis id="material1" class="fcenter"></horis>
                 </grid>
                 <div id="pv1" class="xboard"></div>
                 <div id="pv2" class="xboard"></div>
@@ -113,12 +125,38 @@
                 <canvas id="chart-tb" height="260" class="graphs dn"></canvas>
                 <div id="pva" class="xboard" class="dn"></div>
             </vert>
-            <vert id="chat">
-                TWITCH
+            <!-- right -->
+            <vert id="right">
+                <horis class="tabs">
+                    <div class="tab active" data-t="Chat"></div>
+                    <div class="tab" data-t="Seasons"></div>
+                    <div class="tab" data-t="Games"></div>
+                    <div class="tab" data-t="Winners"></div>
+                    <div class="tab" data-t="Information"></div>
+                </horis>
+                <vert id="chat">
+                    TWITCH
+                </vert>
             </vert>
         </hori>
+        <!-- tables -->
         <div id="tables">
-            TABLES
+            <horis class="tabs">
+                <div class="tab active" data-x="stand" data-t="Standings"></div>
+                <div class="tab" data-x="cross" data-t="Crosstable"></div>
+                <div class="tab" data-x="h2h" data-t="H2H"></div>
+                <div class="tab" data-x="sched" data-t="Schedule"></div>
+                <div class="tab" data-x="stats" data-t="Event Stats"></div>
+                <div class="tab" data-x="log" data-t="Livelog"></div>
+                <div class="tab" data-x="crash" data-t="Crash info"></div>
+            </horis>
+            <div id="table-stand" class="scroller dn"></div>
+            <div id="table-cross" class="scroller dn"></div>
+            <div id="table-h2h" class="scroller dn"></div>
+            <div id="table-sched" class="scroller dn"></div>
+            <div id="table-stats" class="scroller dn"></div>
+            <div id="table-log" class="scroller dn"></div>
+            <div id="table-crash" class="scroller dn"></div>
         </div>
     </vert>
     <!-- footer -->
@@ -172,5 +210,6 @@
             <h5><i data-t="Copyright"></i> © 2010-2020</h5>
         </vert>
     </vert>
+    <div id="extra-style"></div>
 </body>
 </html>

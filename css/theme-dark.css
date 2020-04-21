@@ -8,6 +8,11 @@ body {
     background: rgba(0, 0, 0, 0.95);
 }
 
-#engines {
+#engines > * {
     background: #212529;
+}
+
+.tab,
+.tab:hover {
+    color: #dfdfdf;
 }

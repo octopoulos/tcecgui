@@ -10,7 +10,7 @@
 /*
 globals
 _, Abs, Assign, Attrs, clearTimeout, DefaultFloat, document, E, HTML, Keys, localStorage, LS, Min, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, window
+Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, Title, window
 */
 'use strict';
 
@@ -53,6 +53,7 @@ let __PREFIX = '_',
     touch_start,
     TOUCH_STARTS = {mousedown: 1, mouseenter: 1, touchstart: 2},
     translates = {},
+    Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
     virtual_rename_option,
     virtual_set_combo_special,
@@ -204,7 +205,7 @@ function resize_text(text, resize)
         return text;
 
     let len = text.length;
-    if (text.toUpperCase() == text)
+    if (Upper(text) == text)
         len *= 3/2;
 
     if (len > resize)
@@ -247,12 +248,12 @@ function translate(text) {
         return null;
 
     // MODE
-    if (text == text.toUpperCase())
-        return result.toUpperCase();
+    if (text == Upper(text))
+        return Upper(result);
 
     // Mode
-    if (text[0] == text[0].toUpperCase())
-        return result[0].toUpperCase() + result.slice(1);
+    if (text[0] == Upper(text[0]))
+        return Title(result);
 
     return null;
 }
@@ -506,7 +507,7 @@ function update_theme(callback, version=15) {
             child.rel = 'stylesheet';
             parent.appendChild(child);
         }
-        child.href = `css/${theme}/${theme}.css?v=${version}`;
+        child.href = `css/theme-${theme}.css?v=${version}`;
         child.removeAttribute('href2');
     }
 

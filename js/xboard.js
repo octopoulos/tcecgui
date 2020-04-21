@@ -16,7 +16,7 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Assign, Class, CreateNode, DEV, Floor, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Style, T
+_, A, Assign, Class, CreateNode, DEV, Floor, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Style, T, Upper
 */
 'use strict';
 
@@ -201,7 +201,7 @@ class XBoard {
                     dead = (piece.flag & 1),
                     coord = piece.coord,
                     node = piece.node,
-                    upper = char.toUpperCase(),
+                    upper = Upper(char),
                     image = this.images[(char == upper)? `w${upper}`: `b${upper}`];
 
                 if (node)

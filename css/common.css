@@ -5,6 +5,9 @@
     overscroll-behavior-x: none;
     padding: 0;
 }
+html {
+    overflow-x: hidden;
+}
 body {
     background: #dcdcdc;
     color: #212529;
@@ -117,6 +120,24 @@ i {
     display: inline;
     font-style: normal;
     line-height: 0;
+ }
+ table {
+    border-spacing: 0;
+    font-size: 0.9em;
+    width: 100%;
+ }
+ td {
+    padding: 0.25em 0.5em;
+    text-align: center;
+ }
+ th {
+    background: #222;
+    color: white;
+    padding: 0.25em;
+    text-align: center;
+ }
+ tr {
+    background: rgba(0, 0, 0, 0.05);
  }
 
 /* overrides */
@@ -259,7 +280,7 @@ grid {
     z-index: 1;
 }
 #board {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 300px);
     width: 100%;
 }
 
@@ -274,10 +295,36 @@ grid {
     padding: 3px 2px;
     white-space: nowrap;
 }
+.rounded {
+    border-radius: 4px 0 0 0;
+}
+.tab {
+    border-radius: 4px;
+    color: #07f;
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 0.1em 1em;
+}
+.tab:hover {
+    color: #05b;
+}
+.tab.active {
+    background: #07f;
+    color: #fff;
+}
+#overview {
+    margin: 1em;
+    max-width: calc(100vw - 2em);
+    min-width: 90%;
+    overflow-x: auto;
+}
+#overview td {
+    white-space: nowrap;
+}
 
 /* engines */
 #engines {
-    min-width: 200px;
+    width: 100%;
 }
 #engines > div {
     padding: 0.2em;
@@ -285,23 +332,44 @@ grid {
 #engines > * {
     text-align: center;
 }
+#engines [data-t] {
+    font-size: 0.85em;
+    padding-top: 0.4em;
+}
+#info0,
+#info1 {
+    padding-top: 0.4em;
+}
 .icon > img {
     height: 20px;
 }
 .logo > img {
     height: 40px;
 }
+#engine0,
+#engine1 {
+    font-size: 0.8em;
+}
 #eval0,
 #eval1 {
     font-size: 2.5em;
     font-weight: 500;
-}
-#eval {
-    line-height: 4;
+    padding: 0 !important;
 }
 #time0,
 #time1 {
     font-size: 0.8em;
+    padding-bottom: 0.5em !important;
+}
+#material,
+#material0,
+#material1 {
+    background: transparent !important;
+}
+#material0 img,
+#material1 img {
+    height: 28px;
+    margin: 2px;
 }
 
 /* container */
@@ -314,27 +382,35 @@ grid {
     height: 90vh;
     margin: 4px;
     max-width: calc(100vw - 4px);
-    min-width: 260px;
+    min-width: 244px;
 }
 #center {
-    flex: 1;
-    margin: 4px;
+    flex: 2;
     max-width: 320px;
+    min-width: 244px;
 }
-#chat {
-    background: #559;
+#right {
     flex: 2;
     margin: 4px;
     min-height: 350px;
-    min-width: 280px;
+    min-width: 244px;
+}
+#chat {
+    background: #559;
+    max-width: 510px;
+    width: 100%;
 }
 #lives {
     background: orange;
-    min-height: 200px;
+    min-height: 300px;
     width: 100%;
 }
 #footer {
     padding: 1em;
+}
+.tabs {
+    justify-content: center;
+    margin: 0.5em;
 }
 
 /* extras */
@@ -349,6 +425,15 @@ grid {
 }
 
 /* allow text selection */
-#engines {
+td,
+#engines,
+#footer {
    user-select: text;
+}
+
+/* media */
+@media (max-width: 767px) {
+    #main {
+        flex-wrap: wrap;
+    }
 }
