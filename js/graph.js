@@ -1,8 +1,8 @@
 // graph.js
 /*
 globals
-_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, liveEngineEvals, LS, Max, Min, Pad,
-prevPgnData, Round, Y
+_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, LoadLibrary, LS,
+Max, Min, Pad, prevPgnData, Round, Y
 */
 'use strict';
 
@@ -14,7 +14,8 @@ let COLOR_BLACK = '#000000',
 
 let all_evals = [],
     chart_data = {},
-    charts = {};
+    charts = {},
+    liveEngineEvals = [[], [], []];     // 0 is not used
 
 //
 let blackEval = [],
@@ -772,8 +773,12 @@ function updateChartData()
 
 /**
  * Startup graphs
+ * - load the library and then create the charts =>
  */
 function startup_graphs() {
-    create_chart_data();
-    create_charts();
+    LoadLibrary('js/libs/chart.js', () => {
+        LS('CHART LIBRARY LOADED!');
+        create_chart_data();
+        create_charts();
+    });
 }

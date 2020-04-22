@@ -5,10 +5,11 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, DEFAULTS, Events, Exp,
-FormatUnit, FromSeconds, Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES,
-Pow, Resource, resume_game, Round, S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Sign, Split,
-Style, Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
+_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, DEFAULTS, DEV, Events,
+Exp, FormatUnit, FromSeconds, Hide, HTML, Keys,
+Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
+S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Sign, Split, Style, Title, touch_handle,
+translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -35,6 +36,7 @@ let _BLACK = 'black',
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
     prev_pgn,
+    // prevPgnData,
     TABLES = {
         crash: 'G#|White|Black|Reason|Final decision|Action taken|Result',
         cross: 'Rank|Engine|Points|1|2',
@@ -161,7 +163,7 @@ function get_short_name(engine)
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
 }
 
-// TABLES
+// NODES
 /////////
 
 /**
@@ -203,6 +205,15 @@ function create_live_table(node, is_live) {
 }
 
 /**
+ * Create a PV list
+ * @param {Object[]} moves
+ * @returns {string} html
+ */
+function create_pv_list(moves) {
+    return '';
+}
+
+/**
  * Create a table
  * @param {string[]} columns
  */
@@ -214,7 +225,7 @@ function create_table(columns) {
                 return `<th ${id? '': 'class="rounded" '}data-x="${key}" data-t="${field}"></th>`;
             }).join('')
         + '</thead><tbody></tbody>'
-        + columns.map(column => (`<td data-x="${create_key_field(column)[0]}">&nbsp;</td>`)).join('')
+        + columns.map(column => `<td data-x="${create_key_field(column)[0]}">&nbsp;</td>`).join('')
         + '</table>';
 
     return html;
@@ -245,25 +256,6 @@ function create_tables() {
 
 // ACTIONS
 //////////
-
-/**
- * Create 4 boards
- */
-function create_boards() {
-    Keys(BOARDS).forEach(key => {
-        let options = Assign({
-            node: `#${key}`,
-            notation: 15,
-            size: 16,
-            target: 'html',
-        }, BOARDS[key]);
-
-        let xboard = new XBoard(options);
-        xboard.initialise();
-        xboard.set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
-        xboards[key] = xboard;
-    });
-}
 
 /**
  * Update the PGN
@@ -455,9 +447,9 @@ function update_pgn(pgn) {
         });
 
         let node = players[who][1];
-        HTML(`[data-x="eval"]`, is_book? 'book': move.wv, node);
-        HTML(`[data-x="score"]`, calculate_probability(players[who][0], eval_), node);
-        HTML('div.live-pv', move.pv.San, node);
+        HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
+        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[who][0], eval_), node);
+        HTML('.live-pv', move.pv? move.pv.San: '', node);
         who = 1 - who;
     }
 
@@ -481,6 +473,10 @@ function update_pgn(pgn) {
         if (html != material)
             HTML(node, material);
     }
+
+    // chart
+    // prevPgnData = prev_pgn;
+    // updateChartData();
 }
 
 // LIVE DATA
@@ -500,18 +496,21 @@ function set_viewers(count) {
  * @param {number} id 0, 1
  */
 function update_live_eval(data, id) {
-    LS(`update_live_eval: ${id}`);
-    LS(data);
-
-    let engine = get_short_name(data.engine),
+    let eval_ = data.eval,
+        short = get_short_name(data.engine),
         node = _(`#table-live${id}`);
+
+    if (DEV.socket & 1) {
+        LS(`update_live_eval: ${id} / ${short}`);
+        LS(data);
+    }
 
     let dico = {
         depth: data.depth,
-        eval: data.eval,
-        name: engine,
+        eval: eval_,
+        name: short,
         node: FormatUnit(data.nodes),
-        score: calculate_probability(engine, data.eval),
+        score: calculate_probability(short, eval_),
         speed: data.speed,
         tb: FormatUnit(data.tbhits),
     };
@@ -519,7 +518,54 @@ function update_live_eval(data, id) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
     HTML('.live-pv', data.pv, node);
-    HTML(`div[data-x="live${id}"]`, engine);
+    // HTML(`div[data-x="live${id}"]`, short);
+
+    // chart
+    // updateChartDataLive(id);
+}
+
+/**
+ * Update data from a Player
+ * @param {Object} data
+ */
+function update_player_eval(data) {
+    let eval_ = data.eval,
+        id = data.color,
+        node = _(`#player${id}`),
+        short = get_short_name(data.engine);
+
+    if (DEV.socket & 1) {
+        LS(`update_player_eval: ${id} / ${short}:`);
+        LS(data);
+    }
+
+    // 1) update the live part on the left
+    let dico = {
+        eval: eval_,
+        name: short,
+        score: calculate_probability(short, eval_),
+    };
+    Keys(dico).forEach(key => {
+        HTML(`[data-x="${key}"]`, dico[key], node);
+    });
+    HTML('.live-pv', data.pv, node);
+
+    // 2) update the engine info in the center
+    let stats = {
+        depth: data.depth,
+        engine: data.engine,
+        eval: eval_,
+        logo: short,
+        node: FormatUnit(data.nodes),
+        speed: data.speed,
+        tb: FormatUnit(data.tbhits),
+    };
+    Keys(stats).forEach(key => {
+        HTML(`#${key}${id}`, stats[key]);
+    });
+
+    // chart
+    updateChartDataLive(id);
 }
 
 // INPUT / OUTPUT
@@ -697,6 +743,20 @@ function update_twitch(dark) {
 /////////
 
 /**
+ * Handle xboard events
+ * @param {XBoard} board
+ * @param {string} type
+ * @param {*} value
+ */
+function handle_board_events(board, type, value) {
+    LS(`hook: ${board.name} : ${type} : ${value}`);
+    if (type == 'click') {
+
+    }
+}
+
+
+/**
  * Game events
  */
 function set_game_events() {
@@ -749,9 +809,31 @@ function set_game_events() {
 //////////
 
 /**
+ * Create 4 boards
+ * - should be done at startup since we want to see the boards ASAP
+ */
+function create_boards() {
+    Keys(BOARDS).forEach(key => {
+        let options = Assign({
+            node: `#${key}`,
+            notation: 15,
+            size: 16,
+            target: 'html',
+        }, BOARDS[key]);
+
+        let xboard = new XBoard(options);
+        xboard.initialise();
+        xboard.set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
+        xboard.hook(handle_board_events);
+        xboards[key] = xboard;
+    });
+}
+
+/**
  * Call this after the structures have been initialised
  */
 function start_game() {
+    create_boards();
     create_tables();
     update_twitch();
 }

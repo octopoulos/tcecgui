@@ -92,7 +92,6 @@ function set_ui_events() {
 }
 
 function start_tcec() {
-    create_boards();
 }
 
 function startup_archive() {

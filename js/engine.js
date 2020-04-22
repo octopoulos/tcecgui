@@ -476,6 +476,8 @@ function update_svg(parent) {
         let name = node.dataset.svg,
             image = ICONS[name.split(' ')[0]];
         if (image) {
+            // VB=viewBox=; PFC=path fill="currentColor"
+            image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
             image = `<svg class="svg ${name}" xmlns="http://www.w3.org/2000/svg" ${image}</svg>`;
             HTML(node, image);
             delete node.dataset.svg;

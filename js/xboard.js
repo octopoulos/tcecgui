@@ -6,7 +6,7 @@
 // - 4 rendering targets:
 //      - 3d
 //      - canvas
-//      ~ html
+//      + html
 //      + text
 // - games:
 //      ~ chess
@@ -16,11 +16,13 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Assign, Class, CreateNode, DEV, Floor, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Style, T, Upper
+_, A, Assign, C, Class, CreateNode, DEV, Floor, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Split, Style, T,
+update_svg, Upper
 */
 'use strict';
 
 let COLUMNS = 'abcdefghijklmnopqrst'.split(''),
+    CONTROLS = Split('start=end=mirror|prev=next=mirror|play|next|end|rotate|copy|refresh'),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1';
@@ -35,10 +37,11 @@ class XBoard {
         this.colors = ['#eee', '#111'];                 // light, dark squares
         this.coords = {};
         this.dims = options.dims || [8, 8];             // num_col, num_row
-        this.dirty = 7;                                 // &1: board, &2: notation, &4: pieces
+        this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
         this.history = [];
         this.images = {};
+        this.name = options.node;
         this.node = _(options.node);                    // output for HTML & text ('console' accepted too)
         this.notation = options.notation || 0;          // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
         this.pieces = [];
@@ -101,15 +104,37 @@ class XBoard {
     }
 
     /**
+     * Listen to clicking events
+     * @param {function} callback
+     */
+    hook(callback) {
+        let that = this;
+        C('[data-x]', function() {
+            callback(that, 'click', this.dataset.x);
+        }, this.node);
+    }
+
+    /**
      * Initialise the board
      * - must be run before doing anything with it
      */
     initialise() {
         // create elements
-        HTML(this.node, '<div class="xframe"></div><div class="xgrid"></div><pieces></pieces>');
+        let controls = CONTROLS.map(name => {
+            let [key, value, class_] = name.split('=');
+            return `<vert class="control fcenter${class_? ' ' + class_: ''}" data-x="${key}"><i data-svg="${value || key}"></i></vert>`;
+        }).join('');
+
+        HTML(this.node, [
+            '<div class="xframe"></div>',
+            '<grid class="xgrid"></grid>',
+            '<div class="xpieces"></div>',
+            `<hori class="xcontrol">${controls}</hori>`,
+        ].join(''));
 
         this.analyse_fen();
         this.resize();
+        update_svg();
     }
 
     /**
@@ -129,8 +154,10 @@ class XBoard {
         let node = this.node;
         if (!node)
             LS(text);
-        else if (node)
-            HTML(_('div.xgrid', node), text);
+        else if (node) {
+            HTML('.xgrid', text, node);
+            // Style('.xgrid', `grid-template-columns: repeat(${this.dims[0]}, 1fr)`);
+        }
     }
 
     /**
@@ -169,29 +196,38 @@ class XBoard {
             [num_col, num_row] = this.dims,
             size = this.size;
 
-        // 1) draw empty board
+        // 1) draw empty board + notation
         if (dirty & 1) {
-            let lines = [];
+            let lines = [],
+                notation = this.notation;
+
             for (let i=0; i<num_row; i++)
-                for (let j=0; j<num_col; j++)
-                    lines.push(`<div class="xsquare" style="background:${colors[(i + j) % 2]}"></div>`);
+                for (let j=0; j<num_col; j++) {
+                    let note_x = '',
+                        note_y = '',
+                        even = (i + j) % 2,
+                        style = '';
 
-            let style = '';
-            if (num_col != 8)
-                style = `grid-template-columns: repeat(${num_col}, 1fr)`;
+                    if (notation) {
+                        style = `;color:${colors[1 - even]}`;
+                        if (notation & 2) {
+                            if (i == num_row - 1)
+                                note_x = `<div class="xnote" style="left:2.67em;top:1.17em">${Upper(COLUMNS[j])}</div>`;
+                        }
+                        if (notation & 4) {
+                            if (j == 0)
+                                note_y = `<div class="xnote" style="left:0.1em;top:-1.15em">${8 - i}</div>`;
+                        }
+                    }
 
-            this.output(lines.join('\n'));
-        }
+                    lines.push(`<div class="xsquare" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
+                }
 
-        // 2) draw notation
-        if (dirty & 2) {
-        // if (notation & 1)
-        //     lines.push(`  ${scolumn}`);
-
+            this.output(lines.join(''));
         }
 
         // 3) draw pieces
-        if (dirty & 4) {
+        if (dirty & 2) {
             if (DEV.board & 1)
                 LS(`render_html: num_piece=${this.pieces.length}`);
             let nodes = [];
@@ -219,8 +255,8 @@ class XBoard {
             }
 
             if (DEV.board & 1)
-                LS(_('pieces', this.node));
-            InsertNodes(_('pieces', this.node), nodes);
+                LS(_('div.xpieces', this.node));
+            InsertNodes(_('div.xpieces', this.node), nodes);
         }
 
         this.dirty = 0;
@@ -292,7 +328,7 @@ class XBoard {
         Style('div.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, this.node);
 
         this.size = size;
-        this.dirty |= 4;
+        this.dirty |= 2;
         this.render();
     }
 
@@ -309,7 +345,7 @@ class XBoard {
         this.fen = fen;
         this.analyse_fen();
         if (render) {
-            this.dirty |= 4;
+            this.dirty |= 2;
             this.render();
         }
     }
@@ -324,7 +360,7 @@ class XBoard {
             LS('set_theme');
         this.colors = colors;
         this.images = images;
-        this.dirty = 5;
+        this.dirty = 3;
         this.render();
     }
 }

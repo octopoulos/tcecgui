@@ -119,7 +119,7 @@ function formatScale(value) {
  */
 function create_charts()
 {
-    charts.depth = charts.depth || new Chart('chart-depth', {
+    charts.depth = charts.depth || new Chart('table-depth', {
         type: 'line',
         data: chart_data.depth,
         options: {
@@ -157,7 +157,7 @@ function create_charts()
         },
     });
 
-    charts.eval = charts.eval || new Chart('chart-eval', {
+    charts.eval = charts.eval || new Chart('table-eval', {
         type: 'line',
         data: chart_data.eval,
         options: {
@@ -197,7 +197,7 @@ function create_charts()
         },
     });
 
-    charts.node = charts.node || new Chart('chart-node', {
+    charts.node = charts.node || new Chart('table-node', {
         type: 'line',
         data: chart_data.node,
         options: {
@@ -250,7 +250,7 @@ function create_charts()
         },
     });
 
-    charts.speed = charts.speed || new Chart('chart-speed', {
+    charts.speed = charts.speed || new Chart('table-speed', {
         type: 'line',
         data: chart_data.speed,
         options: {
@@ -304,7 +304,7 @@ function create_charts()
         },
     });
 
-    charts.tb = charts.tb || new Chart('chart-tb', {
+    charts.tb = charts.tb || new Chart('table-tb', {
         type: 'line',
         data: chart_data.tb,
         options: {
@@ -357,7 +357,7 @@ function create_charts()
         },
     });
 
-    charts.time = charts.time || new Chart('chart-time', {
+    charts.time = charts.time || new Chart('table-time', {
         type: 'line',
         data: chart_data.time,
         options: {

@@ -7,8 +7,8 @@
 globals
 _, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setPgn,
 setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true, timeDiff:true, updateCrashData,
-updateEngRatingData, updateH2hData, update_live_eval, update_pgn, updateLiveChartData, updateLiveEvalData,
-updateLiveEvalDataNew, updateScheduleData,
+updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval, updateLiveChartData,
+updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
 Y
 */
 'use strict';
@@ -41,6 +41,8 @@ function init_sockets() {
         div.scrollTop = div.scrollHeight;
     });
     socket.on('crosstable', data => {
+        LS('crosstable:');
+        LS(data);
         newUpdateStandData(data);
     });
     socket.on('liveeval', data => {
@@ -56,7 +58,10 @@ function init_sockets() {
         update_live_eval(data, 1);
     });
     socket.on('updeng', data => {
+        // DELETE
         updateLiveEvalDataNew(data, 1, null, 2);
+
+        update_player_eval(data);
     });
     socket.on('pgn', data => {
         // DELETE
@@ -70,17 +75,23 @@ function init_sockets() {
         update_pgn(data);
     });
     socket.on('schedule', data => {
+        LS('schedule:');
+        LS(data);
         updateScheduleData(data);
         updateH2hData(data);
     });
     socket.on('livechart', data => {
+        LS('livechart:');
+        LS(data);
         updateLiveChartData(data, 1);
     });
     socket.on('livechart1', data => {
+        LS('livechart1:');
+        LS(data);
         updateLiveChartData(data, 2);
     });
     socket.on('lastpgntime', data => {
-        LS(`latpgntime`);
+        LS('lastpgntime:');
         LS(data);
         setLastMoveTime(data);
     });
@@ -91,18 +102,28 @@ function init_sockets() {
         set_viewers(data.count);
     });
     socket.on('banner', data => {
+        LS('banner:');
+        LS(data);
         showBanner(data);
     });
     socket.on('tournament', data => {
+        LS('tournament:');
+        LS(data);
         setTwitchChange(data);
     });
     socket.on('enginerating', data => {
+        LS('enginerating:');
+        LS(data);
         updateEngRatingData(data);
     });
     socket.on('crash', data => {
+        LS('crash:');
+        LS(data);
         updateCrashData(data);
     });
     socket.on('bracket', data => {
+        LS('bracket:');
+        LS(data);
         bracketDataMain(data);
     });
 }

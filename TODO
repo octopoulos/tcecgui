@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-22 : 2020-04-22 : Xboard controls <<  < > >> + notation
 2020-04-22 : 2020-04-22 : autogen static Live tables, currently the whole table is recreated each time => slow
 2020-04-21 : 2020-04-21 : enable all tabs + twitch
 2020-04-21 : 2020-04-13 : convert themes to combo + dynamically load 1 theme at a time (save network)

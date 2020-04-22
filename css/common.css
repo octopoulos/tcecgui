@@ -90,6 +90,9 @@ verts {
 }
 
 /* helpers */
+.mirror {
+    transform: scale(-1, 1);
+}
 .noselect {
     -webkit-user-select: none;
     -webkit-user-drag: none;
@@ -202,6 +205,16 @@ grid {
     width: 100%;
     z-index: 3;
 }
+#popup > grid {
+    max-height: 40vh;
+    max-width: 40vw;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+#popup > grid > div {
+    padding: 0 0.5em;
+    /* word-break: break-all; */
+}
 .popup {
     background: rgba(40, 40, 40, 0.95);
     box-shadow: 0.2em 0.2em 0.5em 0 rgba(0, 0, 0, 0.5);
@@ -257,7 +270,6 @@ grid {
     position: absolute;
 }
 .xgrid {
-    display: grid;
     grid-template-columns: repeat(8, 1em);
 }
 .xpiece {
@@ -276,11 +288,33 @@ grid {
 }
 .xsquare {
     height: 1em;
+    position: relative;
     width: 1em;
     z-index: 1;
 }
+.xnote {
+    font-family: monospace;
+    font-size: 0.3em;
+    left: 0;
+    position: absolute;
+    top: 0;
+}
 #board {
     width: 100%;
+}
+.xcontrol {
+    color: #007bff;
+    font-size: 0.4em;
+    width: calc(100% - 4px);
+}
+.control {
+    cursor: pointer;
+    height: 2.5em;
+    transition: color 0.1s;
+    width: 2.5em;
+}
+.control:hover {
+    color: #0056b3;
 }
 
 /* tables */
@@ -312,6 +346,7 @@ grid {
     color: #fff;
 }
 #tables {
+    margin-top: 1em;
     width: 100%;
 }
 .scroller {
@@ -348,6 +383,10 @@ grid {
 #table-engine [data-t] {
     font-size: 0.85em;
     padding-top: 0.4em;
+}
+#table-view th {
+    font-size: 1em;
+    padding: 0 0.5em;
 }
 #info0,
 #info1 {
@@ -387,13 +426,14 @@ grid {
 
 /* live */
 #lives {
+    margin-top: 1em;
     width: 100%;
 }
 #lives > * {
     width: 100%;
 }
 .live {
-    margin-bottom: 1em;
+    margin-top: 0.5em;
 }
 .live-basic {
     font-weight: 500;
@@ -416,6 +456,7 @@ grid {
 }
 
 /* container */
+#banners,
 #main {
     width: 90%;
 }
@@ -449,18 +490,14 @@ grid {
 }
 
 /* extras */
-#banners {
-    padding: 0.5em;
-    width: 100%;
-}
 .banner {
     height: 60px;
     max-height: 10vw;
     min-height: 30px;
 }
-#google_ad {
+.google-ad {
     cursor: pointer;
-    margin: 1em;
+    margin: 0.5em;
 }
 #theme0,
 #theme1,
@@ -488,7 +525,7 @@ td,
 
 /* media */
 @media (max-width: 639px) {
-    .google_ad {
+    .google-ad {
         display: none;
     }
 }
