@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-22 : 2020-04-22 : handle Live updates on the left
 2020-04-22 : 2020-04-22 : Xboard controls <<  < > >> + notation
 2020-04-22 : 2020-04-22 : autogen static Live tables, currently the whole table is recreated each time => slow
 2020-04-21 : 2020-04-21 : enable all tabs + twitch
@@ -57,7 +58,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-04-22 : handle Live updates on the left
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv

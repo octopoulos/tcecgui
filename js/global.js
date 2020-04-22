@@ -18,10 +18,12 @@ function parse_dev() {
     let names = {
             b: 'board',
             d: 'debug',
+            e: 'eval',                  // live eval
             g: 'graph',
             i: 'input',                 // gamepad input
+            j: 'json',                  // static json files
             p: 'pv',
-            s: 'socket',
+            s: 'socket',                // socket messages
             t: 'time',                  // function execution time
             y: 'ply',
         },

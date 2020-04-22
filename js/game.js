@@ -19,6 +19,7 @@ let _BLACK = 'black',
     board_target = 'board',
     BOARDS = {
         board: {
+            piece_class: 'smooth',
             size: 48,
         },
         // pv0: {
@@ -38,16 +39,16 @@ let _BLACK = 'black',
     prev_pgn,
     // prevPgnData,
     TABLES = {
-        crash: 'G#|White|Black|Reason|Final decision|Action taken|Result',
-        cross: 'Rank|Engine|Points|1|2',
-        game: 'G#|PGN|White|Black|Moves|Result',
-        h2h: 'Game#|White|W.ev|B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
+        crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result',
+        cross: 'Rank|name=Engine|Points|1|2',
+        game: 'gameno=G#|PGN|White|Black|Moves|Result',
+        h2h: 'h2hrank=Game#|fix_white=White|white_ev=W.ev|black_ev=B.Ev|fix_black=Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
         log: 'Text|Date',
-        sched: 'Game#|White|wev=Ev|Black|bev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
-        stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
-        stats: 'Start time|End time|Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
-        view: 'TC|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
-        winner: 'S#|Champion|Runner-up|Score|Date',
+        sched: 'game=Game#|fix_white=White|white_ev=Ev|fix_black=Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
+        stand: 'Rank|name=Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|elo_diff=Diff [Live]',
+        stats: 'Start time|End time|total_time=Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
+        view: 'time_control=TC|moves_to50r=50|moves_to_draw=Draw|moves_to_resign_or_win=Win|piecesleft=TB|Result|Round|Opening|ECO|Event|Viewers',
+        winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
     turn = 0,               // 0:white to play, 1:black to play
@@ -163,20 +164,26 @@ function get_short_name(engine)
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
 }
 
-// NODES
+// TABLES
 /////////
 
 /**
- * Create a key for a table field
- * @param {string} text Wins [W/B]
- * @returns {string[]} [wins_w_b, Wins [W/B]]
+ * Create a field for a table value
+ * @param {string} text
+ * @returns {string[]} field, value
  */
-function create_key_field(text) {
+function create_field_value(text) {
     let items = text.split('=');
     if (items.length > 1)
         return [items[0], items.slice(1).join('=')];
 
-    return [Lower(text.replace(/[_[\]() ./#-]+/g, '_')).replace(/_+$/, ''), text];
+    // startTime => start_time
+    let lower = Lower(text.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`)),
+        pos = lower.indexOf(' [');
+    if (pos > 0)
+        lower = lower.slice(0, pos);
+
+    return [lower.replace(/[_() ./#-]+/g, '_').replace(/_+$/, ''), text];
 }
 
 /**
@@ -205,15 +212,6 @@ function create_live_table(node, is_live) {
 }
 
 /**
- * Create a PV list
- * @param {Object[]} moves
- * @returns {string} html
- */
-function create_pv_list(moves) {
-    return '';
-}
-
-/**
  * Create a table
  * @param {string[]} columns
  */
@@ -221,11 +219,11 @@ function create_table(columns) {
     let html =
         '<table><thead>'
         + columns.map((column, id) => {
-                let [key, field] = create_key_field(column);
-                return `<th ${id? '': 'class="rounded" '}data-x="${key}" data-t="${field}"></th>`;
+                let [field, value] = create_field_value(column);
+                return `<th ${id? '': 'class="rounded" '}data-x="${field}" data-t="${value}"></th>`;
             }).join('')
         + '</thead><tbody></tbody>'
-        + columns.map(column => `<td data-x="${create_key_field(column)[0]}">&nbsp;</td>`).join('')
+        + columns.map(column => `<td data-x="${create_field_value(column)[0]}">&nbsp;</td>`).join('')
         + '</table>';
 
     return html;
@@ -254,20 +252,49 @@ function create_tables() {
     }, {passive: false});
 }
 
-// ACTIONS
-//////////
+/**
+ * Update a table
+ * @param {string} name
+ * @param {Object[]} data
+ */
+function update_table(name, data) {
+    let node = _(`#table-${name}`);
+
+}
+
+// PGN
+//////
 
 /**
- * Update the PGN
+ * Create a PV list
+ * @param {Object[]} moves
+ * @returns {string} html
+ */
+function create_pv_list(moves) {
+    let error,
+        lines = [];
+    for (let move of moves) {
+        if (!move || !move.m) {
+            lines.push(` <a style="color:red">???</a>`);
+            error = true;
+            continue;
+        }
+        lines.push(` <a>${move.m}</a>`);
+    }
+    if (error)
+        LS(moves);
+    return lines.join('');
+}
+
+/**
+ * Download the PGN
  * @param {boolean=} reset_time
  */
-function download_pgn(reset_time)
-{
+function download_pgn(reset_time) {
     Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
-        if (!reset_time)
-        {
+        if (!reset_time) {
             let curr_time = new Date(xhr.getResponseHeader('date')),
                 last_mod = new Date(xhr.getResponseHeader('last-modified'));
             time_delta = curr_time.getTime() - last_mod.getTime();
@@ -276,7 +303,139 @@ function download_pgn(reset_time)
         data.gameChanged = 1;
         update_pgn(data);
     });
+
 }
+
+/**
+ * Update the PGN
+ * - white played => lastMoveLoaded=109
+ * @param {Object} pgn
+ */
+function update_pgn(pgn) {
+    window.pgn = pgn;
+
+    let headers = pgn.Headers,
+        moves = pgn.Moves,
+        num_move = moves.length,
+        start = pgn.lastMoveLoaded || 0;
+
+    // 1) overview
+    if (pgn.Users)
+        HTML('#table-view td[data-x="viewers"]', pgn.Users);
+    if (headers) {
+        Split('ECO|Event|Opening|Result|Round').forEach(key => {
+            HTML(`#table-view td[data-x="${Lower(key)}"]`, headers[key]);
+        });
+
+        let items = headers.TimeControl.split('+');
+        HTML('#table-view td[data-x="time_control"]', `${items[0]/60}'+${items[1]}"`);
+    }
+
+    if (!num_move)
+        return;
+
+    let move = moves[num_move - 1],
+        last_ply = pgn.numMovesToSend + start;
+
+    xboards.board.set_fen(move.fen, true);
+    // xboards.pv1.set_fen(fen, true);
+    if (DEV.ply & 1) {
+        LS(`${start} + ${num_move} = ${start + num_move}. ${(start + num_move) % 2} ${move.m}`);
+        LS(`${(last_ply) / 2}`);
+    }
+
+    if (!last_ply || last_ply < num_ply)
+        pgn_moves.length = 0;
+    for (let i=0; i<num_move; i++)
+        pgn_moves[start + i] = moves[i];
+
+    // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
+    num_ply = pgn_moves.length;
+    turn = num_ply % 2;
+    let players = [],
+        who = 1 - turn;
+
+    if (DEV.ply & 1)
+        LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
+    prev_pgn = pgn;
+
+    // 2) engines
+    WB_TITLES.forEach((title, id) => {
+        let name = headers[title],
+            node = _(`#player${id}`),
+            short = get_short_name(name),
+            src = `image/engine/${short}.jpg`;
+
+        players.push([short, node]);
+
+        HTML(`#engine${id}`, name);
+        HTML(`[data-x="name"]`, short, node);
+        HTML(`#score${id}`, headers[`${title}Elo`]);
+
+        let image = _(`#logo${id}`);
+        if (image.src != src) {
+            image.setAttribute('alt', name);
+            image.src = src;
+        }
+    });
+
+    for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
+        let move = moves[i],
+            is_book = move.book,
+            eval_ = is_book? 'book': move.wv,
+            stats = {
+                depth: is_book? '-': `${move.d}/${move.sd}`,
+                eval: eval_,
+                left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
+                node: is_book? '-': FormatUnit(move.n),
+                speed: is_book? '-': `${FormatUnit(move.s)}bps`,
+                tb: is_book? '-': FormatUnit(move.tb),
+                time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
+            };
+
+        Keys(stats).forEach(key => {
+            HTML(`#${key}${who}`, stats[key]);
+        });
+
+        let node = players[who][1];
+        HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
+        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[who][0], eval_), node);
+        HTML('.live-pv', move.pv? move.pv.San: '', node);
+        who = 1 - who;
+    }
+
+    // material
+    let material = move.material,
+        materials = [[], []];
+    'qrbnp'.split('').forEach(key => {
+        let value = material[key];
+        if (value) {
+            let id = (value > 0)? 0: 1,
+                color = id? 'b': 'w';
+            for (let i=0; i<Abs(value); i++)
+                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
+        }
+    });
+
+    for (let id=0; id<2; id++) {
+        let node = _(`#material${id}`),
+            html = HTML(node),
+            material = materials[id].join('');
+        if (html != material)
+            HTML(node, material);
+    }
+
+    // 3) pv
+    let html = create_pv_list(pgn_moves);
+    HTML('.xmoves', html, xboards.board.node);
+
+    // chart
+    // prevPgnData = prev_pgn;
+    // updateChartData();
+}
+
+// ACTIONS
+//////////
 
 /**
  * Show a popup with the engine info
@@ -356,127 +515,6 @@ function show_info(show) {
     if (show)
         HTML('#popup-desc', HTML('#desc'));
     Class('#popup-info', 'popup-show popup-enable', show);
-}
-
-/**
- * Update the PGN
- * - white played => lastMoveLoaded=109
- * @param {Object} pgn
- */
-function update_pgn(pgn) {
-    window.pgn = pgn;
-
-    let headers = pgn.Headers,
-        moves = pgn.Moves,
-        num_move = moves.length,
-        start = pgn.lastMoveLoaded || 0;
-
-    // 1) overview
-    if (pgn.Users)
-        HTML('#table-view td[data-x="viewers"]', pgn.Users);
-    if (headers) {
-        Split('ECO|Event|Opening|Result|Round').forEach(key => {
-            HTML(`#table-view td[data-x="${Lower(key)}"]`, headers[key]);
-        });
-
-        let items = headers.TimeControl.split('+');
-        HTML('#table-view td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`);
-    }
-
-    if (!num_move)
-        return;
-
-    let move = moves[num_move - 1],
-        last_ply = pgn.numMovesToSend + start;
-
-    xboards.board.set_fen(move.fen, true);
-    // xboards.pv1.set_fen(fen, true);
-    LS(`${start} + ${num_move} = ${start + num_move}. ${(start + num_move) % 2} ${move.m}`);
-    LS(`${(last_ply) / 2}`);
-
-    if (!last_ply || last_ply < num_ply)
-        pgn_moves.length = 0;
-    for (let i=0; i<num_move; i++)
-        pgn_moves[start + i] = moves[i];
-
-    // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
-    num_ply = pgn_moves.length;
-    turn = num_ply % 2;
-    let players = [],
-        who = 1 - turn;
-
-    LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
-    prev_pgn = pgn;
-
-    // 2) engines
-    WB_TITLES.forEach((title, id) => {
-        let name = headers[title],
-            node = _(`#player${id}`),
-            short = get_short_name(name),
-            src = `image/engine/${short}.jpg`;
-
-        players.push([short, node]);
-
-        HTML(`#engine${id}`, name);
-        HTML(`[data-x="name"]`, short, node);
-        HTML(`#score${id}`, headers[`${title}Elo`]);
-
-        let image = _(`#logo${id}`);
-        if (image.src != src) {
-            image.setAttribute('alt', name);
-            image.src = src;
-        }
-    });
-
-    for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
-        let move = moves[i],
-            is_book = move.book,
-            eval_ = is_book? 'book': move.wv,
-            stats = {
-                depth: is_book? '-': `${move.d}/${move.sd}`,
-                eval: eval_,
-                left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
-                node: is_book? '-': FormatUnit(move.n),
-                speed: is_book? '-': `${FormatUnit(move.s)}bps`,
-                tb: is_book? '-': FormatUnit(move.tb),
-                time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
-            };
-
-        Keys(stats).forEach(key => {
-            HTML(`#${key}${who}`, stats[key]);
-        });
-
-        let node = players[who][1];
-        HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
-        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[who][0], eval_), node);
-        HTML('.live-pv', move.pv? move.pv.San: '', node);
-        who = 1 - who;
-    }
-
-    // material
-    let material = move.material,
-        materials = [[], []];
-    'qrbnp'.split('').forEach(key => {
-        let value = material[key];
-        if (value) {
-            let id = (value > 0)? 0: 1,
-                color = id? 'b': 'w';
-            for (let i=0; i<Abs(value); i++)
-                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
-        }
-    });
-
-    for (let id=0; id<2; id++) {
-        let node = _(`#material${id}`),
-            html = HTML(node),
-            material = materials[id].join('');
-        if (html != material)
-            HTML(node, material);
-    }
-
-    // chart
-    // prevPgnData = prev_pgn;
-    // updateChartData();
 }
 
 // LIVE DATA
@@ -565,7 +603,7 @@ function update_player_eval(data) {
     });
 
     // chart
-    updateChartDataLive(id);
+    // updateChartDataLive(id);
 }
 
 // INPUT / OUTPUT
@@ -751,7 +789,13 @@ function update_twitch(dark) {
 function handle_board_events(board, type, value) {
     LS(`hook: ${board.name} : ${type} : ${value}`);
     if (type == 'click') {
-
+        switch (value) {
+        case 'cube':
+            board.target = (board.target == 'html')? 'text': 'html';
+            board.dirty = 3;
+            board.resize();
+            break;
+        }
     }
 }
 
@@ -815,8 +859,10 @@ function set_game_events() {
 function create_boards() {
     Keys(BOARDS).forEach(key => {
         let options = Assign({
+            hook: handle_board_events,
+            history: true,
             node: `#${key}`,
-            notation: 15,
+            notation: 6 * 0,
             size: 16,
             target: 'html',
         }, BOARDS[key]);
@@ -824,8 +870,94 @@ function create_boards() {
         let xboard = new XBoard(options);
         xboard.initialise();
         xboard.set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
-        xboard.hook(handle_board_events);
         xboards[key] = xboard;
+    });
+}
+
+/**
+ * Download static JSON files at startup
+ */
+function download_static() {
+    LS('download_static');
+    download_pgn();
+
+    // evals
+    Resource(`data.json?no-cache${Now()}`, (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('data:');
+                LS(data);
+            }
+            update_live_eval(data, 0);
+        }
+    });
+    Resource(`data1.json?no-cache${Now()}`, (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('data1:');
+                LS(data);
+            }
+            update_live_eval(data, 1);
+        }
+    });
+    Resource('liveeval.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('liveeval:');
+                LS(data);
+            }
+        }
+    });
+    Resource('liveeval1.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('liveeval1:');
+                LS(data);
+            }
+        }
+    });
+
+    // tables
+    Resource('crash.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('crash:');
+                LS(data);
+            }
+        }
+    });
+    Resource('enginerating.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('enginerating:');
+                LS(data);
+            }
+        }
+    });
+    Resource('winners.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('winners:');
+                LS(data);
+            }
+            update_table('winner', data);
+        }
+    });
+    Resource('tournament.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('tournament:');
+                LS(data);
+            }
+        }
+    });
+    Resource('schedule.json', (code, data) => {
+        if (code == 200) {
+            if (DEV.json & 1) {
+                LS('schedule:');
+                LS(data);
+            }
+        }
     });
 }
 

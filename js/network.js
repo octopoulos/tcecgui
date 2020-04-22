@@ -7,8 +7,8 @@
 globals
 _, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setPgn,
 setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true, timeDiff:true, updateCrashData,
-updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval, updateLiveChartData,
-updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
+updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval, update_table,
+updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
 Y
 */
 'use strict';
@@ -79,6 +79,8 @@ function init_sockets() {
         LS(data);
         updateScheduleData(data);
         updateH2hData(data);
+
+        update_table('sched', data);
     });
     socket.on('livechart', data => {
         LS('livechart:');

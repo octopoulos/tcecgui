@@ -21,7 +21,7 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        calculate_score, create_key_field, get_short_name,
+        calculate_score, create_field_value, get_short_name,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,19 +38,21 @@ let {
     });
 });
 
-// create_key_field
+// create_field_value
 [
     ['G#', ['g', 'G#']],
     ['wev=Ev', ['wev', 'Ev']],
     ['White', ['white', 'White']],
     ['Final decision', ['final_decision', 'Final decision']],
     ['W.ev', ['w_ev', 'W.ev']],
-    ['Wins [W/B]', ['wins_w_b', 'Wins [W/B]']],
-    ['Diff [Live]', ['diff_live', 'Diff [Live]']],
+    ['Wins [W/B]', ['wins', 'Wins [W/B]']],
+    ['Diff [Live]', ['diff', 'Diff [Live]']],
     ['a_b=A=B', ['a_b', 'A=B']],
+    ['startTime', ['start_time', 'startTime']],
+    ['BlackEv', ['black_ev', 'BlackEv']],
 ].forEach(([text, answer], id) => {
-    test(`create_key_field:${id}`, () => {
-        expect(create_key_field(text)).toEqual(answer);
+    test(`create_field_value:${id}`, () => {
+        expect(create_field_value(text)).toEqual(answer);
     });
 });
 

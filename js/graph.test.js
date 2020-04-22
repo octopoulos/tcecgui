@@ -15,7 +15,7 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
-    '../dist/js/graph',
+    'graph',
 ], OUTPUT_MODULE);
 
 let {getEval} = require(OUTPUT_MODULE);
