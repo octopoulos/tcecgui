@@ -3,7 +3,7 @@
 // temporary replaces tcec.js to test index_base.html
 /*
 globals
-create_boards, download_pgn, HTML, LS, update_pgn, window, xboards
+create_boards, download_pgn, HTML, LS, window, xboards
 */
 'use strict';
 
@@ -25,18 +25,15 @@ function setDefaults() {
 
 }
 
+// DONE
 function setPgn(pgn) {
-    update_pgn(pgn);
 }
 
 function setTwitch() {
-
 }
 
+// DONE
 function setUsers(data) {
-    LS('setUsers:');
-    LS(data);
-    HTML('#table-view td[data-x="viewers"]', data.count);
 }
 
 function setUsersMain() {
@@ -63,8 +60,8 @@ function updateLiveEval() {
 
 }
 
-function updateLiveEvalData() {
-
+// DONE
+function updateLiveEvalData(data, _a, _b, id) {
 }
 
 function updateLiveEvalDataNew() {

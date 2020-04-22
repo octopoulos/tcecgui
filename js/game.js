@@ -5,10 +5,10 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, Events, FormatUnit,
-FromSeconds, Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Resource,
-resume_game, Round, S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Split, Style, Title,
-touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
+_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, DEFAULTS, Events, Exp,
+FormatUnit, FromSeconds, Hide, HTML, Keys, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES,
+Pow, Resource, resume_game, Round, S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Sign, Split,
+Style, Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -26,6 +26,11 @@ let _BLACK = 'black',
         // pv1: {},
         // pva: {},
     },
+    ENGINE_FEATURES = {
+        AllieStein: 1,                  // & 1 => NN engine
+        LCZero: 3,                      // & 2 => Leela variations
+    },
+    LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
@@ -52,6 +57,75 @@ let _BLACK = 'black',
 
 // HELPERS
 //////////
+
+/**
+ * The function was posted by "ya" in the Leela Chess Zero Discord channel
+ * https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
+ * @param {number} cp
+ * @returns {number}
+ */
+function _leelaCpToQ(cp) {
+    return cp < 234.18?
+        0.0033898305085 * cp -
+            (8.76079436769e-38 * Pow(cp, 15)) /
+                (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
+            (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
+                (cp * cp - 487.329812319 * cp + 59486.9337812)
+        : cp < 381.73?
+            (-17.03267913 * cp + 3342.55947265) /
+                (cp * cp - 360.8419732 * cp + 32568.5395889) + 0.995103
+        : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
+        ((0.4182050082072 * cp - 2942.6269998574) /
+           (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
+           Exp(-Pow((cp - 400.0) / 7000.0, 3)) - 5.727639074137869e-8;
+}
+
+/**
+ * Convert eval to win %
+ * @param {number} eval_
+ */
+function _leelaEvalToWinPct(eval_) {
+    let q = Sign(eval_) * _leelaCpToQ(Abs(eval_) * 100);
+    return Round(100 * 100 * q) / 200;
+}
+
+/**
+ * Calculate the probability to draw or win
+ * - works for AA and NN engines
+ * @param {string} short_engine short engine name
+ * @param {number} eval_
+ * @returns {string}
+ */
+function calculate_probability(short_engine, eval_)
+{
+    if (isNaN(eval_))
+        return eval_;
+
+    let white_win,
+        feature = ENGINE_FEATURES[short_engine];
+
+    // adjust the score
+    if (feature & 1) {
+        if (feature & 2)
+            white_win = _leelaEvalToWinPct(eval_);
+        else
+            white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 - 50;
+    }
+    else
+        white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
+
+    // final output
+    let reverse = 0;
+    if (eval_ < 0)
+    {
+        reverse = 1;
+        white_win = -white_win;
+    }
+    let win = parseFloat(Max(0, white_win * 2)).toFixed(1),
+        draw = parseFloat(100 - Max(win, 0)).toFixed(1);
+
+    return !win? `${draw}% D`: `${win}% ${reverse? 'B': 'W'} | ${draw}% D`;
+}
 
 /**
  * Calculate White and Black points
@@ -104,6 +178,31 @@ function create_key_field(text) {
 }
 
 /**
+ * Create a Live table
+ * - we don't want to recreate the table each time, that's why this creation will give a boost
+ * @param {Node|string} node node or selector
+ * @param {boolean} is_live live => has more info
+ */
+function create_live_table(node, is_live) {
+    let html =
+        '<vert class="live fastart">'
+            + '<div class="live-basic">'
+                + '<i data-x="name"></i> <i data-x="eval"></i> [<i data-x="score"></i>]'
+            + '</div>';
+
+    if (is_live)
+        html +=
+            '<div class="live-more">'
+                + '[D: <i data-x="depth"></i> | TB: <i data-x="tb"></i> | Sp: <i data-x="speed"></i> | N: <i data-x="node"></i>]'
+            + '</div>';
+
+    html +=
+            '<div class="live-pv"></div>'
+        + '</vert>';
+    HTML(node, html);
+}
+
+/**
  * Create a table
  * @param {string[]} columns
  */
@@ -125,6 +224,7 @@ function create_table(columns) {
  * Create all the tables
  */
 function create_tables() {
+    // 1) normal tables
     Keys(TABLES).forEach(name => {
         let table = TABLES[name],
             html = create_table(Split(table));
@@ -132,7 +232,11 @@ function create_tables() {
     });
     translate_node('body');
 
-    // mouse/touch scroll
+    // 2) live tables
+    for (let node of LIVE_TABLES)
+        create_live_table(node, node.includes('live'));
+
+    // 3) mouse/touch scroll
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
         touch_handle(e);
@@ -306,7 +410,8 @@ function update_pgn(pgn) {
     // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
     num_ply = pgn_moves.length;
     turn = num_ply % 2;
-    let who = 1 - turn;
+    let players = [],
+        who = 1 - turn;
 
     LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
     prev_pgn = pgn;
@@ -314,10 +419,14 @@ function update_pgn(pgn) {
     // 2) engines
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
+            node = _(`#player${id}`),
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
 
+        players.push([short, node]);
+
         HTML(`#engine${id}`, name);
+        HTML(`[data-x="name"]`, short, node);
         HTML(`#score${id}`, headers[`${title}Elo`]);
 
         let image = _(`#logo${id}`);
@@ -330,18 +439,25 @@ function update_pgn(pgn) {
     for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
         let move = moves[i],
             is_book = move.book,
+            eval_ = is_book? 'book': move.wv,
             stats = {
                 depth: is_book? '-': `${move.d}/${move.sd}`,
-                eval: is_book? 'book': move.wv,
+                eval: eval_,
                 left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
                 node: is_book? '-': FormatUnit(move.n),
                 speed: is_book? '-': `${FormatUnit(move.s)}bps`,
                 tb: is_book? '-': FormatUnit(move.tb),
                 time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
             };
+
         Keys(stats).forEach(key => {
             HTML(`#${key}${who}`, stats[key]);
         });
+
+        let node = players[who][1];
+        HTML(`[data-x="eval"]`, is_book? 'book': move.wv, node);
+        HTML(`[data-x="score"]`, calculate_probability(players[who][0], eval_), node);
+        HTML('div.live-pv', move.pv.San, node);
         who = 1 - who;
     }
 
@@ -365,6 +481,45 @@ function update_pgn(pgn) {
         if (html != material)
             HTML(node, material);
     }
+}
+
+// LIVE DATA
+////////////
+
+/**
+ * Set the number of viewers
+ * @param {number} count
+ */
+function set_viewers(count) {
+    HTML('#table-view td[data-x="viewers"]', count);
+}
+
+/**
+ * Update data from one of the Live engines
+ * @param {Object} data
+ * @param {number} id 0, 1
+ */
+function update_live_eval(data, id) {
+    LS(`update_live_eval: ${id}`);
+    LS(data);
+
+    let engine = get_short_name(data.engine),
+        node = _(`#table-live${id}`);
+
+    let dico = {
+        depth: data.depth,
+        eval: data.eval,
+        name: engine,
+        node: FormatUnit(data.nodes),
+        score: calculate_probability(engine, data.eval),
+        speed: data.speed,
+        tb: FormatUnit(data.tbhits),
+    };
+    Keys(dico).forEach(key => {
+        HTML(`[data-x="${key}"]`, dico[key], node);
+    });
+    HTML('.live-pv', data.pv, node);
+    HTML(`div[data-x="live${id}"]`, engine);
 }
 
 // INPUT / OUTPUT
@@ -605,6 +760,11 @@ function start_game() {
  * Initialise structures with game specific data
  */
 function startup_game() {
+    //
+    Assign(DEFAULTS, {
+        live_engine1: 1,
+        live_engine2: 1,
+    });
     merge_settings({
         board: {
             arrows: [ON_OFF, 1],

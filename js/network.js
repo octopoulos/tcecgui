@@ -6,8 +6,10 @@
 /*
 globals
 _, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setPgn,
-setTwitchChange, setUsers, setUsersMain, showBanner, timeDiff:true, updateCrashData, updateEngRatingData,
-updateH2hData, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData, Y
+setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true, timeDiff:true, updateCrashData,
+updateEngRatingData, updateH2hData, update_live_eval, update_pgn, updateLiveChartData, updateLiveEvalData,
+updateLiveEvalDataNew, updateScheduleData,
+Y
 */
 'use strict';
 
@@ -21,6 +23,7 @@ function getUserS()
 
 /**
  * Initialise sockets
+ * + handle all messages
  */
 function init_sockets() {
     socket = io.connect('https://tcec-chess.com/');
@@ -41,20 +44,30 @@ function init_sockets() {
         newUpdateStandData(data);
     });
     socket.on('liveeval', data => {
+        // DELETE
         updateLiveEvalData(data, 1, null, 1);
+
+        update_live_eval(data, 0);
     });
     socket.on('liveeval1', data => {
+        // DELETE
         updateLiveEvalData(data, 1, null, 2);
+
+        update_live_eval(data, 1);
     });
     socket.on('updeng', data => {
         updateLiveEvalDataNew(data, 1, null, 2);
     });
     socket.on('pgn', data => {
+        // DELETE
         if (DEV.socket & 1)
             LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
         setUsersMain(data.Users);
         timeDiff = 0;
         setPgn(data);
+
+        time_delta = 0;
+        update_pgn(data);
     });
     socket.on('schedule', data => {
         updateScheduleData(data);
@@ -72,7 +85,10 @@ function init_sockets() {
         setLastMoveTime(data);
     });
     socket.on('users', data => {
+        // DELETE
         setUsers(data);
+
+        set_viewers(data.count);
     });
     socket.on('banner', data => {
         showBanner(data);

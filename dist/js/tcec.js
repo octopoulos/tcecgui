@@ -3,9 +3,9 @@
 /*
 globals
 _, _BLACK, _WHITE, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
-C, calculate_score, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout, clearInterval, ClipboardJS,
-columnsEvent, console, create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV, document, dummyCross,
-engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
+C, calculate_probability, calculate_score, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout,
+clearInterval, ClipboardJS, columnsEvent, console, create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV,
+document, dummyCross, engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_FEN, startDateR1,
@@ -43,13 +43,7 @@ let activePly = 0,
     currentMove,
     current_positions = [],
     defaultStartTime = 0,
-    ENGINE_FEATURES = {
-        AllieStein: 1,                  // & 1 => NN engine
-        LCZero: 3,                      // & 2 => Leela variations
-    },
     engine2LiveData,
-    FEATURE_LEELA = 2,
-    FEATURE_NN = 1,
     game,
     LIVE = 2,
     liveEngineEvals = [[], [], []],     // 0 is not used
@@ -258,6 +252,7 @@ function setTimeUsed(color, time) {
         HTML(`.${WHITE_BLACK[color]}-time-used`, secFormatNoH(time));
 }
 
+// TODO: remove
 function setUsers(data)
 {
     if (data.count != undefined)
@@ -266,6 +261,7 @@ function setUsers(data)
     setUsersMain(userCount);
 }
 
+// TODO: remove
 function setUsersMain(count)
 {
     if (count != undefined)
@@ -755,69 +751,13 @@ function getEvalFromPly(ply)
     };
 }
 
-// The function was posted by "ya" in the Leela Chess Zero Discord channel
-// https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
-function leelaCpToQ(cp) {
-    return cp < 234.18?
-        0.0033898305085 * cp -
-            (8.76079436769e-38 * Pow(cp, 15)) /
-                (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
-            (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
-                (cp * cp - 487.329812319 * cp + 59486.9337812)
-        : cp < 381.73?
-            (-17.03267913 * cp + 3342.55947265) /
-                (cp * cp - 360.8419732 * cp + 32568.5395889) + 0.995103
-        : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
-        ((0.4182050082072 * cp - 2942.6269998574) /
-           (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
-           Exp(-Pow((cp - 400.0) / 7000.0, 3)) - 5.727639074137869e-8;
-}
+function getPct(engine, eval_) {
+    let short = get_short_name(engine),
+        extra = calculate_probability(short, eval_),
+        text = `${short} ${eval_}`;
 
-function leelaEvalToWinPct(eval_) {
-    let q = Sign(eval_) * leelaCpToQ(Abs(eval_) * 100);
-    return Round(100 * 100 * q) / 200;
-}
-
-/**
- * Get eval points
- * - works for AA and NN engines
- * @param {string} engineName full engine name
- * @param {number} eval_
- * @returns {string}
- */
-function getPct(engineName, eval_)
-{
-    if (isNaN(eval_))
-        return `${engineName} ${eval_}`;
-
-    let whiteWinPct,
-        shortName = get_short_name(engineName),
-        feature = ENGINE_FEATURES[shortName];
-
-    // adjust the score
-    if (feature & FEATURE_NN) {
-        if (feature & FEATURE_LEELA)
-            whiteWinPct = leelaEvalToWinPct(eval_);
-        else
-            whiteWinPct = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 - 50;
-    }
-    else
-        whiteWinPct = (50 - (100 / (1 + Pow(10, eval_/ 4))));
-
-    // final output
-    let reverse = 0;
-    if (eval_ < 0)
-    {
-        reverse = 1;
-        whiteWinPct = -whiteWinPct;
-    }
-    let winEval = parseFloat(Max(0, whiteWinPct * 2)).toFixed(1),
-        drawEval = parseFloat(100 - Max(winEval, 0)).toFixed(1),
-        text = `${shortName} ${eval_} `;
-    if (winEval == 0)
-        text += ` [${drawEval}% D]`;
-    else
-        text += ` [${winEval}% ${reverse? 'B': 'W'} | ${drawEval}% D]`;
+    if (extra)
+        text = `${text} [${extra}]`;
     return text;
 }
 
@@ -3980,8 +3920,6 @@ function startup_tcec() {
     //
     Assign(DEFAULTS, {
         dark_mode: 10,
-        live_engine1: 1,
-        live_engine2: 1,
         top_tab: 1,
     });
 }

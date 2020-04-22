@@ -93,7 +93,17 @@
             <!-- left -->
             <vert id="left">
                 <div id="board" class="xboard"></div>
-                <div id="lives"></div>
+                <vert id="lives">
+                    <!-- lives -->
+                    <horis class="tabs">
+                        <div class="tab active" data-x="live0">Live 0</div>
+                        <div class="tab" data-x="live1">Live 1</div>
+                    </horis>
+                    <div id="table-live0"></div>
+                    <div id="table-live1" class="dn"></div>
+                    <div id="player0"></div>
+                    <div id="player1"></div>
+                </vert>
             </vert>
             <!-- center -->
             <vert id="center">

@@ -3,16 +3,16 @@ body {
     background: #333;
     color: #fff;
 }
-
 .popup {
     background: rgba(0, 0, 0, 0.95);
 }
-
 #engines > * {
     background: #212529;
 }
-
 .tab,
 .tab:hover {
     color: #dfdfdf;
+}
+.graphs {
+    background-color: #c6c6c6;
 }
