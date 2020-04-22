@@ -6,8 +6,46 @@ body {
 .popup {
     background: rgba(0, 0, 0, 0.95);
 }
+
+/* board */
+#board .xmoves {
+    color: #dcdcdc;
+}
+.book {
+    color: #f90;
+}
+.real {
+    color: #ddd;
+}
+.turn {
+    color: #ccc;
+}
+
+/* tables */
+.scroller tr:nth-child(2n) {
+    background: #212529;
+}
+.scroller tr:nth-child(2n + 1) {
+    background: #2c3034;
+}
+.scroller tr:hover {
+    background: #323539;
+}
+.scroller tr.last {
+    background: #4c4e4f;
+}
+.scroller tr.last:hover {
+    background: #535456;
+}
 #table-engine > * {
     background: #212529;
+}
+.game {
+    color: #fa0;
+}
+.url,
+.win {
+    color: #4f1;
 }
 .tab,
 .tab:hover {

@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-22 : 2020-04-22 : table data improvements: 1 small function can handle multiple tables
 2020-04-22 : 2020-04-22 : handle Live updates on the left
 2020-04-22 : 2020-04-22 : Xboard controls <<  < > >> + notation
 2020-04-22 : 2020-04-22 : autogen static Live tables, currently the whole table is recreated each time => slow

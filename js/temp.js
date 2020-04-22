@@ -3,7 +3,7 @@
 // temporary replaces tcec.js to test index_base.html
 /*
 globals
-create_boards, download_pgn, download_static, HTML, LS, window, xboards
+create_boards, download_pgn, download_tables, HTML, LS, window, xboards
 */
 'use strict';
 
@@ -81,7 +81,7 @@ function updateScheduleData() {
 }
 
 function updateTables() {
-    download_static();
+    download_tables();
 }
 
 function updateWinners() {

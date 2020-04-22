@@ -107,7 +107,7 @@ verts {
 
 /* main tags */
 a {
-    color: #007bff;
+    color: #07f;
     cursor: pointer;
     text-decoration: none;
 }
@@ -328,31 +328,69 @@ grid {
     border-radius: 4px;
     color: #000;
     font-size: 13px;
-    line-height: 1;
+    line-height: 1.2;
     overflow-y: auto;
     padding: 0.2em;
     width: 100%;
 }
 .xmoves {
-    height: 6em;
+    height: 5.5em;
     overflow-y: auto;
+}
+.xmoves a:hover {
+    text-decoration: underline;
+}
+.move {
+    font-size: 12px;
+}
+#board .xmoves {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    line-height: 1.5;
+}
+.book {
+    color:#080;
+}
+.real {
+    color: #07f;
+}
+.turn {
+    color: #222;
+    font-size: 13px;
+}
+.seen {
+    background-color: #222;
+    color: #ff0;
 }
 
 /* tables */
 .scroller {
-    margin-bottom: 1em;
+    font-size: 0.9em;
+    margin-bottom: 1.5em;
     overflow-x: auto;
     pointer-events: auto;
     width: 90%;
 }
 .scroller td {
-    white-space: nowrap;
+    padding: 0.8em;
 }
 .scroller th {
     color: #fff;
-    font-size: 11px;
-    padding: 3px 2px;
+    padding: 0.5em 1em;
     white-space: nowrap;
+}
+.scroller tr:nth-child(2n) {
+    background: #dcdcdc;
+}
+.scroller tr:nth-child(2n + 1) {
+    background: #d1d1d1;
+}
+.scroller tr:hover {
+    background: #ccc;
+}
+.scroller tr.last {
+    background: #82cafa;
 }
 .rounded {
     border-radius: 4px 0 0 0;
@@ -363,6 +401,7 @@ grid {
     cursor: pointer;
     font-size: 0.9em;
     padding: 0.2em 1em;
+    text-align: center;
 }
 .tab:hover {
     color: #05b;
@@ -375,6 +414,12 @@ grid {
     margin-top: 1em;
     width: 100%;
 }
+#tables .tabs {
+    width: 90%;
+}
+#tables .tab {
+    flex: 1;
+}
 #table-chat {
     max-width: 510px;
     width: 100%;
@@ -385,6 +430,16 @@ grid {
 }
 #twitch-theme {
     width: 100%;
+}
+.game {
+    color: #11b;
+}
+.lose {
+    color: #f00;
+}
+.url,
+.win {
+    color: #008000;
 }
 
 /* engines */
@@ -402,8 +457,14 @@ grid {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
-#table-view th {
+#table-view {
     font-size: 1em;
+}
+#table-view td {
+    padding: 0;
+    white-space: nowrap;
+}
+#table-view th {
     padding: 0.2em 0.5em;
 }
 #info0,

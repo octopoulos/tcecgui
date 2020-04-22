@@ -41,29 +41,47 @@ function init_sockets() {
         div.scrollTop = div.scrollHeight;
     });
     socket.on('crosstable', data => {
-        LS('crosstable:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/crosstable:');
+            LS(data);
+        }
         newUpdateStandData(data);
     });
     socket.on('liveeval', data => {
+        if (DEV.socket & 1) {
+            LS('socket/liveval:');
+            LS(data);
+        }
         // DELETE
         updateLiveEvalData(data, 1, null, 1);
 
         update_live_eval(data, 0);
     });
     socket.on('liveeval1', data => {
+        if (DEV.socket & 1) {
+            LS('socket/liveeval1:');
+            LS(data);
+        }
         // DELETE
         updateLiveEvalData(data, 1, null, 2);
 
         update_live_eval(data, 1);
     });
     socket.on('updeng', data => {
+        if (DEV.socket & 1) {
+            LS('socket/updeng:');
+            LS(data);
+        }
         // DELETE
         updateLiveEvalDataNew(data, 1, null, 2);
 
         update_player_eval(data);
     });
     socket.on('pgn', data => {
+        if (DEV.socket & 1) {
+            LS('socket/pgn:');
+            LS(data);
+        }
         // DELETE
         if (DEV.socket & 1)
             LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
@@ -75,57 +93,79 @@ function init_sockets() {
         update_pgn(data);
     });
     socket.on('schedule', data => {
-        LS('schedule:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/schedule:');
+            LS(data);
+        }
         updateScheduleData(data);
         updateH2hData(data);
 
         update_table('sched', data);
     });
     socket.on('livechart', data => {
-        LS('livechart:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/livechart:');
+            LS(data);
+        }
         updateLiveChartData(data, 1);
     });
     socket.on('livechart1', data => {
-        LS('livechart1:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/livechart1:');
+            LS(data);
+        }
         updateLiveChartData(data, 2);
     });
     socket.on('lastpgntime', data => {
-        LS('lastpgntime:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/lastpgntime:');
+            LS(data);
+        }
         setLastMoveTime(data);
     });
     socket.on('users', data => {
+        if (DEV.socket & 1) {
+            LS('socket/users:');
+            LS(data);
+        }
         // DELETE
         setUsers(data);
 
         set_viewers(data.count);
     });
     socket.on('banner', data => {
-        LS('banner:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/banner:');
+            LS(data);
+        }
         showBanner(data);
     });
     socket.on('tournament', data => {
-        LS('tournament:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/tournament:');
+            LS(data);
+        }
         setTwitchChange(data);
     });
     socket.on('enginerating', data => {
-        LS('enginerating:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/enginerating:');
+            LS(data);
+        }
         updateEngRatingData(data);
     });
     socket.on('crash', data => {
-        LS('crash:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/crash:');
+            LS(data);
+        }
         updateCrashData(data);
     });
     socket.on('bracket', data => {
-        LS('bracket:');
-        LS(data);
+        if (DEV.socket & 1) {
+            LS('socket/bracket:');
+            LS(data);
+        }
         bracketDataMain(data);
     });
 }

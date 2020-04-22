@@ -9,6 +9,7 @@ let crosstableData = null,
     crossTimeout = null;
 /* Global Variables */
 
+// TODO: REMOVE EVERYTHING
 function updateCrosstable()
 {
     Resource('crosstable.json', (code, data) => {
