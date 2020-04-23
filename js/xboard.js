@@ -289,7 +289,7 @@ class XBoard {
      */
     render_text() {
         let lines = [],
-            notation = this.options.notation,
+            notation = (this.name == 'console')? this.options.notation: 0,
             num_col = this.dims[0],
             rows = this.fen.split(' ')[0].split('/'),
             row_id = rows.length;

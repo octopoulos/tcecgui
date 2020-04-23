@@ -101,6 +101,9 @@ verts {
 .nowrap {
     white-space: nowrap;
 }
+.tal {
+    text-align: left;
+}
 .w100 {
     width: 100%;
 }
@@ -135,7 +138,7 @@ td {
     text-align: center;
 }
 th {
-    background: #222;
+    background: #191919;
     color: white;
     padding: 0.25em;
     text-align: center;
@@ -363,6 +366,9 @@ grid {
     background-color: #222;
     color: #ff0;
 }
+.void {
+    background-color: #191919;
+}
 
 /* tables */
 .scroller {
@@ -417,6 +423,8 @@ grid {
 #tables .tabs {
     width: 90%;
 }
+#charts .tab,
+#right .tab,
 #tables .tab {
     flex: 1;
 }
@@ -431,15 +439,27 @@ grid {
 #twitch-theme {
     width: 100%;
 }
+.draw {
+    color: #666;
+}
 .game {
     color: #11b;
 }
-.lose {
+.mono {
+    font-family: monospace;
+    font-size: large;
+}
+.loss {
     color: #f00;
 }
 .url,
 .win {
     color: #008000;
+}
+.left-image {
+    height: 20px;
+    margin-right: 0.6em;
+    width: 40px;
 }
 
 /* engines */
@@ -459,9 +479,10 @@ grid {
 }
 #table-view {
     font-size: 1em;
+    margin-bottom: 1em;
 }
 #table-view td {
-    padding: 0;
+    padding: 0.3em;
     white-space: nowrap;
 }
 #table-view th {
@@ -509,6 +530,9 @@ grid {
     margin-top: 1em;
     width: 100%;
 }
+#lives .tabs {
+    margin-bottom: 0;
+}
 #lives > * {
     width: 100%;
 }
@@ -536,18 +560,19 @@ grid {
 #left {
     flex: 2.6;
     margin: 4px;
-    max-width: calc(100vh - 300px);
+    max-width: calc(100vh - 150px);
     min-width: 281px;
 }
 #center {
     flex: 2;
-    max-width: 320px;
+    max-width: 350px;
     margin: 4px;
     min-width: 260px;
 }
 #right {
     flex: 2;
     margin: 4px;
+    max-width: 350px;
     min-height: 350px;
     min-width: 281px;
 }
@@ -612,6 +637,9 @@ td,
     #main {
         flex-wrap: wrap;
         width: 100%;
+    }
+    #right {
+        max-width: unset;
     }
 }
 @media (min-width: 930px) {

@@ -6,10 +6,10 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, FormatUnit, FromSeconds, Hide, HTML, InsertNodes, Keys,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, Hide, HTML, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
-S, save_option, screen, set_3d_events, Show, show_menu, show_modal, Sign, Split, Style, Title, touch_handle,
-translate_node, update_theme, Upper, Visible, window, XBoard, Y
+S, save_option, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, Title,
+touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -37,13 +37,19 @@ let _BLACK = 'black',
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
     prev_pgn,
+    SCORE_NAMES = {
+        0: 'loss',
+        0.5: 'draw',
+        1: 'win',
+    },
+    table_data = {},
     TABLES = {
         crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
-        cross: 'Rank|name=Engine|Points|1|2',
+        cross: 'Rank|Engine|Points',
         game: 'gameno=G#|PGN|White|Black|Moves|Result',
         h2h: 'h2hrank=Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
         sched: 'game=Game#|White|white_ev=Ev|Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
-        stand: 'Rank|name=Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|elo_diff=Diff [Live]',
+        stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
         stats: 'Start time|End time|total_time=Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
         view: 'time_control=TC|moves_to50r=50|moves_to_draw=Draw|moves_to_resign_or_win=Win|piecesleft=TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
@@ -167,13 +173,74 @@ function get_short_name(engine)
 
 /**
  * Analyse the crosstable data
+ * - create table-stand + table-cross
  * @param {Object} data
  */
 function analyse_crosstable(data) {
-    LS('analyse_crosstable:');
-    LS(data);
+    let cross_rows = [],
+        dicos = data.Table,
+        orders = data.Order,
+        abbrevs = orders.map(name => dicos[name].Abbreviation),
+        stand_rows = [];
 
-    
+    // 1) analyse all data => create rows for both tables
+    for (let name of orders) {
+        let dico = dicos[name],
+            elo = dico.Rating,
+            new_elo = Round(elo + dico.Elo),
+            results = dico.Results;
+
+        // cross
+        let cross_row = {
+            engine: name,
+            points: dico.Score,
+            rank: dico.Rank,
+        };
+        abbrevs.forEach((abbrev, id) => {
+            let games = results[orders[id]];
+            if (games) {
+                cross_row[abbrev] = games.Scores.map(game => {
+                    let score = game.Result;
+                    return ` <a class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                }).join('').slice(1);
+            }
+        });
+        cross_rows.push(cross_row);
+
+        // stand
+        stand_rows.push({
+            crashes: dico.Strikes,
+            diff: `${new_elo - elo} [${new_elo}]`,
+            elo: elo,
+            engine: name,
+            games: dico.Games,
+            loss: `${dico.LossAsWhite + dico.LossAsBlack} [${dico.LossAsWhite}/${dico.LossAsBlack}]`,
+            points: dico.Score,
+            rank: dico.Rank,
+            sb: dico.Neustadtl,
+            wins: `${dico.WinsAsWhite + dico.WinsAsBlack} [${dico.WinsAsWhite}/${dico.WinsAsBlack}]`,
+        });
+    }
+
+    update_table('stand', stand_rows);
+
+    // 2) table-cross: might need to update the columns too
+    let node = _('#table-cross'),
+        new_columns = [...Split(TABLES.cross), ...abbrevs],
+        scolumns = Array.from(A('th', node)).map(node => node.textContent).join('|'),
+        snew_columns = new_columns.join('|');
+
+    if (scolumns != snew_columns) {
+        // make the extra columns the same size
+        let extras = new_columns.slice(3),
+            width = `${Floor(71 / (extras.length + 0.001))}%`,
+            widths = [...['4%', '18%', '7%'], ...extras.map(() => width)],
+            head = create_table_columns(new_columns, widths);
+        HTML('thead', head, node);
+        translate_node(node);
+    }
+
+    update_table('cross', cross_rows);
 }
 
 /**
@@ -228,15 +295,27 @@ function create_live_table(node, is_live) {
 function create_table(columns, add_empty) {
     let html =
         '<table><thead>'
-        + columns.map((column, id) => {
-                let [field, value] = create_field_value(column);
-                return `<th ${id? '': 'class="rounded" '}data-x="${field}" data-t="${value}"></th>`;
-            }).join('')
+        + create_table_columns(columns)
         + '</thead><tbody>'
         + (add_empty? columns.map(column => `<td data-x="${create_field_value(column)[0]}">&nbsp;</td>`).join(''): '')
         + '</tbody></table>';
 
     return html;
+}
+
+/**
+ * Create <th> columns to be used in a table
+ * - used by create_table
+ * - used when generating the dynamic Crosstable
+ * @param {string[]} columns
+ * @param {number[]=} widths optional width for each column
+ */
+function create_table_columns(columns, widths) {
+    return columns.map((column, id) => {
+        let [field, value] = create_field_value(column),
+            style = widths? ` style="width:${widths[id]}"`: '';
+        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}" data-t="${value}"></th>`;
+    }).join('');
 }
 
 /**
@@ -315,32 +394,47 @@ function download_tables() {
  */
 function update_table(name, rows, reset) {
     let last,
+        is_cross = (name == 'cross'),
         table = _(`#table-${name}`),
         body = _('tbody', table),
         columns = Array.from(A('th', table)).map(node => node.dataset.x),
-        nodes = [];
-    if (reset)
-        HTML(body, '');
+        nodes = [],
+        data = SetDefault(table_data, name, []);
 
+    // reset or append?
+    if (reset) {
+        HTML(body, '');
+        data.length = 0;
+    }
+
+    // process all rows
     for (let row of rows) {
         row = Assign({}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
+        data.push(row);
 
-        if (name == 'sched')
-            LS(row);
         let vector = columns.map(key => {
-            let value = row[key];
-            if (value == undefined)
-                value = '';
+            let class_ = '',
+                td_class = '',
+                value = row[key];
+
+            if (value == undefined) {
+                if (is_cross)
+                    td_class = 'void';
+                else
+                    value = '-';
+            }
 
             // special cases
-            let class_ = '';
-
             switch (key) {
             case 'black':
                 if (row.result == '0-1')
                     class_ = 'win';
                 else if (row.result == '1-0')
-                    class_ = 'lose';
+                    class_ = 'loss';
+                break;
+            case 'engine':
+                td_class = 'tal';
+                value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
                 break;
             case 'game':
                 if (row.moves)
@@ -350,19 +444,23 @@ function update_table(name, rows, reset) {
                 if (row.result == '1-0')
                     class_ = 'win';
                 else if (row.result == '0-1')
-                    class_ = 'lose';
+                    class_ = 'loss';
                 break;
             default:
                 if (typeof(value) == 'string') {
-                    if (value.slice(0, 4) == 'http')
+                    if (is_cross && !td_class & key.length == 2)
+                        td_class = 'mono';
+                    else if (value.slice(0, 4) == 'http')
                         value = `<a href="${value}" class="url">${value}</a>`;
                 }
             }
 
             if (class_)
                 value = `<i class="${class_}">${value}</i>`;
+            if (td_class)
+                td_class = ` class="${td_class}"`;
 
-            return `<td>${value}</td>`;
+            return `<td${td_class}>${value}</td>`;
         });
 
         // special cases
@@ -620,7 +718,7 @@ function popup_engine_info(scolor, e) {
  * Resize the window => resize some other elements
  */
 function resize() {
-    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 80));
+    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
     Style('#chat', `height:${height}px;width:100%`);
 
     // resize the boards
@@ -743,7 +841,7 @@ function action_keyup_no_input(code) {
  * @param {number} code hardware keycode
  */
 function action_key(code) {
-    switch(code) {
+    switch (code) {
     // escape
     case 27:
         show_info(false);
@@ -1002,7 +1100,7 @@ function create_boards() {
             hook: handle_board_events,
             history: true,
             node: `#${key}`,
-            notation: 6 * 0,
+            notation: 6,
             size: 16,
             target: 'html',
         }, BOARDS[key]);

@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-23 : 2020-04-22 : handle stand and cross tables
 2020-04-22 : 2020-04-22 : table data improvements: 1 small function can handle multiple tables
 2020-04-22 : 2020-04-22 : handle Live updates on the left
 2020-04-22 : 2020-04-22 : Xboard controls <<  < > >> + notation
@@ -78,6 +79,7 @@ low:
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 -          : 2020-04-13 : add an SVG theme for the pieces
 lowest:
+-          : 2020-04-23 : config.js for user configuration? => 16TH 7Men TB + URL's + ...
 ~          : 2020-04-13 : merge B&W functions
 -          : 2020-04-13 : add more Jest tests
 -          : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
@@ -93,3 +95,4 @@ lowest:
 -          : 2020-04-13 : add 3d tables + room
 -          : 2020-04-13 : VR support
 -          : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
+-          : 2020-04-23 : put a checkbox to listen to log inside the livelog table

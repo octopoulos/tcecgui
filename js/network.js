@@ -5,10 +5,10 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option, setLastMoveTime, setPgn,
-setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true, timeDiff:true, updateCrashData,
-updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval, update_table,
-updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
+_, analyse_crosstable, bracketDataMain, DEV, get_string, io, LS, newUpdateStandData, Prop, save_option,
+setLastMoveTime, setPgn, setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true,
+timeDiff:true, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval,
+update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
 Y
 */
 'use strict';
@@ -29,23 +29,30 @@ function init_sockets() {
     socket = io.connect('https://tcec-chess.com/');
     unlistenLogMain();
 
+    // log
     socket.on('htmlread', datal => {
+        if (DEV.socket & 1) {
+            LS('socket/htmlread:');
+            LS(datal);
+        }
         let data = datal.data,
             date = new Date().toLocaleTimeString(),
             div = _('#log-wrapper'),
             text = data.split(/\n|\s\n/).join("<br>");
 
-        if (DEV.socket & 1)
-            LS(`XXX: recieving data from log: ${datal.room}`);
         div.innerHTML += `<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`;
         div.scrollTop = div.scrollHeight;
     });
+
     socket.on('crosstable', data => {
         if (DEV.socket & 1) {
             LS('socket/crosstable:');
             LS(data);
         }
+        // DELETE
         newUpdateStandData(data);
+
+        analyse_crosstable(data);
     });
     socket.on('liveeval', data => {
         if (DEV.socket & 1) {
@@ -97,6 +104,7 @@ function init_sockets() {
             LS('socket/schedule:');
             LS(data);
         }
+        // DELETE
         updateScheduleData(data);
         updateH2hData(data);
 
@@ -159,7 +167,10 @@ function init_sockets() {
             LS('socket/crash:');
             LS(data);
         }
+        // DELETE
         updateCrashData(data);
+
+        update_table('crash', data);
     });
     socket.on('bracket', data => {
         if (DEV.socket & 1) {
@@ -170,6 +181,7 @@ function init_sockets() {
     });
 }
 
+// CHECK AND DELETE ALL THESE:
 function setDefaultLiveLog()
 {
     globalRoom = Y.engine_livelog;
