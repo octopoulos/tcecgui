@@ -130,7 +130,7 @@
                     </div>
                     <div id="eval0"></div>
                     <vert class="fcenter">
-                        <div id="eval" data-t="Evaluation"></div>
+                        <div id="eval" data-t="Eval"></div>
                     </vert>
                     <div id="eval1"></div>
                     <div id="depth0"></div>
@@ -191,11 +191,16 @@
                     <div class="tab s" data-x="winner" data-t="Winners"></div>
                     <div class="tab" data-x="info" data-t="Information"></div>
                 </horis>
+                <!-- twitch chat -->
                 <vert id="table-chat">
-                    <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                    <vert>
+                        <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                        <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
+                    </vert>
                     <hori id="twitch-theme" class="fend">
                         <i id="twitch0" data-svg="sun" class="dn"></i>
                         <i id="twitch1" data-svg="moon" class="dn"></i>
+                        <i id="hide-chat" data-svg="x" class="dn"></i>
                     </hori>
                 </vert>
                 <div id="table-season" class="scroller dn">Seasons</div>
@@ -274,17 +279,15 @@
         </vert>
     </vert>
     <!-- twitch video -->
-    <hori class="fcenter">
-        <iframe
-            id="twitch-vid"
-            height="400"
-            width="340"
-            frameborder="0"
-            scrolling="no"
-            allowfullscreen="true"
-            autoplay="true"
-            muted="true">
-        </iframe>
+    <hori class="fcenter fastart">
+        <vert>
+            <iframe
+                id="twitch-vid" class="dn" height="400" width="340" frameborder="0" scrolling="no"
+                allowfullscreen="true" autoplay="true" muted="true">
+            </iframe>
+            <a id="show-video" class="dn" data-t="Enable Twitch channel"></a>
+        </vert>
+        <i id="hide-video" data-svg="x" class="dn"></i>
     </hori>
     <!-- footer -->
     <vert id="footer">

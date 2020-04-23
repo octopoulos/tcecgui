@@ -617,6 +617,19 @@ grid {
 .graphs {
     background-color: rgba(47, 152, 208, 0.1);
 }
+#hide-chat,
+#hide-video {
+    color: #999;
+    cursor: pointer;
+    font-size: 1.3em;
+    margin-left: 0.3em;
+}
+#show-chat,
+#show-video {
+    border: 1px dashed #999;
+    margin: 1em;
+    padding: 1em;
+}
 
 /* allow text selection */
 pre,

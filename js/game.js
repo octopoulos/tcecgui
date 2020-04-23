@@ -1039,14 +1039,28 @@ function update_twitch(dark) {
     if (dark != undefined)
         save_option('twitch_dark', dark);
 
+    // 1) update twitch chat IF there was a change
     dark = Y.twitch_dark;
-    Attrs('#chat', 'src', TWITCH_CHAT + (dark? '?darkpopout': ''));
-    S('#twitch0', dark);
-    S('#twitch1', !dark);
+    let node = _('#chat'),
+        current = node.src,
+        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
 
-    if (Y.twitch_video)
-        Attrs('#twitch-vid', 'src', TWITCH_CHANNEL);
-    S('#twitch-vid', Y.twitch_video);
+    if (current != src)
+        Attrs(node, 'src', src);
+    S('#hide-chat, #chat', src);
+    S('#show-chat', !src);
+    S('#twitch0', src && dark);
+    S('#twitch1', src && !dark);
+
+    // 2) update twitch video IF there was a change
+    node = _('#twitch-vid');
+    current = node.src;
+    src = Y.twitch_video? TWITCH_CHANNEL: '';
+
+    if (current != src)
+        Attrs(node, 'src', src);
+    S('#hide-video, #twitch-vid', src);
+    S('#show-video', !src);
 }
 
 // EVENTS
@@ -1142,12 +1156,18 @@ function set_game_events() {
         handle_open_table(node, key);
     });
 
-    // theme
+    // theme + twich
     C('#theme0, #theme1', function() {
         change_theme((this.id.slice(-1) == '1')? 'dark': '');
     });
     C('#twitch0, #twitch1', function() {
         update_twitch((this.id.slice(-1) == '1')? 1: 0);
+    });
+    C('#hide-chat, #hide-video, #show-chat, #show-video', function() {
+        let [left, right] = this.id.split('-');
+        LS(`left=${left} : right=${right}`);
+        save_option(`twitch_${right}`, (left == 'show')? 1: 0);
+        update_twitch();
     });
 }
 
