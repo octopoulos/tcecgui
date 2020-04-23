@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-23 : 2020-04-23 : control of what sections can be translated or not
 2020-04-23 : 2020-04-23 : convenient way to enable/disable twitch: chat & video
 2020-04-23 : 2020-04-23 : json caching system: using localStorage + remember the time => minimise resources usage
 2020-04-23 : 2020-04-13 : add title + params + returns documentation for all functions, JsDoc format
