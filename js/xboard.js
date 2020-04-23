@@ -38,7 +38,7 @@ class XBoard {
      * - dims           // [num_col, num_row]
      * - history        // show history?
      * - hook           // events callback
-     * - name           // output selector for HTML & text, can be 'console' too
+     * - id             // output selector for HTML & text, can be 'console' too
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
      * - piece_class    // custom piece class
      * - size           // square size in px (resize will recalculate it)
@@ -56,10 +56,10 @@ class XBoard {
         this.dims = options.dims || [8, 8];
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
+        this.id = options.id;
         this.images = {};
         this.moves = [];                                // moves history
-        this.name = options.node;
-        this.node = _(this.name);
+        this.node = _(this.id);
         this.pieces = [];
         this.target = options.target || 'html';
         this.size = options.size || 16;
@@ -183,7 +183,7 @@ class XBoard {
      * @param {string} text
      */
     output(text) {
-        if (this.name == 'console')
+        if (this.id == 'console')
             LS(text);
         else
             HTML('.xgrid', text, this.node);
@@ -304,7 +304,7 @@ class XBoard {
      */
     render_text() {
         let lines = [],
-            notation = (this.name == 'console')? this.options.notation: 0,
+            notation = (this.id == 'console')? this.options.notation: 0,
             num_col = this.dims[0],
             rows = this.fen.split(' ')[0].split('/'),
             row_id = rows.length;

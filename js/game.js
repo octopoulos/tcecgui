@@ -6,7 +6,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, getComputedStyle, Hide, HTML, InsertNodes, Keys,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, Hide, HTML, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style,
 Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
@@ -34,9 +34,8 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
-        LCZeroCPU: 3,
     },
-    LIVE_ENGINES = ['4x V100 6Men TB', '16TH 7Men TB'],
+    LIVE_ENGINES = [],
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
@@ -57,7 +56,7 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
         sched: 'game=Game#|White|white_ev=Ev|Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
         stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
         stats: 'Start time|End time|total_time=Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
-        view: 'time_control=TC|moves_to50r=50|moves_to_draw=Draw|moves_to_resign_or_win=Win|piecesleft=TB|Result|Round|Opening|ECO|Event|Viewers',
+        view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
@@ -523,6 +522,44 @@ function update_table(name, rows, reset) {
 //////
 
 /**
+ * Check the adjudication
+ * - algorithm taken from setPgn
+ * @param {Object} dico adjudication object
+ * @param {number} total_moves
+ * @returns {(string|number)[]} adj, _50, draw, win
+ */
+function check_adjudication(dico, total_moves) {
+    let adj_50 = dico.FiftyMoves,
+        adj_draw = dico.Draw,
+        adj_win = dico.ResignOrWin;
+
+    let adjudicated = '',
+        _50 = 50,
+        draw = 50,
+        win = 50;
+
+    if (Abs(adj_draw) <= 10 && total_moves > 58)
+        draw = Max(Abs(adj_draw), 69 - total_moves);
+
+    if (Abs(adj_win) < 11)
+        win = Abs(adj_win);
+
+    if (adj_50 < 51)
+        _50 = adj_50;
+
+    if (_50 < 50 && _50 < win)
+        adjudicated = `${_50} move${(_50 > 1)? 's': ''} 50mr`;
+
+    if (win < 50 && win < draw && win < _50)
+        adjudicated = `${win} pl${(draw > 1)? 'ies': 'y'} win`;
+
+    if (draw < 50 && draw <= _50 && draw <= win)
+        adjudicated = `${draw} pl${(draw > 1)? 'ies': 'y'} draw`;
+
+    return [adjudicated, _50, draw, win];
+}
+
+/**
  * Create a PV list
  * @param {Object[]} moves
  * @returns {string} html
@@ -577,23 +614,25 @@ function update_pgn(pgn) {
     let headers = pgn.Headers,
         moves = pgn.Moves,
         num_move = moves.length,
+        overview = _('#table-view'),
         start = pgn.lastMoveLoaded || 0;
 
-    // 1) overview
+    // 1) update overview
     if (pgn.Users)
-        HTML('#table-view td[data-x="viewers"]', pgn.Users);
+        HTML('td[data-x="viewers"]', pgn.Users, overview);
     if (headers) {
         Split('ECO|Event|Opening|Result|Round').forEach(key => {
-            HTML(`#table-view td[data-x="${Lower(key)}"]`, headers[key]);
+            HTML(`td[data-x="${Lower(key)}"]`, headers[key], overview);
         });
 
         let items = headers.TimeControl.split('+');
-        HTML('#table-view td[data-x="time_control"]', `${items[0]/60}'+${items[1]}"`);
+        HTML('td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`, overview);
     }
 
     if (!num_move)
         return;
 
+    // 2) update the moves
     let move = moves[num_move - 1],
         last_ply = pgn.numMovesToSend + start;
 
@@ -619,7 +658,20 @@ function update_pgn(pgn) {
         LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
     prev_pgn = pgn;
 
-    // 2) engines
+    // 3) check adjudication + update overview
+    let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+    HTML('td[data-x="tb"]', tb, overview);
+
+    let [adjudicated, _50, draw, win] = check_adjudication(move.adjudication, num_ply);
+    HTML('td[data-x="adj_rule"]', adjudicated || '-', overview);
+    HTML('td[data-x="50"]', _50 || '-', overview);
+    HTML('td[data-x="draw"]', draw || '-', overview);
+    HTML('td[data-x="win"]', win || '-', overview);
+
+    S('[data-x="adj_rule"]', adjudicated, overview);
+    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !adjudicated, overview);
+
+    // 4) engines
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
             node = _(`#player${id}`),
@@ -1052,6 +1104,14 @@ function update_twitch(dark) {
     S('#show-chat', !src);
     S('#twitch0', src && dark);
     S('#twitch1', src && !dark);
+
+    let right = _('#right'),
+        has_narrow = right.classList.contains('narrow'),
+        need_narrow = !src;
+    if (need_narrow != has_narrow) {
+        Class(right, 'narrow', need_narrow);
+        resize();
+    }
 
     // 2) update twitch video IF there was a change
     node = _('#twitch-vid');

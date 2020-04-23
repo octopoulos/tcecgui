@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-21
+// @version 2020-04-23
 //
 // startup
 //
@@ -12,9 +12,9 @@ api_translate_get, C, change_theme, check_hash, DEV, document, Events, fill_lang
 game_action_keyup, get_object, getUserS, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Now, parse_dev, resize, Round,
 S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, start_game, start_tcec, startup_3d,
-startup_archive, startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme, translate_node,
-translates:true, unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn, updateRefresh,
-updateTables, updateWinners, window, Y
+startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme,
+translate_node, translates:true, unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn,
+updateRefresh, updateTables, updateWinners, window, Y
 */
 'use strict';
 
@@ -169,6 +169,8 @@ function startup() {
 
     startup_3d();
     startup_game();
+    startup_config();
+
     set_global_events();
     set_ui_events();
     set_game_events();

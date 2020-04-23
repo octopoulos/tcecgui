@@ -21,7 +21,7 @@ create_module(IMPORT_PATH, [
 
 let {Assign, XBoard} = require(OUTPUT_MODULE);
 
-let xboard = new XBoard();
+let xboard = new XBoard({id: 'console'});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

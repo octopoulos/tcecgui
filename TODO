@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-23 : 2020-04-23 : config.js for user configuration => 16TH 7Men TB + URL's + ...
+2020-04-23 : 2020-04-13 : add more Jest tests
 2020-04-23 : 2020-04-23 : swap panes using < > arrows
 2020-04-23 : 2020-04-23 : control of what sections can be translated or not
 2020-04-23 : 2020-04-23 : convenient way to enable/disable twitch: chat & video
@@ -91,8 +93,6 @@ low:
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
--          : 2020-04-23 : config.js for user configuration? => 16TH 7Men TB + URL's + ...
--          : 2020-04-13 : add more Jest tests
 -          : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
 -          : 2020-04-13 : add 3d rendering option to the chessboard
 -          : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
@@ -103,3 +103,4 @@ lowest:
 -          : 2020-04-13 : add 3d tables + room
 -          : 2020-04-13 : VR support
 -          : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
+-          : 2020-04-23 : add tests for check_adjudication
