@@ -480,7 +480,7 @@ grid {
 }
 #table-view {
     font-size: 1em;
-    margin-bottom: 1em;
+    margin-bottom: 0;
 }
 #table-view td {
     padding: 0.3em;
@@ -563,14 +563,12 @@ grid {
     margin: 4px;
     max-width: calc(100vh - 150px);
     min-width: 281px;
-    order: 1;
 }
 #center {
     flex: 2;
     max-width: 350px;
     margin: 4px;
     min-width: 260px;
-    order: 2;
 }
 #right {
     flex: 2;
@@ -578,7 +576,6 @@ grid {
     max-width: 350px;
     min-height: 350px;
     min-width: 281px;
-    order: 3;
 }
 #lives {
     min-height: 300px;
@@ -593,6 +590,18 @@ grid {
 .tabs {
     justify-content: center;
     margin-bottom: 1em;
+}
+.swaps {
+    width: 100%;
+}
+.swap {
+    color: #bbb;
+    cursor: pointer;
+    opacity: 0;
+    padding: 0.1em 0.3em;
+}
+.swap:hover {
+    color: #777;
 }
 
 /* extras */
@@ -625,8 +634,9 @@ grid {
     margin-left: 0.3em;
 }
 #show-chat,
-#show-video {
-    border: 1px dashed #999;
+#show-video,
+.adblock {
+    border: 1px dotted #999;
     margin: 1em;
     padding: 1em;
 }

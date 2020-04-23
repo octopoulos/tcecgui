@@ -21,10 +21,23 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        calculate_score, create_field_value, get_short_name,
+        calculate_probability, calculate_score, create_field_value, get_short_name,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// calculate_probability
+[
+    ['Stockfish', 0.27, '7.8% W | 92.2% D'],
+    ['LCZero', 0.27, '9.2% W | 90.8% D'],
+    ['LCZeroCPU', 0.27, '9.2% W | 90.8% D'],
+    ['AllieStein', 0.27, '6.0% W | 94.0% D'],
+]
+ .forEach(([short_engine, eval_, answer], id) => {
+    test(`calculate_probability:${id}`, () => {
+        expect(calculate_probability(short_engine, eval_)).toEqual(answer);
+    });
+});
 
 // calculate_score
 [

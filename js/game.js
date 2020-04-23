@@ -1,12 +1,12 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-18
+// @version 2020-04-23
 //
 // included after: common, engine, global, 3d, xboard
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, Hide, HTML, InsertNodes, Keys,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, getComputedStyle, Hide, HTML, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style,
 Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
@@ -36,6 +36,7 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
         LCZero: 3,                      // & 2 => Leela variations
         LCZeroCPU: 3,
     },
+    LIVE_ENGINES = ['4x V100 6Men TB', '16TH 7Men TB'],
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
@@ -73,23 +74,23 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
 /**
  * The function was posted by "ya" in the Leela Chess Zero Discord channel
  * https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
+ * - made it more readable
  * @param {number} cp
  * @returns {number}
  */
 function _leelaCpToQ(cp) {
-    return cp < 234.18?
-        0.0033898305085 * cp -
-            (8.76079436769e-38 * Pow(cp, 15)) /
-                (3.618208073857e-34 * Pow(cp, 14) + 1.0) +
-            (cp * (-3.4456396e-5 * cp + 0.007076010851)) /
-                (cp * cp - 487.329812319 * cp + 59486.9337812)
-        : cp < 381.73?
-            (-17.03267913 * cp + 3342.55947265) /
-                (cp * cp - 360.8419732 * cp + 32568.5395889) + 0.995103
-        : (35073.0 * cp) / (755200.0 + 35014.0 * cp) +
-        ((0.4182050082072 * cp - 2942.6269998574) /
-           (cp * cp - 128.710949474 * cp - 6632.9691544526)) *
-           Exp(-Pow((cp - 400.0) / 7000.0, 3)) - 5.727639074137869e-8;
+    if (cp < 234.18)
+        return 0.0033898305085 * cp
+            - (8.76079436769e-38 * Pow(cp, 15)) / (3.618208073857e-34 * Pow(cp, 14) + 1.0)
+            + (cp * (-3.4456396e-5 * cp + 0.007076010851)) / (cp * cp - 487.329812319 * cp + 59486.9337812);
+
+    if (cp < 381.73)
+        return (-17.03267913 * cp + 3342.55947265) / (cp * cp - 360.8419732 * cp + 32568.5395889)
+            + 0.995103;
+
+    return (35073.0 * cp) / (755200.0 + 35014.0 * cp)
+        + ((0.4182050082072 * cp - 2942.6269998574) / (cp * cp - 128.710949474 * cp - 6632.9691544526)) * Exp(-Pow((cp - 400.0) / 7000.0, 3))
+        - 5.727639074137869e-8;
 }
 
 /**
@@ -375,7 +376,7 @@ function download_table(url, name, callback) {
         let cache = get_object(key);
         if (cache && cache.time < Now() + timeout) {
             if (DEV.json & 1)
-                LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`)
+                LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
             _done(cache.data);
             return;
         }
@@ -1046,7 +1047,7 @@ function update_twitch(dark) {
         src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
 
     if (current != src)
-        Attrs(node, 'src', src);
+        node.src = src;
     S('#hide-chat, #chat', src);
     S('#show-chat', !src);
     S('#twitch0', src && dark);
@@ -1058,7 +1059,7 @@ function update_twitch(dark) {
     src = Y.twitch_video? TWITCH_CHANNEL: '';
 
     if (current != src)
-        Attrs(node, 'src', src);
+        node.src = src;
     S('#hide-video, #twitch-vid', src);
     S('#show-video', !src);
 }
@@ -1119,6 +1120,31 @@ function handle_open_table(node, name) {
 }
 
 /**
+ * Move a pane left or right, swapping it with another
+ * - call without arguments to initialise the panes at startup
+ * @param {Node=} node
+ * @param {number=} dir -1, 1
+ */
+function move_pane(node, dir) {
+    let names = Split(Y.order);
+
+    if (node) {
+        let id = node.id,
+            curr = names.indexOf(id),
+            target = (curr + dir + 3) % 3;
+        names[curr] = names[target];
+        names[target] = id;
+    }
+
+    names.forEach((name, id) => {
+        _(`#${name}`).style.order = id;
+    });
+
+    if (node)
+        save_option('order', names.join('|'));
+}
+
+/**
  * Game events
  */
 function set_game_events() {
@@ -1161,13 +1187,21 @@ function set_game_events() {
         change_theme((this.id.slice(-1) == '1')? 'dark': '');
     });
     C('#twitch0, #twitch1', function() {
-        update_twitch((this.id.slice(-1) == '1')? 1: 0);
+        update_twitch((this.id.slice(-1) == '1') * 1);
     });
     C('#hide-chat, #hide-video, #show-chat, #show-video', function() {
         let [left, right] = this.id.split('-');
         LS(`left=${left} : right=${right}`);
-        save_option(`twitch_${right}`, (left == 'show')? 1: 0);
+        save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
+    });
+
+    // swap panes
+    Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
+        Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
+    });
+    C('.swap', function() {
+        move_pane(this.parentNode.parentNode, this.classList.contains('mirror')? -1: 1);
     });
 }
 
@@ -1183,7 +1217,7 @@ function create_boards() {
         let options = Assign({
             hook: handle_board_events,
             history: true,
-            node: `#${key}`,
+            id: `#${key}`,
             notation: 6,
             size: 16,
             target: 'html',
@@ -1200,9 +1234,14 @@ function create_boards() {
  * Call this after the structures have been initialised
  */
 function start_game() {
+    move_pane();
     create_boards();
     create_tables();
     update_twitch();
+
+    LIVE_ENGINES.forEach((live, id) => {
+        HTML(`[data-x="live${id}"]`, live);
+    });
 }
 
 /**
@@ -1213,11 +1252,14 @@ function startup_game() {
     Assign(DEFAULTS, {
         live_engine1: 1,
         live_engine2: 1,
+        order: 'left|center|right',
+        twitch_chat: 1,
+        twitch_dark: 1,
+        twitch_video: 1,
     });
     merge_settings({
         board: {
             arrows: [ON_OFF, 1],
-            board_middle: [ON_OFF, 0],
             board_theme: [BOARD_KEYS, 'chess24'],
             highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
             notation: [ON_OFF, 1],
@@ -1232,9 +1274,6 @@ function startup_game() {
         extra: {
             cross_crash: [ON_OFF, 0],
             live_log: [[0, 5, 10, 'all'], 0],
-            twitch_chat: [ON_OFF , 1],
-            twitch_dark: [ON_OFF, 1],
-            twitch_video: [ON_OFF, 1],
         },
     });
 }

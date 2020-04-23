@@ -106,15 +106,17 @@ function get_float(name, def) {
 }
 
 /**
- * Local Storage - get int
+ * Local Storage - get int/bool
  * @param {string} name
- * @param {number} def also used if the value cannot be converted to an `int`
- * @returns {number}
+ * @param {number|boolean} def also used if the value cannot be converted to an `int`
+ * @returns {number|boolean}
  */
 function get_int(name, def) {
     let value = parseInt(get_string(name));
     if (isNaN(value))
         value = def;
+    if (typeof(def) == 'boolean')
+        value = !!value;
     return value;
 }
 
@@ -182,12 +184,19 @@ function save_option(name, value) {
 
 /**
  * Local Storage - save a value
+ * - true is converted to 1
+ * - false and undefined are converted to 0
  * @param {string} name
  * @param {*} value value for the name
  */
 function save_storage(name, value) {
     if (typeof(value) == 'object')
         value = JSON.stringify(value);
+    else if (value === true)
+        value = 1;
+    else if (value === false || value === undefined)
+        value = 0;
+
     localStorage.setItem(`${__PREFIX}${name}`, value);
 }
 
@@ -585,7 +594,7 @@ function load_defaults() {
     Keys(DEFAULTS).forEach(key => {
         let value,
             def = DEFAULTS[key];
-        if (Number.isInteger(def))
+        if (Number.isInteger(def) || typeof(def) == 'boolean')
             value = get_int(key, def);
         else if (Number.isFinite(def))
             value = get_float(key, def);

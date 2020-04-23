@@ -15,6 +15,7 @@
     <script src="js/libs/socket.io.js"></script>
     <script src="js/temp.js"></script>
     <script src="js/network.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/startup.js"></script>
     <script src="js/script.js"></script>
     <link href="css/common.css" rel="stylesheet">
@@ -76,11 +77,7 @@
                 <script>
                     (adsbygoogle = window.adsbygoogle || []).push({});
                 </script>
-                <div class="adblock dn">
-                    TCEC is based on voluntary work.
-                    Please consider whitelisting http://tcec-chess.com in your ad blocker - or send a donation.
-                    Thank you!
-                </div>
+                <div class="adblock dn"></div>
             </hori>
             <form target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
                 <input type="hidden" name="cmd" value="_s-xclick">
@@ -92,12 +89,20 @@
         <hori id="main" class="fcenter fastart">
             <!-- left -->
             <vert id="left">
+                <hori class="swaps fend">
+                    <div class="swap mirror">
+                        <i data-svg="next"></i>
+                    </div>
+                    <div class="swap">
+                        <i data-svg="next"></i>
+                    </div>
+                </hori>
                 <div id="board" class="xboard"></div>
                 <vert id="lives">
                     <!-- lives -->
                     <horis class="tabs">
-                        <div class="tab active" data-x="live0">4x V100 6Men TB</div>
-                        <div class="tab" data-x="live1">16TH 7Men TB</div>
+                        <div class="tab active" data-x="live0">Live 1</div>
+                        <div class="tab" data-x="live1">Live 2</div>
                     </horis>
                     <div id="table-live0"></div>
                     <div id="table-live1" class="dn"></div>
@@ -107,6 +112,14 @@
             </vert>
             <!-- center -->
             <vert id="center">
+                <hori class="swaps fend">
+                    <div class="swap mirror">
+                        <i data-svg="next"></i>
+                    </div>
+                    <div class="swap">
+                        <i data-svg="next"></i>
+                    </div>
+                </hori>
                 <!-- engines -->
                 <horis class="tabs">
                     <div class="tab active" data-x="engine" data-t="Engine Info"></div>
@@ -186,6 +199,14 @@
             </vert>
             <!-- right -->
             <vert id="right">
+                <hori class="swaps fend">
+                    <div class="swap mirror">
+                        <i data-svg="next"></i>
+                    </div>
+                    <div class="swap">
+                        <i data-svg="next"></i>
+                    </div>
+                </hori>
                 <horis class="tabs">
                     <div class="tab active" data-x="chat" data-t="Chat"></div>
                     <div class="tab" data-x="season" data-t="Seasons"></div>
@@ -225,9 +246,6 @@
                 (adsbygoogle = window.adsbygoogle || []).push({});
             </script>
             <div class="adblock dn">
-                TCEC is based on voluntary work.
-                Please consider whitelisting http://tcec-chess.com in your ad blocker - or send a donation.
-                Thank you!
             </div>
         </hori>
         <!-- tables -->
@@ -293,6 +311,11 @@
     </hori>
     </div>
     <!-- now everything can be translated again -->
+    <div id="adblock" class="dn">
+        TCEC is based on voluntary work.
+        Please consider whitelisting http://tcec-chess.com in your ad blocker - or send a donation.
+        Thank you!
+    </div>
     <!-- footer -->
     <vert id="footer">
         <div id="desc">

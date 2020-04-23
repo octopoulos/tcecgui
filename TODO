@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-23 : 2020-04-23 : swap panes using < > arrows
 2020-04-23 : 2020-04-23 : control of what sections can be translated or not
 2020-04-23 : 2020-04-23 : convenient way to enable/disable twitch: chat & video
 2020-04-23 : 2020-04-23 : json caching system: using localStorage + remember the time => minimise resources usage
@@ -81,7 +82,6 @@ medium:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 low:
--          : 2020-04-23 : add < > arrows to move left/center/right panes
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
