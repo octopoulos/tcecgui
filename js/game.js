@@ -6,16 +6,14 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, Hide, HTML, InsertNodes, Keys,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, Hide, HTML, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
-S, save_option, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, Title,
-touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
+S, save_option, save_storage, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style,
+Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
-let _BLACK = 'black',
-    _WHITE = 'white',
-    BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'),
+let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'),
     board_target = 'board',
     BOARDS = {
         board: {
@@ -28,14 +26,21 @@ let _BLACK = 'black',
         // pv1: {},
         // pva: {},
     },
+    CACHE_TIMEOUTS = {
+        crash: 600,
+        sched: 240,
+        winner: 3600 * 24,
+    },
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
+        LCZeroCPU: 3,
     },
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
+    players = [{}, {}],                 // current 2 players
     prev_pgn,
     SCORE_NAMES = {
         0: 'loss',
@@ -47,7 +52,7 @@ let _BLACK = 'black',
         crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
         game: 'gameno=G#|PGN|White|Black|Moves|Result',
-        h2h: 'h2hrank=Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
+        h2h: 'game=Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
         sched: 'game=Game#|White|white_ev=Ev|Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
         stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
         stats: 'Start time|End time|total_time=Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
@@ -55,11 +60,11 @@ let _BLACK = 'black',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
-    turn = 0,               // 0:white to play, 1:black to play
+    turn = 0,                           // 0:white to play, 1:black to play
     TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat',
     xboards = {},
-    WHITE_BLACK = [_WHITE, _BLACK, 'live'],
+    WHITE_BLACK = ['white', 'black', 'live'],
     WB_TITLES = ['White', 'Black'];
 
 // HELPERS
@@ -90,6 +95,7 @@ function _leelaCpToQ(cp) {
 /**
  * Convert eval to win %
  * @param {number} eval_
+ * @returns {number}
  */
 function _leelaEvalToWinPct(eval_) {
     let q = Sign(eval_) * _leelaCpToQ(Abs(eval_) * 100);
@@ -291,6 +297,7 @@ function create_live_table(node, is_live) {
  * Create a table
  * @param {string[]} columns
  * @param {boolean=} add_empty add an empty row (good for table-view)
+ * @returns {string}
  */
 function create_table(columns, add_empty) {
     let html =
@@ -309,6 +316,7 @@ function create_table(columns, add_empty) {
  * - used when generating the dynamic Crosstable
  * @param {string[]} columns
  * @param {number[]=} widths optional width for each column
+ * @returns {string}
  */
 function create_table_columns(columns, widths) {
     return columns.map((column, id) => {
@@ -343,15 +351,13 @@ function create_tables() {
 
 /**
  * Download static JSON for a table
+ * + cache support = can load the data from localStorage if it was recent
  * @param {string} url url
  * @param {string=} name table name
  * @param {function=} callback
  */
 function download_table(url, name, callback) {
-    Resource(url, (code, data) => {
-        if (code != 200)
-            return;
-
+    function _done(data) {
         if (DEV.json & 1) {
             LS(`${url}:`);
             LS(data);
@@ -360,6 +366,32 @@ function download_table(url, name, callback) {
             update_table(name, data, true);
         if (callback)
             callback(data);
+    }
+
+    let key,
+        timeout = CACHE_TIMEOUTS[name];
+    if (timeout) {
+        key = `table_${name}`;
+        let cache = get_object(key);
+        if (cache && cache.time < Now() + timeout) {
+            if (DEV.json & 1)
+                LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`)
+            _done(cache.data);
+            return;
+        }
+        else if (DEV.json & 1)
+            LS(`no cache: ${key}`);
+    }
+
+    Resource(url, (code, data) => {
+        if (code != 200)
+            return;
+        if (key) {
+            save_storage(key, {data: data, time: Now()});
+            if (DEV.json & 1)
+                LS(`cache saved: ${key}`);
+        }
+        _done(data);
     });
 }
 
@@ -381,7 +413,7 @@ function download_tables() {
 
     // tables
     download_table('crosstable.json', null, analyse_crosstable);
-    download_table('enginerating.json');
+    // download_table('enginerating.json');
     download_table('tournament.json');
     download_table('schedule.json', 'sched');
 }
@@ -394,12 +426,14 @@ function download_tables() {
  */
 function update_table(name, rows, reset) {
     let last,
+        data = SetDefault(table_data, name, []),
         is_cross = (name == 'cross'),
+        is_sched = (name == 'sched'),
+        new_rows = [],
+        nodes = [],
         table = _(`#table-${name}`),
         body = _('tbody', table),
-        columns = Array.from(A('th', table)).map(node => node.dataset.x),
-        nodes = [],
-        data = SetDefault(table_data, name, []);
+        columns = Array.from(A('th', table)).map(node => node.dataset.x);
 
     // reset or append?
     if (reset) {
@@ -463,12 +497,14 @@ function update_table(name, rows, reset) {
             return `<td${td_class}>${value}</td>`;
         });
 
-        // special cases
-        if (name == 'sched') {
+        // special case
+        if (is_sched) {
             if (!last && nodes.length && !row.moves) {
                 nodes[nodes.length - 1].classList.add('last');
                 last = true;
             }
+            if (row.white == players[0].name && row.black == players[1].name)
+                new_rows.push(row);
         }
 
         let node = CreateNode('tr', vector.join(''));
@@ -476,6 +512,10 @@ function update_table(name, rows, reset) {
     }
 
     InsertNodes(body, nodes);
+
+    // special case
+    if (is_sched)
+        update_table('h2h', new_rows, reset);
 }
 
 // PGN
@@ -523,7 +563,6 @@ function download_pgn(reset_time) {
         data.gameChanged = 1;
         update_pgn(data);
     });
-
 }
 
 /**
@@ -572,7 +611,7 @@ function update_pgn(pgn) {
     // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
     num_ply = pgn_moves.length;
     turn = num_ply % 2;
-    let players = [],
+    let short_nodes = [],
         who = 1 - turn;
 
     if (DEV.ply & 1)
@@ -586,7 +625,11 @@ function update_pgn(pgn) {
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
 
-        players.push([short, node]);
+        short_nodes.push([short, node]);
+        Assign(players[id], {
+            name: name,
+            short: short,
+        });
 
         HTML(`#engine${id}`, name);
         HTML(`[data-x="name"]`, short, node);
@@ -617,10 +660,16 @@ function update_pgn(pgn) {
             HTML(`#${key}${who}`, stats[key]);
         });
 
-        let node = players[who][1];
+        let [short, node] = short_nodes[who];
         HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
-        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[who][0], eval_), node);
+        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(short, eval_), node);
         HTML('.live-pv', move.pv? move.pv.San: '', node);
+
+        Assign(players[who], {
+            eval: eval_,
+            left: move.tl,
+            time: move.mt,
+        });
         who = 1 - who;
     }
 
@@ -844,6 +893,7 @@ function action_key(code) {
     switch (code) {
     // escape
     case 27:
+        LS(`action_key: ${code}`);
         show_info(false);
         break;
     }
@@ -884,6 +934,7 @@ function game_action_key(code) {
         // escape, e
         case 27:
         case 69:
+            LS(`game_action_key: ${code}`);
             if (Visible('#modal2'))
                 show_modal(true);
             else
@@ -957,7 +1008,8 @@ function game_action_key(code) {
             break;
         // escape
         case 27:
-            show_menu();
+            // LS(`game_action_key2: ${code}`);
+            // show_menu();
             break;
         }
     }
@@ -1002,13 +1054,16 @@ function update_twitch(dark) {
 
 /**
  * Handle xboard events
+ * + control click
+ * - history/moves click
+ * - drag and drop
  * @param {XBoard} board
  * @param {string} type
- * @param {*} value
+ * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    LS(`hook: ${board.name} : ${type} : ${value}`);
-    if (type == 'click') {
+    if (type == 'control') {
+        LS(`hook: ${board.name} : ${type} : ${value}`);
         switch (value) {
         case 'cube':
             board.target = (board.target == 'html')? 'text': 'html';
@@ -1016,6 +1071,15 @@ function handle_board_events(board, type, value) {
             board.resize();
             break;
         }
+    }
+    else if (type == 'move') {
+        let target = value.target,
+            id = target.dataset.i;
+        LS(id);
+    }
+    else {
+        LS(type);
+        LS(value);
     }
 }
 
@@ -1147,9 +1211,8 @@ function startup_game() {
         },
         extra: {
             cross_crash: [ON_OFF, 0],
-            live_log: [[5, 10, 'all'], 10],
-        },
-        twitch: {
+            live_log: [[0, 5, 10, 'all'], 0],
+            twitch_chat: [ON_OFF , 1],
             twitch_dark: [ON_OFF, 1],
             twitch_video: [ON_OFF, 1],
         },

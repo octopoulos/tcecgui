@@ -280,6 +280,7 @@ grid {
     margin-left: 0.28em;
 }
 .xpiece {
+    cursor: pointer;
     height: 1em;
     left: 0;
     position: absolute;
@@ -562,12 +563,14 @@ grid {
     margin: 4px;
     max-width: calc(100vh - 150px);
     min-width: 281px;
+    order: 1;
 }
 #center {
     flex: 2;
     max-width: 350px;
     margin: 4px;
     min-width: 260px;
+    order: 2;
 }
 #right {
     flex: 2;
@@ -575,6 +578,7 @@ grid {
     max-width: 350px;
     min-height: 350px;
     min-width: 281px;
+    order: 3;
 }
 #lives {
     min-height: 300px;
@@ -582,6 +586,9 @@ grid {
 }
 #footer {
     padding: 1em;
+}
+#desc {
+    max-width: 630px;
 }
 .tabs {
     justify-content: center;

@@ -2,7 +2,7 @@
 // included after: common, engine
 /*
 globals
-_, _BLACK, _WHITE, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
+_, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, calculate_probability, calculate_score, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout,
 clearInterval, ClipboardJS, columnsEvent, console, create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV,
 document, dummyCross, engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
@@ -22,7 +22,9 @@ let eventCross = [],
 
 /***************************** CUP ***************************************************/
 
-let activePly = 0,
+let _BLACK = 'black',
+    _WHITE = 'white',
+    activePly = 0,
     activePvKey = [],
     all_engines = ['w', 'b'],          // w,b full engine names
     all_pvs = [[], []],
@@ -1448,7 +1450,7 @@ function updateH2hData()
         {
             add_timeout('update_h2h', () => {updateH2hData();}, 5000);
             LS("H2h did not get updated:" + h2hRetryCount);
-            h2hRetryCount = h2hRetryCount + 1;
+            h2hRetryCount ++;
             return;
         }
     }
@@ -1572,6 +1574,7 @@ function updateTourStat(data)
     $('#tf').bootstrapTable('load', tinfo);
 }
 
+// TODO: REMOVE
 function updateScheduleData(scdatainput)
 {
     let scdata = [],

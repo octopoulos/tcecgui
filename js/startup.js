@@ -55,14 +55,14 @@ function set_global_events() {
         parse_dev();
     });
 
-    // keys
-    Events(window, 'keydown', e => {
-        tcecHandleKey(e);
-    });
+    // // keys
+    // Events(window, 'keydown', e => {
+    //     tcecHandleKey(e);
+    // });
 
-    C('.toggleDark', () => {
-        toggleTheme();
-    });
+    // C('.toggleDark', () => {
+    //     toggleTheme();
+    // });
     C('.refreshBoard', () => {
         updateRefresh();
     });

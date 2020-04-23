@@ -14,7 +14,6 @@
     <script src="js/game.js"></script>
     <script src="js/libs/socket.io.js"></script>
     <script src="js/temp.js"></script>
-    <script src="dist/js/tcectables.js"></script>
     <script src="js/network.js"></script>
     <script src="js/startup.js"></script>
     <script src="js/script.js"></script>
@@ -261,7 +260,16 @@
             <div id="table-h2h" class="scroller dn"></div>
             <div id="table-sched" class="scroller dn"></div>
             <div id="table-stats" class="scroller dn"></div>
-            <div id="table-log" class="scroller dn"></div>
+            <div id="table-log" class="scroller dn">
+                <hori class="fbetween">
+                    <div></div>
+                    <div>
+                        <i data-t="Lines"></i>
+                        <select od="live-log"></select>
+                    </div>
+                </hori>
+                <ul id="log"></ul>
+            </div>
             <div id="table-crash" class="scroller dn"></div>
         </vert>
     </vert>
@@ -281,13 +289,17 @@
     <!-- footer -->
     <vert id="footer">
         <div id="desc">
-            <b>TCEC</b>
-            (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom
-            in cooperation with Chessdom Arena.
-            The goal is to provide the viewers with a live broadcast of long time control, quality chess
-            - played strictly between computer chess engines created by different programmers.
-            One Season is divided into several Stages and lasts about 3-4 months.
-            The winner of the Season will be the TCEC Grand Champion.
+            <p>
+                <b>TCEC</b>
+                (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom
+                in cooperation with Chessdom Arena.
+                The goal is to provide the viewers with a live broadcast of long time control, quality chess
+                - played strictly between computer chess engines created by different programmers.
+            </p>
+            <p>
+                One Season is divided into several Stages and lasts about 3-4 months.
+                The winner of the Season will be the TCEC Grand Champion.
+            </p>
         </div>
         <br>
         <div>&copy;TCEC Chessdom &copy;Chess Arena 2010-2020</div>

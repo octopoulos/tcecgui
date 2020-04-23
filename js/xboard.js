@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Assign, C, Class, CreateNode, DEV, Floor, Hide, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Show, Split,
-Style, T, update_svg, Upper
+_, A, Assign, C, Class, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Show,
+Split, Style, T, update_svg, Upper
 */
 'use strict';
 
@@ -126,8 +126,15 @@ class XBoard {
     hook(callback) {
         let that = this;
         C('[data-x]', function() {
-            callback(that, 'click', this.dataset.x);
+            callback(that, 'control', this.dataset.x);
         }, this.node);
+        C('.xmoves', e => {
+            callback(that, 'move', e);
+        });
+        // TODO: remove, must replace with mouse/touch events
+        Events('.xpiece', 'dragenter dragover dragexit dragleave drop', e => {
+            callback(that, e.type, e);
+        });
     }
 
     /**
@@ -155,6 +162,11 @@ class XBoard {
 
         if (this.options.hook)
             this.hook(this.options.hook);
+
+        // TODO: remove
+        Events(this.node, 'dragover', e => {
+            e.preventDefault();
+        });
     }
 
     /**
@@ -262,6 +274,9 @@ class XBoard {
                     node.firstElementChild.src = image;
                 else {
                     node = CreateNode('div', `<img src="${image}">`);
+                    // TODO: remove
+                    node.setAttribute('draggable', true);
+
                     nodes.push(node);
                     Class(node, `xpiece${piece_class? (' ' + piece_class): ''}`);
                     piece.node = node;

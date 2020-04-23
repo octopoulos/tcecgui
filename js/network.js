@@ -40,6 +40,7 @@ function init_sockets() {
             div = _('#log-wrapper'),
             text = data.split(/\n|\s\n/).join("<br>");
 
+        // TODO: change this, not a good way to add nodes
         div.innerHTML += `<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`;
         div.scrollTop = div.scrollHeight;
     });
@@ -160,6 +161,7 @@ function init_sockets() {
             LS('socket/enginerating:');
             LS(data);
         }
+        // not used
         updateEngRatingData(data);
     });
     socket.on('crash', data => {
