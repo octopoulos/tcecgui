@@ -1,4 +1,8 @@
-/* theme-dark */
+/*
+dark.css
+- used in Live mode
+- inherits from light.css
+*/
 body {
     background: #333;
     color: #fff;

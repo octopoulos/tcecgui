@@ -273,10 +273,8 @@ class XBoard {
                 if (node)
                     node.firstElementChild.src = image;
                 else {
-                    node = CreateNode('div', `<img src="${image}">`);
-                    // TODO: remove
-                    node.setAttribute('draggable', true);
-
+                    // TODO: remove draggable
+                    node = CreateNode('div', `<img src="${image}">`, {draggable: true});
                     nodes.push(node);
                     Class(node, `xpiece${piece_class? (' ' + piece_class): ''}`);
                     piece.node = node;

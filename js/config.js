@@ -9,8 +9,8 @@
 // (after everything except script.js)
 /*
 globals
-Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, ENGINE_COLORS:true, ENGINE_FEATURES, ENGINE_NAMES:true,
-HOST:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TWITCH_CHANNEL:true, TWITCH_CHAT:true
+Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true, ENGINE_FEATURES,
+ENGINE_NAMES:true, HOST:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -26,14 +26,19 @@ function startup_config() {
     // 2 & 3 = live engines
     ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'];
 
-    // Use Assign to append new NN engines here, by default: AllieStein & LCZero
+    // use Assign to append new NN engines here, by default: AllieStein & LCZero
     // - & 1 => NN engine
     // - & 2 => Leela variations
     Assign(ENGINE_FEATURES, {
         LCZeroCPU: 3,
     });
 
+    // first theme is always the default theme => don't change it
     THEMES = ['light', 'dark'];
+
+    // modify default values
+    Assign(DEFAULTS, {
+    });
 
     // navigation links
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'
@@ -87,9 +92,10 @@ function startup_config() {
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat';
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // POST PROCESS
-    ///////////////
+    // POST PROCESS - don't modify
+    //////////////////////////////
 
     // clean up some mistakes
+    DEFAULTS.theme = THEMES[0];
     HOST = HOST.replace(/\/$/, '');
 }

@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-24 : 2020-04-23 : light-archive.css and dark-archive.css => make skeleton theme
+2020-04-24 : 2020-04-13 : remove bootstrap locale folder
+2020-04-24 : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
 2020-04-24 : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 2020-04-24 : 2020-04-24 : new stucture: info -> about, rules, faq => no accidental misclick opening a new page
 2020-04-24 : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
@@ -81,26 +84,26 @@ high:
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : click on PV => keyboard should move in PV
--          : 2020-04-17 : play archive games without loading a new page
+~          : 2020-04-17 : play archive games without loading a new page
 medium:
+-          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
--          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 low:
--          : 2020-04-23 : archive.css and archive-dark.css => make skeleton theme
--          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
--          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
--          : 2020-04-13 : add an SVG theme for the pieces
 -          : 2020-04-23 : remove moment.js, javascript can handle date/time just fine
+-          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+-          : 2020-04-13 : add an SVG theme for the pieces
+-          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
--          : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
 -          : 2020-04-13 : add 3d rendering option to the chessboard
 -          : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
 -          : 2020-04-13 : only load the 3d library/files when the user wants to use it
--          : 2020-04-13 : remove bootstrap locale folder
+-          : 2020-04-24 : add 3d dark room
+-          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
+-          : 2020-04-24 : add 3d screens displaying the board
 -          : 2020-04-13 : add 3d players moving the pieces
 -          : 2020-04-13 : add 3d crowd based on the number of viewers
 -          : 2020-04-13 : add 3d tables + room

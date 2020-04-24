@@ -9,8 +9,9 @@
 // included after: common
 /*
 globals
-_, Abs, Assign, Attrs, clearTimeout, DefaultFloat, document, E, HTML, Keys, localStorage, LS, Min, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, Title, window
+_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, InsertNodes, Keys, localStorage,
+LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, Title,
+window
 */
 'use strict';
 
@@ -497,31 +498,48 @@ function update_svg(parent) {
 
 /**
  * Update the theme
+ * @param {string[]=} themes if null, will use Y.theme
  * @param {function=} callback
- * @param {number} version CSS version, use Now() to force reload
+ * @param {number=} version CSS version, use Now() to force reload
  */
-function update_theme(callback, version=15) {
+function update_theme(themes, callback, version=15) {
     let parent = _('#extra-style');
     if (!parent)
         return;
-    let child = parent.firstChild,
-        theme = Y.theme;
+    if (!themes)
+        themes = [Y.theme];
 
-    // default theme
-    if (theme == THEMES[0]) {
-        if (child) {
-            child.setAttribute('href2', child.href);
-            child.removeAttribute('href');
-        }
+    // default theme is skipped because it's already loaded
+    if (themes[0] == THEMES[0])
+        themes = themes.slice(1);
+
+    let children = A('link', parent),
+        links = themes.map(theme => `css/${theme}.css?v=${version}`),
+        num_child = children.length,
+        num_theme = themes.length,
+        min = Min(num_child, num_theme);
+
+    // 1) replace existing links
+    for (let i=0; i<min; i++) {
+        let child = children[i],
+            base_href = child.href.split('/').slice(-1)[0].split('.')[0],
+            theme = themes[i];
+
+        if (base_href != theme)
+            child.setAttribute('href', links[i]);
     }
-    else {
-        if (!child) {
-            child = document.createElement('link');
-            child.rel = 'stylesheet';
+
+    // 2) remove extra links
+    if (num_child > num_theme) {
+        for (let i=num_theme; i<num_child; i++)
+            children[i].removeAttribute('href');
+    }
+    // 3) add extra links
+    else if (num_child < num_theme) {
+        for (let i=num_child; i<num_theme; i++) {
+            let child = CreateNode('link', null, {href: links[i], rel: 'stylesheet'});
             parent.appendChild(child);
         }
-        child.href = `css/theme-${theme}.css?v=${version}`;
-        child.removeAttribute('href2');
     }
 
     // post-process

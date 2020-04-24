@@ -16,7 +16,7 @@ initTables, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, Split, start_game,
 start_tcec, startup_3d, startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style,
-tcecHandleKey, toggleTheme, translate_node, translates:true, unlistenLogMain, update_debug, update_theme,
+tcecHandleKey, THEMES, toggleTheme, translate_node, translates:true, unlistenLogMain, update_debug, update_theme,
 updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners,
 virtual_check_hash_special:true, window, Y
 */
@@ -50,15 +50,23 @@ function action_key(code) {
 
 /**
  * Update the theme
+ * - if we're in the archive, then also add the [theme]-archive.css
  * @param {string=} theme
  */
 function change_theme(theme) {
+    let def = THEMES[0];
     if (theme != undefined)
-        save_option('theme', theme);
+        save_option('theme', theme || def);
 
-    S('#theme0', Y.theme);
-    S('#theme1', !Y.theme);
-    update_theme();
+    theme = Y.theme;
+    let themes = [theme];
+    // TODO: make sure every theme is included in THEMES
+    if (Y.x == 'archive')
+        themes.push(`${theme}-archive`);
+
+    S('#theme0', theme != def);
+    S('#theme1', theme == def);
+    update_theme(themes);
 }
 
 /**
@@ -67,6 +75,7 @@ function change_theme(theme) {
 function check_hash_special() {
     Class('#archive', 'yellow', Y.x == 'archive');
     Class('#live', 'red', Y.x == 'live');
+    change_theme();
 }
 
 /**
@@ -400,13 +409,17 @@ function set_global_events() {
         }
 
         while (target) {
+            let id = target.id;
+            if (id) {
+                if (['archive', 'live'].includes(id))
+                    break;
+                if (id.includes('modal') || id.includes('popup')) {
+                    in_modal = id;
+                    break;
+                }
+            }
             if (HasClass(target, 'nav')) {
                 in_modal = true;
-                break;
-            }
-            let id = target.id;
-            if (id && (id.includes('modal') || id.includes('popup'))) {
-                in_modal = id;
                 break;
             }
             target = target.parentNode;
@@ -428,7 +441,7 @@ function set_global_events() {
 
     // theme + twitch
     C('#theme0, #theme1', function() {
-        change_theme((this.id.slice(-1) == '1')? 'dark': '');
+        change_theme((this.id.slice(-1) == '1')? 'dark': 'light');
     });
     C('#twitch0, #twitch1', function() {
         update_twitch((this.id.slice(-1) == '1') * 1);

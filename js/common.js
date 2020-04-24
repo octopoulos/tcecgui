@@ -240,17 +240,24 @@ function Contain(list, pattern) {
 }
 
 /**
- * Create a new node and set its HTML
+ * Create a new node
+ * + set its HTML
+ * + set its attributes
  * @param {string} tag
- * @param {string} html
+ * @param {string=} html
+ * @param {Object=} attrs
  * @returns {Node} created node
  * @example
  * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
  */
-function CreateNode(tag, html) {
+function CreateNode(tag, html, attrs) {
     let node = document.createElement(tag);
     if (html)
         node.innerHTML = html;
+    if (attrs)
+        Keys(attrs).forEach(key => {
+            node.setAttribute(key, attrs[key]);
+        });
     return node;
 }
 
