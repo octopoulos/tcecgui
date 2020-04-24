@@ -299,6 +299,21 @@ function Events(sel, events, callback, options, parent) {
 }
 
 /**
+ * Check if a node has a class
+ * @param {string|Node} node CSS selector or node
+ * @param {string} class_
+ * @returns {boolean}
+ */
+function HasClass(node, class_) {
+    if (typeof(node) == 'string')
+        node = _(node);
+    if (!node)
+        return;
+
+    return node.classList && node.classList.contains(class_);
+}
+
+/**
  * Hide nodes
  * + handle dn
  * @param {string|Node} sel CSS selector or node

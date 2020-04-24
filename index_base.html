@@ -27,27 +27,37 @@
     <div id="overlay" class="dn"></div>
     <div id="debug"></div>
     <div id="popup" class="popup"></div>
+    <vert id="modal" class="popup"></vert>
+    <vert id="modal2" class="popup"></vert>
     <!-- everything from here cannot be translated -->
     <div class="notranslate">
     <horis id="header" class="fbetween">
-        <horis>
-            <div id="info" class="nav" data-t="Info"></div>
-            <a class="nav" href="https://wiki.chessdom.org/Rules" target="_blank" data-t="Rules"></a>
-            <a class="nav" href="http://www.tcec-chess.com/archive.html" target="_blank" data-t="Archive"></a>
-            <div class="nav">
+        <horis class="faround fabase">
+            <div id="section">
+                <a class="nav" href="#x=live" data-t="Live"></a>
+                <a class="nav" href="#x=archive" data-t="Archive"></a>
+            </div>
+            <div id="info" class="nav">
+                <i data-t="Info"></i>
+            </div>
+            <div id="rules" class="nav">
+                <i data-t="Rules"></i>
+                <i data-svg="down"></i>
+            </div>
+            <div id="navigate" class="nav">
                 <i data-t="Navigate"></i>
                 <i data-svg="down"></i>
             </div>
-            <div class="nav">
+            <div id="download" class="nav">
                 <i data-t="Download"></i>
                 <i data-svg="down"></i>
             </div>
-            <div class="nav">
+            <div id="options" class="nav">
                 <i data-t="Options"></i>
                 <i data-svg="down"></i>
             </div>
-            <div class="nav">
-                <i data-t="TCEC Links"></i>
+            <div id="articles" class="nav">
+                <i data-t="Articles"></i>
                 <i data-svg="down"></i>
             </div>
         </horis>

@@ -6,6 +6,10 @@ body {
 .popup {
     background: rgba(0, 0, 0, 0.95);
 }
+#popup-info {
+    background: #333;
+    color: #fff;
+}
 
 /* board */
 #board .xmoves {

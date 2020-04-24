@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-04-24 : 2020-04-13 : redo top navigation links without bootstrap
 2020-04-23 : 2020-04-23 : config.js for user configuration => 16TH 7Men TB + URL's + ...
 2020-04-23 : 2020-04-13 : add more Jest tests
 2020-04-23 : 2020-04-23 : swap panes using < > arrows
@@ -80,7 +81,6 @@ high:
 -          : 2020-04-17 : play archive games without loading a new page
 medium:
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
-~          : 2020-04-13 : recode the top navigation bar, without bootstrap
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 low:

@@ -8,9 +8,9 @@ clearInterval, ClipboardJS, columnsEvent, console, create_charts, crosstableData
 document, dummyCross, engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
 LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
 roundDate, roundDateMan, roundResults:true,
-S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, Sign, socket, START_FEN, startDateR1,
-startDateR2, Style, teamsx, Title, touch_handle, turn:true, updateChartData, updateChartDataLive, updateCrosstable,
-WHITE_BLACK, window, xboards, XBoard, Y
+S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, show_info, Sign, socket, START_FEN,
+startDateR1, startDateR2, Style, teamsx, Title, touch_handle, turn:true, updateChartData, updateChartDataLive,
+updateCrosstable, WHITE_BLACK, window, xboards, XBoard, Y
 */
 'use strict';
 
@@ -511,6 +511,7 @@ function setPgn(pgn)
 
         if (eventNameHeader == 0)
         {
+            // all this can be replaced with 1 line, and it would execute faster too ...
             eventNameHeader = pgn.Headers.Event;
             let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
             if (eventTmp)
@@ -3582,15 +3583,6 @@ function popup_engine_info(scolor, e) {
     }
     else
         add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
-}
-
-/**
- * Show/hide info
- * @param {boolean} show
- */
-function show_info(show) {
-    S('#overlay', show);
-    Class('#popup-info', 'popup-show popup-enable', show);
 }
 
 /**

@@ -9,9 +9,9 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, C, change_theme, check_hash, DEV, document, Events, fill_languages, game_action_key,
-game_action_keyup, get_object, getUserS, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
+game_action_keyup, get_object, getUserS, HasClass, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
 LANGUAGES:true, load_defaults, localStorage, LS, Max, Now, parse_dev, resize, Round,
-S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, start_game, start_tcec, startup_3d,
+S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, start_game, start_tcec, startup_3d,
 startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme,
 translate_node, translates:true, unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn,
 updateRefresh, updateTables, updateWinners, window, Y
@@ -53,18 +53,6 @@ function set_global_events() {
         LS('hash change');
         check_hash();
         parse_dev();
-    });
-
-    // // keys
-    // Events(window, 'keydown', e => {
-    //     tcecHandleKey(e);
-    // });
-
-    // C('.toggleDark', () => {
-    //     toggleTheme();
-    // });
-    C('.refreshBoard', () => {
-        updateRefresh();
     });
 
     // language
@@ -115,6 +103,30 @@ function set_global_events() {
             e.preventDefault();
 
         update_debug();
+    });
+
+    // click somewhere => close the popups
+    // TODO: generalise this and put it in engine.js
+    Events(window, 'mousedown touchstart', e => {
+        let in_modal,
+            target = e.target;
+        while (target) {
+            if (HasClass(target, 'nav')) {
+                in_modal = true;
+                break;
+            }
+            let id = target.id;
+            if (id && (id.includes('modal') || id.includes('popup'))) {
+                in_modal = id;
+                break;
+            }
+            target = target.parentNode;
+        }
+
+        if (!in_modal) {
+            show_popup('');
+            show_popup('info');
+        }
     });
 }
 

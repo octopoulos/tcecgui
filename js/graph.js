@@ -6,11 +6,12 @@ Max, Min, Pad, prevPgnData, Round, Y
 */
 'use strict';
 
-// you can modify these
-let COLOR_BLACK = '#000000',
+// modify those values in config.js
+let CHART_JS = 'js/libs/chart.js',
+    COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
-    engine_colors = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'],
-    engine_names = ['White', 'Black', 'Blueleela', '7Fish'];
+    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred'],
+    ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'];
 
 let all_evals = [],
     chart_data = {},
@@ -67,7 +68,7 @@ function create_chart_data() {
         },
         eval: {
             labels: [],
-            datasets: engine_names.map((name, id) => new_dataset(name, engine_colors[id])),
+            datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, ENGINE_COLORS[id])),
         },
         node: {
             labels: [],
@@ -776,7 +777,7 @@ function updateChartData()
  * - load the library and then create the charts =>
  */
 function startup_graphs() {
-    LoadLibrary('js/libs/chart.js', () => {
+    LoadLibrary(CHART_JS, () => {
         LS('CHART LIBRARY LOADED!');
         create_chart_data();
         create_charts();

@@ -6,8 +6,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, Hide, HTML, InsertNodes, Keys,
-Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST, HTML, InsertNodes, Keys,
+LINKS, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style,
 Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
 */
@@ -363,7 +363,7 @@ function download_table(url, name, callback) {
             LS(data);
         }
         if (name)
-            update_table(name, data, true);
+            update_table(name, data);
         if (callback)
             callback(data);
     }
@@ -422,9 +422,9 @@ function download_tables() {
  * Update a table by adding rows
  * @param {string} name
  * @param {Object[]} data
- * @param {boolean=} reset clear the table before updating it
+ * @param {boolean=} reset clear the table before adding data to it (seems like we always need true?)
  */
-function update_table(name, rows, reset) {
+function update_table(name, rows, reset=true) {
     let last,
         data = SetDefault(table_data, name, []),
         is_cross = (name == 'cross'),
@@ -523,40 +523,20 @@ function update_table(name, rows, reset) {
 
 /**
  * Check the adjudication
- * - algorithm taken from setPgn
- * @param {Object} dico adjudication object
+ * @param {Object} dico
  * @param {number} total_moves
- * @returns {(string|number)[]} adj, _50, draw, win
+ * @returns {Object} 50, draw, win
  */
 function check_adjudication(dico, total_moves) {
-    let adj_50 = dico.FiftyMoves,
-        adj_draw = dico.Draw,
-        adj_win = dico.ResignOrWin;
+    let _50 = dico.FiftyMoves,
+        abs_draw = Abs(dico.Draw),
+        abs_win = Abs(dico.ResignOrWin);
 
-    let adjudicated = '',
-        _50 = 50,
-        draw = 50,
-        win = 50;
-
-    if (Abs(adj_draw) <= 10 && total_moves > 58)
-        draw = Max(Abs(adj_draw), 69 - total_moves);
-
-    if (Abs(adj_win) < 11)
-        win = Abs(adj_win);
-
-    if (adj_50 < 51)
-        _50 = adj_50;
-
-    if (_50 < 50 && _50 < win)
-        adjudicated = `${_50} move${(_50 > 1)? 's': ''} 50mr`;
-
-    if (win < 50 && win < draw && win < _50)
-        adjudicated = `${win} pl${(draw > 1)? 'ies': 'y'} win`;
-
-    if (draw < 50 && draw <= _50 && draw <= win)
-        adjudicated = `${draw} pl${(draw > 1)? 'ies': 'y'} draw`;
-
-    return [adjudicated, _50, draw, win];
+    return {
+        50: (_50 < 51)? _50: '-',
+        draw: (abs_draw <= 10 && total_moves > 58)? `${Max(abs_draw, 69 - total_moves)}p`: '-',
+        win: (abs_win < 11)? abs_win: '-',
+    };
 }
 
 /**
@@ -621,12 +601,18 @@ function update_pgn(pgn) {
     if (pgn.Users)
         HTML('td[data-x="viewers"]', pgn.Users, overview);
     if (headers) {
-        Split('ECO|Event|Opening|Result|Round').forEach(key => {
-            HTML(`td[data-x="${Lower(key)}"]`, headers[key], overview);
+        Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
+            let value = headers[key];
+            // TCEC Season 17 => S17
+            if (key == 'Event')
+                value = value.replace('TCEC Season ', 'S');
+            else if (key == 'TimeControl') {
+                let items = value.split('+');
+                key = 'tc';
+                value = `${items[0]/60}'+${items[1]}"`;
+            }
+            HTML(`td[data-x="${Lower(key)}"]`, value, overview);
         });
-
-        let items = headers.TimeControl.split('+');
-        HTML('td[data-x="tc"]', `${items[0]/60}'+${items[1]}"`, overview);
     }
 
     if (!num_move)
@@ -662,14 +648,15 @@ function update_pgn(pgn) {
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
     HTML('td[data-x="tb"]', tb, overview);
 
-    let [adjudicated, _50, draw, win] = check_adjudication(move.adjudication, num_ply);
-    HTML('td[data-x="adj_rule"]', adjudicated || '-', overview);
-    HTML('td[data-x="50"]', _50 || '-', overview);
-    HTML('td[data-x="draw"]', draw || '-', overview);
-    HTML('td[data-x="win"]', win || '-', overview);
+    let finished = headers.TerminationDetails,
+        result = check_adjudication(move.adjudication, num_ply);
+    result.adj_rule = finished;
+    Keys(result).forEach(key => {
+        HTML(`td[data-x="${key}"]`, result[key], overview);
+    });
 
-    S('[data-x="adj_rule"]', adjudicated, overview);
-    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !adjudicated, overview);
+    S('[data-x="adj_rule"]', finished, overview);
+    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
 
     // 4) engines
     WB_TITLES.forEach((title, id) => {
@@ -760,6 +747,28 @@ function update_pgn(pgn) {
 //////////
 
 /**
+ * Create an URL list
+ * - for DOWNLOADS and NAVIGATES
+ * @param {Object} dico
+ */
+function create_url_list(dico) {
+    if (!dico)
+        return '';
+
+    let html = Keys(dico).map(key => {
+        let value = dico[key];
+        if (typeof(value) != 'string')
+            return '<hr>';
+
+        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
+            value = `${HOST}/${value}`;
+        return `<a class="item" href="${value}" target="_blank">${key}</a>`;
+    }).join('');
+
+    return `<vert class="fastart">${html}</vert>`;
+}
+
+/**
  * Show a popup with the engine info
  * @param {string} scolor white, black
  * @param {Event} e
@@ -826,17 +835,106 @@ function resize() {
     // resize the boards
     let width = _('#board').clientWidth;
     xboards.board.resize(width);
+
+    // readjust popups
+    show_popup('info', null, {adjust: true});
+    show_popup('', null, {adjust: true});
 }
 
 /**
- * Show/hide info
- * @param {boolean} show
+ * Show/hide popup
+ * - TODO: generalise this function and put it in engine.js
+ * @param {string=} name
+ * @param {boolean=} show
+ * @param {boolean=} adjust only change its position
+ * @param {boolean=} instant popup appears instantly
+ * @param {boolean=} overlay dark overlay is used behind the popup
  */
-function show_info(show) {
-    S('#overlay', show);
-    if (show)
-        HTML('#popup-desc', HTML('#desc'));
-    Class('#popup-info', 'popup-show popup-enable', show);
+function show_popup(name, show, {adjust, instant=true, overlay}={}) {
+    S('#overlay', show && overlay);
+
+    let node = (name == 'info')? _('#popup-info'): _('#modal');
+
+    if (show || adjust) {
+        let extra = '',
+            html = '',
+            px = 0,
+            py = 0,
+            win_x = window.innerWidth,
+            win_y = window.innerHeight,
+            x = 0,
+            x2 = 0,
+            y = 0,
+            y2 = 0;
+
+        // create the html
+        switch (name) {
+        case 'info':
+            html = HTML('#desc');
+            px = -50;
+            py = -50;
+            x = win_x / 2;
+            y = win_y / 2;
+            break;
+        case 'options':
+            html = 'OPTIONS';
+            break;
+        default:
+            if (name)
+                html = create_url_list(LINKS[name]);
+            break;
+        }
+
+        if (show)
+            HTML(name == 'info'? '#popup-desc': '#modal', html);
+        else
+            name = node.dataset.id;
+
+        // align the popup with the target, if any
+        if (name && !px) {
+            let rect = _(`#${name}`).getBoundingClientRect();
+            [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
+        }
+
+        // make sure the popup remains inside the window
+        if (!extra) {
+            let height = node.clientHeight,
+                width = node.clientWidth;
+
+            // align left doesn't work => try align right, and if not then center
+            if (x + width > win_x - 20) {
+                if (x2 < win_x - 20 && x2 - width > 0) {
+                    px = -100;
+                    x = x2;
+                }
+                else {
+                    px = -50;
+                    x = win_x / 2;
+                }
+            }
+            // same for y
+            if (y + height > win_y) {
+                if (y2 < win_y && y2 - height > 0) {
+                    py = -100;
+                    y = y2;
+                }
+                else {
+                    py = -50;
+                    y = win_y / 2;
+                }
+            }
+        }
+        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
+    }
+
+    if (!adjust) {
+        if (instant != undefined)
+            Class(node, 'instant', instant);
+        Class(node, 'popup-show popup-enable', !!show);
+
+        // remember which popup it is, so if we click again on the same id => it closes it
+        node.dataset.id = show? name: '';
+    }
 }
 
 // LIVE DATA
@@ -947,7 +1045,8 @@ function action_key(code) {
     // escape
     case 27:
         LS(`action_key: ${code}`);
-        show_info(false);
+        show_popup();
+        show_popup('info');
         break;
     }
 }
@@ -978,14 +1077,14 @@ function game_action_key(code) {
             parent = Visible('#modal')? _('#modal'): _('#modal2'),
             items = Array.from(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
-            index = (items.findIndex(item => item.classList.contains('selected')) + length) % length,
+            index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
             node = items[index],
             tag = node.tagName,
-            is_grid = node.parentNode.classList.contains('grid');
+            is_grid = HasClass(node.parentNode, 'grid');
 
         switch (code) {
         // escape, e
-        case 27:
+        // case 27:
         case 69:
             LS(`game_action_key: ${code}`);
             if (Visible('#modal2'))
@@ -1106,7 +1205,7 @@ function update_twitch(dark) {
     S('#twitch1', src && !dark);
 
     let right = _('#right'),
-        has_narrow = right.classList.contains('narrow'),
+        has_narrow = HasClass(right, 'narrow'),
         need_narrow = !src;
     if (need_narrow != has_narrow) {
         Class(right, 'narrow', need_narrow);
@@ -1215,16 +1314,26 @@ function set_game_events() {
         popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
     });
     C('.popup-close', function() {
-        show_info(false);
+        show_popup();
+        show_popup('info');
         let parent = Parent(this, 'div|vert', 'popup');
         if (parent)
             Class(parent, '-popup-enable -popup-show');
     });
+    C('#articles, #download, #navigate, #options, #rules', function() {
+        show_popup('info');
+        if (_('#modal').dataset.id == this.id)
+            show_popup('');
+        else
+            show_popup(this.id, true);
+    });
     C('#info', () => {
-        show_info(true);
+        show_popup('');
+        show_popup('info', true, {overlay: true});
     });
     C('#overlay', () => {
-        show_info(false);
+        show_popup();
+        show_popup('info');
     });
 
     // tabs
@@ -1261,7 +1370,7 @@ function set_game_events() {
         Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
     C('.swap', function() {
-        move_pane(this.parentNode.parentNode, this.classList.contains('mirror')? -1: 1);
+        move_pane(HasClass(this.parentNode.parentNode, 'mirror')? -1: 1);
     });
 }
 

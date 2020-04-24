@@ -21,6 +21,10 @@ function initTables() {
 
 }
 
+// DONE
+function newUpdateStandData() {
+}
+
 function setDefaults() {
 
 }

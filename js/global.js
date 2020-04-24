@@ -11,6 +11,10 @@ DEV:true, LS, Y
 */
 'use strict';
 
+// modify those values in config.js
+let HOST = 'https://tcec-chess.com',
+    LINKS = {};
+
 /**
  * Parse DEV
  */
