@@ -1,31 +1,113 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-23
+// @version 2020-04-24
 //
-// startup
+// Startup
+// - start everything: 3d, game, ...
+// - global window events
 //
 // included after: common, engine, global, 3d, xboard, game, network
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, C, change_theme, check_hash, DEV, document, Events, fill_languages, game_action_key,
-game_action_keyup, get_object, getUserS, HasClass, hideBanner, ICONS:true, init_sockets, initTables, KEY_TIMES, KEYS,
-LANGUAGES:true, load_defaults, localStorage, LS, Max, Now, parse_dev, resize, Round,
-S, save_option, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, start_game, start_tcec, startup_3d,
-startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style, tcecHandleKey, toggleTheme,
-translate_node, translates:true, unlistenLogMain, update_debug, updateLiveChart, updateLiveEval, updatePgn,
-updateRefresh, updateTables, updateWinners, window, Y
+api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, Events, fill_languages,
+game_action_key, game_action_keyup, get_object, getUserS, HasClass, hideBanner, HOST, HTML, ICONS:true, init_sockets,
+initTables, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
+S, save_option, screen, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, Split, start_game,
+start_tcec, startup_3d, startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style,
+tcecHandleKey, toggleTheme, translate_node, translates:true, unlistenLogMain, update_debug, update_theme,
+updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners,
+virtual_check_hash_special:true, window, Y
 */
 'use strict';
+
+// modify those values in config.js
+let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
+    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat';
+
+/**
+ * Same as action_key_no_input, but when the key is up
+ * @param {number} code hardware keycode
+ */
+function action_keyup_no_input(code) {
+}
+
+/**
+ * Handle keys, even when an input is active
+ * @param {number} code hardware keycode
+ */
+function action_key(code) {
+    switch (code) {
+    // escape
+    case 27:
+        LS(`action_key: ${code}`);
+        show_popup();
+        show_popup('about');
+        break;
+    }
+}
+
+/**
+ * Update the theme
+ * @param {string=} theme
+ */
+function change_theme(theme) {
+    if (theme != undefined)
+        save_option('theme', theme);
+
+    S('#theme0', Y.theme);
+    S('#theme1', !Y.theme);
+    update_theme();
+}
+
+/**
+ * Called whenever the page loads and whenever the hash changes
+ */
+function check_hash_special() {
+    LS('check hash special');
+    if (Y.x == 'archive')
+        ;
+    else if (Y.x == 'live')
+        ;
+}
+
+/**
+ * Create an URL list
+ * @param {Object} dico {key:value, ...}
+ * - value is string => URL is created unless empty string
+ * - otherwise insert separator
+ */
+function create_url_list(dico) {
+    if (!dico)
+        return '';
+
+    let html = Keys(dico).map(key => {
+        let value = dico[key];
+        if (typeof(value) != 'string')
+            return '<hr>';
+
+        if (!value)
+            return `<a class="item" data-id="${create_field_value(key)[0]}">${key}</a>`;
+
+        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
+            value = `${HOST}/${value}`;
+        return `<a class="item" href="${value}" target="_blank">${key}</a>`;
+    }).join('');
+
+    return `<vert class="fastart">${html}</vert>`;
+}
 
 /**
  * First initialisation
  */
 function init_globals() {
+    // DELETE
     updatePgn();
     setDefaults();
 
     // timeouts
+    // TODO: change that
     add_timeout('twitch', () => {setTwitch();}, 10000);
     add_timeout('get_users', () => {getUserS();}, 5000);
     add_timeout('update_winners', () => {updateWinners();}, 12000);
@@ -41,6 +123,186 @@ function init_globals() {
 }
 
 /**
+ * Move a pane left or right, swapping it with another
+ * - call without arguments to initialise the panes at startup
+ * @param {Node=} node
+ * @param {number=} dir -1, 1
+ */
+function move_pane(node, dir) {
+    let names = Split(Y.order);
+
+    if (node) {
+        let id = node.id,
+            curr = names.indexOf(id),
+            target = (curr + dir + 3) % 3;
+        names[curr] = names[target];
+        names[target] = id;
+    }
+
+    names.forEach((name, id) => {
+        _(`#${name}`).style.order = id;
+    });
+
+    if (node)
+        save_option('order', names.join('|'));
+}
+
+/**
+ * Resize the window => resize some other elements
+ */
+function resize() {
+    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
+    Style('#chat', `height:${height}px;width:100%`);
+
+    // readjust popups
+    show_popup('about', null, {adjust: true});
+    show_popup('', null, {adjust: true});
+
+    resize_game();
+}
+
+/**
+ * Show/hide popup
+ * @param {string=} name
+ * @param {boolean=} show
+ * @param {boolean=} adjust only change its position
+ * @param {boolean=} instant popup appears instantly
+ * @param {boolean=} overlay dark overlay is used behind the popup
+ */
+function show_popup(name, show, {adjust, instant=true, overlay}={}) {
+    S('#overlay', show && overlay);
+
+    let node = (name == 'about')? _('#popup-about'): _('#modal');
+
+    if (show || adjust) {
+        let extra = '',
+            html = '',
+            px = 0,
+            py = 0,
+            win_x = window.innerWidth,
+            win_y = window.innerHeight,
+            x = 0,
+            x2 = 0,
+            y = 0,
+            y2 = 0;
+
+        // create the html
+        switch (name) {
+        case 'about':
+            html = HTML('#desc');
+            px = -50;
+            py = -50;
+            x = win_x / 2;
+            y = win_y / 2;
+            break;
+        case 'options':
+            html = 'OPTIONS';
+            break;
+        default:
+            if (name)
+                html = create_url_list(LINKS[name]);
+            break;
+        }
+
+        if (show)
+            HTML(name == 'about'? '#popup-desc': '#modal', html);
+        else
+            name = node.dataset.id;
+
+        // align the popup with the target, if any
+        if (name && !px) {
+            let target = _(`#${name}`);
+            if (target) {
+                let rect = target.getBoundingClientRect();
+                [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
+            }
+        }
+
+        // make sure the popup remains inside the window
+        if (!extra) {
+            let height = node.clientHeight,
+                width = node.clientWidth;
+
+            // align left doesn't work => try align right, and if not then center
+            if (x + width > win_x - 20) {
+                if (x2 < win_x - 20 && x2 - width > 0) {
+                    px = -100;
+                    x = x2;
+                }
+                else {
+                    px = -50;
+                    x = win_x / 2;
+                }
+            }
+            // same for y
+            if (y + height > win_y) {
+                if (y2 < win_y && y2 - height > 0) {
+                    py = -100;
+                    y = y2;
+                }
+                else {
+                    py = -50;
+                    y = win_y / 2;
+                }
+            }
+        }
+        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
+    }
+
+    if (!adjust) {
+        if (instant != undefined)
+            Class(node, 'instant', instant);
+        Class(node, 'popup-show popup-enable', !!show);
+
+        // remember which popup it is, so if we click again on the same id => it closes it
+        node.dataset.id = show? name: '';
+    }
+}
+
+/**
+ * Enable/disable twitch video + chat
+ * @param {number=} dark
+ */
+function update_twitch(dark) {
+    if (dark != undefined)
+        save_option('twitch_dark', dark);
+
+    // 1) update twitch chat IF there was a change
+    dark = Y.twitch_dark;
+    let node = _('#chat'),
+        current = node.src,
+        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
+
+    if (current != src)
+        node.src = src;
+    S('#hide-chat, #chat', src);
+    S('#show-chat', !src);
+    S('#twitch0', src && dark);
+    S('#twitch1', src && !dark);
+
+    let right = _('#right'),
+        has_narrow = HasClass(right, 'narrow'),
+        need_narrow = !src;
+    if (need_narrow != has_narrow) {
+        Class(right, 'narrow', need_narrow);
+        resize();
+    }
+
+    // 2) update twitch video IF there was a change
+    node = _('#twitch-vid');
+    current = node.src;
+    src = Y.twitch_video? TWITCH_CHANNEL: '';
+
+    if (current != src)
+        node.src = src;
+    S('#hide-video, #twitch-vid', src);
+    S('#show-video', !src);
+}
+
+// MAIN
+///////
+
+/**
  * Global events
  */
 function set_global_events() {
@@ -50,7 +312,6 @@ function set_global_events() {
     });
     // it won't be triggered by pushState and replaceState
     Events(window, 'hashchange', () => {
-        LS('hash change');
         check_hash();
         parse_dev();
     });
@@ -105,11 +366,42 @@ function set_global_events() {
         update_debug();
     });
 
+    // popups
+    C('.popup-close', function() {
+        show_popup();
+        show_popup('about');
+        let parent = Parent(this, 'div|vert', 'popup');
+        if (parent)
+            Class(parent, '-popup-enable -popup-show');
+    });
+    C('#articles, #download, #info, #navigate, #options', function() {
+        show_popup('about');
+        if (_('#modal').dataset.id == this.id)
+            show_popup('');
+        else
+            show_popup(this.id, true);
+    });
+    C('#overlay', () => {
+        show_popup();
+        show_popup('about');
+    });
+
     // click somewhere => close the popups
-    // TODO: generalise this and put it in engine.js
     Events(window, 'mousedown touchstart', e => {
         let in_modal,
-            target = e.target;
+            target = e.target,
+            dataset = target.dataset;
+
+        // special cases
+        if (dataset) {
+            let id = dataset.id;
+            if (id == 'about') {
+                show_popup('');
+                show_popup(id, true, {overlay: true});
+                return;
+            }
+        }
+
         while (target) {
             if (HasClass(target, 'nav')) {
                 in_modal = true;
@@ -125,8 +417,30 @@ function set_global_events() {
 
         if (!in_modal) {
             show_popup('');
-            show_popup('info');
+            show_popup('about');
         }
+    });
+
+    // swap panes
+    Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
+        Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
+    });
+    C('.swap', function() {
+        move_pane(HasClass(this.parentNode.parentNode, 'mirror')? -1: 1);
+    });
+
+    // theme + twitch
+    C('#theme0, #theme1', function() {
+        change_theme((this.id.slice(-1) == '1')? 'dark': '');
+    });
+    C('#twitch0, #twitch1', function() {
+        update_twitch((this.id.slice(-1) == '1') * 1);
+    });
+    C('#hide-chat, #hide-video, #show-chat, #show-video', function() {
+        let [left, right] = this.id.split('-');
+        LS(`left=${left} : right=${right}`);
+        save_option(`twitch_${right}`, (left == 'show') * 1);
+        update_twitch();
     });
 }
 
@@ -179,6 +493,9 @@ function startup() {
         ukr: 'українська',
     };
 
+    virtual_check_hash_special = check_hash_special;
+
+    // pre-process
     startup_3d();
     startup_game();
     startup_config();
@@ -190,7 +507,12 @@ function startup() {
     startup_tcec();
     startup_graphs();
     load_settings();
+
+    // start
+    move_pane();
     start_game();
+    update_twitch();
+    // DELETE
     start_tcec();
 
     init_sockets();

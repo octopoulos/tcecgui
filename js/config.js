@@ -5,7 +5,8 @@
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
 //
-// included after: common, engine, global, 3d, xboard, game, network
+// included after: common, engine, global, 3d, xboard, game, network, startup
+// (after everything except script.js)
 /*
 globals
 Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, ENGINE_COLORS:true, ENGINE_FEATURES, ENGINE_NAMES:true,
@@ -61,13 +62,14 @@ function startup_config() {
             'Event PGN': 'evalbotelo/archive.pgn',
             'Current PGN': 'evalbotelo/live.pgn',
         },
+        info: {
+            About: '',
+            Rules: 'https://wiki.chessdom.org/Rules',
+            'Book FAQ': 'articles/TCEC_Openings_FAQ.html',
+        },
         navigate: {
             'Main live': 'live.html',
             'Twitch Stream': 'https://www.twitch.tv/tcec_chess_tv',
-        },
-        rules: {
-            Rules: 'https://wiki.chessdom.org/Rules',
-            'Book FAQ': 'articles/TCEC_Openings_FAQ.html',
         },
     };
 

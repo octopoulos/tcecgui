@@ -245,7 +245,7 @@ grid {
     opacity: 1;
 }
 #modal,
-#popup-info {
+#popup-about {
     background: #fff;
     color: #000;
     max-height: 80vh;
@@ -257,18 +257,18 @@ grid {
 #modal a {
     color: #000;
 }
-#popup-info {
+#popup-about {
     min-height: 50vh;
     min-width: 50vw;
 }
-#popup-info > hori,
-#popup-info > vert {
+#popup-about > hori,
+#popup-about > vert {
     align-items: start;
     padding: 1em 1em 0.5em 1em;
     width: 100%;
 }
 #modal,
-#popup-info.instant {
+#popup-about.instant {
     transition: none;
 }
 .item {
@@ -467,6 +467,7 @@ grid {
 .mono {
     font-family: monospace;
     font-size: large;
+    text-align: left;
 }
 .loss {
     color: #f00;
@@ -608,7 +609,7 @@ grid {
     padding: 1em;
 }
 #desc {
-    max-width: 630px;
+    max-width: 666px;
 }
 .tabs {
     justify-content: center;

@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
+2020-04-24 : 2020-04-24 : new stucture: info -> about, rules, faq => no accidental misclick opening a new page
+2020-04-24 : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
 2020-04-24 : 2020-04-13 : redo top navigation links without bootstrap
 2020-04-23 : 2020-04-23 : config.js for user configuration => 16TH 7Men TB + URL's + ...
 2020-04-23 : 2020-04-13 : add more Jest tests
@@ -80,9 +83,9 @@ high:
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 -          : 2020-04-17 : play archive games without loading a new page
 medium:
+-          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
--          : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
 low:
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
@@ -102,5 +105,4 @@ lowest:
 -          : 2020-04-13 : add 3d crowd based on the number of viewers
 -          : 2020-04-13 : add 3d tables + room
 -          : 2020-04-13 : VR support
--          : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
 -          : 2020-04-23 : add tests for check_adjudication

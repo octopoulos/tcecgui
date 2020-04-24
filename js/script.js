@@ -16,8 +16,8 @@ window.onload = function() {
     // @import {xboard.js}
     // @import {game.js}
     // @import {network.js}
-    // @import {config.js}
     // @import {startup.js}
+    // @import {config.js}
 
     startup();
 };

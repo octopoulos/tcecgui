@@ -2,14 +2,19 @@
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-04-23
 //
+// Game specific code:
+// - control the board, moves
+// - create the tables
+// - update stats
+//
 // included after: common, engine, global, 3d, xboard
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST, HTML, InsertNodes, Keys,
-LINKS, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
-S, save_option, save_storage, screen, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style,
-Title, touch_handle, translate_node, update_theme, Upper, Visible, window, XBoard, Y
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, InsertNodes, Keys,
+Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
+S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, Title,
+touch_handle, translate_node, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -61,8 +66,6 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
     },
     time_delta = 0,
     turn = 0,                           // 0:white to play, 1:black to play
-    TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
-    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat',
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
     WB_TITLES = ['White', 'Black'];
@@ -183,6 +186,9 @@ function get_short_name(engine)
  * @param {Object} data
  */
 function analyse_crosstable(data) {
+    if (!data)
+        return;
+
     let cross_rows = [],
         dicos = data.Table,
         orders = data.Order,
@@ -452,8 +458,10 @@ function update_table(name, rows, reset=true) {
                 value = row[key];
 
             if (value == undefined) {
-                if (is_cross)
+                if (is_cross) {
                     td_class = 'void';
+                    value = '';
+                }
                 else
                     value = '-';
             }
@@ -528,6 +536,8 @@ function update_table(name, rows, reset=true) {
  * @returns {Object} 50, draw, win
  */
 function check_adjudication(dico, total_moves) {
+    if (!dico)
+        return {};
     let _50 = dico.FiftyMoves,
         abs_draw = Abs(dico.Draw),
         abs_win = Abs(dico.ResignOrWin);
@@ -743,198 +753,13 @@ function update_pgn(pgn) {
     // updateChartData();
 }
 
-// ACTIONS
-//////////
-
 /**
- * Create an URL list
- * - for DOWNLOADS and NAVIGATES
- * @param {Object} dico
+ * Resize game elements
  */
-function create_url_list(dico) {
-    if (!dico)
-        return '';
-
-    let html = Keys(dico).map(key => {
-        let value = dico[key];
-        if (typeof(value) != 'string')
-            return '<hr>';
-
-        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
-            value = `${HOST}/${value}`;
-        return `<a class="item" href="${value}" target="_blank">${key}</a>`;
-    }).join('');
-
-    return `<vert class="fastart">${html}</vert>`;
-}
-
-/**
- * Show a popup with the engine info
- * @param {string} scolor white, black
- * @param {Event} e
- */
-function popup_engine_info(scolor, e) {
-    if (!prev_pgn)
-        return;
-
-    let show,
-        popup = _('#popup'),
-        type = e.type;
-
-    if (type == 'mouseleave')
-        show = false;
-    else if (scolor == 'popup')
-        show = true;
-    else {
-        let title = Title(scolor),
-            engine = Split(prev_pgn.Headers[title]),
-            options = prev_pgn[`${title}EngineOptions`],
-            lines = options.map(option => [option.Name, option.Value]);
-
-        // add engine + version
-        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
-        lines = lines.flat().map(item => `<div>${item}</div>`);
-
-        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
-
-        // place the popup in a visible area on the screen
-        let x = e.clientX + 10,
-            y = e.clientY + 10,
-            x2 = 0,
-            y2 = 0;
-        if (x >= window.innerWidth / 2) {
-            x -= 20;
-            x2 = -100;
-        }
-        if (y >= window.innerHeight / 2) {
-            y -= 20;
-            y2 = -100;
-        }
-
-        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
-        show = true;
-    }
-
-    Class(popup, 'popup-show', show);
-    // trick to be able to put the mouse on the popup and copy text
-    if (show) {
-        clear_timeout('popup-engine');
-        Class(popup, 'popup-enable');
-    }
-    else
-        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
-}
-
-/**
- * Resize the window => resize some other elements
- */
-function resize() {
-    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
-    Style('#chat', `height:${height}px;width:100%`);
-
+function resize_game() {
     // resize the boards
     let width = _('#board').clientWidth;
     xboards.board.resize(width);
-
-    // readjust popups
-    show_popup('info', null, {adjust: true});
-    show_popup('', null, {adjust: true});
-}
-
-/**
- * Show/hide popup
- * - TODO: generalise this function and put it in engine.js
- * @param {string=} name
- * @param {boolean=} show
- * @param {boolean=} adjust only change its position
- * @param {boolean=} instant popup appears instantly
- * @param {boolean=} overlay dark overlay is used behind the popup
- */
-function show_popup(name, show, {adjust, instant=true, overlay}={}) {
-    S('#overlay', show && overlay);
-
-    let node = (name == 'info')? _('#popup-info'): _('#modal');
-
-    if (show || adjust) {
-        let extra = '',
-            html = '',
-            px = 0,
-            py = 0,
-            win_x = window.innerWidth,
-            win_y = window.innerHeight,
-            x = 0,
-            x2 = 0,
-            y = 0,
-            y2 = 0;
-
-        // create the html
-        switch (name) {
-        case 'info':
-            html = HTML('#desc');
-            px = -50;
-            py = -50;
-            x = win_x / 2;
-            y = win_y / 2;
-            break;
-        case 'options':
-            html = 'OPTIONS';
-            break;
-        default:
-            if (name)
-                html = create_url_list(LINKS[name]);
-            break;
-        }
-
-        if (show)
-            HTML(name == 'info'? '#popup-desc': '#modal', html);
-        else
-            name = node.dataset.id;
-
-        // align the popup with the target, if any
-        if (name && !px) {
-            let rect = _(`#${name}`).getBoundingClientRect();
-            [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
-        }
-
-        // make sure the popup remains inside the window
-        if (!extra) {
-            let height = node.clientHeight,
-                width = node.clientWidth;
-
-            // align left doesn't work => try align right, and if not then center
-            if (x + width > win_x - 20) {
-                if (x2 < win_x - 20 && x2 - width > 0) {
-                    px = -100;
-                    x = x2;
-                }
-                else {
-                    px = -50;
-                    x = win_x / 2;
-                }
-            }
-            // same for y
-            if (y + height > win_y) {
-                if (y2 < win_y && y2 - height > 0) {
-                    py = -100;
-                    y = y2;
-                }
-                else {
-                    py = -50;
-                    y = win_y / 2;
-                }
-            }
-        }
-        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
-    }
-
-    if (!adjust) {
-        if (instant != undefined)
-            Class(node, 'instant', instant);
-        Class(node, 'popup-show popup-enable', !!show);
-
-        // remember which popup it is, so if we click again on the same id => it closes it
-        node.dataset.id = show? name: '';
-    }
 }
 
 // LIVE DATA
@@ -954,6 +779,9 @@ function set_viewers(count) {
  * @param {number} id 0, 1
  */
 function update_live_eval(data, id) {
+    if (!data)
+        return;
+
     let eval_ = data.eval,
         short = get_short_name(data.engine),
         node = _(`#table-live${id}`);
@@ -1028,28 +856,6 @@ function update_player_eval(data) {
 
 // INPUT / OUTPUT
 /////////////////
-
-/**
- * Same as action_key_no_input, but when the key is up
- * @param {number} code hardware keycode
- */
-function action_keyup_no_input(code) {
-}
-
-/**
- * Handle keys, even when an input is active
- * @param {number} code hardware keycode
- */
-function action_key(code) {
-    switch (code) {
-    // escape
-    case 27:
-        LS(`action_key: ${code}`);
-        show_popup();
-        show_popup('info');
-        break;
-    }
-}
 
 /**
  * Handle a keyup
@@ -1167,62 +973,6 @@ function game_action_key(code) {
     }
 }
 
-// SETTINGS
-///////////
-
-/**
- * Update the theme
- * @param {string=} theme
- */
-function change_theme(theme) {
-    if (theme != undefined)
-        save_option('theme', theme);
-
-    S('#theme0', Y.theme);
-    S('#theme1', !Y.theme);
-    update_theme();
-}
-
-/**
- * Enable/disable twitch video + chat
- * @param {number=} dark
- */
-function update_twitch(dark) {
-    if (dark != undefined)
-        save_option('twitch_dark', dark);
-
-    // 1) update twitch chat IF there was a change
-    dark = Y.twitch_dark;
-    let node = _('#chat'),
-        current = node.src,
-        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
-
-    if (current != src)
-        node.src = src;
-    S('#hide-chat, #chat', src);
-    S('#show-chat', !src);
-    S('#twitch0', src && dark);
-    S('#twitch1', src && !dark);
-
-    let right = _('#right'),
-        has_narrow = HasClass(right, 'narrow'),
-        need_narrow = !src;
-    if (need_narrow != has_narrow) {
-        Class(right, 'narrow', need_narrow);
-        resize();
-    }
-
-    // 2) update twitch video IF there was a change
-    node = _('#twitch-vid');
-    current = node.src;
-    src = Y.twitch_video? TWITCH_CHANNEL: '';
-
-    if (current != src)
-        node.src = src;
-    S('#hide-video, #twitch-vid', src);
-    S('#show-video', !src);
-}
-
 // EVENTS
 /////////
 
@@ -1279,28 +1029,60 @@ function handle_open_table(node, name) {
 }
 
 /**
- * Move a pane left or right, swapping it with another
- * - call without arguments to initialise the panes at startup
- * @param {Node=} node
- * @param {number=} dir -1, 1
+ * Show a popup with the engine info
+ * @param {string} scolor white, black
+ * @param {Event} e
  */
-function move_pane(node, dir) {
-    let names = Split(Y.order);
+function popup_engine_info(scolor, e) {
+    if (!prev_pgn)
+        return;
 
-    if (node) {
-        let id = node.id,
-            curr = names.indexOf(id),
-            target = (curr + dir + 3) % 3;
-        names[curr] = names[target];
-        names[target] = id;
+    let show,
+        popup = _('#popup'),
+        type = e.type;
+
+    if (type == 'mouseleave')
+        show = false;
+    else if (scolor == 'popup')
+        show = true;
+    else {
+        let title = Title(scolor),
+            engine = Split(prev_pgn.Headers[title]),
+            options = prev_pgn[`${title}EngineOptions`],
+            lines = options.map(option => [option.Name, option.Value]);
+
+        // add engine + version
+        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
+        lines = lines.flat().map(item => `<div>${item}</div>`);
+
+        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
+
+        // place the popup in a visible area on the screen
+        let x = e.clientX + 10,
+            y = e.clientY + 10,
+            x2 = 0,
+            y2 = 0;
+        if (x >= window.innerWidth / 2) {
+            x -= 20;
+            x2 = -100;
+        }
+        if (y >= window.innerHeight / 2) {
+            y -= 20;
+            y2 = -100;
+        }
+
+        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
+        show = true;
     }
 
-    names.forEach((name, id) => {
-        _(`#${name}`).style.order = id;
-    });
-
-    if (node)
-        save_option('order', names.join('|'));
+    Class(popup, 'popup-show', show);
+    // trick to be able to put the mouse on the popup and copy text
+    if (show) {
+        clear_timeout('popup-engine');
+        Class(popup, 'popup-enable');
+    }
+    else
+        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
 }
 
 /**
@@ -1309,31 +1091,9 @@ function move_pane(node, dir) {
 function set_game_events() {
     set_3d_events();
 
-    // popups
+    // engine popup
     Events('#info0, #info1', 'click mouseenter mousemove mouseleave', function(e) {
         popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
-    });
-    C('.popup-close', function() {
-        show_popup();
-        show_popup('info');
-        let parent = Parent(this, 'div|vert', 'popup');
-        if (parent)
-            Class(parent, '-popup-enable -popup-show');
-    });
-    C('#articles, #download, #navigate, #options, #rules', function() {
-        show_popup('info');
-        if (_('#modal').dataset.id == this.id)
-            show_popup('');
-        else
-            show_popup(this.id, true);
-    });
-    C('#info', () => {
-        show_popup('');
-        show_popup('info', true, {overlay: true});
-    });
-    C('#overlay', () => {
-        show_popup();
-        show_popup('info');
     });
 
     // tabs
@@ -1349,28 +1109,6 @@ function set_game_events() {
         Show(node);
 
         handle_open_table(node, key);
-    });
-
-    // theme + twich
-    C('#theme0, #theme1', function() {
-        change_theme((this.id.slice(-1) == '1')? 'dark': '');
-    });
-    C('#twitch0, #twitch1', function() {
-        update_twitch((this.id.slice(-1) == '1') * 1);
-    });
-    C('#hide-chat, #hide-video, #show-chat, #show-video', function() {
-        let [left, right] = this.id.split('-');
-        LS(`left=${left} : right=${right}`);
-        save_option(`twitch_${right}`, (left == 'show') * 1);
-        update_twitch();
-    });
-
-    // swap panes
-    Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
-        Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
-    });
-    C('.swap', function() {
-        move_pane(HasClass(this.parentNode.parentNode, 'mirror')? -1: 1);
     });
 }
 
@@ -1403,10 +1141,8 @@ function create_boards() {
  * Call this after the structures have been initialised
  */
 function start_game() {
-    move_pane();
     create_boards();
     create_tables();
-    update_twitch();
 
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);

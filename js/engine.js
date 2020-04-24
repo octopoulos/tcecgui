@@ -56,6 +56,7 @@ let __PREFIX = '_',
     translates = {},
     Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
+    virtual_check_hash_special,
     virtual_rename_option,
     virtual_set_combo_special,
     X_SETTINGS = {},
@@ -539,6 +540,9 @@ function check_hash() {
     let string = QueryString(false, '', '', {}, 'hash');
     Assign(Y, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     sanitise_data();
+
+    if (virtual_check_hash_special)
+        virtual_check_hash_special();
 }
 
 /**

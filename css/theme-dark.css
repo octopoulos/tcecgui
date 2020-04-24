@@ -6,9 +6,16 @@ body {
 .popup {
     background: rgba(0, 0, 0, 0.95);
 }
-#popup-info {
-    background: #333;
+#modal,
+#popup-about {
+    background: #2c3034;
     color: #fff;
+}
+#modal a {
+    color: #fff;
+}
+.item:hover {
+    background: rgba(255, 255, 255, 0.1)
 }
 
 /* board */
