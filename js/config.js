@@ -10,7 +10,7 @@
 /*
 globals
 Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, ENGINE_COLORS:true, ENGINE_FEATURES, ENGINE_NAMES:true,
-HOST:true, LINKS:true, LIVE_ENGINES:true, TWITCH_CHANNEL:true, TWITCH_CHAT:true
+HOST:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -32,6 +32,8 @@ function startup_config() {
     Assign(ENGINE_FEATURES, {
         LCZeroCPU: 3,
     });
+
+    THEMES = ['light', 'dark'];
 
     // navigation links
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'

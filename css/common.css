@@ -186,6 +186,12 @@ grid {
 #language {
     margin-right: 1em;
 }
+.red {
+    color: red !important;
+}
+.yellow {
+    color: yellow !important;
+}
 
 /* debug */
 #debug {

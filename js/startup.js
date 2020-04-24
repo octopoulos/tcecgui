@@ -65,11 +65,8 @@ function change_theme(theme) {
  * Called whenever the page loads and whenever the hash changes
  */
 function check_hash_special() {
-    LS('check hash special');
-    if (Y.x == 'archive')
-        ;
-    else if (Y.x == 'live')
-        ;
+    Class('#archive', 'yellow', Y.x == 'archive');
+    Class('#live', 'red', Y.x == 'live');
 }
 
 /**
