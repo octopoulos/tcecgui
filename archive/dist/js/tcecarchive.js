@@ -118,7 +118,7 @@ var globalCrash = '';
 var globalCurr  = "pgn/live.pgn";
 var globalGameno = 1;
 var globalUrl = "season=1&div=3"
-var globalWeb = "https://cd.tcecbeta.club/archive.html?";
+var globalWeb = "https://www.tcec-chess.com/archive.html?";
 var globalLiveEval1 = "json/liveeval1.json";
 var globalLiveEval = "json/liveeval.json";
 
@@ -280,31 +280,31 @@ function updateArchive(pgnarch)
 
 function openCrossFile()
 {
-   var link = "https://cd.tcecbeta.club/" + globalCross;
+   var link = "https://www.tcec-chess.com/" + globalCross;
    window.open(link,'_blank');
 }
 
 function openSchedFile()
 {
-   var link = "https://cd.tcecbeta.club/" + globalSched;
+   var link = "https://www.tcec-chess.com/" + globalSched;
    window.open(link,'_blank');
 }
 
 function openEvent()
 {
-   var link = "https://cd.tcecbeta.club/" + globalPgn;
+   var link = "https://www.tcec-chess.com/" + globalPgn;
    window.open(link,'_blank');
 }
 
 function openPGN()
 {
-   var link = "https://cd.tcecbeta.club/" + globalCurr;
+   var link = "https://www.tcec-chess.com/" + globalCurr;
    window.open(link,'_blank');
 }
 
 function openPGNlink(linkpgn)
 {
-   var link = "https://cd.tcecbeta.club/" + linkpgn;
+   var link = "https://www.tcec-chess.com/" + linkpgn;
    window.open(link,'_blank');
 }
 
@@ -2172,8 +2172,7 @@ function getLinkArch(gameNumber)
 {
    var retLink;
 
-   retLink = "http://tcec.chessdom.com/archive.php";
-   retLink = "https://cd.tcecbeta.club/archive.html";
+   retLink = "https://www.tcec-chess/archive.html";
 
    return (retLink);
 }
@@ -2332,7 +2331,7 @@ function openCross(index, gamen)
 
 function openCrossOld(gamen)
 {
-   var link = "http://legacy-tcec.chessdom.com/archive.php";
+   var link = "http://none.com/archive.php";
    var season = 1;
    var div = "di";
    var divno = 1;
@@ -3013,7 +3012,7 @@ function getPGN(id)
 
 function downloadFile(name)
 {
-   var link = "https://cd.tcecbeta.club/json/" + name;
+   var link = "https://www.tcec-chess.com/json/" + name;
    window.open(link);
    //window.location.href = link;
 }

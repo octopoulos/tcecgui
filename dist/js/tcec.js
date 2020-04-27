@@ -106,7 +106,7 @@ var standColumns = [];
 var prevevalData = {};
 
 /***************************** CUP ***************************************************/
-var totalEvents = 32;
+var totalEvents = 16;
 var gameDiff = 0;
 var eventCross = [];
 /***************************** CUP ***************************************************/
@@ -5144,11 +5144,11 @@ function bracketDataMain(data)
       roundResults = data.matchresults;
       bigData.results = data.results;
    }
-   for (var i = roundResults.length + 1; i <= 32; i++)
+   for (var i = roundResults.length + 1; i <= 16; i++)
    {
       roundResults[i-1] = [{lead:-1, score: -1}, {lead:-1, score: -1}];
    }
-   for (var i = bigData.teams.length + 1; i <= 16; i++)
+   for (var i = bigData.teams.length + 1; i <= 8; i++)
    {
       bigData.teams[i-1] = [{name: getSeededName(teamsx[i-1][0][0]), flag: getShortEngineName(teamsx[i-1][0][0]),
                              score: -1, rank: '1', date: '', lead: 0},
@@ -5220,9 +5220,18 @@ function drawBracket1()
           case "entry-no-score":
           case "entry-default-win":
           case "entry-complete":
-            if (roundResults[localRound][isFirst].name != undefined)
+            var localRoundL = localRound + 1;
+            if (localRoundL == 15)
             {
-               if (getShortEngineName(roundResults[localRound][isFirst].name) != getShortEngineName(data.origname))
+                localRoundL = 16;
+            }
+            else if (localRoundL == 16)
+            {
+                localRoundL = 15;
+            }
+            if (roundResults[localRoundL-1][isFirst].name != undefined)
+            {
+               if (getShortEngineName(roundResults[localRoundL-1][isFirst].name) != getShortEngineName(data.origname))
                {
                   if (isFirst)
                   {
@@ -5234,13 +5243,13 @@ function drawBracket1()
                   }
                }
             }
-            var scoreL = roundResults[localRound][isFirst].score;
+            var scoreL = roundResults[localRoundL-1][isFirst].score;
 
             if (scoreL >= 0)
             {
                var appendStr = '';
-               var lead = roundResults[localRound][isFirst].lead;
-               var manual = roundResults[localRound][isFirst].manual;
+               var lead = roundResults[localRoundL-1][isFirst].lead;
+               var manual = roundResults[localRoundL-1][isFirst].manual;
                if (manual == 1)
                {
                   appendStr = '<div class="bracket-name"> <a> ' + dataName + '</a> </div>' +
@@ -5271,17 +5280,8 @@ function drawBracket1()
                }
                if (roundNox%2 == 1)
                {
-                  var localRoundL = localRound + 1;
-                  if (localRoundL == 31)
-                  {
-                     localRoundL = 32;
-                  }
-                  else if (localRoundL == 32)
-                  {
-                     localRoundL = 31;
-                  }
                   var befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
-                  if (roundDate[localRound] != undefined)
+                  if (roundDate[localRoundL-1] != undefined)
                   {
                      //befStr = befStr + '<a> ' + roundDate[localRound] + '</a> </div>';
                      befStr = befStr + '</div>';
@@ -5296,15 +5296,6 @@ function drawBracket1()
             }
             else
             {
-               var localRoundL = localRound + 1;
-               if (localRoundL == 31)
-               {
-                  localRoundL = 32;
-               }
-               else if (localRoundL == 32)
-               {
-                  localRoundL = 31;
-               }
                if (roundNox%2 == 1)
                {
                   var befStr = '<div class="labelbracket"> <a class="roundleft"> #' + (localRoundL) + '</a> ';
@@ -5314,7 +5305,7 @@ function drawBracket1()
                container.append('<img class="bracket-material" src="img/engines/'+data.flag+'.jpg" />').append('<div class="bracket-name"> <a> ' + dataName + '</a> </div>')
             }
 
-            if (roundNox > 64)
+            if (roundNox > 32)
             {
                $(container).parent().append('<div class="bubblex third">3rd</div>');
             }
