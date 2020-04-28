@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
+2020-04-28 : 2020-04-28 : calculate seeds + tests
 2020-04-28 : 2020-04-27 : draw basic brackets
 2020-04-24 : 2020-04-23 : light-archive.css and dark-archive.css => make skeleton theme
 2020-04-24 : 2020-04-13 : remove bootstrap locale folder

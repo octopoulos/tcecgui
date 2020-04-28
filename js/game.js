@@ -182,6 +182,8 @@ function calculate_score(text) {
  */
 function get_short_name(engine)
 {
+    if (!engine)
+        return '';
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
 }
 
@@ -564,50 +566,92 @@ function update_table(name, rows, reset=true) {
 ///////////
 
 /**
+ * Calculate the seeds
+ * - assume the final will be 1-2 then work backwards
+ * - support non power of 2 => 0 will be the 'skip' seed
+ * @param {number} num_team
+ */
+function calculate_seeds(num_team) {
+    let number = 2,
+        nexts = [1, 2];
+
+    while (number < num_team) {
+        number *= 2;
+        let seeds = [];
+        for (let i=0; i<number; i++) {
+            let value = (i % 2)? (number + 1 - seeds[i - 1]): nexts[Floor(i / 2)];
+            seeds[i] = (value <= num_team)? value: 0;
+        }
+        nexts = seeds;
+    }
+
+    return nexts;
+}
+
+/**
  * Create the brackets
  * @param {Object} data
  */
 function create_bracket(data) {
-    LS(data);
-    // 8 teams => starts with round of 16
+    // 1)
+    window.event = data;
     let game = 1,
         lines = ['<hori class="fastart">'],
         teams = data.teams,
         num_team = teams.length,
         number = num_team,
-        round = 1;
+        round_results = data.results[0] || [],
+        round = 0,
+        seeds = calculate_seeds(num_team * 2);
 
+    // assign seeds
+    teams.forEach((team, id) => {
+        team[0].seed = seeds[id * 2];
+        team[1].seed = seeds[id * 2 + 1];
+    });
+
+    // 2) create each round
     while (number >= 1) {
         let name = ROUND_NAMES[number] || `Round of ${number * 2}`,
-            number2 = (number == 1)? 2: number;
+            nexts = [],
+            number2 = (number == 1)? 2: number,
+            results = round_results[round] || [];
 
         lines.push(
-            '<vert class="fstart">'
+            '<vert class="rounds fstart h100">'
             + `<div class="round" data-t="${name}"></div>`
+            + `<vert class="${number == 1? 'fcenter final': 'faround'} h100">`
         );
         for (let i=0; i<number2; i++) {
             let names = [0, 0],
-                scores = [0, 0];
-            if (round == 1) {
-                let team = teams[i];
-                if (team)
-                    team.forEach((item, id) => {
-                        let class_ = '',
-                            short = get_short_name(item.name);
+                result = results[i] || [],
+                scores = [0, 0],
+                team = teams[i];
 
-                        if (item.winner)
-                            class_ = (item.winner && item.score > team[1 - id].score)? ' win': ' loss';
+            if (team)
+                team.forEach((item, id) => {
+                    let class_ = '',
+                        short = get_short_name(item.name);
 
-                        names[id] = [
-                            class_,
-                            `<hori><img class="match-logo" src="image/engine/${short}.jpg"><div>#0 ${short}</div></hori>`,
-                        ];
-                        scores[id] = [
-                            class_,
-                            item.score,
-                        ];
-                    });
-            }
+                    if (result[0] != result[1])
+                        class_ = (item.winner && result[id] > result[1 - id])? ' win': ' loss';
+
+                    names[id] = [
+                        class_,
+                        `<hori title="${item.name}"><img class="match-logo" src="image/engine/${short}.jpg"><div>#${item.seed} ${short}</div></hori>`,
+                    ];
+                    scores[id] = [
+                        class_,
+                        result[id],
+                    ];
+
+                    // propagate the winner to the next round
+                    if (class_ == ' win')
+                        SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
+                    // match for 3rd place
+                    else if (class_ == ' loss' && number == 2)
+                        SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                });
 
             lines.push(
                 '<vert class="match fastart">'
@@ -630,8 +674,8 @@ function create_bracket(data) {
                     name_class += ' fastart';
 
                 lines.push(
-                    `<vert class="match-name${name_class} fcenter">${name}</vert>`
-                    + `<vert class="match-score${score_class} fcenter">${score}</vert>`
+                    `<vert class="name${name_class} fcenter">${name}</vert>`
+                    + `<vert class="score${score_class} fcenter">${score}</vert>`
                 );
             }
 
@@ -641,16 +685,24 @@ function create_bracket(data) {
             );
             game ++;
         }
-        lines.push('</vert>');
+        lines.push(
+                '</vert>'
+            + '</vert>'
+        );
 
         number /= 2;
         round ++;
+        teams = nexts;
     }
 
+    // 3) result
     lines.push('</hori>');
     let node = _('#table-brak');
     HTML(node, lines.join(''));
     translate_node(node);
+
+    // necessary to correctly size each round
+    Style(node.firstChild, `height:${node.clientHeight}px`);
 }
 
 /**

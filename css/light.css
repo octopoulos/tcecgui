@@ -95,6 +95,9 @@ verts {
 }
 
 /* helpers */
+.h100 {
+    height: 100%;
+}
 .mirror {
     transform: scale(-1, 1);
 }
@@ -559,6 +562,9 @@ grid {
 }
 
 /* bracket */
+.rounds {
+    margin: 0 0.3em;
+}
 .round {
     color: #888;
 }
@@ -567,6 +573,12 @@ grid {
     font-family: monospace;
     font-size: 13px;
     margin: 0.5em;
+}
+.final {
+    margin-top: 33%;
+}
+.final > .match {
+    margin-top: 3em;
 }
 .match-grid {
     grid-gap: 1px 0;
@@ -582,40 +594,58 @@ grid {
     margin-right: 0.3em;
     width: 38px;
 }
-.match-name,
-.match-name.win {
+.name,
+.name.win {
     background: #eee;
     color: #000;
-    height: 27px;
-    padding-left: 4px;
+    min-height: 27px;
+    padding: 4px;
     width: 15em;
 }
-.match-name.none {
+.name.gold {
+    background: #da0;
+}
+.name.high {
+    background: #3c0;
+}
+.name.loss {
+    background: #ddd;
+    color: #999;
+}
+.name.none {
     background: #999;
     color: #ccc;
     font-family: Arial;
     text-align: center;
 }
-.match-name.loss {
-    background: #ddd;
-    color: #999;
+.name.silver {
+    background: #ccc;
 }
-.match-score {
+.score {
     background: #f3f3f3;
     color: #000;
     font-family: Arial;
     font-size: 14px;
     text-align: center;
 }
-.match-score.none {
-    background: #b8b8b8;
-    color: #ccc;
+.score.gold {
+    background: #e7c44d;
 }
-.match-score.loss {
+.score.high {
+    background: #71db4d;
+}
+.score.loss {
    background: #e7e7e7;
    color: #900;
 }
-.match-score.win {
+.score.none {
+    background: #b8b8b8;
+    color: #ccc;
+}
+.score.silver {
+    background: #dbdbdb;
+}
+.score.win {
     color: #060;
 }
 

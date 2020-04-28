@@ -21,7 +21,7 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        calculate_probability, calculate_score, create_field_value, get_short_name,
+        calculate_probability, calculate_seeds, calculate_score, create_field_value, get_short_name,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,6 +36,28 @@ let {
  .forEach(([short_engine, eval_, answer], id) => {
     test(`calculate_probability:${id}`, () => {
         expect(calculate_probability(short_engine, eval_)).toEqual(answer);
+    });
+});
+
+// calculate_seeds
+[
+    [2, [1, 2]],
+    [4, [1, 4, 2, 3]],
+    [8, [1, 8, 4, 5, 2, 7, 3, 6]],
+    [16, [1, 16, 8, 9, 4, 13, 5, 12, 2, 15, 7, 10, 3, 14, 6, 11]],
+    [32, [1, 32, 16, 17, 8, 25, 9, 24, 4, 29, 13, 20, 5, 28, 12, 21, 2, 31, 15, 18, 7, 26, 10, 23, 3, 30, 14, 19, 6, 27, 11, 22]],
+    // non power of 2
+    [3, [1, 0, 2, 3]],
+    [6, [1, 0, 4, 5, 2, 0, 3, 6]],
+    [13, [1, 0, 8, 9, 4, 13, 5, 12, 2, 0, 7, 10, 3, 0, 6, 11]],
+    [14, [1, 0, 8, 9, 4, 13, 5, 12, 2, 0, 7, 10, 3, 14, 6, 11]],
+    [15, [1, 0, 8, 9, 4, 13, 5, 12, 2, 15, 7, 10, 3, 14, 6, 11]],
+    //
+    [0, [1, 2]],
+    [1, [1, 2]],
+].forEach(([num_team, answer], id) => {
+    test(`calculate_seeds:${id}`, () => {
+        expect(calculate_seeds(num_team)).toEqual(answer);
     });
 });
 
@@ -72,6 +94,8 @@ let {
 
 // get_short_name
 [
+    ['', ''],
+    [undefined, ''],
     ['LCZero v0.24-sv-t60-3010', 'LCZero'],
     ['Stockfish 20200407DC', 'Stockfish'],
     ['SuperBaronizer', 'Baron'],
