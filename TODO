@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
+2020-04-28 : 2020-04-27 : draw basic brackets
 2020-04-24 : 2020-04-23 : light-archive.css and dark-archive.css => make skeleton theme
 2020-04-24 : 2020-04-13 : remove bootstrap locale folder
 2020-04-24 : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
@@ -86,7 +88,6 @@ high:
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 ~          : 2020-04-17 : play archive games without loading a new page
 medium:
--          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
 -          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 low:

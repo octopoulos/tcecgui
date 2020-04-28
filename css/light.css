@@ -558,6 +558,67 @@ grid {
     margin: 2px;
 }
 
+/* bracket */
+.round {
+    color: #888;
+}
+.match {
+    background: #808080;
+    font-family: monospace;
+    font-size: 13px;
+    margin: 0.5em;
+}
+.match-grid {
+    grid-gap: 1px 0;
+    grid-template-columns: 1fr 35px;
+}
+.match-title {
+    color: #fff;
+    padding: 0.2em 0 0.2em 0.4em;
+    width: 100%;
+}
+.match-logo {
+    height: 19px;
+    margin-right: 0.3em;
+    width: 38px;
+}
+.match-name,
+.match-name.win {
+    background: #eee;
+    color: #000;
+    height: 27px;
+    padding-left: 4px;
+    width: 15em;
+}
+.match-name.none {
+    background: #999;
+    color: #ccc;
+    font-family: Arial;
+    text-align: center;
+}
+.match-name.loss {
+    background: #ddd;
+    color: #999;
+}
+.match-score {
+    background: #f3f3f3;
+    color: #000;
+    font-family: Arial;
+    font-size: 14px;
+    text-align: center;
+}
+.match-score.none {
+    background: #b8b8b8;
+    color: #ccc;
+}
+.match-score.loss {
+   background: #e7e7e7;
+   color: #900;
+}
+.match-score.win {
+    color: #060;
+}
+
 /* live */
 #lives {
     margin-top: 1em;

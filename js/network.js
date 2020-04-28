@@ -175,10 +175,10 @@ function init_sockets() {
         update_table('crash', data);
     });
     socket.on('bracket', data => {
-        if (DEV.socket & 1) {
+        // if (DEV.socket & 1) {
             LS('socket/bracket:');
             LS(data);
-        }
+        // }
         bracketDataMain(data);
     });
 }

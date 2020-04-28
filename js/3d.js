@@ -8,7 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, Assign, Attrs, Audio, C, Class, clear_timeout, DEFAULTS, DEV, Events, Exp, Format, HTML, KEY_TIMES,
-Keys, KEYS, merge_settings, navigator, Now, S, save_option, translate_node, Visible, window, X_SETTINGS, Y
+Keys, KEYS, merge_settings, navigator, Now, S, save_option, Style, Title, translate_node, Visible, window, X_SETTINGS,
+Y
 */
 'use strict';
 
@@ -287,13 +288,15 @@ function show_menu() {
  */
 function show_modal(show, text, title, name) {
     S('#overlay', show);
+
+    let node = _('#modal');
     if (typeof(text) == 'string') {
         Attrs('#modal-title', 'data-t', title? title: '');
-        HTML('#dynamic', text);
-        translate_node('#modal2');
+        HTML(node, text);
+        translate_node(node);
     }
-    S('#modal', !text);
-    S('#modal2', !!text);
+
+    Style(node, `opacity:${show? 1: 0}`);
 
     if (show) {
         add_timeout('pad', gamepad_modal, 300);
@@ -315,15 +318,16 @@ function show_modal(show, text, title, name) {
 /**
  * Show a settings page
  * @param {string} name
+ * @returns {string} html
  */
 function show_settings(name) {
-    let html = '<vert class="grid t24">',
-        settings = X_SETTINGS[name];
+    let html = '<grid class="grid2">',
+        settings = name? X_SETTINGS[name]: X_SETTINGS;
 
     Keys(settings).forEach(key => {
         let setting = settings[key][0],
             more = setting? '': ` name="${key}"`;
-        html += `<div${more} class="item" data-t="${key.replace(/_/g, ' ')}"></div>`;
+        html += `<a${more} class="item" data-t="${Title(key.replace(/_/g, ' '))}"></a>`;
         if (Array.isArray(setting)) {
             html
                 += `<select name="${key}">`
@@ -340,17 +344,20 @@ function show_settings(name) {
         else
             html += `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`;
     });
-    html += '</vert>';
-    show_modal(true, html, `${name} settings`);
+    html += '</grid>';
+    // show_modal(true, html, `${name} settings`);
 
-    // events
-    let parent = _('#modal2');
-    Events('select, input', 'change', function() {
-        change_setting(this.name, this.value);
-    }, {}, parent);
-    C('div[name]', function() {
-        change_setting(this.getAttribute('name'));
-    }, parent);
+    // // events
+    // let parent = _('#modal2');
+    // Events('select, input', 'change', function() {
+    //     change_setting(this.name, this.value);
+    // }, {}, parent);
+    // C('div[name]', function() {
+    //     change_setting(this.getAttribute('name'));
+    // }, parent);
+
+    LS(html);
+    return html;
 }
 
 /**

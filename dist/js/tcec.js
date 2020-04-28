@@ -3233,6 +3233,8 @@ function bracketDataMain(data)
         roundResults = data.matchresults;
         bigData.results = data.results;
     }
+    if (!roundResults)
+        return;
     for (let i = roundResults.length + 1; i <= 32; i++)
     {
         roundResults[i-1] = [
@@ -3240,6 +3242,9 @@ function bracketDataMain(data)
             {lead:-1, score: -1},
         ];
     }
+
+    if (!bigData.teams)
+        return;
     for (let i = bigData.teams.length + 1; i <= 16; i++)
     {
         bigData.teams[i-1] = [
@@ -3473,6 +3478,9 @@ function getCurrDate(currdate, mins)
 
 async function eventCrosstable(data)
 {
+    if (!data)
+        return;
+
     let divname = '#crosstableevent',
         standings = [];
 

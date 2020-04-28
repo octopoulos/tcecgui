@@ -47,15 +47,22 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
     pgn_moves = [],
     players = [{}, {}],                 // current 2 players
     prev_pgn,
+    ROUND_NAMES = {
+        1: 'Final',
+        2: 'SemiFinal',
+        4: 'QuarterFinal',
+    },
     SCORE_NAMES = {
         0: 'loss',
         0.5: 'draw',
         1: 'win',
+        '=': 'draw',
     },
     table_data = {},
     TABLES = {
         crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
+        event: 'Round|Winner|Points|runner=Runner-up|# Games|Score',
         game: 'gameno=G#|PGN|White|Black|Moves|Result',
         h2h: 'game=Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
         sched: 'game=Game#|White|white_ev=Ev|Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
@@ -65,6 +72,7 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
+    tour_info = {},
     turn = 0,                           // 0:white to play, 1:black to play
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
@@ -271,7 +279,7 @@ function create_field_value(text) {
     if (pos > 0)
         lower = lower.slice(0, pos);
 
-    return [lower.replace(/[_() ./#-]+/g, '_').replace(/_+$/, ''), text];
+    return [lower.replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
 }
 
 /**
@@ -425,6 +433,23 @@ function download_tables() {
 }
 
 /**
+ * Show tables depending on the event type
+ * @param {string} type
+ */
+function show_tables(type) {
+    let is_cup = (type == 'cup'),
+        parent = _('#tables'),
+        target = is_cup? 'brak': 'stand';
+    Class('[data-x="brak"], [data-x="event"]', 'dn', !is_cup, parent);
+    Class('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', 'dn', is_cup, parent);
+
+    Class('div.tab', '-active', true, parent);
+    Class(`[data-x="${target}"]`, 'active', true, parent);
+    Class('div.scroller', 'dn', true, parent);
+    Class(`#table-${target}`, '-dn');
+}
+
+/**
  * Update a table by adding rows
  * @param {string} name
  * @param {Object[]} data
@@ -434,6 +459,7 @@ function update_table(name, rows, reset=true) {
     let last,
         data = SetDefault(table_data, name, []),
         is_cross = (name == 'cross'),
+        is_event = (name == 'event'),
         is_sched = (name == 'sched'),
         new_rows = [],
         nodes = [],
@@ -475,12 +501,20 @@ function update_table(name, rows, reset=true) {
                     class_ = 'loss';
                 break;
             case 'engine':
+            case 'runner':
+            case 'winner':
                 td_class = 'tal';
                 value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
                 break;
             case 'game':
                 if (row.moves)
                     value = `<a class="game">${value}</a>`;
+                break;
+            case 'score':
+                let numbers = Split(row.gamesno || '', ',');
+                value = value.split('').map((item, id) => {
+                    return ` <a class="${SCORE_NAMES[item]}" title="${numbers[id] || 0}">${item.replace('=', '½')}</a>`;
+                }).join('');
                 break;
             case 'white':
                 if (row.result == '1-0')
@@ -524,6 +558,117 @@ function update_table(name, rows, reset=true) {
     // special case
     if (is_sched)
         update_table('h2h', new_rows, reset);
+}
+
+// BRACKETS
+///////////
+
+/**
+ * Create the brackets
+ * @param {Object} data
+ */
+function create_bracket(data) {
+    LS(data);
+    // 8 teams => starts with round of 16
+    let game = 1,
+        lines = ['<hori class="fastart">'],
+        teams = data.teams,
+        num_team = teams.length,
+        number = num_team,
+        round = 1;
+
+    while (number >= 1) {
+        let name = ROUND_NAMES[number] || `Round of ${number * 2}`,
+            number2 = (number == 1)? 2: number;
+
+        lines.push(
+            '<vert class="fstart">'
+            + `<div class="round" data-t="${name}"></div>`
+        );
+        for (let i=0; i<number2; i++) {
+            let names = [0, 0],
+                scores = [0, 0];
+            if (round == 1) {
+                let team = teams[i];
+                if (team)
+                    team.forEach((item, id) => {
+                        let class_ = '',
+                            short = get_short_name(item.name);
+
+                        if (item.winner)
+                            class_ = (item.winner && item.score > team[1 - id].score)? ' win': ' loss';
+
+                        names[id] = [
+                            class_,
+                            `<hori><img class="match-logo" src="image/engine/${short}.jpg"><div>#0 ${short}</div></hori>`,
+                        ];
+                        scores[id] = [
+                            class_,
+                            item.score,
+                        ];
+                    });
+            }
+
+            lines.push(
+                '<vert class="match fastart">'
+                    // final has 3rd place game too
+                    + `<div class="match-title">#${game + (number == 1? 1 - i * 2: 0)}</div>`
+                    + '<grid class="match-grid">'
+            );
+
+            for (let id=0; id<2; id++) {
+                let [name_class, name] = names[id] || [],
+                    [score_class, score] = scores[id] || [];
+
+                if (!name) {
+                    name = 'TBD';
+                    score = '--';
+                    name_class = ' none';
+                    score_class = ' none';
+                }
+                else
+                    name_class += ' fastart';
+
+                lines.push(
+                    `<vert class="match-name${name_class} fcenter">${name}</vert>`
+                    + `<vert class="match-score${score_class} fcenter">${score}</vert>`
+                );
+            }
+
+            lines.push(
+                    '</grid>'
+                + '</vert>'
+            );
+            game ++;
+        }
+        lines.push('</vert>');
+
+        number /= 2;
+        round ++;
+    }
+
+    lines.push('</hori>');
+    let node = _('#table-brak');
+    HTML(node, lines.join(''));
+    translate_node(node);
+}
+
+/**
+ * Create a cup
+ * @param {Object} data
+ */
+function create_cup(data) {
+    show_tables('cup');
+
+    let event = data.EventTable;
+    if (event) {
+        let rows = Keys(event).map(key => {
+            return Assign({round: key.split(' ').slice(-1)}, event[key]);
+        });
+        update_table('event', rows);
+    }
+
+    create_bracket(data);
 }
 
 // PGN
@@ -599,6 +744,8 @@ function download_pgn(reset_time) {
  * @param {Object} pgn
  */
 function update_pgn(pgn) {
+    if (!xboards.board)
+        return;
     window.pgn = pgn;
 
     let headers = pgn.Headers,
@@ -759,7 +906,8 @@ function update_pgn(pgn) {
 function resize_game() {
     // resize the boards
     let width = _('#board').clientWidth;
-    xboards.board.resize(width);
+    if (xboards.board)
+        xboards.board.resize(width);
 }
 
 // LIVE DATA
@@ -856,14 +1004,6 @@ function update_player_eval(data) {
 
 // INPUT / OUTPUT
 /////////////////
-
-/**
- * Handle a keyup
- * @param {number} code
- */
-function game_action_keyup(code) {
-    LS(code);
-}
 
 /**
  * Handle keys, when input is not active
@@ -970,7 +1110,17 @@ function game_action_key(code) {
             // show_menu();
             break;
         }
+
+        LS(`keydown: ${code}`);
     }
+}
+
+/**
+ * Handle a keyup
+ * @param {number} code
+ */
+function game_action_keyup(code) {
+    LS(`keyup: ${code}`);
 }
 
 // EVENTS
@@ -1105,8 +1255,8 @@ function set_game_events() {
 
         Class(active, '-active');
         Class(this, 'active');
-        Hide(`#table-${active.dataset.x}`);
-        Show(node);
+        Class(`#table-${active.dataset.x}`, 'dn');
+        Class(node, '-dn');
 
         handle_open_table(node, key);
     });
@@ -1147,6 +1297,8 @@ function start_game() {
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);
     });
+
+    download_table('bracket.json', null, create_cup);
 }
 
 /**

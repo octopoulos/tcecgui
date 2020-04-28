@@ -3,11 +3,14 @@
 // temporary replaces tcec.js to test index_base.html
 /*
 globals
-create_boards, download_pgn, download_tables, HTML, LS, window, xboards
+create_boards, download_pgn, download_tables, HTML, LS, tour_info:true, update_twitch, window, xboards
 */
 'use strict';
 
 let timeDiff;
+
+function bracketDataMain() {
+}
 
 function getUserS() {
 
@@ -34,6 +37,12 @@ function setPgn(pgn) {
 }
 
 function setTwitch() {
+}
+
+function setTwitchChange(data)
+{
+    tour_info = data;
+    update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
 }
 
 // DONE

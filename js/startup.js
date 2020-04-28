@@ -14,8 +14,8 @@ api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, 
 game_action_key, game_action_keyup, get_object, getUserS, HasClass, hideBanner, HOST, HTML, ICONS:true, init_sockets,
 initTables, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, Split, start_game,
-start_tcec, startup_3d, startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style,
+S, save_option, screen, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, show_settings, Split,
+start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style,
 tcecHandleKey, THEMES, toggleTheme, translate_node, translates:true, unlistenLogMain, update_debug, update_theme,
 updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners,
 virtual_check_hash_special:true, window, Y
@@ -46,6 +46,14 @@ function action_key(code) {
         show_popup('about');
         break;
     }
+}
+
+/**
+ * Adjust popup position
+ */
+function adjust_popups() {
+    show_popup('', null, {adjust: true});
+    show_popup('about', null, {adjust: true});
 }
 
 /**
@@ -146,7 +154,7 @@ function move_pane(node, dir) {
     }
 
     names.forEach((name, id) => {
-        _(`#${name}`).style.order = id;
+        Style(`#${name}`, `order:${id}`);
     });
 
     if (node)
@@ -160,10 +168,7 @@ function resize() {
     let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
     Style('#chat', `height:${height}px;width:100%`);
 
-    // readjust popups
-    show_popup('about', null, {adjust: true});
-    show_popup('', null, {adjust: true});
-
+    adjust_popups();
     resize_game();
 }
 
@@ -179,6 +184,8 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
     S('#overlay', show && overlay);
 
     let node = (name == 'about')? _('#popup-about'): _('#modal');
+    if (!node)
+        return;
 
     if (show || adjust) {
         let extra = '',
@@ -202,7 +209,7 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
             y = win_y / 2;
             break;
         case 'options':
-            html = 'OPTIONS';
+            html = show_settings('audio');
             break;
         default:
             if (name)
@@ -252,6 +259,8 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
                 }
             }
         }
+
+        translate_node(node);
         Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
     }
 
@@ -268,15 +277,22 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
 /**
  * Enable/disable twitch video + chat
  * @param {number=} dark
+ * @param {string=} chat_url new chat URL
  */
-function update_twitch(dark) {
+function update_twitch(dark, chat_url) {
     if (dark != undefined)
         save_option('twitch_dark', dark);
 
+    if (chat_url)
+        TWITCH_CHAT = chat_url;
+
     // 1) update twitch chat IF there was a change
     dark = Y.twitch_dark;
-    let node = _('#chat'),
-        current = node.src,
+    let node = _('#chat');
+    if (!node)
+        return;
+
+    let current = node.src,
         src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
 
     if (current != src)
@@ -315,6 +331,9 @@ function set_global_events() {
     // general
     Events(window, 'resize', () => {
         resize();
+    });
+    Events(window, 'scroll', () => {
+        adjust_popups();
     });
     // it won't be triggered by pushState and replaceState
     Events(window, 'hashchange', () => {

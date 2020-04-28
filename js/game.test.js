@@ -30,7 +30,7 @@ let {
 [
     ['Stockfish', 0.27, '7.8% W | 92.2% D'],
     ['LCZero', 0.27, '9.2% W | 90.8% D'],
-    ['LCZeroCPU', 0.27, '9.2% W | 90.8% D'],
+    // ['LCZeroCPU', 0.27, '9.2% W | 90.8% D'],
     ['AllieStein', 0.27, '6.0% W | 94.0% D'],
 ]
  .forEach(([short_engine, eval_, answer], id) => {
@@ -63,6 +63,7 @@ let {
     ['a_b=A=B', ['a_b', 'A=B']],
     ['startTime', ['start_time', 'startTime']],
     ['BlackEv', ['black_ev', 'BlackEv']],
+    ['# Games', ['games', '# Games']],
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
