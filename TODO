@@ -1,7 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-04-13 : make JS generate some of the live.html elements (ex: options)
+2020-04-29 : 2020-04-13 : dynamic options system: very easily extensible without extra code
+2020-04-29 : 2020-04-23 : remove moment.js, javascript can handle date/time just fine
 2020-04-28 : 2020-04-28 : calculate seeds + tests
 2020-04-28 : 2020-04-27 : draw basic brackets
 2020-04-24 : 2020-04-23 : light-archive.css and dark-archive.css => make skeleton theme
@@ -92,8 +93,8 @@ medium:
 -          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 low:
+-          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
--          : 2020-04-23 : remove moment.js, javascript can handle date/time just fine
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2020-04-13 : add an SVG theme for the pieces
 -          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse

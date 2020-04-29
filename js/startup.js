@@ -11,14 +11,14 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, Events, fill_languages,
-game_action_key, game_action_keyup, get_object, getUserS, HasClass, hideBanner, HOST, HTML, ICONS:true, init_sockets,
-initTables, KEY_TIMES, Keys, KEYS,
+game_action_key, game_action_keyup, get_object, getUserS, HasClass, hideBanner, HOST, HTML, ICONS:true, Id,
+init_sockets, initTables, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_ui_events, setDefaults, setTwitch, show_popup, show_settings, Split,
-start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game, startup_graphs, startup_tcec, Style,
-tcecHandleKey, THEMES, toggleTheme, translate_node, translates:true, unlistenLogMain, update_debug, update_theme,
-updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables, updateWinners,
-virtual_check_hash_special:true, window, Y
+S, save_option, screen, set_game_events, set_modal_events, set_ui_events, setDefaults, setTwitch, show_popup,
+show_settings, Split, start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game,
+startup_graphs, startup_tcec, Style, tcecHandleKey, THEMES, toggleTheme, translate_node, translates:true,
+unlistenLogMain, update_debug, update_theme, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables,
+updateWinners, virtual_change_setting_special:true, virtual_check_hash_special:true, window, Y
 */
 'use strict';
 
@@ -54,6 +54,20 @@ function action_key(code) {
 function adjust_popups() {
     show_popup('', null, {adjust: true});
     show_popup('about', null, {adjust: true});
+}
+
+/**
+ * Handler for change settings
+ * @param {string} name
+ * @param {string|number} value
+ * @returns {boolean} true if we've handled the setting
+ */
+function change_setting_special(name, value) {
+    if (name == 'theme') {
+        change_theme(value);
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -132,7 +146,7 @@ function init_globals() {
     }, 2000);
     add_timeout('update_tables', () => {updateTables();}, 3000);
     add_timeout('adblock', () => {
-        S('.encouragement', ((_('#google_adverts') || {}).height || 0) <= 0);
+        S('.encouragement', ((Id('google_adverts') || {}).height || 0) <= 0);
     }, 15000);
 }
 
@@ -180,10 +194,10 @@ function resize() {
  * @param {boolean=} instant popup appears instantly
  * @param {boolean=} overlay dark overlay is used behind the popup
  */
-function show_popup(name, show, {adjust, instant=true, overlay}={}) {
+function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
     S('#overlay', show && overlay);
 
-    let node = (name == 'about')? _('#popup-about'): _('#modal');
+    let node = (name == 'about')? Id('popup-about'): Id('modal');
     if (!node)
         return;
 
@@ -209,7 +223,7 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
             y = win_y / 2;
             break;
         case 'options':
-            html = show_settings('audio');
+            html = show_settings(setting);
             break;
         default:
             if (name)
@@ -224,7 +238,7 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
 
         // align the popup with the target, if any
         if (name && !px) {
-            let target = _(`#${name}`);
+            let target = Id(name);
             if (target) {
                 let rect = target.getBoundingClientRect();
                 [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
@@ -271,6 +285,8 @@ function show_popup(name, show, {adjust, instant=true, overlay}={}) {
 
         // remember which popup it is, so if we click again on the same id => it closes it
         node.dataset.id = show? name: '';
+
+        set_modal_events(node);
     }
 }
 
@@ -288,7 +304,7 @@ function update_twitch(dark, chat_url) {
 
     // 1) update twitch chat IF there was a change
     dark = Y.twitch_dark;
-    let node = _('#chat');
+    let node = Id('chat');
     if (!node)
         return;
 
@@ -302,7 +318,7 @@ function update_twitch(dark, chat_url) {
     S('#twitch0', src && dark);
     S('#twitch1', src && !dark);
 
-    let right = _('#right'),
+    let right = Id('right'),
         has_narrow = HasClass(right, 'narrow'),
         need_narrow = !src;
     if (need_narrow != has_narrow) {
@@ -311,7 +327,7 @@ function update_twitch(dark, chat_url) {
     }
 
     // 2) update twitch video IF there was a change
-    node = _('#twitch-vid');
+    node = Id('twitch-vid');
     current = node.src;
     src = Y.twitch_video? TWITCH_CHANNEL: '';
 
@@ -339,16 +355,6 @@ function set_global_events() {
     Events(window, 'hashchange', () => {
         check_hash();
         parse_dev();
-    });
-
-    // language
-    Events('#language', 'change', function() {
-        let lan = this.value;
-        save_option('lan', lan);
-        if (lan == 'eng' || translates._lan == lan)
-            translate_node('body');
-        else if (lan != 'eng')
-            add_timeout('lan', api_translate_get, 100);
     });
 
     // keys
@@ -401,7 +407,7 @@ function set_global_events() {
     });
     C('#articles, #download, #info, #navigate, #options', function() {
         show_popup('about');
-        if (_('#modal').dataset.id == this.id)
+        if (Id('modal').dataset.id == this.id)
             show_popup('');
         else
             show_popup(this.id, true);
@@ -434,13 +440,24 @@ function set_global_events() {
                     break;
                 if (id.includes('modal') || id.includes('popup')) {
                     in_modal = id;
-                    break;
+                    return;
                 }
             }
             if (HasClass(target, 'nav')) {
                 in_modal = true;
-                break;
+                return;
             }
+
+            // sub settings
+            let dataset = target.dataset;
+            if (dataset) {
+                let set = target.dataset.set;
+                if (set != undefined) {
+                    show_popup('options', true, {setting: set});
+                    return;
+                }
+            }
+
             target = target.parentNode;
         }
 
@@ -522,12 +539,13 @@ function startup() {
         ukr: 'українська',
     };
 
+    virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
 
     // pre-process
+    startup_config();
     startup_3d();
     startup_game();
-    startup_config();
 
     set_global_events();
     set_ui_events();

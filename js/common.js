@@ -74,6 +74,17 @@ function E(sel, callback, parent) {
     A(sel, parent).forEach(callback);
 }
 
+/**
+ * Get an element by ID
+ * @param {string} id
+ * @param {Node=} parent parent node, document by default
+ * @returns {Node=}
+ */
+function Id(id, parent) {
+    if (!id) return;
+    return (parent || document).getElementById(id);
+}
+
 // DERIVED NODE FUNCTIONS
 /////////////////////////
 /**

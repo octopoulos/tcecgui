@@ -11,6 +11,7 @@
 *+.js
 *.mp3
 *.pyc
+*.rar
 4d.js
 all.*
 archive/
@@ -30,5 +31,6 @@ schedule.json
 sound/*.js
 svg/
 tempCodeRunnerFile.py
+test?.html
 tournament.json
 winners.json

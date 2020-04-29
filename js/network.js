@@ -5,7 +5,7 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, analyse_crosstable, bracketDataMain, DEV, get_string, HOST, io, LS, newUpdateStandData, Prop, save_option,
+_, analyse_crosstable, bracketDataMain, DEV, get_string, HOST, Id, io, LS, newUpdateStandData, Prop, save_option,
 setLastMoveTime, setPgn, setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true,
 timeDiff:true, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval,
 update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
@@ -37,7 +37,7 @@ function init_sockets() {
         }
         let data = datal.data,
             date = new Date().toLocaleTimeString(),
-            div = _('#log-wrapper'),
+            div = Id('log-wrapper'),
             text = data.split(/\n|\s\n/).join("<br>");
 
         // TODO: change this, not a good way to add nodes

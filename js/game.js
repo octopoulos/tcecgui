@@ -11,7 +11,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, InsertNodes, Keys,
+DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, Id, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, Title,
 touch_handle, translate_node, Upper, Visible, window, XBoard, Y
@@ -42,6 +42,7 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
     },
     LIVE_ENGINES = [],
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
+    NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     pgn_moves = [],
@@ -247,7 +248,7 @@ function analyse_crosstable(data) {
     update_table('stand', stand_rows);
 
     // 2) table-cross: might need to update the columns too
-    let node = _('#table-cross'),
+    let node = Id('table-cross'),
         new_columns = [...Split(TABLES.cross), ...abbrevs],
         scolumns = Array.from(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
@@ -440,7 +441,7 @@ function download_tables() {
  */
 function show_tables(type) {
     let is_cup = (type == 'cup'),
-        parent = _('#tables'),
+        parent = Id('tables'),
         target = is_cup? 'brak': 'stand';
     Class('[data-x="brak"], [data-x="event"]', 'dn', !is_cup, parent);
     Class('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', 'dn', is_cup, parent);
@@ -465,7 +466,7 @@ function update_table(name, rows, reset=true) {
         is_sched = (name == 'sched'),
         new_rows = [],
         nodes = [],
-        table = _(`#table-${name}`),
+        table = Id(`table-${name}`),
         body = _('tbody', table),
         columns = Array.from(A('th', table)).map(node => node.dataset.x);
 
@@ -596,7 +597,7 @@ function create_bracket(data) {
     // 1)
     window.event = data;
     let game = 1,
-        lines = ['<hori class="fastart">'],
+        lines = ['<hori class="fastart noselect">'],
         teams = data.teams,
         num_team = teams.length,
         number = num_team,
@@ -697,7 +698,7 @@ function create_bracket(data) {
 
     // 3) result
     lines.push('</hori>');
-    let node = _('#table-brak');
+    let node = Id('table-brak');
     HTML(node, lines.join(''));
     translate_node(node);
 
@@ -803,7 +804,7 @@ function update_pgn(pgn) {
     let headers = pgn.Headers,
         moves = pgn.Moves,
         num_move = moves.length,
-        overview = _('#table-view'),
+        overview = Id('table-view'),
         start = pgn.lastMoveLoaded || 0;
 
     // 1) update overview
@@ -870,7 +871,7 @@ function update_pgn(pgn) {
     // 4) engines
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
-            node = _(`#player${id}`),
+            node = Id(`player${id}`),
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
 
@@ -884,7 +885,7 @@ function update_pgn(pgn) {
         HTML(`[data-x="name"]`, short, node);
         HTML(`#score${id}`, headers[`${title}Elo`]);
 
-        let image = _(`#logo${id}`);
+        let image = Id(`logo${id}`);
         if (image.src != src) {
             image.setAttribute('alt', name);
             image.src = src;
@@ -936,7 +937,7 @@ function update_pgn(pgn) {
     });
 
     for (let id=0; id<2; id++) {
-        let node = _(`#material${id}`),
+        let node = Id(`material${id}`),
             html = HTML(node),
             material = materials[id].join('');
         if (html != material)
@@ -957,7 +958,7 @@ function update_pgn(pgn) {
  */
 function resize_game() {
     // resize the boards
-    let width = _('#board').clientWidth;
+    let width = Id('board').clientWidth;
     if (xboards.board)
         xboards.board.resize(width);
 }
@@ -984,7 +985,7 @@ function update_live_eval(data, id) {
 
     let eval_ = data.eval,
         short = get_short_name(data.engine),
-        node = _(`#table-live${id}`);
+        node = Id(`table-live${id}`);
 
     if (DEV.socket & 1) {
         LS(`update_live_eval: ${id} / ${short}`);
@@ -1017,7 +1018,7 @@ function update_live_eval(data, id) {
 function update_player_eval(data) {
     let eval_ = data.eval,
         id = data.color,
-        node = _(`#player${id}`),
+        node = Id(`player${id}`),
         short = get_short_name(data.engine);
 
     if (DEV.socket & 1) {
@@ -1072,7 +1073,7 @@ function action_key_no_input(code, active) {
 function game_action_key(code) {
     if (Visible('#overlay')) {
         let changes = 0,
-            parent = Visible('#modal')? _('#modal'): _('#modal2'),
+            parent = Visible('#modal')? Id('modal'): Id('modal2'),
             items = Array.from(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
@@ -1240,7 +1241,7 @@ function popup_engine_info(scolor, e) {
         return;
 
     let show,
-        popup = _('#popup'),
+        popup = Id('popup'),
         type = e.type;
 
     if (type == 'mouseleave')
@@ -1303,7 +1304,7 @@ function set_game_events() {
         let parent = Parent(this, 'horis', 'tabs'),
             active = _('div.active', parent),
             key = this.dataset.x,
-            node = _(`#table-${key}`);
+            node = Id(`table-${key}`);
 
         Class(active, '-active');
         Class(this, 'active');
@@ -1367,6 +1368,8 @@ function startup_game() {
         twitch_video: 1,
     });
     merge_settings({
+        // separator
+        _1: {},
         board: {
             arrows: [ON_OFF, 1],
             board_theme: [BOARD_KEYS, 'chess24'],

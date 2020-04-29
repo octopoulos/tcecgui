@@ -5,9 +5,9 @@ globals
 _, $, Abs, add_timeout, addDataLive, Assign, Attrs, audiobox, bigData, board:true, BOARD_THEMES,
 C, calculate_probability, calculate_score, Ceil, charts, Chess, ChessBoard, Clamp, Class, clear_timeout,
 clearInterval, ClipboardJS, columnsEvent, console, create_charts, crosstableData, Date, DefaultFloat, DEFAULTS, DEV,
-document, dummyCross, engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Keys,
-LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, Pow, Prop, removeData, reset_charts, Resource, Round,
-roundDate, roundDateMan, roundResults:true,
+document, dummyCross, engine_colors, Events, Exp, Floor, FormatUnit, get_short_name, Hide, HTML, Id, Keys,
+LS, Max, Min, moment, Now, Pad, Parent, PIECE_THEMES, play_sound, popup_engine_info, Pow, Prop, removeData,
+reset_charts, Resource, Round, roundDate, roundDateMan, roundResults:true,
 S, save_option, screen, setDefaultLiveLog, setInterval, setTimeout, Show, show_info, Sign, socket, START_FEN,
 startDateR1, startDateR2, Style, teamsx, Title, touch_handle, turn:true, updateChartData, updateChartDataLive,
 updateCrosstable, WHITE_BLACK, window, xboards, XBoard, Y
@@ -1917,9 +1917,9 @@ function setDefaults()
     setDefaultLiveLog();
 
     if (Y.top_tab == 1)
-        _('#v-pills-gameinfo-tab').click();
+        Id('v-pills-gameinfo-tab').click();
     else
-        _('#v-pills-pv-top-tab').click();
+        Id('v-pills-pv-top-tab').click();
 
     // checkboxes
     Prop('#notacheck', 'checked', !Y.arrows);
@@ -2957,7 +2957,7 @@ function initTables()
     }, {passive: false});
 
     // hack
-    _('#pills-stand-tab').click();
+    Id('pills-stand-tab').click();
 }
 
 function removeClassEngineInfo(cont)
@@ -3537,60 +3537,6 @@ function formatterEvent(value, row, index, _field) {
     });
 
     return retStr;
-}
-
-/**
- * Show a popup with the engine info
- * @param {string} scolor white, black
- * @param {Event} e
- */
-function popup_engine_info(scolor, e) {
-    let show,
-        popup = _('#popup'),
-        type = e.type;
-
-    if (type == 'mouseleave')
-        show = false;
-    else if (scolor == 'popup')
-        show = true;
-    else {
-        let title = Title(scolor),
-            engine = prevPgnData.Headers[title].split(' '),
-            options = prevPgnData[`${title}EngineOptions`],
-            lines = options.map(option => [option.Name, option.Value]);
-
-        // add engine + version
-        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
-        lines = lines.flat().map(item => `<div>${item}</div>`);
-
-        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
-
-        // place the popup in a visible area on the screen
-        let x = e.clientX + 10,
-            y = e.clientY + 10,
-            x2 = 0,
-            y2 = 0;
-        if (x >= window.innerWidth / 2) {
-            x -= 20;
-            x2 = -100;
-        }
-        if (y >= window.innerHeight / 2) {
-            y -= 20;
-            y2 = -100;
-        }
-
-        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
-        show = true;
-    }
-
-    Class(popup, 'popup-show', show);
-    // trick to be able to put the mouse on the popup and copy text
-    if (show) {
-        clear_timeout('popup-engine');
-        Class(popup, 'popup-enable');
-    }
-    else
-        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
 }
 
 /**

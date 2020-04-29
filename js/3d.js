@@ -7,9 +7,9 @@
 // included after: common, engine, global
 /*
 globals
-_, Abs, add_timeout, Assign, Attrs, Audio, C, Class, clear_timeout, DEFAULTS, DEV, Events, Exp, Format, HTML, KEY_TIMES,
-Keys, KEYS, merge_settings, navigator, Now, S, save_option, Style, Title, translate_node, Visible, window, X_SETTINGS,
-Y
+_, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio, C, Class, clear_timeout, DEFAULTS, DEV, Events, Exp,
+Format, HTML, Id, KEY_TIMES, Keys, KEYS, LANGUAGES, merge_settings, navigator, Now, S, save_option, Style, THEMES,
+Title, translate_node, translates, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -226,6 +226,19 @@ function change_setting(name, value) {
 
     if (virtual_change_setting_special && virtual_change_setting_special(name, value))
         return;
+
+    switch(name) {
+    case 'language':
+        save_option('lan', value);
+        if (value == 'eng' || translates._lan == value)
+            translate_node('body');
+        else if (value != 'eng')
+            add_timeout('lan', api_translate_get, 100);
+        break;
+    case 'theme':
+        update_theme([value]);
+        break;
+    }
 }
 
 /**
@@ -289,7 +302,7 @@ function show_menu() {
 function show_modal(show, text, title, name) {
     S('#overlay', show);
 
-    let node = _('#modal');
+    let node = Id('modal');
     if (typeof(text) == 'string') {
         Attrs('#modal-title', 'data-t', title? title: '');
         HTML(node, text);
@@ -303,14 +316,13 @@ function show_modal(show, text, title, name) {
         set_modal_events();
         if (virtual_game_action_key)
             virtual_game_action_key();
-        if (virtual_show_modal_special)
-            virtual_show_modal_special(false);
     }
     else {
         clear_timeout('pad');
-        if (virtual_show_modal_special)
-            virtual_show_modal_special();
     }
+
+    if (virtual_show_modal_special)
+        virtual_show_modal_special(show);
 
     modal_name = name;
 }
@@ -321,43 +333,56 @@ function show_modal(show, text, title, name) {
  * @returns {string} html
  */
 function show_settings(name) {
-    let html = '<grid class="grid2">',
+    let lines = ['<grid class="grid2 noselect">'],
         settings = name? X_SETTINGS[name]: X_SETTINGS;
 
+    if (name)
+        lines.push(`<div class="item-title span" data-set="" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+
     Keys(settings).forEach(key => {
+        // separator
+        if (key[0] == '_') {
+            lines.push('<hr class="span">');
+            return;
+        }
+
+        // link or list
         let setting = settings[key][0],
-            more = setting? '': ` name="${key}"`;
-        html += `<a${more} class="item" data-t="${Title(key.replace(/_/g, ' '))}"></a>`;
+            more_class = setting? '': ' span',
+            more_data = setting? '': ` data-set="${key}"`;
+        lines.push(`<a class="item${more_class}"${more_data} data-t="${Title(key).replace(/_/g, ' ')}"></a>`);
         if (Array.isArray(setting)) {
-            html
-                += `<select name="${key}">`
+            lines.push(
+                `<select name="${key}">`
                     + settings[key][0].map(option => {
                         let value = {off: 0, on: 1}[option];
                         if (value == undefined)
                             value = option;
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')
-                + '</select>';
+                + '</select>'
+            );
         }
-        else if (!setting)
-            html += '<div></div>';
-        else
-            html += `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`;
+        else if (setting) {
+            if (setting.type)
+                lines.push(`<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`);
+            else
+                lines.push(
+                    `<select name="${key}">`
+                        + Keys(setting).map(value => {
+                            let option = setting[value];
+                            return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
+                        }).join('')
+                    + '</select>'
+                );
+        }
     });
-    html += '</grid>';
-    // show_modal(true, html, `${name} settings`);
 
-    // // events
-    // let parent = _('#modal2');
-    // Events('select, input', 'change', function() {
-    //     change_setting(this.name, this.value);
-    // }, {}, parent);
-    // C('div[name]', function() {
-    //     change_setting(this.getAttribute('name'));
-    // }, parent);
+    if (name)
+        lines.push('<a class="item item-title span" data-set="" data-t="OK"></a>');
 
-    LS(html);
-    return html;
+    lines.push('</grid>');
+    return lines.join('');
 }
 
 /**
@@ -429,26 +454,27 @@ function set_3d_events() {
     C('#back', () => {
         show_modal(true);
     });
-    C('#play-audio', () => {
-        show_settings('audio');
-    });
-    C('#play-game', () => {
-        show_settings('game');
-    });
-    C('#play-video', () => {
-        show_settings('video');
-    });
 }
 
 /**
  * Used when showing a modal
+ * @param {Node=} parent
  */
-function set_modal_events() {
+function set_modal_events(parent) {
     Events('#overlay .item', '!mouseenter mouseleave', function(e) {
         Class('#overlay .item.selected', '-selected');
         if (e.type == 'mouseenter')
             Class(this, 'selected');
     });
+
+    // settings events
+    parent = parent || Id('overlay');
+    Events('select, input', 'change', function() {
+        change_setting(this.name, this.value);
+    }, {}, parent);
+    C('div[name]', function() {
+        change_setting(this.getAttribute('name'));
+    }, parent);
 
     if (virtual_set_modal_events_special)
         virtual_set_modal_events_special();
@@ -459,6 +485,10 @@ function set_modal_events() {
  */
 function startup_3d() {
     merge_settings({
+        general: {
+            language: [LANGUAGES, Y.lan],
+            theme: [THEMES, Y.theme],
+        },
         audio: {
             sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
             sound: [ON_OFF, 1],

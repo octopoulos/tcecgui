@@ -9,9 +9,9 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, InsertNodes, Keys, localStorage,
-LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout, TEXT, Title,
-window
+_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, Id, InsertNodes, Keys,
+localStorage, LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout,
+TEXT, Title, window
 */
 'use strict';
 
@@ -503,7 +503,7 @@ function update_svg(parent) {
  * @param {number=} version CSS version, use Now() to force reload
  */
 function update_theme(themes, callback, version=15) {
-    let parent = _('#extra-style');
+    let parent = Id('extra-style');
     if (!parent)
         return;
     if (!themes)
