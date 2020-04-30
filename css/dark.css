@@ -26,6 +26,10 @@ body {
 #board .xmoves {
     color: #dcdcdc;
 }
+.live-pv,
+.xmoves {
+    background: rgba(230, 240, 255, 0.85);
+}
 .book {
     color: #f90;
 }
@@ -41,13 +45,13 @@ body {
 
 /* tables */
 .scroller tr:nth-child(2n) {
-    background: #212529;
+    background: rgba(1, 9, 26, 0.28);
 }
 .scroller tr:nth-child(2n + 1) {
-    background: #2c3034;
+    background: rgba(15, 30, 60, 0.2);
 }
 .scroller tr:hover {
-    background: #323539;
+    background: rgba(108, 157, 255, 0.05);
 }
 .scroller tr.last {
     background: #4c4e4f;
@@ -56,7 +60,7 @@ body {
     background: #535456;
 }
 #table-engine > * {
-    background: #212529;
+    background: rgba(1, 9, 26, 0.28);
 }
 .game {
     color: #fa0;
@@ -71,4 +75,12 @@ body {
 }
 .graphs {
     background-color: #c6c6c6;
+}
+
+/* extras */
+.swap {
+    color: rgba(255, 255, 255, 0.2);
+}
+.swap:hover {
+    color: rgba(255, 255, 255, 0.5);
 }

@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
+2020-04-30 : 2020-04-30 : sea theme: good example to let other people create their own themes
+2020-04-30 : 2020-04-30 : xboard rotation
 2020-04-29 : 2020-04-13 : dynamic options system: very easily extensible without extra code
 2020-04-29 : 2020-04-23 : remove moment.js, javascript can handle date/time just fine
 2020-04-28 : 2020-04-28 : calculate seeds + tests
@@ -83,6 +86,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
@@ -90,14 +94,14 @@ high:
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 ~          : 2020-04-17 : play archive games without loading a new page
 medium:
--          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
+-          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
 low:
 -          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+-          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-04-13 : add an SVG theme for the pieces
--          : 2020-04-14 : chessboard drag doesn't work with touch, only mouse
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces

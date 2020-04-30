@@ -1,7 +1,7 @@
 /*
 dark-archive.css
 - used in Archive mode
-- inherits from live.css AND dark.css
+- inherits from light.css AND dark.css
 */
 body {
     background: #352c27;

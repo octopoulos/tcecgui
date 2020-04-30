@@ -1,0 +1,8 @@
+/*
+sea-archive.css
+- used in Archive mode
+- inherits from light.css AND sea.css
+*/
+body {
+    background: #3aa;
+}

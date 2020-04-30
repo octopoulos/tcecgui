@@ -203,7 +203,19 @@ grid {
     color: yellow !important;
 }
 
-/* debug */
+/* overlays */
+#banner {
+    background: #07f;
+    box-shadow: 0 0 0.2em #000;
+    color: #fff;
+    left: 0;
+    padding: 0.7em;
+    position: fixed;
+    text-align: center;
+    top: 0;
+    width: 100%;
+    z-index: 5;
+}
 #debug {
     color: rgba(0, 255, 0, 0.8);
     flex: 1;
@@ -213,7 +225,7 @@ grid {
     max-height: 70vh;
     position: fixed;
     top: 15vh;
-    z-index: 5;
+    z-index: 6;
 }
 
 /* popups */
@@ -327,7 +339,7 @@ grid {
     width: 1em;
     z-index: 2;
 }
-.smooth {
+.smooth > div {
     transition: transform 1s;
 }
 .xpiece > img {
@@ -358,15 +370,17 @@ grid {
 .control {
     cursor: pointer;
     height: 2.5em;
-    transition: color 0.1s;
     width: 2.5em;
 }
 .control:hover {
     color: #0056b3;
 }
+.control.copied {
+    color: #080;
+}
 .live-pv,
 .xmoves {
-    background: #d6d8d9;
+    background: rgba(230, 240, 255, 0.3);
     border: 1px solid #c6c8ca;
     border-radius: 4px;
     color: #000;
@@ -428,13 +442,13 @@ grid {
     white-space: nowrap;
 }
 .scroller tr:nth-child(2n) {
-    background: #dcdcdc;
+    background: rgba(0, 0, 0, 0.01);
 }
 .scroller tr:nth-child(2n + 1) {
-    background: #d1d1d1;
+    background: rgba(0, 0, 0, 0.05);
 }
 .scroller tr:hover {
-    background: #ccc;
+    background: rgba(0, 0, 0, 0.1);
 }
 .scroller tr.last {
     background: #82cafa;
@@ -731,13 +745,13 @@ grid {
     width: 100%;
 }
 .swap {
-    color: #bbb;
+    color: rgba(0, 0, 0, 0.2);
     cursor: pointer;
     opacity: 0;
     padding: 0.1em 0.3em;
 }
 .swap:hover {
-    color: #777;
+    color: rgb(0, 0, 0, 0.5);
 }
 
 /* extras */
@@ -773,6 +787,7 @@ grid {
 #show-video,
 .adblock {
     border: 1px dotted #999;
+    color: #06d;
     margin: 1em;
     padding: 1em;
     text-align: center;
