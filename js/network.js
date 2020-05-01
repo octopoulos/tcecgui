@@ -1,25 +1,21 @@
 // network
 //
 // moved all socket functions here
+// TODO: move this to startup because this code will be very short once the DELETE have been deleted?
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, analyse_crosstable, bracketDataMain, DEV, get_string, HOST, Id, io, LS, newUpdateStandData, Prop, save_option,
-setLastMoveTime, setPgn, setTwitchChange, setUsers, setUsersMain, set_viewers, showBanner, time_delta:true,
-timeDiff:true, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval, update_pgn, update_player_eval,
-update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
-Y
+_, add_timeout, analyse_crosstable, bracketDataMain, DEV, get_string, Hide, HOST, HTML, Id, io, LS, newUpdateStandData,
+Prop, save_option, set_viewers, setLastMoveTime, setPgn, setTwitchChange, setUsers, setUsersMain, Show, showBanner,
+time_delta:true, timeDiff:true, TIMEOUTS, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval,
+update_pgn, update_player_eval, update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew,
+updateScheduleData, Y
 */
 'use strict';
 
 let globalRoom = 0,
     socket;
-
-function getUserS()
-{
-    socket.emit('getusers', 'd');
-}
 
 /**
  * Initialise sockets
@@ -31,10 +27,7 @@ function init_sockets() {
 
     // log
     socket.on('htmlread', datal => {
-        if (DEV.socket & 1) {
-            LS('socket/htmlread:');
-            LS(datal);
-        }
+        log_socket('htmlread', datal);
         let data = datal.data,
             date = new Date().toLocaleTimeString(),
             div = Id('log-wrapper'),
@@ -46,53 +39,36 @@ function init_sockets() {
     });
 
     socket.on('crosstable', data => {
-        if (DEV.socket & 1) {
-            LS('socket/crosstable:');
-            LS(data);
-        }
+        log_socket('crosstable', data);
         // DELETE
         newUpdateStandData(data);
 
         analyse_crosstable(data);
     });
     socket.on('liveeval', data => {
-        if (DEV.socket & 1) {
-            LS('socket/liveval:');
-            LS(data);
-        }
+        log_socket('liveeval', data);
         // DELETE
         updateLiveEvalData(data, 1, null, 1);
 
         update_live_eval(data, 0);
     });
     socket.on('liveeval1', data => {
-        if (DEV.socket & 1) {
-            LS('socket/liveeval1:');
-            LS(data);
-        }
+        log_socket('liveeval1', data);
         // DELETE
         updateLiveEvalData(data, 1, null, 2);
 
         update_live_eval(data, 1);
     });
     socket.on('updeng', data => {
-        if (DEV.socket & 1) {
-            LS('socket/updeng:');
-            LS(data);
-        }
+        log_socket('updeng', data);
         // DELETE
         updateLiveEvalDataNew(data, 1, null, 2);
 
         update_player_eval(data);
     });
     socket.on('pgn', data => {
-        if (DEV.socket & 1) {
-            LS('socket/pgn:');
-            LS(data);
-        }
+        log_socket('pgn', data);
         // DELETE
-        if (DEV.socket & 1)
-            LS(`Got move: ${data.lastMoveLoaded} : users=${data.Users}`);
         setUsersMain(data.Users);
         timeDiff = 0;
         setPgn(data);
@@ -101,10 +77,7 @@ function init_sockets() {
         update_pgn(data);
     });
     socket.on('schedule', data => {
-        if (DEV.socket & 1) {
-            LS('socket/schedule:');
-            LS(data);
-        }
+        log_socket('schedule', data);
         // DELETE
         updateScheduleData(data);
         updateH2hData(data);
@@ -112,75 +85,66 @@ function init_sockets() {
         update_table('sched', data);
     });
     socket.on('livechart', data => {
-        if (DEV.socket & 1) {
-            LS('socket/livechart:');
-            LS(data);
-        }
+        log_socket('livechart', data);
         updateLiveChartData(data, 1);
     });
     socket.on('livechart1', data => {
-        if (DEV.socket & 1) {
-            LS('socket/livechart1:');
-            LS(data);
-        }
+        log_socket('livechart1', data);
         updateLiveChartData(data, 2);
     });
     socket.on('lastpgntime', data => {
-        if (DEV.socket & 1) {
-            LS('socket/lastpgntime:');
-            LS(data);
-        }
+        log_socket('lastpgntime', data);
         setLastMoveTime(data);
     });
     socket.on('users', data => {
-        if (DEV.socket & 1) {
-            LS('socket/users:');
-            LS(data);
-        }
+        log_socket('users', data);
         // DELETE
         setUsers(data);
 
         set_viewers(data.count);
     });
     socket.on('banner', data => {
-        if (DEV.socket & 1) {
-            LS('socket/banner:');
-            LS(data);
-        }
+        log_socket('banner', data);
+        // DELETE
         showBanner(data);
+
+        show_banner(data);
     });
     socket.on('tournament', data => {
-        if (DEV.socket & 1) {
-            LS('socket/tournament:');
-            LS(data);
-        }
+        log_socket('tournament', data);
         setTwitchChange(data);
     });
     socket.on('enginerating', data => {
-        if (DEV.socket & 1) {
-            LS('socket/enginerating:');
-            LS(data);
-        }
+        log_socket('enginerating', data);
         // not used
         updateEngRatingData(data);
     });
     socket.on('crash', data => {
-        if (DEV.socket & 1) {
-            LS('socket/crash:');
-            LS(data);
-        }
+        log_socket('crash', data);
         // DELETE
         updateCrashData(data);
 
         update_table('crash', data);
     });
     socket.on('bracket', data => {
-        // if (DEV.socket & 1) {
-            LS('socket/bracket:');
-            LS(data);
-        // }
+        log_socket('bracket', data);
         bracketDataMain(data);
     });
+
+    //
+    add_timeout('get_users', () => {socket.emit('getusers', 'd');}, TIMEOUTS.users);
+}
+
+/**
+ * Log a socket message
+ * @param {string} name
+ * @param {Object} data
+ */
+function log_socket(name, data) {
+    if (DEV.socket & 1) {
+        LS(`socket/${name}:`);
+        LS(data);
+    }
 }
 
 // CHECK AND DELETE ALL THESE:
@@ -198,6 +162,19 @@ function setLiveLog(livelog)
         globalRoom = livelog.value;
 
     listenLog();
+}
+
+/**
+ * Show the banner and hide it after a timeout
+ * @param {string=} text if there's no text, then just hide it
+ */
+function show_banner(text) {
+    let node = _('#banner');
+    if (text) {
+        HTML(node, text);
+        Show(node);
+    }
+    add_timeout('banner', () => {Hide(node);}, TIMEOUTS.banner);
 }
 
 function listenLogMain(room)

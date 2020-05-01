@@ -1,7 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
+2020-05-01 : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 2020-04-30 : 2020-04-30 : sea theme: good example to let other people create their own themes
 2020-04-30 : 2020-04-30 : xboard rotation
 2020-04-29 : 2020-04-13 : dynamic options system: very easily extensible without extra code
@@ -102,10 +102,10 @@ low:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-04-13 : add an SVG theme for the pieces
+-          : 2020-04-13 : add 3d rendering option to the chessboard
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
--          : 2020-04-13 : add 3d rendering option to the chessboard
 -          : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
 -          : 2020-04-13 : only load the 3d library/files when the user wants to use it
 -          : 2020-04-24 : add 3d dark room

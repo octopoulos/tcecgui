@@ -16,13 +16,28 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Assign, C, Class, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, LS, merge_settings, ON_OFF, S, Show,
-Split, Style, T, update_svg, Upper
+_, A, add_timeout, Assign, C, Class, CopyClipboard, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, Keys, LS,
+merge_settings, ON_OFF, S, Show, Split, Style, T, update_svg, Upper
 */
 'use strict';
 
 let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
-    CONTROLS = Split('start=end=mirror|prev=next=mirror|play|next|end|rotate|copy|cube'),
+    CONTROLS = {
+        start: {
+            class: 'mirror',
+            icon: 'end',
+        },
+        prev: {
+            class: 'mirror',
+            icon: 'next',
+        },
+        play: '',
+        next: '',
+        end: '',
+        rotate: 'Rotate board',
+        copy: 'Copy FEN',
+        cube: 'Change view',
+    },
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
@@ -40,29 +55,31 @@ class XBoard {
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' too
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
-     * - piece_class    // custom piece class
+     * - rotate         // board rotation
      * - size           // square size in px (resize will recalculate it)
+     * - smooth         // smooth piece animation
      * - target         // 3d, canvas, html, text
      */
-    constructor(options={}) {
-        this.options = Assign({
-            border: 2,
-            history: true,
-            notation: 6,
-        }, options);
 
+    constructor(options={}) {
+        this.border = options.border || 2;
         this.colors = ['#eee', '#111'];
         this.coords = {};
         this.dims = options.dims || [8, 8];
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
+        this.history = options.history;
+        this.hook = options.hook;
         this.id = options.id;
         this.images = {};
         this.moves = [];                                // moves history
         this.node = _(this.id);
+        this.notation = options.notation || 6;
         this.pieces = [];
-        this.target = options.target || 'html';
+        this.rotate = options.rotate || 0;
         this.size = options.size || 16;
+        this.smooth = options.smooth;
+        this.target = options.target || 'html';
     }
 
     /**
@@ -123,11 +140,32 @@ class XBoard {
      * Listen to clicking events
      * @param {function} callback
      */
-    hook(callback) {
+    handle_hook(callback) {
         let that = this;
+
+        // controls
         C('[data-x]', function() {
-            callback(that, 'control', this.dataset.x);
+            let name = this.dataset.x;
+            switch (name) {
+            case 'copy':
+                CopyClipboard(that.fen);
+                Class(this, 'copied');
+                add_timeout('fen', () => {Class(this, '-copied');}, 1000);
+                break;
+            case 'rotate':
+                let smooth = that.smooth;
+                that.smooth = false;
+                that.rotate = (that.rotate + 1) % 2;
+                that.dirty |= 3;
+                that.render();
+                that.smooth = smooth;
+                break;
+            default:
+                callback(that, 'control', name);
+            }
         }, this.node);
+
+        // moving a piece by click
         C('.xmoves', e => {
             callback(that, 'move', e);
         });
@@ -143,9 +181,19 @@ class XBoard {
      */
     initialise() {
         // create elements
-        let controls = CONTROLS.map(name => {
-            let [key, value, class_] = name.split('=');
-            return `<vert class="control fcenter${class_? ' ' + class_: ''}" data-x="${key}"><i data-svg="${value || key}"></i></vert>`;
+        let controls = Keys(CONTROLS).map(name => {
+            let value = CONTROLS[name] || {},
+                class_ = value.class || '',
+                icon = value.icon || name,
+                title = value.title || '';
+
+            if (class_)
+                class_ = ` ${class_}`;
+            if (typeof(value) == 'string')
+                title = value;
+            if (title)
+                title = ` title="${title}"`;
+            return `<vert class="control fcenter${class_}" data-x="${name}"><i data-svg="${icon}"${title}></i></vert>`;
         }).join('');
 
         HTML(this.node, [
@@ -153,15 +201,15 @@ class XBoard {
             '<grid class="xgrid"></grid>',
             '<div class="xpieces"></div>',
             `<hori class="xcontrol">${controls}</hori>`,
-            `<div class="xmoves${this.options.history? '': ' dn'}"></div>`,
+            `<div class="xmoves${this.history? '': ' dn'}"></div>`,
         ].join(''));
 
         this.analyse_fen();
         this.resize();
         update_svg();
 
-        if (this.options.hook)
-            this.hook(this.options.hook);
+        if (this.hook)
+            this.handle_hook(this.hook);
 
         // TODO: remove
         Events(this.node, 'dragover', e => {
@@ -223,12 +271,13 @@ class XBoard {
         let colors = this.colors,
             dirty = this.dirty,
             [num_col, num_row] = this.dims,
+            rotate = this.rotate,
             size = this.size;
 
         // 1) draw empty board + notation
         if (dirty & 1) {
             let lines = [],
-                notation = this.options.notation;
+                notation = this.notation;
 
             for (let i=0; i<num_row; i++)
                 for (let j=0; j<num_col; j++) {
@@ -241,11 +290,11 @@ class XBoard {
                         style = `;color:${colors[1 - even]}`;
                         if (notation & 2) {
                             if (i == num_row - 1)
-                                note_x = `<div class="xnote" style="left:2.67em;top:1.17em">${Upper(COLUMN_LETTERS[j])}</div>`;
+                                note_x = `<div class="xnote" style="left:2.67em;top:1.17em">${Upper(COLUMN_LETTERS[rotate? 7 - j: j])}</div>`;
                         }
                         if (notation & 4) {
-                            if (j == 0)
-                                note_y = `<div class="xnote" style="left:0.1em;top:-1.15em">${8 - i}</div>`;
+                            if (j == rotate * 7)
+                                note_y = `<div class="xnote" style="left:${rotate? 2.7: 0.1}em;top:-1.15em">${rotate? i + 1: 8 - i}</div>`;
                         }
                     }
 
@@ -260,8 +309,11 @@ class XBoard {
             if (DEV.board & 1)
                 LS(`render_html: num_piece=${this.pieces.length}`);
             let nodes = [],
-                piece_class = this.options.piece_class;
+                xpieces = _('div.xpieces', this.node);
 
+            Class(xpieces, 'smooth', this.smooth);
+
+            // create pieces / adjust their position
             for (let piece of this.pieces) {
                 let char = piece.char,
                     dead = (piece.flag & 1),
@@ -273,10 +325,8 @@ class XBoard {
                 if (node)
                     node.firstElementChild.src = image;
                 else {
-                    // TODO: remove draggable
-                    node = CreateNode('div', `<img src="${image}">`, {draggable: true});
+                    node = CreateNode('div', `<img src="${image}">`, {class: 'xpiece'});
                     nodes.push(node);
-                    Class(node, `xpiece${piece_class? (' ' + piece_class): ''}`);
                     piece.node = node;
                 }
 
@@ -284,13 +334,20 @@ class XBoard {
                 if (!dead) {
                     let x = LETTER_COLUMNS[coord[0]],
                         y = 8 - coord[1];
+
+                    if (rotate) {
+                        x = 7 - x;
+                        y = 7 - y;
+                    }
                     Style(node, `transform:translate(${x * size}px,${y * size}px)`);
                 }
             }
 
             if (DEV.board & 1)
-                LS(_('div.xpieces', this.node));
-            InsertNodes(_('div.xpieces', this.node), nodes);
+                LS(xpieces);
+
+            // insert pieces
+            InsertNodes(xpieces, nodes);
         }
 
         this.dirty = 0;
@@ -302,7 +359,7 @@ class XBoard {
      */
     render_text() {
         let lines = [],
-            notation = (this.id == 'console')? this.options.notation: 0,
+            notation = (this.id == 'console')? this.notation: 0,
             num_col = this.dims[0],
             rows = this.fen.split(' ')[0].split('/'),
             row_id = rows.length;
@@ -362,7 +419,7 @@ class XBoard {
         if (!width)
             width = this.node.clientWidth;
 
-        let border = this.options.border,
+        let border = this.border,
             num_col = this.dims[0],
             size = Floor((width - border * 2) * 2 / num_col) / 2,
             frame_size = size * num_col + border * 2;

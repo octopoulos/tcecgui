@@ -809,6 +809,21 @@ function Clamp(number, min, max, min_set) {
 }
 
 /**
+ * Copy text to the clipboard
+ * - ideally should be called from an event callback
+ * @param {string} text
+ */
+function CopyClipboard(text) {
+    let node = CreateNode('textarea', null, {readonly: ''});
+    node.value = text;
+    Style(node, `left:-9999px;position:absolute`);
+    document.body.appendChild(node);
+    node.select();
+    document.execCommand('copy');
+    document.body.removeChild(node);
+}
+
+/**
  * Get the date, offset by a number of days
  * @param {number} offset day offset
  * @returns {string} date in YYYYMMDD format

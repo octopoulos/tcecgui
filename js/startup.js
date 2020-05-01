@@ -10,15 +10,16 @@
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, Events, fill_languages,
-game_action_key, game_action_keyup, get_object, getUserS, HasClass, hideBanner, HOST, HTML, ICONS:true, Id,
+api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events,
+fill_languages, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
 init_sockets, initTables, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_modal_events, set_ui_events, setDefaults, setTwitch, show_popup,
-show_settings, Split, start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game,
-startup_graphs, startup_tcec, Style, tcecHandleKey, THEMES, toggleTheme, translate_node, translates:true,
-unlistenLogMain, update_debug, update_theme, updateLiveChart, updateLiveEval, updatePgn, updateRefresh, updateTables,
-updateWinners, virtual_change_setting_special:true, virtual_check_hash_special:true, window, Y
+S, save_option, screen, set_game_events, set_modal_events, set_ui_events, setDefaults, setTwitch, Show, show_banner,
+show_popup, show_settings, Split, start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game,
+startup_graphs, startup_tcec, Style, tcecHandleKey, THEMES, TIMEOUTS, toggleTheme, translate_node, translates:true,
+unlistenLogMain, update_board_theme, update_debug, update_theme, updateLiveChart, updateLiveEval, updatePgn,
+updateRefresh, updateWinners, virtual_change_setting_special:true, virtual_check_hash_special:true,
+window, Y
 */
 'use strict';
 
@@ -63,11 +64,19 @@ function adjust_popups() {
  * @returns {boolean} true if we've handled the setting
  */
 function change_setting_special(name, value) {
-    if (name == 'theme') {
+    switch (name) {
+    case 'board_theme':
+    case 'piece_theme':
+        update_board_theme();
+        break;
+    case 'theme':
         change_theme(value);
-        return true;
+        break;
+    default:
+        return false;
     }
-    return false;
+
+    return true;
 }
 
 /**
@@ -135,19 +144,23 @@ function init_globals() {
     setDefaults();
 
     // timeouts
+    show_banner();
+
+    download_tables(true);
+    add_timeout('tables', () => {download_tables();}, TIMEOUTS.tables);
+    add_timeout('twitch', () => {update_twitch();}, TIMEOUTS.twitch);
+
     // TODO: change that
-    add_timeout('twitch', () => {setTwitch();}, 10000);
-    add_timeout('get_users', () => {getUserS();}, 5000);
-    add_timeout('update_winners', () => {updateWinners();}, 12000);
-    hideBanner();
-    add_timeout('update_live', () => {
-        updateLiveChart();
-        updateLiveEval();
-    }, 2000);
-    add_timeout('update_tables', () => {updateTables();}, 3000);
+    // add_timeout('update_live', () => {
+    //     updateLiveChart();
+    //     updateLiveEval();
+    // }, 2000);
     add_timeout('adblock', () => {
-        S('.encouragement', ((Id('google_adverts') || {}).height || 0) <= 0);
-    }, 15000);
+        if (_('.google-ad').clientHeight <= 0) {
+            HTML('.adblock', HTML('#adblock'));
+            Show('.adblock');
+        }
+    }, TIMEOUTS.adblock);
 }
 
 /**
@@ -398,6 +411,9 @@ function set_global_events() {
     });
 
     // popups
+    C('#banner', function() {
+        Hide(this);
+    });
     C('.popup-close', function() {
         show_popup();
         show_popup('about');
@@ -558,7 +574,6 @@ function startup() {
     // start
     move_pane();
     start_game();
-    update_twitch();
     // DELETE
     start_tcec();
 

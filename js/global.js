@@ -13,7 +13,14 @@ DEV:true, LS, Y
 
 // modify those values in config.js
 let HOST = 'https://tcec-chess.com',
-    LINKS = {};
+    LINKS = {},
+    TIMEOUTS = {
+        adblock: 15,
+        banner: 30,
+        tables: 3,
+        twitch: 10,
+        users: 5,
+    };
 
 /**
  * Parse DEV

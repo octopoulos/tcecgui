@@ -12,10 +12,6 @@ let timeDiff;
 function bracketDataMain() {
 }
 
-function getUserS() {
-
-}
-
 function hideBanner() {
 
 }
@@ -94,7 +90,6 @@ function updateScheduleData() {
 }
 
 function updateTables() {
-    download_tables();
 }
 
 function updateWinners() {

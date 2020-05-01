@@ -78,6 +78,11 @@ body {
 }
 
 /* extras */
+#show-chat,
+#show-video,
+.adblock {
+    color: #fff;
+}
 .swap {
     color: rgba(255, 255, 255, 0.2);
 }

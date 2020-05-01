@@ -13,8 +13,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
 DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, Id, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
-S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, Title,
-touch_handle, translate_node, Upper, Visible, window, XBoard, Y
+S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, TIMEOUTS,
+Title, touch_handle, translate_node, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -22,8 +22,8 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
     board_target = 'board',
     BOARDS = {
         board: {
-            piece_class: 'smooth',
             size: 48,
+            smooth: true,
         },
         // pv0: {
         //     target: 'text',
@@ -32,8 +32,11 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
         // pva: {},
     },
     CACHE_TIMEOUTS = {
+        brak: 1,
         crash: 600,
+        cross: 1,
         sched: 240,
+        tour: 1,
         winner: 3600 * 24,
     },
     ENGINE_FEATURES = {
@@ -188,6 +191,41 @@ function get_short_name(engine)
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
 }
 
+// BOARD
+////////
+
+/**
+ * Create 4 boards
+ * - should be done at startup since we want to see the boards ASAP
+ */
+function create_boards() {
+    Keys(BOARDS).forEach(key => {
+        let options = Assign({
+            hook: handle_board_events,
+            history: true,
+            id: `#${key}`,
+            notation: 6,
+            size: 16,
+            target: 'html',
+        }, BOARDS[key]);
+
+        let xboard = new XBoard(options);
+        xboard.initialise();
+        xboards[key] = xboard;
+    });
+
+    update_board_theme();
+}
+
+/**
+ * Update the boards' theme
+ */
+function update_board_theme() {
+    Keys(xboards).forEach(key => {
+        xboards[key].set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
+    });
+}
+
 // TABLES
 /////////
 
@@ -264,6 +302,14 @@ function analyse_crosstable(data) {
     }
 
     update_table('cross', cross_rows);
+}
+
+/**
+ * Handle tournament data
+ * @param {Object} data
+ */
+function analyse_tournament(data) {
+    LS(data);
 }
 
 /**
@@ -371,26 +417,28 @@ function create_tables() {
  * + cache support = can load the data from localStorage if it was recent
  * @param {string} url url
  * @param {string=} name table name
+ * @param {boolean=} only_cache only load data if it's cached
  * @param {function=} callback
  */
-function download_table(url, name, callback) {
+function download_table(url, name, only_cache, callback) {
     function _done(data) {
         if (DEV.json & 1) {
             LS(`${url}:`);
             LS(data);
         }
-        if (name)
-            update_table(name, data);
         if (callback)
             callback(data);
+        else if (name)
+            update_table(name, data);
     }
 
     let key,
         timeout = CACHE_TIMEOUTS[name];
+
     if (timeout) {
         key = `table_${name}`;
         let cache = get_object(key);
-        if (cache && cache.time < Now() + timeout) {
+        if (cache && (only_cache || cache.time < Now() + timeout)) {
             if (DEV.json & 1)
                 LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
             _done(cache.data);
@@ -399,6 +447,9 @@ function download_table(url, name, callback) {
         else if (DEV.json & 1)
             LS(`no cache: ${key}`);
     }
+
+    if (only_cache)
+        return;
 
     Resource(url, (code, data) => {
         if (code != 200)
@@ -414,25 +465,27 @@ function download_table(url, name, callback) {
 
 /**
  * Download static JSON files at startup
+ * @param {boolean=} only_cache
  */
-function download_tables() {
-    download_pgn();
+function download_tables(only_cache) {
+    if (!only_cache) {
+        download_pgn();
 
-    // evals
-    download_table(`data.json?no-cache${Now()}`, null, data => {
-        update_live_eval(data, 0);
-    });
-    download_table(`data1.json?no-cache${Now()}`, null, data => {
-        update_live_eval(data, 1);
-    });
-    download_table('liveeval.json');
-    download_table('liveeval1.json');
+        // evals
+        download_table(`data.json?no-cache${Now()}`, null, data => {
+            update_live_eval(data, 0);
+        });
+        download_table(`data1.json?no-cache${Now()}`, null, data => {
+            update_live_eval(data, 1);
+        });
+        download_table('liveeval.json');
+        download_table('liveeval1.json');
+    }
 
     // tables
-    download_table('crosstable.json', null, analyse_crosstable);
-    // download_table('enginerating.json');
-    download_table('tournament.json');
-    download_table('schedule.json', 'sched');
+    download_table('crosstable.json', 'cross', only_cache, analyse_crosstable);
+    download_table('tournament.json', 'tour', only_cache, analyse_tournament);
+    download_table('schedule.json', 'sched', only_cache);
 }
 
 /**
@@ -475,6 +528,9 @@ function update_table(name, rows, reset=true) {
         HTML(body, '');
         data.length = 0;
     }
+
+    if (!Array.isArray(rows))
+        return;
 
     // process all rows
     for (let row of rows) {
@@ -1319,28 +1375,6 @@ function set_game_events() {
 //////////
 
 /**
- * Create 4 boards
- * - should be done at startup since we want to see the boards ASAP
- */
-function create_boards() {
-    Keys(BOARDS).forEach(key => {
-        let options = Assign({
-            hook: handle_board_events,
-            history: true,
-            id: `#${key}`,
-            notation: 6,
-            size: 16,
-            target: 'html',
-        }, BOARDS[key]);
-
-        let xboard = new XBoard(options);
-        xboard.initialise();
-        xboard.set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
-        xboards[key] = xboard;
-    });
-}
-
-/**
  * Call this after the structures have been initialised
  */
 function start_game() {
@@ -1351,7 +1385,8 @@ function start_game() {
         HTML(`[data-x="live${id}"]`, live);
     });
 
-    download_table('bracket.json', null, create_cup);
+    show_tables('league');
+    // download_table('bracket.json', 'brak', false, create_cup);
 }
 
 /**
