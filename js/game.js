@@ -10,15 +10,28 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, BOARD_THEMES, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS,
-DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, Id, InsertNodes, Keys,
-Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, PIECE_THEMES, Pow, Resource, resume_game, Round,
+_, A, Abs, add_timeout, Assign, Attrs, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS, DEV, Events, Exp,
+Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, Id, InsertNodes, Keys,
+Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, TIMEOUTS,
 Title, touch_handle, translate_node, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
-let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red symbol uscf wikipedia'),
+let BOARD_THEMES = {
+        blue: ['#e0e0e0', '#87a6bc'],
+        brown: ['#eaded0', '#927b6d'],
+        chess24: ['#9E7863', '#633526'],
+        dark: ['#797877', '#585655'],
+        dilena: ['#FFE5B6', '#B16228'],
+        green: ['#f0e9db', '#7b9d86'],
+        leipzig: ['#FFFFFF', '#E1E1E1'],
+        metro: ['#FFFFFF', '#EFEFEF'],
+        red: ['#eaded0', '#b17278'],
+        symbol: ['#FFFFFF', '#58AC8A'],
+        uscf: ['#C3C6BE', '#727FA2'],
+        wikipedia: ['#FFCE9E', '#D18B47'],
+    },
     board_target = 'board',
     BOARDS = {
         board: {
@@ -61,6 +74,9 @@ let BOARD_KEYS = Split('blue brown chess24 dark dilena green leipzig metro red s
         0.5: 'draw',
         1: 'win',
         '=': 'draw',
+    },
+    SVG_THEMES = {
+        wikipedia: 1,
     },
     table_data = {},
     TABLES = {
@@ -221,8 +237,12 @@ function create_boards() {
  * Update the boards' theme
  */
 function update_board_theme() {
+    let board_theme = BOARD_THEMES[Y.board_theme],
+        theme = Y.piece_theme,
+        theme_ext = SVG_THEMES[theme]? 'svg': 'png';
+
     Keys(xboards).forEach(key => {
-        xboards[key].set_theme(BOARD_THEMES[Y.board_theme], PIECE_THEMES[Y.piece_theme]);
+        xboards[key].set_theme(board_theme, theme, theme_ext);
     });
 }
 
@@ -1407,7 +1427,7 @@ function startup_game() {
         _1: {},
         board: {
             arrows: [ON_OFF, 1],
-            board_theme: [BOARD_KEYS, 'chess24'],
+            board_theme: [Keys(BOARD_THEMES), 'chess24'],
             highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
             notation: [ON_OFF, 1],
             piece_theme: [PIECE_KEYS, 'chess24'],

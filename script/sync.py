@@ -43,7 +43,6 @@ JS_FILES = {
         'engine',
         'global',
         '3d',
-        '../dist/js/themes',
         'xboard',
         'graph',
         'game',

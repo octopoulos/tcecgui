@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, add_timeout, Assign, C, Class, CopyClipboard, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, Keys, LS,
-merge_settings, ON_OFF, S, Show, Split, Style, T, update_svg, Upper
+_, A, add_timeout, Assign, C, Class, CopyClipboard, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, Keys,
+Lower, LS, merge_settings, ON_OFF, S, Show, Split, Style, T, update_svg, Upper
 */
 'use strict';
 
@@ -71,7 +71,6 @@ class XBoard {
         this.history = options.history;
         this.hook = options.hook;
         this.id = options.id;
-        this.images = {};
         this.moves = [];                                // moves history
         this.node = _(this.id);
         this.notation = options.notation || 6;
@@ -80,6 +79,8 @@ class XBoard {
         this.size = options.size || 16;
         this.smooth = options.smooth;
         this.target = options.target || 'html';
+        this.theme = 'wikipedia';
+        this.theme_ext = 'svg';
     }
 
     /**
@@ -318,9 +319,10 @@ class XBoard {
                 let char = piece.char,
                     dead = (piece.flag & 1),
                     coord = piece.coord,
+                    lower = Lower(char),
                     node = piece.node,
-                    upper = Upper(char),
-                    image = this.images[(char == upper)? `w${upper}`: `b${upper}`];
+                    name = (char == lower)? `b${lower}`: `w${lower}`,
+                    image = `theme/${this.theme}/${name}.${this.theme_ext}`;
 
                 if (node)
                     node.firstElementChild.src = image;
@@ -453,13 +455,15 @@ class XBoard {
     /**
      * Set the theme
      * @param {string[]} colors [light, dark]
-     * @param {Object} images {wB: ...}
+     * @param {Object} theme
+     * @param {string} theme_ext extension for the theme images
      */
-    set_theme(colors, images) {
+    set_theme(colors, theme, theme_ext) {
         if (DEV.board & 1)
             LS('set_theme');
         this.colors = colors;
-        this.images = images;
+        this.theme = theme;
+        this.theme_ext = theme_ext;
         this.dirty = 3;
         this.render();
     }

@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-05-01 : 2020-05-01 : optimized board/piece theme system
 2020-05-01 : 2020-05-01 : convert themes.js to png images
 2020-05-01 : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
 2020-04-30 : 2020-04-30 : sea theme: good example to let other people create their own themes
@@ -100,8 +101,6 @@ medium:
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 -          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
--          : 2020-05-01 : optimized board/piece themes
--          : 2020-04-13 : add an SVG theme for the pieces
 low:
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
