@@ -14,6 +14,8 @@ from subprocess import run
 from time import time
 from typing import Any
 
+from PIL import Image, ImageFile
+
 from common import makedirs_safe, read_text_safe, write_text_safe
 from css_minify import css_minify
 
@@ -68,6 +70,40 @@ class Sync:
         self.no_process = kwargs.get('no_process')                      # type: bool
 
         self.logger = getLogger(self.__class__.__name__)
+
+    def combine_pieces(self, folder: str):
+        """Combine chess pieces png files into 1 file
+        """
+        if 'metro' in folder:
+            height = 160
+            width = 160
+        else:
+            height = 80
+            width = 80
+        combined = Image.new('RGBA', (width * 12, height), (0, 255, 0, 0))
+        output = f'{folder}.png'
+
+        i = 0
+        pieces = 'bknpqr'
+        for color in 'bw':
+            for piece in pieces:
+                name = f'{color}{piece}'
+                image = Image.open(os.path.join(folder, f'{name}.png'))
+                offset = (i * width, 0)
+                combined.paste(image, offset)
+                i += 1
+
+        combined.save(output, format='png')
+        print('a', end='')
+
+    def combine_themes(self, folder: str):
+        """Combine all pieces of each theme
+        """
+        sources = os.listdir(folder)
+        for source in sources:
+            filename = os.path.join(folder, source)
+            if os.path.isdir(filename):
+                self.combine_pieces(filename)
 
     def compress_3d(self, data: str) -> str:
         """Compress THREE javascript
@@ -263,6 +299,11 @@ class Sync:
 if __name__ == '__main__':
     start = time()
     sync = Sync()
-    sync.synchronise()
+
+    if 0:
+        sync.combine_themes(os.path.join(BASE, 'theme'))
+    else:
+        sync.synchronise()
+
     end = time()
     print(f'\nELAPSED: {end-start:.3f} seconds')

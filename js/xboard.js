@@ -39,6 +39,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         cube: 'Change view',
     },
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
+    SPRITE_OFFSETS = Assign({}, ...'bknpqrBKNPQR'.split('').map((key, id) => ({[key]: id}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1';
@@ -84,8 +85,9 @@ class XBoard {
         this.size = options.size || 16;
         this.smooth = options.smooth;
         this.target = options.target || 'html';
-        this.theme = 'wikipedia';
-        this.theme_ext = 'svg';
+        this.theme = 'chess24';
+        this.theme_ext = 'png';
+        this.theme_size = 80;
     }
 
     /**
@@ -389,7 +391,12 @@ class XBoard {
         if (dirty & 2) {
             if (DEV.board & 1)
                 LS(`render_html: num_piece=${this.pieces.length}`);
-            let nodes = [],
+            let image = `theme/${this.theme}.${this.theme_ext}`,
+                nodes = [],
+                piece_size = this.theme_size,
+                diff = (piece_size - size) / 2,
+                style = `background-image:url(${image});height:${piece_size}px;width:${piece_size}px`,
+                transform = `transform:scale(${size / piece_size}) translate(-${diff}px,-${diff}px)`,
                 xpieces = _('div.xpieces', this.node);
 
             Class(xpieces, 'smooth', this.smooth);
@@ -399,15 +406,12 @@ class XBoard {
                 let char = piece.char,
                     dead = (piece.flag & 1),
                     coord = piece.coord,
-                    lower = Lower(char),
                     node = piece.node,
-                    name = (char == lower)? `b${lower}`: `w${lower}`,
-                    image = `theme/${this.theme}/${name}.${this.theme_ext}`;
+                    offset = -SPRITE_OFFSETS[char] * piece_size;
 
-                if (node)
-                    node.firstElementChild.src = image;
-                else {
-                    node = CreateNode('div', `<img src="${image}">`, {class: 'xpiece'});
+                if (!node) {
+                    let html = `<div style="${style};background-position-x:${offset}px"></div>`;
+                    node = CreateNode('div', html, {class: 'xpiece'});
                     nodes.push(node);
                     piece.node = node;
                 }
@@ -421,7 +425,7 @@ class XBoard {
                         x = 7 - x;
                         y = 7 - y;
                     }
-                    Style(node, `transform:translate(${x * size}px,${y * size}px)`);
+                    Style(node, `${transform} translate(${x * piece_size}px,${y * piece_size}px)`);
                 }
             }
 
@@ -537,15 +541,17 @@ class XBoard {
      * @param {string[]} colors [light, dark]
      * @param {Object} theme
      * @param {string} theme_ext extension for the theme images
+     * @param {number} theme_size square dimension in px
      * @param {string} high_color
      * @param {number} high_size
      */
-    set_theme(colors, theme, theme_ext, high_color, high_size) {
+    set_theme(colors, theme, theme_ext, theme_size, high_color, high_size) {
         if (DEV.board & 1)
             LS('set_theme');
         this.colors = colors;
         this.theme = theme;
         this.theme_ext = theme_ext;
+        this.theme_size = theme_size;
         this.high_color = high_color;
         this.high_size = high_size;
 

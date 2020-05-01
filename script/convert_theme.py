@@ -8,6 +8,7 @@ Why?
 1)  - theme.js  = 387KB
     - saved png = 184KB ... half the size
     - quant png = 114KB
+    - combined  = 83KB
 2) only the desired theme will be loaded, if it's chess24, then it's only 21KB to load, instead of 387KB
 """
 
@@ -44,9 +45,6 @@ class Converter:
                 theme = line[:-3].strip()
                 num_theme += 1
                 print(f'{num_theme}) {theme}')
-                continue
-
-            if theme == 'wikipedia':
                 continue
 
             if 'base64' not in line:

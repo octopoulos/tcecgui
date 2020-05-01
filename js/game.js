@@ -62,6 +62,14 @@ let BOARD_THEMES = {
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
+    PIECE_SIZES = {
+        _: 80,
+        metro: 160,
+    },
+    PIECE_TYPES = {
+        _: 'png',
+        // wikipedia: 'svg',            // will enable in the future
+    },
     pgn_moves = [],
     players = [{}, {}],                 // current 2 players
     prev_pgn,
@@ -75,9 +83,6 @@ let BOARD_THEMES = {
         0.5: 'draw',
         1: 'win',
         '=': 'draw',
-    },
-    SVG_THEMES = {
-        wikipedia: 1,
     },
     table_data = {},
     TABLES = {
@@ -242,10 +247,11 @@ function create_boards() {
 function update_board_theme() {
     let board_theme = BOARD_THEMES[Y.board_theme],
         theme = Y.piece_theme,
-        theme_ext = SVG_THEMES[theme]? 'svg': 'png';
+        theme_ext = PIECE_TYPES[theme] || PIECE_TYPES._,
+        theme_size = PIECE_SIZES[theme] || PIECE_SIZES._;
 
     Keys(xboards).forEach(key => {
-        xboards[key].set_theme(board_theme, theme, theme_ext, Y.highlight_color, Y.highlight_size);
+        xboards[key].set_theme(board_theme, theme, theme_ext, theme_size, Y.highlight_color, Y.highlight_size);
     });
 }
 

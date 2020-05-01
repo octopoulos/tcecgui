@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
+2020-05-02 : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
 2020-05-01 : 2020-05-01 : delay google ads + analytics
 2020-05-01 : 2020-05-01 : show the seasons in archive
 2020-05-01 : 2020-05-01 : control highlight color + size, and display it on the board
@@ -109,7 +110,6 @@ low:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-13 : add 3d rendering option to the chessboard
--          : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
