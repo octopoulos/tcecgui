@@ -72,7 +72,7 @@ def write_text_safe(
         return False
 
     try:
-        open_func = locked_open if locked else open
+        open_func = open    # locked_open if locked else open
         with open_func(filename, mode) as file:
             if data:
                 file.write(data.encode('utf-8') if isinstance(data, str) else data)

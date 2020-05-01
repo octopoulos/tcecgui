@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-04-13
+# @version 2020-05-01
 
 """
 Sync
@@ -29,7 +29,7 @@ LOCAL = BASE
 
 # edit these files
 CSS_FILES = [
-    'common',
+    'light',
 ]
 
 JS_FILES = {
@@ -43,9 +43,14 @@ JS_FILES = {
         'engine',
         'global',
         '3d',
+        '../dist/js/themes',
         'xboard',
+        'graph',
         'game',
+        'temp',
         'network',
+        'startup',
+        'config',
         'script',
     ],
 }
