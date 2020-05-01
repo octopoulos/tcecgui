@@ -333,7 +333,7 @@ function show_modal(show, text, title, name) {
  * @returns {string} html
  */
 function show_settings(name) {
-    let lines = ['<grid class="grid2 noselect">'],
+    let lines = ['<grid class="noselect">'],
         settings = name? X_SETTINGS[name]: X_SETTINGS;
 
     if (name)
@@ -350,10 +350,13 @@ function show_settings(name) {
         let setting = settings[key][0],
             more_class = setting? '': ' span',
             more_data = setting? '': ` data-set="${key}"`;
+
         lines.push(`<a class="item${more_class}"${more_data} data-t="${Title(key).replace(/_/g, ' ')}"></a>`);
+
         if (Array.isArray(setting)) {
             lines.push(
-                `<select name="${key}">`
+                '<vert class="fcenter">'
+                + `<select name="${key}">`
                     + settings[key][0].map(option => {
                         let value = {off: 0, on: 1}[option];
                         if (value == undefined)
@@ -361,19 +364,26 @@ function show_settings(name) {
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')
                 + '</select>'
+                + '</vert>'
             );
         }
         else if (setting) {
             if (setting.type)
-                lines.push(`<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`);
+                lines.push(
+                    '<vert class="fcenter">'
+                    + `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`
+                    + '</vert>'
+                );
             else
                 lines.push(
-                    `<select name="${key}">`
+                    '<vert class="fcenter">'
+                    + `<select name="${key}">`
                         + Keys(setting).map(value => {
                             let option = setting[value];
                             return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
+                    + '</vert>'
                 );
         }
     });

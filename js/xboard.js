@@ -68,11 +68,16 @@ class XBoard {
         this.dims = options.dims || [8, 8];
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
+        this.high_color = '';                           // highlight color
+        this.high_size = 0;                             // highlight size in .em
         this.history = options.history;
         this.hook = options.hook;
         this.id = options.id;
+        this.move = null;                               // current move
+        this.move2 = null;                              // previous move
         this.moves = [];                                // moves history
         this.node = _(this.id);
+        this.nodes = {};
         this.notation = options.notation || 6;
         this.pieces = [];
         this.rotate = options.rotate || 0;
@@ -135,6 +140,69 @@ class XBoard {
             pieces[id].flag = 1;
 
         this.coords = coords;
+    }
+
+    /**
+     * Animate / render a move
+     * @param {Object=} move
+     */
+    animate(move) {
+        if (!move)
+            return;
+        let target = `animate_${this.target}`;
+        if (this[target])
+            this[target](move);
+    }
+
+    /**
+     * Animate a move in 3D
+     * @param {Object} move
+     */
+    animate_3d(move) {
+        LS(`${move.from}${move.to}`);
+    }
+
+    /**
+     * Animate a move on the canvas
+     * @param {Object} move
+     */
+    animate_canvas(move) {
+        LS(`${move.from}${move.to}`);
+    }
+
+    /**
+     * Animate a move in the DOM
+     * @param {Object} move
+     */
+    animate_html(move) {
+        LS(`${move.from}${move.to}`);
+        let color = this.high_color,
+            node_from = this.nodes[move.from],
+            node_to = this.nodes[move.to],
+            prev = this.move2,
+            size = this.high_size,
+            high_style = `box-shadow: inset 0 0 ${size}em ${size}em ${color}`;
+
+        if (prev) {
+            Style(prev.node_from, 'box-shadow: none');
+            Style(prev.node_to, 'box-shadow: none');
+        }
+
+        Style(node_from, high_style);
+        Style(node_to, high_style);
+
+        // remember the move + nodes
+        move.node_from = node_from;
+        move.node_to = node_to;
+        this.move2 = move;
+    }
+
+    /**
+     * Animate a move in text
+     * @param {Object} move
+     */
+    animate_text(move) {
+        LS(`${move.from}${move.to}`);
     }
 
     /**
@@ -224,7 +292,9 @@ class XBoard {
      * @param {Object} move
      */
     new_move(move) {
-        this.moves.push(move);
+        this.move = move;
+        // this.moves.push(move);
+        this.animate(move);
     }
 
     /**
@@ -280,29 +350,37 @@ class XBoard {
             let lines = [],
                 notation = this.notation;
 
-            for (let i=0; i<num_row; i++)
+            for (let i=0; i<num_row; i++) {
+                let row_name = rotate? i + 1: 8 - i;
+
                 for (let j=0; j<num_col; j++) {
-                    let note_x = '',
-                        note_y = '',
+                    let col_name = COLUMN_LETTERS[rotate? 7 - j: j],
                         even = (i + j) % 2,
+                        note_x = '',
+                        note_y = '',
                         style = '';
 
                     if (notation) {
                         style = `;color:${colors[1 - even]}`;
                         if (notation & 2) {
                             if (i == num_row - 1)
-                                note_x = `<div class="xnote" style="left:2.67em;top:1.17em">${Upper(COLUMN_LETTERS[rotate? 7 - j: j])}</div>`;
+                                note_x = `<div class="xnote" style="left:2.67em;top:1.17em">${Upper(col_name)}</div>`;
                         }
                         if (notation & 4) {
                             if (j == rotate * 7)
-                                note_y = `<div class="xnote" style="left:${rotate? 2.7: 0.1}em;top:-1.15em">${rotate? i + 1: 8 - i}</div>`;
+                                note_y = `<div class="xnote" style="left:${rotate? 2.7: 0.1}em;top:-1.15em">${row_name}</div>`;
                         }
                     }
 
-                    lines.push(`<div class="xsquare" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
+                    lines.push(`<div class="xsquare" data-q="${col_name}${row_name}" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
                 }
+            }
 
             this.output(lines.join(''));
+
+            // remember all the nodes for quick access
+            this.nodes = Assign({}, ...Array.from(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
+            this.move2 = null;
         }
 
         // 3) draw pieces
@@ -457,14 +535,20 @@ class XBoard {
      * @param {string[]} colors [light, dark]
      * @param {Object} theme
      * @param {string} theme_ext extension for the theme images
+     * @param {string} high_color
+     * @param {number} high_size
      */
-    set_theme(colors, theme, theme_ext) {
+    set_theme(colors, theme, theme_ext, high_color, high_size) {
         if (DEV.board & 1)
             LS('set_theme');
         this.colors = colors;
         this.theme = theme;
         this.theme_ext = theme_ext;
+        this.high_color = high_color;
+        this.high_size = high_size;
+
         this.dirty = 3;
         this.render();
+        this.animate(this.move);
     }
 }

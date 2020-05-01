@@ -242,7 +242,7 @@ function update_board_theme() {
         theme_ext = SVG_THEMES[theme]? 'svg': 'png';
 
     Keys(xboards).forEach(key => {
-        xboards[key].set_theme(board_theme, theme, theme_ext);
+        xboards[key].set_theme(board_theme, theme, theme_ext, Y.highlight_color, Y.highlight_size);
     });
 }
 
@@ -908,7 +908,9 @@ function update_pgn(pgn) {
     let move = moves[num_move - 1],
         last_ply = pgn.numMovesToSend + start;
 
+    xboards.board.new_move(move);
     xboards.board.set_fen(move.fen, true);
+
     // xboards.pv1.set_fen(fen, true);
     if (DEV.ply & 1) {
         LS(`${start} + ${num_move} = ${start + num_move}. ${(start + num_move) % 2} ${move.m}`);
@@ -1428,12 +1430,12 @@ function startup_game() {
         board: {
             arrows: [ON_OFF, 1],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
-            highlight: [['off', 'thin', 'standard', 'big'], 'standard'],
+            highlight_color: [{type: 'color'}, '#ff0'],
+            highlight_size: [{max: 0.5, min: 0, step: 0.01, type: 'number'}, 0.05],
             notation: [ON_OFF, 1],
             piece_theme: [PIECE_KEYS, 'chess24'],
         },
         board_pv: {
-            highlight_pv: [['off', 'thin', 'standard', 'big'], 'standard'],
             live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
             ply_diff: [['first', 'diverging', 'last'], 'first'],

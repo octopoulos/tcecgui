@@ -285,6 +285,12 @@ grid {
 #modal a {
     color: #000;
 }
+#modal input,
+#modal select {
+    height: calc(100% - 0.5em);
+    padding: 0.5em;
+    width: calc(100% - 0.5em);
+}
 #popup-about {
     min-height: 50vh;
     min-width: 50vw;

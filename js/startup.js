@@ -66,6 +66,8 @@ function adjust_popups() {
 function change_setting_special(name, value) {
     switch (name) {
     case 'board_theme':
+    case 'highlight_color':
+    case 'highlight_size':
     case 'piece_theme':
         update_board_theme();
         break;
