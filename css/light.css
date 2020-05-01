@@ -101,6 +101,7 @@ verts {
 .mirror {
     transform: scale(-1, 1);
 }
+a,
 img,
 .noselect {
     -webkit-user-select: none;
@@ -369,14 +370,14 @@ grid {
 }
 .xcontrol {
     color: #007bff;
-    font-size: 0.4em;
-    margin-top: -0.1em;
+    font-size: 0.35em;
+    margin-bottom: 0.2em;
     width: calc(100% - 4px);
 }
 .control {
     cursor: pointer;
-    height: 2.5em;
-    width: 2.5em;
+    height: 2.4em;
+    width: 3em;
 }
 .control:hover {
     color: #0056b3;
@@ -397,7 +398,7 @@ grid {
     width: 100%;
 }
 .xmoves {
-    height: 5.5em;
+    height: 5em;
     overflow-y: auto;
 }
 .xmoves a:hover {
@@ -423,11 +424,14 @@ grid {
     font-size: 13px;
 }
 .seen {
-    background-color: #222;
-    color: #ff0;
+    background-color: #222 !important;
+    color: #ff0 !important;
 }
 .void {
     background-color: #191919;
+}
+.last::after {
+    content: ' *';
 }
 
 /* tables */
@@ -498,6 +502,19 @@ grid {
     font-size: 1.1em;
     padding: 1em;
 }
+#table-season a {
+    color: #212529;
+}
+#table-season grid {
+    grid-template-columns: 1fr 1em;
+}
+#table-winner {
+    max-height: 90vh;
+    overflow-x: hidden;
+}
+#table-winner td {
+    padding: 0.8em 0.4em;
+}
 #twitch-theme {
     width: 100%;
 }
@@ -515,6 +532,10 @@ grid {
 .loss {
     color: #f00;
 }
+.sub {
+    font-style: italic;
+    margin: 0.5em 0 0 2em;
+}
 .url,
 .win {
     color: #008000;
@@ -527,7 +548,7 @@ grid {
 
 /* engines */
 #table-engine {
-    margin-bottom: 1em;
+    margin-bottom: 0.7em;
     width: 100%;
 }
 #table-engine > div {
@@ -683,24 +704,25 @@ grid {
     width: 100%;
 }
 #lives .tabs {
-    margin-bottom: 0;
+    margin-bottom: 0.1em;
 }
 #lives > * {
     width: 100%;
 }
 .live {
-    margin-top: 0.5em;
+    margin-top: 0.1em;
 }
 .live-basic {
+    font-size: 0.95em;
     font-weight: 500;
     margin: 0.15em 0;
 }
 .live-more {
     font-size: 0.8em;
-    margin: 0.15em 0;
+    margin-bottom: 0.15em;
 }
 .live-pv {
-    height: 3.5em;
+    height: 3em;
 }
 
 /* container */
@@ -713,7 +735,7 @@ grid {
 #left {
     flex: 2.6;
     margin: 4px;
-    max-width: calc(100vh - 150px);
+    max-width: calc(100vh - 380px);
     min-width: 281px;
 }
 #center {
@@ -725,13 +747,17 @@ grid {
 #right {
     flex: 2;
     margin: 4px;
-    max-width: 350px;
+    max-width: 395px;
     min-height: 350px;
     min-width: 281px;
 }
 #right.narrow {
     flex: 1;
     min-width: 150px;
+}
+#right.wide {
+    flex: 1;
+    min-width: 372px;
 }
 #lives {
     min-height: 300px;
@@ -745,7 +771,7 @@ grid {
 }
 .tabs {
     justify-content: center;
-    margin-bottom: 1em;
+    margin-bottom: 0.5em;
 }
 .swaps {
     width: 100%;
@@ -812,6 +838,9 @@ td,
 /* svg */
 .svg {
     height: 1em;
+}
+svg.down {
+    transition: transform 0.2s;
 }
 
 /* media */

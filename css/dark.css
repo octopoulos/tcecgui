@@ -62,6 +62,9 @@ body {
 #table-engine > * {
     background: rgba(1, 9, 26, 0.28);
 }
+#table-season a {
+    color: #fff;
+}
 .game {
     color: #fa0;
 }
@@ -81,7 +84,7 @@ body {
 #show-chat,
 #show-video,
 .adblock {
-    color: #fff;
+    color: #ddd;
 }
 .swap {
     color: rgba(255, 255, 255, 0.2);

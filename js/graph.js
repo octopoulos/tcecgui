@@ -1,8 +1,8 @@
 // graph.js
 /*
 globals
-_, $, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, LoadLibrary, LS,
-Max, Min, Pad, prevPgnData, Round, Y
+_, $, add_timeout, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, LoadLibrary, LS,
+Max, Min, Pad, prevPgnData, Round, TIMEOUTS, Y
 */
 'use strict';
 
@@ -773,13 +773,19 @@ function updateChartData()
 }
 
 /**
- * Startup graphs
- * - load the library and then create the charts =>
+ * Load the chart.js library
  */
-function startup_graphs() {
+function init_graph() {
     LoadLibrary(CHART_JS, () => {
         LS('CHART LIBRARY LOADED!');
         create_chart_data();
         create_charts();
     });
+}
+
+/**
+ * Startup graphs
+ * - initialise global variables
+ */
+function startup_graph() {
 }

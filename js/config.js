@@ -10,8 +10,8 @@
 /*
 globals
 Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true, ENGINE_FEATURES,
-ENGINE_NAMES:true, HOST:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true,
-TWITCH_CHAT:true
+ENGINE_NAMES:true, HOST:true, HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS,
+TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -23,6 +23,7 @@ function startup_config() {
     LIVE_ENGINES = ['4x V100 6Men TB', '16TH 7Men TB'];
 
     HOST = 'https://tcec-chess.com';
+    HOST_ARCHIVE = 'archive/json';
 
     // 2 & 3 = live engines
     ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'];
@@ -84,6 +85,7 @@ function startup_config() {
     // startup timeouts in ms
     Assign(TIMEOUTS, {
         banner: 30 * 1000,
+        graph: 2 * 1000,
         tables: 3 * 1000,
         twitch: 10 * 1000,
         users: 5 * 1000,
@@ -107,4 +109,5 @@ function startup_config() {
     // clean up some mistakes
     DEFAULTS.theme = THEMES[0];
     HOST = HOST.replace(/\/$/, '');
+    HOST_ARCHIVE = HOST_ARCHIVE.replace(/\/$/, '');
 }

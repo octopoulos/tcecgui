@@ -11,10 +11,10 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS, DEV, Events, Exp,
-Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HTML, Id, InsertNodes, Keys,
+Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
 Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, TIMEOUTS,
-Title, touch_handle, translate_node, Upper, Visible, window, XBoard, Y
+Title, Toggle, touch_handle, translate_node, update_svg, Upper, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -83,17 +83,19 @@ let BOARD_THEMES = {
         crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# Games|Score',
-        game: 'gameno=G#|PGN|White|Black|Moves|Result',
-        h2h: 'game=Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
-        sched: 'game=Game#|White|white_ev=Ev|Black|black_ev=Ev|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
+        game: 'Game#|PGN|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Start',
+        h2h: 'Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
+        sched: 'Game#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
+        season: 'Season|Download',
         stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
-        stats: 'Start time|End time|total_time=Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
+        stats: 'Start time|End time|Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
     tour_info = {},
     turn = 0,                           // 0:white to play, 1:black to play
+    virtual_opened_table_special,
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
     WB_TITLES = ['White', 'Black'];
@@ -325,6 +327,18 @@ function analyse_crosstable(data) {
 }
 
 /**
+ * Handle the seasons file
+ */
+function analyse_seasons(data) {
+    let seasons = (data || {}).Seasons;
+    if (!seasons)
+        return;
+
+    let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
+    update_table('season', rows);
+}
+
+/**
  * Handle tournament data
  * @param {Object} data
  */
@@ -437,10 +451,11 @@ function create_tables() {
  * + cache support = can load the data from localStorage if it was recent
  * @param {string} url url
  * @param {string=} name table name
- * @param {boolean=} only_cache only load data if it's cached
  * @param {function=} callback
+ * @param {boolean=} only_cache only load data if it's cached
+ * @param {boolean=} show open the table after wards
  */
-function download_table(url, name, only_cache, callback) {
+function download_table(url, name, callback, {only_cache, show}={}) {
     function _done(data) {
         if (DEV.json & 1) {
             LS(`${url}:`);
@@ -448,8 +463,13 @@ function download_table(url, name, only_cache, callback) {
         }
         if (callback)
             callback(data);
-        else if (name)
+        else if (name) {
             update_table(name, data);
+            if (show) {
+                LS(data);
+                open_table(name);
+            }
+        }
     }
 
     let key,
@@ -503,9 +523,9 @@ function download_tables(only_cache) {
     }
 
     // tables
-    download_table('crosstable.json', 'cross', only_cache, analyse_crosstable);
-    download_table('tournament.json', 'tour', only_cache, analyse_tournament);
-    download_table('schedule.json', 'sched', only_cache);
+    download_table('crosstable.json', 'cross', analyse_crosstable, {only_cache: true});
+    download_table('tournament.json', 'tour', analyse_tournament, {only_cache: true});
+    download_table('schedule.json', 'sched', null, {only_cache: true});
 }
 
 /**
@@ -537,6 +557,7 @@ function update_table(name, rows, reset=true) {
         is_cross = (name == 'cross'),
         is_event = (name == 'event'),
         is_sched = (name == 'sched'),
+        is_winner = (name == 'winner'),
         new_rows = [],
         nodes = [],
         table = Id(`table-${name}`),
@@ -553,7 +574,7 @@ function update_table(name, rows, reset=true) {
         return;
 
     // process all rows
-    for (let row of rows) {
+    rows.forEach((row, row_id) => {
         row = Assign({}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
         data.push(row);
 
@@ -579,21 +600,50 @@ function update_table(name, rows, reset=true) {
                 else if (row.result == '1-0')
                     class_ = 'loss';
                 break;
+            case 'download':
+                value = `<a href="${HOST_ARCHIVE}/${value}"><i data-svg="download"></i></a>`;
+                break;
             case 'engine':
             case 'runner':
             case 'winner':
-                td_class = 'tal';
-                value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
+                if (!is_winner) {
+                    td_class = 'tal';
+                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
+                }
                 break;
             case 'game':
-                if (row.moves)
-                    value = `<a class="game">${value}</a>`;
+                value = row_id + 1;
+                // if (row.moves)
+                //     value = `<a class="game">${value}</a>`;
+                break;
+            case 'name':
+                class_ = 'loss';
                 break;
             case 'score':
-                let numbers = Split(row.gamesno || '', ',');
-                value = value.split('').map((item, id) => {
-                    return ` <a class="${SCORE_NAMES[item]}" title="${numbers[id] || 0}">${item.replace('=', '½')}</a>`;
-                }).join('');
+                if (is_winner)
+                    value = value.replace(/-/g, '<br>- ').replace('Abandonded', '-');
+                else {
+                    let numbers = Split(row.gamesno || '', ',');
+                    value = value.split('').map((item, id) => {
+                        return ` <a class="${SCORE_NAMES[item]}" title="${numbers[id] || 0}">${item.replace('=', '½')}</a>`;
+                    }).join('');
+                }
+                break;
+            case 'season':
+                td_class = 'mono';
+                let lines = [`<a class="season">${value} <i data-svg="down"></i></a>`];
+                if (row.sub) {
+                    if (value == 'Season 18')
+                        LS(row);
+                    lines.push('<grid class="dn">');
+                    for (let sub of row.sub.reverse())
+                        lines.push(
+                            `<a class="sub" data-u="${sub.abb}">${sub.menu}</a>`
+                            + `<a href="${HOST_ARCHIVE}/${sub.abb}.pgn.zip"><i data-svg="download"></i></a>`
+                        );
+                    lines.push('</grid>');
+                }
+                value = lines.join('');
                 break;
             case 'white':
                 if (row.result == '1-0')
@@ -630,13 +680,26 @@ function update_table(name, rows, reset=true) {
 
         let node = CreateNode('tr', vector.join(''));
         nodes.push(node);
-    }
+    });
 
     InsertNodes(body, nodes);
 
-    // special case
+    // special cases
     if (is_sched)
         update_table('h2h', new_rows, reset);
+    else if (name == 'season') {
+        update_svg(table);
+        C('.season', function() {
+            let next = this.nextElementSibling;
+            Toggle(next);
+            Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, this);
+        }, table);
+        C('a[data-u]', function() {
+            download_table(`${HOST_ARCHIVE}/${this.dataset.u}_Schedule.sjson?v=${Now()}`, 'game', null, {show: true});
+        }, table);
+    }
+
+    translate_node(table);
 }
 
 // BRACKETS
@@ -841,7 +904,10 @@ function create_pv_list(moves) {
             return;
         }
 
-        let class_ = (id == num_move - 1)? 'seen': (move.book? 'book': 'real');
+        let class_ = move.book? 'book': 'real';
+        if (id == num_move - 1)
+            class_ += ' last';
+
         lines.push(` <a class="${class_}" data-i="${id}">${move.m}</a>`);
     });
 
@@ -1279,8 +1345,14 @@ function handle_board_events(board, type, value) {
     }
     else if (type == 'move') {
         let target = value.target,
-            id = target.dataset.i;
-        LS(id);
+            id = target.dataset.i,
+            move = pgn_moves[id];
+        if (id) {
+            Class('.seen', '-seen', true, target.parentNode);
+            Class(target, 'seen');
+            // note: potentially SLOW, better to use `new_move` if going to the next move
+            xboards.board.set_fen(move.fen, true);
+        }
     }
     else {
         LS(type);
@@ -1289,24 +1361,51 @@ function handle_board_events(board, type, value) {
 }
 
 /**
+ * Select a tab and open the corresponding table
+ * @param {string|Node} sel tab name or node
+ */
+function open_table(sel) {
+    if (typeof(sel) == 'string')
+        sel = _(`div.tab[data-x="${sel}"]`);
+
+    let parent = Parent(sel, 'horis', 'tabs'),
+        active = _('div.active', parent),
+        key = sel.dataset.x,
+        node = Id(`table-${key}`);
+
+    Class(active, '-active');
+    Class(sel, 'active');
+    Class(`#table-${active.dataset.x}`, 'dn');
+    Class(node, '-dn');
+
+    opened_table(node, key);
+}
+
+/**
  * Special handling after user clicked on a tab
  * @param {Node} node table node
  * @param {string} name
  */
-function handle_open_table(node, name) {
-    LS(`handle_open_table: ${name}`);
+function opened_table(node, name) {
+    LS(`opened_table: ${name}`);
 
     switch (name) {
     case 'crash':
-        download_table('crash.json', 'crash');
+        download_table('crash.json', name);
         break;
     case 'info':
         HTML(node, HTML('#desc'));
         break;
+    case 'season':
+        download_table('gamelist.json', name, analyse_seasons);
+        break;
     case 'winner':
-        download_table('winners.json', 'winner');
+        download_table('winners.json', name);
         break;
     }
+
+    if (virtual_opened_table_special)
+        virtual_opened_table_special(node, name);
 }
 
 /**
@@ -1379,17 +1478,7 @@ function set_game_events() {
 
     // tabs
     C('div.tab', function() {
-        let parent = Parent(this, 'horis', 'tabs'),
-            active = _('div.active', parent),
-            key = this.dataset.x,
-            node = Id(`table-${key}`);
-
-        Class(active, '-active');
-        Class(this, 'active');
-        Class(`#table-${active.dataset.x}`, 'dn');
-        Class(node, '-dn');
-
-        handle_open_table(node, key);
+        open_table(this);
     });
 }
 
@@ -1408,7 +1497,7 @@ function start_game() {
     });
 
     show_tables('league');
-    // download_table('bracket.json', 'brak', false, create_cup);
+    // download_table('bracket.json', 'brak', create_cup);
 }
 
 /**
@@ -1428,10 +1517,10 @@ function startup_game() {
         // separator
         _1: {},
         board: {
-            arrows: [ON_OFF, 1],
+            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
-            highlight_color: [{type: 'color'}, '#ff0'],
-            highlight_size: [{max: 0.5, min: 0, step: 0.01, type: 'number'}, 0.05],
+            highlight_color: [{type: 'color'}, '#ffff00'],
+            highlight_size: [{max: 0.5, min: 0, step: 0.01, type: 'number'}, 0.06],
             notation: [ON_OFF, 1],
             piece_theme: [PIECE_KEYS, 'chess24'],
         },

@@ -315,8 +315,10 @@ class XBoard {
         if (DEV.board & 1)
             LS(`render: ${this.dirty}`);
         let target = `render_${this.target}`;
-        if (this[target])
+        if (this[target]) {
             this[target]();
+            this.animate(this.move);
+        }
     }
 
     /**
@@ -549,6 +551,5 @@ class XBoard {
 
         this.dirty = 3;
         this.render();
-        this.animate(this.move);
     }
 }

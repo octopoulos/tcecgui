@@ -194,12 +194,12 @@
                     <div class="tab" data-x="pv" data-t="PV"></div>
                     <div class="tab" data-x="pva" data-t="PV(A)"></div>
                 </horis>
-                <canvas id="table-eval" height="260" class="graphs"></canvas>
-                <canvas id="table-time" height="260" class="graphs dn"></canvas>
-                <canvas id="table-speed" height="260" class="graphs dn"></canvas>
-                <canvas id="table-node" height="260" class="graphs dn"></canvas>
-                <canvas id="table-depth" height="260" class="graphs dn"></canvas>
-                <canvas id="table-tb" height="260" class="graphs dn"></canvas>
+                <canvas id="table-eval" height="250" class="graphs"></canvas>
+                <canvas id="table-time" height="250" class="graphs dn"></canvas>
+                <canvas id="table-speed" height="250" class="graphs dn"></canvas>
+                <canvas id="table-node" height="250" class="graphs dn"></canvas>
+                <canvas id="table-depth" height="250" class="graphs dn"></canvas>
+                <canvas id="table-tb" height="250" class="graphs dn"></canvas>
                 <div id="table-pva" class="xboard" class="dn"></div>
             </vert>
             <!-- right -->
@@ -214,9 +214,7 @@
                 </hori>
                 <horis class="tabs">
                     <div class="tab active" data-x="chat" data-t="Chat"></div>
-                    <div class="tab" data-x="season" data-t="Seasons"></div>
-                    <div class="tab" data-x="game" data-t="Games"></div>
-                    <div class="tab s" data-x="winner" data-t="Winners"></div>
+                    <div class="tab" data-x="winner" data-t="Winners"></div>
                     <div class="tab" data-x="info" data-t="Information"></div>
                 </horis>
                 <!-- twitch chat -->
@@ -231,8 +229,6 @@
                         <i id="hide-chat" data-svg="x" class="dn"></i>
                     </hori>
                 </vert>
-                <div id="table-season" class="scroller dn">Seasons</div>
-                <div id="table-game" class="scroller dn"></div>
                 <div id="table-winner" class="scroller dn"></div>
                 <div id="table-info" class="dn">INFO</div>
             </vert>
@@ -256,6 +252,8 @@
         <!-- tables -->
         <vert id="tables">
             <horis class="tabs">
+                <div class="tab" data-x="season" data-t="Seasons"></div>
+                <div class="tab" data-x="game" data-t="Games"></div>
                 <div class="tab dn" data-x="brak">
                     <i data-svg="medal"></i>
                     <i data-t="Brackets"></i>
@@ -293,6 +291,8 @@
                     <i data-t="Crash info"></i>
                 </div>
             </horis>
+            <div id="table-season" class="scroller dn"></div>
+            <div id="table-game" class="scroller dn"></div>
             <div id="table-brak" class="scroller dn"></div>
             <div id="table-event" class="scroller dn"></div>
             <div id="table-stand" class="scroller dn"></div>

@@ -12,14 +12,12 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events,
 fill_languages, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
-init_sockets, initTables, KEY_TIMES, Keys, KEYS,
+init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_modal_events, set_ui_events, setDefaults, setTwitch, Show, show_banner,
-show_popup, show_settings, Split, start_game, start_tcec, startup_3d, startup_archive, startup_config, startup_game,
-startup_graphs, startup_tcec, Style, tcecHandleKey, THEMES, TIMEOUTS, toggleTheme, translate_node, translates:true,
-unlistenLogMain, update_board_theme, update_debug, update_theme, updateLiveChart, updateLiveEval, updatePgn,
-updateRefresh, updateWinners, virtual_change_setting_special:true, virtual_check_hash_special:true,
-window, Y
+S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
+Split, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style, tcecHandleKey,
+THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true, window, Y
 */
 'use strict';
 
@@ -106,9 +104,14 @@ function change_theme(theme) {
  * Called whenever the page loads and whenever the hash changes
  */
 function check_hash_special() {
-    Class('#archive', 'yellow', Y.x == 'archive');
-    Class('#live', 'red', Y.x == 'live');
+    let is_live = (Y.x == 'live'),
+        parent = Id('tables');
+    Class('#archive', 'yellow', !is_live);
+    Class('#live', 'red', is_live);
     change_theme();
+
+    Class('[data-x="season"], [data-x="game"]', 'dn', is_live, parent);
+    Class('[data-x="log"]', 'dn', !is_live, parent);
 }
 
 /**
@@ -141,16 +144,15 @@ function create_url_list(dico) {
  * First initialisation
  */
 function init_globals() {
-    // DELETE
-    updatePgn();
-    setDefaults();
-
-    // timeouts
-    show_banner();
-
+    // load local data directly, and later online data
     download_tables(true);
     add_timeout('tables', () => {download_tables();}, TIMEOUTS.tables);
+
+    // delayed loading
+    show_banner();
+    update_twitch(null, null, true);
     add_timeout('twitch', () => {update_twitch();}, TIMEOUTS.twitch);
+    add_timeout('graph', () => {init_graph();}, TIMEOUTS.graph);
 
     // TODO: change that
     // add_timeout('update_live', () => {
@@ -188,6 +190,16 @@ function move_pane(node, dir) {
 
     if (node)
         save_option('order', names.join('|'));
+}
+
+/**
+ * A table was opened => extra handling
+ * @param {Node} node
+ * @param {string} name
+ */
+function opened_table_special(node, name) {
+    if (['chat', 'information', 'winner'].includes(name))
+        update_twitch(null, null, true);
 }
 
 /**
@@ -309,8 +321,9 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
  * Enable/disable twitch video + chat
  * @param {number=} dark
  * @param {string=} chat_url new chat URL
+ * @param {boolean=} only_resize
  */
-function update_twitch(dark, chat_url) {
+function update_twitch(dark, chat_url, only_resize) {
     if (dark != undefined)
         save_option('twitch_dark', dark);
 
@@ -326,7 +339,7 @@ function update_twitch(dark, chat_url) {
     let current = node.src,
         src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
 
-    if (current != src)
+    if (!only_resize && current != src)
         node.src = src;
     S('#hide-chat, #chat', src);
     S('#show-chat', !src);
@@ -334,10 +347,16 @@ function update_twitch(dark, chat_url) {
     S('#twitch1', src && !dark);
 
     let right = Id('right'),
+        active = _('.active', right),
+        active_name = active? active.dataset.x: '',
         has_narrow = HasClass(right, 'narrow'),
-        need_narrow = !src;
-    if (need_narrow != has_narrow) {
+        has_wide = HasClass(right, 'wide'),
+        need_narrow = (active_name == 'chat' && !src),
+        need_wide = (active_name == 'winner');
+
+    if (need_narrow != has_narrow || need_wide != has_wide) {
         Class(right, 'narrow', need_narrow);
+        Class(right, 'wide', need_wide);
         resize();
     }
 
@@ -346,7 +365,7 @@ function update_twitch(dark, chat_url) {
     current = node.src;
     src = Y.twitch_video? TWITCH_CHANNEL: '';
 
-    if (current != src)
+    if (!only_resize && current != src)
         node.src = src;
     S('#hide-video, #twitch-vid', src);
     S('#show-video', !src);
@@ -490,7 +509,8 @@ function set_global_events() {
         Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
     C('.swap', function() {
-        move_pane(HasClass(this.parentNode.parentNode, 'mirror')? -1: 1);
+        let node = this.parentNode.parentNode;
+        move_pane(node, HasClass(this, 'mirror')? -1: 1);
     });
 
     // theme + twitch
@@ -502,7 +522,6 @@ function set_global_events() {
     });
     C('#hide-chat, #hide-video, #show-chat, #show-video', function() {
         let [left, right] = this.id.split('-');
-        LS(`left=${left} : right=${right}`);
         save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
     });
@@ -536,6 +555,7 @@ function startup() {
         crash: 'VB="0 0 640 512"><PFC d="M143.25 220.81l-12.42 46.37c-3.01 11.25-3.63 22.89-2.41 34.39l-35.2 28.98c-6.57 5.41-16.31-.43-14.62-8.77l15.44-76.68c1.06-5.26-2.66-10.28-8-10.79l-77.86-7.55c-8.47-.82-11.23-11.83-4.14-16.54l65.15-43.3c4.46-2.97 5.38-9.15 1.98-13.29L21.46 93.22c-5.41-6.57.43-16.3 8.78-14.62l76.68 15.44c5.26 1.06 10.28-2.66 10.8-8l7.55-77.86c.82-8.48 11.83-11.23 16.55-4.14l43.3 65.14c2.97 4.46 9.15 5.38 13.29 1.98l60.4-49.71c6.57-5.41 16.3.43 14.62 8.77L262.1 86.38c-2.71 3.05-5.43 6.09-7.91 9.4l-32.15 42.97-10.71 14.32c-32.73 8.76-59.18 34.53-68.08 67.74zm494.57 132.51l-12.42 46.36c-3.13 11.68-9.38 21.61-17.55 29.36a66.876 66.876 0 0 1-8.76 7l-13.99 52.23c-1.14 4.27-3.1 8.1-5.65 11.38-7.67 9.84-20.74 14.68-33.54 11.25L515 502.62c-17.07-4.57-27.2-22.12-22.63-39.19l8.28-30.91-247.28-66.26-8.28 30.91c-4.57 17.07-22.12 27.2-39.19 22.63l-30.91-8.28c-12.8-3.43-21.7-14.16-23.42-26.51-.57-4.12-.35-8.42.79-12.68l13.99-52.23a66.62 66.62 0 0 1-4.09-10.45c-3.2-10.79-3.65-22.52-.52-34.2l12.42-46.37c5.31-19.8 19.36-34.83 36.89-42.21a64.336 64.336 0 0 1 18.49-4.72l18.13-24.23 32.15-42.97c3.45-4.61 7.19-8.9 11.2-12.84 8-7.89 17.03-14.44 26.74-19.51 4.86-2.54 9.89-4.71 15.05-6.49 10.33-3.58 21.19-5.63 32.24-6.04 11.05-.41 22.31.82 33.43 3.8l122.68 32.87c11.12 2.98 21.48 7.54 30.85 13.43a111.11 111.11 0 0 1 34.69 34.5c8.82 13.88 14.64 29.84 16.68 46.99l6.36 53.29 3.59 30.05a64.49 64.49 0 0 1 22.74 29.93c4.39 11.88 5.29 25.19 1.75 38.39zM255.58 234.34c-18.55-4.97-34.21 4.04-39.17 22.53-4.96 18.49 4.11 34.12 22.65 39.09 18.55 4.97 45.54 15.51 50.49-2.98 4.96-18.49-15.43-53.67-33.97-58.64zm290.61 28.17l-6.36-53.29c-.58-4.87-1.89-9.53-3.82-13.86-5.8-12.99-17.2-23.01-31.42-26.82l-122.68-32.87a48.008 48.008 0 0 0-50.86 17.61l-32.15 42.97 172 46.08 75.29 20.18zm18.49 54.65c-18.55-4.97-53.8 15.31-58.75 33.79-4.95 18.49 23.69 22.86 42.24 27.83 18.55 4.97 34.21-4.04 39.17-22.53 4.95-18.48-4.11-34.12-22.66-39.09z"/>',
         cube: 'VB="0 0 576 512"><PFC d="M498.11,206.4,445.31,14.72,248.2,66.08,219,116.14l-59.2-.43L15.54,256,159.82,396.32l59.17-.43,29.24,50,197.08,51.36,52.8-191.62-30-49.63ZM223.77,124.2,374.55,86.51,288,232.33H114.87Zm0,263.63L114.87,279.71H288l86.55,145.81Zm193,14L330.17,256l86.58-145.84L458.56,256Z"/>',
         down: 'VB="0 0 320 512"><PFC d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"/>',
+        download: 'VB="0 0 512 512"><PFC d="M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"/>',
         end: 'VB="0 0 448 512"><PFC d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34zm192-34l-136-136c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l96.4 96.4-96.4 96.4c-9.4 9.4-9.4 24.6 0 33.9l22.6 22.6c9.4 9.4 24.6 9.4 33.9 0l136-136c9.4-9.2 9.4-24.4 0-33.8z"/>',
         info: 'VB="0 0 512 512"><PFC d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"/>',
         log: 'VB="0 0 448 512"><PFC d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/>',
@@ -559,6 +579,7 @@ function startup() {
 
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
+    virtual_opened_table_special = opened_table_special;
 
     // pre-process
     startup_config();
@@ -569,19 +590,15 @@ function startup() {
     set_ui_events();
     set_game_events();
     startup_archive();
-    startup_tcec();
-    startup_graphs();
+    startup_graph();
     load_settings();
 
     // start
     move_pane();
     start_game();
-    // DELETE
-    start_tcec();
 
     init_sockets();
     init_globals();
     fill_languages('#language');
     resize();
-    initTables();
 }

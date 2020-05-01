@@ -13,6 +13,7 @@ DEV:true, LS, Y
 
 // modify those values in config.js
 let HOST = 'https://tcec-chess.com',
+    HOST_ARCHIVE = `${HOST}/archive/json`,
     LINKS = {},
     TIMEOUTS = {
         adblock: 15,

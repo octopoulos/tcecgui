@@ -14,7 +14,9 @@ window.onload = function() {
     // @import {global.js}
     // @import {3d.js}
     // @import {xboard.js}
+    // @import {graph.js}
     // @import {game.js}
+    // @import {temp.js}
     // @import {network.js}
     // @import {startup.js}
     // @import {config.js}
