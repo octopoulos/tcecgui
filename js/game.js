@@ -49,6 +49,7 @@ let BOARD_THEMES = {
         crash: 600,
         cross: 1,
         sched: 240,
+        season: 3600 * 24,
         tour: 1,
         winner: 3600 * 24,
     },
@@ -452,15 +453,25 @@ function create_tables() {
  * @param {string} url url
  * @param {string=} name table name
  * @param {function=} callback
+ * @param {boolean=} no_cache force to skip the cache
  * @param {boolean=} only_cache only load data if it's cached
  * @param {boolean=} show open the table after wards
  */
-function download_table(url, name, callback, {only_cache, show}={}) {
-    function _done(data) {
+function download_table(url, name, callback, {no_cache, only_cache, show}={}) {
+    function _done(data, cached) {
         if (DEV.json & 1) {
             LS(`${url}:`);
             LS(data);
         }
+
+        // if cached and table was already filled => skip
+        if (cached) {
+            let nodes = A(`#table-${name} tr`);
+            if (nodes.length > 1)
+                return;
+        }
+
+        // fill the table
         if (callback)
             callback(data);
         else if (name) {
@@ -475,13 +486,13 @@ function download_table(url, name, callback, {only_cache, show}={}) {
     let key,
         timeout = CACHE_TIMEOUTS[name];
 
-    if (timeout) {
+    if (!no_cache && timeout) {
         key = `table_${name}`;
         let cache = get_object(key);
         if (cache && (only_cache || cache.time < Now() + timeout)) {
             if (DEV.json & 1)
                 LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
-            _done(cache.data);
+            _done(cache.data, true);
             return;
         }
         else if (DEV.json & 1)
@@ -499,7 +510,7 @@ function download_table(url, name, callback, {only_cache, show}={}) {
             if (DEV.json & 1)
                 LS(`cache saved: ${key}`);
         }
-        _done(data);
+        _done(data, false);
     });
 }
 
@@ -529,6 +540,34 @@ function download_tables(only_cache) {
 }
 
 /**
+ * Set table-season events
+ */
+function set_season_events() {
+    let table = Id('table-season');
+
+    // expand/collapse
+    C('.season', function() {
+        let next = this.nextElementSibling;
+        Toggle(next);
+        Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, this);
+    }, table);
+
+    // open games
+    C('a[data-u]', function() {
+        let dico = {no_cache: true},
+            name = this.dataset.u,
+            prefix = `${HOST_ARCHIVE}/${name}`,
+            prefix_lower = `${HOST_ARCHIVE}/${Lower(name)}`;
+
+        download_table(`${prefix}_crash.xjson`, 'crash', null, dico);
+        download_table(`${prefix}_Crosstable.cjson`, 'cross', analyse_crosstable, dico);
+        download_table(`${prefix}_Enginerating.egjson`, null, null, dico);
+        download_table(`${prefix}_Schedule.sjson`, 'game', null, Assign({show: true}, dico));
+        // download_pgn();
+    }, table);
+}
+
+/**
  * Show tables depending on the event type
  * @param {string} type
  */
@@ -555,7 +594,8 @@ function update_table(name, rows, reset=true) {
     let last,
         data = SetDefault(table_data, name, []),
         is_cross = (name == 'cross'),
-        is_event = (name == 'event'),
+        // is_event = (name == 'event'),
+        is_game = (name == 'game'),
         is_sched = (name == 'sched'),
         is_winner = (name == 'winner'),
         new_rows = [],
@@ -575,6 +615,10 @@ function update_table(name, rows, reset=true) {
 
     // process all rows
     rows.forEach((row, row_id) => {
+        if (is_cross) {
+            LS('cross');
+            LS(row);
+        }
         row = Assign({}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
         data.push(row);
 
@@ -671,34 +715,31 @@ function update_table(name, rows, reset=true) {
         // special case
         if (is_sched) {
             if (!last && nodes.length && !row.moves) {
-                nodes[nodes.length - 1].classList.add('last');
+                nodes[nodes.length - 1].classList.add('active');
                 last = true;
             }
             if (row.white == players[0].name && row.black == players[1].name)
                 new_rows.push(row);
         }
 
-        let node = CreateNode('tr', vector.join(''));
+        let node = CreateNode('tr', vector.join(''), (is_game || is_sched)? {class: 'pointer', 'data-g': row_id + 1}: null);
         nodes.push(node);
     });
 
     InsertNodes(body, nodes);
 
-    // special cases
+    // add events
     if (is_sched)
         update_table('h2h', new_rows, reset);
-    else if (name == 'season') {
-        update_svg(table);
-        C('.season', function() {
-            let next = this.nextElementSibling;
-            Toggle(next);
-            Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, this);
-        }, table);
-        C('a[data-u]', function() {
-            download_table(`${HOST_ARCHIVE}/${this.dataset.u}_Schedule.sjson?v=${Now()}`, 'game', null, {show: true});
-        }, table);
-    }
+    else if (name == 'season')
+        set_season_events();
 
+    C('tr[data-g]', function() {
+        Class('tr.active', '-active', true, table);
+        Class(this, 'active', true, table);
+    }, table);
+
+    update_svg(table);
     translate_node(table);
 }
 
@@ -955,6 +996,9 @@ function update_pgn(pgn) {
     if (headers) {
         Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
             let value = headers[key];
+            if (value == undefined)
+                value = '';
+
             // TCEC Season 17 => S17
             if (key == 'Event')
                 value = value.replace('TCEC Season ', 'S');
@@ -1387,8 +1431,6 @@ function open_table(sel) {
  * @param {string} name
  */
 function opened_table(node, name) {
-    LS(`opened_table: ${name}`);
-
     switch (name) {
     case 'crash':
         download_table('crash.json', name);

@@ -13,7 +13,8 @@ _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add
 api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events,
 fill_languages, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
 init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, load_defaults, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game, Round,
+LANGUAGES:true, LINKS, load_defaults, LoadLibrary, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
+Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
 Split, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style, tcecHandleKey,
 THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
@@ -146,13 +147,13 @@ function create_url_list(dico) {
 function init_globals() {
     // load local data directly, and later online data
     download_tables(true);
-    add_timeout('tables', () => {download_tables();}, TIMEOUTS.tables);
+    add_timeout('tables', download_tables, TIMEOUTS.tables);
 
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    add_timeout('twitch', () => {update_twitch();}, TIMEOUTS.twitch);
-    add_timeout('graph', () => {init_graph();}, TIMEOUTS.graph);
+    add_timeout('twitch', () => update_twitch, TIMEOUTS.twitch);
+    add_timeout('graph', () => init_graph, TIMEOUTS.graph);
 
     // TODO: change that
     // add_timeout('update_live', () => {
@@ -165,6 +166,61 @@ function init_globals() {
             Show('.adblock');
         }
     }, TIMEOUTS.adblock);
+
+    add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+    load_google_analytics();
+}
+
+/**
+ * Insert one google ad
+ * @param {number} id
+ */
+function insert_google_ad(id) {
+    let html =
+    `<ins class="adsbygoogle"
+        style="display:block;"
+        data-ad-client="ca-pub-6544406400639567"
+        data-ad-slot="4926769371"
+        data-ad-format="auto"
+        data-full-width-responsive="true">
+        <img src="image/ad${id}.png">
+    </ins>
+    <div class="adblock dn">
+    </div>`;
+
+    HTML(`#ad${id} > hori`, html);
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+}
+
+/**
+ * Insert google ads after some time
+ */
+function insert_google_ads() {
+    insert_google_ad(1);
+    insert_google_ad(2);
+
+    LoadLibrary('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', () => {
+        if (DEV.load & 1)
+            LS('google ads loaded');
+    });
+}
+
+/**
+ * Load Google Analytics library
+ */
+function load_google_analytics() {
+    window._gaq = window._gaq || [];
+    window._gaq.push(
+        ['_setAccount', 'UA-37458566-1'],
+        ['_trackPageview'],
+        ['b._setAccount', 'UA-1679851-1'],
+        ['b._trackPageview'],
+    );
+
+    LoadLibrary(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js', () => {
+        if (DEV.load & 1)
+            LS('google analytics loaded');
+    });
 }
 
 /**
@@ -455,7 +511,7 @@ function set_global_events() {
     });
 
     // click somewhere => close the popups
-    Events(window, 'mousedown touchstart', e => {
+    Events(window, 'click', e => {
         let in_modal,
             target = e.target,
             dataset = target.dataset;

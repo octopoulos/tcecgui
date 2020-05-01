@@ -169,7 +169,7 @@ function setLiveLog(livelog)
  * @param {string=} text if there's no text, then just hide it
  */
 function show_banner(text) {
-    let node = _('#banner');
+    let node = Id('banner');
     if (text) {
         HTML(node, text);
         Show(node);

@@ -85,6 +85,7 @@ function startup_config() {
     // startup timeouts in ms
     Assign(TIMEOUTS, {
         banner: 30 * 1000,
+        google_ad: 5 * 1000,
         graph: 2 * 1000,
         tables: 3 * 1000,
         twitch: 10 * 1000,

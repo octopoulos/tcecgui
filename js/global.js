@@ -18,6 +18,7 @@ let HOST = 'https://tcec-chess.com',
     TIMEOUTS = {
         adblock: 15,
         banner: 30,
+        google_ad: -1,                  // disabled
         tables: 3,
         twitch: 10,
         users: 5,
@@ -34,6 +35,7 @@ function parse_dev() {
             g: 'graph',
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files
+            l: 'load',
             p: 'pv',
             s: 'socket',                // socket messages
             t: 'time',                  // function execution time

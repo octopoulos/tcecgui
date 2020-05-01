@@ -70,10 +70,13 @@ let __PREFIX = '_',
  * Add a timeout
  * @param {string} name
  * @param {function} func function to be called after the timer
- * @param {number} timer milliseconds
+ * @param {number} timer milliseconds <0: does nothing, =0: executes directly, >0: timer
  */
 function add_timeout(name, func, timer) {
     clear_timeout(name);
+    if (timer < 0)
+        return;
+
     if (timer)
         timers[name] = setTimeout(func, timer);
     else

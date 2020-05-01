@@ -111,6 +111,9 @@ img,
 .nowrap {
     white-space: nowrap;
 }
+.pointer {
+    cursor: pointer;
+}
 .tal {
     text-align: left;
 }
@@ -460,7 +463,7 @@ grid {
 .scroller tr:hover {
     background: rgba(0, 0, 0, 0.1);
 }
-.scroller tr.last {
+.scroller tr.active {
     background: #82cafa;
 }
 .rounded {
@@ -787,6 +790,10 @@ grid {
 }
 
 /* extras */
+#ad1,
+#ad2 {
+    height: 250px;
+}
 .banner {
     height: 60px;
     max-height: 10vw;

@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
+~          : 2020-04-17 : load archive games without loading a new page
+2020-05-01 : 2020-05-01 : delay google ads + analytics
 2020-05-01 : 2020-05-01 : show the seasons in archive
 2020-05-01 : 2020-05-01 : control highlight color + size, and display it on the board
 2020-05-01 : 2020-05-01 : optimized board/piece theme system
@@ -90,7 +93,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
-~          : 2020-04-17 : load archive games without loading a new page
 -          : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping

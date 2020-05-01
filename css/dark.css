@@ -53,10 +53,10 @@ body {
 .scroller tr:hover {
     background: rgba(108, 157, 255, 0.05);
 }
-.scroller tr.last {
+.scroller tr.active {
     background: #4c4e4f;
 }
-.scroller tr.last:hover {
+.scroller tr.active:hover {
     background: #535456;
 }
 #table-engine > * {
