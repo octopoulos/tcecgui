@@ -67,6 +67,7 @@ function change_setting_special(name, value) {
     case 'board_theme':
     case 'highlight_color':
     case 'highlight_size':
+    case 'notation':
     case 'piece_theme':
         update_board_theme();
         break;

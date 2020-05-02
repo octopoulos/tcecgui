@@ -22,7 +22,6 @@ let globalRoom = 0,
  * + handle all messages
  */
 function init_sockets() {
-    return;
     socket = io.connect(HOST);
     unlistenLogMain();
 

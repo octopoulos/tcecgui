@@ -44,7 +44,7 @@ function parse_dev() {
         text = Y.dev || '';
 
     DEV = {};
-    for (let i=0, length=text.length; i<length; i++) {
+    for (let i = 0, length = text.length; i < length; i ++) {
         let letter = text[i];
         if (letter == 'Z')
             DEV = {};

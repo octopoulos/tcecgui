@@ -4,12 +4,12 @@
 //
 // game board:
 // - 4 rendering targets:
-//      - 3d
+//      ~ 3d
 //      - canvas
 //      + html
 //      + text
 // - games:
-//      ~ chess
+//      + chess
 //      - chess960
 //      - go (future)
 //
@@ -51,12 +51,12 @@ class XBoard {
      * @param {Object} options options:
      * @example
      * - border         // frame size
-     * - colors         // [light, dark] squares
      * - dims           // [num_col, num_row]
      * - history        // show history?
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' too
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
+     * - pv_id          // extra output selector for PV list
      * - rotate         // board rotation
      * - size           // square size in px (resize will recalculate it)
      * - smooth         // smooth piece animation
@@ -64,32 +64,87 @@ class XBoard {
      */
 
     constructor(options={}) {
+        // options
         this.border = options.border || 2;
+        this.dims = options.dims || [8, 8];
+        this.history = options.history;
+        this.hook = options.hook;
+        this.id = options.id;
+        this.notation = options.notation || 6;
+        this.pv_id = options.pv_id;                     // extra container for PV list
+        this.rotate = options.rotate || 0;
+        this.size = options.size || 16;
+        this.smooth = options.smooth;
+        this.target = options.target || 'html';
+
+        // initialisation
         this.colors = ['#eee', '#111'];
         this.coords = {};
-        this.dims = options.dims || [8, 8];
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
         this.grid = {};
         this.high_color = '';                           // highlight color
         this.high_size = 0;                             // highlight size in .em
-        this.history = options.history;
-        this.hook = options.hook;
-        this.id = options.id;
         this.move = null;                               // current move
         this.move2 = null;                              // previous move
         this.moves = [];                                // moves history
         this.node = _(this.id);
         this.nodes = {};
-        this.notation = options.notation || 6;
         this.pieces = {};                               // b: [[found, row, col], ...]
-        this.rotate = options.rotate || 0;
-        this.size = options.size || 16;
-        this.smooth = options.smooth;
-        this.target = options.target || 'html';
+        this.pv_node = _(this.pv_id);
         this.theme = 'chess24';
         this.theme_ext = 'png';
         this.theme_size = 80;
+        this.xmoves = null;
+    }
+
+    /**
+     * Add a new move
+     * - faster than using set_fen, as it won't have to recompute everything
+     * @param {Object} move
+     */
+    add_move(move) {
+        this.move = move;
+        // this.moves.push(move);
+        this.animate(move);
+    }
+
+    /**
+     * Add new moves
+     * - handle PGN format from TCEC
+     * - can handle 2 pv lists
+     * @param {Object[]} moves
+     * @param {number} start starting ply for those moves
+     */
+    add_moves(moves, start) {
+        let num_move = moves.length,
+            parent_lasts = [this.xmoves, this.pv_node]
+                .filter(parent => parent)
+                .map(parent => {
+                    let last = _('.last', parent);
+                    if (!last) {
+                        last = CreateNode('i', '*', {class: 'last'});
+                        parent.appendChild(last);
+                    }
+                    return [parent, last];
+                });
+
+        for (let i = 0; i < num_move; i ++) {
+            let move = moves[i],
+                ply = start + i;
+            this.moves[ply] = move;
+
+            if (ply % 2 == 0) {
+                let node = CreateNode('i', `${1 + ply / 2}. `, {class: 'turn'});
+                for (let [parent, last] of parent_lasts)
+                    parent.insertBefore(node, last);
+            }
+            if (move.m) {
+                let node = CreateNode('a', `${move.m} `, {class: (move.book? 'book': 'real'), 'data-i': ply});
+                for (let [parent, last] of parent_lasts)
+                    parent.insertBefore(node, last);
+            }
+        }
     }
 
     /**
@@ -122,7 +177,7 @@ class XBoard {
                 }
                 // void
                 else {
-                    for (let j=0; j<parseInt(char); j++) {
+                    for (let j = 0; j < parseInt(char); j ++) {
                         grid[`${row}${col}`] = '';
                         col ++;
                     }
@@ -200,6 +255,8 @@ class XBoard {
      * @param {Object} move
      */
     animate_3d(move) {
+        if (!T)
+            return;
         LS(`${move.from}${move.to}`);
     }
 
@@ -276,13 +333,15 @@ class XBoard {
         }, this.node);
 
         // moving a piece by click
-        C('.xmoves', e => {
+        C(this.xmoves, e => {
             callback(that, 'move', e);
         });
-        // TODO: remove, must replace with mouse/touch events
-        Events('.xpiece', 'dragenter dragover dragexit dragleave drop', e => {
-            callback(that, e.type, e);
-        });
+        C('.xsquares', e => {
+            callback(that, 'square', e);
+        }, this.node);
+        C('.xpieces', e => {
+            callback(that, 'piece', e);
+        }, this.node);
     }
 
     /**
@@ -308,11 +367,13 @@ class XBoard {
 
         HTML(this.node, [
             '<div class="xframe"></div>',
-            '<grid class="xgrid"></grid>',
+            '<grid class="xsquares"></grid>',
             '<div class="xpieces"></div>',
             `<hori class="xcontrol">${controls}</hori>`,
             `<div class="xmoves${this.history? '': ' dn'}"></div>`,
         ].join(''));
+
+        this.xmoves = _('.xmoves', this.node);
 
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
@@ -331,14 +392,12 @@ class XBoard {
     }
 
     /**
-     * Add a new move
-     * - faster than using set_fen, as it won't have to recompute everything
-     * @param {Object} move
+     * New game
+     * - reset the moves
      */
-    new_move(move) {
-        this.move = move;
-        // this.moves.push(move);
-        this.animate(move);
+    new_game() {
+        this.moves.length = 0;
+        HTML(this.xmoves, '');
     }
 
     /**
@@ -349,7 +408,7 @@ class XBoard {
         if (this.id == 'console')
             LS(text);
         else
-            HTML('.xgrid', text, this.node);
+            HTML('.xsquares', text, this.node);
     }
 
     /**
@@ -440,7 +499,7 @@ class XBoard {
                 diff = (piece_size - size) / 2,
                 style = `background-image:url(${image});height:${piece_size}px;width:${piece_size}px`,
                 transform = `transform:scale(${size / piece_size}) translate(-${diff}px,-${diff}px)`,
-                xpieces = _('div.xpieces', this.node);
+                xpieces = _('.xpieces', this.node);
 
             Class(xpieces, 'smooth', this.smooth);
 
@@ -458,9 +517,13 @@ class XBoard {
                         nodes.push(node);
                         item[3] = node;
                     }
+                    if (rotate)
+                        col = 7 - col;
+                    else
+                        row = 7 - row;
 
                     if (found)
-                        Style(node, `${transform} translate(${col * piece_size}px,${(7 - row) * piece_size}px);opacity:1`);
+                        Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1`);
                     else
                         Style(node, 'opacity:0');
                 }
@@ -560,28 +623,5 @@ class XBoard {
             this.dirty |= 2;
             this.render();
         }
-    }
-
-    /**
-     * Set the theme
-     * @param {string[]} colors [light, dark]
-     * @param {Object} theme
-     * @param {string} theme_ext extension for the theme images
-     * @param {number} theme_size square dimension in px
-     * @param {string} high_color
-     * @param {number} high_size
-     */
-    set_theme(colors, theme, theme_ext, theme_size, high_color, high_size) {
-        if (DEV.board & 1)
-            LS('set_theme');
-        this.colors = colors;
-        this.theme = theme;
-        this.theme_ext = theme_ext;
-        this.theme_size = theme_size;
-        this.high_color = high_color;
-        this.high_size = high_size;
-
-        this.dirty = 3;
-        this.render();
     }
 }

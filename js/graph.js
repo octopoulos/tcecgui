@@ -638,7 +638,7 @@ function updateChartData()
     whiteEvalL = 0;
     blackEvalL = 0;
 
-    for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr++)
+    for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr ++)
     {
         let key = moveCtr,
             move = prevPgnData.Moves[moveCtr];
@@ -654,7 +654,7 @@ function updateChartData()
 
         if (moveCtr % 2 != 0) {
             plyNum = moveCtr + 1;
-            moveNumber--;
+            moveNumber --;
         }
         else
             plyNum = moveCtr + 1;

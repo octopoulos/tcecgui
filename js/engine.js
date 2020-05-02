@@ -523,7 +523,7 @@ function update_theme(themes, callback, version=15) {
         min = Min(num_child, num_theme);
 
     // 1) replace existing links
-    for (let i=0; i<min; i++) {
+    for (let i = 0; i < min; i ++) {
         let child = children[i],
             base_href = child.href.split('/').slice(-1)[0].split('.')[0],
             theme = themes[i];
@@ -534,12 +534,12 @@ function update_theme(themes, callback, version=15) {
 
     // 2) remove extra links
     if (num_child > num_theme) {
-        for (let i=num_theme; i<num_child; i++)
+        for (let i = num_theme; i < num_child; i ++)
             children[i].removeAttribute('href');
     }
     // 3) add extra links
     else if (num_child < num_theme) {
-        for (let i=num_child; i<num_theme; i++) {
+        for (let i = num_child; i < num_theme; i ++) {
             let child = CreateNode('link', null, {href: links[i], rel: 'stylesheet'});
             parent.appendChild(child);
         }

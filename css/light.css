@@ -334,12 +334,6 @@ grid {
     background: #444;
     position: absolute;
 }
-.xgrid {
-    grid-template-columns: repeat(8, 1em);
-}
-.xgrid > pre {
-    margin-left: 0.28em;
-}
 .xpiece {
     cursor: pointer;
     height: 1em;
@@ -354,6 +348,12 @@ grid {
 }
 .xpiece > img {
     height: 100%;
+}
+.xsquares {
+    grid-template-columns: repeat(8, 1em);
+}
+.xsquares > pre {
+    margin-left: 0.28em;
 }
 .xsquare {
     height: 1em;
@@ -432,9 +432,6 @@ grid {
 }
 .void {
     background-color: #191919;
-}
-.last::after {
-    content: ' *';
 }
 
 /* tables */

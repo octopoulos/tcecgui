@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-23
+// @version 2020-05-02
 //
 // Game specific code:
 // - control the board, moves
@@ -188,7 +188,7 @@ function calculate_score(text) {
     let black = 0,
         white = 0;
 
-    for (let i=0, length=text.length; i<length; i++) {
+    for (let i = 0, length = text.length; i < length; i ++) {
         let char = text[i];
         if (char == '0')
             black ++;
@@ -251,7 +251,18 @@ function update_board_theme() {
         theme_size = PIECE_SIZES[theme] || PIECE_SIZES._;
 
     Keys(xboards).forEach(key => {
-        xboards[key].set_theme(board_theme, theme, theme_ext, theme_size, Y.highlight_color, Y.highlight_size);
+        Assign(xboards[key], {
+            colors: board_theme,
+            dirty: 3,
+            high_color: Y.highlight_color,
+            high_size: Y.highlight_size,
+            notation: Y.notation? 6: 0,
+            theme: theme,
+            theme_ext: theme_ext,
+            theme_size: theme_size,
+        });
+
+        xboards[key].render();
     });
 }
 
@@ -540,9 +551,10 @@ function download_tables(only_cache) {
     }
 
     // tables
-    download_table('crosstable.json', 'cross', analyse_crosstable, {only_cache: true});
-    download_table('tournament.json', 'tour', analyse_tournament, {only_cache: true});
-    download_table('schedule.json', 'sched', null, {only_cache: true});
+    let dico = {only_cache: only_cache};
+    download_table('crosstable.json', 'cross', analyse_crosstable, dico);
+    download_table('tournament.json', 'tour', analyse_tournament, dico);
+    download_table('schedule.json', 'sched', null, dico);
 }
 
 /**
@@ -765,7 +777,7 @@ function calculate_seeds(num_team) {
     while (number < num_team) {
         number *= 2;
         let seeds = [];
-        for (let i=0; i<number; i++) {
+        for (let i = 0; i < number; i ++) {
             let value = (i % 2)? (number + 1 - seeds[i - 1]): nexts[Floor(i / 2)];
             seeds[i] = (value <= num_team)? value: 0;
         }
@@ -809,7 +821,7 @@ function create_bracket(data) {
             + `<div class="round" data-t="${name}"></div>`
             + `<vert class="${number == 1? 'fcenter final': 'faround'} h100">`
         );
-        for (let i=0; i<number2; i++) {
+        for (let i = 0; i < number2; i ++) {
             let names = [0, 0],
                 result = results[i] || [],
                 scores = [0, 0],
@@ -847,7 +859,7 @@ function create_bracket(data) {
                     + '<grid class="match-grid">'
             );
 
-            for (let id=0; id<2; id++) {
+            for (let id = 0; id < 2; id ++) {
                 let [name_class, name] = names[id] || [],
                     [score_class, score] = scores[id] || [];
 
@@ -934,34 +946,6 @@ function check_adjudication(dico, total_moves) {
 }
 
 /**
- * Create a PV list
- * @param {Object[]} moves
- * @returns {string} html
- */
-function create_pv_list(moves) {
-    let lines = [],
-        num_move = moves.length;
-
-    moves.forEach((move, id) => {
-        if (id % 2 == 0)
-            lines.push(` <i class="turn">${1 + id / 2}.</i>`);
-
-        if (!move || !move.m) {
-            lines.push(` <a style="color:red">???</a>`);
-            return;
-        }
-
-        let class_ = move.book? 'book': 'real';
-        if (id == num_move - 1)
-            class_ += ' last';
-
-        lines.push(` <a class="${class_}" data-i="${id}">${move.m}</a>`);
-    });
-
-    return lines.join('');
-}
-
-/**
  * Download the PGN
  * @param {boolean=} reset_time
  */
@@ -1021,22 +1005,24 @@ function update_pgn(pgn) {
         return;
 
     // 2) update the moves
-    let move = moves[num_move - 1],
+    let board = xboards.board,
+        move = moves[num_move - 1],
         last_ply = pgn.numMovesToSend + start;
 
-    xboards.board.new_move(move);
-    xboards.board.set_fen(move.fen, true);
-
-    // xboards.pv1.set_fen(fen, true);
     if (DEV.ply & 1) {
         LS(`${start} + ${num_move} = ${start + num_move}. ${(start + num_move) % 2} ${move.m}`);
         LS(`${(last_ply) / 2}`);
     }
 
-    if (!last_ply || last_ply < num_ply)
+    if (!last_ply || last_ply < num_ply) {
+        board.new_game();
         pgn_moves.length = 0;
-    for (let i=0; i<num_move; i++)
+    }
+    for (let i = 0; i < num_move; i ++)
         pgn_moves[start + i] = moves[i];
+
+    board.add_moves(moves, start);
+    board.set_fen(move.fen, true);
 
     // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
     num_ply = pgn_moves.length;
@@ -1086,7 +1072,7 @@ function update_pgn(pgn) {
         }
     });
 
-    for (let i=num_move - 1; i>=0 && i>=num_move - 2; i--) {
+    for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
         let move = moves[i],
             is_book = move.book,
             eval_ = is_book? 'book': move.wv,
@@ -1125,22 +1111,18 @@ function update_pgn(pgn) {
         if (value) {
             let id = (value > 0)? 0: 1,
                 color = id? 'b': 'w';
-            for (let i=0; i<Abs(value); i++)
+            for (let i = 0; i < Abs(value); i ++)
                 materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
         }
     });
 
-    for (let id=0; id<2; id++) {
+    for (let id = 0; id < 2; id ++) {
         let node = Id(`material${id}`),
             html = HTML(node),
             material = materials[id].join('');
         if (html != material)
             HTML(node, material);
     }
-
-    // 3) pv
-    let html = create_pv_list(pgn_moves);
-    HTML('.xmoves', html, xboards.board.node);
 
     // chart
     // prevPgnData = prev_pgn;
@@ -1152,9 +1134,13 @@ function update_pgn(pgn) {
  */
 function resize_game() {
     // resize the boards
-    let width = Id('board').clientWidth;
-    if (xboards.board)
-        xboards.board.resize(width);
+    let width = Id('board').clientWidth,
+        board = xboards.board;
+    if (board) {
+        board.smooth = false;
+        board.resize(width);
+        add_timeout('smooth', () => {board.smooth = Y.animate;}, 100);
+    }
 }
 
 // LIVE DATA
@@ -1565,6 +1551,7 @@ function startup_game() {
         // separator
         _1: {},
         board: {
+            animate: [ON_OFF, 1],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
             highlight_color: [{type: 'color'}, '#ffff00'],
@@ -1573,6 +1560,7 @@ function startup_game() {
             piece_theme: [PIECE_KEYS, 'chess24'],
         },
         board_pv: {
+            animate_pv: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
             ply_diff: [['first', 'diverging', 'last'], 'first'],

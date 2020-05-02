@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
+2020-05-02 : 2020-05-02 : optimized create_pv_list with node insertion
 2020-05-02 : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
 2020-05-02 : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
 2020-05-01 : 2020-05-01 : delay google ads + analytics
@@ -95,8 +97,7 @@ DONE         CREATED      DESCRIPTION
 high:
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
-~          : 2020-04-20 : efficient board history in xboard
-~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
+~          : 2020-04-20 : efficient board history in xboard, no more pgn_moves?
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
 -          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 -          : 2020-04-13 : click on PV => keyboard should move in PV
@@ -110,11 +111,11 @@ low:
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 -          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
 -          : 2029-04-29 : add SVG connectors to the bracket
-lowest:
+-          : 2020-04-13 : only load the 3d library/files when the user wants to use it
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
+lowest:
 -          : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
--          : 2020-04-13 : only load the 3d library/files when the user wants to use it
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board

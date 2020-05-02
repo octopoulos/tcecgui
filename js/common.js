@@ -472,7 +472,7 @@ function Parent(node, type, class_, attrs, be_self) {
         parent = node,
         types = type? type.split('|'): null;
 
-    for (let depth=0; ;depth ++) {
+    for (let depth = 0; ; depth ++) {
         if (depth || !be_self) {
             parent = parent.parentNode;
             if (!parent || !parent.tagName)
@@ -998,7 +998,7 @@ function FromTimestamp(stamp) {
  */
 function HashText(text) {
     let hash = 0;
-    for (let i=0, length = text.length; i<length; i++) {
+    for (let i = 0, length = text.length; i < length; i ++) {
         let char = text.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
         hash |= 0;
