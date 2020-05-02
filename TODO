@@ -2,6 +2,9 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
+2020-05-03 : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
+2020-05-02 : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
+2020-05-02 : 2020-04-13 : accelerate setPvFromKey, updateEnginePv: not using them anymore
 2020-05-02 : 2020-05-02 : optimized create_pv_list with node insertion
 2020-05-02 : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
 2020-05-02 : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
@@ -95,12 +98,10 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-04-13 : click on PV => keyboard should move in PV
+-          : 2020-05-02 : pv lists click => use the current FEN and then play a few moves
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
-~          : 2020-04-20 : efficient board history in xboard, no more pgn_moves?
-~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
--          : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
--          : 2020-04-13 : click on PV => keyboard should move in PV
 -          : 2020-05-01 : make charts work again
 medium:
 -          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
@@ -115,7 +116,6 @@ low:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces
 lowest:
--          : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board

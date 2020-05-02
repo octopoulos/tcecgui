@@ -33,6 +33,7 @@ function startup_config() {
     // - & 2 => Leela variations
     Assign(ENGINE_FEATURES, {
         LCZeroCPU: 3,
+        LCZeroCPU3pct: 3,
     });
 
     // first theme is always the default theme => don't change it

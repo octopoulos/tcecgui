@@ -155,7 +155,7 @@ function gamepad_update() {
  * @param {number=} volume
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0, voice, volume=1}={}) {
-    if (!cube || !cube.sounds)
+    if (!Y.sound || !cube || !cube.sounds)
         return;
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
