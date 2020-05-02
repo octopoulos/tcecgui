@@ -1,8 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
-~          : 2020-04-17 : load archive games without loading a new page
+2020-05-02 : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
 2020-05-02 : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
 2020-05-01 : 2020-05-01 : delay google ads + analytics
 2020-05-01 : 2020-05-01 : show the seasons in archive
@@ -94,7 +93,8 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
+-          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
+~          : 2020-04-17 : load archive games without loading a new page
 ~          : 2020-04-20 : efficient board history in xboard
 ~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
 ~          : 2020-04-13 : accelerate setPvFromKey, updateEnginePv
@@ -102,14 +102,14 @@ high:
 -          : 2020-04-13 : click on PV => keyboard should move in PV
 -          : 2020-05-01 : make charts work again
 medium:
+-          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
+-          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
+-          : 2020-04-13 : add 3d rendering option to the chessboard
+low:
+-          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 -          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
--          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
-low:
--          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
--          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2029-04-29 : add SVG connectors to the bracket
--          : 2020-04-13 : add 3d rendering option to the chessboard
 lowest:
 ~          : 2020-04-13 : add 3d board
 ~          : 2020-04-13 : add 3d pieces

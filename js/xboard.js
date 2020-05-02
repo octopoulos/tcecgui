@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-16
+// @version 2020-05-02
 //
 // game board:
 // - 4 rendering targets:
@@ -16,7 +16,7 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, add_timeout, Assign, C, Class, CopyClipboard, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, Keys,
+_, A, Abs, add_timeout, Assign, C, Class, CopyClipboard, CreateNode, DEV, Events, Floor, Hide, HTML, InsertNodes, Keys,
 Lower, LS, merge_settings, ON_OFF, S, Show, Split, Style, T, update_svg, Upper
 */
 'use strict';
@@ -38,8 +38,9 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         copy: 'Copy FEN',
         cube: 'Change view',
     },
+    FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
-    SPRITE_OFFSETS = Assign({}, ...'bknpqrBKNPQR'.split('').map((key, id) => ({[key]: id}))),
+    SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1';
@@ -69,6 +70,7 @@ class XBoard {
         this.dims = options.dims || [8, 8];
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;
+        this.grid = {};
         this.high_color = '';                           // highlight color
         this.high_size = 0;                             // highlight size in .em
         this.history = options.history;
@@ -80,7 +82,7 @@ class XBoard {
         this.node = _(this.id);
         this.nodes = {};
         this.notation = options.notation || 6;
-        this.pieces = [];
+        this.pieces = {};                               // b: [[found, row, col], ...]
         this.rotate = options.rotate || 0;
         this.size = options.size || 16;
         this.smooth = options.smooth;
@@ -95,53 +97,90 @@ class XBoard {
      * - ideally do this only when starting a new game
      */
     analyse_fen() {
-        let coords = {},
-            id = 0,
+        // 1) create the grid + count the pieces
+        let chars = [],
+            counts = {},
+            grid = {},
+            lines = this.fen.split(' ')[0].split('/'),
             pieces = this.pieces,
-            num_piece = pieces.length,
-            rows = this.fen.split(' ')[0].split('/'),
-            row_id = rows.length;
+            row = lines.length - 1;
 
-        // parse all cells
-        for (let row of rows) {
+        for (let line of lines) {
             let col = 0;
-            for (let char of row.split('')) {
+            for (let char of line.split('')) {
                 // piece
                 if (isNaN(char)) {
-                    let piece,
-                        coord =`${COLUMN_LETTERS[col]}${row_id}`;
+                    grid[`${row}${col}`] = char;
+                    chars.push([char, row, col]);
+                    let count = (counts[char] || 0) + 1,
+                        items = pieces[char];
 
-                    // reuse pieces (with piece.node) when possible
-                    if (id < num_piece)
-                        piece = pieces[id];
-                    else {
-                        piece = {};
-                        pieces.push(piece);
-                    }
-                    Assign(piece, {
-                        char: char,
-                        coord: coord,
-                        flag: 0,                        // &1: dead
-                    });
-
-                    coords[coord] = piece;
-                    id ++;
+                    counts[char] = count;
+                    if (count > items.length)
+                        items.push([0, -1, -1]);
                     col ++;
                 }
                 // void
-                else
-                    col += parseInt(char);
+                else {
+                    for (let j=0; j<parseInt(char); j++) {
+                        grid[`${row}${col}`] = '';
+                        col ++;
+                    }
+                }
             }
-            row_id --;
+            row --;
         }
 
-        // hide every other piece
-        if (DEV.board & 1)
-            LS(`analyse_fen: id=${id} : num_piece=${num_piece}`);
-        for (; id<num_piece; id++)
-            pieces[id].flag = 1;
+        // 2) match chars and pieces
+        Keys(pieces).forEach(key => {
+            for (let piece of pieces[key])
+                piece[0] = 0;
+        });
 
-        this.coords = coords;
+        // perfect matches
+        for (let char of chars) {
+            for (let item of pieces[char[0]]) {
+                if (!item[0] && char[1] == item[1] && char[2] == item[2]) {
+                    item[0] = 1;
+                    char[0] = '';
+                    break;
+                }
+            }
+        }
+
+        // imperfect matches
+        for (let [char, row, col] of chars) {
+            if (!char)
+                continue;
+
+            let win,
+                best = 9999,
+                items = pieces[char];
+            for (let item of items) {
+                if (item[0])
+                    continue;
+                let diff = Abs(row - item[1]) + Abs(col - item[2]);
+                if (diff < best) {
+                    best = diff;
+                    win = item;
+                }
+            }
+            win[0] = 1;
+            win[1] = row;
+            win[2] = col;
+        }
+
+        // move non found pieces off the board
+        let [num_row, num_col] = this.dims;
+        Keys(pieces).forEach(key => {
+            for (let piece of pieces[key])
+                if (!piece[0]) {
+                    piece[1] = -num_row;
+                    piece[2] = num_col * 2;
+                }
+        });
+
+        this.grid = grid;
     }
 
     /**
@@ -275,6 +314,9 @@ class XBoard {
             `<div class="xmoves${this.history? '': ' dn'}"></div>`,
         ].join(''));
 
+        // initialise the pieces to zero
+        this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
+
         this.analyse_fen();
         this.resize();
         update_svg();
@@ -345,7 +387,7 @@ class XBoard {
     render_html() {
         let colors = this.colors,
             dirty = this.dirty,
-            [num_col, num_row] = this.dims,
+            [num_row, num_col] = this.dims,
             rotate = this.rotate,
             size = this.size;
 
@@ -354,10 +396,10 @@ class XBoard {
             let lines = [],
                 notation = this.notation;
 
-            for (let i=0; i<num_row; i++) {
+            for (let i = 0; i < num_row; i ++) {
                 let row_name = rotate? i + 1: 8 - i;
 
-                for (let j=0; j<num_col; j++) {
+                for (let j = 0; j < num_col; j ++) {
                     let col_name = COLUMN_LETTERS[rotate? 7 - j: j],
                         even = (i + j) % 2,
                         note_x = '',
@@ -391,6 +433,7 @@ class XBoard {
         if (dirty & 2) {
             if (DEV.board & 1)
                 LS(`render_html: num_piece=${this.pieces.length}`);
+
             let image = `theme/${this.theme}.${this.theme_ext}`,
                 nodes = [],
                 piece_size = this.theme_size,
@@ -402,32 +445,26 @@ class XBoard {
             Class(xpieces, 'smooth', this.smooth);
 
             // create pieces / adjust their position
-            for (let piece of this.pieces) {
-                let char = piece.char,
-                    dead = (piece.flag & 1),
-                    coord = piece.coord,
-                    node = piece.node,
+            Keys(this.pieces).forEach(char => {
+                let items = this.pieces[char],
                     offset = -SPRITE_OFFSETS[char] * piece_size;
 
-                if (!node) {
-                    let html = `<div style="${style};background-position-x:${offset}px"></div>`;
-                    node = CreateNode('div', html, {class: 'xpiece'});
-                    nodes.push(node);
-                    piece.node = node;
-                }
+                for (let item of items) {
+                    let [found, row, col, node] = item;
 
-                S(node, !dead);
-                if (!dead) {
-                    let x = LETTER_COLUMNS[coord[0]],
-                        y = 8 - coord[1];
-
-                    if (rotate) {
-                        x = 7 - x;
-                        y = 7 - y;
+                    if (!node) {
+                        let html = `<div style="${style};background-position-x:${offset}px"></div>`;
+                        node = CreateNode('div', html, {class: 'xpiece'});
+                        nodes.push(node);
+                        item[3] = node;
                     }
-                    Style(node, `${transform} translate(${x * piece_size}px,${y * piece_size}px)`);
+
+                    if (found)
+                        Style(node, `${transform} translate(${col * piece_size}px,${(7 - row) * piece_size}px);opacity:1`);
+                    else
+                        Style(node, 'opacity:0');
                 }
-            }
+            });
 
             if (DEV.board & 1)
                 LS(xpieces);
@@ -444,11 +481,10 @@ class XBoard {
      * 2d text rendering
      */
     render_text() {
-        let lines = [],
+        let grid = this.grid,
+            lines = [],
             notation = (this.id == 'console')? this.notation: 0,
-            num_col = this.dims[0],
-            rows = this.fen.split(' ')[0].split('/'),
-            row_id = rows.length;
+            [num_row, num_col] = this.dims;
 
         // column notation
         let scolumn = COLUMN_LETTERS.slice(0, num_col).join(' ');
@@ -456,33 +492,23 @@ class XBoard {
             lines.push(`  ${scolumn}`);
 
         // parse all cells
-        for (let row of rows) {
-            let col = 1,
-                vector = [];
+        for (let i = num_row - 1; i >= 0; i --) {
+            let vector = [];
 
             if (notation & 4)
-                vector.push(`${row_id}`);
+                vector.push(`${i + 1}`);
 
-            for (let char of row.split('')) {
-                // piece
-                if (isNaN(char)) {
-                    vector.push(char);
-                    col ++;
-                }
-                // void
-                else {
-                    for (let i=0; i<parseInt(char); i++) {
-                        vector.push(((row_id + col) % 2)? ' ': '·');
-                        col ++;
-                    }
-                }
+            for (let j = 0; j < num_col; j ++) {
+                let char = grid[`${i}${j}`];
+                if (!char)
+                    char = ((i + j) % 2)? ' ': '.';
+                vector.push(char);
             }
 
             if (notation & 8)
-                vector.push(`${row_id}`);
+                vector.push(`${i + 1}`);
 
             lines.push(vector.join(' '));
-            row_id --;
         }
 
         if (notation & 2)
@@ -506,7 +532,7 @@ class XBoard {
             width = this.node.clientWidth;
 
         let border = this.border,
-            num_col = this.dims[0],
+            num_col = this.dims[1],
             size = Floor((width - border * 2) * 2 / num_col) / 2,
             frame_size = size * num_col + border * 2;
 
