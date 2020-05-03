@@ -36,11 +36,14 @@ body {
 .draw {
     color: #f5f5f5;
 }
-.real {
+#board .real {
     color: #ddd;
 }
 .turn {
-    color: #ccc;
+    color: #222;
+}
+#board .turn {
+    color: #bbb;
 }
 
 /* tables */

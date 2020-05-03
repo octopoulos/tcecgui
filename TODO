@@ -1,7 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-04-18 : handle Keys correctly: proper key timings + hold key + button mapping
+2020-05-03 : 2020-04-18 : handle keys correctly: proper key timings + hold key + button mapping
 2020-05-03 : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
 2020-05-02 : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
 2020-05-02 : 2020-04-13 : accelerate setPvFromKey, updateEnginePv: not using them anymore

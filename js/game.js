@@ -10,9 +10,9 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS, DEV, Events, Exp,
-Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
-Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, Pow, Resource, resume_game, Round,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS, DEV,
+Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
+Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, Resource, resume_game, Round,
 S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, TIMEOUTS,
 Title, Toggle, touch_handle, translate_node, update_svg, Upper, Visible, window, XBoard, Y
 */
@@ -39,7 +39,7 @@ let BOARD_THEMES = {
             smooth: true,
         },
         // pv0: {
-        //     target: 'text',
+        //     mode: 'text',
         // },
         // pv1: {},
         // pva: {},
@@ -60,7 +60,8 @@ let BOARD_THEMES = {
     LIVE_ENGINES = [],
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
-    num_ply,
+    num_ply = 0,
+    pgn,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     PIECE_SIZES = {
         _: 80,
@@ -70,9 +71,7 @@ let BOARD_THEMES = {
         _: 'png',
         // wikipedia: 'svg',            // will enable in the future
     },
-    pgn_moves = [],
     players = [{}, {}],                 // current 2 players
-    prev_pgn,
     ROUND_NAMES = {
         1: 'Final',
         2: 'SemiFinal',
@@ -99,8 +98,8 @@ let BOARD_THEMES = {
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     time_delta = 0,
+    TIMEOUT_PLY_LIVE = 100,             // when moving the cursor, wait a bit before updating live history
     tour_info = {},
-    turn = 0,                           // 0:white to play, 1:black to play
     virtual_opened_table_special,
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
@@ -228,9 +227,9 @@ function create_boards() {
             hook: handle_board_events,
             history: true,
             id: `#${key}`,
+            mode: 'html',
             notation: 6,
             size: 16,
-            target: 'html',
         }, BOARDS[key]);
 
         let xboard = new XBoard(options);
@@ -293,6 +292,7 @@ function analyse_crosstable(data) {
 
         // cross
         let cross_row = {
+            abbrev: Lower(dico.Abbreviation),
             engine: name,
             points: dico.Score,
             rank: dico.Rank,
@@ -633,10 +633,6 @@ function update_table(name, rows, reset=true) {
 
     // process all rows
     rows.forEach((row, row_id) => {
-        if (is_cross) {
-            LS('cross');
-            LS(row);
-        }
         row = Assign({}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
         data.push(row);
 
@@ -647,7 +643,8 @@ function update_table(name, rows, reset=true) {
 
             if (value == undefined) {
                 if (is_cross) {
-                    td_class = 'void';
+                    if (row.abbrev == key)
+                        td_class = 'void';
                     value = '';
                 }
                 else
@@ -740,7 +737,8 @@ function update_table(name, rows, reset=true) {
                 new_rows.push(row);
         }
 
-        let node = CreateNode('tr', vector.join(''), (is_game || is_sched)? {class: 'pointer', 'data-g': row_id + 1}: null);
+        let dico = (is_game || is_sched || name == 'h2h')? {class: 'pointer', 'data-g': row_id + 1}: null,
+            node = CreateNode('tr', vector.join(''), dico);
         nodes.push(node);
     });
 
@@ -958,20 +956,69 @@ function download_pgn(reset_time) {
                 last_mod = new Date(xhr.getResponseHeader('last-modified'));
             time_delta = curr_time.getTime() - last_mod.getTime();
         }
-        prev_pgn = null;
+        pgn = null;
         data.gameChanged = 1;
         update_pgn(data);
     });
 }
 
 /**
+ * Update engine info from a move
+ * @param {number} ply
+ * @param {Move} move
+ * @param {boolean=} fresh is it the latest move?
+ */
+function update_move_info(ply, move, fresh) {
+    let is_book = move.book,
+        eval_ = is_book? 'book': move.wv,
+        stats = {
+            depth: is_book? '-': `${move.d}/${move.sd}`,
+            eval: eval_,
+            left: move.tl? FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'): 'n/a',
+            node: is_book? '-': FormatUnit(move.n),
+            speed: is_book? '-': `${FormatUnit(move.s)}bps`,
+            tb: is_book? '-': FormatUnit(move.tb),
+            time: move.mt? FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'): 'n/a',
+        };
+
+    Keys(stats).forEach(key => {
+        HTML(`#${key}${ply % 2}`, stats[key]);
+    });
+
+    if (fresh)
+        Assign(players[ply % 2], {
+            eval: eval_,
+            left: move.tl,
+            time: move.mt,
+        });
+}
+
+/**
+ * Update PV info from a player move
+ * @param {number} ply
+ * @param {Move} move
+ */
+function update_move_pv(ply, move) {
+    let is_book = move.book,
+        eval_ = is_book? 'book': move.wv,
+        id = ply % 2,
+        node = Id(`player${id}`);
+
+    HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
+    HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
+    // LS(move.pv);
+    HTML('.live-pv', create_live_pv(ply, move.pv? move.pv.San: ''), node);
+}
+
+/**
  * Update the PGN
  * - white played => lastMoveLoaded=109
- * @param {Object} pgn
+ * @param {Object} pgn_
  */
-function update_pgn(pgn) {
+function update_pgn(pgn_) {
     if (!xboards.board)
         return;
+    pgn = pgn_;
     window.pgn = pgn;
 
     let headers = pgn.Headers,
@@ -1014,25 +1061,12 @@ function update_pgn(pgn) {
         LS(`${(last_ply) / 2}`);
     }
 
-    if (!last_ply || last_ply < num_ply) {
+    if (!last_ply || last_ply < num_ply)
         board.new_game();
-        pgn_moves.length = 0;
-    }
-    for (let i = 0; i < num_move; i ++)
-        pgn_moves[start + i] = moves[i];
 
     board.add_moves(moves, start);
-    board.set_fen(move.fen, true);
-
-    // if only 1 move was played => white just played (who=0), and black plays next (turn=1)
-    num_ply = pgn_moves.length;
-    turn = num_ply % 2;
-    let short_nodes = [],
-        who = 1 - turn;
-
-    if (DEV.ply & 1)
-        LS(`num_move=${num_move} : num_ply=${num_ply} : last_ply=${last_ply} => turn=${turn}`);
-    prev_pgn = pgn;
+    if (Y.move_sound)
+        play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
     // 3) check adjudication + update overview
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
@@ -1047,15 +1081,35 @@ function update_pgn(pgn) {
 
     S('[data-x="adj_rule"]', finished, overview);
     S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
+    if (finished) {
+        let result = headers.Result;
+        if (Y.crowd_sound)
+            play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        board.add_moves(result);
+    }
 
-    // 4) engines
+    // 4) clock
+    // num_ply % 2 tells us who plays next
+    num_ply = board.moves.length;
+    let who = num_ply % 2;
+
+    // time control could be different for white and black
+    let tc = headers[`${WB_TITLES[who]}TimeControl`];
+    if (tc) {
+        let items = tc.split('+');
+        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+    }
+
+    S(`#cog${who}`, !finished);
+    Hide(`#cog${1 - who}`);
+
+    // 5) engines
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
             node = Id(`player${id}`),
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
 
-        short_nodes.push([short, node]);
         Assign(players[id], {
             name: name,
             short: short,
@@ -1073,34 +1127,9 @@ function update_pgn(pgn) {
     });
 
     for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
-        let move = moves[i],
-            is_book = move.book,
-            eval_ = is_book? 'book': move.wv,
-            stats = {
-                depth: is_book? '-': `${move.d}/${move.sd}`,
-                eval: eval_,
-                left: FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'),
-                node: is_book? '-': FormatUnit(move.n),
-                speed: is_book? '-': `${FormatUnit(move.s)}bps`,
-                tb: is_book? '-': FormatUnit(move.tb),
-                time: FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'),
-            };
-
-        Keys(stats).forEach(key => {
-            HTML(`#${key}${who}`, stats[key]);
-        });
-
-        let [short, node] = short_nodes[who];
-        HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
-        HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(short, eval_), node);
-        HTML('.live-pv', move.pv? move.pv.San: '', node);
-
-        Assign(players[who], {
-            eval: eval_,
-            left: move.tl,
-            time: move.mt,
-        });
-        who = 1 - who;
+        let move = moves[i];
+        update_move_info(start + i, move, true);
+        update_move_pv(start + i, move);
     }
 
     // material
@@ -1124,8 +1153,7 @@ function update_pgn(pgn) {
             HTML(node, material);
     }
 
-    // chart
-    // prevPgnData = prev_pgn;
+    // 6) chart
     // updateChartData();
 }
 
@@ -1145,6 +1173,32 @@ function resize_game() {
 
 // LIVE DATA
 ////////////
+
+/**
+ * Create a live PV from a string
+ * @param {number} ply starting ply
+ * @param {string} pv
+ * @returns {string} html
+ */
+function create_live_pv(ply, text) {
+    if (!text)
+        return '';
+
+    let items = text.replace('...', '... ').split(' ').map(item => {
+        if (item.slice(-1) == '.')
+            return '';
+
+        let line = '';
+        if (ply % 2 == 0)
+            line = `<i class="turn">${1 + ply / 2} </i>`;
+
+        line += `<a class="real">${item} </a>`;
+        ply ++;
+        return line;
+    });
+
+    return items.join('');
+}
 
 /**
  * Set the number of viewers
@@ -1184,8 +1238,8 @@ function update_live_eval(data, id) {
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
-    HTML('.live-pv', data.pv, node);
-    // HTML(`div[data-x="live${id}"]`, short);
+
+    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
 
     // chart
     // updateChartDataLive(id);
@@ -1215,7 +1269,7 @@ function update_player_eval(data) {
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
-    HTML('.live-pv', data.pv, node);
+    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
 
     // 2) update the engine info in the center
     let stats = {
@@ -1342,9 +1396,15 @@ function game_action_key(code) {
             // LS(`game_action_key2: ${code}`);
             // show_menu();
             break;
+        // left
+        case 37:
+            xboards[board_target].go_prev();
+            break;
+        // right
+        case 39:
+            xboards[board_target].go_next();
+            break;
         }
-
-        LS(`keydown: ${code}`);
     }
 }
 
@@ -1370,24 +1430,24 @@ function game_action_keyup(code) {
  */
 function handle_board_events(board, type, value) {
     if (type == 'control') {
-        LS(`hook: ${board.name} : ${type} : ${value}`);
-        switch (value) {
-        case 'cube':
-            board.target = (board.target == 'html')? 'text': 'html';
+        if (value == 'cube') {
+            board.mode = (board.mode == 'html')? 'text': 'html';
             board.dirty = 3;
             board.resize();
-            break;
         }
     }
     else if (type == 'move') {
         let target = value.target,
-            id = target.dataset.i,
-            move = pgn_moves[id];
-        if (id) {
-            Class('.seen', '-seen', true, target.parentNode);
-            Class(target, 'seen');
-            // note: potentially SLOW, better to use `new_move` if going to the next move
-            xboards.board.set_fen(move.fen, true);
+            id = target.dataset.i;
+        if (id != undefined)
+            xboards[board_target].set_ply(id * 1);
+    }
+    else if (type == 'ply') {
+        // only update stats of the main board
+        if (board.id == '#board') {
+            let ply = board.ply;
+            update_move_info(ply, value);
+            add_timeout(`ply_live${ply % 2}`, () => {update_move_pv(ply, value);}, TIMEOUT_PLY_LIVE);
         }
     }
     else {
@@ -1448,7 +1508,7 @@ function opened_table(node, name) {
  * @param {Event} e
  */
 function popup_engine_info(scolor, e) {
-    if (!prev_pgn)
+    if (!pgn)
         return;
 
     let show,
@@ -1461,8 +1521,8 @@ function popup_engine_info(scolor, e) {
         show = true;
     else {
         let title = Title(scolor),
-            engine = Split(prev_pgn.Headers[title]),
-            options = prev_pgn[`${title}EngineOptions`],
+            engine = Split(pgn.Headers[title]),
+            options = pgn[`${title}EngineOptions`],
             lines = options.map(option => [option.Name, option.Value]);
 
         // add engine + version

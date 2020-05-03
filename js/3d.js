@@ -155,7 +155,7 @@ function gamepad_update() {
  * @param {number=} volume
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0, voice, volume=1}={}) {
-    if (!Y.sound || !cube || !cube.sounds)
+    if (!cube || !cube.sounds)
         return;
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
@@ -500,8 +500,9 @@ function startup_3d() {
             theme: [THEMES, Y.theme],
         },
         audio: {
+            crowd_sound: [ON_OFF, 1],
+            move_sound: [ON_OFF, 1],
             sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
-            sound: [ON_OFF, 1],
             voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
             volume: [{min: 0, max: 10, type: 'number'}, 5],
         },
