@@ -599,13 +599,13 @@ function show_tables(type) {
     let is_cup = (type == 'cup'),
         parent = Id('tables'),
         target = is_cup? 'brak': 'stand';
-    Class('[data-x="brak"], [data-x="event"]', 'dn', !is_cup, parent);
-    Class('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', 'dn', is_cup, parent);
+    S('[data-x="brak"], [data-x="event"]', is_cup, parent);
+    S('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', !is_cup, parent);
 
     Class('div.tab', '-active', true, parent);
     Class(`[data-x="${target}"]`, 'active', true, parent);
-    Class('div.scroller', 'dn', true, parent);
-    Class(`#table-${target}`, '-dn');
+    Hide('div.scroller', parent);
+    Show(`#table-${target}`);
 }
 
 /**
@@ -1468,8 +1468,9 @@ function handle_board_events(board, type, value) {
 /**
  * Select a tab and open the corresponding table
  * @param {string|Node} sel tab name or node
+ * @param {boolean=} hide_table hide the corresponding table (but PV is shared!)
  */
-function open_table(sel) {
+function open_table(sel, hide_table=true) {
     if (typeof(sel) == 'string')
         sel = _(`div.tab[data-x="${sel}"]`);
 
@@ -1480,8 +1481,9 @@ function open_table(sel) {
 
     Class(active, '-active');
     Class(sel, 'active');
-    Class(`#table-${active.dataset.x}`, 'dn');
-    Class(node, '-dn');
+    if (hide_table)
+        Hide(`#table-${active.dataset.x}`);
+    Show(node);
 
     opened_table(node, key, sel);
 }
@@ -1500,11 +1502,18 @@ function opened_table(node, name, tab) {
     case 'info':
         HTML(node, HTML('#desc'));
         break;
+    // change order + switch to default tab
     case 'pv':
-        LS('PV OPENED');
-        LS(tab);
-        let parent = Parent(tab);
-        LS(parent.id);
+        let parent = Parent(tab),
+            is_chart = (parent.id == 'chart-tabs');
+        Style('#table-pv', `order:${is_chart? 3: 1}`);
+        if (is_chart)
+            open_table('engine', false);
+        else {
+            let active = _('#chart-tabs .active');
+            if (active && active.dataset.x == 'pv')
+                open_table('eval', false);
+        }
         break;
     case 'season':
         download_table('gamelist.json', name, analyse_seasons);

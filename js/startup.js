@@ -121,8 +121,8 @@ function check_hash_special() {
     Class('#live', 'red', is_live);
     change_theme();
 
-    Class('[data-x="season"], [data-x="game"]', 'dn', is_live, parent);
-    Class('[data-x="log"]', 'dn', !is_live, parent);
+    S('[data-x="season"], [data-x="game"]', !is_live, parent);
+    S('[data-x="log"]', is_live, parent);
 }
 
 /**

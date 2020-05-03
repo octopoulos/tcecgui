@@ -1,7 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
+2020-05-03 : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 2020-05-03 : 2020-05-03 : shortcut 1 & 2: can make a copy of any table appear on the top right
 2020-05-03 : 2020-04-13 : click on PV => keyboard should move in PV
 2020-05-03 : 2020-04-18 : handle keys correctly: proper key timings + hold key + button mapping
@@ -102,6 +102,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 -          : 2020-05-01 : make charts work again
+-          : 2020-05-03 : enable javascript timer
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:

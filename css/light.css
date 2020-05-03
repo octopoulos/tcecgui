@@ -831,16 +831,16 @@ grid {
     color: rgb(0, 0, 0, 0.5);
 }
 #chart-tabs {
-    order: 1;
-}
-#table-pv {
     order: 2;
 }
-#charts {
+#table-pv {
     order: 3;
 }
-#table-pva {
+#charts {
     order: 4;
+}
+#table-pva {
+    order: 5;
 }
 
 /* extras */

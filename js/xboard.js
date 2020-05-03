@@ -859,13 +859,14 @@ class XBoard {
         ply = Clamp(ply, 0, this.moves.length - 1);
         if (this.ply == ply)
             return false;
-        this.ply = ply;
 
         // update the FEN
         // TODO: if delta = 1 => should add_move instead => faster
         let move = this.moves[ply];
         if (!move)
             return false;
+
+        this.ply = ply;
         this.set_fen(move.fen, true);
 
         if (this.hook)
