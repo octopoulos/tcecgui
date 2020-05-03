@@ -17,7 +17,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, DEV, Events, Floor, Hide,
-HTML, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, Show, Split, Style, T, timers, update_svg, Upper
+HTML, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, Show, Split, Style, T, timers, update_svg, Upper,
+Y
 */
 'use strict';
 
@@ -47,9 +48,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1',
     TIMEOUT_CLICK = 200,
-    TIMEOUT_HIGHLIGHT = 1100,
-    TIMEOUT_PLAY = 1000,
-    TIMEOUT_REPEAT = 50,
+    TIMEOUT_REPEAT = 40,
     TIMEOUT_REPEAT_INITIAL = 500;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,9 +78,9 @@ class XBoard {
      * @example
      * - border         // frame size
      * - dims           // [num_col, num_row]
-     * - history        // show history?
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' too
+     * - list           // show move list history
      * - mode         // 3d, canvas, html, text
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
      * - pv_id          // extra output selector for PV list
@@ -94,9 +93,9 @@ class XBoard {
         // options
         this.border = options.border || 2;
         this.dims = options.dims || [8, 8];
-        this.history = options.history;
         this.hook = options.hook;
         this.id = options.id;
+        this.list = options.list;
         this.mode = options.mode || 'html';
         this.notation = options.notation || 6;
         this.pv_id = options.pv_id;                     // extra container for PV list
@@ -109,15 +108,15 @@ class XBoard {
         this.coords = {};
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
         this.fen = START_FEN;                           // current fen
-        this.fens = {};                                 // fens for PV
         this.grid = {};
         this.high_color = '';                           // highlight color
+        this.high_delay = 1100;                         // if smooth + history => delay highlighting
         this.high_size = 0;                             // highlight size in .em
         this.hold = null;                               // mouse/touch hold target
         this.hold_time = 0;                             // last time the event was repeated
         this.move = null;                               // current move
         this.move2 = null;                              // previous move
-        this.moves = [];                                // moves history
+        this.moves = [];                                // move list
         this.node = _(this.id);
         this.nodes = {};
         this.pieces = {};                               // b: [[found, row, col], ...]
@@ -290,6 +289,9 @@ class XBoard {
 
     /**
      * Animate / render a move
+     * - high_delay = 0 => always show the highlight in smooth/history
+     * -            < 0    never  ------------------------------------
+     * -            > 0    will   ------------------------------------
      * @param {Move=} move
      * @param {boolean} animate
      */
@@ -298,9 +300,10 @@ class XBoard {
             return;
         let func = `animate_${this.mode}`;
         if (this[func]) {
-            this[func](move, animate);
-            if (!animate)
-                add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, TIMEOUT_HIGHLIGHT);
+            let delay = this.high_delay;
+            this[func](move, animate || !delay);
+            if (!animate && delay > 0)
+                add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, delay);
         }
     }
 
@@ -338,7 +341,7 @@ class XBoard {
         if (!animate)
             return;
 
-        LS(`${move.from}${move.to}`);
+        // LS(`${move.from}${move.to}`);
         let color = this.high_color,
             node_from = this.nodes[move.from],
             node_to = this.nodes[move.to],
@@ -370,9 +373,14 @@ class XBoard {
     event_hook(callback) {
         let that = this;
 
-        Events(this.node, 'contextmenu', e => {
-            e.preventDefault();
+        C(this.node, () => {
+            callback(that, 'activate');
         });
+
+        // disable right click
+        Events('[data-x]', 'contextmenu', e => {
+            e.preventDefault();
+        }, {}, this.node);
 
         // controls
         C('[data-x]', function() {
@@ -438,7 +446,7 @@ class XBoard {
                     clear_timeout(`click_prev`);
                 }
             }
-        });
+        }, {}, this.node);
 
         // moving a piece by click
         C(this.xmoves, e => {
@@ -483,7 +491,7 @@ class XBoard {
 
         this.hold_time = now;
 
-        let timeout = (name == 'play')? TIMEOUT_PLAY: (step? TIMEOUT_REPEAT: TIMEOUT_REPEAT_INITIAL);
+        let timeout = (name == 'play')? Y.play_every: (step? TIMEOUT_REPEAT: TIMEOUT_REPEAT_INITIAL);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
     }
 
@@ -520,11 +528,13 @@ class XBoard {
         }).join('');
 
         HTML(this.node, [
-            '<div class="xframe"></div>',
-            '<grid class="xsquares"></grid>',
-            '<div class="xpieces"></div>',
-            `<hori class="xcontrol">${controls}</hori>`,
-            `<div class="xmoves${this.history? '': ' dn'}"></div>`,
+            '<div>',
+                '<div class="xframe"></div>',
+                '<grid class="xsquares"></grid>',
+                '<div class="xpieces"></div>',
+                `<hori class="xcontrol">${controls}</hori>`,
+            '</div>',
+            `<div class="xmoves${this.list? '': ' dn'}"></div>`,
         ].join(''));
 
         this.xmoves = _('.xmoves', this.node);
@@ -580,17 +590,7 @@ class XBoard {
             ply = 0;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
-        return this.set_ply(0);
-    }
-
-    /**
-     * New game
-     * - reset the moves
-     */
-    new_game() {
-        this.moves.length = 0;
-        this.ply = 0;
-        HTML(this.xmoves, '');
+        return this.set_ply(ply);
     }
 
     /**
@@ -633,7 +633,7 @@ class XBoard {
         let func = `render_${this.mode}`;
         if (this[func]) {
             this[func]();
-            this.animate(this.move);
+            this.animate(this.move, this.smooth);
         }
     }
 
@@ -800,6 +800,15 @@ class XBoard {
     }
 
     /**
+     * Reset the moves
+     */
+    reset() {
+        this.moves.length = 0;
+        this.ply = 0;
+        HTML(this.xmoves, '');
+    }
+
+    /**
      * Resize the board to a desired width
      * @param {number=} width
      */
@@ -863,7 +872,7 @@ class XBoard {
             this.hook(this, 'ply', move);
 
         this.update_cursor(ply);
-        if (animate == undefined && ply == this.moves.length - 1)
+        if (animate == undefined && (!this.smooth || ply == this.moves.length - 1))
             animate = true;
         this.animate(move, animate);
         return true;

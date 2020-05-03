@@ -16,12 +16,12 @@ let HOST = 'https://tcec-chess.com',
     HOST_ARCHIVE = `${HOST}/archive/json`,
     LINKS = {},
     TIMEOUTS = {
-        adblock: 15,
-        banner: 30,
+        adblock: 15 * 1000,
+        banner: 30 * 1000,
         google_ad: -1,                  // disabled
-        tables: 3,
-        twitch: 10,
-        users: 5,
+        tables: 3 * 1000,
+        twitch: 5 * 1000,
+        users: 5 * 1000,
     };
 
 /**

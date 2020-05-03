@@ -376,7 +376,7 @@ grid {
 }
 .xcontrol {
     color: #007bff;
-    font-size: 0.35em;
+    font-size: 0.34em;
     margin-bottom: 0.2em;
     width: calc(100% - 4px);
 }
@@ -400,11 +400,12 @@ grid {
     font-size: 13px;
     line-height: 1.2;
     overflow-y: auto;
-    padding: 0.2em;
+    padding: 0.2em 0.3em;
     position: relative;
     width: 100%;
 }
-#player1 .live-pv {
+#player1 .live-pv,
+#pv1 .xmoves {
     background: #000;
 }
 .xmoves {
@@ -429,14 +430,16 @@ grid {
 .real {
     color: #07f;
 }
-#player1 .real {
+#player1 .real,
+#pv1 .real {
     color: #7ce
 }
 .turn {
     color: #222;
     font-size: 13px;
 }
-#player1 .turn {
+#player1 .turn,
+#pv1 .turn {
     color: #fff;
 }
 .seen {
@@ -445,6 +448,17 @@ grid {
 }
 .void {
     background-color: #191919;
+}
+#pv0 .xmoves,
+#pv1 .xmoves {
+    font-size: 12px;
+    height: 192px;
+    overflow-y: scroll;
+    width: 8em;
+}
+#pv0 .turn,
+#pv1 .turn {
+    font-size: 11px;
 }
 
 /* tables */
@@ -502,7 +516,7 @@ grid {
     max-width: 1200px;
     width: 95%;
 }
-#charts .tab,
+#chart-tabs .tab,
 #right .tab,
 #tables .tab {
     flex: 1;
@@ -521,6 +535,8 @@ grid {
 #table-season grid {
     grid-template-columns: 1fr 1em;
 }
+#table-shortcut1,
+#table-shortcut2,
 #table-winner {
     max-height: 90vh;
     overflow-x: hidden;
@@ -751,6 +767,10 @@ grid {
 }
 
 /* container */
+#ad1,
+#ad2 {
+    max-height: 280px;
+}
 #banners,
 #main {
     margin-bottom: 1em;
@@ -765,9 +785,9 @@ grid {
 }
 #center {
     flex: 2;
-    max-width: 350px;
+    max-width: 320px;
     margin: 4px;
-    min-width: 260px;
+    min-width: 300px;
 }
 #right {
     flex: 2;
@@ -810,12 +830,20 @@ grid {
 .swap:hover {
     color: rgb(0, 0, 0, 0.5);
 }
+#chart-tabs {
+    order: 1;
+}
+#table-pv {
+    order: 2;
+}
+#charts {
+    order: 3;
+}
+#table-pva {
+    order: 4;
+}
 
 /* extras */
-#ad1,
-#ad2 {
-    height: 250px;
-}
 .banner {
     height: 60px;
     max-height: 10vw;

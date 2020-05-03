@@ -115,7 +115,7 @@
                     </div>
                 </hori>
                 <!-- engines -->
-                <horis class="tabs">
+                <horis id="engine-tabs" class="tabs">
                     <div class="tab active" data-x="engine" data-t="Engine Info"></div>
                     <div class="tab" data-x="pv" data-t="PV"></div>
                 </horis>
@@ -177,29 +177,35 @@
                     <i id="material"></i>
                     <horis id="material1" class="fcenter"></horis>
                 </grid>
-                <!-- pv -->
-                <vert id="table-pv">
-                    <div id="pv0" class="xboard"></div>
-                    <div id="pv1" class="xboard"></div>
+                <vert>
+                    <!-- charts -->
+                    <horis id="chart-tabs" class="tabs">
+                        <div class="tab active" data-x="eval" data-t="Eval"></div>
+                        <div class="tab" data-x="time" data-t="Time"></div>
+                        <div class="tab" data-x="speed" data-t="Speed"></div>
+                        <div class="tab" data-x="node" data-t="Nodes"></div>
+                        <div class="tab" data-x="depth" data-t="Depth/SD"></div>
+                        <div class="tab" data-x="tb" data-t="TB"></div>
+                        <div class="tab" data-x="pv" data-t="PV"></div>
+                        <div class="tab" data-x="pva" data-t="PV(A)"></div>
+                    </horis>
+                    <div id="charts">
+                        <canvas id="table-eval" height="250" class="graphs"></canvas>
+                        <canvas id="table-time" height="250" class="graphs dn"></canvas>
+                        <canvas id="table-speed" height="250" class="graphs dn"></canvas>
+                        <canvas id="table-node" height="250" class="graphs dn"></canvas>
+                        <canvas id="table-depth" height="250" class="graphs dn"></canvas>
+                        <canvas id="table-tb" height="250" class="graphs dn"></canvas>
+                    </div>
+                    <!-- pv -->
+                    <vert id="table-pv" class="dn">
+                        <hori id="pv0" class="xboard fastart"></hori>
+                        <hori id="pv1" class="xboard fastart"></hori>
+                    </vert>
+                    <vert id="table-pva" class="dn">
+                        <vert id="pva" class="xboard"></vert>
+                    </vert>
                 </vert>
-                <!-- charts -->
-                <horis id="charts" class="tabs">
-                    <div class="tab active" data-x="eval" data-t="Eval"></div>
-                    <div class="tab" data-x="time" data-t="Time"></div>
-                    <div class="tab" data-x="speed" data-t="Speed"></div>
-                    <div class="tab" data-x="node" data-t="Nodes"></div>
-                    <div class="tab" data-x="depth" data-t="Depth/SD"></div>
-                    <div class="tab" data-x="tb" data-t="TB"></div>
-                    <div class="tab" data-x="pv" data-t="PV"></div>
-                    <div class="tab" data-x="pva" data-t="PV(A)"></div>
-                </horis>
-                <canvas id="table-eval" height="250" class="graphs"></canvas>
-                <canvas id="table-time" height="250" class="graphs dn"></canvas>
-                <canvas id="table-speed" height="250" class="graphs dn"></canvas>
-                <canvas id="table-node" height="250" class="graphs dn"></canvas>
-                <canvas id="table-depth" height="250" class="graphs dn"></canvas>
-                <canvas id="table-tb" height="250" class="graphs dn"></canvas>
-                <div id="table-pva" class="xboard" class="dn"></div>
             </vert>
             <!-- right -->
             <vert id="right">
@@ -214,7 +220,9 @@
                 <horis class="tabs">
                     <div class="tab active" data-x="chat" data-t="Chat"></div>
                     <div class="tab" data-x="winner" data-t="Winners"></div>
-                    <div class="tab" data-x="info" data-t="Information"></div>
+                    <div class="tab" data-x="info" data-t="Info"></div>
+                    <div class="tab" data-x="shortcut1"></div>
+                    <div class="tab" data-x="shortcut2"></div>
                 </horis>
                 <!-- twitch chat -->
                 <vert id="table-chat">
@@ -230,6 +238,8 @@
                 </vert>
                 <div id="table-winner" class="scroller dn"></div>
                 <div id="table-info" class="dn">INFO</div>
+                <div id="table-shortcut1" class="scroller dn"></div>
+                <div id="table-shortcut2" class="scroller dn"></div>
             </vert>
         </hori>
         <!-- ad2 -->

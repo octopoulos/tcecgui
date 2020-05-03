@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+~          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
+2020-05-03 : 2020-05-03 : shortcut 1 & 2: can make a copy of any table appear on the top right
+2020-05-03 : 2020-04-13 : click on PV => keyboard should move in PV
 2020-05-03 : 2020-04-18 : handle keys correctly: proper key timings + hold key + button mapping
 2020-05-03 : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
 2020-05-02 : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
@@ -98,17 +101,15 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-04-13 : click on PV => keyboard should move in PV
--          : 2020-05-02 : pv lists click => use the current FEN and then play a few moves
+-          : 2020-05-01 : make charts work again
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
--          : 2020-05-01 : make charts work again
 medium:
--          : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
--          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-04-13 : add 3d rendering option to the chessboard
+-          : 2020-05-02 : live fen calculation after clicking on a ply
 low:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+-          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 ~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
 -          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
 -          : 2029-04-29 : add SVG connectors to the bracket

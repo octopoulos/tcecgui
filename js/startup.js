@@ -10,9 +10,10 @@
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events,
-fill_languages, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
-init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+api_translate_get, Attrs,
+C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events, fill_languages,
+game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets,
+KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, LoadLibrary, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
 Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
@@ -64,12 +65,20 @@ function adjust_popups() {
  */
 function change_setting_special(name, value) {
     switch (name) {
+    case 'animate':
+    case 'animate_pv':
     case 'board_theme':
     case 'highlight_color':
+    case 'highlight_delay':
     case 'highlight_size':
     case 'notation':
+    case 'notation_pv':
     case 'piece_theme':
         update_board_theme();
+        break;
+    case 'shortcut_1':
+    case 'shortcut_2':
+        update_shortcuts();
         break;
     case 'theme':
         change_theme(value);
@@ -147,6 +156,7 @@ function create_url_list(dico) {
  */
 function init_globals() {
     // load local data directly, and later online data
+    update_shortcuts();
     download_tables(true);
     add_timeout('tables', download_tables, TIMEOUTS.tables);
 
@@ -168,7 +178,7 @@ function init_globals() {
         }
     }, TIMEOUTS.adblock);
 
-    add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+    // add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 }
 
@@ -184,10 +194,10 @@ function insert_google_ad(id) {
         data-ad-slot="4926769371"
         data-ad-format="auto"
         data-full-width-responsive="true">
-        <img src="image/ad${id}.png">
     </ins>
     <div class="adblock dn">
     </div>`;
+    // <img src="image/ad${id}.png">
 
     HTML(`#ad${id} > hori`, html);
     (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -253,8 +263,9 @@ function move_pane(node, dir) {
  * A table was opened => extra handling
  * @param {Node} node
  * @param {string} name
+ * @param {Node} tab
  */
-function opened_table_special(node, name) {
+function opened_table_special(node, name, tab) {
     if (['chat', 'information', 'winner'].includes(name))
         update_twitch(null, null, true);
 }
@@ -371,6 +382,30 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
         node.dataset.id = show? name: '';
 
         set_modal_events(node);
+    }
+}
+
+/**
+ * Update the shortcuts on the top right
+ * - copy the tab text
+ * - copy the table html
+ */
+function update_shortcuts() {
+    for (let id = 1; id <= 2 ; id ++) {
+        let tab = _(`.tab[data-x="shortcut${id}"]`),
+            shortcut = Y[`shortcut_${id}`];
+
+        if (shortcut) {
+            let target = _(`.tab[data-x="${shortcut}"]`);
+            if (target && !target.dataset.t)
+                target = _('[data-t]', target);
+            if (target) {
+                tab.dataset.t = target.dataset.t;
+                translate_node(tab.parentNode);
+                HTML(`#table-shortcut${id}`, HTML(`#table-${shortcut}`));
+            }
+        }
+        S(tab, shortcut);
     }
 }
 
