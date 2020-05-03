@@ -35,8 +35,12 @@ let BOARD_THEMES = {
     board_target,
     BOARDS = {
         board: {},
-        pv0: {},
-        pv1: {},
+        pv0: {
+            pv_id: '#player0 .live-pv',
+        },
+        pv1: {
+            pv_id: '#player1 .live-pv',
+        },
         pva: {
             size: 36,
         },
@@ -58,6 +62,10 @@ let BOARD_THEMES = {
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply = 0,
+    PAGINATIONS = {
+        h2h: 10,
+        sched: 10,
+    },
     pgn,
     PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     PIECE_SIZES = {
@@ -94,7 +102,6 @@ let BOARD_THEMES = {
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
-    time_delta = 0,
     TIMEOUT_PLY_LIVE = 100,             // when moving the cursor, wait a bit before updating live history
     tour_info = {},
     virtual_opened_table_special,
@@ -478,11 +485,12 @@ function create_tables() {
  * @param {string} url url
  * @param {string=} name table name
  * @param {function=} callback
+ * @param {boolean=} add_delta calculate time delta, and add it to the data
  * @param {boolean=} no_cache force to skip the cache
  * @param {boolean=} only_cache only load data if it's cached
  * @param {boolean=} show open the table after wards
  */
-function download_table(url, name, callback, {no_cache, only_cache, show}={}) {
+function download_table(url, name, callback, {add_delta, no_cache, only_cache, show}={}) {
     function _done(data, cached) {
         if (DEV.json & 1) {
             LS(`${url}:`);
@@ -525,11 +533,19 @@ function download_table(url, name, callback, {no_cache, only_cache, show}={}) {
     if (only_cache)
         return;
 
-    Resource(url, (code, data) => {
+    // get the data
+    Resource(url, (code, data, xhr) => {
         if (code != 200)
             return;
+
+        let now = Now(true);
+        if (data && add_delta) {
+            let last_mod = new Date(xhr.getResponseHeader('last-modified'));
+            data.delta = now - last_mod.getTime();
+        }
+
         if (key) {
-            save_storage(key, {data: data, time: Now()});
+            save_storage(key, {data: data, time: Floor(now)});
             if (DEV.json & 1)
                 LS(`cache saved: ${key}`);
         }
@@ -616,7 +632,8 @@ function show_tables(type) {
  */
 function update_table(name, rows, reset=true) {
     let last,
-        data = SetDefault(table_data, name, []),
+        data_x = SetDefault(table_data, Y.x, {}),
+        data = SetDefault(data_x, name, []),
         is_cross = (name == 'cross'),
         // is_event = (name == 'event'),
         is_game = (name == 'game'),
@@ -955,19 +972,19 @@ function check_adjudication(dico, total_moves) {
 
 /**
  * Download the PGN
- * @param {boolean=} reset_time
  */
-function download_pgn(reset_time) {
+function download_pgn() {
     Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
-        if (!reset_time) {
-            let curr_time = new Date(xhr.getResponseHeader('date')),
-                last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            time_delta = curr_time.getTime() - last_mod.getTime();
+
+        if (data) {
+            let last_mod = new Date(xhr.getResponseHeader('last-modified'));
+            data.elapsed = Now(true) - last_mod.getTime() / 1000;
+            data.gameChanged = 1;
         }
+
         pgn = null;
-        data.gameChanged = 1;
         update_pgn(data);
     });
 }
@@ -981,26 +998,28 @@ function download_pgn(reset_time) {
 function update_move_info(ply, move, fresh) {
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
+        id = ply % 2,
         stats = {
             depth: is_book? '-': `${move.d}/${move.sd}`,
             eval: eval_,
-            left: move.tl? FromSeconds(move.tl / 1000).slice(0, -1).map(item => Pad(item)).join(':'): 'n/a',
             node: is_book? '-': FormatUnit(move.n),
             speed: is_book? '-': `${FormatUnit(move.s)}bps`,
             tb: is_book? '-': FormatUnit(move.tb),
-            time: move.mt? FromSeconds(move.mt / 1000).slice(1, -1).map(item => Pad(item)).join(':'): 'n/a',
         };
 
     Keys(stats).forEach(key => {
-        HTML(`#${key}${ply % 2}`, stats[key]);
+        HTML(`#${key}${id}`, stats[key]);
     });
 
     if (fresh)
-        Assign(players[ply % 2], {
+        Assign(players[id], {
+            elapsed: 0,
             eval: eval_,
-            left: move.tl,
-            time: move.mt,
+            left: move.tl * 1,
+            time: move.mt * 1,
         });
+
+    update_clock(id);
 }
 
 /**
@@ -1012,13 +1031,13 @@ function update_move_pv(ply, move) {
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
-        node = Id(`player${id}`),
-        board = xboards[`pv${id}`];
+        board = xboards[`pv${id}`],
+        node = Id(`player${id}`);
 
     HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
     // LS(move.pv);
-    HTML('.live-pv', create_live_pv(ply, move.pv? move.pv.San: ''), node);
+    // HTML('.live-pv', create_live_pv(ply, move.pv? move.pv.San: ''), node);
 
     if (move.pv) {
         board.reset();
@@ -1039,6 +1058,7 @@ function update_pgn(pgn_) {
 
     let headers = pgn.Headers,
         moves = pgn.Moves,
+        new_game = pgn.gameChanged,
         num_move = moves.length,
         overview = Id('table-view'),
         start = pgn.lastMoveLoaded || 0;
@@ -1064,6 +1084,11 @@ function update_pgn(pgn_) {
         });
     }
 
+    if (new_game) {
+        LS(`new game: ${headers.Round}`);
+        pgn.gameChanged = 0;
+    }
+
     if (!num_move)
         return;
 
@@ -1073,7 +1098,7 @@ function update_pgn(pgn_) {
         last_ply = pgn.numMovesToSend + start;
 
     // new game?
-    if (!last_ply || last_ply < num_ply) {
+    if (new_game || !last_ply || last_ply < num_ply) {
         Keys(xboards).forEach(key => {
             xboards[key].reset();
         });
@@ -1107,6 +1132,7 @@ function update_pgn(pgn_) {
     // num_ply % 2 tells us who plays next
     num_ply = board.moves.length;
     let who = num_ply % 2;
+    start_clock(who, finished);
 
     // time control could be different for white and black
     let tc = headers[`${WB_TITLES[who]}TimeControl`];
@@ -1114,9 +1140,6 @@ function update_pgn(pgn_) {
         let items = tc.split('+');
         HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
     }
-
-    S(`#cog${who}`, !finished);
-    Hide(`#cog${1 - who}`);
 
     // 5) engines
     WB_TITLES.forEach((title, id) => {
@@ -1150,22 +1173,24 @@ function update_pgn(pgn_) {
     // material
     let material = move.material,
         materials = [[], []];
-    'qrbnp'.split('').forEach(key => {
-        let value = material[key];
-        if (value) {
-            let id = (value > 0)? 0: 1,
-                color = id? 'b': 'w';
-            for (let i = 0; i < Abs(value); i ++)
-                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
-        }
-    });
+    if (material) {
+        'qrbnp'.split('').forEach(key => {
+            let value = material[key];
+            if (value) {
+                let id = (value > 0)? 0: 1,
+                    color = id? 'b': 'w';
+                for (let i = 0; i < Abs(value); i ++)
+                    materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
+            }
+        });
 
-    for (let id = 0; id < 2; id ++) {
-        let node = Id(`material${id}`),
-            html = HTML(node),
-            material = materials[id].join('');
-        if (html != material)
-            HTML(node, material);
+        for (let id = 0; id < 2; id ++) {
+            let node = Id(`material${id}`),
+                html = HTML(node),
+                material = materials[id].join('');
+            if (html != material)
+                HTML(node, material);
+        }
     }
 
     // 6) chart
@@ -1188,8 +1213,31 @@ function resize_game() {
     }
 }
 
-// LIVE DATA
-////////////
+// LIVE ACTION/DATA
+///////////////////
+
+/**
+ * Clock countdown
+ * @param {number} id
+ */
+function clock_tick(id) {
+    let now = Now(true),
+        player = players[id],
+        elapsed = (now - player.start) * 1000,
+        left = player.left - elapsed,
+        // try to synchronise it with the left time
+        timeout = Floor(left) % 1000 - 1;
+
+    if (isNaN(timeout))
+        return;
+
+    if (timeout < 50)
+        timeout += 100;
+
+    player.elapsed = elapsed;
+    update_clock(id);
+    add_timeout(`clock${id}`, () => {clock_tick(id, now);}, timeout);
+}
 
 /**
  * Create a live PV from a string
@@ -1223,6 +1271,20 @@ function create_live_pv(ply, text) {
  */
 function set_viewers(count) {
     HTML('#table-view td[data-x="viewers"]', count);
+}
+
+/**
+ * Start the clock for one player, and stop it for the other
+ * @param {number} id
+ * @param {boolean=} finished game is over => both clocks will stop
+ */
+function start_clock(id, finished) {
+    S(`#cog${id}`, !finished);
+    Hide(`#cog${1 - id}`);
+
+    players[id].start = Now(true);
+    clear_timeout(`clock${1 - id}`);
+    clock_tick(id);
 }
 
 /**
@@ -1264,6 +1326,7 @@ function update_live_eval(data, id) {
 function update_player_eval(data) {
     let eval_ = data.eval,
         id = data.color,
+        board = xboards[`pv${id}`],
         node = Id(`player${id}`),
         short = get_short_name(data.engine);
 
@@ -1276,7 +1339,11 @@ function update_player_eval(data) {
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
-    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
+
+    // HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
+    LS(data);
+    // board.reset();
+    // board.add_moves(data.pv, num_ply);
 
     // 2) update the engine info in the center
     let stats = {
@@ -1294,6 +1361,21 @@ function update_player_eval(data) {
 
     // chart
     // updateChartDataLive(id);
+}
+
+/**
+ * Update the left + time UI info
+ */
+function update_clock(id) {
+    let player = players[id],
+        elapsed = player.elapsed,
+        left = player.left,
+        time = player.time;
+
+    left = left? FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':'): 'n/a';
+    time = time? FromSeconds(Round((time + elapsed) / 1000)).slice(1, -1).map(item => Pad(item)).join(':'): 'n/a';
+    HTML(`#left${id}`, left);
+    HTML(`#time${id}`, time);
 }
 
 // INPUT / OUTPUT
@@ -1442,8 +1524,7 @@ function handle_board_events(board, type, value) {
         board_target = board;
         if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';
-            board.dirty = 3;
-            board.resize();
+            board.render(3);
         }
         break;
     // move list => ply selected
@@ -1608,8 +1689,8 @@ function set_game_events() {
  * Call this after the structures have been initialised
  */
 function start_game() {
-    create_boards();
     create_tables();
+    create_boards();
 
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);

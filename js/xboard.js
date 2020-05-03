@@ -452,6 +452,9 @@ class XBoard {
         C(this.xmoves, e => {
             callback(that, 'move', e);
         });
+        C(this.pv_node, e => {
+            callback(that, 'move', e);
+        });
         C('.xsquares', e => {
             callback(that, 'square', e);
         }, this.node);
@@ -806,6 +809,7 @@ class XBoard {
         this.moves.length = 0;
         this.ply = 0;
         HTML(this.xmoves, '');
+        HTML(this.pv_node, '');
     }
 
     /**

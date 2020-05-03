@@ -38,7 +38,6 @@ function parse_dev() {
             l: 'load',
             p: 'pv',
             s: 'socket',                // socket messages
-            t: 'time',                  // function execution time
             y: 'ply',
         },
         text = Y.dev || '';

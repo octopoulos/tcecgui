@@ -8,9 +8,9 @@
 globals
 _, add_timeout, analyse_crosstable, bracketDataMain, DEV, get_string, Hide, HOST, HTML, Id, io, LS, newUpdateStandData,
 Prop, save_option, set_viewers, setLastMoveTime, setPgn, setTwitchChange, setUsers, setUsersMain, Show, showBanner,
-time_delta:true, timeDiff:true, TIMEOUTS, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval,
-update_pgn, update_player_eval, update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew,
-updateScheduleData, Y
+timeDiff:true, TIMEOUTS, updateCrashData, updateEngRatingData, updateH2hData, update_live_eval, update_pgn,
+update_player_eval, update_table, updateLiveChartData, updateLiveEvalData, updateLiveEvalDataNew, updateScheduleData,
+Y
 */
 'use strict';
 
@@ -26,12 +26,12 @@ function init_sockets() {
     unlistenLogMain();
 
     // log
-    socket.on('htmlread', datal => {
-        log_socket('htmlread', datal);
-        let data = datal.data,
+    socket.on('htmlread', data => {
+        log_socket('htmlread', data);
+        let data_ = data.data,
             date = new Date().toLocaleTimeString(),
             div = Id('log-wrapper'),
-            text = data.split(/\n|\s\n/).join("<br>");
+            text = data_.split(/\n|\s\n/).join("<br>");
 
         // TODO: change this, not a good way to add nodes
         div.innerHTML += `<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`;
@@ -73,7 +73,6 @@ function init_sockets() {
         timeDiff = 0;
         setPgn(data);
 
-        time_delta = 0;
         update_pgn(data);
     });
     socket.on('schedule', data => {

@@ -1,6 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
+2020-05-03 : 2020-05-03 : accurate javascript clock
+2020-05-03 : 2020-04-13 : modeled 3d pieces, 1.6k polygons for the queen
 2020-05-03 : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
 2020-05-03 : 2020-05-03 : shortcut 1 & 2: can make a copy of any table appear on the top right
 2020-05-03 : 2020-04-13 : click on PV => keyboard should move in PV
@@ -101,22 +104,21 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-05-03 : add pagination to some tables
 -          : 2020-05-01 : make charts work again
--          : 2020-05-03 : enable javascript timer
--          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
 -          : 2020-04-13 : add 3d rendering option to the chessboard
 -          : 2020-05-02 : live fen calculation after clicking on a ply
-low:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
--          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
-~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
--          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
--          : 2029-04-29 : add SVG connectors to the bracket
+-          : 2020-05-03 : delete the old code
+low:
 -          : 2020-04-13 : only load the 3d library/files when the user wants to use it
 ~          : 2020-04-13 : add 3d board
-~          : 2020-04-13 : add 3d pieces
+-          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
+-          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
+~          : 2020-04-23 : add a select in live_log tab => select number of lines including disable
+-          : 2029-04-29 : add SVG connectors to the bracket
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
