@@ -192,10 +192,14 @@ grid {
     line-height: 0.3;
     padding: 0.15em;
 }
+#section {
+    z-index: 1;
+}
 .nav {
     color: #bbb;
     cursor: pointer;
     padding: 0.7em;
+    z-index: 1;
 }
 .nav:hover {
     color: #ddd;
@@ -334,7 +338,7 @@ grid {
     position: relative;
 }
 .xframe {
-    background: #444;
+    background: rgba(0, 0, 0, 0.6);
     position: absolute;
 }
 .xpiece {
@@ -469,6 +473,7 @@ grid {
     overflow-x: auto;
     pointer-events: auto;
     width: 95%;
+    z-index: 1;
 }
 .scroller td {
     padding: 0.8em;
@@ -500,6 +505,7 @@ grid {
     font-size: 0.9em;
     padding: 0.2em 1em;
     text-align: center;
+    z-index: 1;
 }
 .tab:hover {
     color: #05b;
@@ -579,6 +585,7 @@ grid {
 #table-engine {
     margin-bottom: 0.7em;
     width: 100%;
+    z-index: 1;
 }
 #table-engine > div {
     padding: 0.2em;
@@ -771,7 +778,6 @@ grid {
     height: 100%;
     position: fixed;
     width: 100%;
-    z-index: -1;
 }
 #ad1,
 #ad2 {
@@ -864,6 +870,7 @@ grid {
 #twitch1 {
     cursor: pointer;
     padding: 0.5em;
+    z-index: 1;
 }
 #theme1 {
     color: #fff;

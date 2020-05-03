@@ -23,6 +23,9 @@ body {
 }
 
 /* board */
+.xframe {
+    background: rgba(255, 255, 255, 0.08);
+}
 #board .xmoves {
     color: #dcdcdc;
 }

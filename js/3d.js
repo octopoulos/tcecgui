@@ -51,10 +51,19 @@ let audiobox = {
     button_repeat_time,
     buttons = {},
     camera,
+    camera_control,
     camera_id,
+    camera_id2,
     camera_look,
     camera_pos,
     camera_target,
+    CAMERAS = {
+        static: {
+            dir: [0, 0, 0],
+            lerp: [-1, -1, 0],
+            pos: [0, 0, 0],
+        },
+    },
     clock,
     clock2,
     controls,
@@ -112,7 +121,7 @@ let audiobox = {
     t_vector5,
     three_loaded,
     u_vector,
-    use_controls,
+    use_controls = true,
     VECTOR_0,
     VECTOR_X,
     VECTOR_Y,
@@ -351,7 +360,7 @@ function load_model(name, filename, callback) {
 
     if (!draco_loader && filename.includes('-draco')) {
         draco_loader = new T.DRACOLoader();
-        draco_loader.setDecoderPath('js/draco/');
+        draco_loader.setDecoderPath('js/libs/draco/');
         gltf_loader.setDRACOLoader(draco_loader);
     }
 
@@ -528,7 +537,8 @@ function render() {
                     epsilon = (deltas[1] - now2) * SIMULATION_HZ;
 
                 if (step > 0) {
-                    sim_times = sim_times.slice(-1200);
+                    if (sim_times.length > 1200)
+                        sim_times.shift();
                     sim_times.push(clock2.getDelta() / step);
                     let sim_time = sim_times.reduce((a, b) => a + b);
                     debugs.sim_time = `${sim_times.length} : ${Format(sim_time * 1000 / sim_times.length)}ms`;
@@ -653,6 +663,7 @@ function resize_3d() {
 
         if (virtual_random_position)
             camera.position.copy(virtual_random_position(1));
+        set_camera_id('static');
 
         Assign(camera, {
             pos2: camera.position.clone(),
@@ -674,6 +685,57 @@ function resize_3d() {
         controls.addEventListener('controlstart', () => {request_render();});
         controls.update();
     }
+}
+
+/**
+ * Set controls to the current camera
+ * @param {boolean=} pause
+ * @param {Vector3} target
+ * @param {boolean=} transition
+ */
+function set_camera_control(pause, target, transition) {
+    if (pause)
+        next_paused = pause;
+    if (controls) {
+        controls.updateCameraUp();
+        // change pivot
+        if (target) {
+            let dir = t_vector.subVectors(target, camera_pos),
+                line = t_vector2.subVectors(camera_look, camera_pos);
+            target = dir.projectOnVector(line).add(camera_pos);
+        }
+        else if (target == 0)
+            target = t_vector.subVectors(camera_look, camera_pos).normalize().add(camera_pos);
+        else
+            target = camera_look;
+        controls.setLookAt(camera_pos.x, camera_pos.y, camera_pos.z, target.x, target.y, target.z, transition);
+    }
+    camera_control = true;
+}
+
+/**
+ * Set the camera view
+ * @param {string=} id
+ */
+function set_camera_id(id) {
+    // default value
+    if (!id) {
+        id = Y.camera_id;
+        if (!CAMERAS[id])
+            id = 'far';
+    }
+
+    // remember a good camera view
+    let bads = {reverse: 1};
+    for (let id2 of [id, camera_id])
+        if (!bads[id2]) {
+            camera_id2 = id2;
+            break;
+        }
+
+    // change the camera view
+    camera_id = id;
+    save_option('camera_id', id);
 }
 
 /**
@@ -1244,7 +1306,7 @@ function set_modal_events(parent) {
  * Start the 3D engine
  */
 function start_3d() {
-    if (window.THREE)
+    if (T)
         init_3d(true);
     else
         LoadLibrary('./js/4d_.js?version=1', () => {init_3d(true);});
@@ -1276,4 +1338,6 @@ function startup_3d() {
             texture: [['auto', 'on', 'off'], 'auto'],
         },
     });
+
+    window.T = window.T || window.THREE || null;
 }

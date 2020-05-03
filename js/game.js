@@ -10,11 +10,14 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, change_setting, Class, clear_timeout, CreateNode, DEFAULTS, DEV,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, BOARD_MODES,
+C, camera_look, camera_pos, change_setting, Class, clear_timeout, controls, CreateNode, cube:true, DEFAULTS, DEV,
 Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
-Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, Resource, resume_game, Round,
-S, save_option, save_storage, set_3d_events, SetDefault, Show, show_menu, show_modal, Sign, Split, Style, TIMEOUTS,
-Title, Toggle, touch_handle, translate_node, update_svg, Upper, Visible, window, XBoard, Y
+load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, resize_3d, Resource,
+resume_game, Round,
+S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
+show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate_node, update_svg, Upper,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -1211,6 +1214,8 @@ function resize_game() {
             add_timeout('smooth', () => {board.smooth = Y.animate;}, 100);
         }
     }
+
+    resize_3d();
 }
 
 // LIVE ACTION/DATA
@@ -1282,9 +1287,12 @@ function start_clock(id, finished) {
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
-    players[id].start = Now(true);
-    clear_timeout(`clock${1 - id}`);
-    clock_tick(id);
+    clear_timeout('clock0');
+    clear_timeout('clock1');
+    if (!finished) {
+        players[id].start = Now(true);
+        clock_tick(id);
+    }
 }
 
 /**
@@ -1340,8 +1348,8 @@ function update_player_eval(data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    // HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
-    LS(data);
+    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
+    // LS(data);
     // board.reset();
     // board.add_moves(data.pv, num_ply);
 
@@ -1505,6 +1513,26 @@ function game_action_keyup(code) {
     // LS(`keyup: ${code}`);
 }
 
+// 3D SCENE
+///////////
+
+/**
+ * Initialise the 3D engine
+ */
+function init_3d_special() {
+    load_model('pieces', 'export/pieces-draco.glb', object => {
+        cube = object;
+        scene.add(cube);
+    });
+}
+
+/**
+ * Random position for looking at the chessboard
+ */
+function random_position() {
+    return {x: -1.34, y: -1.98, z: 0.97};
+}
+
 // EVENTS
 /////////
 
@@ -1523,7 +1551,10 @@ function handle_board_events(board, type, value) {
     case 'control':
         board_target = board;
         if (value == 'cube') {
-            board.mode = (board.mode == 'html')? 'text': 'html';
+            let modes = BOARD_MODES;
+            board.mode = modes[(modes.indexOf(board.mode) + 1) % modes.length];
+            if (board.mode == '3d')
+                start_3d();
             board.render(3);
         }
         break;
@@ -1731,7 +1762,7 @@ function startup_game() {
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
         },
         board_pv: {
-            animate_pv: [ON_OFF, 0],
+            animate_pv: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
             ply_diff: [['first', 'diverging', 'last'], 'first'],
@@ -1743,4 +1774,7 @@ function startup_game() {
             shortcut_2: [shortcuts, 'off'],
         },
     });
+
+    virtual_init_3d_special = init_3d_special;
+    virtual_random_position = random_position;
 }

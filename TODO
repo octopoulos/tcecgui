@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-13 : add 3d rendering option to the chessboard
+2020-05-03 : 2020-05-03 : create a 3d scene and display the pieces
 2020-05-03 : 2020-04-13 : only load the 3d library/files when the user wants to use it
 2020-05-03 : 2020-05-03 : accurate javascript clock
 2020-05-03 : 2020-04-13 : modeled 3d pieces, 1.6k polygons for the queen
@@ -109,7 +111,6 @@ high:
 -          : 2020-05-01 : make charts work again
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
--          : 2020-04-13 : add 3d rendering option to the chessboard
 -          : 2020-05-02 : live fen calculation after clicking on a ply
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 -          : 2020-05-03 : delete the old code

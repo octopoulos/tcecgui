@@ -22,7 +22,8 @@ Y
 */
 'use strict';
 
-let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
+let BOARD_MODES = ['html', 'text', '3d'],
+    COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     CONTROLS = {
         start: {
             class: 'mirror',
@@ -892,7 +893,11 @@ class XBoard {
             if (!parent)
                 continue;
 
+            // node might disappear when the PV is updated
             let node = _(`[data-i="${ply}"]`, parent);
+            if (!node)
+                continue;
+
             Class('.seen', '-seen', true, parent);
             Class(node, 'seen');
 
