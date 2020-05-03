@@ -767,6 +767,12 @@ grid {
 }
 
 /* container */
+#meta-canvas {
+    height: 100%;
+    position: fixed;
+    width: 100%;
+    z-index: -1;
+}
 #ad1,
 #ad2 {
     max-height: 280px;

@@ -17,372 +17,380 @@
     <script src="js/startup.js"></script>
     <script src="js/config.js"></script>
     <script src="js/script.js"></script>
+    <script src="../three.js/build/three.js"></script>
+    <script src="js/libs/stats.js"></script>
+    <script src="js/libs/GLTFLoader.js"></script>
+    <script src="js/libs/DRACOLoader.js"></script>
+    <script src="js/libs/camera-controls.js"></script>
     <link href="css/light.css" rel="stylesheet">
     <!-- END -->
     <!-- {SCRIPT} -->
     <!-- {STYLE} -->
 </head>
 <body class="noselect">
-    <div id="overlay" class="dn"></div>
-    <div id="banner" class="dn"></div>
-    <div id="debug"></div>
-    <div id="popup" class="popup"></div>
-    <vert id="modal" class="popup"></vert>
-    <!-- everything from here cannot be translated -->
-    <div class="notranslate">
-    <horis id="header" class="fbetween">
-        <horis class="faround fabase">
-            <div id="section">
-                <a id="live" class="nav" href="#x=live" data-t="Live"></a>
-                <a id="archive" class="nav" href="#x=archive" data-t="Archive"></a>
-            </div>
-            <div id="info" class="nav">
-                <i data-t="Info"></i>
-                <i data-svg="down"></i>
-            </div>
-            <div id="navigate" class="nav">
-                <i data-t="Navigate"></i>
-                <i data-svg="down"></i>
-            </div>
-            <div id="download" class="nav">
-                <i data-t="Download"></i>
-                <i data-svg="down"></i>
-            </div>
-            <div id="options" class="nav">
-                <i data-t="Options"></i>
-                <i data-svg="down"></i>
-            </div>
-            <div id="articles" class="nav">
-                <i data-t="Articles"></i>
-                <i data-svg="down"></i>
-            </div>
-        </horis>
-        <hori>
-            <i id="theme0" data-svg="sun" class="dn"></i>
-            <i id="theme1" data-svg="moon" class="dn"></i>
-        </hori>
+<vert id="meta-canvas">
+    <canvas id="canvas"></canvas>
+</vert>
+<div id="overlay" class="dn"></div>
+<div id="banner" class="dn"></div>
+<div id="debug"></div>
+<div id="popup" class="popup"></div>
+<vert id="modal" class="popup"></vert>
+<!-- everything from here cannot be translated -->
+<div class="notranslate">
+<horis id="header" class="fbetween">
+    <horis class="faround fabase">
+        <div id="section">
+            <a id="live" class="nav" href="#x=live" data-t="Live"></a>
+            <a id="archive" class="nav" href="#x=archive" data-t="Archive"></a>
+        </div>
+        <div id="info" class="nav">
+            <i data-t="Info"></i>
+            <i data-svg="down"></i>
+        </div>
+        <div id="navigate" class="nav">
+            <i data-t="Navigate"></i>
+            <i data-svg="down"></i>
+        </div>
+        <div id="download" class="nav">
+            <i data-t="Download"></i>
+            <i data-svg="down"></i>
+        </div>
+        <div id="options" class="nav">
+            <i data-t="Options"></i>
+            <i data-svg="down"></i>
+        </div>
+        <div id="articles" class="nav">
+            <i data-t="Articles"></i>
+            <i data-svg="down"></i>
+        </div>
     </horis>
-    <vert>
-        <!-- banners -->
-        <horis id="banners" class="fbetween fastart">
-            <div>
-                <img src="image/tcec2.jpg" class="banner" alt="TCEC">
-                <img src="image/cd.jpg" class="banner" alt="Chessdom">
-            </div>
-            <!-- ad1 -->
-            <div id="ad1">
-                <hori class="google-ad"></hori>
-            </div>
-            <form target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
-                <input type="hidden" name="cmd" value="_s-xclick">
-                <input type="hidden" name="hosted_button_id" value="L84QRRQJ88CYQ">
-                <input type="image" class="banner" src="image/paypal3.jpg" name="submit" alt="PayPal - The safer, easier way to pay online!">
-            </form>
-        </horis>
-        <div id="table-view" class="scroller"></div>
-        <hori id="main" class="fcenter fastart">
-            <!-- left -->
-            <vert id="left">
-                <hori class="swaps fend">
-                    <div class="swap mirror">
-                        <i data-svg="next"></i>
-                    </div>
-                    <div class="swap">
-                        <i data-svg="next"></i>
-                    </div>
-                </hori>
-                <div id="board" class="xboard"></div>
-                <vert id="lives">
-                    <!-- lives -->
-                    <horis class="tabs">
-                        <div class="tab active" data-x="live0">Live 1</div>
-                        <div class="tab" data-x="live1">Live 2</div>
-                    </horis>
-                    <div id="table-live0"></div>
-                    <div id="table-live1" class="dn"></div>
-                    <div id="player0"></div>
-                    <div id="player1"></div>
-                </vert>
-            </vert>
-            <!-- center -->
-            <vert id="center">
-                <hori class="swaps fend">
-                    <div class="swap mirror">
-                        <i data-svg="next"></i>
-                    </div>
-                    <div class="swap">
-                        <i data-svg="next"></i>
-                    </div>
-                </hori>
-                <!-- engines -->
-                <horis id="engine-tabs" class="tabs">
-                    <div class="tab active" data-x="engine" data-t="Engine Info"></div>
-                    <div class="tab" data-x="pv" data-t="PV"></div>
-                </horis>
-                <grid id="table-engine" class="grid3">
-                    <i id="info0" class="icon">
-                        <img src="theme/wikipedia/wk.svg">
-                    </i>
-                    <i></i>
-                    <i id="info1" class="icon">
-                        <img src="theme/wikipedia/bk.svg">
-                    </i>
-                    <div id="engine0">&nbsp;</div>
-                    <i></i>
-                    <div id="engine1">&nbsp;</div>
-                    <div class="logo">
-                        <img id="logo0" src="image/tcec.jpg">
-                    </div>
-                    <i></i>
-                    <div class="logo">
-                        <img id="logo1" src="image/tcec.jpg">
-                    </div>
-                    <div id="eval0"></div>
-                    <vert class="fcenter">
-                        <div id="eval" data-t="Eval"></div>
-                    </vert>
-                    <div id="eval1"></div>
-                    <div id="depth0"></div>
-                    <div data-t="{Depth}/{SD}"></div>
-                    <div id="depth1"></div>
-                    <div id="speed0"></div>
-                    <div data-t="Speed"></div>
-                    <div id="speed1"></div>
-                    <div id="node0"></div>
-                    <div data-t="Nodes"></div>
-                    <div id="node1"></div>
-                    <div id="tb0"></div>
-                    <div data-t="TB Hits"></div>
-                    <div id="tb1"></div>
-                    <div id="score0"></div>
-                    <div data-t="{Score}({Elo})"></div>
-                    <div id="score1"></div>
-                    <div id="left0">&nbsp;</div>
-                    <i></i>
-                    <div id="left1"></div>
-                    <div class="pr">
-                        <div id="time0">&nbsp;</div>
-                        <div id="cog0" class="dn">
-                            <i data-svg="cog"></i>
-                        </div>
-                    </div>
-                    <i></i>
-                    <div class="pr">
-                        <div id="time1"></div>
-                        <div id="cog1" class="dn">
-                            <i data-svg="cog"></i>
-                        </div>
-                    </div>
-                    <horis id="material0" class="fcenter"></horis>
-                    <i id="material"></i>
-                    <horis id="material1" class="fcenter"></horis>
-                </grid>
-                <vert>
-                    <!-- charts -->
-                    <horis id="chart-tabs" class="tabs">
-                        <div class="tab active" data-x="eval" data-t="Eval"></div>
-                        <div class="tab" data-x="time" data-t="Time"></div>
-                        <div class="tab" data-x="speed" data-t="Speed"></div>
-                        <div class="tab" data-x="node" data-t="Nodes"></div>
-                        <div class="tab" data-x="depth" data-t="Depth/SD"></div>
-                        <div class="tab" data-x="tb" data-t="TB"></div>
-                        <div class="tab" data-x="pv" data-t="PV"></div>
-                        <div class="tab" data-x="pva" data-t="PV(A)"></div>
-                    </horis>
-                    <div id="charts">
-                        <canvas id="table-eval" height="250" class="graphs"></canvas>
-                        <canvas id="table-time" height="250" class="graphs dn"></canvas>
-                        <canvas id="table-speed" height="250" class="graphs dn"></canvas>
-                        <canvas id="table-node" height="250" class="graphs dn"></canvas>
-                        <canvas id="table-depth" height="250" class="graphs dn"></canvas>
-                        <canvas id="table-tb" height="250" class="graphs dn"></canvas>
-                    </div>
-                    <!-- pv -->
-                    <vert id="table-pv" class="dn">
-                        <hori id="pv0" class="xboard fastart"></hori>
-                        <hori id="pv1" class="xboard fastart"></hori>
-                    </vert>
-                    <vert id="table-pva" class="dn">
-                        <vert id="pva" class="xboard"></vert>
-                    </vert>
-                </vert>
-            </vert>
-            <!-- right -->
-            <vert id="right">
-                <hori class="swaps fend">
-                    <div class="swap mirror">
-                        <i data-svg="next"></i>
-                    </div>
-                    <div class="swap">
-                        <i data-svg="next"></i>
-                    </div>
-                </hori>
-                <horis class="tabs">
-                    <div class="tab active" data-x="chat" data-t="Chat"></div>
-                    <div class="tab" data-x="winner" data-t="Winners"></div>
-                    <div class="tab" data-x="info" data-t="Info"></div>
-                    <div class="tab" data-x="shortcut1"></div>
-                    <div class="tab" data-x="shortcut2"></div>
-                </horis>
-                <!-- twitch chat -->
-                <vert id="table-chat">
-                    <vert class="w100">
-                        <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
-                        <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
-                    </vert>
-                    <hori id="twitch-theme" class="fend">
-                        <i id="twitch0" data-svg="sun" class="dn"></i>
-                        <i id="twitch1" data-svg="moon" class="dn"></i>
-                        <i id="hide-chat" data-svg="x" class="dn"></i>
-                    </hori>
-                </vert>
-                <div id="table-winner" class="scroller dn"></div>
-                <div id="table-info" class="dn">INFO</div>
-                <div id="table-shortcut1" class="scroller dn"></div>
-                <div id="table-shortcut2" class="scroller dn"></div>
-            </vert>
-        </hori>
-        <!-- ad2 -->
-        <div id="ad2">
+    <hori>
+        <i id="theme0" data-svg="sun" class="dn"></i>
+        <i id="theme1" data-svg="moon" class="dn"></i>
+    </hori>
+</horis>
+<vert>
+    <!-- banners -->
+    <horis id="banners" class="fbetween fastart">
+        <div>
+            <img src="image/tcec2.jpg" class="banner" alt="TCEC">
+            <img src="image/cd.jpg" class="banner" alt="Chessdom">
+        </div>
+        <!-- ad1 -->
+        <div id="ad1">
             <hori class="google-ad"></hori>
         </div>
-        <!-- tables -->
-        <vert id="tables">
-            <horis class="tabs">
-                <div class="tab" data-x="season" data-t="Seasons"></div>
-                <div class="tab" data-x="game" data-t="Games"></div>
-                <div class="tab dn" data-x="brak">
-                    <i data-svg="medal"></i>
-                    <i data-t="Brackets"></i>
+        <form target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
+            <input type="hidden" name="cmd" value="_s-xclick">
+            <input type="hidden" name="hosted_button_id" value="L84QRRQJ88CYQ">
+            <input type="image" class="banner" src="image/paypal3.jpg" name="submit" alt="PayPal - The safer, easier way to pay online!">
+        </form>
+    </horis>
+    <div id="table-view" class="scroller"></div>
+    <hori id="main" class="fcenter fastart">
+        <!-- left -->
+        <vert id="left">
+            <hori class="swaps fend">
+                <div class="swap mirror">
+                    <i data-svg="next"></i>
                 </div>
-                <div class="tab dn" data-x="event">
-                    <i data-svg="x"></i>
-                    <i data-t="EventTable"></i>
+                <div class="swap">
+                    <i data-svg="next"></i>
                 </div>
-                <div class="tab active" data-x="stand">
-                    <i data-svg="medal"></i>
-                    <i data-t="Standings"></i>
+            </hori>
+            <div id="board" class="xboard"></div>
+            <vert id="lives">
+                <!-- lives -->
+                <horis class="tabs">
+                    <div class="tab active" data-x="live0">Live 1</div>
+                    <div class="tab" data-x="live1">Live 2</div>
+                </horis>
+                <div id="table-live0"></div>
+                <div id="table-live1" class="dn"></div>
+                <div id="player0"></div>
+                <div id="player1"></div>
+            </vert>
+        </vert>
+        <!-- center -->
+        <vert id="center">
+            <hori class="swaps fend">
+                <div class="swap mirror">
+                    <i data-svg="next"></i>
                 </div>
-                <div class="tab" data-x="cross">
-                    <i data-svg="x"></i>
-                    <i data-t="Crosstable"></i>
+                <div class="swap">
+                    <i data-svg="next"></i>
                 </div>
-                <div class="tab" data-x="h2h">
-                    <i data-svg="theater"></i>
-                    <i data-t="H2H"></i>
-                </div>
-                <div class="tab" data-x="sched">
-                    <i data-svg="calendar"></i>
-                    <i data-t="Schedule"></i>
-                </div>
-                <div class="tab" data-x="stats">
-                    <i data-svg="info"></i>
-                    <i data-t="Event Stats"></i>
-                </div>
-                <div class="tab" data-x="log">
-                    <i data-svg="log"></i>
-                    <i data-t="Livelog"></i>
-                </div>
-                <div class="tab" data-x="crash">
-                    <i data-svg="crash"></i>
-                    <i data-t="Crash info"></i>
-                </div>
+            </hori>
+            <!-- engines -->
+            <horis id="engine-tabs" class="tabs">
+                <div class="tab active" data-x="engine" data-t="Engine Info"></div>
+                <div class="tab" data-x="pv" data-t="PV"></div>
             </horis>
-            <div id="table-season" class="scroller dn"></div>
-            <div id="table-game" class="scroller dn"></div>
-            <div id="table-brak" class="scroller dn"></div>
-            <div id="table-event" class="scroller dn"></div>
-            <div id="table-stand" class="scroller dn"></div>
-            <div id="table-cross" class="scroller dn"></div>
-            <div id="table-h2h" class="scroller dn"></div>
-            <div id="table-sched" class="scroller dn"></div>
-            <div id="table-stats" class="scroller dn"></div>
-            <div id="table-log" class="scroller dn">
-                <hori class="fbetween">
-                    <div></div>
-                    <div>
-                        <i data-t="Lines"></i>
-                        <select od="live-log"></select>
+            <grid id="table-engine" class="grid3">
+                <i id="info0" class="icon">
+                    <img src="theme/wikipedia/wk.svg">
+                </i>
+                <i></i>
+                <i id="info1" class="icon">
+                    <img src="theme/wikipedia/bk.svg">
+                </i>
+                <div id="engine0">&nbsp;</div>
+                <i></i>
+                <div id="engine1">&nbsp;</div>
+                <div class="logo">
+                    <img id="logo0" src="image/tcec.jpg">
+                </div>
+                <i></i>
+                <div class="logo">
+                    <img id="logo1" src="image/tcec.jpg">
+                </div>
+                <div id="eval0"></div>
+                <vert class="fcenter">
+                    <div id="eval" data-t="Eval"></div>
+                </vert>
+                <div id="eval1"></div>
+                <div id="depth0"></div>
+                <div data-t="{Depth}/{SD}"></div>
+                <div id="depth1"></div>
+                <div id="speed0"></div>
+                <div data-t="Speed"></div>
+                <div id="speed1"></div>
+                <div id="node0"></div>
+                <div data-t="Nodes"></div>
+                <div id="node1"></div>
+                <div id="tb0"></div>
+                <div data-t="TB Hits"></div>
+                <div id="tb1"></div>
+                <div id="score0"></div>
+                <div data-t="{Score}({Elo})"></div>
+                <div id="score1"></div>
+                <div id="left0">&nbsp;</div>
+                <i></i>
+                <div id="left1"></div>
+                <div class="pr">
+                    <div id="time0">&nbsp;</div>
+                    <div id="cog0" class="dn">
+                        <i data-svg="cog"></i>
                     </div>
+                </div>
+                <i></i>
+                <div class="pr">
+                    <div id="time1"></div>
+                    <div id="cog1" class="dn">
+                        <i data-svg="cog"></i>
+                    </div>
+                </div>
+                <horis id="material0" class="fcenter"></horis>
+                <i id="material"></i>
+                <horis id="material1" class="fcenter"></horis>
+            </grid>
+            <vert>
+                <!-- charts -->
+                <horis id="chart-tabs" class="tabs">
+                    <div class="tab active" data-x="eval" data-t="Eval"></div>
+                    <div class="tab" data-x="time" data-t="Time"></div>
+                    <div class="tab" data-x="speed" data-t="Speed"></div>
+                    <div class="tab" data-x="node" data-t="Nodes"></div>
+                    <div class="tab" data-x="depth" data-t="Depth/SD"></div>
+                    <div class="tab" data-x="tb" data-t="TB"></div>
+                    <div class="tab" data-x="pv" data-t="PV"></div>
+                    <div class="tab" data-x="pva" data-t="PV(A)"></div>
+                </horis>
+                <div id="charts">
+                    <canvas id="table-eval" height="250" class="graphs"></canvas>
+                    <canvas id="table-time" height="250" class="graphs dn"></canvas>
+                    <canvas id="table-speed" height="250" class="graphs dn"></canvas>
+                    <canvas id="table-node" height="250" class="graphs dn"></canvas>
+                    <canvas id="table-depth" height="250" class="graphs dn"></canvas>
+                    <canvas id="table-tb" height="250" class="graphs dn"></canvas>
+                </div>
+                <!-- pv -->
+                <vert id="table-pv" class="dn">
+                    <hori id="pv0" class="xboard fastart"></hori>
+                    <hori id="pv1" class="xboard fastart"></hori>
+                </vert>
+                <vert id="table-pva" class="dn">
+                    <vert id="pva" class="xboard"></vert>
+                </vert>
+            </vert>
+        </vert>
+        <!-- right -->
+        <vert id="right">
+            <hori class="swaps fend">
+                <div class="swap mirror">
+                    <i data-svg="next"></i>
+                </div>
+                <div class="swap">
+                    <i data-svg="next"></i>
+                </div>
+            </hori>
+            <horis class="tabs">
+                <div class="tab active" data-x="chat" data-t="Chat"></div>
+                <div class="tab" data-x="winner" data-t="Winners"></div>
+                <div class="tab" data-x="info" data-t="Info"></div>
+                <div class="tab" data-x="shortcut1"></div>
+                <div class="tab" data-x="shortcut2"></div>
+            </horis>
+            <!-- twitch chat -->
+            <vert id="table-chat">
+                <vert class="w100">
+                    <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                    <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
+                </vert>
+                <hori id="twitch-theme" class="fend">
+                    <i id="twitch0" data-svg="sun" class="dn"></i>
+                    <i id="twitch1" data-svg="moon" class="dn"></i>
+                    <i id="hide-chat" data-svg="x" class="dn"></i>
                 </hori>
-                <ul id="log"></ul>
-            </div>
-            <div id="table-crash" class="scroller dn"></div>
+            </vert>
+            <div id="table-winner" class="scroller dn"></div>
+            <div id="table-info" class="dn">INFO</div>
+            <div id="table-shortcut1" class="scroller dn"></div>
+            <div id="table-shortcut2" class="scroller dn"></div>
         </vert>
-    </vert>
-    <!-- twitch video -->
-    <hori class="fcenter fastart">
-        <vert>
-            <iframe
-                id="twitch-vid" class="dn" height="400" width="340" frameborder="0" scrolling="no"
-                allowfullscreen="true" autoplay="true" muted="true">
-            </iframe>
-            <a id="show-video" class="dn" data-t="Enable Twitch channel"></a>
-        </vert>
-        <i id="hide-video" data-svg="x" class="dn"></i>
     </hori>
+    <!-- ad2 -->
+    <div id="ad2">
+        <hori class="google-ad"></hori>
     </div>
-    <!-- now everything can be translated again -->
-    <div id="adblock" class="dn">
-        TCEC is based on voluntary work.<br>
-        Please consider whitelisting https://tcec-chess.com<br>
-        in your ad blocker - or send a donation. Thank you!
-    </div>
-    <!-- footer -->
-    <vert id="footer">
-        <div id="desc">
-            <p>
-                <b>TCEC</b>
-                (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom
-                in cooperation with Chessdom Arena.
-                The goal is to provide the viewers with a live broadcast of long time control, quality chess
-                - played strictly between computer chess engines created by different programmers.
-            </p>
-            <p>
-                One Season is divided into several Stages and lasts about 3-4 months.
-                The winner of the Season will be the TCEC Grand Champion.
-            </p>
+    <!-- tables -->
+    <vert id="tables">
+        <horis class="tabs">
+            <div class="tab" data-x="season" data-t="Seasons"></div>
+            <div class="tab" data-x="game" data-t="Games"></div>
+            <div class="tab dn" data-x="brak">
+                <i data-svg="medal"></i>
+                <i data-t="Brackets"></i>
+            </div>
+            <div class="tab dn" data-x="event">
+                <i data-svg="x"></i>
+                <i data-t="EventTable"></i>
+            </div>
+            <div class="tab active" data-x="stand">
+                <i data-svg="medal"></i>
+                <i data-t="Standings"></i>
+            </div>
+            <div class="tab" data-x="cross">
+                <i data-svg="x"></i>
+                <i data-t="Crosstable"></i>
+            </div>
+            <div class="tab" data-x="h2h">
+                <i data-svg="theater"></i>
+                <i data-t="H2H"></i>
+            </div>
+            <div class="tab" data-x="sched">
+                <i data-svg="calendar"></i>
+                <i data-t="Schedule"></i>
+            </div>
+            <div class="tab" data-x="stats">
+                <i data-svg="info"></i>
+                <i data-t="Event Stats"></i>
+            </div>
+            <div class="tab" data-x="log">
+                <i data-svg="log"></i>
+                <i data-t="Livelog"></i>
+            </div>
+            <div class="tab" data-x="crash">
+                <i data-svg="crash"></i>
+                <i data-t="Crash info"></i>
+            </div>
+        </horis>
+        <div id="table-season" class="scroller dn"></div>
+        <div id="table-game" class="scroller dn"></div>
+        <div id="table-brak" class="scroller dn"></div>
+        <div id="table-event" class="scroller dn"></div>
+        <div id="table-stand" class="scroller dn"></div>
+        <div id="table-cross" class="scroller dn"></div>
+        <div id="table-h2h" class="scroller dn"></div>
+        <div id="table-sched" class="scroller dn"></div>
+        <div id="table-stats" class="scroller dn"></div>
+        <div id="table-log" class="scroller dn">
+            <hori class="fbetween">
+                <div></div>
+                <div>
+                    <i data-t="Lines"></i>
+                    <select od="live-log"></select>
+                </div>
+            </hori>
+            <ul id="log"></ul>
         </div>
-        <br>
-        <div>&copy;TCEC Chessdom &copy;Chess Arena 2010-2020</div>
-        <div>TCEC is powered by ... <a href="https://fontawesome.com/license">fontawesome</a> and cutechess-cli</div>
-        <div>TCEC is sponsored by Noobpwnftw</div>
+        <div id="table-crash" class="scroller dn"></div>
     </vert>
-    <!-- popup -->
-    <vert id="popup-about" class="popup">
-        <hori class="fbetween">
-            <h5>About TCEC</h5>
-            <i class="popup-close" data-svg="x"></i>
-        </hori>
-        <hr>
-        <vert>
-            <div id="popup-desc"></div>
-        </vert>
-        <vert>
-            <h4>The TCEC Grand Champions:</h4>
-            <div>
-                Season 16: Stockfish | Season 15: LCZero |
-                Season 14: Stockfish | Season 13: Stockfish | Season 12: Stockfish | Season 11: Stockfish |
-                Season 10: Houdini | Season 9: Stockfish | Season 8: Komodo | Season 7: Komodo | Season 6: Stockfish |
-                Season 5: Komodo | Season 4: Houdini | Season 3: N/A | Season 2: Houdini | Season 1: Houdini
-            </div>
-        </vert>
-        <vert>
-            <h4>Special thanks:</h4>
-            <div>
-                Martin Thoresen,
-                Anton Mihailov,
-                <a href="http://pgn4web.casaschi.net/home.html" target="_blank">Paolo Casaschi</a>,
-                <a href="https://github.com/cutechess/cutechess" target="_blank">Ilari Pihlajisto</a>,
-                <a href="https://github.com/cutechess/cutechess" target="_blank">Arto Jonsson</a>,
-                <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
-                <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
-            </div>
-        </vert>
-        <vert>
-            <h5><i data-t="Copyright"></i> © 2010-2020</h5>
-        </vert>
+</vert>
+<!-- twitch video -->
+<hori class="fcenter fastart">
+    <vert>
+        <iframe
+            id="twitch-vid" class="dn" height="400" width="340" frameborder="0" scrolling="no"
+            allowfullscreen="true" autoplay="true" muted="true">
+        </iframe>
+        <a id="show-video" class="dn" data-t="Enable Twitch channel"></a>
     </vert>
-    <div id="extra-style"></div>
+    <i id="hide-video" data-svg="x" class="dn"></i>
+</hori>
+</div>
+<!-- now everything can be translated again -->
+<div id="adblock" class="dn">
+    TCEC is based on voluntary work.<br>
+    Please consider whitelisting https://tcec-chess.com<br>
+    in your ad blocker - or send a donation. Thank you!
+</div>
+<!-- footer -->
+<vert id="footer">
+    <div id="desc">
+        <p>
+            <b>TCEC</b>
+            (Top Chess Engine Championship) is a computer chess tournament organized and maintained by Chessdom
+            in cooperation with Chessdom Arena.
+            The goal is to provide the viewers with a live broadcast of long time control, quality chess
+            - played strictly between computer chess engines created by different programmers.
+        </p>
+        <p>
+            One Season is divided into several Stages and lasts about 3-4 months.
+            The winner of the Season will be the TCEC Grand Champion.
+        </p>
+    </div>
+    <br>
+    <div>&copy;TCEC Chessdom &copy;Chess Arena 2010-2020</div>
+    <div>TCEC is powered by ... <a href="https://fontawesome.com/license">fontawesome</a> and cutechess-cli</div>
+    <div>TCEC is sponsored by Noobpwnftw</div>
+</vert>
+<!-- popup -->
+<vert id="popup-about" class="popup">
+    <hori class="fbetween">
+        <h5>About TCEC</h5>
+        <i class="popup-close" data-svg="x"></i>
+    </hori>
+    <hr>
+    <vert>
+        <div id="popup-desc"></div>
+    </vert>
+    <vert>
+        <h4>The TCEC Grand Champions:</h4>
+        <div>
+            Season 16: Stockfish | Season 15: LCZero |
+            Season 14: Stockfish | Season 13: Stockfish | Season 12: Stockfish | Season 11: Stockfish |
+            Season 10: Houdini | Season 9: Stockfish | Season 8: Komodo | Season 7: Komodo | Season 6: Stockfish |
+            Season 5: Komodo | Season 4: Houdini | Season 3: N/A | Season 2: Houdini | Season 1: Houdini
+        </div>
+    </vert>
+    <vert>
+        <h4>Special thanks:</h4>
+        <div>
+            Martin Thoresen,
+            Anton Mihailov,
+            <a href="http://pgn4web.casaschi.net/home.html" target="_blank">Paolo Casaschi</a>,
+            <a href="https://github.com/cutechess/cutechess" target="_blank">Ilari Pihlajisto</a>,
+            <a href="https://github.com/cutechess/cutechess" target="_blank">Arto Jonsson</a>,
+            <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
+            <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
+        </div>
+    </vert>
+    <vert>
+        <h5><i data-t="Copyright"></i> © 2010-2020</h5>
+    </vert>
+</vert>
+<div id="extra-style" class="dn"></div>
 </body>
 </html>
