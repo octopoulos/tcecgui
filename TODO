@@ -1,6 +1,10 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-05-04 : redo live charts
+-          : 2020-05-04 : remember all active tabs, the same tabs will be opened when reloading the page
+-          : 2020-05-04 : only update 1 chart if that's the only one we're watching
+2020-05-04 : 2020-05-01 : redo player charts
 2020-05-04 : 2020-04-13 : add 3d scene toggle on top right
 2020-05-03 : 2020-05-03 : create a 3d scene and display the pieces
 2020-05-03 : 2020-04-13 : only load the 3d library/files when the user wants to use it
@@ -108,11 +112,10 @@ DONE         CREATED      DESCRIPTION
 high:
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 -          : 2020-05-03 : add pagination to some tables
--          : 2020-05-01 : make charts work again
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
--          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js
+-          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js (slow)
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code

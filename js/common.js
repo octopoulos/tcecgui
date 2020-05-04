@@ -943,9 +943,9 @@ function FormatUnit(number)
     }
     else if (number == Infinity)
         return `${number}`;
-    else if (number > 1e9)
+    else if (number >= 1e9)
         number = `${Floor(number / 1e8) / 10}B`;
-    else if (number > 1e6)
+    else if (number >= 1e6)
         number = `${Floor(number / 1e5) / 10}M`;
     else if (number > 1000)
         number = `${Floor(number / 100) / 10}k`;

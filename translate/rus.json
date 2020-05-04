@@ -3,6 +3,7 @@
 "3D scene": "3D сцена",
 "archive": "архив",
 "articles": "статьи",
+"black": "чёрный",
 "Change view": "Изменить вид",
 "chat": "чат",
 "Copy FEN": "Копировать FEN",
@@ -51,6 +52,7 @@
 "TCEC Links": "TCEC Ссылки",
 "time": "время",
 "viewers": "зрители",
+"white": "белый",
 "win": "победа",
 "winners": "победители"
 }

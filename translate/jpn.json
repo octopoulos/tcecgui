@@ -3,6 +3,7 @@
 "3D scene": "3Dシーン",
 "archive": "アーカイブ",
 "articles": "記事",
+"black": "黒",
 "Change view": "ビューを変更",
 "chat": "チャット",
 "Copy FEN": "FENをコピー",
@@ -51,6 +52,7 @@
 "TCEC Links": "TCEC リンク",
 "time": "時間",
 "viewers": "閲覧者",
+"white": "白い",
 "win": "勝利",
 "winners": "勝者"
 }

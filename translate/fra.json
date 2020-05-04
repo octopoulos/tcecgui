@@ -3,6 +3,7 @@
 "3D scene": "scène 3D",
 "archive": "archive",
 "articles": "articles",
+"black": "noir",
 "Change view": "Changer la vue",
 "chat": "chat",
 "Copy FEN": "Copier le FEN",
@@ -51,6 +52,7 @@
 "TCEC Links": "Liens TCEC",
 "time": "temps",
 "viewers": "spectateurs",
+"white": "blanc",
 "win": "victoire",
 "winners": "vainqueurs"
 }

@@ -652,12 +652,11 @@ grid {
 #material0,
 #material1 {
     background: transparent !important;
-    height: 36px;
+    height: 60px;
 }
 #material0 img,
 #material1 img {
     height: 28px;
-    margin: 2px;
 }
 
 /* bracket */

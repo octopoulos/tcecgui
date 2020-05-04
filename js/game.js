@@ -11,13 +11,14 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, change_setting, Class, clear_timeout, controls, CreateNode, cube:true, DEFAULTS, DEV,
-Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
-load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, resize_3d, Resource,
-resume_game, Round,
+C, camera_look, camera_pos, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
+DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id,
+InsertNodes, Keys,
+load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts, resize_3d,
+Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate_node, update_svg, Upper,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate_node, update_player_chart,
+update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -80,6 +81,7 @@ let BOARD_THEMES = {
         // wikipedia: 'svg',            // will enable in the future
     },
     players = [{}, {}],                 // current 2 players
+    prev_round,
     ROUND_NAMES = {
         1: 'Final',
         2: 'SemiFinal',
@@ -250,6 +252,15 @@ function create_boards() {
 
     board_target = xboards[first];
     update_board_theme();
+}
+
+/**
+ * Reset all boards
+ */
+function reset_boards() {
+    Keys(xboards).forEach(key => {
+        xboards[key].reset();
+    });
 }
 
 /**
@@ -1067,6 +1078,7 @@ function update_pgn(pgn_) {
         start = pgn.lastMoveLoaded || 0;
 
     // 1) update overview
+    // TODO: only change these when a new game was detected?
     if (pgn.Users)
         HTML('td[data-x="viewers"]', pgn.Users, overview);
     if (headers) {
@@ -1088,7 +1100,7 @@ function update_pgn(pgn_) {
     }
 
     if (new_game) {
-        LS(`new game: ${headers.Round}`);
+        LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;
     }
 
@@ -1101,13 +1113,15 @@ function update_pgn(pgn_) {
         last_ply = pgn.numMovesToSend + start;
 
     // new game?
-    if (new_game || !last_ply || last_ply < num_ply) {
-        Keys(xboards).forEach(key => {
-            xboards[key].reset();
-        });
+    if (prev_round != headers.Round || !last_ply || last_ply < num_ply) {
+        LS(`new game: ${prev_round} => ${headers.Round}`);
+        reset_boards();
+        reset_charts();
+        prev_round = headers.Round;
     }
 
     board.add_moves(moves, start);
+    update_player_chart(null, moves, start);
     if (Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
@@ -1128,7 +1142,7 @@ function update_pgn(pgn_) {
         let result = headers.Result;
         if (Y.crowd_sound)
             play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
-        board.add_moves(result);
+        board.set_last(result);
     }
 
     // 4) clock
@@ -1195,9 +1209,6 @@ function update_pgn(pgn_) {
                 HTML(node, material);
         }
     }
-
-    // 6) chart
-    // updateChartData();
 }
 
 /**
@@ -1604,6 +1615,16 @@ function open_table(sel, hide_table=true) {
  * @param {Node} tab
  */
 function opened_table(node, name, tab) {
+    let parent = Parent(tab),
+        is_chart = (parent.id == 'chart-tabs');
+    if (DEV.ui)
+        LS(`opened_table: ${parent.id}/${name}`);
+
+    // change chart_id
+    if (is_chart && CHART_NAMES[name])
+        update_player_chart(name, xboards.board.moves, 0);
+
+    //
     switch (name) {
     case 'crash':
         download_table('crash.json', name);
@@ -1613,8 +1634,6 @@ function opened_table(node, name, tab) {
         break;
     // change order + switch to default tab
     case 'pv':
-        let parent = Parent(tab),
-            is_chart = (parent.id == 'chart-tabs');
         Style('#table-pv', `order:${is_chart? 3: 1}`);
         if (is_chart)
             open_table('engine', false);

@@ -1,8 +1,9 @@
 // graph.js
+//
 /*
 globals
-_, $, add_timeout, Assign, Chart, Clamp, console, DEV, document, FormatUnit, FromSeconds, Keys, LoadLibrary, LS,
-Max, Min, Pad, prevPgnData, Round, TIMEOUTS, Y
+_, $, add_timeout, Assign, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, Keys, load_library,
+LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, Y
 */
 'use strict';
 
@@ -15,42 +16,23 @@ let CHART_JS = 'js/libs/chart.js',
 
 let all_evals = [],
     chart_data = {},
+    chart_id = 'eval',                  // currently selected chart: eval, node, ...
+    CHART_NAMES = {
+        eval: 1,
+        time: 1,
+        speed: 1,
+        node: 1,
+        depth: 1,
+        tb: 1,
+    },
     charts = {},
+    EVAL_CONSTANT = 10,
     liveEngineEvals = [[], [], []];     // 0 is not used
 
 //
-let blackEval = [],
-    blackEvalL = 0,
-    blackStarted = 0,
-    evalconstant = 10.0,
+let blackEvalL = 0,
     firstPly = 0,
-    whiteEval = [],
     whiteEvalL = 0;
-
-/**
- * Create a dataset
- * - prevents excessive copy/pasting => makes the code a lot shorter!
- * @param {string} label
- * @param {string} color
- * @param {string=} yaxis
- * @param {Object=} dico
- * @returns {Object}
- */
-function new_dataset(label, color, yaxis, dico) {
-    let dataset = {
-        backgroundColor: color,
-        borderColor: color,
-        data: [],
-        fill: false,
-        label: label,
-        lineTension: 0,
-        yAxisID: yaxis,
-    };
-
-    if (dico)
-        Assign(dataset, dico);
-    return dataset;
-}
 
 /**
  * Create all chart data
@@ -99,15 +81,6 @@ function create_chart_data() {
             ],
         },
     });
-}
-
-// format axes scale
-function formatScale(value) {
-    if (value >= 1000000)
-        value = `${Round(value / 100000) / 10}M`;
-    else
-        value = `${Round(value / 100) / 10}k`;
-    return value;
 }
 
 /**
@@ -268,7 +241,7 @@ function create_charts()
                     position: 'left',
                     id: 'y-axis-1',
                     ticks: {
-                        callback: formatScale,
+                        callback: FormatUnit,
                     }
                 }, {
                     type: 'linear',
@@ -279,7 +252,7 @@ function create_charts()
                         drawOnChartArea: false,
                     },
                     ticks: {
-                        callback: formatScale,
+                        callback: FormatUnit,
                     },
                 }],
                 xAxes: [{
@@ -322,7 +295,7 @@ function create_charts()
                     position: 'left',
                     id: 'tb-y-axis-1',
                     ticks: {
-                        callback: formatScale,
+                        callback: FormatUnit,
                     }
                 }, {
                     type: 'linear',
@@ -333,7 +306,7 @@ function create_charts()
                         drawOnChartArea: false,
                     },
                     ticks: {
-                        callback: formatScale,
+                        callback: FormatUnit,
                     },
                 }],
                 xAxes: [{
@@ -396,6 +369,154 @@ function create_charts()
     });
 }
 
+/**
+ * Create a dataset
+ * - prevents excessive copy/pasting => makes the code a lot shorter!
+ * @param {string} label
+ * @param {string} color
+ * @param {string=} yaxis
+ * @param {Object=} dico
+ * @returns {Object}
+ */
+function new_dataset(label, color, yaxis, dico) {
+    let dataset = {
+        backgroundColor: color,
+        borderColor: color,
+        data: [],
+        fill: false,
+        label: label,
+        lineTension: 0,
+        yAxisID: yaxis,
+    };
+
+    if (dico)
+        Assign(dataset, dico);
+    return dataset;
+}
+
+/**
+ * Normalise an eval
+ * @param {number} eval_
+ * @returns {number}
+ */
+function normalize_eval(eval_)
+{
+    if (!isNaN(eval_))
+        return Clamp(eval_ * 1, -EVAL_CONSTANT, EVAL_CONSTANT);
+
+    if (eval_ && eval_[0] == '-')
+        eval_ = -EVAL_CONSTANT;
+    else if (eval_ != undefined)
+        eval_ = EVAL_CONSTANT;
+    else
+        eval_ = 0;
+
+    return eval_;
+}
+
+/**
+ * Reset a chart
+ * @param {Object} chart
+ */
+function reset_chart(chart) {
+    if (!chart)
+        return;
+
+    let data = chart.data;
+    data.labels.length = 0;
+    for (let dataset of data.datasets)
+        dataset.data.length = 0;
+
+    chart.update();
+}
+
+/**
+ * Reset all charts
+ */
+function reset_charts()
+{
+    Keys(charts).forEach(key => {
+        reset_chart(charts[key]);
+    });
+}
+
+/**
+ * Update a chart using new moves
+ * @param {string} name if empty then will use the current chart_id
+ * @param {Move[]} moves
+ * @param {number} start starting ply for the moves
+ */
+function update_player_chart(name, moves, start) {
+    // 1) update ID
+    if (name)
+        chart_id = name;
+
+    let data = chart_data[chart_id];
+    if (!data)
+        return;
+
+    // 2) add missing labels from the start
+    // TODO: compare with data[0].x to start at another move?
+    let datasets = data.datasets,
+        first_ply = Floor((start + 1) / 2),
+        labels = data.labels,
+        num_label = labels.length,
+        num_move = moves.length;
+
+    if (num_label < first_ply)
+        for (let i = num_label; i < first_ply; i ++)
+            labels[i] = i + 1;
+
+    // 3) add data
+    // TODO: skip existing data except if at the very end?
+    for (let i = 0; i < num_move ; i ++) {
+        let move = moves[i],
+            ply = start + i,
+            id = Floor(ply / 2);
+
+        labels[id] = id + 1;
+        if (!move || move.book)
+            continue;
+
+        let dico = {
+            x: id + 1,      // move number
+            ply: ply,       // used for jumping to the position
+        };
+
+        switch (chart_id) {
+        case 'depth':
+            dico.y = move.ydepth;
+            datasets[ply % 2 + 2].data[id] = {...dico, ...{y: move.sd}};
+            break;
+        case 'eval':
+            dico.eval = move.wv;
+            dico.y = normalize_eval(move.wv);
+            break;
+        case 'node':
+            dico.nodes = move.n;
+            dico.y = move.n;
+            break;
+        case 'speed':
+            dico.nodes = move.n;
+            dico.y = move.s;
+            break;
+        case 'tb':
+            dico.y = move.tb;
+            break;
+        case 'time':
+            dico.y = Round(move.mt / 1000);
+            break;
+        }
+
+        datasets[ply % 2].data[id] = dico;
+    }
+
+    charts[chart_id].update();
+}
+
+// REMOVE
+/////////
+
 function addDataLive(chart, data, black, contno)
 {
     if (!whiteEvalL)
@@ -403,21 +524,13 @@ function addDataLive(chart, data, black, contno)
 
     let chart_data = chart.data;
     if (chart_data.datasets[contno + 1].data.length == 0)
-    {
-        if (DEV.graph & 1)
-            LS("YYY: Chart not yet updated, so exiting");
         return;
-    }
 
-    data.y = getEval(data.eval);
+    data.y = normalize_eval(data.eval);
     let length = Max(whiteEvalL, blackEvalL);
 
     if (length == 0)
-    {
-        if (DEV.graph & 1)
-            LS("XXX: Chart not yet updated, so exiting");
         return;
-    }
 
     if (!black)
         chart_data.labels[length] = data.x;
@@ -428,18 +541,14 @@ function addDataLive(chart, data, black, contno)
 
 function addData(chart, data, black)
 {
-    data.y = getEval(data.eval);
+    data.y = normalize_eval(data.eval);
 
     if (!whiteEvalL)
         return;
 
     let length = Max(whiteEvalL, blackEvalL);
     if (length == 0)
-    {
-        if (DEV.graph & 1)
-            LS("XXX: Chart not yet updated, so exiting");
         return;
-    }
 
     if (black)
     {
@@ -471,7 +580,7 @@ function getLiveEval(key, moveNumber, isBlack, contno)
         if (isBlack)
             evall *= -1;
 
-        evalObject.eval = getEval(evall);
+        evalObject.eval = normalize_eval(evall);
         return {
             x: moveNumber,
             y: evalObject.eval,
@@ -480,64 +589,6 @@ function getLiveEval(key, moveNumber, isBlack, contno)
     }
 
     return {x: moveNumber, y: null, eval: null};
-}
-
-/**
- * Reset a chart
- * @param {Object} chart
- */
-function reset_chart(chart) {
-    if (!chart)
-        return;
-
-    let data = chart.data;
-    data.labels.length = 0;
-    for (let dataset of data.datasets)
-        dataset.data.length = 0;
-
-    chart.update();
-}
-
-/**
- * Reset all charts
- */
-function reset_charts()
-{
-    blackEval = [];
-    firstPly = 0;
-    whiteEval = [];
-
-    Keys(charts).forEach(key => {
-        reset_chart(charts[key]);
-    });
-}
-
-/**
- * Normalise an eval
- * @param {number} eval_
- * @returns {number}
- */
-function getEval(eval_)
-{
-    if (!isNaN(eval_))
-        return Clamp(eval_, -evalconstant, evalconstant);
-
-    if (eval_ && eval_[0] == '-')
-        eval_ = -evalconstant;
-    else if (eval_ != undefined)
-        eval_ = evalconstant;
-    else
-        eval_ = 0;
-
-    return eval_;
-}
-
-function arrayPush(chart, number, datax, index, movenum)
-{
-    if (chart) {
-        chart.data.labels[index] = movenum;
-        chart.data.datasets[number].data[index] = datax;
-    }
 }
 
 function updateChartDataLive(id)
@@ -599,187 +650,17 @@ function updateChartDataLive(id)
         charts.eval.update();
 }
 
-function updateChartData()
-{
-    if (DEV.graph & 1)
-        LS(`GRAPH: updateChartData : whiteEvalL=${whiteEvalL}`);
-
-    if (prevPgnData.Moves)
-    {
-        if (DEV.graph & 1)
-            LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
-        if (prevPgnData.Moves[0].completed == undefined || charts.eval.data.labels.length == 0)
-        {
-            reset_charts();
-            prevPgnData.Moves[0].completed = 0;
-            prevPgnData.Moves[0].arrayStartW = 0;
-            prevPgnData.Moves[0].arrayStartB = 0;
-        }
-    }
-    else
-    {
-        reset_charts();
-        return;
-    }
-
-    let needtoUpdate = 0,
-        arrayCtrW = prevPgnData.Moves[0].arrayStartW,
-        arrayCtrB = prevPgnData.Moves[0].arrayStartB;
-
-    if (0 && (arrayCtrW - 2) > 0)
-    {
-        arrayCtrW -= 2;
-        arrayCtrB -= 2;
-        prevPgnData.Moves[0].completed -= 4;
-        if (DEV.graph & 1)
-            LS(`GRAPH: prevPgnData.Moves.length=$prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
-    }
-
-    whiteEvalL = 0;
-    blackEvalL = 0;
-
-    for (let moveCtr = prevPgnData.Moves[0].completed; moveCtr < prevPgnData.Moves.length ; moveCtr ++)
-    {
-        let key = moveCtr,
-            move = prevPgnData.Moves[moveCtr];
-
-        if (move.book)
-        {
-            prevPgnData.Moves[moveCtr].done = 1;
-            continue;
-        }
-
-        let moveNumber = Round(moveCtr / 2) + 1,
-            plyNum = 0;
-
-        if (moveCtr % 2 != 0) {
-            plyNum = moveCtr + 1;
-            moveNumber --;
-        }
-        else
-            plyNum = moveCtr + 1;
-
-        if (plyNum < prevPgnData.Moves[0].completed)
-            continue;
-
-        if (!move.book) {
-            needtoUpdate = 1;
-            prevPgnData.Moves[0].completed = moveCtr + 1;
-            let ydepth = move.d;
-
-            move.cwv = getEval(move.wv);
-
-            let evall =
-            {
-                'x': moveNumber,
-                'y': move.cwv,
-                'ply': plyNum,
-                'eval': move.wv
-            },
-            time =
-            {
-                'x': moveNumber,
-                'y': Round(move.mt / 1000),
-                'ply': plyNum
-            },
-            speed =
-            {
-                'x': moveNumber,
-                'y': move.s,
-                'nodes': move.n,
-                'ply': plyNum
-            },
-            depth =
-            {
-                'x': moveNumber,
-                'y': ydepth,
-                'ply': plyNum
-            },
-            seldepth =
-            {
-                'x': moveNumber,
-                'y': move.sd,
-                'ply': plyNum,
-            },
-            tbHits =
-            {
-                'x': moveNumber,
-                'y': move.tb,
-                'ply': plyNum,
-            },
-            nodes =
-            {
-                'x': moveNumber,
-                'y': move.n,
-                'nodes': move.n,
-                'ply': plyNum,
-            };
-
-            if (!firstPly)
-            {
-                firstPly = plyNum;
-                if (firstPly % 2 == 0)
-                {
-                    blackStarted = 1;
-                    charts.eval.data.labels[arrayCtrW] = moveNumber;
-                    arrayCtrW ++;
-                }
-            }
-
-            if (DEV.graph & 1)
-                LS(`LLL: doing for key=${key} : prevPgnData.Moves[0].arrayStartW=${prevPgnData.Moves[0].arrayStartW}`
-                    + ` : prevPgnData.Moves[0].arrayStartB=${prevPgnData.Moves[0].arrayStartB} : blackStarted=${blackStarted}`);
-
-            if (key % 2 == 0) {
-                charts.eval.data.labels[arrayCtrW] = moveNumber;
-                charts.eval.data.datasets[0].data[arrayCtrW] = evall;
-                arrayPush(charts.node, 0, nodes, arrayCtrW, moveNumber);
-                arrayPush(charts.time, 0, time, arrayCtrW, moveNumber);
-                arrayPush(charts.speed, 0, speed, arrayCtrW, moveNumber);
-                arrayPush(charts.depth, 0, depth, arrayCtrW, moveNumber);
-                arrayPush(charts.depth, 2, seldepth, arrayCtrW, moveNumber);
-                arrayPush(charts.tb, 0, tbHits, arrayCtrW, moveNumber);
-                arrayCtrW ++;
-                prevPgnData.Moves[0].arrayStartW = arrayCtrW;
-            }
-            else
-            {
-                charts.eval.data.datasets[1].data[arrayCtrB] = evall;
-                arrayPush(charts.node, 1, nodes, arrayCtrB, moveNumber);
-                arrayPush(charts.time, 1, time, arrayCtrB, moveNumber);
-                arrayPush(charts.speed, 1, speed, arrayCtrB, moveNumber);
-                arrayPush(charts.depth, 1, depth, arrayCtrB, moveNumber);
-                arrayPush(charts.depth, 3, seldepth, arrayCtrB, moveNumber);
-                arrayPush(charts.tb, 1, tbHits, arrayCtrB, moveNumber);
-                arrayCtrB ++;
-                prevPgnData.Moves[0].arrayStartB = arrayCtrB;
-            }
-        }
-    }
-
-    // update all charts
-    Keys(charts).forEach(key => {
-        charts[key].update();
-    });
-
-    if (arrayCtrW)
-        whiteEvalL = arrayCtrW;
-    if (arrayCtrB)
-        blackEvalL = arrayCtrB;
-
-    if (DEV.graph & 1)
-        LS(`GRAPH: ~updateChartData : needtoUpdate=${needtoUpdate} : arrayCtrW=${arrayCtrW} : arrayCtrB=${arrayCtrB}`
-            + `prevPgnData.Moves[0].completed=${prevPgnData.Moves[0].completed} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
-}
+// STARTUP
+//////////
 
 /**
  * Load the chart.js library
  */
 function init_graph() {
-    LoadLibrary(CHART_JS, () => {
-        LS('CHART LIBRARY LOADED!');
+    load_library(CHART_JS, () => {
         create_chart_data();
         create_charts();
+        update_player_chart(null, xboards.board.moves, 0);
     });
 }
 
