@@ -3,6 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js (slow)
+-          : 2020-05-03 : add pagination to some tables
+2020-05-04 : 2020-05-04 : compress create_charts + add click events
 2020-05-04 : 2020-05-04 : finish network.js: handle all events + live_log
 2020-05-04 : 2020-05-04 : engine colors should be more obvious in live PV
 2020-05-04 : 2020-05-04 : redo live charts
@@ -115,8 +117,8 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-05-04 : show move arrows
 -          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
--          : 2020-05-03 : add pagination to some tables
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage

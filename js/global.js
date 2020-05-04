@@ -33,6 +33,7 @@ let HOST = 'https://tcec-chess.com',
 function parse_dev() {
     let names = {
             b: 'board',
+            c: 'chart',
             d: 'debug',
             e: 'eval',                  // live eval
             g: 'graph',

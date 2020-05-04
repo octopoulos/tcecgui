@@ -2,7 +2,7 @@
 //
 /*
 globals
-_, $, add_timeout, Assign, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, Keys, load_library,
+_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, Keys, load_library,
 LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, Y
 */
 'use strict';
@@ -108,13 +108,25 @@ function create_chart_data() {
  */
 function create_charts()
 {
+    // 1) common options
+    let options = {
+        hoverMode: 'index',
+        legend: {
+            display: false
+        },
+        title: {
+            display: false,
+        },
+        tooltips: {
+            mode: 'index',
+        },
+    };
+
+    // 2) create all charts
     charts.depth = charts.depth || new Chart('table-depth', {
         type: 'line',
         data: chart_data.depth,
-        options: {
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
+        options: {...options, ...{
             legend: {
                 display: true,
                 position: 'bottom',
@@ -122,9 +134,6 @@ function create_charts()
                 labels: {
                     boxWidth: 1,
                 },
-            },
-            title: {
-                display: false,
             },
             scales: {
                 yAxes: [{
@@ -140,21 +149,14 @@ function create_charts()
                     },
                 }],
             },
-            tooltips: {
-                mode: 'index',
-            },
-        },
+        }},
     });
 
     charts.eval = charts.eval || new Chart('table-eval', {
         type: 'line',
         data: chart_data.eval,
-        options: {
-            responsive: true,
+        options: {...options, ...{
             bezierCurve: false,
-            hoverMode: 'index',
-            spanGaps: true,
-            stacked: false,
             legend: {
                 display: true,
                 position: 'bottom',
@@ -162,12 +164,6 @@ function create_charts()
                 labels: {
                     boxWidth: 1
                 },
-            },
-            title: {
-                display: false
-            },
-            tooltips: {
-                mode: 'index',
             },
             scales: {
                 yAxes: [{
@@ -183,22 +179,14 @@ function create_charts()
                     },
                 }],
             },
-        },
+            spanGaps: true,
+        }},
     });
 
     charts.node = charts.node || new Chart('table-node', {
         type: 'line',
         data: chart_data.node,
-        options: {
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
-            legend: {
-                display: false
-            },
-            title: {
-                display: false
-            },
+        options: {...options, ...{
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -236,22 +224,13 @@ function create_charts()
                     },
                 },
             },
-        },
+        }},
     });
 
     charts.speed = charts.speed || new Chart('table-speed', {
         type: 'line',
         data: chart_data.speed,
-        options: {
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
-            legend: {
-                display: false
-            },
-            title: {
-                display: false
-            },
+        options: {...options, ...{
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -290,22 +269,13 @@ function create_charts()
                     },
                 },
             },
-        },
+        }},
     });
 
     charts.tb = charts.tb || new Chart('table-tb', {
         type: 'line',
         data: chart_data.tb,
-        options: {
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
-            legend: {
-                display: false,
-            },
-            title: {
-                display: false,
-            },
+        options: {...options, ...{
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -343,23 +313,14 @@ function create_charts()
                     },
                 },
             },
-        },
+        }},
     });
 
     charts.time = charts.time || new Chart('table-time', {
         type: 'line',
         data: chart_data.time,
-        options: {
+        options: {...options, ...{
             backgroundColor: 'rgb(10,10,10)',
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
-            legend: {
-                display: false,
-            },
-            title: {
-                display: false,
-            },
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -383,7 +344,24 @@ function create_charts()
                     },
                 },
             },
-        },
+        }},
+    });
+
+    // 3) click events
+    Keys(charts).forEach(name => {
+        C(`#table-${name}`, e => {
+            let chart = charts[name],
+                point = chart.getElementAtEvent(e)[0];
+            if (!point)
+                return;
+
+            let ds_index = point._datasetIndex,
+                index = point._index,
+                dico = chart.data.datasets[ds_index].data[index];
+
+            if (dico)
+                xboards.board.set_ply(dico.ply);
+        });
     });
 }
 
@@ -444,8 +422,9 @@ function reset_charts()
  * @param {Move[]} moves
  * @param {number} start
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
+ * @param {boolean=} invert_black invert black evals
  */
-function update_live_chart(moves, id) {
+function update_live_chart(moves, id, invert_black) {
     let data = chart_data.eval;
     if (!data)
         return;
@@ -461,21 +440,26 @@ function update_live_chart(moves, id) {
 
     // add missing labels backwards
     for (let i = num - first_num; i >= 0 && !labels[i]; i --) {
-        LS(`label1: ${i} => ${i + 1 + first_num}`);
+        if (DEV.chart & 1)
+            LS(`label1: ${i} => ${i + 1 + first_num}`);
         labels[i] = i + 1 + first_num;
     }
 
     for (let move of moves) {
-        let ply = move.ply - 1,
+        let eval_ = move.eval,
+            ply = move.ply - 1,
             num = Floor(ply / 2),
             num2 = num - first_num;
 
+        if (invert_black && ply % 2)
+            eval_ = -eval_;
+
         // check update_player_chart to understand
         dataset.data[num2] = {
-            eval: move.eval,
+            eval: eval_,
             x: num + 1,
             ply: ply,
-            y: clamp_eval(move.eval),
+            y: clamp_eval(eval_),
         };
     }
 
@@ -513,7 +497,8 @@ function update_player_chart(name, moves, start) {
 
     // add missing labels backwards
     for (let i = start_num - first_num; i >= 0 && !labels[i]; i --) {
-        LS(`label0: ${i} => ${i + 1 + first_num}`);
+        if (DEV.chart & 1)
+            LS(`label0: ${i} => ${i + 1 + first_num}`);
         labels[i] = i + 1 + first_num;
     }
 

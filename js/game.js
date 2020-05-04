@@ -1367,7 +1367,7 @@ function update_live_eval(data, id) {
     });
 
     HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
-    update_live_chart(moves || [data], id + 2);
+    update_live_chart(moves || [data], id + 2, !!moves);
 }
 
 /**
