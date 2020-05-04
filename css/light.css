@@ -466,7 +466,8 @@ grid {
 }
 
 /* tables */
-.scroller {
+.scroller,
+#table-log {
     font-size: 0.9em;
     margin-bottom: 1.5em;
     max-width: 1200px;
@@ -536,6 +537,10 @@ grid {
     font-size: 1.1em;
     padding: 1em;
     z-index: 1;
+}
+#table-log {
+    font-family: monospace;
+    max-height: 80vh;
 }
 #table-season a {
     color: #212529;
@@ -811,7 +816,7 @@ grid {
 #left {
     flex: 2.6;
     margin: 4px;
-    max-width: calc(100vh - 380px);
+    max-width: calc(100vh - 300px);
     min-width: 281px;
 }
 #center {
@@ -922,6 +927,7 @@ td,
 #lives,
 #table-engine,
 #table-info,
+#table-log,
 .scroller {
     user-select: text;
 }

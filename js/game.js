@@ -14,8 +14,8 @@ _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
 DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id,
 InsertNodes, Keys,
-load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts, resize_3d,
-Resource, resume_game, Round,
+listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
+resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
 show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
 update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true,
@@ -496,6 +496,27 @@ function create_tables() {
 }
 
 /**
+ * Download live data when the graph is ready
+ */
+function download_live() {
+    // evals
+    download_table(`data.json?no-cache${Now()}`, null, data => {
+        update_live_eval(data, 0);
+    });
+    download_table(`data1.json?no-cache${Now()}`, null, data => {
+        update_live_eval(data, 1);
+    });
+
+    // live engines
+    download_table('liveeval.json', null, data => {
+        update_live_eval(data, 0);
+    });
+    download_table('liveeval1.json', null, data => {
+        update_live_eval(data, 1);
+    });
+}
+
+/**
  * Download static JSON for a table
  * + cache support = can load the data from localStorage if it was recent
  * @param {string} url url
@@ -576,16 +597,7 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
 function download_tables(only_cache) {
     if (!only_cache) {
         download_pgn();
-
-        // evals
-        download_table(`data.json?no-cache${Now()}`, null, data => {
-            update_live_eval(data, 0);
-        });
-        download_table(`data1.json?no-cache${Now()}`, null, data => {
-            update_live_eval(data, 1);
-        });
-        download_table('liveeval.json');
-        download_table('liveeval1.json');
+        download_live();
     }
 
     // tables
@@ -1056,8 +1068,11 @@ function update_move_pv(ply, move) {
     // HTML('.live-pv', create_live_pv(ply, move.pv? move.pv.San: ''), node);
 
     if (move.pv) {
+        let temp = board.smooth;
+        board.smooth = false;
         board.reset();
         board.add_moves(move.pv.Moves, ply);
+        board.smooth = temp;
     }
 }
 
@@ -1317,6 +1332,16 @@ function update_live_eval(data, id) {
     if (!data)
         return;
 
+    let moves = data.moves;
+    // moves => maybe old data?
+    if (moves) {
+        if (data.round != prev_round) {
+            LS(`maybe old data => SKIP: ${data.round} vs ${prev_round}`);
+            return;
+        }
+        data = moves[moves.length - 1];
+    }
+
     let eval_ = data.eval,
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
@@ -1342,7 +1367,7 @@ function update_live_eval(data, id) {
     });
 
     HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
-    update_live_chart(data, id + 2);
+    update_live_chart(moves || [data], id + 2);
 }
 
 /**
@@ -1386,7 +1411,7 @@ function update_player_eval(data) {
         HTML(`#${key}${id}`, stats[key]);
     });
 
-    update_live_chart(data, id);
+    update_live_chart([data], id);
 }
 
 /**
@@ -1641,6 +1666,9 @@ function opened_table(node, name, tab) {
         break;
     case 'info':
         HTML(node, HTML('#desc'));
+        break;
+    case 'log':
+        listen_log();
         break;
     // change order + switch to default tab
     case 'pv':

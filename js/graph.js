@@ -27,6 +27,7 @@ let all_evals = [],
         tb: 1,
     },
     charts = {},
+    first_num = -1,
     MAX_EVAL = 10;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -432,6 +433,7 @@ function reset_chart(chart) {
  */
 function reset_charts()
 {
+    first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
@@ -439,12 +441,11 @@ function reset_charts()
 
 /**
  * Update the eval chart from a Live source
- * - only 1 move, and it contains the ply
- * @param {Move} move
+ * @param {Move[]} moves
  * @param {number} start
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
-function update_live_chart(move, id) {
+function update_live_chart(moves, id) {
     let data = chart_data.eval;
     if (!data)
         return;
@@ -452,20 +453,31 @@ function update_live_chart(move, id) {
     let dataset = data.datasets[id],
         labels = data.labels,
         // first ply is 1 here, but the code counts from 0
-        ply = move.ply - 1,
+        ply = moves[0].ply - 1,
         num = Floor(ply / 2);
 
-    // add missing labels backwards
-    for (let i = num; i >= 0 && !labels[i]; i --)
-        labels[i] = i + 1;
+    if (first_num < 0)
+        first_num = num;
 
-    // check update_player_chart to understand
-    dataset.data[num] = {
-        eval: move.eval,
-        x: num + 1,
-        ply: ply,
-        y: clamp_eval(move.eval),
-    };
+    // add missing labels backwards
+    for (let i = num - first_num; i >= 0 && !labels[i]; i --) {
+        LS(`label1: ${i} => ${i + 1 + first_num}`);
+        labels[i] = i + 1 + first_num;
+    }
+
+    for (let move of moves) {
+        let ply = move.ply - 1,
+            num = Floor(ply / 2),
+            num2 = num - first_num;
+
+        // check update_player_chart to understand
+        dataset.data[num2] = {
+            eval: move.eval,
+            x: num + 1,
+            ply: ply,
+            y: clamp_eval(move.eval),
+        };
+    }
 
     charts.eval.update();
 }
@@ -487,24 +499,33 @@ function update_player_chart(name, moves, start) {
         return;
 
     let datasets = data.datasets,
-        first_num = Floor(start / 2),
         labels = data.labels,
-        num_move = moves.length;
+        num_move = moves.length,
+        offset = 0;
 
-    // 2) add missing labels backwards
-    for (let i = first_num; i >= 0 && !labels[i]; i --)
-        labels[i] = i + 1;
+    // 2) skip all book moves
+    while (offset < num_move && (!moves[offset] || moves[offset].book))
+        offset ++;
+
+    let start_num = Floor((start + offset) / 2);
+    if (first_num < 0)
+        first_num = start_num;
+
+    // add missing labels backwards
+    for (let i = start_num - first_num; i >= 0 && !labels[i]; i --) {
+        LS(`label0: ${i} => ${i + 1 + first_num}`);
+        labels[i] = i + 1 + first_num;
+    }
 
     // 3) add data
     // TODO: skip existing data except if at the very end?
-    for (let i = 0; i < num_move ; i ++) {
+    for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
             ply = start + i,
-            num = Floor(ply / 2);
+            num = Floor(ply / 2),
+            num2 = num - first_num;
 
-        labels[num] = num + 1;
-        if (!move || move.book)
-            continue;
+        labels[num2] = num + 1;
 
         let dico = {
             x: num + 1,     // move number
@@ -513,7 +534,7 @@ function update_player_chart(name, moves, start) {
 
         switch (chart_id) {
         case 'depth':
-            datasets[ply % 2 + 2].data[num] = {...dico, ...{y: move.sd}};
+            datasets[ply % 2 + 2].data[num2] = {...dico, ...{y: move.sd}};
             dico.y = move.d;
             break;
         case 'eval':
@@ -536,7 +557,7 @@ function update_player_chart(name, moves, start) {
             break;
         }
 
-        datasets[ply % 2].data[num] = dico;
+        datasets[ply % 2].data[num2] = dico;
     }
 
     charts[chart_id].update();
@@ -547,12 +568,14 @@ function update_player_chart(name, moves, start) {
 
 /**
  * Load the chart.js library
+ * @param {function} callback
  */
-function init_graph() {
+function init_graph(callback) {
     load_library(CHART_JS, () => {
         create_chart_data();
         create_charts();
         update_player_chart(null, xboards.board.moves, 0);
+        callback();
     });
 }
 

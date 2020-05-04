@@ -393,11 +393,11 @@ class XBoard {
                 that.play();
                 break;
             case 'rotate':
-                let smooth = that.smooth;
+                let temp = that.smooth;
                 that.smooth = false;
                 that.rotate = (that.rotate + 1) % 2;
                 that.render(3);
-                that.smooth = smooth;
+                that.smooth = temp;
                 break;
             case 'start':
                 that.go_start();

@@ -11,21 +11,18 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Attrs,
-C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, ENGINE_COLORS, Events,
-game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets,
-KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now, open_table, Parent,
-parse_dev, resize_game, Round,
+C, change_theme, check_hash, Class, create_field_value, DEV, document, download_live, download_tables, ENGINE_COLORS,
+Events, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph,
+init_sockets, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
+open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
 Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
 tcecHandleKey, THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true, window, Y
+update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
+virtual_resize:true, Visible, window, Y
 */
 'use strict';
-
-// modify those values in config.js
-let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
-    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat';
 
 /**
  * Same as action_key_no_input, but when the key is up
@@ -87,6 +84,10 @@ function change_setting_special(name, value) {
     case 'notation_pv':
     case 'piece_theme':
         update_board_theme();
+        break;
+    case 'live_log':
+        if (Visible('#table-log'))
+            listen_log();
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -176,7 +177,9 @@ function init_globals() {
     show_banner();
     update_twitch(null, null, true);
     add_timeout('twitch', update_twitch, TIMEOUTS.twitch);
-    add_timeout('graph', init_graph, TIMEOUTS.graph);
+    add_timeout('graph', () => {
+        init_graph(download_live);
+    }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
     // TODO: change that
@@ -197,7 +200,10 @@ function init_globals() {
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);
     });
+
     activate_tabs();
+    if (Visible('#table-log'))
+        listen_log();
 }
 
 /**
@@ -437,60 +443,6 @@ function update_shortcuts() {
     }
 }
 
-/**
- * Enable/disable twitch video + chat
- * @param {number=} dark
- * @param {string=} chat_url new chat URL
- * @param {boolean=} only_resize
- */
-function update_twitch(dark, chat_url, only_resize) {
-    if (dark != undefined)
-        save_option('twitch_dark', dark);
-
-    if (chat_url)
-        TWITCH_CHAT = chat_url;
-
-    // 1) update twitch chat IF there was a change
-    dark = Y.twitch_dark;
-    let node = Id('chat');
-    if (!node)
-        return;
-
-    let current = node.src,
-        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
-
-    if (!only_resize && current != src)
-        node.src = src;
-    S('#hide-chat, #chat', src);
-    S('#show-chat', !src);
-    S('#twitch0', src && dark);
-    S('#twitch1', src && !dark);
-
-    let right = Id('right'),
-        active = _('.active', right),
-        active_name = active? active.dataset.x: '',
-        has_narrow = HasClass(right, 'narrow'),
-        has_wide = HasClass(right, 'wide'),
-        need_narrow = (active_name == 'chat' && !src),
-        need_wide = (active_name == 'winner');
-
-    if (need_narrow != has_narrow || need_wide != has_wide) {
-        Class(right, 'narrow', need_narrow);
-        Class(right, 'wide', need_wide);
-        resize();
-    }
-
-    // 2) update twitch video IF there was a change
-    node = Id('twitch-vid');
-    current = node.src;
-    src = Y.twitch_video? TWITCH_CHANNEL: '';
-
-    if (!only_resize && current != src)
-        node.src = src;
-    S('#hide-video, #twitch-vid', src);
-    S('#show-video', !src);
-}
-
 // MAIN
 ///////
 
@@ -499,7 +451,7 @@ function update_twitch(dark, chat_url, only_resize) {
  */
 function set_global_events() {
     // general
-    Events(window, 'resize', resize());
+    Events(window, 'resize', resize);
     Events(window, 'scroll', adjust_popups);
     // it won't be triggered by pushState and replaceState
     Events(window, 'hashchange', () => {
@@ -702,6 +654,7 @@ function startup() {
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
     virtual_opened_table_special = opened_table_special;
+    virtual_resize = resize;
 
     // pre-process
     startup_config();
