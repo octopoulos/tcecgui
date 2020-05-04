@@ -11,11 +11,11 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Attrs,
-C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events, fill_languages,
-game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets,
-KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, load_defaults, load_library, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
-Round,
+C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events, game_action_key,
+game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys,
+KEYS,
+LANGUAGES:true, LINKS, load_defaults, load_library, localStorage, LS, Max, Min, Now, open_table, Parent, parse_dev,
+resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
 Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
 tcecHandleKey, THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
@@ -47,6 +47,18 @@ function action_key(code) {
         show_popup('about');
         break;
     }
+}
+
+/**
+ * Restore all activated tabs at startup
+ * - must be done only after all tabs have been created
+ */
+function activate_tabs() {
+    Keys(Y.tabs).forEach(key => {
+        let value = Y.tabs[key],
+            node = _(`#${key} > [data-x="${value}"]`);
+        open_table(node);
+    });
 }
 
 /**
@@ -704,6 +716,6 @@ function startup() {
 
     init_sockets();
     init_globals();
-    fill_languages('#language');
+    activate_tabs();
     resize();
 }

@@ -440,6 +440,9 @@ function Input(sel, callback, parent) {
 function InsertNodes(parent, nodes, preprend) {
     if (typeof(parent) == 'string')
         parent = _(parent);
+    if (!parent)
+        return;
+
     for (let node of nodes) {
         let child = parent.firstChild;
         if (child && preprend)

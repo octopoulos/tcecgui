@@ -129,17 +129,18 @@ function get_int(name, def) {
 /**
  * Local Storage - get an object
  * @param {string} name
+ * @param {*=} def
  * @returns {Object}
  */
-function get_object(name) {
+function get_object(name, def) {
     let text = get_string(name);
     if (!text)
-        return text;
+        return def;
     try {
         return JSON.parse(text);
     }
     catch(error) {
-        return undefined;
+        return def;
     }
 }
 
@@ -444,14 +445,6 @@ function fill_combo(letter, values, select, dico, no_translate)
 }
 
 /**
- * Fill the languages
- * @param {string|Node} sel CSS selector or node
- */
-function fill_languages(sel) {
-    fill_combo(sel, Keys(LANGUAGES), Y.lan || 'eng', LANGUAGES);
-}
-
-/**
  * Get the selector for a single letter
  * + letter is a selector if it has more than 1 letter
  * @param {string} letter
@@ -643,7 +636,7 @@ function load_defaults() {
         else if (Number.isFinite(def))
             value = get_float(key, def);
         else if (typeof(def) == 'object')
-            value = get_object(key);
+            value = get_object(key, def);
         else
             value = get_string(key, def);
         Y[key] = value;

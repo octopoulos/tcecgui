@@ -441,7 +441,8 @@ function reset_charts()
 }
 
 /**
- * Update a chart using new moves
+ * Update a player chart using new moves
+ * - designed for white & black, not live
  * @param {string} name if empty then will use the current chart_id
  * @param {Move[]} moves
  * @param {number} start starting ply for the moves
@@ -485,8 +486,8 @@ function update_player_chart(name, moves, start) {
 
         switch (chart_id) {
         case 'depth':
-            dico.y = move.ydepth;
             datasets[ply % 2 + 2].data[id] = {...dico, ...{y: move.sd}};
+            dico.y = move.d;
             break;
         case 'eval':
             dico.eval = move.wv;

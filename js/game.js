@@ -1110,11 +1110,11 @@ function update_pgn(pgn_) {
     // 2) update the moves
     let board = xboards.board,
         move = moves[num_move - 1],
-        last_ply = pgn.numMovesToSend + start;
+        last_ply = (pgn.numMovesToSend || moves.length) + start;
 
     // new game?
     if (prev_round != headers.Round || !last_ply || last_ply < num_ply) {
-        LS(`new game: ${prev_round} => ${headers.Round}`);
+        LS(`new game: ${prev_round} => ${headers.Round} : last_ply=${last_ply} : num_ply=${num_ply}`);
         reset_boards();
         reset_charts();
         prev_round = headers.Round;
@@ -1615,16 +1615,19 @@ function open_table(sel, hide_table=true) {
  * @param {Node} tab
  */
 function opened_table(node, name, tab) {
+    // 1) save the tab
     let parent = Parent(tab),
         is_chart = (parent.id == 'chart-tabs');
     if (DEV.ui)
         LS(`opened_table: ${parent.id}/${name}`);
 
-    // change chart_id
-    if (is_chart && CHART_NAMES[name])
+    Y.tabs[parent.id] = name;
+    save_option('tabs', Y.tabs);
+
+    // 2) special cases
+    if (is_chart && CHART_NAMES[name] && xboards.board)
         update_player_chart(name, xboards.board.moves, 0);
 
-    //
     switch (name) {
     case 'crash':
         download_table('crash.json', name);
@@ -1755,7 +1758,8 @@ function startup_game() {
     Assign(DEFAULTS, {
         live_engine1: 1,
         live_engine2: 1,
-        order: 'left|center|right',
+        order: 'left|center|right',         // main panes order
+        tabs: {},                           // opened tabs
         three: 0,
         twitch_chat: 1,
         twitch_dark: 1,

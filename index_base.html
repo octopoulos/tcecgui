@@ -103,7 +103,7 @@
             <div id="board" class="xboard"></div>
             <vert id="lives">
                 <!-- lives -->
-                <horis class="tabs">
+                <horis id="live-tabs" class="tabs">
                     <div class="tab active" data-x="live0">Live 1</div>
                     <div class="tab" data-x="live1">Live 2</div>
                 </horis>
@@ -199,12 +199,12 @@
                     <div class="tab" data-x="pva" data-t="PV(A)"></div>
                 </horis>
                 <div id="charts">
-                    <canvas id="table-eval" height="250" class="graphs"></canvas>
-                    <canvas id="table-time" height="250" class="graphs dn"></canvas>
-                    <canvas id="table-speed" height="250" class="graphs dn"></canvas>
-                    <canvas id="table-node" height="250" class="graphs dn"></canvas>
-                    <canvas id="table-depth" height="250" class="graphs dn"></canvas>
-                    <canvas id="table-tb" height="250" class="graphs dn"></canvas>
+                    <canvas id="table-eval" height="220" class="graphs"></canvas>
+                    <canvas id="table-time" height="220" class="graphs dn"></canvas>
+                    <canvas id="table-speed" height="220" class="graphs dn"></canvas>
+                    <canvas id="table-node" height="220" class="graphs dn"></canvas>
+                    <canvas id="table-depth" height="220" class="graphs dn"></canvas>
+                    <canvas id="table-tb" height="220" class="graphs dn"></canvas>
                 </div>
                 <!-- pv -->
                 <vert id="table-pv" class="dn">
@@ -226,7 +226,7 @@
                     <i data-svg="next"></i>
                 </div>
             </hori>
-            <horis class="tabs">
+            <horis id="quick-tabs" class="tabs">
                 <div class="tab active" data-x="chat" data-t="Chat"></div>
                 <div class="tab" data-x="winner" data-t="Winners"></div>
                 <div class="tab" data-x="info" data-t="Info"></div>
@@ -257,7 +257,7 @@
     </div>
     <!-- tables -->
     <vert id="tables">
-        <horis class="tabs">
+        <horis id="table-tabs" class="tabs">
             <div class="tab" data-x="season" data-t="Seasons"></div>
             <div class="tab" data-x="game" data-t="Games"></div>
             <div class="tab dn" data-x="brak">
