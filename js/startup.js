@@ -196,7 +196,6 @@ function init_globals() {
 
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);
-        // Style(`#table-live${id} [data-x="name"]`, `background:${ENGINE_COLORS[id + 2]}`);
     });
     activate_tabs();
 }

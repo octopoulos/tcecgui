@@ -775,6 +775,22 @@ grid {
 .live-pv {
     height: 3em;
 }
+.engine {
+    border-radius: 0.1em;
+    padding: 0 0.1em;
+}
+#table-live0 .engine {
+    color: #007bff;
+}
+#table-live1 .engine {
+    color: darkred;
+}
+#player0 .engine {
+    color: #666;
+}
+#player1 .engine {
+    color: #000;
+}
 
 /* container */
 #meta-canvas {
