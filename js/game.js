@@ -17,8 +17,9 @@ InsertNodes, Keys,
 load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts, resize_3d,
 Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate_node, update_player_chart,
-update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
+update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true,
+Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -62,7 +63,6 @@ let BOARD_THEMES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
     },
-    LIVE_ENGINES = [],
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply = 0,
@@ -113,6 +113,8 @@ let BOARD_THEMES = {
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
     WB_TITLES = ['White', 'Black'];
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // HELPERS
 //////////
@@ -422,7 +424,7 @@ function create_live_table(node, is_live) {
     let html =
         '<vert class="live fastart">'
             + '<div class="live-basic">'
-                + '<i data-x="name"></i> <i data-x="eval"></i> [<i data-x="score"></i>]'
+                + '<i class="engine" data-x="name"></i> <i data-x="eval"></i> [<i data-x="score"></i>]'
             + '</div>';
 
     if (is_live)
@@ -1319,6 +1321,13 @@ function update_live_eval(data, id) {
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
 
+    // live engine is not desired?
+    if (!Y[`live_engine_${id + 1}`]) {
+        HTML(`[data-x="name"]`, short, node);
+        HTML('.live-pv', `<i>${translate('off')}</i>`, node);
+        return;
+    }
+
     let dico = {
         depth: data.depth,
         eval: eval_,
@@ -1333,9 +1342,7 @@ function update_live_eval(data, id) {
     });
 
     HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
-
-    // chart
-    // updateChartDataLive(id);
+    update_live_chart(data, id + 2);
 }
 
 /**
@@ -1359,6 +1366,7 @@ function update_player_eval(data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
+    // TODO: handle this better ...
     HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
     // LS(data);
     // board.reset();
@@ -1378,8 +1386,7 @@ function update_player_eval(data) {
         HTML(`#${key}${id}`, stats[key]);
     });
 
-    // chart
-    // updateChartDataLive(id);
+    update_live_chart(data, id);
 }
 
 /**
@@ -1741,11 +1748,6 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
-
-    LIVE_ENGINES.forEach((live, id) => {
-        HTML(`[data-x="live${id}"]`, live);
-    });
-
     show_tables('league');
     // download_table('bracket.json', 'brak', create_cup);
 }
@@ -1756,8 +1758,6 @@ function start_game() {
 function startup_game() {
     //
     Assign(DEFAULTS, {
-        live_engine1: 1,
-        live_engine2: 1,
         order: 'left|center|right',         // main panes order
         tabs: {},                           // opened tabs
         three: 0,
@@ -1788,9 +1788,13 @@ function startup_game() {
             notation_pv: [ON_OFF, 1],
             ply_diff: [['first', 'diverging', 'last'], 'first'],
         },
+        live: {
+            live_engine_1: [ON_OFF, 1],
+            live_engine_2: [ON_OFF, 2],
+            live_log: [[0, 5, 10, 'all'], 0],
+        },
         extra: {
             cross_crash: [ON_OFF, 0],
-            live_log: [[0, 5, 10, 'all'], 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },

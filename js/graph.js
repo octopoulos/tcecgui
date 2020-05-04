@@ -12,7 +12,8 @@ let CHART_JS = 'js/libs/chart.js',
     COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
     ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred'],
-    ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'];
+    ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'],
+    LIVE_ENGINES = [];
 
 let all_evals = [],
     chart_data = {},
@@ -26,13 +27,29 @@ let all_evals = [],
         tb: 1,
     },
     charts = {},
-    EVAL_CONSTANT = 10,
-    liveEngineEvals = [[], [], []];     // 0 is not used
+    MAX_EVAL = 10;
 
-//
-let blackEvalL = 0,
-    firstPly = 0,
-    whiteEvalL = 0;
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Clamp an eval
+ * @param {number} eval_
+ * @returns {number}
+ */
+function clamp_eval(eval_)
+{
+    if (!isNaN(eval_))
+        return Clamp(eval_ * 1, -MAX_EVAL, MAX_EVAL);
+
+    if (eval_ && eval_[0] == '-')
+        eval_ = -MAX_EVAL;
+    else if (eval_ != undefined)
+        eval_ = MAX_EVAL;
+    else
+        eval_ = 0;
+
+    return eval_;
+}
 
 /**
  * Create all chart data
@@ -395,26 +412,6 @@ function new_dataset(label, color, yaxis, dico) {
 }
 
 /**
- * Normalise an eval
- * @param {number} eval_
- * @returns {number}
- */
-function normalize_eval(eval_)
-{
-    if (!isNaN(eval_))
-        return Clamp(eval_ * 1, -EVAL_CONSTANT, EVAL_CONSTANT);
-
-    if (eval_ && eval_[0] == '-')
-        eval_ = -EVAL_CONSTANT;
-    else if (eval_ != undefined)
-        eval_ = EVAL_CONSTANT;
-    else
-        eval_ = 0;
-
-    return eval_;
-}
-
-/**
  * Reset a chart
  * @param {Object} chart
  */
@@ -441,6 +438,39 @@ function reset_charts()
 }
 
 /**
+ * Update the eval chart from a Live source
+ * - only 1 move, and it contains the ply
+ * @param {Move} move
+ * @param {number} start
+ * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
+ */
+function update_live_chart(move, id) {
+    let data = chart_data.eval;
+    if (!data)
+        return;
+
+    let dataset = data.datasets[id],
+        labels = data.labels,
+        // first ply is 1 here, but the code counts from 0
+        ply = move.ply - 1,
+        num = Floor(ply / 2);
+
+    // add missing labels backwards
+    for (let i = num; i >= 0 && !labels[i]; i --)
+        labels[i] = i + 1;
+
+    // check update_player_chart to understand
+    dataset.data[num] = {
+        eval: move.eval,
+        x: num + 1,
+        ply: ply,
+        y: clamp_eval(move.eval),
+    };
+
+    charts.eval.update();
+}
+
+/**
  * Update a player chart using new moves
  * - designed for white & black, not live
  * @param {string} name if empty then will use the current chart_id
@@ -456,42 +486,39 @@ function update_player_chart(name, moves, start) {
     if (!data)
         return;
 
-    // 2) add missing labels from the start
-    // TODO: compare with data[0].x to start at another move?
     let datasets = data.datasets,
-        first_ply = Floor((start + 1) / 2),
+        first_num = Floor(start / 2),
         labels = data.labels,
-        num_label = labels.length,
         num_move = moves.length;
 
-    if (num_label < first_ply)
-        for (let i = num_label; i < first_ply; i ++)
-            labels[i] = i + 1;
+    // 2) add missing labels backwards
+    for (let i = first_num; i >= 0 && !labels[i]; i --)
+        labels[i] = i + 1;
 
     // 3) add data
     // TODO: skip existing data except if at the very end?
     for (let i = 0; i < num_move ; i ++) {
         let move = moves[i],
             ply = start + i,
-            id = Floor(ply / 2);
+            num = Floor(ply / 2);
 
-        labels[id] = id + 1;
+        labels[num] = num + 1;
         if (!move || move.book)
             continue;
 
         let dico = {
-            x: id + 1,      // move number
+            x: num + 1,     // move number
             ply: ply,       // used for jumping to the position
         };
 
         switch (chart_id) {
         case 'depth':
-            datasets[ply % 2 + 2].data[id] = {...dico, ...{y: move.sd}};
+            datasets[ply % 2 + 2].data[num] = {...dico, ...{y: move.sd}};
             dico.y = move.d;
             break;
         case 'eval':
             dico.eval = move.wv;
-            dico.y = normalize_eval(move.wv);
+            dico.y = clamp_eval(move.wv);
             break;
         case 'node':
             dico.nodes = move.n;
@@ -509,146 +536,10 @@ function update_player_chart(name, moves, start) {
             break;
         }
 
-        datasets[ply % 2].data[id] = dico;
+        datasets[ply % 2].data[num] = dico;
     }
 
     charts[chart_id].update();
-}
-
-// REMOVE
-/////////
-
-function addDataLive(chart, data, black, contno)
-{
-    if (!whiteEvalL)
-        return;
-
-    let chart_data = chart.data;
-    if (chart_data.datasets[contno + 1].data.length == 0)
-        return;
-
-    data.y = normalize_eval(data.eval);
-    let length = Max(whiteEvalL, blackEvalL);
-
-    if (length == 0)
-        return;
-
-    if (!black)
-        chart_data.labels[length] = data.x;
-
-    chart_data.datasets[contno + 1].data[black? (whiteEvalL - 1): length] = data;
-    chart.update();
-}
-
-function addData(chart, data, black)
-{
-    data.y = normalize_eval(data.eval);
-
-    if (!whiteEvalL)
-        return;
-
-    let length = Max(whiteEvalL, blackEvalL);
-    if (length == 0)
-        return;
-
-    if (black)
-    {
-        chart.data.datasets[1].data[blackEvalL] = data;
-        length = blackEvalL;
-    }
-    else
-    {
-        chart.data.labels[length] = data.x;
-        chart.data.datasets[0].data[length] = data;
-    }
-
-    chart.update();
-}
-
-function removeData(chart, data, black)
-{
-    addData(chart, data, black);
-}
-
-function getLiveEval(key, moveNumber, isBlack, contno)
-{
-    // CHECK THIS
-    let engineEval = liveEngineEvals[contno],
-        evalObject = engineEval.find(ev => ev.ply == key);
-
-    if (typeof(evalObject) == 'object') {
-        let evall = evalObject.eval;
-        if (isBlack)
-            evall *= -1;
-
-        evalObject.eval = normalize_eval(evall);
-        return {
-            x: moveNumber,
-            y: evalObject.eval,
-            eval: evall,
-        };
-    }
-
-    return {x: moveNumber, y: null, eval: null};
-}
-
-function updateChartDataLive(id)
-{
-    if (!Y[`live_engine${id}`])
-        return;
-
-    let done = `didliveEval${id}`,
-        eval_data = charts.eval.data,
-        needtoUpdate = 0,
-        startEval = whiteEvalL;
-
-    if (!startEval)
-        return;
-
-    if (prevPgnData.Moves[0][done] == undefined)
-        prevPgnData.Moves[0][done] = 0;
-
-    let endVal = Min(startEval - 2, prevPgnData.Moves[0][done]);
-    prevPgnData.Moves[0][done] = 0;
-
-    for (let ctr = startEval; ctr >= endVal; ctr --)
-    {
-        let dataToUse = eval_data.datasets[0].data[ctr],
-            key = 0,
-            isBlack = 0;
-
-        if (dataToUse)
-            key = dataToUse.ply;
-
-        // LS("RRR: Doing for ctrl:" + ctr + " ,startEval:" + startEval);
-
-        if (eval_data.datasets[1].data[ctr] != undefined)
-        {
-            dataToUse = eval_data.datasets[1].data[ctr];
-            key = dataToUse.ply;
-            isBlack = 1;
-        }
-
-        if (dataToUse != undefined)
-        {
-            needtoUpdate = 1;
-            let moveNumber = dataToUse.x,
-                evalObject = getLiveEval(key, moveNumber, isBlack, id);
-            /*LS("RRR: cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
-            if (!prevPgnData.Moves[0][done])
-            {
-                prevPgnData.Moves[0][done] = ctr;
-                /*LS("RRR:X setting cont2 Doing for ctrl:" + ctr + ", key:" + key + " ,startEval:" + startEval + ", evalObject:" + evalObject.y + " ,isblack:" + isBlack);*/
-            }
-            if (evalObject.y == null)
-                prevPgnData.Moves[0][done] = ctr;
-            else
-                eval_data.datasets[1 + id].data[ctr] = evalObject;
-        }
-    }
-
-    if (needtoUpdate)
-        charts.eval.update();
 }
 
 // STARTUP

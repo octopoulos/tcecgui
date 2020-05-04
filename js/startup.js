@@ -11,11 +11,11 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Attrs,
-C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events, game_action_key,
-game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys,
-KEYS,
-LANGUAGES:true, LINKS, load_defaults, load_library, localStorage, LS, Max, Min, Now, open_table, Parent, parse_dev,
-resize_game, Round,
+C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, ENGINE_COLORS, Events,
+game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets,
+KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, LINKS, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now, open_table, Parent,
+parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
 Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
 tcecHandleKey, THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
@@ -164,7 +164,7 @@ function create_url_list(dico) {
 }
 
 /**
- * First initialisation
+ * Ran once at the last initialisation step
  */
 function init_globals() {
     // load local data directly, and later online data
@@ -193,6 +193,12 @@ function init_globals() {
 
     // add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
+
+    LIVE_ENGINES.forEach((live, id) => {
+        HTML(`[data-x="live${id}"]`, live);
+        // Style(`#table-live${id} [data-x="name"]`, `background:${ENGINE_COLORS[id + 2]}`);
+    });
+    activate_tabs();
 }
 
 /**
@@ -716,6 +722,5 @@ function startup() {
 
     init_sockets();
     init_globals();
-    activate_tabs();
     resize();
 }
