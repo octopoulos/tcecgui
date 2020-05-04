@@ -9,7 +9,7 @@
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, KEY_TIMES, Keys, KEYS,
-LANGUAGES, LoadLibrary, LS, merge_settings, navigator, Now, requestAnimationFrame,
+LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, update_theme, Visible, window,
 X_SETTINGS, Y
 */
@@ -1309,7 +1309,9 @@ function start_3d() {
     if (T)
         init_3d(true);
     else
-        LoadLibrary('./js/4d_.js?version=1', () => {init_3d(true);});
+        load_library('./js/4d_.js?version=1', () => {
+            init_3d(true);
+        });
 }
 
 /**

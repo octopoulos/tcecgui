@@ -4,6 +4,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-04 : redo live charts
 -          : 2020-05-04 : remember all active tabs, the same tabs will be opened when reloading the page
 -          : 2020-05-04 : only update 1 chart if that's the only one we're watching
+2020-05-04 : 2020-05-04 : load libraries only once by remembering which ones have been loaded
 2020-05-04 : 2020-05-01 : redo player charts
 2020-05-04 : 2020-04-13 : add 3d scene toggle on top right
 2020-05-03 : 2020-05-03 : create a 3d scene and display the pieces

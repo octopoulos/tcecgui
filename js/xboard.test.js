@@ -22,6 +22,7 @@ create_module(IMPORT_PATH, [
 let {Assign, XBoard} = require(OUTPUT_MODULE);
 
 let xboard = new XBoard({id: 'console'});
+xboard.initialise();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,7 +59,7 @@ let xboard = new XBoard({id: 'console'});
     ],
 ].forEach(([fen, options, answer], id) => {
     test(`render_text:${id}`, () => {
-        Assign(xboard.options, options);
+        Assign(xboard, options);
         xboard.set_fen(fen);
         expect(xboard.render_text()).toEqual(answer);
     });

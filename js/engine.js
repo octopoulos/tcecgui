@@ -10,8 +10,8 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, Id, InsertNodes, Keys,
-localStorage, LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault, setTimeout,
-TEXT, Title, window
+LoadLibrary, localStorage, LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault,
+setTimeout, TEXT, Title, window
 */
 'use strict';
 
@@ -40,6 +40,7 @@ let __PREFIX = '_',
         pl: 'pol',
         sv: 'swe',
     },
+    libraries = {},
     Lower = (text) => (text.toLowerCase()),
     scroll_target,
     THEMES = [''],
@@ -151,6 +152,24 @@ function get_object(name) {
 function get_string(name, def) {
     let value = localStorage.getItem(`${__PREFIX}${name}`);
     return (value == 'undefined')? def: (value || def);
+}
+
+/**
+ * Load a library only once
+ * @param {string} url
+ * @param {function=} callback
+ */
+function load_library(url, callback) {
+    if (!libraries[url])
+        LoadLibrary(url, () => {
+            if (DEV.load & 1)
+                LS(`loaded: ${url}`);
+            libraries[url] = Now();
+            if (callback)
+                callback();
+        });
+    else
+        LS(`already loaded: ${url}`);
 }
 
 /**

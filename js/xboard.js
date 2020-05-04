@@ -141,7 +141,7 @@ class XBoard {
      * Add new moves
      * - handle PGN format from TCEC
      * - can handle 2 pv lists
-     * @param {Move[]|string} moves
+     * @param {Move[]} moves
      * @param {number} start starting ply for those moves
      */
     add_moves(moves, start) {
@@ -157,15 +157,6 @@ class XBoard {
                     }
                     return [parent, last];
                 });
-
-        // special case: just append a text, ex: 1-0
-        if (!Array.isArray(moves)) {
-            for (let [parent, last] of parent_lasts) {
-                let node = CreateNode('i', moves);
-                parent.insertBefore(node, last);
-            }
-            return;
-        }
 
         // proper moves
         for (let i = 0; i < num_new; i ++) {
@@ -780,7 +771,7 @@ class XBoard {
             for (let j = 0; j < num_col; j ++) {
                 let char = grid[`${i}${j}`];
                 if (!char)
-                    char = ((i + j) % 2)? ' ': '.';
+                    char = ((i + j) % 2)? ' ': '·';
                 vector.push(char);
             }
 
@@ -810,6 +801,7 @@ class XBoard {
         this.ply = 0;
         HTML(this.xmoves, '');
         HTML(this.pv_node, '');
+        this.set_last('*');
     }
 
     /**
@@ -817,8 +809,11 @@ class XBoard {
      * @param {number=} width
      */
     resize(width) {
-        if (!width)
+        if (!width) {
+            if (!this.node)
+                return;
             width = this.node.clientWidth;
+        }
 
         let border = this.border,
             num_col = this.dims[1],
@@ -881,6 +876,14 @@ class XBoard {
             animate = true;
         this.animate(move, animate);
         return true;
+    }
+
+    /**
+     * Set the result (last item in the moves list)
+     * @param {string} text
+     */
+    set_last(text) {
+        HTML('.last', text);
     }
 
     /**

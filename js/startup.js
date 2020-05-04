@@ -14,7 +14,7 @@ api_translate_get, Attrs,
 C, change_theme, check_hash, Class, create_field_value, DEV, document, download_tables, Events, fill_languages,
 game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph, init_sockets,
 KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, load_defaults, LoadLibrary, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
+LANGUAGES:true, LINKS, load_defaults, load_library, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
 Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
 Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
@@ -211,10 +211,7 @@ function insert_google_ads() {
     insert_google_ad(1);
     insert_google_ad(2);
 
-    LoadLibrary('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', () => {
-        if (DEV.load & 1)
-            LS('google ads loaded');
-    });
+    load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
 }
 
 /**
@@ -229,10 +226,7 @@ function load_google_analytics() {
         ['b._trackPageview'],
     );
 
-    LoadLibrary(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js', () => {
-        if (DEV.load & 1)
-            LS('google analytics loaded');
-    });
+    load_library(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
 }
 
 /**
