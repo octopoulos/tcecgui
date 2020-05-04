@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-24
+// @version 2020-05-04
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -17,8 +17,8 @@ KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, load_defaults, LoadLibrary, localStorage, LS, Max, Min, Now, Parent, parse_dev, resize_game,
 Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
-Split, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style, tcecHandleKey,
-THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
+Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
+tcecHandleKey, THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true, window, Y
 */
 'use strict';
@@ -165,6 +165,7 @@ function init_globals() {
     update_twitch(null, null, true);
     add_timeout('twitch', update_twitch, TIMEOUTS.twitch);
     add_timeout('graph', init_graph, TIMEOUTS.graph);
+    add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
     // TODO: change that
     // add_timeout('update_live', () => {
@@ -279,6 +280,22 @@ function resize() {
 
     adjust_popups();
     resize_game();
+}
+
+/**
+ * Enable/disable 3d scene rendering
+ * + start the 3d engine if on
+ * @param {boolean} three
+ */
+function set_3d_scene(three) {
+    if (three != undefined)
+        save_option('three', three);
+    three = Y.three;
+
+    Style('#three', `color:${three? '#fff': '#555'}`);
+    S('#canvas', three);
+    if (three)
+        start_3d();
 }
 
 /**
@@ -471,12 +488,8 @@ function update_twitch(dark, chat_url, only_resize) {
  */
 function set_global_events() {
     // general
-    Events(window, 'resize', () => {
-        resize();
-    });
-    Events(window, 'scroll', () => {
-        adjust_popups();
-    });
+    Events(window, 'resize', resize());
+    Events(window, 'scroll', adjust_popups);
     // it won't be triggered by pushState and replaceState
     Events(window, 'hashchange', () => {
         check_hash();
@@ -616,6 +629,10 @@ function set_global_events() {
         let [left, right] = this.id.split('-');
         save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
+    });
+
+    C('#three', () => {
+        set_3d_scene(!Y.three);
     });
 }
 

@@ -443,7 +443,7 @@ function new_vector3(x, y, z) {
  * Render the 3D scene
  */
 function render() {
-    if (!cube || !clock)
+    if (!cube || !clock || !Y.three)
         return;
 
     let [can_render, can_simulate] = virtual_can_render_simulate? virtual_can_render_simulate(): [true, true],

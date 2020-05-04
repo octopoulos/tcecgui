@@ -22,8 +22,7 @@ Y
 */
 'use strict';
 
-let BOARD_MODES = ['html', 'text', '3d'],
-    COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
+let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     CONTROLS = {
         start: {
             class: 'mirror',
@@ -517,7 +516,7 @@ class XBoard {
             if (typeof(value) == 'string')
                 title = value;
             if (title)
-                title = ` title="${title}"`;
+                title = ` data-t="${title}" data-t2="title"`;
 
             // handle dual elements: play/pause
             let attr = ` data-x="${name}"`,

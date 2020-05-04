@@ -10,7 +10,7 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox, BOARD_MODES,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, change_setting, Class, clear_timeout, controls, CreateNode, cube:true, DEFAULTS, DEV,
 Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, InsertNodes, Keys,
 load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, resize_3d, Resource,
@@ -1551,10 +1551,7 @@ function handle_board_events(board, type, value) {
     case 'control':
         board_target = board;
         if (value == 'cube') {
-            let modes = BOARD_MODES;
-            board.mode = modes[(modes.indexOf(board.mode) + 1) % modes.length];
-            if (board.mode == '3d')
-                start_3d();
+            board.mode = (board.mode == 'html')? 'text': 'html';
             board.render(3);
         }
         break;
@@ -1740,6 +1737,7 @@ function startup_game() {
         live_engine1: 1,
         live_engine2: 1,
         order: 'left|center|right',
+        three: 0,
         twitch_chat: 1,
         twitch_dark: 1,
         twitch_video: 1,

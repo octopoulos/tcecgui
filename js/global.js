@@ -20,6 +20,7 @@ let HOST = 'https://tcec-chess.com',
         banner: 30 * 1000,
         google_ad: -1,                  // disabled
         tables: 3 * 1000,
+        three: 1 * 1000,                // 3d scene
         twitch: 5 * 1000,
         users: 5 * 1000,
     };

@@ -530,10 +530,12 @@ grid {
 #table-chat {
     max-width: 510px;
     width: 100%;
+    z-index: 1;
 }
 #table-info {
     font-size: 1.1em;
     padding: 1em;
+    z-index: 1;
 }
 #table-season a {
     color: #212529;
@@ -764,10 +766,12 @@ grid {
     font-size: 0.95em;
     font-weight: 500;
     margin: 0.15em 0;
+    z-index: 1;
 }
 .live-more {
     font-size: 0.8em;
     margin-bottom: 0.15em;
+    z-index: 1;
 }
 .live-pv {
     height: 3em;
@@ -816,10 +820,6 @@ grid {
     flex: 1;
     min-width: 372px;
 }
-#lives {
-    min-height: 300px;
-    width: 100%;
-}
 #footer {
     padding: 1em;
 }
@@ -838,6 +838,7 @@ grid {
     cursor: pointer;
     opacity: 0;
     padding: 0.1em 0.3em;
+    z-index: 1;
 }
 .swap:hover {
     color: rgb(0, 0, 0, 0.5);
@@ -850,6 +851,7 @@ grid {
 }
 #charts {
     order: 4;
+    z-index: 1;
 }
 #table-pva {
     order: 5;
@@ -866,6 +868,7 @@ grid {
 }
 #theme0,
 #theme1,
+#three,
 #twitch0,
 #twitch1 {
     cursor: pointer;
@@ -874,6 +877,9 @@ grid {
 }
 #theme1 {
     color: #fff;
+}
+#three {
+    color: #555;
 }
 .graphs {
     background-color: rgba(47, 152, 208, 0.1);
