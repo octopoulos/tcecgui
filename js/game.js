@@ -11,7 +11,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
+C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
 DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id,
 InsertNodes, Keys,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
@@ -39,7 +39,9 @@ let BOARD_THEMES = {
     },
     board_target,
     BOARDS = {
-        board: {},
+        board: {
+            last: '*',
+        },
         pv0: {
             pv_id: '#player0 .live-pv',
         },
@@ -63,9 +65,11 @@ let BOARD_THEMES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
     },
+    finished,
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply = 0,
+    PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
         sched: 10,
@@ -82,6 +86,7 @@ let BOARD_THEMES = {
     },
     players = [{}, {}],                 // current 2 players
     prev_round,
+    queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     ROUND_NAMES = {
         1: 'Final',
         2: 'SemiFinal',
@@ -93,7 +98,10 @@ let BOARD_THEMES = {
         1: 'win',
         '=': 'draw',
     },
-    table_data = {},
+    table_data = {
+        archive: {},
+        live: {},
+    },
     TABLES = {
         crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
@@ -108,6 +116,7 @@ let BOARD_THEMES = {
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TIMEOUT_PLY_LIVE = 100,             // when moving the cursor, wait a bit before updating live history
+    TIMEOUT_QUEUE = 100,                // check the queue after updating a table
     tour_info = {},
     virtual_opened_table_special,
     xboards = {},
@@ -211,6 +220,25 @@ function calculate_score(text) {
     }
 
     return {w: white, b: black};
+}
+
+/**
+ * Get the active tab name
+ * + translate shortcuts
+ * @param {string} parent
+ * @returns {string[]} name, original
+ */
+function get_active_tab(parent) {
+    let active = _(`#${parent}-tabs .active`);
+    if (!active)
+        return '';
+
+    let name = active.dataset.x,
+        translated = name;
+    if (name.slice(0, 8) == 'shortcut')
+        translated = Y[name];
+
+    return [translated, name];
 }
 
 /**
@@ -396,6 +424,120 @@ function analyse_tournament(data) {
 }
 
 /**
+ * Change the page from quick/table
+ * @param {string} parent quick, table
+ * @param {string} value +1, -1, 0, 1, 2, ...
+ */
+function change_page(parent, value) {
+    let [active, source] = get_active_tab(parent);
+
+    if (DEV.ui & 1)
+        LS(`change_page: ${parent} : ${value} ~ ${active}`);
+
+    let page,
+        page_key = `page_${parent}`,
+        data_x = SetDefault(table_data[Y.x], active, {data: []}),
+        num_row = data_x.data.length,
+        num_page = Ceil(num_row / Y.rows_per_page);
+
+    if ('+-'.includes(value[0]))
+        page = (data_x[page_key] || 0) + parseInt(value);
+    else
+        page = value * 1;
+
+    if (page < 0)
+        page += num_page;
+    else if (page >= num_page)
+        page -= num_page;
+
+    // refresh the table
+    data_x[page_key] = page;
+    update_table(active, null, parent, {output: source});
+}
+
+/**
+ * Check pagination for the currently active tables
+ */
+function check_paginations() {
+    let parents = new Set(PAGINATION_PARENTS);
+
+    for (let parent of PAGINATION_PARENTS) {
+        // check if the active tab can be paginated
+        let [name] = get_active_tab(parent);
+        if (!PAGINATIONS[name])
+            continue;
+
+        // check if there's enough data
+        let data_x = table_data[Y.x][name];
+        if (!data_x)
+            continue;
+
+        let data = data_x.data,
+            num_row = data.length,
+            num_page = Ceil(num_row / Y.rows_per_page),
+            page = data_x[`page_${parent}`];
+
+        if (num_page < 2)
+            continue;
+
+        // many rows => enable pagination
+        // - only create the HTML if it doesn't already exist
+        let node = Id(`${parent}-pagin`),
+            pages = A('.page', node);
+
+        if (pages.length != num_page + 2) {
+            let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
+            if (parent != 'quick')
+                for (let id = 0; id < num_page; id ++)
+                    lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
+
+            lines.push('<a class="page page-next" data-p="+1">&gt;</a>');
+            HTML('.pages', lines.join(''), node);
+            HTML('.num-row', num_row, node);
+        }
+
+        Show(node);
+        parents.delete(parent);
+    }
+
+    // no match for those => hide pagination
+    for (let parent of parents)
+        Hide(`#${parent}-pagin`);
+}
+
+/**
+ * Check if some queued tables can be created
+ */
+function check_queued_tables() {
+    clear_timeout('queue');
+    let removes = [];
+
+    for (let queued of queued_tables) {
+        if (DEV.ui & 1)
+            LS(`queued: ${queued}`);
+
+        let [parent, table] = queued.split('/');
+        if (table != 'h2h')
+            continue;
+
+        let data = table_data[Y.x].sched;
+        if (!data)
+            continue;
+
+        data = data.data;
+        let names = [players[0].name, players[1].name],
+            new_rows = data.filter(row => names.includes(row.white) && names.includes(row.black));
+
+        update_table(table, new_rows);
+        check_paginations();
+        removes.push(queued);
+    }
+
+    for (let remove of removes)
+        queued_tables.delete(remove);
+}
+
+/**
  * Create a field for a table value
  * @param {string} text
  * @returns {string[]} field, value
@@ -535,19 +677,21 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
         }
 
         // if cached and table was already filled => skip
+        let skip;
         if (cached) {
             let nodes = A(`#table-${name} tr`);
-            if (nodes.length > 1)
-                return;
+            skip = (nodes.length > 1);
         }
 
         // fill the table
-        if (callback)
-            callback(data);
-        else if (name) {
-            update_table(name, data);
-            if (show)
-                open_table(name);
+        if (!skip) {
+            if (callback)
+                callback(data);
+            else if (name) {
+                update_table(name, data);
+                if (show)
+                    open_table(name);
+            }
         }
     }
 
@@ -555,9 +699,10 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
         timeout = CACHE_TIMEOUTS[name];
 
     if (!no_cache && timeout) {
-        key = `table_${name}`;
+        // save cache separately for Live and Archive
+        key = `table_${name}_${Y.x}`;
         let cache = get_object(key);
-        if (cache && (only_cache || cache.time < Now() + timeout)) {
+        if (cache && (only_cache || Now() < cache.time + timeout)) {
             if (DEV.json & 1)
                 LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
             _done(cache.data, true);
@@ -654,38 +799,87 @@ function show_tables(type) {
 
 /**
  * Update a table by adding rows
- * @param {string} name
- * @param {Object[]} data
- * @param {boolean=} reset clear the table before adding data to it (seems like we always need true?)
+ * - handles all the tables
+ * @param {string} name h2h, sched, stand, ...
+ * @param {Object[]} rows if null then uses the cached table_data
+ * @param {string=} parent chart, engine, quick, table
+ * @param {string=} output output the result to another name
+ * @param {boolean=} reset clear the table before adding data to it (so far always the case)
  */
-function update_table(name, rows, reset=true) {
-    let last,
-        data_x = SetDefault(table_data, Y.x, {}),
-        data = SetDefault(data_x, name, []),
+function update_table(name, rows, parent='table', {output, reset=true}={}) {
+    // 1) update table data
+    let data_x = SetDefault(table_data[Y.x], name, {data: []}),
+        data = data_x.data,
+        page_key = `page_${parent}`,
+        table = Id(`table-${output || name}`),
+        body = _('tbody', table);
+
+    // reset or append?
+    // - except if rows is null
+    if (reset) {
+        HTML(body, '');
+        if (rows) {
+            data.length = 0;
+            delete data_x[page_key];
+        }
+    }
+
+    if (rows) {
+        if (!Array.isArray(rows))
+            return;
+
+        rows.forEach((row, row_id) => {
+            row = Assign({row_id: row_id}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
+            data.push(row);
+        });
+    }
+
+    // 2) handle pagination
+    let paginated,
+        active_row = -1;
+
+    if (PAGINATIONS[name]) {
+        let [active] = get_active_tab(parent),
+            page = data_x[page_key],
+            row_page = Y.rows_per_page;
+
+        if (active == name) {
+            let node = Id(`${parent}-pagin`),
+                num_row = data.length;
+
+            // find the active row + update initial page
+            for (let row of data) {
+                if (!row.moves) {
+                    active_row = row.row_id;
+                    break;
+                }
+            }
+            if (active_row >= 0)
+                data_x.row = active_row;
+            if (page == undefined)
+                page = (active_row >= 0)? Floor(active_row / row_page): 0;
+
+            HTML('.num-row', num_row, node);
+            Class('.active', '-active', true, node);
+            Class(`[data-p="${page}"]`, 'active', true, node);
+        }
+
+        let start = page * row_page;
+        data = data.slice(start, start + row_page);
+        paginated = true;
+        data_x[page_key] = page;
+    }
+
+    // 3) process all rows => render the HTML
+    let columns = Array.from(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
-        // is_event = (name == 'event'),
         is_game = (name == 'game'),
         is_sched = (name == 'sched'),
         is_winner = (name == 'winner'),
-        new_rows = [],
-        nodes = [],
-        table = Id(`table-${name}`),
-        body = _('tbody', table),
-        columns = Array.from(A('th', table)).map(node => node.dataset.x);
+        nodes = [];
 
-    // reset or append?
-    if (reset) {
-        HTML(body, '');
-        data.length = 0;
-    }
-
-    if (!Array.isArray(rows))
-        return;
-
-    // process all rows
-    rows.forEach((row, row_id) => {
-        row = Assign({}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
-        data.push(row);
+    for (let row of data) {
+        let row_id = row.row_id;
 
         let vector = columns.map(key => {
             let class_ = '',
@@ -776,42 +970,56 @@ function update_table(name, rows, reset=true) {
             return `<td${td_class}>${value}</td>`;
         });
 
-        // special case
-        if (is_sched) {
-            if (!last && nodes.length && !row.moves) {
-                nodes[nodes.length - 1].classList.add('active');
-                last = true;
-            }
-            if (row.white == players[0].name && row.black == players[1].name)
-                new_rows.push(row);
-        }
+        // create a new row node
+        let dico = null;
+        if (is_game || is_sched || name == 'h2h')
+            dico = {
+                class: `pointer${row_id == active_row? ' active': ''}`,
+                'data-g': row_id + 1,
+            };
 
-        let dico = (is_game || is_sched || name == 'h2h')? {class: 'pointer', 'data-g': row_id + 1}: null,
-            node = CreateNode('tr', vector.join(''), dico);
+        let node = CreateNode('tr', vector.join(''), dico);
         nodes.push(node);
-    });
+    }
 
     InsertNodes(body, nodes);
+    update_svg(table);
+    translate_node(table);
 
-    // add events
-    if (is_sched)
-        update_table('h2h', new_rows, reset);
-    else if (name == 'season')
+    // 4) add events
+    if (name == 'season')
         set_season_events();
 
     C('tr[data-g]', function() {
         Class('tr.active', '-active', true, table);
-        Class(this, 'active', true, table);
+        Class(this, 'active');
     }, table);
 
-    update_svg(table);
-    translate_node(table);
+    // 5) update shortcuts
+    if (parent != 'quick') {
+        let html = HTML(table);
+        for (let id = 1; id <= 2 ; id ++) {
+            // shortcut matches this table?
+            let key = `shortcut_${id}`;
+            if (name != Y[key])
+                continue;
 
-    // shortcuts
-    let html = HTML(table);
-    for (let id = 1; id <= 2 ; id ++)
-        if (name == Y[`shortcut_${id}`])
-            HTML(`#table-shortcut${id}`, html);
+            let node = Id(`table-${key}`);
+            if (paginated && data_x.page_quick != undefined)
+                update_table(name, null, 'quick', {output: key});
+            else {
+                HTML(node, html);
+                data_x.page_quick = data_x[page_key];
+            }
+        }
+    }
+
+    // 6) create another table?
+    if (is_sched) {
+        queued_tables.add(`${parent}/h2h`);
+        if (players[0].name)
+            add_timeout('queue', check_queued_tables, TIMEOUT_QUEUE);
+    }
 }
 
 // BRACKETS
@@ -1048,6 +1256,7 @@ function update_move_info(ply, move, fresh) {
         });
 
     update_clock(id);
+    start_clock(id, finished);
 }
 
 /**
@@ -1127,7 +1336,7 @@ function update_pgn(pgn_) {
     // 2) update the moves
     let board = xboards.board,
         move = moves[num_move - 1],
-        last_ply = (pgn.numMovesToSend || moves.length) + start;
+        last_ply = (pgn.numMovesToSend || 0) + start;
 
     // new game?
     if (prev_round != headers.Round || !last_ply || last_ply < num_ply) {
@@ -1135,19 +1344,20 @@ function update_pgn(pgn_) {
         reset_boards();
         reset_charts();
         prev_round = headers.Round;
+        new_game = true;
     }
 
     board.add_moves(moves, start);
     update_player_chart(null, moves, start);
-    if (Y.move_sound)
+    if (!new_game && Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
     // 3) check adjudication + update overview
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
     HTML('td[data-x="tb"]', tb, overview);
 
-    let finished = headers.TerminationDetails,
-        result = check_adjudication(move.adjudication, num_ply);
+    let result = check_adjudication(move.adjudication, num_ply);
+    finished = headers.TerminationDetails;
     result.adj_rule = finished;
     Keys(result).forEach(key => {
         HTML(`td[data-x="${key}"]`, result[key], overview);
@@ -1162,20 +1372,7 @@ function update_pgn(pgn_) {
         board.set_last(result);
     }
 
-    // 4) clock
-    // num_ply % 2 tells us who plays next
-    num_ply = board.moves.length;
-    let who = num_ply % 2;
-    start_clock(who, finished);
-
-    // time control could be different for white and black
-    let tc = headers[`${WB_TITLES[who]}TimeControl`];
-    if (tc) {
-        let items = tc.split('+');
-        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
-    }
-
-    // 5) engines
+    // 4) engines
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
             node = Id(`player${id}`),
@@ -1197,6 +1394,22 @@ function update_pgn(pgn_) {
             image.src = src;
         }
     });
+
+    // 5) clock
+    // num_ply % 2 tells us who plays next
+    num_ply = board.moves.length;
+    let who = num_ply % 2;
+    start_clock(who);
+
+    // time control could be different for white and black
+    let tc = headers[`${WB_TITLES[who]}TimeControl`];
+    if (tc) {
+        let items = tc.split('+');
+        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+    }
+
+    // got player info => can do h2h
+    check_queued_tables();
 
     for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
         let move = moves[i];
@@ -1309,16 +1522,19 @@ function set_viewers(count) {
 /**
  * Start the clock for one player, and stop it for the other
  * @param {number} id
- * @param {boolean=} finished game is over => both clocks will stop
  */
-function start_clock(id, finished) {
+function start_clock(id) {
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
     clear_timeout('clock0');
     clear_timeout('clock1');
+
     if (!finished) {
-        players[id].start = Now(true);
+        Assign(players[id], {
+            elapsed: 0.000001,
+            start: Now(true),
+        });
         clock_tick(id);
     }
 }
@@ -1348,15 +1564,16 @@ function update_live_eval(data, id) {
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
-        HTML(`[data-x="name"]`, short, node);
         HTML('.live-pv', `<i>${translate('off')}</i>`, node);
         return;
     }
 
+    if (short)
+        HTML(`[data-x="name"]`, short, node);
+
     let dico = {
         depth: data.depth,
         eval: eval_,
-        name: short,
         node: FormatUnit(data.nodes),
         score: calculate_probability(short, eval_),
         speed: data.speed,
@@ -1421,10 +1638,11 @@ function update_clock(id) {
     let player = players[id],
         elapsed = player.elapsed,
         left = player.left,
-        time = player.time;
+        time = Round((elapsed > 0? elapsed: player.time) / 1000);
 
-    left = left? FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':'): 'n/a';
-    time = time? FromSeconds(Round((time + elapsed) / 1000)).slice(1, -1).map(item => Pad(item)).join(':'): 'n/a';
+    left = isNaN(left)? 'n/a': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
+    time = isNaN(time)? 'n/a': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
+
     HTML(`#left${id}`, left);
     HTML(`#time${id}`, time);
 }
@@ -1625,16 +1843,20 @@ function handle_board_events(board, type, value) {
 function open_table(sel, hide_table=true) {
     if (typeof(sel) == 'string')
         sel = _(`div.tab[data-x="${sel}"]`);
+    if (!sel)
+        return;
 
     let parent = Parent(sel, 'horis', 'tabs'),
-        active = _('div.active', parent),
+        active = _('.active', parent),
         key = sel.dataset.x,
         node = Id(`table-${key}`);
 
-    Class(active, '-active');
+    if (active) {
+        Class(active, '-active');
+        if (hide_table)
+            Hide(`#table-${active.dataset.x}`);
+    }
     Class(sel, 'active');
-    if (hide_table)
-        Hide(`#table-${active.dataset.x}`);
     Show(node);
 
     opened_table(node, key, sel);
@@ -1648,12 +1870,12 @@ function open_table(sel, hide_table=true) {
  */
 function opened_table(node, name, tab) {
     // 1) save the tab
-    let parent = Parent(tab),
-        is_chart = (parent.id == 'chart-tabs');
-    if (DEV.ui)
-        LS(`opened_table: ${parent.id}/${name}`);
+    let parent = Parent(tab).id,
+        is_chart = (parent == 'chart-tabs');
+    if (DEV.ui & 1)
+        LS(`opened_table: ${parent}/${name}`);
 
-    Y.tabs[parent.id] = name;
+    Y.tabs[parent] = name;
     save_option('tabs', Y.tabs);
 
     // 2) special cases
@@ -1676,8 +1898,8 @@ function opened_table(node, name, tab) {
         if (is_chart)
             open_table('engine', false);
         else {
-            let active = _('#chart-tabs .active');
-            if (active && active.dataset.x == 'pv')
+            let [active] = get_active_tab('chart');
+            if (active == 'pv')
                 open_table('eval', false);
         }
         break;
@@ -1688,6 +1910,8 @@ function opened_table(node, name, tab) {
         download_table('winners.json', name);
         break;
     }
+
+    check_paginations();
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
@@ -1760,11 +1984,6 @@ function set_game_events() {
     Events('#info0, #info1', 'click mouseenter mousemove mouseleave', function(e) {
         popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
     });
-
-    // tabs
-    C('div.tab', function() {
-        open_table(this);
-    });
 }
 
 // STARTUP
@@ -1788,7 +2007,7 @@ function startup_game() {
     Assign(DEFAULTS, {
         order: 'left|center|right',         // main panes order
         tabs: {},                           // opened tabs
-        three: 0,
+        three: 0,                           // 3d scene
         twitch_chat: 1,
         twitch_dark: 1,
         twitch_video: 1,
@@ -1823,6 +2042,7 @@ function startup_game() {
         },
         extra: {
             cross_crash: [ON_OFF, 0],
+            rows_per_page: [[10, 20, 50, 100], 10],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },

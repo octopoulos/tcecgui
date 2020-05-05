@@ -3,7 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js (slow)
--          : 2020-05-03 : add pagination to some tables
+2020-05-05 : 2020-05-03 : add pagination system
+2020-05-05 : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 2020-05-04 : 2020-05-04 : compress create_charts + add click events
 2020-05-04 : 2020-05-04 : finish network.js: handle all events + live_log
 2020-05-04 : 2020-05-04 : engine colors should be more obvious in live PV
@@ -118,7 +119,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 -          : 2020-05-04 : show move arrows
--          : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
@@ -126,8 +126,8 @@ medium:
 -          : 2020-05-03 : delete the old code
 low:
 -          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
--          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2029-04-29 : add SVG connectors to the bracket
+-          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)

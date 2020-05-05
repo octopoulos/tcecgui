@@ -114,6 +114,7 @@ function create_charts()
         legend: {
             display: false
         },
+        responsive: true,
         title: {
             display: false,
         },
@@ -511,6 +512,8 @@ function update_player_chart(name, moves, start) {
             num2 = num - first_num;
 
         labels[num2] = num + 1;
+        if (!move)
+            continue;
 
         let dico = {
             x: num + 1,     // move number

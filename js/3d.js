@@ -1322,8 +1322,8 @@ function start_3d() {
 function startup_3d() {
     merge_settings({
         general: {
-            language: [LANGUAGES, Y.lan],
-            theme: [THEMES, Y.theme],
+            language: [LANGUAGES, 'eng'],
+            theme: [THEMES, THEMES[0]],
         },
         audio: {
             crowd_sound: [ON_OFF, 1],

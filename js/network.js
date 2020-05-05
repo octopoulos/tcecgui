@@ -1,7 +1,6 @@
 // network
 //
-// moved all socket functions here
-// TODO: move this to startup because this code will be very short once the DELETE have been deleted?
+// all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
@@ -61,7 +60,7 @@ function init_sockets() {
     });
     socket.on('livechart1', data => {
         log_socket('livechart1', data);
-        update_live_eval(data, 0);
+        update_live_eval(data, 1);
     });
     socket.on('liveeval', data => {
         log_socket('liveeval', data);

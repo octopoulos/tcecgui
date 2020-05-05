@@ -11,9 +11,9 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Attrs,
-C, change_theme, check_hash, Class, create_field_value, DEV, document, download_live, download_tables, ENGINE_COLORS,
-Events, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, init_graph,
-init_sockets, KEY_TIMES, Keys, KEYS,
+C, change_page, change_theme, check_hash, Class, create_field_value, DEV, document, download_live, download_tables,
+ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
+init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
 open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
@@ -416,6 +416,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
         node.dataset.id = show? name: '';
 
         set_modal_events(node);
+        Show(node);
     }
 }
 
@@ -426,7 +427,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
  */
 function update_shortcuts() {
     for (let id = 1; id <= 2 ; id ++) {
-        let tab = _(`.tab[data-x="shortcut${id}"]`),
+        let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
 
         if (shortcut) {
@@ -436,7 +437,7 @@ function update_shortcuts() {
             if (target) {
                 tab.dataset.t = target.dataset.t;
                 translate_node(tab.parentNode);
-                HTML(`#table-shortcut${id}`, HTML(`#table-${shortcut}`));
+                HTML(`#table-shortcut_${id}`, HTML(`#table-${shortcut}`));
             }
         }
         S(tab, shortcut);
@@ -552,6 +553,11 @@ function set_global_events() {
                 in_modal = true;
                 return;
             }
+            if (HasClass(target, 'page')) {
+                let parent = Parent(target, 'horis', 'pagin');
+                change_page(parent.id.split('-')[0], target.dataset.p);
+                break;
+            }
 
             // sub settings
             let dataset = target.dataset;
@@ -593,9 +599,13 @@ function set_global_events() {
         save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
     });
-
     C('#three', () => {
         set_3d_scene(!Y.three);
+    });
+
+    // tabs
+    C('div.tab', function() {
+        open_table(this);
     });
 }
 

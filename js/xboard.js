@@ -80,8 +80,9 @@ class XBoard {
      * - dims           // [num_col, num_row]
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' too
+     * - last           // default result text, ex: *
      * - list           // show move list history
-     * - mode         // 3d, canvas, html, text
+     * - mode           // 3d, canvas, html, text
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
      * - pv_id          // extra output selector for PV list
      * - rotate         // board rotation
@@ -95,6 +96,7 @@ class XBoard {
         this.dims = options.dims || [8, 8];
         this.hook = options.hook;
         this.id = options.id;
+        this.last = options.last || '';
         this.list = options.list;
         this.mode = options.mode || 'html';
         this.notation = options.notation || 6;
@@ -152,7 +154,7 @@ class XBoard {
                 .map(parent => {
                     let last = _('.last', parent);
                     if (!last) {
-                        last = CreateNode('i', '*', {class: 'last'});
+                        last = CreateNode('i', this.last, {class: 'last'});
                         parent.appendChild(last);
                     }
                     return [parent, last];
@@ -730,9 +732,9 @@ class XBoard {
                         row = 7 - row;
 
                     if (found)
-                        Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1`);
+                        Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1;pointer-events:all`);
                     else
-                        Style(node, 'opacity:0');
+                        Style(node, 'opacity:0;pointer-events:none');
                 }
             });
 
@@ -801,7 +803,7 @@ class XBoard {
         this.ply = 0;
         HTML(this.xmoves, '');
         HTML(this.pv_node, '');
-        this.set_last('*');
+        this.set_last(this.last);
     }
 
     /**

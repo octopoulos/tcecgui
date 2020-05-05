@@ -146,24 +146,24 @@
                 <div class="logo">
                     <img id="logo1" src="image/tcec.jpg">
                 </div>
-                <div id="eval0"></div>
+                <div id="eval0">&nbsp;</div>
                 <vert class="fcenter">
                     <div id="eval" data-t="Eval"></div>
                 </vert>
                 <div id="eval1"></div>
-                <div id="depth0"></div>
+                <div id="depth0">&nbsp;</div>
                 <div data-t="{Depth}/{SD}"></div>
                 <div id="depth1"></div>
-                <div id="speed0"></div>
+                <div id="speed0">&nbsp;</div>
                 <div data-t="Speed"></div>
                 <div id="speed1"></div>
-                <div id="node0"></div>
+                <div id="node0">&nbsp;</div>
                 <div data-t="Nodes"></div>
                 <div id="node1"></div>
-                <div id="tb0"></div>
+                <div id="tb0">&nbsp;</div>
                 <div data-t="TB Hits"></div>
                 <div id="tb1"></div>
-                <div id="score0"></div>
+                <div id="score0">&nbsp;</div>
                 <div data-t="{Score}({Elo})"></div>
                 <div id="score1"></div>
                 <div id="left0">&nbsp;</div>
@@ -230,25 +230,35 @@
                 <div class="tab active" data-x="chat" data-t="Chat"></div>
                 <div class="tab" data-x="winner" data-t="Winners"></div>
                 <div class="tab" data-x="info" data-t="Info"></div>
-                <div class="tab" data-x="shortcut1"></div>
-                <div class="tab" data-x="shortcut2"></div>
+                <div class="tab" data-x="shortcut_1"></div>
+                <div class="tab" data-x="shortcut_2"></div>
             </horis>
-            <!-- twitch chat -->
-            <vert id="table-chat">
-                <vert class="w100">
-                    <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
-                    <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
+            <vert class="w100">
+                <!-- pagination -->
+                <horis id="quick-pagin" class="pagin fbetween dn">
+                    <div>
+                        <i class="num-row"></i>
+                        <i data-t="rows"></i>
+                    </div>
+                    <div class="pages"></div>
+                </horis>
+                <!-- twitch chat -->
+                <vert id="table-chat">
+                    <vert class="w100">
+                        <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                        <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
+                    </vert>
+                    <hori id="twitch-theme" class="fend">
+                        <i id="twitch0" data-svg="sun" class="dn"></i>
+                        <i id="twitch1" data-svg="moon" class="dn"></i>
+                        <i id="hide-chat" data-svg="x" class="dn"></i>
+                    </hori>
                 </vert>
-                <hori id="twitch-theme" class="fend">
-                    <i id="twitch0" data-svg="sun" class="dn"></i>
-                    <i id="twitch1" data-svg="moon" class="dn"></i>
-                    <i id="hide-chat" data-svg="x" class="dn"></i>
-                </hori>
+                <div id="table-winner" class="scroller dn"></div>
+                <div id="table-info" class="dn">INFO</div>
+                <div id="table-shortcut_1" class="scroller dn"></div>
+                <div id="table-shortcut_2" class="scroller dn"></div>
             </vert>
-            <div id="table-winner" class="scroller dn"></div>
-            <div id="table-info" class="dn">INFO</div>
-            <div id="table-shortcut1" class="scroller dn"></div>
-            <div id="table-shortcut2" class="scroller dn"></div>
         </vert>
     </hori>
     <!-- ad2 -->
@@ -297,6 +307,15 @@
                 <i data-t="Crash info"></i>
             </div>
         </horis>
+        <!-- pagination -->
+        <horis id="table-pagin" class="pagin fbetween dn">
+            <div>
+                <i class="num-row"></i>
+                <i data-t="rows"></i>
+            </div>
+            <div class="pages"></div>
+        </horis>
+        <!-- tables -->
         <div id="table-season" class="scroller dn"></div>
         <div id="table-game" class="scroller dn"></div>
         <div id="table-brak" class="scroller dn"></div>
@@ -349,7 +368,7 @@
     <div>TCEC is sponsored by Noobpwnftw</div>
 </vert>
 <!-- popup -->
-<vert id="popup-about" class="popup">
+<vert id="popup-about" class="popup dn">
     <hori class="fbetween">
         <h5>About TCEC</h5>
         <i class="popup-close" data-svg="x"></i>

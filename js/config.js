@@ -87,7 +87,7 @@ function startup_config() {
     Assign(TIMEOUTS, {
         banner: 30 * 1000,
         google_ad: 5 * 1000,
-        graph: 2 * 1000,
+        graph: 1 * 1000,
         tables: 100,
         twitch: 8 * 1000,
         users: 5 * 1000,
