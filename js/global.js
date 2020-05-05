@@ -60,6 +60,6 @@ function parse_dev() {
         }
     }
 
-    if (DEV.debug & 1)
+    if (DEV.debug)
         LS(DEV);
 }

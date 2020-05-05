@@ -251,7 +251,7 @@ function init_3d(force) {
     // renderer.shadowMap.type = T.PCFSoftShadowMap;
 
     // more
-    if (DEV.frame & 1) {
+    if (DEV.frame) {
         stats = new Stats();
         stats.showPanel(0);     // 0: fps, 1: ms, 2: mb, 3+: custom
         document.body.appendChild(stats.dom);
@@ -1218,7 +1218,7 @@ function update_debug() {
         sep = ' : ';
 
     // gamepad
-    if (DEV.input & 1) {
+    if (DEV.input) {
         lines.push('&nbsp;');
         lines.push(`id=${gamepad_id}`);
         lines.push(`axes=${Format(axes, sep)}`);
@@ -1229,7 +1229,7 @@ function update_debug() {
     }
 
     // debugs
-    if (DEV.debug & 1) {
+    if (DEV.debug) {
         let debug_keys = Keys(debugs).sort();
         if (debug_keys.length) {
             lines.push('&nbsp;');

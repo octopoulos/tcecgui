@@ -314,7 +314,7 @@ function setPgn(pgn)
         Attrs('#newmove', 'data-count', 0);
     }
 
-    if (pgn.Moves && (DEV.ply & 1))
+    if (pgn.Moves && DEV.ply)
         LS("XXX: Entered for pgn.Moves.length:" + pgn.Moves.length + " , round is :" + pgn.Headers.Round);
 
     if (pgn.gameChanged) {
@@ -324,11 +324,11 @@ function setPgn(pgn)
         setInfoFromCurrentHeaders();
         updateH2hData();
         updateScoreHeadersData();
-        if (DEV.ply & 1)
+        if (DEV.ply)
             LS("New game, round is :" + parseFloat(pgn.Headers.Round));
     }
     else {
-        if (DEV.ply & 1)
+        if (DEV.ply)
             LS("prevPgnData.Moves.length:" + prevPgnData.Moves.length + " ,pgn.lastMoveLoaded:" + pgn.lastMoveLoaded);
         if (parseFloat(prevPgnData.Headers.Round) != parseFloat(pgn.Headers.Round))
         {
@@ -380,7 +380,7 @@ function setPgn(pgn)
     else
         stopClock(turn);
 
-    if (DEV.ply & 1)
+    if (DEV.ply)
         LS(`XXX: loadedPlies=${loadedPlies} : num_ply=${num_ply} : currentGameActive=${currentGameActive}`
             + `gameActive=${gameActive} : gameChanged=${pgn.gameChanged}`);
     if (loadedPlies == num_ply && (currentGameActive == gameActive))
@@ -487,7 +487,7 @@ function setPgn(pgn)
     }
 
     if (pgn.Headers == undefined) {
-        if (DEV.ply & 1)
+        if (DEV.ply)
             LS("XXX: Returning here because headers not defined");
         return;
     }
@@ -516,7 +516,7 @@ function setPgn(pgn)
             let eventTmp = eventNameHeader.match(/TCEC Season (.*)/);
             if (eventTmp)
             {
-                if (DEV.ply & 1)
+                if (DEV.ply)
                     LS(eventTmp[1]);
                 pgn.Headers.Event = "S" + eventTmp[1];
                 eventNameHeader = pgn.Headers.Event;
@@ -562,7 +562,7 @@ function setPgn(pgn)
         }
         else {
             pgn.Headers.Termination = pgn.Headers.TerminationDetails;
-            if (DEV.ply & 1)
+            if (DEV.ply)
                 LS("pgn.Headers.Termination: yes" + pgn.Headers.Termination);
 
             if (pgn.Headers.Termination && pgn.Headers.Termination != 'undefined')
@@ -615,7 +615,7 @@ function setPgn(pgn)
     $('#engine-history').append(pgn.Headers.Result);
     $("#engine-history").scrollTop($("#engine-history")[0].scrollHeight);
 
-    if (pgn.gameChanged && (DEV.ply & 1))
+    if (pgn.gameChanged && DEV.ply)
         LS("Came to setpgn need to reread data at end");
 }
 
@@ -858,14 +858,14 @@ function updateEnginePv(color, moves)
 
         if (color == turn && highlightpv == key)
         {
-            if (DEV.pv &  1)
+            if (DEV.pv)
                 LS(`Need to highlight: ${pvMove} : move=${move.m}`);
             classhigh = "active-pv-move";
             setpvmove = effectiveKey;
         }
         if (color == other && highlightpv == key + 1)
         {
-            if (DEV.pv & 1)
+            if (DEV.pv)
                 LS(`Need to highlight: ${pvMove} : move=${move.m}`);
             classhigh = "active-pv-move";
             setpvmove = effectiveKey;
@@ -927,7 +927,7 @@ function updateEnginePv(color, moves)
         $('#' + scolor + '-engine-pv3').append("<a href='#' id='c" + scolor + '-' + key + "' class='set-pv-board " + classhigh + "' move-key='" + key + "' color='" + scolor + "'>" + move.m + '</a> ');
     });
 
-    if (DEV.pv & 1)
+    if (DEV.pv)
         LS(`highlightpv=${highlightpv}`);
     if (highlightpv == 0)
         setpvmove = 0;
@@ -943,7 +943,7 @@ function updateEnginePv(color, moves)
         if (Y.ply_diff == 'last')
         {
             setpvmove = all_pvs[color].length - 1;
-            if (DEV.pv & 1)
+            if (DEV.pv)
                 LS(`ply_diff in white: ${all_pvs[color].length}`);
         }
         activePv = all_pvs[color].slice();
@@ -975,7 +975,7 @@ function findDiffPv(whitemoves, blackmoves)
         {
             if (!highlightpv && blackmoves && blackmoves[key - 1] && (blackmoves[key - 1].m != whitemoves[key].m))
             {
-                if (DEV.pv & 1)
+                if (DEV.pv)
                     LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key - 1].m);
                 highlightpv = key;
             }
@@ -984,7 +984,7 @@ function findDiffPv(whitemoves, blackmoves)
         {
             if (!highlightpv && blackmoves && blackmoves[key + 1] && (blackmoves[key + 1].m != whitemoves[key].m))
             {
-                if (DEV.pv & 1)
+                if (DEV.pv)
                     LS("Need to color this pvmove is :" + key + ", pv:" + whitemoves[key].m + ", black: " + blackmoves[key + 1].m);
                 highlightpv = key + 1;
             }
@@ -1983,7 +1983,7 @@ function updateLiveData(datum, fen, container, id, score) {
 
         let move = chess.move(text);
         if (!move) {
-            if (DEV.eval & 1)
+            if (DEV.eval)
                 LS(`undefined move: ${text}`);
             return [];
         }
@@ -2136,7 +2136,7 @@ function updateLiveEvalDataNew(datum, _update, fen, id, _initial) {
     for (let key of ['eval', 'speed', 'nodes', 'depth', 'tbhits'])
         HTML(`.${scolor}-engine-${key}`, datum[key]);
 
-    if (DEV.eval & 1)
+    if (DEV.eval)
         LS("updateLiveEvalDataNew::: Entered for color:" + datum.color);
 
     let score = (parseFloat(datum.eval || 0)).toFixed(2),
@@ -2180,7 +2180,7 @@ function updateLiveEvalDataNew(datum, _update, fen, id, _initial) {
         if (Y.live_pv)
             removeData(charts.eval, evalData, datum.color);
     }
-    else if (DEV.eval & 1)
+    else if (DEV.eval)
         LS(`XXX: not updating movecount=${x} : datum.plynum=${datum.plynum}`);
 
     prevevalData = evalData;

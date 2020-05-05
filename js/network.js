@@ -141,7 +141,7 @@ function listen_log() {
  * @param {boolean=} cache
  */
 function log_socket(name, data, cache) {
-    if (DEV.socket & 1) {
+    if (DEV.socket) {
         LS(`socket/${name}:`);
         LS(data);
     }

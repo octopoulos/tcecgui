@@ -469,7 +469,6 @@ grid {
 .scroller,
 #table-log {
     font-size: 0.9em;
-    margin-bottom: 1.5em;
     max-width: 1200px;
     overflow-x: auto;
     pointer-events: auto;
@@ -516,7 +515,7 @@ grid {
     color: #fff;
 }
 #tables {
-    margin-top: 1em;
+    margin: 1em 0 1.5em 0;
     width: 100%;
 }
 #tables .tabs,
@@ -697,6 +696,14 @@ grid {
 .page-next {
     border-right-width: 1px;
     border-radius: 0 0.3em 0.3em 0;
+}
+#quick-search,
+#table-search {
+    margin-top: 0.8em;
+    width: 95%;
+}
+.search {
+    padding: 0.5em;
 }
 
 /* bracket */

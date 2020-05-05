@@ -602,11 +602,6 @@ function set_global_events() {
     C('#three', () => {
         set_3d_scene(!Y.three);
     });
-
-    // tabs
-    C('div.tab', function() {
-        open_table(this);
-    });
 }
 
 /**

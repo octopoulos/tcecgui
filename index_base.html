@@ -237,10 +237,10 @@
                 <!-- pagination -->
                 <horis id="quick-pagin" class="pagin fbetween dn">
                     <div>
-                        <i class="num-row"></i>
+                        <i class="row-filter"></i> / <i class="row-total"></i>
                         <i data-t="rows"></i>
                     </div>
-                    <div class="pages"></div>
+                    <horis class="pages"></horis>
                 </horis>
                 <!-- twitch chat -->
                 <vert id="table-chat">
@@ -258,6 +258,10 @@
                 <div id="table-info" class="dn">INFO</div>
                 <div id="table-shortcut_1" class="scroller dn"></div>
                 <div id="table-shortcut_2" class="scroller dn"></div>
+                <!-- search -->
+                <horis id="quick-search" class="fend dn">
+                    <input class="search" data-t="Search" data-t2="placeholder">
+                </horis>
             </vert>
         </vert>
     </hori>
@@ -310,10 +314,10 @@
         <!-- pagination -->
         <horis id="table-pagin" class="pagin fbetween dn">
             <div>
-                <i class="num-row"></i>
+                <i class="row-filter"></i> / <i class="row-total"></i>
                 <i data-t="rows"></i>
             </div>
-            <div class="pages"></div>
+            <horis class="pages"></horis>
         </horis>
         <!-- tables -->
         <div id="table-season" class="scroller dn"></div>
@@ -327,6 +331,10 @@
         <div id="table-stats" class="scroller dn"></div>
         <div id="table-log" class="dn"></div>
         <div id="table-crash" class="scroller dn"></div>
+        <!-- search -->
+        <horis id="table-search" class="fend dn">
+            <input class="search" data-t="Search" data-t2="placeholder">
+        </horis>
     </vert>
 </vert>
 <!-- twitch video -->

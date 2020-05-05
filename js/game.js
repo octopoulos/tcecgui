@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-02
+// @version 2020-05-05
 //
 // Game specific code:
 // - control the board, moves
@@ -13,7 +13,7 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
 DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id,
-InsertNodes, Keys,
+Input, InsertNodes, Keys,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -117,6 +117,7 @@ let BOARD_THEMES = {
     },
     TIMEOUT_PLY_LIVE = 100,             // when moving the cursor, wait a bit before updating live history
     TIMEOUT_QUEUE = 100,                // check the queue after updating a table
+    TIMEOUT_SEARCH = 100,               // filtering the table when input changes
     tour_info = {},
     virtual_opened_table_special,
     xboards = {},
@@ -429,15 +430,14 @@ function analyse_tournament(data) {
  * @param {string} value +1, -1, 0, 1, 2, ...
  */
 function change_page(parent, value) {
-    let [active, source] = get_active_tab(parent);
-
-    if (DEV.ui & 1)
+    let [active, output] = get_active_tab(parent);
+    if (DEV.ui)
         LS(`change_page: ${parent} : ${value} ~ ${active}`);
 
     let page,
         page_key = `page_${parent}`,
         data_x = SetDefault(table_data[Y.x], active, {data: []}),
-        num_row = data_x.data.length,
+        num_row = data_x[`rows_${parent}`],
         num_page = Ceil(num_row / Y.rows_per_page);
 
     if ('+-'.includes(value[0]))
@@ -452,57 +452,64 @@ function change_page(parent, value) {
 
     // refresh the table
     data_x[page_key] = page;
-    update_table(active, null, parent, {output: source});
+    update_table(active, null, parent, {output: output});
+}
+
+/**
+ * Create pagination if required
+ * @returns {number} number of pages (negative if virtual)
+ */
+function check_pagination(parent) {
+    // check if the active tab can be paginated
+    let [name] = get_active_tab(parent);
+    if (!PAGINATIONS[name])
+        return 0;
+
+    if (DEV.ui)
+        LS(`check_pagination: ${parent}/${name}`);
+
+    // check if there's enough data
+    let data_x = table_data[Y.x][name];
+    if (!data_x)
+        return 0;
+
+    let num_row = data_x[`rows_${parent}`] || 0,
+        num_page = Ceil(num_row / Y.rows_per_page),
+        page = data_x[`page_${parent}`],
+        total = data_x.data.length;
+
+    if (num_page < 2)
+        return -Ceil(total / Y.rows_per_page);
+
+    // many rows => enable pagination
+    // - only create the HTML if it doesn't already exist
+    let node = Id(`${parent}-pagin`),
+        pages = A('.page', node);
+
+    if (pages.length != num_page + 2) {
+        let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
+        if (parent != 'quick')
+            for (let id = 0; id < num_page; id ++)
+                lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
+
+        lines.push('<a class="page page-next" data-p="+1">&gt;</a>');
+        HTML('.pages', lines.join(''), node);
+        HTML('.row-filter', num_row, node);
+        HTML('.row-total', total, node);
+    }
+
+    return num_page;
 }
 
 /**
  * Check pagination for the currently active tables
  */
 function check_paginations() {
-    let parents = new Set(PAGINATION_PARENTS);
-
     for (let parent of PAGINATION_PARENTS) {
-        // check if the active tab can be paginated
-        let [name] = get_active_tab(parent);
-        if (!PAGINATIONS[name])
-            continue;
-
-        // check if there's enough data
-        let data_x = table_data[Y.x][name];
-        if (!data_x)
-            continue;
-
-        let data = data_x.data,
-            num_row = data.length,
-            num_page = Ceil(num_row / Y.rows_per_page),
-            page = data_x[`page_${parent}`];
-
-        if (num_page < 2)
-            continue;
-
-        // many rows => enable pagination
-        // - only create the HTML if it doesn't already exist
-        let node = Id(`${parent}-pagin`),
-            pages = A('.page', node);
-
-        if (pages.length != num_page + 2) {
-            let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
-            if (parent != 'quick')
-                for (let id = 0; id < num_page; id ++)
-                    lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
-
-            lines.push('<a class="page page-next" data-p="+1">&gt;</a>');
-            HTML('.pages', lines.join(''), node);
-            HTML('.num-row', num_row, node);
-        }
-
-        Show(node);
-        parents.delete(parent);
+        let num_page = check_pagination(parent);
+        S(`#${parent}-pagin`, num_page > 1);
+        S(`#${parent}-search`, Abs(num_page) > 1);
     }
-
-    // no match for those => hide pagination
-    for (let parent of parents)
-        Hide(`#${parent}-pagin`);
 }
 
 /**
@@ -513,7 +520,7 @@ function check_queued_tables() {
     let removes = [];
 
     for (let queued of queued_tables) {
-        if (DEV.ui & 1)
+        if (DEV.ui)
             LS(`queued: ${queued}`);
 
         let [parent, table] = queued.split('/');
@@ -671,7 +678,7 @@ function download_live() {
  */
 function download_table(url, name, callback, {add_delta, no_cache, only_cache, show}={}) {
     function _done(data, cached) {
-        if (DEV.json & 1) {
+        if (DEV.json) {
             LS(`${url}:`);
             LS(data);
         }
@@ -703,12 +710,12 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
         key = `table_${name}_${Y.x}`;
         let cache = get_object(key);
         if (cache && (only_cache || Now() < cache.time + timeout)) {
-            if (DEV.json & 1)
+            if (DEV.json)
                 LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
             _done(cache.data, true);
             return;
         }
-        else if (DEV.json & 1)
+        else if (DEV.json)
             LS(`no cache: ${key}`);
     }
 
@@ -728,7 +735,7 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
 
         if (key) {
             save_storage(key, {data: data, time: Floor(now)});
-            if (DEV.json & 1)
+            if (DEV.json)
                 LS(`cache saved: ${key}`);
         }
         _done(data, false);
@@ -750,6 +757,22 @@ function download_tables(only_cache) {
     download_table('crosstable.json', 'cross', analyse_crosstable, dico);
     download_table('tournament.json', 'tour', analyse_tournament, dico);
     download_table('schedule.json', 'sched', null, dico);
+}
+
+/**
+ * Filter table rows based on text matching
+ * - only works if the table is active + paginated
+ * @param {string} parent
+ * @param {string} text
+ */
+function filter_table_rows(parent, text) {
+    let [active, output] = get_active_tab(parent),
+        data_x = table_data[Y.x][active];
+
+    if (data_x) {
+        data_x[`filter_${parent}`] = text;
+        update_table(active, null, parent, {output: output});
+    }
 }
 
 /**
@@ -820,7 +843,10 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
         HTML(body, '');
         if (rows) {
             data.length = 0;
-            delete data_x[page_key];
+            for (let pagin of PAGINATION_PARENTS) {
+                data_x[`page_${pagin}`] = -1;
+                data_x[`rows_${pagin}`] = -1;
+            }
         }
     }
 
@@ -828,40 +854,60 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
         if (!Array.isArray(rows))
             return;
 
+        // translate row keys + calculate _id and _text
         rows.forEach((row, row_id) => {
-            row = Assign({row_id: row_id}, ...Keys(row).map(key => ({[create_field_value(key)[0]]: row[key]})));
+            let lines = [];
+            row = Assign({_id: row_id}, ...Keys(row).map(key => {
+                let value = row[key];
+                if (value)
+                    lines.push(value + '');
+                return {[create_field_value(key)[0]]: value};
+            }));
+            row._text = Lower(lines.join(' '));
             data.push(row);
         });
     }
 
-    // 2) handle pagination
+    // 2) handle pagination + filtering
     let paginated,
         active_row = -1;
 
     if (PAGINATIONS[name]) {
         let [active] = get_active_tab(parent),
             page = data_x[page_key],
-            row_page = Y.rows_per_page;
+            row_page = Y.rows_per_page,
+            total = data.length;
 
         if (active == name) {
+            let filter = data_x[`filter_${parent}`];
+            if (filter) {
+                filter = Lower(filter);
+                data = data.filter(item => item._text.includes(filter));
+            }
+
             let node = Id(`${parent}-pagin`),
-                num_row = data.length;
+                num_row = data.length,
+                num_page = Ceil(num_row / row_page);
 
             // find the active row + update initial page
             for (let row of data) {
                 if (!row.moves) {
-                    active_row = row.row_id;
+                    active_row = row._id;
                     break;
                 }
             }
             if (active_row >= 0)
                 data_x.row = active_row;
-            if (page == undefined)
+            if (page < 0)
                 page = (active_row >= 0)? Floor(active_row / row_page): 0;
+            page = Min(page, num_page - 1);
 
-            HTML('.num-row', num_row, node);
+            HTML('.row-filter', num_row, node);
+            HTML('.row-total', total, node);
             Class('.active', '-active', true, node);
             Class(`[data-p="${page}"]`, 'active', true, node);
+
+            data_x[`rows_${parent}`] = num_row;
         }
 
         let start = page * row_page;
@@ -879,7 +925,7 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
         nodes = [];
 
     for (let row of data) {
-        let row_id = row.row_id;
+        let row_id = row._id;
 
         let vector = columns.map(key => {
             let class_ = '',
@@ -1005,7 +1051,7 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                 continue;
 
             let node = Id(`table-${key}`);
-            if (paginated && data_x.page_quick != undefined)
+            if (paginated && data_x.page_quick >= 0)
                 update_table(name, null, 'quick', {output: key});
             else {
                 HTML(node, html);
@@ -1583,6 +1629,11 @@ function update_live_eval(data, id) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
+    // CHECK THIS
+    if (DEV.eval) {
+        LS(`live_eval${id} : eval=${eval_} : ply=${data.ply}`);
+        LS(data);
+    }
     HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
     update_live_chart(moves || [data], id + 2, !!moves);
 }
@@ -1594,7 +1645,7 @@ function update_live_eval(data, id) {
 function update_player_eval(data) {
     let eval_ = data.eval,
         id = data.color,
-        board = xboards[`pv${id}`],
+        // board = xboards[`pv${id}`],
         node = Id(`player${id}`),
         short = get_short_name(data.engine);
 
@@ -1628,6 +1679,15 @@ function update_player_eval(data) {
         HTML(`#${key}${id}`, stats[key]);
     });
 
+    if (!data.ply)
+        data.ply = data.plynum;
+
+    // CHECK THIS
+    // start_clock(data.ply % 2);
+    if (DEV.eval) {
+        LS(`play_eval${id} : eval=${eval_} : ply=${data.ply}`);
+        LS(data);
+    }
     update_live_chart([data], id);
 }
 
@@ -1872,7 +1932,7 @@ function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = (parent == 'chart-tabs');
-    if (DEV.ui & 1)
+    if (DEV.ui)
         LS(`opened_table: ${parent}/${name}`);
 
     Y.tabs[parent] = name;
@@ -1983,6 +2043,18 @@ function set_game_events() {
     // engine popup
     Events('#info0, #info1', 'click mouseenter mousemove mouseleave', function(e) {
         popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
+    });
+
+    // tabs
+    C('div.tab', function() {
+        open_table(this);
+    });
+    // search
+    Input('input.search', function() {
+        add_timeout('search', () => {
+            let parent = this.parentNode.id.split('-')[0];
+            filter_table_rows(parent, this.value);
+        }, TIMEOUT_SEARCH);
     });
 }
 

@@ -84,7 +84,7 @@ function add_timeout(name, func, timer) {
         timers[name] = setTimeout(func, timer);
     else
         func();
-    if (DEV.frame & 2) {
+    if (DEV.frame) {
         LS(`add_timeout: ${name} : ${timer}`);
         LS(timers);
     }
@@ -99,7 +99,7 @@ function clear_timeout(name) {
         return;
     clearTimeout(timers[name]);
     delete timers[name];
-    if (DEV.frame & 2)
+    if (DEV.frame)
         LS(`clear_timeout: ${name}`);
 }
 
@@ -165,7 +165,7 @@ function get_string(name, def) {
 function load_library(url, callback) {
     if (!libraries[url])
         LoadLibrary(url, () => {
-            if (DEV.load & 1)
+            if (DEV.load)
                 LS(`loaded: ${url}`);
             libraries[url] = Now();
             if (callback)

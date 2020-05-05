@@ -432,8 +432,8 @@ function update_live_chart(moves, id, invert_black) {
 
     let dataset = data.datasets[id],
         labels = data.labels,
-        // first ply is 1 here, but the code counts from 0
-        ply = moves[0].ply - 1,
+        // ??? MAYBE NOT => first ply is 1 here, but the code counts from 0
+        ply = moves[0].ply, // - 1,
         num = Floor(ply / 2);
 
     if (first_num < 0)
@@ -441,18 +441,18 @@ function update_live_chart(moves, id, invert_black) {
 
     // add missing labels backwards
     for (let i = num - first_num; i >= 0 && !labels[i]; i --) {
-        if (DEV.chart & 1)
+        if (DEV.chart)
             LS(`label1: ${i} => ${i + 1 + first_num}`);
         labels[i] = i + 1 + first_num;
     }
 
     for (let move of moves) {
         let eval_ = move.eval,
-            ply = move.ply - 1,
+            ply = move.ply, // - 1,
             num = Floor(ply / 2),
             num2 = num - first_num;
 
-        if (invert_black && ply % 2)
+        if (invert_black && ply % 2 == 0)
             eval_ = -eval_;
 
         // check update_player_chart to understand
@@ -498,7 +498,7 @@ function update_player_chart(name, moves, start) {
 
     // add missing labels backwards
     for (let i = start_num - first_num; i >= 0 && !labels[i]; i --) {
-        if (DEV.chart & 1)
+        if (DEV.chart)
             LS(`label0: ${i} => ${i + 1 + first_num}`);
         labels[i] = i + 1 + first_num;
     }

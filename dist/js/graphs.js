@@ -406,7 +406,7 @@ function addDataLive(chart, data, black, contno)
     let chart_data = chart.data;
     if (chart_data.datasets[contno + 1].data.length == 0)
     {
-        if (DEV.graph & 1)
+        if (DEV.graph)
             LS("YYY: Chart not yet updated, so exiting");
         return;
     }
@@ -416,7 +416,7 @@ function addDataLive(chart, data, black, contno)
 
     if (length == 0)
     {
-        if (DEV.graph & 1)
+        if (DEV.graph)
             LS("XXX: Chart not yet updated, so exiting");
         return;
     }
@@ -438,7 +438,7 @@ function addData(chart, data, black)
     let length = Max(whiteEvalL, blackEvalL);
     if (length == 0)
     {
-        if (DEV.graph & 1)
+        if (DEV.graph)
             LS("XXX: Chart not yet updated, so exiting");
         return;
     }
@@ -604,12 +604,12 @@ function updateChartDataLive(id)
 
 function updateChartData()
 {
-    if (DEV.graph & 1)
+    if (DEV.graph)
         LS(`GRAPH: updateChartData : whiteEvalL=${whiteEvalL}`);
 
     if (prevPgnData.Moves)
     {
-        if (DEV.graph & 1)
+        if (DEV.graph)
             LS(`GRAPH: prevPgnData.Moves.length=${prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
         if (prevPgnData.Moves[0].completed == undefined || charts.eval.data.labels.length == 0)
         {
@@ -634,7 +634,7 @@ function updateChartData()
         arrayCtrW -= 2;
         arrayCtrB -= 2;
         prevPgnData.Moves[0].completed -= 4;
-        if (DEV.graph & 1)
+        if (DEV.graph)
             LS(`GRAPH: prevPgnData.Moves.length=$prevPgnData.Moves.length} : whiteEvalL=${whiteEvalL} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
     }
 
@@ -729,7 +729,7 @@ function updateChartData()
                 }
             }
 
-            if (DEV.graph & 1)
+            if (DEV.graph)
                 LS(`LLL: doing for key=${key} : prevPgnData.Moves[0].arrayStartW=${prevPgnData.Moves[0].arrayStartW}`
                     + ` : prevPgnData.Moves[0].arrayStartB=${prevPgnData.Moves[0].arrayStartB} : blackStarted=${blackStarted}`);
 
@@ -770,7 +770,7 @@ function updateChartData()
     if (arrayCtrB)
         blackEvalL = arrayCtrB;
 
-    if (DEV.graph & 1)
+    if (DEV.graph)
         LS(`GRAPH: ~updateChartData : needtoUpdate=${needtoUpdate} : arrayCtrW=${arrayCtrW} : arrayCtrB=${arrayCtrB}`
             + `prevPgnData.Moves[0].completed=${prevPgnData.Moves[0].completed} : charts.eval.data.labels.length=${charts.eval.data.labels.length}`);
 }

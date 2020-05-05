@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js (slow)
+2020-05-05 : 2020-04-30 : add search box for paginated tables
 2020-05-05 : 2020-05-03 : add pagination system
 2020-05-05 : 2020-05-01 : save table data in memory for live and archive + instant switch between them
 2020-05-04 : 2020-05-04 : compress create_charts + add click events
@@ -125,7 +126,6 @@ medium:
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code
 low:
--          : 2020-04-30 : re-add search box for the schedule + improve it (can specify the field)
 -          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 lowest:

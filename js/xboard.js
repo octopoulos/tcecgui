@@ -624,7 +624,7 @@ class XBoard {
         if (dirty != undefined)
             this.dirty |= dirty;
 
-        if (DEV.board & 1)
+        if (DEV.board)
             LS(`render: ${this.dirty}`);
         let func = `render_${this.mode}`;
         if (this[func]) {
@@ -699,7 +699,7 @@ class XBoard {
 
         // 3) draw pieces
         if (dirty & 2) {
-            if (DEV.board & 1)
+            if (DEV.board)
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
             let image = `theme/${this.theme}.${this.theme_ext}`,
@@ -738,7 +738,7 @@ class XBoard {
                 }
             });
 
-            if (DEV.board & 1)
+            if (DEV.board)
                 LS(xpieces);
 
             // insert pieces
@@ -835,7 +835,7 @@ class XBoard {
      * @param {boolean=} render
      */
     set_fen(fen, render) {
-        if (DEV.board & 1)
+        if (DEV.board)
             LS(`set_fen: ${fen}`);
         if (fen == null)
             fen = START_FEN;
@@ -853,7 +853,7 @@ class XBoard {
      * @returns {boolean}
      */
     set_ply(ply, animate) {
-        if (DEV.ply & 1)
+        if (DEV.ply)
             LS(`set_ply: ${ply} : ${animate}`);
 
         // boundary check
