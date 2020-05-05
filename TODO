@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)
+-          : 2020-05-05 : remove unused client js/css including jquery, extensions, ...
 2020-05-05 : 2020-05-05 : remove every bootstrap file
 2020-05-05 : 2020-05-05 : make a faster/smaller version of chess.js
 2020-05-05 : 2020-04-30 : add search box for paginated tables
