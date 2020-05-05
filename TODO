@@ -1,8 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
--          : 2020-05-02 : live fen calculation after clicking on a ply with chess.js (slow)
+~          : 2020-05-02 : live fen calculation after clicking on a ply with accelerated chess.js (still slow)
+2020-05-05 : 2020-05-05 : make a faster/smaller version of chess.js
 2020-05-05 : 2020-04-30 : add search box for paginated tables
 2020-05-05 : 2020-05-03 : add pagination system
 2020-05-05 : 2020-05-01 : save table data in memory for live and archive + instant switch between them
@@ -125,6 +125,7 @@ medium:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 low:
 -          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
