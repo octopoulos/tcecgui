@@ -16,9 +16,9 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, Assign, C, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, DEV, Events, Floor, Hide,
-HTML, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, Show, Split, Style, T, timers, update_svg, Upper,
-Y
+_, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, DEV, Events, Floor,
+Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, SetDefault, Show, Split, Style, T,
+timers, update_svg, Upper, window, Y
 */
 'use strict';
 
@@ -43,10 +43,21 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
+    SANITY_CHECK = true,
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
+    // SQUARES = {
+    //     a8: 0x00, b8: 0x01, c8: 0x02, d8: 0x03, e8: 0x04, f8: 0x05, g8: 0x06, h8: 0x07,
+    //     a7: 0x10, b7: 0x11, c7: 0x12, d7: 0x13, e7: 0x14, f7: 0x15, g7: 0x16, h7: 0x17,
+    //     a6: 0x20, b6: 0x21, c6: 0x22, d6: 0x23, e6: 0x24, f6: 0x25, g6: 0x26, h6: 0x27,
+    //     a5: 0x30, b5: 0x31, c5: 0x32, d5: 0x33, e5: 0x34, f5: 0x35, g5: 0x36, h5: 0x37,
+    //     a4: 0x40, b4: 0x41, c4: 0x42, d4: 0x43, e4: 0x44, f4: 0x45, g4: 0x46, h4: 0x47,
+    //     a3: 0x50, b3: 0x51, c3: 0x52, d3: 0x53, e3: 0x54, f3: 0x55, g3: 0x56, h3: 0x57,
+    //     a2: 0x60, b2: 0x61, c2: 0x62, d2: 0x63, e2: 0x64, f2: 0x65, g2: 0x66, h2: 0x67,
+    //     a1: 0x70, b1: 0x71, c1: 0x72, d1: 0x73, e1: 0x74, f1: 0x75, g1: 0x76, h1: 0x77,
+    // },
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
-    START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1',
+    START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_CLICK = 200,
     TIMEOUT_REPEAT = 40,
     TIMEOUT_REPEAT_INITIAL = 500;
@@ -88,6 +99,8 @@ class XBoard {
      * - rotate         // board rotation
      * - size           // square size in px (resize will recalculate it)
      * - smooth         // smooth piece animation
+     * - tab            // tab name to use with 'open_table' to make the board visible
+     * - vis            // id of the visible element to know if the board is visible or not
      */
 
     constructor(options={}) {
@@ -100,12 +113,15 @@ class XBoard {
         this.list = options.list;
         this.mode = options.mode || 'html';
         this.notation = options.notation || 6;
-        this.pv_id = options.pv_id;                     // extra container for PV list
+        this.pv_id = options.pv_id;
         this.rotate = options.rotate || 0;
         this.size = options.size || 16;
         this.smooth = options.smooth;
+        this.tab = options.tab;
+        this.vis = Id(options.vis);
 
         // initialisation
+        this.chess = new Chess();
         this.colors = ['#eee', '#111'];
         this.coords = {};
         this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
@@ -124,6 +140,7 @@ class XBoard {
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
+        this.real = null;                               // pointer to a board with the real moves
         this.theme = 'chess24';
         this.theme_ext = 'png';
         this.theme_size = 80;
@@ -143,11 +160,15 @@ class XBoard {
      * Add new moves
      * - handle PGN format from TCEC
      * - can handle 2 pv lists
+     * - if num_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Move[]} moves
      * @param {number} start starting ply for those moves
+     * @param {number=} num_ply if defined, then this is the current ply in the game
      */
-    add_moves(moves, start) {
-        let num_new = moves.length,
+    add_moves(moves, start, num_ply) {
+        let is_ply = (num_ply != undefined),
+            lines = [],
+            num_new = moves.length,
             num_move = this.moves.length,
             parent_lasts = [this.xmoves, this.pv_node]
                 .filter(parent => parent)
@@ -162,31 +183,109 @@ class XBoard {
 
         // proper moves
         for (let i = 0; i < num_new; i ++) {
-            let move = moves[i],
+            let extra = '',
+                move = moves[i],
                 ply = start + i;
+
+            if (SANITY_CHECK)
+                this.sanity_check(move.fen, ply);
 
             this.moves[ply] = move;
             // TODO: remove this ... sometimes we need to add missing nodes
             if (ply < num_move)
                 continue;
 
-            if (ply % 2 == 0) {
-                for (let [parent, last] of parent_lasts) {
-                    let node = CreateNode('i', `${1 + ply / 2}. `, {class: 'turn'});
-                    parent.insertBefore(node, last);
+            if (is_ply) {
+                if (ply == num_ply) {
+                    extra = ' seen';
+                    lines.push('<i>@</i>');
                 }
             }
+
+            if (ply % 2 == 0) {
+                if (is_ply)
+                    lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
+                else
+                    for (let [parent, last] of parent_lasts) {
+                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
+                        parent.insertBefore(node, last);
+                    }
+            }
+            else if (!i && is_ply)
+                lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
+
             if (move.m) {
-                for (let [parent, last] of parent_lasts) {
-                    let node = CreateNode('a', `${move.m} `, {class: (move.book? 'book': 'real'), 'data-i': ply});
-                    parent.insertBefore(node, last);
-                }
+                let class_ = `${move.book? 'book': 'real'}${extra}`;
+                if (is_ply)
+                    lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
+                else
+                    for (let [parent, last] of parent_lasts) {
+                        let node = CreateNode('a', `${move.m}`, {class: class_, 'data-i': ply});
+                        parent.insertBefore(node, last);
+                    }
             }
         }
 
+        if (is_ply)
+            for (let [parent] of parent_lasts)
+                HTML(parent, lines.join(''));
+
+        let last_move = this.moves.length - 1;
+        this.move = this.moves[last_move];
+
         // update the cursor
-        if (this.ply >= num_move - 1)
-            this.set_ply(this.moves.length - 1, true);
+        if (!is_ply && this.ply >= num_move - 1)
+            this.set_ply(last_move, true);
+    }
+
+    /**
+     * Same as add_moves but with a string, only contains notations, no fen
+     * - used in live pv, not for real moves
+     * - completely replaces the moves list with this one
+     * @param {string} text
+     * @param {number} start starting ply, not necessary if the text contains turn info
+     * @param {number*} num_ply current ply in the real game
+     */
+    add_moves_string(text, start, num_ply) {
+        if (!text)
+            return;
+
+        let first_ply = -1,
+            lines = [],
+            moves = [],
+            ply = start;
+
+        text.replace(/[.]{2,}/, ' ... ').split(' ').forEach(item => {
+            if (first_ply < 0 && ply >= 0)
+                first_ply = ply;
+
+            if (item == '...') {
+                lines.push('<i>...</i>');
+                ply ++;
+                return;
+            }
+            // turn? => use it
+            else if ('0123456789'.includes(item[0])) {
+                let turn = parseInt(item);
+                ply = (turn - 1) * 2;
+                lines.push(`<i class="turn">${turn}</i>`);
+                return;
+            }
+            // normal move
+            else {
+                moves[ply] = {
+                    m: item,
+                };
+                lines.push(`<a class="real" data-i="${ply}">${item}</a>`);
+                ply ++;
+            }
+        });
+
+        this.moves = moves;
+
+        let html = lines.join('');
+        for (let parent of [this.xmoves, this.pv_node])
+            HTML(parent, html);
     }
 
     /**
@@ -360,6 +459,89 @@ class XBoard {
     }
 
     /**
+     * Calculate the FEN for the ply, by looking at the previously saved FEN's
+     * @param {number} ply
+     * @returns {boolean}
+     */
+    chess_backtrack(ply) {
+        if (DEV.ply)
+            LS(`no fen available for ply ${ply}`);
+
+        let moves = this.moves,
+            real = this.real,
+            start = real.ply;
+
+        SetDefault(moves, start, {fen: real.fen});
+
+        for (let curr = ply - 1; curr >= 0; curr --) {
+            let move = moves[curr];
+            if (!move) {
+                if (DEV.ply)
+                    LS(`no move at ply ${curr}`);
+                return false;
+            }
+
+            if (move.fen) {
+                this.chess_load(move.fen);
+                for (let next = curr + 1; next <= ply; next ++) {
+                    if (!this.chess_move(moves[next].m)) {
+                        if (DEV.ply)
+                            LS(`invalid move at ply ${next}: ${moves[next].m}`);
+                        return false;
+                    }
+                    moves[next].fen = this.chess_fen();
+                }
+
+                if (SANITY_CHECK)
+                    this.sanity_check(move.fen, curr);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Temporary chess.js
+     * @returns {string}
+     */
+    chess_fen() {
+        return this.chess.fen();
+    }
+
+    /**
+     * Temporary chess.js
+     * @param {string} fen
+     */
+    chess_load(fen) {
+        this.chess.load(fen);
+    }
+
+    /**
+     * Temporary chess.js
+     * @param {string} text
+     * @returns {Object}
+     */
+    chess_move(text) {
+        return this.chess.move(text);
+    }
+
+    /**
+     * Clicked on a move list => maybe selected a new ply
+     * @param {Event} e
+     * @param {function} callback
+     */
+    clicked_move_list(e, callback) {
+        let target = e.target,
+            ply = target.dataset.i;
+
+        if (ply != undefined)
+            this.set_ply(ply * 1);
+
+        callback(this, 'move', ply);
+    }
+
+    /**
      * Listen to clicking events
      * @param {function} callback
      */
@@ -441,13 +623,13 @@ class XBoard {
             }
         }, {}, this.node);
 
+        // pv list
+        for (let parent of [this.xmoves, this.pv_node])
+            C(parent, e => {
+                this.clicked_move_list(e, callback);
+            });
+
         // moving a piece by click
-        C(this.xmoves, e => {
-            callback(that, 'move', e);
-        });
-        C(this.pv_node, e => {
-            callback(that, 'move', e);
-        });
         C('.xsquares', e => {
             callback(that, 'square', e);
         }, this.node);
@@ -530,7 +712,7 @@ class XBoard {
                 '<div class="xpieces"></div>',
                 `<hori class="xcontrol">${controls}</hori>`,
             '</div>',
-            `<div class="xmoves${this.list? '': ' dn'}"></div>`,
+            `<horis class="xmoves${this.list? '': ' dn'}"></horis>`,
         ].join(''));
 
         this.xmoves = _('.xmoves', this.node);
@@ -830,6 +1012,18 @@ class XBoard {
     }
 
     /**
+     * Check that the FEN matches the ply
+     * @param {string} fen
+     * @param {number} ply
+     */
+    sanity_check(fen, ply) {
+        let items = fen.split(' '),
+            fen_ply = (items[5] - 1) * 2 - (items[1] == 'w'? 1: 0);
+        if (ply != fen_ply)
+            LS(`fen_ply=${fen_ply} : ply=${ply} : ${fen}`);
+    }
+
+    /**
      * Set a new FEN
      * @param {string} fen
      * @param {boolean=} render
@@ -856,11 +1050,6 @@ class XBoard {
         if (DEV.ply)
             LS(`set_ply: ${ply} : ${animate}`);
 
-        // boundary check
-        ply = Clamp(ply, 0, this.moves.length - 1);
-        if (this.ply == ply)
-            return false;
-
         // update the FEN
         // TODO: if delta = 1 => should add_move instead => faster
         let move = this.moves[ply];
@@ -868,6 +1057,9 @@ class XBoard {
             return false;
 
         this.ply = ply;
+        if (!move.fen)
+            if (!this.chess_backtrack(ply))
+                return;
         this.set_fen(move.fen, true);
 
         if (this.hook)

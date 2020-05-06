@@ -16,6 +16,8 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 create_module(IMPORT_PATH, [
     'common',
     'engine',
+    'libs/chess-quick',
+    //
     'xboard',
 ], OUTPUT_MODULE, 'Assign XBoard'.split(' '));
 
@@ -25,6 +27,27 @@ let xboard = new XBoard({id: 'console'});
 xboard.initialise();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// add_moves_string
+[
+    [
+        '1. d4 Nf6 2. c4 c5 3. d5',
+        [{m: 'd4', ply: 0}, {m: 'Nf6', ply: 1}, {m: 'c4', ply: 2}, {m: 'c5', ply: 3}, {m: 'd5', ply: 4}],
+    ],
+    [
+        '38...Qg7 39. Rf2 Qh6 40. Nxg6',
+        [{m: 'Qg7', ply: 75}, {m: 'Rf2', ply: 76}, {m: 'Qh6', ply: 77}, {m: 'Nxg6', ply: 78}],
+    ],
+    [
+        '41...Kxg8 42. a8=Q+ Kg7',
+        [{m: 'Kxg8', ply: 81}, {m: 'a8=Q+', ply: 82}, {m: 'Kg7', ply: 83}],
+    ],
+].forEach(([text, answer], id) => {
+    test(`add_moves_string:${id}`, () => {
+        xboard.add_moves_string(text);
+        expect(xboard.moves).toEqual(answer);
+    });
+});
 
 // render_text
 [

@@ -18,11 +18,11 @@ create_module(IMPORT_PATH, [
     'graph',
 ], OUTPUT_MODULE);
 
-let {getEval} = require(OUTPUT_MODULE);
+let {clamp_eval} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// getEval
+// clamp_eval
 [
     [NaN, 10],
     [Infinity, 10],
@@ -30,12 +30,12 @@ let {getEval} = require(OUTPUT_MODULE);
     [-19, -10],
     [3.14, 3.14],
     [10.05, 10],
-    ['3.14', '3.14'],
-    ['-3.14', '-3.14'],
+    ['3.14', 3.14],
+    ['-3.14', -3.14],
     ['-something', -10],
     ['something', 10],
 ].forEach(([eval_, answer], id) => {
-    test(`getEval:${id}`, () => {
-        expect(getEval(eval_)).toEqual(answer);
+    test(`clamp_eval:${id}`, () => {
+        expect(clamp_eval(eval_)).toEqual(answer);
     });
 });
