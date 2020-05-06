@@ -1,8 +1,10 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)
-2020-05-05 : 2020-05-06 : add_moves_string + add tests
+-          : 2020-05-04 : show move arrows
+-          : 2002-05-07 : show first diverging move in white/black PV
+2020-05-07 : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)
+2020-05-06 : 2020-05-06 : add_moves_string + add tests
 2020-05-05 : 2020-05-05 : remove unused client js/css including jquery, extensions, ...
 2020-05-05 : 2020-05-05 : remove every bootstrap file
 2020-05-05 : 2020-05-05 : make a faster/smaller version of chess.js
@@ -122,7 +124,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-05-04 : show move arrows
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
 -          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage

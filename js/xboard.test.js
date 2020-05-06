@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-18
+// @version 2020-05-06
 //
 /*
 globals
@@ -19,9 +19,9 @@ create_module(IMPORT_PATH, [
     'libs/chess-quick',
     //
     'xboard',
-], OUTPUT_MODULE, 'Assign XBoard'.split(' '));
+], OUTPUT_MODULE, 'Assign START_FEN XBoard'.split(' '));
 
-let {Assign, XBoard} = require(OUTPUT_MODULE);
+let {Assign, START_FEN, XBoard} = require(OUTPUT_MODULE);
 
 let xboard = new XBoard({id: 'console'});
 xboard.initialise();
@@ -32,20 +32,61 @@ xboard.initialise();
 [
     [
         '1. d4 Nf6 2. c4 c5 3. d5',
-        [{m: 'd4', ply: 0}, {m: 'Nf6', ply: 1}, {m: 'c4', ply: 2}, {m: 'c5', ply: 3}, {m: 'd5', ply: 4}],
+        [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}],
     ],
     [
         '38...Qg7 39. Rf2 Qh6 40. Nxg6',
-        [{m: 'Qg7', ply: 75}, {m: 'Rf2', ply: 76}, {m: 'Qh6', ply: 77}, {m: 'Nxg6', ply: 78}],
+        [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}],
     ],
     [
         '41...Kxg8 42. a8=Q+ Kg7',
-        [{m: 'Kxg8', ply: 81}, {m: 'a8=Q+', ply: 82}, {m: 'Kg7', ply: 83}],
+        [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}],
     ],
 ].forEach(([text, answer], id) => {
     test(`add_moves_string:${id}`, () => {
         xboard.add_moves_string(text);
-        expect(xboard.moves).toEqual(answer);
+
+        let offset = answer[0],
+            array = new Array(offset);
+        for (let i = 1; i < answer.length ; i ++)
+            array[offset + i - 1] = answer[i];
+
+        expect(xboard.moves).toEqual(array);
+    });
+});
+
+// chess_fen
+[
+    [START_FEN, ['d5'], START_FEN],
+    [START_FEN, ['d4'], 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
+    [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
+].forEach(([fen, moves, answer], id) => {
+    test(`chess_fen:${id}`, () => {
+        xboard.chess_load(fen);
+        for (let move of moves)
+            xboard.chess_move(move);
+        expect(xboard.chess_fen()).toEqual(answer);
+    });
+});
+
+// chess_load
+[
+    START_FEN,
+].forEach((fen, id) => {
+    test(`chess_load:${id}`, () => {
+        xboard.chess_load(fen);
+        expect(xboard.chess_fen()).toEqual(fen);
+    });
+});
+
+// chess_move
+[
+    [START_FEN, 'd5', null],
+    [START_FEN, 'd4', {color: 'w', flags: 4, from: 99, piece: 'p', to: 67}],
+].forEach(([fen, move, answer], id) => {
+    test(`chess_move:${id}`, () => {
+        xboard.chess_load(fen);
+        expect(xboard.chess_move(move)).toEqual(answer);
     });
 });
 

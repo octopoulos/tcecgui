@@ -5,6 +5,7 @@
 // Game specific code:
 // - control the board, moves
 // - create the tables
+// - handle live updates
 // - update stats
 //
 // included after: common, engine, global, 3d, xboard
@@ -17,7 +18,7 @@ Input, InsertNodes, Keys,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, start_3d, Style, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
+show_modal, Sign, Split, start_3d, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
 update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true,
 Visible, window, XBoard, Y
 */
@@ -38,18 +39,36 @@ let BOARD_THEMES = {
         wikipedia: ['#FFCE9E', '#D18B47'],
     },
     board_target,
+    // vis: selector of the element to check visibility against, indicating that the board is visible or not
     BOARDS = {
         board: {
             last: '*',
+            vis: 'board',
+        },
+        live0: {
+            pv_id: '#table-live0 .live-pv',
+            tab: 'live',
+            vis: 'table-live',
+        },
+        live1: {
+            pv_id: '#table-live1 .live-pv',
+            tab: 'live',
+            vis: 'table-live',
         },
         pv0: {
             pv_id: '#player0 .live-pv',
+            tab: 'pv',
+            vis: 'table-pv',
         },
         pv1: {
             pv_id: '#player1 .live-pv',
+            tab: 'pv',
+            vis: 'table-pv',
         },
         pva: {
             size: 36,
+            tab: 'pva',
+            vis: 'table-pva',
         },
     },
     CACHE_TIMEOUTS = {
@@ -282,6 +301,10 @@ function create_boards() {
     });
 
     board_target = xboards[first];
+    keys.forEach(key => {
+        xboards[key].real = board_target;
+    });
+
     update_board_theme();
 }
 
@@ -573,7 +596,7 @@ function create_live_table(node, is_live) {
     let html =
         '<vert class="live fastart">'
             + '<div class="live-basic">'
-                + '<i class="engine" data-x="name"></i> <i data-x="eval"></i> [<i data-x="score"></i>]'
+                + '<i class="engine" data-x="name"></i> <i data-x="eval"></i> <i class="live-score">[<i data-x="score"></i>]</i>'
             + '</div>';
 
     if (is_live)
@@ -583,7 +606,7 @@ function create_live_table(node, is_live) {
             + '</div>';
 
     html +=
-            '<div class="live-pv"></div>'
+            '<horis class="live-pv"></horis>'
         + '</vert>';
     HTML(node, html);
 }
@@ -1307,6 +1330,7 @@ function update_move_info(ply, move, fresh) {
 
 /**
  * Update PV info from a player move
+ * - move contains pv.Moves with fen info for each move, so we can use this
  * @param {number} ply
  * @param {Move} move
  */
@@ -1314,19 +1338,17 @@ function update_move_pv(ply, move) {
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
-        board = xboards[`pv${id}`],
         node = Id(`player${id}`);
 
     HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
-    // LS(move.pv);
-    // HTML('.live-pv', create_live_pv(ply, move.pv? move.pv.San: ''), node);
 
     if (move.pv) {
-        let temp = board.smooth;
+        let board = xboards[`pv${id}`],
+            temp = board.smooth;
         board.smooth = false;
         board.reset();
-        board.add_moves(move.pv.Moves, ply);
+        board.add_moves(move.pv.Moves, ply, num_ply);
         board.smooth = temp;
     }
 }
@@ -1394,7 +1416,10 @@ function update_pgn(pgn_) {
     }
 
     board.add_moves(moves, start);
+
+    // only update the current chart
     update_player_chart(null, moves, start);
+
     if (!new_game && Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
@@ -1532,32 +1557,6 @@ function clock_tick(id) {
 }
 
 /**
- * Create a live PV from a string
- * @param {number} ply starting ply
- * @param {string} pv
- * @returns {string} html
- */
-function create_live_pv(ply, text) {
-    if (!text)
-        return '';
-
-    let items = text.replace('...', '... ').split(' ').map(item => {
-        if (item.slice(-1) == '.')
-            return '';
-
-        let line = '';
-        if (ply % 2 == 0)
-            line = `<i class="turn">${1 + ply / 2} </i>`;
-
-        line += `<a class="real">${item} </a>`;
-        ply ++;
-        return line;
-    });
-
-    return items.join('');
-}
-
-/**
  * Set the number of viewers
  * @param {number} count
  */
@@ -1587,6 +1586,7 @@ function start_clock(id) {
 
 /**
  * Update data from one of the Live engines
+ * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {Object} data
  * @param {number} id 0, 1
  */
@@ -1629,17 +1629,21 @@ function update_live_eval(data, id) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
+    // only display the PV but no expensive FEN calculation
+    let board = xboards[`live${id}`];
+    board.add_moves_string(data.pv, num_ply - id, num_ply);
+
     // CHECK THIS
     if (DEV.eval) {
         LS(`live_eval${id} : eval=${eval_} : ply=${data.ply}`);
         LS(data);
     }
-    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
     update_live_chart(moves || [data], id + 2, !!moves);
 }
 
 /**
  * Update data from a Player
+ * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {Object} data
  */
 function update_player_eval(data) {
@@ -1659,11 +1663,9 @@ function update_player_eval(data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    // TODO: handle this better ...
-    HTML('.live-pv', create_live_pv(num_ply - id, data.pv), node);
-    // LS(data);
-    // board.reset();
-    // board.add_moves(data.pv, num_ply);
+    // only display the PV but no expensive FEN calculation
+    let board = xboards[`pv${id}`];
+    board.add_moves_string(data.pv, num_ply - id, num_ply);
 
     // 2) update the engine info in the center
     let stats = {
@@ -1879,10 +1881,8 @@ function handle_board_events(board, type, value) {
     // move list => ply selected
     case 'move':
         board_target = board;
-        let target = value.target,
-            id = target.dataset.i;
-        if (id != undefined)
-            board.set_ply(id * 1);
+        if (value != undefined && !Visible(board.vis))
+            open_table(board.tab);
         break;
     // ply was set => maybe update some stats (for the main board)
     case 'ply':
@@ -1902,7 +1902,7 @@ function handle_board_events(board, type, value) {
  */
 function open_table(sel, hide_table=true) {
     if (typeof(sel) == 'string')
-        sel = _(`div.tab[data-x="${sel}"]`);
+        sel = _(`.tab[data-x="${sel}"]`);
     if (!sel)
         return;
 
@@ -2095,7 +2095,8 @@ function startup_game() {
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
             highlight_color: [{type: 'color'}, '#ffff00'],
-            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 1100],
+            // 1100 looks good too
+            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
             highlight_size: [{max: 0.5, min: 0, step: 0.01, type: 'number'}, 0.06],
             notation: [ON_OFF, 1],
             piece_theme: [PIECE_KEYS, 'chess24'],

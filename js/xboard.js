@@ -14,11 +14,18 @@
 //      - go (future)
 //
 // included after: common, engine, global, 3d
+//
+// 128 SQUARES idea taken from chess.js:
+// @license
+// Copyright (c) 2016, Jeff Hlywa (jhlywa@gmail.com)
+// Released under the BSD license
+// https://github.com/jhlywa/chess.js/blob/master/LICENSE
+//
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, DEV, Events, Floor,
 Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, SetDefault, Show, Split, Style, T,
-timers, update_svg, Upper, window, Y
+timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -45,16 +52,17 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     SANITY_CHECK = true,
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
-    // SQUARES = {
-    //     a8: 0x00, b8: 0x01, c8: 0x02, d8: 0x03, e8: 0x04, f8: 0x05, g8: 0x06, h8: 0x07,
-    //     a7: 0x10, b7: 0x11, c7: 0x12, d7: 0x13, e7: 0x14, f7: 0x15, g7: 0x16, h7: 0x17,
-    //     a6: 0x20, b6: 0x21, c6: 0x22, d6: 0x23, e6: 0x24, f6: 0x25, g6: 0x26, h6: 0x27,
-    //     a5: 0x30, b5: 0x31, c5: 0x32, d5: 0x33, e5: 0x34, f5: 0x35, g5: 0x36, h5: 0x37,
-    //     a4: 0x40, b4: 0x41, c4: 0x42, d4: 0x43, e4: 0x44, f4: 0x45, g4: 0x46, h4: 0x47,
-    //     a3: 0x50, b3: 0x51, c3: 0x52, d3: 0x53, e3: 0x54, f3: 0x55, g3: 0x56, h3: 0x57,
-    //     a2: 0x60, b2: 0x61, c2: 0x62, d2: 0x63, e2: 0x64, f2: 0x65, g2: 0x66, h2: 0x67,
-    //     a1: 0x70, b1: 0x71, c1: 0x72, d1: 0x73, e1: 0x74, f1: 0x75, g1: 0x76, h1: 0x77,
-    // },
+    SQUARES = {
+        a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
+        a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
+        a6:  32, b6:  33, c6:  34, d6:  35, e6:  36, f6:  37, g6:  38, h6:  39,
+        a5:  48, b5:  49, c5:  50, d5:  51, e5:  52, f5:  53, g5:  54, h5:  55,
+        a4:  64, b4:  65, c4:  66, d4:  67, e4:  68, f4:  69, g4:  70, h4:  71,
+        a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
+        a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
+        a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119,
+    },
+    SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -250,7 +258,8 @@ class XBoard {
         if (!text)
             return;
 
-        let first_ply = -1,
+        let first_seen,
+            first_ply = -1,
             lines = [],
             moves = [],
             ply = start;
@@ -258,6 +267,11 @@ class XBoard {
         text.replace(/[.]{2,}/, ' ... ').split(' ').forEach(item => {
             if (first_ply < 0 && ply >= 0)
                 first_ply = ply;
+
+            if (!first_seen && ply == num_ply) {
+                lines.push('<i>@</i>');
+                first_seen = true;
+            }
 
             if (item == '...') {
                 lines.push('<i>...</i>');
@@ -268,7 +282,7 @@ class XBoard {
             else if ('0123456789'.includes(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
-                lines.push(`<i class="turn">${turn}</i>`);
+                lines.push(`<i class="turn">${turn}.</i>`);
                 return;
             }
             // normal move
@@ -276,16 +290,27 @@ class XBoard {
                 moves[ply] = {
                     m: item,
                 };
-                lines.push(`<a class="real" data-i="${ply}">${item}</a>`);
+                lines.push(`<a class="real${ply == num_ply? ' seen': ''}" data-i="${ply}">${item}</a>`);
                 ply ++;
             }
         });
 
         this.moves = moves;
+        if (this.real)
+            Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
 
         let html = lines.join('');
         for (let parent of [this.xmoves, this.pv_node])
             HTML(parent, html);
+
+        // update the cursor
+        // TODO: show diverging moves instead (requires waiting for both PV's though)
+        if (Visible(this.vis)) {
+            let temp = this.smooth;
+            this.smooth = false;
+            this.set_ply(num_ply, true);
+            this.smooth = temp;
+        }
     }
 
     /**
@@ -467,11 +492,9 @@ class XBoard {
         if (DEV.ply)
             LS(`no fen available for ply ${ply}`);
 
-        let moves = this.moves,
-            real = this.real,
-            start = real.ply;
-
-        SetDefault(moves, start, {fen: real.fen});
+        let moves = this.moves;
+        if (this.real)
+            Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
 
         for (let curr = ply - 1; curr >= 0; curr --) {
             let move = moves[curr];
@@ -484,12 +507,18 @@ class XBoard {
             if (move.fen) {
                 this.chess_load(move.fen);
                 for (let next = curr + 1; next <= ply; next ++) {
-                    if (!this.chess_move(moves[next].m)) {
+                    let move_next = moves[next],
+                        result = this.chess_move(move_next.m);
+                    if (!result) {
                         if (DEV.ply)
-                            LS(`invalid move at ply ${next}: ${moves[next].m}`);
+                            LS(`invalid move at ply ${next}: ${move_next.m}`);
                         return false;
                     }
-                    moves[next].fen = this.chess_fen();
+                    Assign(move_next, {
+                        fen: this.chess_fen(),
+                        from: SQUARES_INV[result.from],
+                        to: SQUARES_INV[result.to],
+                    });
                 }
 
                 if (SANITY_CHECK)
@@ -536,7 +565,7 @@ class XBoard {
             ply = target.dataset.i;
 
         if (ply != undefined)
-            this.set_ply(ply * 1);
+            this.set_ply(ply * 1, true);
 
         callback(this, 'move', ply);
     }

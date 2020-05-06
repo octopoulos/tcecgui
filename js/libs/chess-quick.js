@@ -685,25 +685,19 @@ var Chess = function(fen) {
             return generate_fen();
         },
 
-        move: function(move, options) {
-            /* The move function can be called with in the following parameters:
-             *
-             * .move('Nxb7')            <- where 'move' is a case-sensitive SAN string
-             *
-             * .move({ from: 'h7', <- where the 'move' is a move object (additional
-             *                 to :'h8',            fields are ignored)
-             *                 promotion: 'q',
-             *            })
-             */
-
+        /**
+         * Move
+         * @param {string|Object} move ex: Nxb7, {from: 'h7', to: 'h8', promotion: 'q'}
+         */
+        move: function(move) {
             var move_obj = null;
 
-            if (typeof move === 'string') {
+            if (typeof move === 'string')
                 move_obj = move_from_san(move);
-            } else if (typeof move === 'object') {
+            else if (typeof move === 'object') {
                 var moves = generate_moves();
 
-                /* convert the pretty move object to an ugly move object */
+                // convert the pretty move object to an ugly move object
                 for (let i = 0, len = moves.length; i < len; i++) {
                     if (move.from === algebraic(moves[i].from) &&
                             move.to === algebraic(moves[i].to) &&
@@ -715,13 +709,12 @@ var Chess = function(fen) {
                 }
             }
 
-            /* failed to find move */
-            if (!move_obj) {
+            // failed to find move
+            if (!move_obj)
                 return null;
-            }
 
             make_move(move_obj);
-            return true;
+            return move_obj;
         },
 
         clear: function() {

@@ -8,6 +8,7 @@
     <script src="js/engine.js"></script>
     <script src="js/global.js"></script>
     <script src="js/3d.js"></script>
+    <script src="js/libs/chess-quick.js"></script>
     <script src="js/xboard.js"></script>
     <script src="js/graph.js"></script>
     <script src="js/game.js"></script>
@@ -195,6 +196,7 @@
                     <div class="tab" data-x="node" data-t="Nodes"></div>
                     <div class="tab" data-x="depth" data-t="Depth/SD"></div>
                     <div class="tab" data-x="tb" data-t="TB"></div>
+                    <div class="tab" data-x="live" data-t="Live"></div>
                     <div class="tab" data-x="pv" data-t="PV"></div>
                     <div class="tab" data-x="pva" data-t="PV(A)"></div>
                 </horis>
@@ -210,6 +212,10 @@
                 <vert id="table-pv" class="dn">
                     <hori id="pv0" class="xboard fastart"></hori>
                     <hori id="pv1" class="xboard fastart"></hori>
+                </vert>
+                <vert id="table-live" class="dn">
+                    <hori id="live0" class="xboard fastart"></hori>
+                    <hori id="live1" class="xboard fastart"></hori>
                 </vert>
                 <vert id="table-pva" class="dn">
                     <vert id="pva" class="xboard"></vert>

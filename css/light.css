@@ -31,7 +31,6 @@ verts {
     display: -webkit-box;
     display: -webkit-flex;
     display: flex;
-    -webkit-box-align: center;
     -webkit-align-items: center;
     align-items: center;
 }
@@ -46,17 +45,14 @@ verts {
 .fcols,
 vert,
 verts {
-    -webkit-box-orient: vertical;
     -webkit-flex-direction: column;
     flex-direction: column;
 }
 .faround {
-    -webkit-box-pack: justify;
     -webkit-justify-content: space-around;
     justify-content: space-around;
 }
 .fbetween {
-    -webkit-box-pack: justify;
     -webkit-justify-content: space-between;
     justify-content: space-between;
 }
@@ -73,7 +69,6 @@ verts {
     justify-content: flex-end;
 }
 .facenter {
-    -webkit-box-align: center;
     -webkit-align-items: center;
     align-items: center;
 }
@@ -397,6 +392,7 @@ grid {
 }
 .live-pv,
 .xmoves {
+    align-content: flex-start;
     background: rgba(230, 240, 255, 0.3);
     border: 1px solid #c6c8ca;
     border-radius: 4px;
@@ -411,6 +407,13 @@ grid {
 #player1 .live-pv,
 #pv1 .xmoves {
     background: #000;
+    color: #fff;
+}
+#live0 .xmoves {
+    background: rgba(235, 235, 255, 0.9);
+}
+#live1 .xmoves {
+    background: rgba(255, 235, 235, 0.9);
 }
 .xmoves {
     height: 5em;
@@ -418,6 +421,11 @@ grid {
 }
 .xmoves a:hover {
     text-decoration: underline;
+}
+.live-pv > *,
+.xmoves > * {
+    line-height: initial;
+    margin: 0 0.15em;
 }
 .move {
     font-size: 12px;
@@ -453,6 +461,8 @@ grid {
 .void {
     background-color: #191919;
 }
+#live0 .xmoves,
+#live1 .xmoves,
 #pv0 .xmoves,
 #pv1 .xmoves {
     font-size: 12px;
@@ -460,6 +470,8 @@ grid {
     overflow-y: scroll;
     width: 8em;
 }
+#live0 .turn,
+#live1 .turn,
 #pv0 .turn,
 #pv1 .turn {
     font-size: 11px;
@@ -823,6 +835,10 @@ grid {
 .live-pv {
     height: 3em;
 }
+.live-score {
+    color: #444;
+    font-size: 0.85em;
+}
 .engine {
     border-radius: 0.1em;
     padding: 0 0.1em;
@@ -863,7 +879,7 @@ grid {
 #left {
     flex: 2.6;
     margin: 4px;
-    max-width: calc(100vh - 300px);
+    max-width: calc(100vh - 400px);
     min-width: 281px;
 }
 #center {
@@ -923,8 +939,11 @@ grid {
     order: 4;
     z-index: 1;
 }
-#table-pva {
+#table-live {
     order: 5;
+}
+#table-pva {
+    order: 6;
 }
 
 /* extras */
@@ -983,7 +1002,11 @@ td,
 #table-engine,
 #table-info,
 #table-log,
-.scroller {
+.live-pv,
+.live-pv > a,
+.scroller,
+.xmoves,
+.xmoves > a {
     user-select: text;
 }
 
