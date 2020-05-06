@@ -11,8 +11,10 @@ engine2color = '#A44BC0';
 var evalChartData = {};
 var engineColorArray = ['darkred', 'red', 'green', 'darkgreen', 'yellow', 'purple', 'orange'];
 var evalconstant = 10.0;
-var eng1L = 'Blueleela';
-var eng2L = '7Fish';
+//var eng1L = 'Blueleela';
+eng1L = '7Blue';
+//var eng2L = 'Redfish';
+eng2L = '7Red';
 
 function setevalChartData()
 {

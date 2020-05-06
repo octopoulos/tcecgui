@@ -347,7 +347,7 @@ function getWinner(engine_table)
       maxScore = otherScore;
    }
 
-   if (maxScore <= 4)
+   if (maxScore <= 2)
    {
        return mWinner;
    }
@@ -360,7 +360,7 @@ function getWinner(engine_table)
    {
       minDiff = 1.5;
    }
-
+   
    let maxDiff = Math.abs(engine_table.Score - otherScore);
    if (maxDiff >= minDiff)
    {
@@ -735,12 +735,12 @@ function getResultPair(object)
 }
 
  let results = [
- [[0,0, "empty-bye"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "last"]],
- [[0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],                                                                                                                                    
- [[0,0], [0,0], [0,0], [0,0]],                                                                                                                                                                        
- [[0,0], [0,0]],                                                                                                                                                                                      
- [[0,0],                                                                                                                                                                                              
-  [0,0]]                                                                                                                                                                                              
+/* [[0,0, "empty-bye"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "last"]], */
+     [[0,0, "empty-bye"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "last"]],
+     [[0,0], [0,0], [0,0], [0,0]],                                                                                                                                                                        
+     [[0,0], [0,0]],                                                                                                                                                                                      
+     [[0,0],                                                                                                                                                                                              
+      [0,0]]                                                                                                                                                                                              
  ]  
 function generateResult(output_json)
 {
@@ -754,44 +754,39 @@ function generateResult(output_json)
     for (let key in object) {
         if (object.hasOwnProperty(key)) {
             console.log(key + " -> " + object[key]);
-            if (totalMatches < 16)
+            if (totalMatches < 8)
             {
                teamArray.push(getMatchPair(object[key]));
                results[0][totalMatches] = getResultPair(object[key]);
                matchResArray.push(getMatchResPair(object[key])); 
             }
-            else if (totalMatches < 24)
+            else if (totalMatches < 12)
             {
-               results[1][totalMatches-16] = getResultPair(object[key]);
+               results[1][totalMatches-8] = getResultPair(object[key]);
                matchResArray.push(getMatchResPair(object[key])); 
             }
-            else if (totalMatches < 28)
+            else if (totalMatches < 14)
             {
-               results[2][totalMatches-24] = getResultPair(object[key]);
+               results[2][totalMatches-12] = getResultPair(object[key]);
                matchResArray.push(getMatchResPair(object[key])); 
             }
-            else if (totalMatches < 30)
+            else if (totalMatches == 14)
             {
-               results[3][totalMatches-28] = getResultPair(object[key]);
+               results[3][1] = getResultPair(object[key]);
                matchResArray.push(getMatchResPair(object[key])); 
             }
-            else if (totalMatches == 30)
+            else if (totalMatches == 15)
             {
-               results[4][1] = getResultPair(object[key]);
+               results[4][0] = getResultPair(object[key]);
                matchResArray.push([0,0]);
                matchResArray.push(getMatchResPair(object[key])); 
             }
-            else if (totalMatches == 31)
-            {
-               results[4][0] = getResultPair(object[key]);
-               matchResArray.splice(matchResArray.length-2, 1, getMatchResPair(object[key]));
-            }
             totalMatches = totalMatches + 1;
-            if ((totalMatches == 16) ||
-                (totalMatches == 24) ||
-                (totalMatches == 28) ||
-                (totalMatches == 30) ||
-                (totalMatches == 32))
+            if ((totalMatches == 8) ||
+                (totalMatches == 12) ||
+                (totalMatches == 14) ||
+                (totalMatches == 15) ||
+                (totalMatches == 16))
             {
                 resultArray = [];
             }

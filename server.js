@@ -73,10 +73,9 @@ var lineChanged = 0;
 let watcherFast = 0;
 var ctable = 'crosstable.json';
 let watcherSlow;
-var count = 0;
+var localCount = 0;
 var socket = 0;
 var totalCount = 0;
-var socketArray = [];
 var userCountFactor = 1;
 /* Deltapgn: Configure this to less value for less data */
 var numMovesToSend = 2;
@@ -281,7 +280,7 @@ function showDuplicates(names)
 
 function userCount()
 {
-   var userCountFinal = parseInt(socketArray.length);
+   var userCountFinal = userCountActual();
 
    if (userCountFinal < totalCount)
    {
@@ -296,7 +295,7 @@ function userCount()
 
 function userCountActual()
 {
-   return (parseInt(socketArray.length));
+   return localCount;
 }
 
 function checkLatestArchive()
@@ -355,7 +354,7 @@ function addLatestArch()
 
 function sendUsers()
 {
-   setTimeout(function() { broadCastUsers(); }, 5000);
+   setTimeout(function() { process.send({users: userCountActual()}); }, 5000);
 }
 
 function broadCastUsers()
@@ -580,14 +579,7 @@ function Misc()
 {
    io.sockets.on ('connection', function(socket)
    {
-      var socketId = socket.id;
-      count = socketArray.length;
-
-      if (socketArray.indexOf(socketId) === -1)
-      {
-         socketArray.push(socketId);
-      }
-
+      localCount++;
       socket.on('room', function(room)
       {
          if (room == 'room5')
@@ -613,7 +605,7 @@ function Misc()
 
       socket.on('disconnect', function()
       {
-         socketArray = arrayRemove(socketArray, socketId);
+	 localCount--;
       });
 
       socket.on('getusers', function(data)
@@ -680,7 +672,7 @@ function Misc()
          {
             delta = getDeltaPgn(data, prevData);
             console.log ("json changed, ply is :" + Math.round((delta.numMovesToSend + delta.lastMoveLoaded)/2));
-            io.emit('pgn', data);
+            broadCastData(socket, 'pgn', path, data, prevData);
             lastPgnTime = Date.now();
             prevData = data;
          }
@@ -779,6 +771,7 @@ function Misc()
    {
       console.log('Worker ' + process.pid + ' received message from master.', JSON.stringify(msg));
       totalCount = parseInt(msg.count);
+      broadCastUsers();
    });
 }
 
@@ -833,6 +826,7 @@ function Main()
       makeLink();
       addLiveTail();
       Misc();
+      //sendUsers();
    }
    else
    {

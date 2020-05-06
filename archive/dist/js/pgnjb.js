@@ -1,6 +1,6 @@
 // Created by Steven Xia  --  Contributed to TCEC
 
-const Chess = require("./chess.js");
+Chess = require("./chess.js");
 const pgnParse = require("./lib.js");
 const argv = require('yargs').argv;
 const fs = require("fs");
@@ -234,8 +234,12 @@ exports.pgn2json = function (pgn) {
    // handle the moves
 
    const moves = [];
+   chess = new Chess.Chess();
 
-   const chess = new Chess.Chess();
+   if (headers.FEN != undefined)
+   {
+      chess = new Chess.Chess(headers.FEN);
+   }
    let move;
    let details;
    let match = pgn.match(moveRegex);
@@ -358,7 +362,13 @@ console.log ("Res lenght is :" + res.length);
 
 let force  = retArg(argv.force);
 let pretty = retArg(argv.pretty);
+let frc = retArg(argv.frc);
 nomoves = retArg(argv.nomoves);
+
+if (frc) 
+{
+   Chess = require("./chess_frc.js");
+}
 
 for (let i = 0; i < res.length ; i++)
 {

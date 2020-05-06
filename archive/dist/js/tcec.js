@@ -1942,7 +1942,7 @@ function getLinkArch(gameNumber)
 {
    var retLink;
 
-   retLink = "http://tcec.chessdom.com/archive.php";
+   retLink = "http://www.tcec-chess.com/archive.html";
 
    return (retLink);
 }
