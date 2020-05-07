@@ -132,7 +132,6 @@ let BOARD_THEMES = {
         sched: 'Game#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
         season: 'Season|Download',
         stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
-        stats: 'Start time|End time|Duration|Avg Moves|Avg Time|White wins|Black wins|Draw Rate|Crashes|Min Moves|Max Moves|Min Time|Max Time',
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
@@ -1202,22 +1201,31 @@ function calculate_event_stats(rows) {
     let [date, time] = FromTimestamp(event_stats._end);
 
     Assign(event_stats, {
+        start_time: start,
+        end_time: `${time} on 20${date.replace(/-/g, '.')}`,
+        duration: format_hhmmss(event_stats._duration),
         avg_moves: Round(moves / games),
         avg_time: format_hhmmss(seconds / games),
-        black_wins: `${results['0-1']} [ ${format_percent(results['0-1'] / games)} ]`,
-        crashes: crashes,
-        draw_rate: format_percent(results['1/2-1/2'] / games),
-        duration: format_hhmmss(event_stats._duration),
-        end_time: `${time} on ${date}`,
-        games: games,
-        max_moves: `${max_moves[0]} [${max_moves[1]}]`,
-        max_time: `${format_hhmmss(max_time[0])} [${max_time[1]}]`,
-        min_moves: `${min_moves[0]} [${min_moves[1]}]`,
-        min_time: `${format_hhmmss(min_time[0])} [${min_time[1]}]`,
-        start_time: start,
         white_wins: `${results['1-0']} [ ${format_percent(results['1-0'] / games)} ]`,
+        black_wins: `${results['0-1']} [ ${format_percent(results['0-1'] / games)} ]`,
+        draw_rate: format_percent(results['1/2-1/2'] / games),
+        crashes: crashes,
+        min_moves: `${min_moves[0]} [${min_moves[1]}]`,
+        max_moves: `${max_moves[0]} [${max_moves[1]}]`,
+        min_time: `${format_hhmmss(min_time[0])} [${min_time[1]}]`,
+        max_time: `${format_hhmmss(max_time[0])} [${max_time[1]}]`,
+        // extra
+        games: games,
     });
-    LS(event_stats);
+
+    // create the table
+    let lines = Keys(event_stats)
+        .filter(key => (key[0] != '_'))
+        .map(key => {
+            let title = Title(key.replace(/_/g, ' '));
+            return `<vert class="stats faround"><div class="stats-title">${title}</div><div>${event_stats[key]}</div></vert>`;
+        });
+    HTML('#table-stats', lines.join(''));
 }
 
 /**
@@ -1259,7 +1267,7 @@ function calculate_estimates(rows) {
             continue;
 
         let [date, time] = FromTimestamp(last + offset);
-        row.start = `Estd: ${time} on ${date}`;
+        row.start = `Estd: ${time} on 20${date.replace(/-/g, '.')}`;
         offset += average;
     }
 

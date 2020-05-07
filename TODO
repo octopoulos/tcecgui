@@ -3,7 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-04 : show move arrows
 -          : 2002-05-07 : show first diverging move in white/black PV
--          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+2020-05-07 : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 2020-05-07 : 2020-05-07 : calculate event stats
 2020-05-07 : 2020-05-07 : estimate stating date/time in schedule
 2020-05-07 : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)

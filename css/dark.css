@@ -33,6 +33,9 @@ body {
 .xmoves {
     background: rgba(255, 255, 255, 0.85);
 }
+.live-score {
+    color: #aaa;
+}
 .book {
     color: #f90;
 }
@@ -84,6 +87,14 @@ body {
 }
 .graphs {
     background-color: #c6c6c6;
+}
+.stats {
+    background: rgba(1, 9, 26, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ccc;
+}
+.stats-title {
+    color: #fff;
 }
 
 /* lives */

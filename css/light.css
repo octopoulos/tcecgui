@@ -479,7 +479,8 @@ grid {
 
 /* tables */
 .scroller,
-#table-log {
+#table-log,
+#table-stats {
     font-size: 0.9em;
     max-width: 1200px;
     overflow-x: auto;
@@ -598,6 +599,22 @@ grid {
     height: 20px;
     margin-right: 0.6em;
     width: 40px;
+}
+.stats {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 0.2em;
+    color: #555;
+    font-size: 0.95em;
+    height: 5.5em;
+    margin: 0.3em;
+    padding: 0.6em;
+    text-align: center;
+    width: 8em;
+}
+.stats-title {
+    color: #000;
+    font-weight: 500;
 }
 
 /* engines */
@@ -1005,6 +1022,7 @@ td,
 .live-pv,
 .live-pv > a,
 .scroller,
+.stats,
 .xmoves,
 .xmoves > a {
     user-select: text;
