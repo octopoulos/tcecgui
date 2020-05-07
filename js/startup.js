@@ -128,6 +128,9 @@ function change_theme(theme) {
  * Called whenever the page loads and whenever the hash changes
  */
 function check_hash_special() {
+    if (!['archive', 'live'].includes(Y.x))
+        Y.x = 'live';
+
     let is_live = (Y.x == 'live'),
         parent = Id('tables');
     Class('#archive', 'yellow', !is_live);

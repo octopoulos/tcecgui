@@ -1,8 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-04 : show move arrows
 -          : 2002-05-07 : show first diverging move in white/black PV
+~          : 2020-05-04 : show move arrows
+2020-05-07 : 2020-05-07 : make a smaller chart.js, small enough so it can be bundled
 2020-05-07 : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 2020-05-07 : 2020-05-07 : calculate event stats
 2020-05-07 : 2020-05-07 : estimate stating date/time in schedule
@@ -129,7 +130,7 @@ DONE         CREATED      DESCRIPTION
 high:
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
--          : 2020-05-07 : show fewer pages in the pagination
+-          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code
 low:
@@ -139,7 +140,7 @@ low:
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
--          : 2020-04-24 : add 3d screens displaying the board
+-          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
 -          : 2020-04-13 : add 3d players moving the pieces
 -          : 2020-04-13 : add 3d crowd based on the number of viewers
 -          : 2020-04-13 : add 3d tables + room

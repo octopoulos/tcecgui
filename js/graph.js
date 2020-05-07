@@ -3,7 +3,7 @@
 /*
 globals
 _, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, Keys, load_library,
-LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, Y
+LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
 */
 'use strict';
 
@@ -11,7 +11,7 @@ LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, Y
 let CHART_JS = 'js/libs/chart.js',
     COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
-    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred'],
+    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000'],
     ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'],
     LIVE_ENGINES = [];
 
@@ -556,15 +556,21 @@ function update_player_chart(name, moves, start) {
 
 /**
  * Load the chart.js library
+ * - it might be bundled already => skip loading in that case
  * @param {function} callback
  */
 function init_graph(callback) {
-    load_library(CHART_JS, () => {
+    function _done() {
         create_chart_data();
         create_charts();
         update_player_chart(null, xboards.board.moves, 0);
         callback();
-    });
+    }
+
+    if (window.Chart)
+        _done();
+    else
+        load_library(CHART_JS, () => {_done();});
 }
 
 /**

@@ -8,7 +8,7 @@ prevPgnData, Round, Y
 // you can modify these
 let COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
-    engine_colors = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'],
+    engine_colors = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000', 'green', 'yellow', 'purple', 'orange'],
     engine_names = ['White', 'Black', 'Blueleela', '7Fish'];
 
 let all_evals = [],

@@ -1206,14 +1206,14 @@ function calculate_event_stats(rows) {
         duration: format_hhmmss(event_stats._duration),
         avg_moves: Round(moves / games),
         avg_time: format_hhmmss(seconds / games),
-        white_wins: `${results['1-0']} [ ${format_percent(results['1-0'] / games)} ]`,
-        black_wins: `${results['0-1']} [ ${format_percent(results['0-1'] / games)} ]`,
+        white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
+        black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draw_rate: format_percent(results['1/2-1/2'] / games),
         crashes: crashes,
-        min_moves: `${min_moves[0]} [${min_moves[1]}]`,
-        max_moves: `${max_moves[0]} [${max_moves[1]}]`,
-        min_time: `${format_hhmmss(min_time[0])} [${min_time[1]}]`,
-        max_time: `${format_hhmmss(max_time[0])} [${max_time[1]}]`,
+        min_moves: `${min_moves[0]} [<a>${min_moves[1]}</a>]`,
+        max_moves: `${max_moves[0]} [<a>${max_moves[1]}</a>]`,
+        min_time: `${format_hhmmss(min_time[0])} [<a>${min_time[1]}</a>]`,
+        max_time: `${format_hhmmss(max_time[0])} [<a>${max_time[1]}</a>]`,
         // extra
         games: games,
     });
@@ -2049,6 +2049,11 @@ function handle_board_events(board, type, value) {
         if (value != undefined && !Visible(board.vis))
             open_table(board.tab);
         break;
+    // PV list was updated => next move is sent
+    case 'next':
+        if (board.id.slice(0, 4) == 'live')
+            xboards.board.arrow(value.from, value.to, 'rgba(0, 255, 255, 0.9)');
+        break;
     // ply was set => maybe update some stats (for the main board)
     case 'ply':
         if (board.id == '#board') {
@@ -2208,8 +2213,8 @@ function set_game_events() {
     set_3d_events();
 
     // engine popup
-    Events('#info0, #info1', 'click mouseenter mousemove mouseleave', function(e) {
-        popup_engine_info(WHITE_BLACK[this.id.slice(-1)], e);
+    Events('#info0, #info1, #popup', 'click mouseenter mousemove mouseleave', function(e) {
+        popup_engine_info(WHITE_BLACK[this.id.slice(-1)] || this.id, e);
     });
 
     // tabs
@@ -2250,6 +2255,7 @@ function startup_game() {
         twitch_chat: 1,
         twitch_dark: 1,
         twitch_video: 1,
+        x: 'live',
     });
 
     let shortcuts = [...['off'], ...Keys(TABLES)];

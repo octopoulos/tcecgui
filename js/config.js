@@ -96,7 +96,7 @@ function startup_config() {
     // graph colors
     COLOR_BLACK = '#000000';
     COLOR_WHITE = '#efefef';
-    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', 'darkred', 'green', 'yellow', 'purple', 'orange'];
+    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000', 'green', 'yellow', 'purple', 'orange'];
 
     // dynamically loaded libraries
     CHART_JS = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js';
