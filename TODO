@@ -3,6 +3,9 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-04 : show move arrows
 -          : 2002-05-07 : show first diverging move in white/black PV
+-          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+2020-05-07 : 2020-05-07 : calculate event stats
+2020-05-07 : 2020-05-07 : estimate stating date/time in schedule
 2020-05-07 : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)
 2020-05-06 : 2020-05-06 : add_moves_string + add tests
 2020-05-05 : 2020-05-05 : remove unused client js/css including jquery, extensions, ...
@@ -126,13 +129,13 @@ DONE         CREATED      DESCRIPTION
 high:
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
--          : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+-          : 2020-05-07 : show fewer pages in the pagination
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 low:
 -          : 2029-04-29 : add SVG connectors to the bracket
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)

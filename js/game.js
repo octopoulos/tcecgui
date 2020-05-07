@@ -13,8 +13,8 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
-DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id,
-Input, InsertNodes, Keys,
+DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE,
+HTML, Id, Input, InsertNodes, Keys,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -72,18 +72,19 @@ let BOARD_THEMES = {
         },
     },
     CACHE_TIMEOUTS = {
-        brak: 1,
+        brak: 60,
         crash: 600,
-        cross: 1,
+        cross: 60,
         sched: 240,
         season: 3600 * 24,
-        tour: 1,
+        tour: 60,
         winner: 3600 * 24,
     },
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
     },
+    event_stats = {},
     finished,
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
@@ -106,6 +107,7 @@ let BOARD_THEMES = {
     players = [{}, {}],                 // current 2 players
     prev_round,
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
+    QUEUES = ['h2h', 'stats'],
     ROUND_NAMES = {
         1: 'Final',
         2: 'SemiFinal',
@@ -240,6 +242,29 @@ function calculate_score(text) {
     }
 
     return {w: white, b: black};
+}
+
+/**
+ * Format seconds to hh:mm:ss + handle days
+ * @param {number} seconds
+ * @returns {string}
+ */
+function format_hhmmss(seconds) {
+    let days = Floor(seconds / 86400);
+    seconds = seconds % 86400;
+    let text = FromSeconds(seconds).slice(0, -1).map(item => Pad(item)).join(':');
+    if (days)
+        text = `${days}d, ${text}`;
+    return text;
+}
+
+/**
+ * Format a value to %
+ * @param {number} value
+ * @returns {string}
+ */
+function format_percent(value) {
+    return `${Round(value * 10000) / 100}%`;
 }
 
 /**
@@ -440,14 +465,6 @@ function analyse_seasons(data) {
 }
 
 /**
- * Handle tournament data
- * @param {Object} data
- */
-function analyse_tournament(data) {
-    // LS(data);
-}
-
-/**
  * Change the page from quick/table
  * @param {string} parent quick, table
  * @param {string} value +1, -1, 0, 1, 2, ...
@@ -547,19 +564,23 @@ function check_queued_tables() {
             LS(`queued: ${queued}`);
 
         let [parent, table] = queued.split('/');
-        if (table != 'h2h')
+        if (!QUEUES.includes(table))
             continue;
 
-        let data = table_data[Y.x].sched;
-        if (!data)
+        let data_x = table_data[Y.x].sched;
+        if (!data_x)
             continue;
 
-        data = data.data;
-        let names = [players[0].name, players[1].name],
-            new_rows = data.filter(row => names.includes(row.white) && names.includes(row.black));
+        let data = data_x.data;
+        if (table == 'h2h') {
+            let names = [players[0].name, players[1].name],
+                new_rows = data.filter(row => names.includes(row.white) && names.includes(row.black));
 
-        update_table(table, new_rows);
-        check_paginations();
+            update_table(table, new_rows);
+            check_paginations();
+        }
+        else
+            calculate_event_stats(data);
         removes.push(queued);
     }
 
@@ -856,6 +877,7 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
     // 1) update table data
     let data_x = SetDefault(table_data[Y.x], name, {data: []}),
         data = data_x.data,
+        is_sched = (name == 'sched'),
         page_key = `page_${parent}`,
         table = Id(`table-${output || name}`),
         body = _('tbody', table);
@@ -889,6 +911,10 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
             row._text = Lower(lines.join(' '));
             data.push(row);
         });
+
+        // special case
+        if (is_sched)
+            calculate_estimates(data);
     }
 
     // 2) handle pagination + filtering
@@ -943,7 +969,6 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
     let columns = Array.from(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
-        is_sched = (name == 'sched'),
         is_winner = (name == 'winner'),
         nodes = [];
 
@@ -1085,14 +1110,23 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
 
     // 6) create another table?
     if (is_sched) {
-        queued_tables.add(`${parent}/h2h`);
+        for (let queue of QUEUES)
+            queued_tables.add(`${parent}/${queue}`);
         if (players[0].name)
             add_timeout('queue', check_queued_tables, TIMEOUT_QUEUE);
     }
 }
 
-// BRACKETS
+// BRACKETS / TOURNAMENT
 ///////////
+
+/**
+ * Handle tournament data
+ * @param {Object} data
+ */
+function analyse_tournament(data) {
+    // LS(data);
+}
 
 /**
  * Calculate the seeds
@@ -1115,6 +1149,129 @@ function calculate_seeds(num_team) {
     }
 
     return nexts;
+}
+
+/**
+ * Calculate tournament stats
+ * - called after sched data is available, so, from queued tables
+ * - called after calculate_estimates
+ * @param {Object[]} rows
+ */
+function calculate_event_stats(rows) {
+    let crashes = 0,
+        end = '',
+        games = 0,
+        max_moves = [-1, 0],
+        max_time = [-1, 0],
+        min_moves = [Infinity, 0],
+        min_time = [Infinity, 0],
+        moves = 0,
+        results = [],
+        seconds = 0,
+        start = rows.length? rows[0].start: '';
+
+    for (let row of rows) {
+        let game = row.game,
+            move = row.moves,
+            time = row.duration;
+        if (!move)
+            continue;
+
+        // 01:04:50 => seconds
+        let [hour, min, sec] = time.split(':');
+        time = hour * 3600 + min * 60 + sec * 1;
+
+        games ++;
+        moves += move;
+        results[row.result] = (results[row.result] || 0) + 1;
+        seconds += time;
+
+        if (max_moves[0] < move)
+            max_moves = [move, game];
+        if (min_moves[0] > move)
+            min_moves = [move, game];
+
+        if (max_time[0] < time)
+            max_time = [time, game];
+        if (min_time[0] > time)
+            min_time = [time, game];
+
+        end = row.start;
+    }
+
+    let [date, time] = FromTimestamp(event_stats._end);
+
+    Assign(event_stats, {
+        avg_moves: Round(moves / games),
+        avg_time: format_hhmmss(seconds / games),
+        black_wins: `${results['0-1']} [ ${format_percent(results['0-1'] / games)} ]`,
+        crashes: crashes,
+        draw_rate: format_percent(results['1/2-1/2'] / games),
+        duration: format_hhmmss(event_stats._duration),
+        end_time: `${time} on ${date}`,
+        games: games,
+        max_moves: `${max_moves[0]} [${max_moves[1]}]`,
+        max_time: `${format_hhmmss(max_time[0])} [${max_time[1]}]`,
+        min_moves: `${min_moves[0]} [${min_moves[1]}]`,
+        min_time: `${format_hhmmss(min_time[0])} [${min_time[1]}]`,
+        start_time: start,
+        white_wins: `${results['1-0']} [ ${format_percent(results['1-0'] / games)} ]`,
+    });
+    LS(event_stats);
+}
+
+/**
+ * Calculate the estimated times
+ * - called when new schedule data is available
+ */
+function calculate_estimates(rows) {
+    let end = '',
+        games = 0,
+        seconds = 0;
+
+    for (let row of rows) {
+        let start = row.start,
+            time = row.duration;
+        if (!start)
+            continue;
+
+        if (time) {
+            // 01:04:50 => seconds
+            let [hour, min, sec] = time.split(':');
+            time = hour * 3600 + min * 60 + sec * 1;
+            games ++;
+            seconds += time;
+        }
+        end = start;
+    }
+
+    // 18:18:54 on 2020.05.06
+    // => '2020.05.06 18:18:54': can be parsed by javascript correctly
+    let items = end.split(' on '),
+        last = Date.parse(`${items[1]} ${items[0]}`) / 1000,
+        average = seconds / games,
+        offset = average;
+
+    // set the estimates
+    // TODO: handle timezone (not needed if times are UTC ...)
+    for (let row of rows) {
+        if (row.start)
+            continue;
+
+        let [date, time] = FromTimestamp(last + offset);
+        row.start = `Estd: ${time} on ${date}`;
+        offset += average;
+    }
+
+    // update some stats
+    items = rows[0].start.split(' on ');
+    let start = Date.parse(`${items[1]} ${items[0]}`) / 1000;
+
+    Assign(event_stats, {
+        _duration: last + offset - start,
+        _end: last + offset,
+        _start: start,
+    });
 }
 
 /**
@@ -1969,6 +2126,8 @@ function opened_table(node, name, tab) {
     case 'winner':
         download_table('winners.json', name);
         break;
+    default:
+        update_table(name);
     }
 
     check_paginations();

@@ -980,14 +980,14 @@ function FromSeconds(time) {
  * @param {number} stamp timestamp in seconds
  * @returns {string[]} [date, time] string
  * @example
- * FromTimestamp(1576574884)    // ['19-12-17', '10:28']
+ * FromTimestamp(1576574884)    // ['19-12-17', '10:28:04']
  */
 function FromTimestamp(stamp) {
     if (!stamp)
         return '???';
     let date = new Date(stamp * 1000),
         day = `${Pad(date.getFullYear())}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
-        time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}`;
+        time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}:${Pad(date.getSeconds())}`;
     return [day, time];
 }
 
