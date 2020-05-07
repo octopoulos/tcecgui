@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2002-05-07 : show first diverging move in white/black PV
 ~          : 2020-05-04 : show move arrows
+2020-05-07 : 2020-05-07 : extra translations
 2020-05-07 : 2020-05-07 : make a smaller chart.js, small enough so it can be bundled
 2020-05-07 : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
 2020-05-07 : 2020-05-07 : calculate event stats

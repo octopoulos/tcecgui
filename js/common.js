@@ -933,11 +933,15 @@ function FormatFloat(text, align) {
  * - B: billion, M: million, K: thousand
  * - NaN => n/a
  * @param {number} number
+ * @param {string=} def default value used when number is not a number
  * @returns {number}
  */
-function FormatUnit(number)
+function FormatUnit(number, def)
 {
     if (isNaN(number)) {
+        if (def !== undefined)
+            return def;
+
         // isNaN will return true for 'hello', but Number.isNaN won't
         if (Number.isNaN(number))
             number = 'N/A';

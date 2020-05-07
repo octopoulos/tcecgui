@@ -124,14 +124,14 @@ let BOARD_THEMES = {
         live: {},
     },
     TABLES = {
-        crash: 'gameno=G#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
+        crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
-        event: 'Round|Winner|Points|runner=Runner-up|# Games|Score',
-        game: 'Game#|PGN|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Start',
-        h2h: 'Game#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen',
-        sched: 'Game#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final Fen|Start',
+        event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
+        game: '{Game}#|PGN|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Start',
+        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
+        sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|Crashes|Wins [W/B]|Loss [W/B]|SB|Elo|Diff [Live]',
+        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
@@ -603,7 +603,7 @@ function create_field_value(text) {
     if (pos > 0)
         lower = lower.slice(0, pos);
 
-    return [lower.replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
+    return [lower.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
 }
 
 /**
@@ -1210,12 +1210,11 @@ function calculate_event_stats(rows) {
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draw_rate: format_percent(results['1/2-1/2'] / games),
         crashes: crashes,
+        games: games,
         min_moves: `${min_moves[0]} [<a>${min_moves[1]}</a>]`,
         max_moves: `${max_moves[0]} [<a>${max_moves[1]}</a>]`,
         min_time: `${format_hhmmss(min_time[0])} [<a>${min_time[1]}</a>]`,
         max_time: `${format_hhmmss(max_time[0])} [<a>${max_time[1]}</a>]`,
-        // extra
-        games: games,
     });
 
     // create the table
@@ -1223,9 +1222,12 @@ function calculate_event_stats(rows) {
         .filter(key => (key[0] != '_'))
         .map(key => {
             let title = Title(key.replace(/_/g, ' '));
-            return `<vert class="stats faround"><div class="stats-title">${title}</div><div>${event_stats[key]}</div></vert>`;
+            return `<vert class="stats faround"><div class="stats-title" data-t="${title}"></div><div>${event_stats[key]}</div></vert>`;
         });
-    HTML('#table-stats', lines.join(''));
+
+    let node = Id('table-stats');
+    HTML(node, lines.join(''));
+    translate_node(node);
 }
 
 /**
@@ -1474,7 +1476,7 @@ function update_move_info(ply, move, fresh) {
             eval: eval_,
             node: is_book? '-': FormatUnit(move.n),
             speed: is_book? '-': `${FormatUnit(move.s)}bps`,
-            tb: is_book? '-': FormatUnit(move.tb),
+            tb: is_book? '-': FormatUnit(move.tb, '-'),
         };
 
     Keys(stats).forEach(key => {
@@ -1867,8 +1869,8 @@ function update_clock(id) {
         left = player.left,
         time = Round((elapsed > 0? elapsed: player.time) / 1000);
 
-    left = isNaN(left)? 'n/a': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
-    time = isNaN(time)? 'n/a': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
+    left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
+    time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
     HTML(`#left${id}`, left);
     HTML(`#time${id}`, time);

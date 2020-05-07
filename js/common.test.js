@@ -64,29 +64,32 @@ let {
 
 // FormatUnit
 [
-    [1000000000, '1B'],
-    [1000000, '1M'],
-    [10000, '10k'],
-    [1000, '1000'],
-    [100, '100'],
-    [7841319402, '7.8B'],
-    [58335971.81109362, '58.3M'],
-    [58335971, '58.3M'],
-    ['58335971', '58.3M'],
-    [318315, '318.3k'],
-    [1259, '1.2k'],
-    [725.019, '725'],
-    [NaN, 'N/A'],
-    [Infinity, 'Infinity'],
+    [1000000000, undefined, '1B'],
+    [1000000, undefined, '1M'],
+    [10000, undefined, '10k'],
+    [1000, undefined, '1000'],
+    [100, undefined, '100'],
+    [7841319402, undefined, '7.8B'],
+    [58335971.81109362, undefined, '58.3M'],
+    [58335971, undefined, '58.3M'],
+    ['58335971', undefined, '58.3M'],
+    [318315, undefined, '318.3k'],
+    [1259, undefined, '1.2k'],
+    [725.019, undefined, '725'],
+    [NaN, undefined, 'N/A'],
+    [Infinity, undefined, 'Infinity'],
     // check if we can feed the result back => stability
-    ['7.8B', '7.8B'],
-    ['58.3M', '58.3M'],
-    ['725', '725'],
-    ['N/A', 'N/A'],
-    ['Infinity', 'Infinity'],
-].forEach(([nodes, answer], id) => {
+    ['7.8B', undefined, '7.8B'],
+    ['58.3M', undefined, '58.3M'],
+    ['725', undefined, '725'],
+    ['N/A', undefined, 'N/A'],
+    ['Infinity', undefined, 'Infinity'],
+    ['null', undefined, 'null'],
+    ['null', '-', '-'],
+    ['null', null, null],
+].forEach(([nodes, def, answer], id) => {
     test(`FormatUnit:${id}`, () => {
-        expect(FormatUnit(nodes)).toEqual(answer);
+        expect(FormatUnit(nodes, def)).toEqual(answer);
     });
 });
 

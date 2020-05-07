@@ -8,7 +8,7 @@ LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
 'use strict';
 
 // modify those values in config.js
-let CHART_JS = 'js/libs/chart.js',
+let CHART_JS = 'js/libs/chart-quick.js',
     COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
     ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000'],
@@ -114,7 +114,9 @@ function create_charts()
         legend: {
             display: false
         },
-        responsive: true,
+        // the chart.js responsive code is broken
+        // for ex, load the page with PV(A) tab activated by default, then go to Eval tab => chart won't appear
+        responsive: false,
         title: {
             display: false,
         },

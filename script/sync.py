@@ -40,7 +40,7 @@ JS_FILES = {
     ],
     'all': [
         'libs/socket.io',
-        'libs/chart-quick',
+        # 'libs/chart-quick',
         'libs/chess-quick',
         ':common',
         ':engine',

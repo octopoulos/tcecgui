@@ -157,11 +157,11 @@ function create_url_list(dico) {
             return '<hr>';
 
         if (!value)
-            return `<a class="item" data-id="${create_field_value(key)[0]}">${key}</a>`;
+            return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
 
         if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
             value = `${HOST}/${value}`;
-        return `<a class="item" href="${value}" target="_blank">${key}</a>`;
+        return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
     }).join('');
 
     return `<vert class="fastart">${html}</vert>`;
@@ -334,8 +334,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
         return;
 
     if (show || adjust) {
-        let extra = '',
-            html = '',
+        let html = '',
             px = 0,
             py = 0,
             win_x = window.innerWidth,
@@ -367,6 +366,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
             HTML(name == 'about'? '#popup-desc': '#modal', html);
         else
             name = node.dataset.id;
+        translate_node(node);
 
         // align the popup with the target, if any
         if (name && !px) {
@@ -378,35 +378,32 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
         }
 
         // make sure the popup remains inside the window
-        if (!extra) {
-            let height = node.clientHeight,
-                width = node.clientWidth;
+        let height = node.clientHeight,
+            width = node.clientWidth;
 
-            // align left doesn't work => try align right, and if not then center
-            if (x + width > win_x - 20) {
-                if (x2 < win_x - 20 && x2 - width > 0) {
-                    px = -100;
-                    x = x2;
-                }
-                else {
-                    px = -50;
-                    x = win_x / 2;
-                }
+        // align left doesn't work => try align right, and if not then center
+        if (x + width > win_x - 20) {
+            if (x2 < win_x - 20 && x2 - width > 0) {
+                px = -100;
+                x = x2;
             }
-            // same for y
-            if (y + height > win_y) {
-                if (y2 < win_y && y2 - height > 0) {
-                    py = -100;
-                    y = y2;
-                }
-                else {
-                    py = -50;
-                    y = win_y / 2;
-                }
+            else {
+                px = -50;
+                x = win_x / 2;
+            }
+        }
+        // same for y
+        if (y + height > win_y) {
+            if (y2 < win_y && y2 - height > 0) {
+                py = -100;
+                y = y2;
+            }
+            else {
+                py = -50;
+                y = win_y / 2;
             }
         }
 
-        translate_node(node);
         Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
     }
 

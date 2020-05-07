@@ -86,6 +86,7 @@ let {
     ['startTime', ['start_time', 'startTime']],
     ['BlackEv', ['black_ev', 'BlackEv']],
     ['# Games', ['games', '# Games']],
+    ['{Game}#', ['game', '{Game}#']],
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
