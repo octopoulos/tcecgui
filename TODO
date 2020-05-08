@@ -2,7 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2002-05-07 : show first diverging move in white/black PV
--          : 2020-05-08 : piece theme offsets, ex: dilena -15px
+-          : 2020-05-08 : use sanity_check algorithm to detect the correct ply in update_pgn
+2020-05-08 : 2020-05-08 : piece theme offsets, ex: dilena -15px
 2020-05-08 : 2020-05-04 : show move arrows
 2020-05-07 : 2020-05-07 : extra translations
 2020-05-07 : 2020-05-07 : make a smaller chart.js, small enough so it can be bundled

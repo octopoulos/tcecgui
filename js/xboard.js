@@ -109,6 +109,7 @@ class XBoard {
      * - size           // square size in px (resize will recalculate it)
      * - smooth         // smooth piece animation
      * - tab            // tab name to use with 'open_table' to make the board visible
+     * - theme          // {ext: 'png', name: 'dilena', off: 15, size: 80}
      * - vis            // id of the visible element to know if the board is visible or not
      */
 
@@ -128,6 +129,7 @@ class XBoard {
         this.size = options.size || 16;
         this.smooth = options.smooth;
         this.tab = options.tab;
+        this.theme = options.theme;
         this.vis = Id(options.vis);
 
         // initialisation
@@ -154,9 +156,6 @@ class XBoard {
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
         this.svgs = [];                                 // svg objects for the arrows
-        this.theme = 'chess24';
-        this.theme_ext = 'png';
-        this.theme_size = 80;
         this.xmoves = null;
     }
 
@@ -1039,12 +1038,13 @@ class XBoard {
             if (DEV.board)
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
-            let image = `url(theme/${this.theme}.${this.theme_ext})`,
+            let theme = this.theme,
+                image = `url(theme/${theme.name}.${theme.ext})`,
                 nodes = [],
-                piece_size = this.theme_size,
+                piece_size = theme.size,
                 diff = (piece_size - size) / 2,
                 style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
-                transform = `transform:scale(${size / piece_size}) translate(-${diff}px,-${diff}px)`,
+                transform = `transform:scale(${size / piece_size}) translate(-${diff - theme.off[0]}px,-${diff - theme.off[1]}px)`,
                 xpieces = _('.xpieces', this.node);
 
             Class(xpieces, 'smooth', this.smooth);
@@ -1176,6 +1176,7 @@ class XBoard {
 
     /**
      * Check that the FEN matches the ply
+     * - this can be used in `update_pgn` to detect the current ply
      * @param {string} fen
      * @param {number} ply
      */

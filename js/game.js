@@ -97,14 +97,27 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         sched: 10,
     },
     pgn,
-    PIECE_KEYS  = Split('alpha chess24 dilena leipzig metro symbol uscf wikipedia'),
     PIECE_SIZES = {
         _: 80,
         metro: 160,
     },
-    PIECE_TYPES = {
-        _: 'png',
-        // wikipedia: 'svg',            // will enable in the future
+    // defaults: {ext: png, off: [0, 0], size: 80}
+    PIECE_THEMES = {
+        alpha: {},
+        chess24: {},
+        dilena: {
+            off: [0, -15],
+        },
+        leipzig: {
+            off: [5, 5],
+        },
+        metro: {
+            off: [0, -4],
+            size: 160,
+        },
+        symbol: {},
+        uscf: {},
+        wikipedia: {},
     },
     players = [{}, {}],                 // current 2 players
     prev_round,
@@ -350,9 +363,8 @@ function update_board_theme() {
     let board_theme = BOARD_THEMES[Y.board_theme],
         keys = Keys(BOARDS),
         first = keys[0],
-        theme = Y.piece_theme,
-        theme_ext = PIECE_TYPES[theme] || PIECE_TYPES._,
-        theme_size = PIECE_SIZES[theme] || PIECE_SIZES._;
+        piece_theme = Y.piece_theme,
+        theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
 
     Keys(xboards).forEach(key => {
         let is_first = (key == first),
@@ -367,8 +379,6 @@ function update_board_theme() {
             notation: (is_first? Y.notation: Y.notation_pv)? 6: 0,
             smooth: is_first? Y.animate: Y.animate_pv,
             theme: theme,
-            theme_ext: theme_ext,
-            theme_size: theme_size,
         });
 
         board.hold_smooth();
@@ -2279,7 +2289,7 @@ function startup_game() {
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.05],
             notation: [ON_OFF, 1],
-            piece_theme: [PIECE_KEYS, 'chess24'],
+            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
         },
         board_pv: {
