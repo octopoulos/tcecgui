@@ -74,16 +74,22 @@ function adjust_popups() {
  */
 function change_setting_special(name, value) {
     switch (name) {
+    case 'highlight_size':
+        update_board_theme(4);
+        break;
     case 'animate':
-    case 'animate_pv':
     case 'board_theme':
     case 'highlight_color':
-    case 'highlight_delay':
-    case 'highlight_size':
     case 'notation':
-    case 'notation_pv':
     case 'piece_theme':
-        update_board_theme();
+        update_board_theme(1);
+        break;
+    case 'animate_pv':
+    case 'board_theme_pv':
+    case 'highlight_color_pv':
+    case 'notation_pv':
+    case 'piece_theme_pv':
+        update_board_theme(2);
         break;
     case 'live_log':
         if (Visible('#table-log'))

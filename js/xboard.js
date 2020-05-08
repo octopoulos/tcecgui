@@ -140,8 +140,6 @@ class XBoard {
         this.fen = START_FEN;                           // current fen
         this.grid = {};
         this.high_color = '';                           // highlight color
-        this.high_delay = 1100;                         // if smooth + history => delay highlighting
-        this.high_size = 0;                             // highlight size in .em
         this.hold = null;                               // mouse/touch hold target
         this.hold_time = 0;                             // last time the event was repeated
         this.move = null;                               // current move
@@ -410,9 +408,9 @@ class XBoard {
 
     /**
      * Animate / render a move
-     * - high_delay = 0 => always show the highlight in smooth/history
-     * -            < 0    never  ------------------------------------
-     * -            > 0    will   ------------------------------------
+     * - highlight_delay = 0 => always show the highlight in smooth/history
+     * -                 < 0    never  ------------------------------------
+     * -                 > 0    will   ------------------------------------
      * @param {Move=} move
      * @param {boolean} animate
      */
@@ -421,7 +419,7 @@ class XBoard {
             return;
         let func = `animate_${this.mode}`;
         if (this[func]) {
-            let delay = this.high_delay;
+            let delay = Y.highlight_delay;
             this[func](move, animate || !delay);
             if (!animate && delay > 0)
                 add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, delay);
@@ -466,7 +464,7 @@ class XBoard {
         let color = this.high_color,
             node_from = this.nodes[move.from],
             node_to = this.nodes[move.to],
-            size = this.high_size,
+            size = Y.highlight_size,
             high_style = `box-shadow: inset 0 0 ${size}em ${size}em ${color}`;
 
         Style(node_from, high_style);

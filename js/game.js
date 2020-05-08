@@ -344,7 +344,7 @@ function create_boards() {
         xboards[key].real = board_target;
     });
 
-    update_board_theme();
+    update_board_theme(3);
 }
 
 /**
@@ -358,28 +358,35 @@ function reset_boards() {
 
 /**
  * Update the boards' theme
+ * @param {number} mode &1:board &2:pv (all other boards)
  */
-function update_board_theme() {
-    let board_theme = BOARD_THEMES[Y.board_theme],
-        keys = Keys(BOARDS),
-        first = keys[0],
-        piece_theme = Y.piece_theme,
-        theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
-
+function update_board_theme(mode) {
     Keys(xboards).forEach(key => {
-        let is_first = (key == first),
-            board = xboards[key];
+        // 1) skip?
+        let board = xboards[key],
+            is_main = (key == 'board');
+        if (is_main) {
+            if (!(mode & 5))
+                return;
+        }
+        else if (!(mode & 6))
+            return;
 
-        Assign(board, {
-            colors: board_theme,
-            dirty: 3,
-            high_color: Y.highlight_color,
-            high_delay: Y.highlight_delay,
-            high_size: Y.highlight_size,
-            notation: (is_first? Y.notation: Y.notation_pv)? 6: 0,
-            smooth: is_first? Y.animate: Y.animate_pv,
-            theme: theme,
-        });
+        // 2) update board
+        if (mode & 3) {
+            let suffix = is_main? '': '_pv',
+                piece_theme = Y[`piece_theme${suffix}`],
+                theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
+
+            Assign(board, {
+                colors: BOARD_THEMES[Y[`board_theme${suffix}`]],
+                dirty: 3,
+                high_color: Y[`highlight_color${suffix}`],
+                notation: Y[`notation${suffix}`]? 6: 0,
+                smooth: Y[`animate${suffix}`],
+                theme: theme,
+            });
+        }
 
         board.hold_smooth();
         board.render(7);
@@ -2294,8 +2301,11 @@ function startup_game() {
         },
         board_pv: {
             animate_pv: [ON_OFF, 1],
+            board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            highlight_color_pv: [{type: 'color'}, '#ffff00'],
             live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
+            piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             ply_diff: [['first', 'diverging', 'last'], 'first'],
         },
         live: {
