@@ -220,7 +220,7 @@ grid {
     text-align: center;
     top: 0;
     width: 100%;
-    z-index: 5;
+    z-index: 6;
 }
 #debug {
     color: rgba(0, 255, 0, 0.8);
@@ -231,7 +231,7 @@ grid {
     max-height: 70vh;
     position: fixed;
     top: 15vh;
-    z-index: 6;
+    z-index: 7;
 }
 
 /* popups */
@@ -242,7 +242,7 @@ grid {
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 3;
+    z-index: 4;
 }
 #popup > grid {
     max-height: 40vh;
@@ -267,7 +267,7 @@ grid {
     top: 0;
     transition: opacity 0.5s;
     user-select: text;
-    z-index: 4;
+    z-index: 5;
 }
 .popup-close {
     cursor: pointer;
@@ -335,6 +335,10 @@ grid {
 .xframe {
     background: rgba(0, 0, 0, 0.6);
     position: absolute;
+}
+.xoverlay {
+    position: absolute;
+    z-index: 3;
 }
 .xpiece {
     cursor: pointer;
@@ -1013,7 +1017,6 @@ grid {
 
 /* allow text selection */
 pre,
-td,
 #footer,
 #lives,
 #table-engine,
@@ -1021,7 +1024,6 @@ td,
 #table-log,
 .live-pv,
 .live-pv > a,
-.scroller,
 .stats,
 .xmoves,
 .xmoves > a {
@@ -1035,6 +1037,28 @@ td,
 svg.down {
     transition: transform 0.2s;
 }
+.markers {
+    position: absolute;
+    z-index: -1;
+}
+#mk0,
+#mk1 {
+    fill: #999;
+}
+.arrow {
+    fill: none;
+    height: 100%;
+    left: 0;
+    opacity: 0.7;
+    marker-end: url(#mk1);
+    marker-start: url(#mk0);
+    pointer-events: none;
+    position: absolute;
+    stroke-linejoin: round;
+    top: 0;
+    width: 100%;
+}
+
 
 @keyframes spin {
     100% {

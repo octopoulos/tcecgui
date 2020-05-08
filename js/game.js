@@ -24,7 +24,8 @@ Visible, window, XBoard, Y
 */
 'use strict';
 
-let BOARD_THEMES = {
+let ARROW_COLORS = ['#007bff', '#f08080'],
+    BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
         chess24: ['#9E7863', '#633526'],
@@ -46,11 +47,13 @@ let BOARD_THEMES = {
             vis: 'board',
         },
         live0: {
+            live_id: 0,
             pv_id: '#table-live0 .live-pv',
             tab: 'live',
             vis: 'table-live',
         },
         live1: {
+            live_id: 1,
             pv_id: '#table-live1 .live-pv',
             tab: 'live',
             vis: 'table-live',
@@ -87,7 +90,6 @@ let BOARD_THEMES = {
     event_stats = {},
     finished,
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
-    NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     num_ply = 0,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -131,7 +133,7 @@ let BOARD_THEMES = {
         h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Loss} [W/B]|SB|Elo|{Diff} [{Live}]',
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
@@ -320,7 +322,7 @@ function create_boards() {
             xboard = new XBoard(options);
 
         xboard.initialise();
-        xboard.resize(options.size * 8 + options.border * 2);
+        xboard.resize(options.size * 8 + options.border * 2, false);
         xboards[key] = xboard;
     });
 
@@ -353,9 +355,10 @@ function update_board_theme() {
         theme_size = PIECE_SIZES[theme] || PIECE_SIZES._;
 
     Keys(xboards).forEach(key => {
-        let is_first = (key == first);
+        let is_first = (key == first),
+            board = xboards[key];
 
-        Assign(xboards[key], {
+        Assign(board, {
             colors: board_theme,
             dirty: 3,
             high_color: Y.highlight_color,
@@ -368,7 +371,8 @@ function update_board_theme() {
             theme_size: theme_size,
         });
 
-        xboards[key].render();
+        board.hold_smooth();
+        board.render(7);
     });
 }
 
@@ -638,14 +642,14 @@ function create_live_table(node, is_live) {
  * @returns {string}
  */
 function create_table(columns, add_empty) {
-    let html =
-        '<table><thead>'
-        + create_table_columns(columns)
-        + '</thead><tbody>'
-        + (add_empty? columns.map(column => `<td data-x="${create_field_value(column)[0]}">&nbsp;</td>`).join(''): '')
-        + '</tbody></table>';
-
-    return html;
+    let lines = [
+        '<table><thead>',
+            create_table_columns(columns),
+        '</thead><tbody>',
+            (add_empty? columns.map(column => `<td data-x="${create_field_value(column)[0]}">&nbsp;</td>`).join(''): ''),
+        '</tbody></table>',
+    ];
+    return lines.join('');
 }
 
 /**
@@ -1511,12 +1515,10 @@ function update_move_pv(ply, move) {
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
 
     if (move.pv) {
-        let board = xboards[`pv${id}`],
-            temp = board.smooth;
-        board.smooth = false;
+        let board = xboards[`pv${id}`];
+        board.hold_smooth();
         board.reset();
         board.add_moves(move.pv.Moves, ply, num_ply);
-        board.smooth = temp;
     }
 }
 
@@ -1560,6 +1562,8 @@ function update_pgn(pgn_) {
         });
     }
 
+    // TODO: CHECK THIS
+    // missing something for new game detection ...
     if (new_game) {
         LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;
@@ -1688,9 +1692,8 @@ function resize_game() {
         let width = Id(parent).clientWidth,
             board = xboards[key];
         if (board) {
-            board.smooth = false;
+            board.hold_smooth();
             board.resize(width);
-            add_timeout('smooth', () => {board.smooth = Y.animate;}, 100);
         }
     }
 
@@ -1786,7 +1789,7 @@ function update_live_eval(data, id) {
 
     let dico = {
         depth: data.depth,
-        eval: eval_,
+        eval: (Number.isFinite(eval_))? eval_.toFixed(2): eval_,
         node: FormatUnit(data.nodes),
         score: calculate_probability(short, eval_),
         speed: data.speed,
@@ -2053,8 +2056,9 @@ function handle_board_events(board, type, value) {
         break;
     // PV list was updated => next move is sent
     case 'next':
-        if (board.id.slice(0, 4) == 'live')
-            xboards.board.arrow(value.from, value.to, 'rgba(0, 255, 255, 0.9)');
+        let id = board.live_id;
+        if (id != undefined)
+            xboards.board.arrow(id, value, ARROW_COLORS[id]);
         break;
     // ply was set => maybe update some stats (for the main board)
     case 'ply':
@@ -2267,12 +2271,13 @@ function startup_game() {
         _1: {},
         board: {
             animate: [ON_OFF, 1],
-            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
+            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
-            highlight_size: [{max: 0.5, min: 0, step: 0.01, type: 'number'}, 0.06],
+            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.05],
             notation: [ON_OFF, 1],
             piece_theme: [PIECE_KEYS, 'chess24'],
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],

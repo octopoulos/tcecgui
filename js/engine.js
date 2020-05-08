@@ -10,8 +10,8 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, Id, InsertNodes, Keys,
-LoadLibrary, localStorage, LS, Min, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, SetDefault,
-setTimeout, TEXT, Title, window
+LoadLibrary, localStorage, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
+Resource, SetDefault, setTimeout, TEXT, Title, window
 */
 'use strict';
 
@@ -506,7 +506,7 @@ function update_svg(parent) {
         if (image) {
             // VB=viewBox=; PFC=path fill="currentColor"
             image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
-            image = `<svg class="svg ${name}" xmlns="http://www.w3.org/2000/svg" ${image}</svg>`;
+            image = `<svg class="svg ${name}" xmlns="${NAMESPACE_SVG}" ${image}</svg>`;
             HTML(node, image);
             delete node.dataset.svg;
         }

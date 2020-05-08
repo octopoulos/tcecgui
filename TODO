@@ -2,7 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2002-05-07 : show first diverging move in white/black PV
-~          : 2020-05-04 : show move arrows
+-          : 2020-05-08 : piece theme offsets, ex: dilena -15px
+2020-05-08 : 2020-05-04 : show move arrows
 2020-05-07 : 2020-05-07 : extra translations
 2020-05-07 : 2020-05-07 : make a smaller chart.js, small enough so it can be bundled
 2020-05-07 : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
@@ -131,11 +132,12 @@ DONE         CREATED      DESCRIPTION
 high:
 ~          : 2020-04-17 : load archive games without loading a new page
 medium:
--          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-03 : delete the old code
-low:
 -          : 2029-04-29 : add SVG connectors to the bracket
+low:
+-          : 2020-05-07 : hover on final FEN => show popup with a board + copy fen button
+-          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:

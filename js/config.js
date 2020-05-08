@@ -9,8 +9,8 @@
 // (after everything except script.js)
 /*
 globals
-Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true, ENGINE_FEATURES,
-ENGINE_NAMES:true, HOST:true, HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS,
+ARROW_COLORS:true, Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true,
+ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true, HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS,
 TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
@@ -97,6 +97,9 @@ function startup_config() {
     COLOR_BLACK = '#000000';
     COLOR_WHITE = '#efefef';
     ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000', 'green', 'yellow', 'purple', 'orange'];
+
+    // board arrow colors
+    ARROW_COLORS = ['#007bff', '#f08080'];
 
     // dynamically loaded libraries
     CHART_JS = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js';

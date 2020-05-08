@@ -23,9 +23,9 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, DEV, Events, Floor,
-Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, SetDefault, Show, Split, Style, T,
-timers, update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
+Events, Floor, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, SetDefault, Show, Sign,
+Split, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -101,6 +101,7 @@ class XBoard {
      * - id             // output selector for HTML & text, can be 'console' too
      * - last           // default result text, ex: *
      * - list           // show move list history
+     * - live_id        // live engine id => will show arrows on the main board
      * - mode           // 3d, canvas, html, text
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
      * - pv_id          // extra output selector for PV list
@@ -119,6 +120,7 @@ class XBoard {
         this.id = options.id;
         this.last = options.last || '';
         this.list = options.list;
+        this.live_id = options.live_id;
         this.mode = options.mode || 'html';
         this.notation = options.notation || 6;
         this.pv_id = options.pv_id;
@@ -132,7 +134,7 @@ class XBoard {
         this.chess = new Chess();
         this.colors = ['#eee', '#111'];
         this.coords = {};
-        this.dirty = 3;                                 // &1: board, &2: notation, &4: pieces
+        this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.fen = START_FEN;                           // current fen
         this.grid = {};
         this.high_color = '';                           // highlight color
@@ -143,12 +145,15 @@ class XBoard {
         this.move = null;                               // current move
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
+        this.next_smooth = false;                       // used to temporarily prevent transitions
         this.node = _(this.id);
         this.nodes = {};
+        this.overlay = null;                            // svg objects will be added there
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
+        this.svgs = [];                                 // svg objects for the arrows
         this.theme = 'chess24';
         this.theme_ext = 'png';
         this.theme_size = 80;
@@ -305,11 +310,11 @@ class XBoard {
 
         // update the cursor
         // TODO: show diverging moves instead (requires waiting for both PV's though)
-        if (Visible(this.vis)) {
-            let temp = this.smooth;
-            this.smooth = false;
-            this.set_ply(num_ply, true);
-            this.smooth = temp;
+        if (this.live_id != undefined || Visible(this.vis)) {
+            this.hold_smooth();
+            let move = this.set_ply(num_ply, true);
+            if (move && this.hook)
+                this.hook(this, 'next', move);
         }
     }
 
@@ -475,12 +480,91 @@ class XBoard {
     }
 
     /**
-     * Animate a move in text
-     * @param {Move} move
-     * @param {boolean} animate
+     * Show an arrow
+     * @param {number} id object id, there can be multiple arrows
+     * @param {Object} dico {captured, color, from, piece, to}
+     * @param {string} color
      */
-    animate_text(move, animate) {
-        LS(`${move.from}${move.to}`);
+    arrow(id, dico, color) {
+        let func = `arrow_${this.mode}`;
+        if (this[func])
+            this[func](id, dico, color);
+    }
+
+    /**
+     * Display a 3d arrow
+     * @param {number} id
+     * @param {Object} dico
+     * @param {string} color
+     */
+    arrow_3d(id, dico, color) {
+
+    }
+
+    /**
+     * Draw an arrow on the canvas
+     * @param {number} id
+     * @param {Object} dico
+     * @param {string} color
+     */
+    arrow_canvas(id, dico, color) {
+
+    }
+
+    /**
+     * Create an SVG arrow
+     * @param {number} id svg id, there can be multiple arrows
+     * @param {Object} dico
+     * @param {string} color
+     */
+    arrow_html(id, dico, color) {
+        if (!dico.piece)
+            return;
+
+        let path,
+            x1 = 5 + 10 * (dico.from % 16),
+            x2 = 5 + 10 * (dico.to % 16),
+            y1 = 5 + 10 * (dico.from >> 4),
+            y2 = 5 + 10 * (dico.to >> 4);
+
+        // knight = L shape path
+        if (dico.piece == 'n') {
+            let x3, y3;
+            if (Abs(x1 - x2) > Abs(y1 - y2)) {
+                x3 = x2;
+                y3 = y1;
+                y2 += Sign(y1 - y2) * 2.5;
+            }
+            else {
+                x3 = x1;
+                y3 = y2;
+                x2 += Sign(x1 - x2) * 2.5;
+            }
+            path = `M${x1} ${y1} L${x3} ${y3} L${x2} ${y2}`;
+        }
+        // diagonal => divide factor by sqrt(2)
+        else {
+            let factor = (x1 == x2 || y1 == y2)? 2.5: 1.77;
+            x2 += Sign(x1 - x2) * factor;
+            y2 += Sign(y1 - y2) * factor;
+            path = `M${x1} ${y1} L${x2} ${y2}`;
+        }
+
+        // hide the 2nd arrow if it has the same path as the first
+        let other = this.svgs[1 - id];
+        if (other) {
+            let path2 = _('path', other).getAttribute('d');
+            if (path == path2) {
+                Hide(this.svgs[1]);
+                if (id == 1)
+                    return;
+            }
+        }
+
+        let body = this.create_svg(id);
+        HTML(_('svg', body), `<path stroke="${color}" stroke-width="${Y.arrow_width}" d="${path}"/>`);
+        Style(body, `opacity:${Y.arrow_opacity}`);
+        Show(body);
     }
 
     /**
@@ -514,11 +598,8 @@ class XBoard {
                             LS(`invalid move at ply ${next}: ${move_next.m}`);
                         return false;
                     }
-                    Assign(move_next, {
-                        fen: this.chess_fen(),
-                        from: SQUARES_INV[result.from],
-                        to: SQUARES_INV[result.to],
-                    });
+                    Assign(move_next, result);
+                    move_next.fen = this.chess_fen();
                 }
 
                 if (SANITY_CHECK)
@@ -571,6 +652,31 @@ class XBoard {
     }
 
     /**
+     * Create an svg arrow part
+     * @param {string} id
+     * @param {function} callback can return nodes to be added to the svg
+     * @returns {Node}
+     */
+    create_svg(id, callback) {
+        let arrow = this.svgs[id];
+        if (arrow)
+            return arrow;
+
+        arrow = CreateNode('div', null, {class: 'arrow'});
+        let svg = CreateSVG('svg', {viewBox: '0 0 80 80'});
+        if (callback) {
+            let nodes = callback(svg);
+            if (nodes)
+                for (let node of nodes)
+                    svg.appendChild(node);
+        }
+        arrow.appendChild(svg);
+        this.overlay.appendChild(arrow);
+        this.svgs[id] = arrow;
+        return arrow;
+    }
+
+    /**
      * Listen to clicking events
      * @param {function} callback
      */
@@ -606,11 +712,9 @@ class XBoard {
                 that.play();
                 break;
             case 'rotate':
-                let temp = that.smooth;
-                that.smooth = false;
+                that.hold_smooth();
                 that.rotate = (that.rotate + 1) % 2;
                 that.render(3);
-                that.smooth = temp;
                 break;
             case 'start':
                 that.go_start();
@@ -665,6 +769,15 @@ class XBoard {
         C('.xpieces', e => {
             callback(that, 'piece', e);
         }, this.node);
+    }
+
+    /**
+     * Hide arrows
+     * - for now, only HTML code
+     */
+    hide_arrows() {
+        for (let svg of this.svgs)
+            Hide(svg);
     }
 
     /**
@@ -738,19 +851,20 @@ class XBoard {
             '<div>',
                 '<div class="xframe"></div>',
                 '<grid class="xsquares"></grid>',
+                '<div class="xoverlay"></div>',
                 '<div class="xpieces"></div>',
                 `<hori class="xcontrol">${controls}</hori>`,
             '</div>',
             `<horis class="xmoves${this.list? '': ' dn'}"></horis>`,
         ].join(''));
 
+        this.overlay = _('.xoverlay', this.node);
         this.xmoves = _('.xmoves', this.node);
 
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
 
         this.analyse_fen();
-        this.resize();
         update_svg();
 
         if (this.hook)
@@ -801,6 +915,14 @@ class XBoard {
     }
 
     /**
+     * Hold the smooth value for 1 render frame
+     */
+    hold_smooth() {
+        this.next_smooth = this.smooth;
+        this.smooth = false;
+    }
+
+    /**
      * Output HTML or text to an element or the console
      * @param {string} text
      */
@@ -842,6 +964,10 @@ class XBoard {
             this[func]();
             this.animate(this.move, this.smooth);
         }
+
+        // restore smooth after `hold_smooth`
+        if (this.next_smooth)
+            this.smooth = this.next_smooth;
     }
 
     /**
@@ -913,11 +1039,11 @@ class XBoard {
             if (DEV.board)
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
-            let image = `theme/${this.theme}.${this.theme_ext}`,
+            let image = `url(theme/${this.theme}.${this.theme_ext})`,
                 nodes = [],
                 piece_size = this.theme_size,
                 diff = (piece_size - size) / 2,
-                style = `background-image:url(${image});height:${piece_size}px;width:${piece_size}px`,
+                style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
                 transform = `transform:scale(${size / piece_size}) translate(-${diff}px,-${diff}px)`,
                 xpieces = _('.xpieces', this.node);
 
@@ -937,6 +1063,10 @@ class XBoard {
                         nodes.push(node);
                         item[3] = node;
                     }
+                    // theme change
+                    else if (dirty & 4)
+                        Style('div', `${style};background-position-x:${offset}px`, true, node);
+
                     if (rotate)
                         col = 7 - col;
                     else
@@ -1020,8 +1150,9 @@ class XBoard {
     /**
      * Resize the board to a desired width
      * @param {number=} width
+     * @param {boolean=} render
      */
-    resize(width) {
+    resize(width, render=true) {
         if (!width) {
             if (!this.node)
                 return;
@@ -1031,13 +1162,16 @@ class XBoard {
         let border = this.border,
             num_col = this.dims[1],
             size = Floor((width - border * 2) * 2 / num_col) / 2,
-            frame_size = size * num_col + border * 2;
+            frame_size = size * num_col + border * 2,
+            frame_size2 = size * num_col;
 
         Style(this.node, `font-size:${size}px`);
-        Style('div.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, this.node);
+        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, this.node);
+        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, this.node);
 
         this.size = size;
-        this.render(2);
+        if (render)
+            this.render(2);
     }
 
     /**
@@ -1073,7 +1207,7 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
-     * @returns {boolean}
+     * @returns {Move}
      */
     set_ply(ply, animate) {
         if (DEV.ply)
@@ -1083,22 +1217,25 @@ class XBoard {
         // TODO: if delta = 1 => should add_move instead => faster
         let move = this.moves[ply];
         if (!move)
-            return false;
+            return null;
 
         this.ply = ply;
         if (!move.fen)
             if (!this.chess_backtrack(ply))
-                return;
+                return null;
         this.set_fen(move.fen, true);
 
         if (this.hook)
             this.hook(this, 'ply', move);
 
+        // new move => remove arrows from the past
+        this.hide_arrows();
+
         this.update_cursor(ply);
         if (animate == undefined && (!this.smooth || ply == this.moves.length - 1))
             animate = true;
         this.animate(move, animate);
-        return true;
+        return move;
     }
 
     /**

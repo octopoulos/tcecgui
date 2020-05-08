@@ -29,6 +29,8 @@ let Abs = Math.abs,
     Sqrt = Math.sqrt,
     Tanh = Math.tanh;
 
+let NAMESPACE_SVG = 'http://www.w3.org/2000/svg';
+
 // ELEMENTARY NODE FUNCTIONS
 ////////////////////////////
 /**
@@ -268,6 +270,20 @@ function CreateNode(tag, html, attrs) {
     if (attrs)
         Keys(attrs).forEach(key => {
             node.setAttribute(key, attrs[key]);
+        });
+    return node;
+}
+
+/**
+ * Create an SVG node
+ * @param {string} type
+ * @param {Object=} attrs
+ */
+function CreateSVG(type, attrs) {
+    let node = document.createElementNS(NAMESPACE_SVG, type);
+    if (attrs)
+        Keys(attrs).forEach(key => {
+            node.setAttributeNS(null, key, attrs[key]);
         });
     return node;
 }
