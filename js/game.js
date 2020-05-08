@@ -1580,7 +1580,7 @@ function update_pgn(pgn_) {
     }
 
     // TODO: CHECK THIS
-    // missing something for new game detection ...
+    // missing something for new game detection ... look at tcec.js
     if (new_game) {
         LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;

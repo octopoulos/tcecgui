@@ -2,7 +2,7 @@
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-04-13
 //
-// global variables shared across multiple js files
+// global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
@@ -29,6 +29,17 @@ let HOST = 'https://tcec-chess.com',
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Extract the ply from a FEN
+ * - first move: ply=0 (white has just moved, it's black's turn now)
+ * @param {string} fen
+ * @returns {number}
+ */
+function extract_fen_ply(fen) {
+    let items = fen.split(' ');
+    return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+}
+
+/**
  * Parse DEV
  */
 function parse_dev() {
@@ -37,6 +48,7 @@ function parse_dev() {
             c: 'chart',
             d: 'debug',
             e: 'eval',                  // live eval
+            f: 'fen',                   // sanity check: FEN vs ply
             g: 'graph',
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files

@@ -24,8 +24,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, Floor, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S, SetDefault, Show, Sign,
-Split, Style, T, timers, update_svg, Upper, Visible, window, Y
+Events, extract_fen_ply, Floor, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S,
+SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -50,7 +50,19 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
-    SANITY_CHECK = true,
+    // piece moves based on the SQUARES
+    // - p2 = there must be an piece of the opposite color
+    PIECE_MOVES = {
+        b: [-17, -15, 15, 17],
+        k: [-17, -16, -15, -1, 1, 15, 16, 17],
+        n: [-33, -31, -18, -14, 14, 18, 31, 33],
+        P: [-16],
+        P2: [-17, 17],
+        p: [16],
+        p2: [-15, 15],
+        q: [-17, -16, -15, -1, 1, 15, 16, 17],
+        r: [-16, -1, 1, 16],
+    },
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
@@ -195,12 +207,16 @@ class XBoard {
         for (let i = 0; i < num_new; i ++) {
             let extra = '',
                 move = moves[i],
-                ply = start + i;
+                ply = extract_fen_ply(move.fen);
 
-            if (SANITY_CHECK)
-                this.sanity_check(move.fen, ply);
-
+            if (DEV.fen && ply != start + i) {
+                LS(`add_moves: ${ply} != ${start + i}`);
+                LS(moves);
+                LS(this.moves);
+                break;
+            }
             this.moves[ply] = move;
+
             // TODO: remove this ... sometimes we need to add missing nodes
             if (ply < num_move)
                 continue;
@@ -599,8 +615,13 @@ class XBoard {
                     move_next.fen = this.chess_fen();
                 }
 
-                if (SANITY_CHECK)
-                    this.sanity_check(move.fen, curr);
+                if (DEV.fen) {
+                    let ply = extract_fen_ply(move.fen);
+                    if (ply != curr) {
+                        LS(`chess_backtrack: ${ply} != ${curr}`);
+                        LS(moves);
+                    }
+                }
                 return true;
             }
         }
@@ -1170,19 +1191,6 @@ class XBoard {
         this.size = size;
         if (render)
             this.render(2);
-    }
-
-    /**
-     * Check that the FEN matches the ply
-     * - this can be used in `update_pgn` to detect the current ply
-     * @param {string} fen
-     * @param {number} ply
-     */
-    sanity_check(fen, ply) {
-        let items = fen.split(' '),
-            fen_ply = (items[5] - 1) * 2 - (items[1] == 'w'? 1: 0);
-        if (ply != fen_ply)
-            LS(`fen_ply=${fen_ply} : ply=${ply} : ${fen}`);
     }
 
     /**
