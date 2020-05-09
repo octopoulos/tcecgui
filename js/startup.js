@@ -74,12 +74,10 @@ function adjust_popups() {
  */
 function change_setting_special(name, value) {
     switch (name) {
-    case 'highlight_size':
-        update_board_theme(4);
-        break;
     case 'animate':
     case 'board_theme':
     case 'highlight_color':
+    case 'highlight_size':
     case 'notation':
     case 'piece_theme':
         update_board_theme(1);
@@ -87,6 +85,7 @@ function change_setting_special(name, value) {
     case 'animate_pv':
     case 'board_theme_pv':
     case 'highlight_color_pv':
+    case 'highlight_size_pv':
     case 'notation_pv':
     case 'piece_theme_pv':
         update_board_theme(2);

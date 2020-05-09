@@ -47,23 +47,27 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             vis: 'board',
         },
         live0: {
+            dual: 'live1',
             live_id: 0,
             pv_id: '#table-live0 .live-pv',
             tab: 'live',
             vis: 'table-live',
         },
         live1: {
+            dual: 'live0',
             live_id: 1,
             pv_id: '#table-live1 .live-pv',
             tab: 'live',
             vis: 'table-live',
         },
         pv0: {
+            dual: 'pv1',
             pv_id: '#player0 .live-pv',
             tab: 'pv',
             vis: 'table-pv',
         },
         pv1: {
+            dual: 'pv0',
             pv_id: '#player1 .live-pv',
             tab: 'pv',
             vis: 'table-pv',
@@ -83,6 +87,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         tour: 60,
         winner: 3600 * 24,
     },
+    cur_ply = 0,                        // same as xboards.board.ply
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
@@ -90,7 +95,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
     event_stats = {},
     finished,
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
-    num_ply = 0,
+    num_ply = 0,                        // same as xboards.board.moves.length
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -150,7 +155,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
-    TIMEOUT_PLY_LIVE = 100,             // when moving the cursor, wait a bit before updating live history
+    TIMEOUT_PLY_LIVE = 50,              // when moving the cursor, wait a bit before updating live history
     TIMEOUT_QUEUE = 100,                // check the queue after updating a table
     TIMEOUT_SEARCH = 100,               // filtering the table when input changes
     tour_info = {},
@@ -320,6 +325,7 @@ function get_short_name(engine)
  * - should be done at startup since we want to see the boards ASAP
  */
 function create_boards() {
+    // 1) create all boards
     let keys = Keys(BOARDS),
         first = keys[0];
 
@@ -335,15 +341,23 @@ function create_boards() {
             xboard = new XBoard(options);
 
         xboard.initialise();
+        // make sure not to render => false
         xboard.resize(options.size * 8 + options.border * 2, false);
         xboards[key] = xboard;
     });
 
+    // 2) set pointers: real board + duals
     board_target = xboards[first];
     keys.forEach(key => {
-        xboards[key].real = board_target;
+        let board = BOARDS[key],
+            xboard = xboards[key];
+
+        xboard.real = board_target;
+        if (board.dual)
+            xboard.dual = xboards[board.dual];
     });
 
+    // 3) update themes: this will render the boards too
     update_board_theme(3);
 }
 
@@ -358,7 +372,10 @@ function reset_boards() {
 
 /**
  * Update the boards' theme
- * @param {number} mode &1:board &2:pv (all other boards)
+ * @param {number} mode update mode:
+ * - &1: board
+ * - &2: pv (all other boards)
+ * - &4: just re-render all but don't update settings
  */
 function update_board_theme(mode) {
     Keys(xboards).forEach(key => {
@@ -382,6 +399,7 @@ function update_board_theme(mode) {
                 colors: BOARD_THEMES[Y[`board_theme${suffix}`]],
                 dirty: 3,
                 high_color: Y[`highlight_color${suffix}`],
+                high_size: Y[`highlight_size${suffix}`],
                 notation: Y[`notation${suffix}`]? 6: 0,
                 smooth: Y[`animate${suffix}`],
                 theme: theme,
@@ -1523,19 +1541,35 @@ function update_move_info(ply, move, fresh) {
  * @param {Move} move
  */
 function update_move_pv(ply, move) {
+    if (!move)
+        return;
+
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
+        board = xboards[`pv${id}`],
         node = Id(`player${id}`);
 
     HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
 
-    if (move.pv) {
-        let board = xboards[`pv${id}`];
-        board.hold_smooth();
-        board.reset();
-        board.add_moves(move.pv.Moves, ply, num_ply);
+    // PV should jump directly to a new position, no transition
+    board.reset();
+    board.hold_smooth();
+
+    if (move.pv)
+        board.add_moves(move.pv.Moves, ply, cur_ply + 1);
+    else {
+        // no pv available =>
+        // - delete it if the move is in the past (ex: "book")
+        // - keep it if this is the latest move, as we don't want to see PV disappearing
+        // TODO: try to readjust the existing PV to match the current move
+        LS('no move pv');
+        LS(move);
+        if (ply < num_ply - 1) {
+            board.moves[ply] = move;
+            board.set_ply(ply);
+        }
     }
 }
 
@@ -1781,13 +1815,18 @@ function update_live_eval(data, id) {
     if (!data)
         return;
 
-    let moves = data.moves;
+    let board = xboards[`live${id}`],
+        moves = data.moves;
     // moves => maybe old data?
     if (moves) {
         if (data.round != prev_round) {
             LS(`maybe old data => SKIP: ${data.round} vs ${prev_round}`);
             return;
         }
+        // !!! CHECK THIS
+        // ply might be offset by 1
+        for (let move of moves)
+            board.texts[move.ply] = move.pv;
         data = moves[moves.length - 1];
     }
 
@@ -1817,7 +1856,6 @@ function update_live_eval(data, id) {
     });
 
     // only display the PV but no expensive FEN calculation
-    let board = xboards[`live${id}`];
     board.add_moves_string(data.pv, num_ply - id, num_ply);
 
     // CHECK THIS
@@ -2072,6 +2110,7 @@ function handle_board_events(board, type, value) {
             open_table(board.tab);
         break;
     // PV list was updated => next move is sent
+    // - if move is null, then hide the arrow
     case 'next':
         let id = board.live_id;
         if (id != undefined)
@@ -2080,9 +2119,11 @@ function handle_board_events(board, type, value) {
     // ply was set => maybe update some stats (for the main board)
     case 'ply':
         if (board.id == '#board') {
-            let ply = board.ply;
-            update_move_info(ply, value);
-            add_timeout(`ply_live${ply % 2}`, () => {update_move_pv(ply, value);}, TIMEOUT_PLY_LIVE);
+            cur_ply = board.ply;
+            LS('new main ply: ' + cur_ply);
+            update_move_info(cur_ply, value);
+            update_move_pv(cur_ply - 1, board.moves[cur_ply - 1]);
+            update_move_pv(cur_ply, value);
         }
         break;
     }
@@ -2294,7 +2335,7 @@ function startup_game() {
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
-            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.05],
+            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
@@ -2303,10 +2344,11 @@ function startup_game() {
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
+            highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
             live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            ply_diff: [['first', 'diverging', 'last'], 'first'],
+            show_ply: [['first', 'diverging'], 'diverging'],
         },
         live: {
             live_engine_1: [ON_OFF, 1],

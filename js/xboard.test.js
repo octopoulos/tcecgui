@@ -139,3 +139,15 @@ xboard.initialise();
         expect(xboard.fen).toEqual(fen);
     });
 });
+
+// split_move_string
+[
+    ['23. Qd2 Nf6 24. f3 Ra6', [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
+    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
+    ['22...f5 23. Qd2', [43, ['22', '...', 'f5', '23.', 'Qd2']]],
+    ['22. Kh1 Ra6 23. Qg3 Nf6', [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
+].forEach(([text, answer], id) => {
+    test(`split_move_string:${id}`, () => {
+        expect(xboard.split_move_string(text)).toEqual(answer);
+    });
+});
