@@ -1,7 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-05-08 : fix highlight / sync issues in PV
+~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
+~          : 2020-04-17 : load archive games without loading a new page
+2020-05-09 : 2020-05-07 : hover on final FEN => show popup with a board + copy fen button
 2020-05-09 : 2020-05-09 : use handle_hold for key events in addition to mouse events
 2020-05-09 : 2020-05-07 : show first diverging move in white/black PV
 2020-05-08 : 2020-05-08 : extract_fen_ply used in add_moves + DEV.fen can detect ply mismatches
@@ -134,14 +136,12 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
-~          : 2020-04-17 : load archive games without loading a new page
 -          : 2029-04-29 : add SVG connectors to the bracket
 medium:
 -          : 2020-05-08 : show how many new moves have appeared when not viewing the last ply
 -          : 2020-05-03 : delete the old code
 ~          : 2020-04-13 : add 3d board
 low:
--          : 2020-05-07 : hover on final FEN => show popup with a board + copy fen button
 -          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)

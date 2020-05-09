@@ -12,9 +12,9 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
-DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, Keys, KEYS,
+C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CopyClipboard,
+CreateNode, cube:true, DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass,
+Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, Keys, KEYS,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -77,6 +77,9 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             tab: 'pva',
             vis: 'table-pva',
         },
+        xfen: {
+            size: 24,
+        }
     },
     CACHE_TIMEOUTS = {
         brak: 60,
@@ -1046,10 +1049,11 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                     value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
                 }
                 break;
+            case 'final_fen':
+                td_class = 'fen';
+                break;
             case 'game':
                 value = row_id + 1;
-                // if (row.moves)
-                //     value = `<a class="game">${value}</a>`;
                 break;
             case 'name':
                 class_ = 'loss';
@@ -1066,7 +1070,9 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                 break;
             case 'season':
                 td_class = 'mono';
-                let lines = [`<a class="season">${value} <i data-svg="down"></i></a>`];
+                let items = value.split(' '),
+                    name = (items.length > 1)? `{${items[0]}} ${items[1]}`: value,
+                    lines = [`<a class="season"><i data-t="${name}"></i> <i data-svg="down"></i></a>`];
                 if (row.sub) {
                     lines.push('<grid class="dn">');
                     for (let sub of row.sub.reverse())
@@ -1125,6 +1131,12 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
         Class('tr.active', '-active', true, table);
         Class(this, 'active');
     }, table);
+
+    Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
+        if (e.type == 'click')
+            CopyClipboard(TEXT(this));
+        popup_custom('popup-fen', 'fen', e);
+    });
 
     // 5) update shortcuts
     if (parent != 'quick') {
@@ -2232,15 +2244,14 @@ function opened_table(node, name, tab) {
 
 /**
  * Show a popup with the engine info
- * @param {string} scolor white, black
+ * @param {string} id popup id
+ * @param {string} name timeout name
  * @param {Event} e
+ * @param {string} scolor white, black
  */
-function popup_engine_info(scolor, e) {
-    if (!pgn)
-        return;
-
+function popup_custom(id, name, e, scolor) {
     let show,
-        popup = Id('popup'),
+        popup = Id(id),
         type = e.type;
 
     if (type == 'mouseleave')
@@ -2248,16 +2259,26 @@ function popup_engine_info(scolor, e) {
     else if (scolor == 'popup')
         show = true;
     else {
-        let title = Title(scolor),
-            engine = Split(pgn.Headers[title]),
-            options = pgn[`${title}EngineOptions`],
-            lines = options.map(option => [option.Name, option.Value]);
+        if (name == 'engine') {
+            if (!pgn)
+                return;
 
-        // add engine + version
-        lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
-        lines = lines.flat().map(item => `<div>${item}</div>`);
+            let title = Title(scolor),
+                engine = Split(pgn.Headers[title]),
+                options = pgn[`${title}EngineOptions`],
+                lines = options.map(option => [option.Name, option.Value]);
 
-        HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
+            // add engine + version
+            lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
+            lines = lines.flat().map(item => `<div>${item}</div>`);
+
+            HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
+        }
+        else if (name == 'fen') {
+            let fen = TEXT(e.target);
+            xboards.xfen.hold_smooth();
+            xboards.xfen.set_fen(fen, true);
+        }
 
         // place the popup in a visible area on the screen
         let x = e.clientX + 10,
@@ -2280,11 +2301,11 @@ function popup_engine_info(scolor, e) {
     Class(popup, 'popup-show', show);
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
-        clear_timeout('popup-engine');
+        clear_timeout(`popup-${name}`);
         Class(popup, 'popup-enable');
     }
     else
-        add_timeout('popup-engine', () => {Class(popup, '-popup-enable');}, 500);
+        add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 500);
 }
 
 /**
@@ -2295,7 +2316,7 @@ function set_game_events() {
 
     // engine popup
     Events('#info0, #info1, #popup', 'click mouseenter mousemove mouseleave', function(e) {
-        popup_engine_info(WHITE_BLACK[this.id.slice(-1)] || this.id, e);
+        popup_custom('popup', 'engine', e, WHITE_BLACK[this.id.slice(-1)] || this.id);
     });
 
     // tabs

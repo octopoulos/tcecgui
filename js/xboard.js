@@ -362,9 +362,13 @@ class XBoard {
         let chars = [],
             counts = {},
             grid = {},
-            lines = this.fen.split(' ')[0].split('/'),
+            items = this.fen.split(' '),
+            lines = items[0].split('/'),
             pieces = this.pieces,
             row = lines.length - 1;
+
+        if (items.length < 6)
+            return;
 
         for (let line of lines) {
             let col = 0;

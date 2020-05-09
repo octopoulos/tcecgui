@@ -480,6 +480,18 @@ grid {
 #pv1 .turn {
     font-size: 11px;
 }
+#popup-fen {
+    border-radius: 0;
+    padding: 0;
+    width: 196px;
+}
+#xfen {
+    margin: 2px;
+}
+#xfen .xcontrol,
+#xfen .xmoves {
+    display: none;
+}
 
 /* tables */
 .scroller,
