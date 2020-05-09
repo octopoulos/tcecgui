@@ -5,9 +5,9 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, add_timeout, analyse_crosstable, Class, create_bracket, CreateNode, DEV, get_string, HasClass, Hide, HOST, HTML, Id,
-InsertNodes, io, LS, Prop, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval, update_pgn,
-update_player_eval, update_table, update_twitch, Y
+_, add_timeout, analyse_crosstable, analyse_tournament, Class, create_bracket, CreateNode, DEV, get_string, HasClass,
+Hide, HOST, HTML, Id, InsertNodes, io, LS, Prop, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval,
+update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
 
@@ -17,7 +17,10 @@ let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
 
 let prev_room = 0,
     socket,
-    socket_data = {},
+    socket_data = {
+        archive: {},
+        live: {},
+    },
     virtual_resize;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,47 +47,49 @@ function init_sockets() {
     });
     socket.on('bracket', data => {
         log_socket('bracket', data);
-        create_bracket(data);
+        create_bracket('live', data);
     });
     socket.on('crash', data => {
         log_socket('crash', data);
-        update_table('crash', data);
+        update_table('live', 'crash', data);
     });
     socket.on('crosstable', data => {
         log_socket('crosstable', data);
-        analyse_crosstable(data);
+        analyse_crosstable('live', data);
     });
     socket.on('livechart', data => {
         log_socket('livechart', data);
-        update_live_eval(data, 0);
+        update_live_eval('live', data, 0);
     });
     socket.on('livechart1', data => {
         log_socket('livechart1', data);
-        update_live_eval(data, 1);
+        update_live_eval('live', data, 1);
     });
     socket.on('liveeval', data => {
         log_socket('liveeval', data);
-        update_live_eval(data, 0);
+        update_live_eval('live', data, 0);
     });
     socket.on('liveeval1', data => {
         log_socket('liveeval1', data);
-        update_live_eval(data, 1);
+        update_live_eval('live', data, 1);
     });
     socket.on('pgn', data => {
         log_socket('pgn', data);
-        update_pgn(data);
+        update_pgn('live', data);
     });
     socket.on('schedule', data => {
         log_socket('schedule', data);
-        update_table('sched', data);
+        update_table('live', 'sched', data);
     });
     socket.on('tournament', data => {
         log_socket('tournament', data, true);
-        update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
+        analyse_tournament('live', data);
+        if (Y.x == 'live')
+            update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
     });
     socket.on('updeng', data => {
         log_socket('updeng', data);
-        update_player_eval(data);
+        update_player_eval('live', data);
     });
     socket.on('users', data => {
         log_socket('users', data);
@@ -146,7 +151,7 @@ function log_socket(name, data, cache) {
         LS(data);
     }
     if (cache)
-        socket_data[name] = data;
+        socket_data[Y.x][name] = data;
 }
 
 /**

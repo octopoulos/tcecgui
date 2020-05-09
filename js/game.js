@@ -86,7 +86,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         crash: 600,
         cross: 60,
         sched: 240,
-        season: 3600 * 24,
+        season: 1200,
         tour: 60,
         winner: 3600 * 24,
     },
@@ -150,7 +150,6 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
-        game: '{Game}#|PGN|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Start',
         h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
@@ -263,6 +262,17 @@ function calculate_score(text) {
     }
 
     return {w: white, b: black};
+}
+
+/**
+ * Create a link to a game
+ * @param {number} game
+ * @param {string=} text if not set, then use game as the text
+ * @returns {string}
+ */
+function create_game_link(game, text) {
+    let link = `#x=archive&${tour_info.link}&game=${game}`;
+    return `<a href="${link}">${text || game}</a>`;
 }
 
 /**
@@ -720,21 +730,16 @@ function create_tables() {
  * Download live data when the graph is ready
  */
 function download_live() {
+    if (Y.x != 'live')
+        return;
+
     // evals
-    download_table(`data.json?no-cache${Now()}`, null, data => {
-        update_live_eval(data, 0);
-    });
-    download_table(`data1.json?no-cache${Now()}`, null, data => {
-        update_live_eval(data, 1);
-    });
+    download_table(`data.json?no-cache${Now()}`, null, data => {update_live_eval(data, 0);});
+    download_table(`data1.json?no-cache${Now()}`, null, data => {update_live_eval(data, 1);});
 
     // live engines
-    download_table('liveeval.json', null, data => {
-        update_live_eval(data, 0);
-    });
-    download_table('liveeval1.json', null, data => {
-        update_live_eval(data, 1);
-    });
+    download_table('liveeval.json', null, data => {update_live_eval(data, 0);});
+    download_table('liveeval1.json', null, data => {update_live_eval(data, 1);});
 }
 
 /**
@@ -819,16 +824,19 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
  * @param {boolean=} only_cache
  */
 function download_tables(only_cache) {
-    if (!only_cache) {
-        download_pgn();
-        download_live();
-    }
+    if (!only_cache)
+        download_gamelist();
 
-    // tables
-    let dico = {only_cache: only_cache};
-    download_table('crosstable.json', 'cross', analyse_crosstable, dico);
-    download_table('tournament.json', 'tour', analyse_tournament, dico);
-    download_table('schedule.json', 'sched', null, dico);
+    if (Y.x == 'live') {
+        if (!only_cache) {
+            download_pgn('live.json');
+            download_live();
+        }
+        let dico = {only_cache: only_cache};
+        download_table('crosstable.json', 'cross', analyse_crosstable, dico);
+        download_table('schedule.json', 'sched', null, dico);
+        download_table('tournament.json', 'tour', analyse_tournament, dico);
+    }
 }
 
 /**
@@ -867,15 +875,16 @@ function show_tables(type) {
 /**
  * Update a table by adding rows
  * - handles all the tables
+ * @param {string} section archive, live
  * @param {string} name h2h, sched, stand, ...
  * @param {Object[]} rows if null then uses the cached table_data
  * @param {string=} parent chart, engine, quick, table
  * @param {string=} output output the result to another name
  * @param {boolean=} reset clear the table before adding data to it (so far always the case)
  */
-function update_table(name, rows, parent='table', {output, reset=true}={}) {
+function update_table(section, name, rows, parent='table', {output, reset=true}={}) {
     // 1) update table data
-    let data_x = SetDefault(table_data[Y.x], name, {data: []}),
+    let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_sched = (name == 'sched'),
         page_key = `page_${parent}`,
@@ -1015,6 +1024,8 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                 break;
             case 'game':
                 value = row_id + 1;
+                if (row.moves)
+                    value = create_game_link(value);
                 break;
             case 'name':
                 class_ = 'loss';
@@ -1038,7 +1049,7 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                     lines.push('<grid class="dn">');
                     for (let sub of row.sub.reverse())
                         lines.push(
-                            `<a class="sub" data-u="${sub.abb}">${sub.menu}</a>`
+                            `<a class="sub" data-u="${sub.url}">${sub.menu}</a>`
                             + `<a href="${HOST_ARCHIVE}/${sub.abb}.pgn.zip"><i data-svg="download"></i></a>`
                         );
                     lines.push('</grid>');
@@ -1089,15 +1100,12 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
         set_season_events();
 
     // open game?
-    // https://www.tcec-chess.com/json/TCEC_Testing_18_-_Cpu_Engine_Test1_1.pgjson?no-cache1589043742457
-    // https://www.tcec-chess.com/archive/tcec_testing_18_-_cpu_engine_test1_liveeval_1.1.json
-    // https://www.tcec-chess.com/archive/tcec_testing_18_-_cpu_engine_test1_liveeval1_1.1.json
     C('tr[data-g]', function() {
         Class('tr.active', '-active', true, table);
         Class(this, 'active');
         if (Y.x == 'archive') {
-            save_option('game_id', this.dataset.g * 1);
-            LS(`open game? ${this.dataset.g}`);
+            save_option('game', this.dataset.g * 1);
+            open_game();
         }
     }, table);
 
@@ -1150,16 +1158,25 @@ function analyse_seasons(data) {
     let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
     update_table('season', rows);
 
-    let node = _(`[data-u="${Y.event}"]`);
+    let link = `season=${Y.season}&div=${Y.div}`,
+        node = _(`[data-u="${link}"]`);
     if (node) {
         let parent = Parent(node, 'grid');
         if (parent) {
             Class(node, 'active');
             Class(node.nextElementSibling, 'active');
             expand_season(parent.previousElementSibling, true);
-            open_event(Y.event);
+            tour_info.link = link;
+            open_event(link);
         }
     }
+}
+
+/**
+ * Download the game list, necessary for the archive and for the game links in Live
+ */
+function download_gamelist() {
+    download_table('gamelist.json', 'season', analyse_seasons);
 }
 
 /**
@@ -1183,16 +1200,54 @@ function expand_season(node, show) {
  * @param {string} name
  */
 function open_event(name) {
+    let data_x = table_data[Y.x].season;
+    if (!data_x)
+        return;
+
+    let found,
+        data = data_x.data;
+    Keys(data).forEach(key => {
+        let subs = data[key].sub;
+        Keys(subs).forEach(sub_key => {
+            let sub = subs[sub_key];
+            if (sub.url == name) {
+                found = sub.abb;
+                tour_info.cup = data[key].cup;
+                return;
+            }
+        });
+        if (found)
+            return;
+    });
+
+    tour_info.url = found;
+    if (!found)
+        return;
+
     let dico = {no_cache: true},
-        prefix = `${HOST_ARCHIVE}/${name}`;
-        // prefix_lower = `${HOST_ARCHIVE}/${Lower(name)}`;
+        prefix = `${HOST_ARCHIVE}/${found}`;
 
     download_table(`${prefix}_crash.xjson`, 'crash', null, dico);
     download_table(`${prefix}_Crosstable.cjson`, 'cross', analyse_crosstable, dico);
     download_table(`${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(`${prefix}_Schedule.sjson`, 'game', null, Assign({show: true}, dico));
-    // download_pgn();
+    download_table(`${prefix}_Schedule.sjson`, 'sched', null, Assign({show: true}, dico));
     save_option('event', name);
+
+    open_game();
+}
+
+/**
+ * Open an archived game
+ */
+function open_game() {
+    let event = tour_info.url,
+        game = Y.game,
+        prefix = `${HOST_ARCHIVE}/${event}`,
+        prefix_lower = `${HOST_ARCHIVE}/${Lower(event)}`;
+
+    download_pgn(`${prefix}_${game}.pgjson`);
+    download_table(`${prefix_lower}_liveeval_1.${game}.json`, null, data => {update_live_eval(data, 0);});
+    download_table(`${prefix_lower}_liveeval1_1.${game}.json`, null, data => {update_live_eval(data, 1);});
 }
 
 /**
@@ -1208,6 +1263,7 @@ function set_season_events() {
 
     // open games
     C('a[data-u]', function() {
+        save_option('game', 1);
         open_event(this.dataset.u);
         Class('a.active', '-active', true, table);
         Class(this, 'active');
@@ -1223,7 +1279,9 @@ function set_season_events() {
  * @param {Object} data
  */
 function analyse_tournament(data) {
-    // LS(data);
+    Assign(tour_info, data);
+    if (tour_info.cup)
+        download_table('bracket.json', 'brak', create_cup);
 }
 
 /**
@@ -1264,7 +1322,11 @@ function calculate_event_stats(rows) {
         min_moves = [Infinity, 0],
         min_time = [Infinity, 0],
         moves = 0,
-        results = [],
+        results = {
+            '0-1': 0,
+            '1-0': 0,
+            '1/2-1/2': 0,
+        },
         seconds = 0,
         start = rows.length? rows[0].start: '';
 
@@ -1310,10 +1372,10 @@ function calculate_event_stats(rows) {
         draw_rate: format_percent(results['1/2-1/2'] / games),
         crashes: crashes,
         games: games,
-        min_moves: `${min_moves[0]} [<a>${min_moves[1]}</a>]`,
-        max_moves: `${max_moves[0]} [<a>${max_moves[1]}</a>]`,
-        min_time: `${format_hhmmss(min_time[0])} [<a>${min_time[1]}</a>]`,
-        max_time: `${format_hhmmss(max_time[0])} [<a>${max_time[1]}</a>]`,
+        min_moves: `${min_moves[0]} [${create_game_link(min_moves[1])}]`,
+        max_moves: `${max_moves[0]} [${create_game_link(max_moves[1])}]`,
+        min_time: `${format_hhmmss(min_time[0])} [${create_game_link(min_time[1])}]`,
+        max_time: `${format_hhmmss(max_time[0])} [${create_game_link(max_time[1])}]`,
     });
 
     // create the table
@@ -1544,8 +1606,8 @@ function check_adjudication(dico, total_moves) {
 /**
  * Download the PGN
  */
-function download_pgn() {
-    Resource(`live.json?no-cache${Now()}`, (code, data, xhr) => {
+function download_pgn(url) {
+    Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
 
@@ -1582,7 +1644,7 @@ function update_move_info(ply, move, fresh) {
         HTML(`#${key}${id}`, stats[key]);
     });
 
-    if (fresh)
+    if (fresh || Y.x == 'archive')
         Assign(players[id], {
             elapsed: 0,
             eval: eval_,
@@ -1718,9 +1780,11 @@ function update_pgn(pgn_) {
     S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
     if (finished) {
         let result = headers.Result;
-        if (Y.crowd_sound)
+        if (!new_game && Y.crowd_sound && Y.x == 'live')
             play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        LS(result);
         board.set_last(result);
+        LS(board.last);
     }
 
     // 4) engines
@@ -1848,6 +1912,9 @@ function set_viewers(count) {
  * @param {number} id
  */
 function start_clock(id) {
+    if (Y.x != 'live')
+        return;
+
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
@@ -1980,7 +2047,6 @@ function update_player_eval(data) {
         data.ply = data.plynum;
 
     // CHECK THIS
-    // start_clock(data.ply % 2);
     if (DEV.eval) {
         LS(`play_eval${id} : eval=${eval_} : ply=${data.ply}`);
         LS(data);
@@ -2258,6 +2324,9 @@ function opened_table(node, name, tab) {
     case 'crash':
         download_table('crash.json', name);
         break;
+    case 'h2h':
+        LS('h2h opened');
+        break;
     case 'info':
         HTML(node, HTML('#desc'));
         break;
@@ -2276,7 +2345,7 @@ function opened_table(node, name, tab) {
         }
         break;
     case 'season':
-        download_table('gamelist.json', name, analyse_seasons);
+        download_gamelist();
         break;
     case 'winner':
         download_table('winners.json', name);
@@ -2391,7 +2460,6 @@ function start_game() {
     create_tables();
     create_boards();
     show_tables('league');
-    // download_table('bracket.json', 'brak', create_cup);
 }
 
 /**
@@ -2400,8 +2468,7 @@ function start_game() {
 function startup_game() {
     //
     Assign(DEFAULTS, {
-        event: '',
-        game_id: 0,
+        game: 0,
         order: 'left|center|right',         // main panes order
         tabs: {},                           // opened tabs
         three: 0,                           // 3d scene

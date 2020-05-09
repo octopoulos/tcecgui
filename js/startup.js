@@ -16,13 +16,15 @@ ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass,
 init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
 open_table, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_modal_events, set_ui_events, Show, show_banner, show_popup, show_settings,
-Split, start_3d, start_game, startup_3d, startup_archive, startup_config, startup_game, startup_graph, Style,
-tcecHandleKey, THEMES, TIMEOUTS, translate_node, translates:true, update_board_theme, update_debug, update_theme,
-update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
+S, save_option, screen, set_game_events, set_modal_events, Show, show_banner, show_popup, show_settings, Split,
+start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, tcecHandleKey, THEMES, TIMEOUTS,
+translate_node, translates:true, update_board_theme, update_debug, update_theme, update_twitch,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, Y
 */
 'use strict';
+
+let old_x;
 
 /**
  * Same as action_key_no_input, but when the key is up
@@ -142,8 +144,16 @@ function check_hash_special() {
     Class('#live', 'red', is_live);
     change_theme();
 
-    S('[data-x="season"], [data-x="game"]', !is_live, parent);
+    S('[data-x="season"]', !is_live, parent);
     S('[data-x="log"]', is_live, parent);
+
+    Attrs('[data-x="sched"] i[data-t]', 'data-t', is_live? 'Schedule': 'Games');
+    translate_node('#table-tabs');
+
+    if (Y.x != old_x)
+        download_tables();
+
+    old_x = Y.x;
 }
 
 /**
@@ -178,8 +188,8 @@ function create_url_list(dico) {
 function init_globals() {
     // load local data directly, and later online data
     update_shortcuts();
-    download_tables(true);
-    add_timeout('tables', download_tables, TIMEOUTS.tables);
+    // download_tables(true);
+    // add_timeout('tables', download_tables, TIMEOUTS.tables);
 
     // delayed loading
     show_banner();
@@ -672,9 +682,7 @@ function startup() {
     startup_game();
 
     set_global_events();
-    set_ui_events();
     set_game_events();
-    startup_archive();
     startup_graph();
     load_settings();
 
