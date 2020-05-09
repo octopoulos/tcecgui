@@ -1131,9 +1131,8 @@ function show_modal(show, text, title, name) {
         if (virtual_game_action_key)
             virtual_game_action_key();
     }
-    else {
+    else
         clear_timeout('pad');
-    }
 
     if (virtual_show_modal_special)
         virtual_show_modal_special(show);
@@ -1243,7 +1242,7 @@ function update_debug() {
         lines = [...lines, ...virtual_update_debug_special()];
 
     HTML('#debug', `<div>${lines.join('</div><div>')}</div>`);
-    add_timeout('pad', gamepad_modal, 300);
+    // add_timeout('pad', gamepad_modal, 300);
 }
 
 // STARTUP

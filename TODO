@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV
+2020-05-09 : 2020-05-09 : use handle_hold for key events in addition to mouse events
 2020-05-09 : 2020-05-07 : show first diverging move in white/black PV
 2020-05-08 : 2020-05-08 : extract_fen_ply used in add_moves + DEV.fen can detect ply mismatches
 2020-05-08 : 2020-05-08 : separate themes for main board and PV

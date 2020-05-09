@@ -449,7 +449,7 @@ function update_live_chart(moves, id, invert_black) {
     }
 
     for (let move of moves) {
-        let eval_ = move.eval,
+        let eval_ = move.eval2 || move.eval,
             ply = move.ply, // - 1,
             num = Floor(ply / 2),
             num2 = num - first_num;

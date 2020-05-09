@@ -78,9 +78,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    TIMEOUT_CLICK = 200,
-    TIMEOUT_REPEAT = 40,
-    TIMEOUT_REPEAT_INITIAL = 500;
+    TIMEOUT_CLICK = 200;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -150,6 +148,7 @@ class XBoard {
         this.coords = {};
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
+        this.evals = [];                                // eval history
         this.fen = START_FEN;                           // current fen
         this.grid = {};
         this.high_color = '';                           // highlight color
@@ -168,7 +167,6 @@ class XBoard {
         this.real = null;                               // pointer to a board with the real moves
         this.svgs = [];                                 // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
-        this.texts = [];                                // text history
         this.xmoves = null;
     }
 
@@ -263,13 +261,10 @@ class XBoard {
 
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
-        LS(`${this.id}: add_moves: num_ply=${num_ply}`);
         if (is_ply)
-            this.compare_duals(num_ply);
-        else if (this.ply >= num_move - 1) {
-            LS(`${this.id}: add_moves / set_ply: last_move=${last_move}`);
+            add_timeout(`dual${this.id}`, () => {this.compare_duals(num_ply);}, Y.show_delay);
+        else if (this.ply >= num_move - 1)
             this.set_ply(last_move, true);
-        }
     }
 
     /**
@@ -290,8 +285,11 @@ class XBoard {
 
         let [new_ply, new_items] = this.split_move_string(text),
             [old_ply] = this.split_move_string(this.text);
-        if (new_ply < old_ply)
-            return;
+        if (new_ply < old_ply) {
+            if (DEV.ply)
+                LS(`${this.id}: add_moves_string: ${new_ply} < ${old_ply}`);
+            // return;
+        }
 
         this.text = text;
 
@@ -352,7 +350,7 @@ class XBoard {
 
         // show diverging move in PV
         if (num_ply != undefined)
-            this.compare_duals(num_ply);
+            add_timeout(`dual${this.id}`, () => {this.compare_duals(num_ply);}, Y.show_delay);
     }
 
     /**
@@ -717,16 +715,13 @@ class XBoard {
             moves = this.moves,
             num_dual = duals.length,
             num_move = moves.length,
-            ply = num_ply;
+            ply = num_ply - 1;
 
         while (ply < num_dual && ply < num_move) {
             let dual_fen = (duals[ply] || {}).fen,
                 move_fen = (moves[ply] || {}).fen;
-            if (!dual_fen || !move_fen) {
-                LS(`ply=${ply} : break`);
+            if (!dual_fen || !move_fen)
                 break;
-            }
-            LS(`ply=${ply} : ${duals[ply].m} : ${moves[ply].m}`);
             if (dual_fen != move_fen)
                 break;
             ply ++;
@@ -792,10 +787,10 @@ class XBoard {
             case 'end':
                 that.go_end();
                 break;
-            case 'next':
-            case 'prev':
-                that.hold_button(name, -1);
-                break;
+            // case 'next':
+            // case 'prev':
+            //     that.hold_button(name, -1);
+            //     break;
             case 'play':
                 that.play();
                 break;
@@ -899,7 +894,7 @@ class XBoard {
 
         this.hold_time = now;
 
-        let timeout = (name == 'play')? Y.play_every: (step? TIMEOUT_REPEAT: TIMEOUT_REPEAT_INITIAL);
+        let timeout = (name == 'play')? Y.play_every: (step? Y.key_repeat: Y.key_repeat_initial);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
     }
 
@@ -1054,8 +1049,6 @@ class XBoard {
         }
 
         // restore smooth after `hold_smooth`
-        if (this.id == '#live0')
-            LS(`${this.id}: render: ${this.next_smooth}`);
         if (this.next_smooth)
             this.smooth = this.next_smooth;
     }
@@ -1231,8 +1224,6 @@ class XBoard {
      * Reset the moves
      */
     reset() {
-        if (this.id == '#live0')
-            LS(`${this.id}: reset ... had ${this.moves.length} moves`);
         this.moves.length = 0;
         this.ply = 0;
         this.text = '';

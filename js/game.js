@@ -14,7 +14,7 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CreateNode, cube:true,
 DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, Keys,
+HTML, Id, Input, InsertNodes, Keys, KEYS,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -155,7 +155,6 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
-    TIMEOUT_PLY_LIVE = 50,              // when moving the cursor, wait a bit before updating live history
     TIMEOUT_QUEUE = 100,                // check the queue after updating a table
     TIMEOUT_SEARCH = 100,               // filtering the table when input changes
     tour_info = {},
@@ -1564,8 +1563,6 @@ function update_move_pv(ply, move) {
         // - delete it if the move is in the past (ex: "book")
         // - keep it if this is the latest move, as we don't want to see PV disappearing
         // TODO: try to readjust the existing PV to match the current move
-        LS('no move pv');
-        LS(move);
         if (ply < num_ply - 1) {
             board.moves[ply] = move;
             board.set_ply(ply);
@@ -1810,8 +1807,9 @@ function start_clock(id) {
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {Object} data
  * @param {number} id 0, 1
+ * @param {boolean=} force update with this data.pv even if there's more recent text
  */
-function update_live_eval(data, id) {
+function update_live_eval(data, id, force) {
     if (!data)
         return;
 
@@ -1823,14 +1821,15 @@ function update_live_eval(data, id) {
             LS(`maybe old data => SKIP: ${data.round} vs ${prev_round}`);
             return;
         }
-        // !!! CHECK THIS
-        // ply might be offset by 1
+        // ply seems be offset by 1
         for (let move of moves)
-            board.texts[move.ply] = move.pv;
+            board.evals[move.ply - 1] = move;
         data = moves[moves.length - 1];
     }
 
     let eval_ = data.eval,
+        eval_text = eval_,
+        invert = (cur_ply % 2)? -1: 1,
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
 
@@ -1843,9 +1842,16 @@ function update_live_eval(data, id) {
     if (short)
         HTML(`[data-x="name"]`, short, node);
 
+    // invert eval for black?
+    if (Number.isFinite(eval_)) {
+        eval_ = eval_ * invert;
+        eval_text = eval_.toFixed(2);
+        data.eval2 = eval_;
+    }
+
     let dico = {
         depth: data.depth,
-        eval: (Number.isFinite(eval_))? eval_.toFixed(2): eval_,
+        eval: eval_text,
         node: FormatUnit(data.nodes),
         score: calculate_probability(short, eval_),
         speed: data.speed,
@@ -1855,8 +1861,9 @@ function update_live_eval(data, id) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    // only display the PV but no expensive FEN calculation
-    board.add_moves_string(data.pv, num_ply - id, num_ply);
+    if (force)
+        board.text = '';
+    board.add_moves_string(data.pv, cur_ply, cur_ply);
 
     // CHECK THIS
     if (DEV.eval) {
@@ -1872,6 +1879,9 @@ function update_live_eval(data, id) {
  * @param {Object} data
  */
 function update_player_eval(data) {
+    if (!Y.live_pv)
+        return;
+
     let eval_ = data.eval,
         id = data.color,
         // board = xboards[`pv${id}`],
@@ -1888,7 +1898,6 @@ function update_player_eval(data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    // only display the PV but no expensive FEN calculation
     let board = xboards[`pv${id}`];
     board.add_moves_string(data.pv, num_ply - id, num_ply);
 
@@ -2030,24 +2039,17 @@ function game_action_key(code) {
         Class('.selected', '-selected', true, parent);
         Class(items[index], 'selected');
     }
-    else {
+    else if (!KEYS[code]) {
         switch (code) {
-        // enter, space
-        case 13:
-        case 32:
-            break;
-        // escape
-        case 27:
-            // LS(`game_action_key2: ${code}`);
-            // show_menu();
-            break;
         // left
         case 37:
-            board_target.go_prev();
+            board_target.hold = 'prev';
+            board_target.hold_button('prev', 0);
             break;
         // right
         case 39:
-            board_target.go_next();
+            board_target.hold = 'next';
+            board_target.hold_button('next', 0);
             break;
         }
     }
@@ -2058,7 +2060,16 @@ function game_action_key(code) {
  * @param {number} code
  */
 function game_action_keyup(code) {
-    // LS(`keyup: ${code}`);
+    switch (code) {
+    // left
+    case 37:
+        clear_timeout('click_prev');
+        break;
+    // right
+    case 39:
+        clear_timeout('click_next');
+        break;
+    }
 }
 
 // 3D SCENE
@@ -2116,14 +2127,20 @@ function handle_board_events(board, type, value) {
         if (id != undefined)
             xboards.board.arrow(id, value, ARROW_COLORS[id]);
         break;
-    // ply was set => maybe update some stats (for the main board)
+    // ply was set
     case 'ply':
         if (board.id == '#board') {
+            // update main board stats
             cur_ply = board.ply;
-            LS('new main ply: ' + cur_ply);
             update_move_info(cur_ply, value);
+
+            // show PV's
             update_move_pv(cur_ply - 1, board.moves[cur_ply - 1]);
             update_move_pv(cur_ply, value);
+
+            // show live engines
+            update_live_eval(xboards.live0.evals[cur_ply], 0, true);
+            update_live_eval(xboards.live1.evals[cur_ply], 1, true);
         }
         break;
     }
@@ -2338,22 +2355,27 @@ function startup_game() {
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
         },
         board_pv: {
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
-            live_pv: [ON_OFF, 1],
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
+            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
             show_ply: [['first', 'diverging'], 'diverging'],
+        },
+        control: {
+            key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
+            key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
+            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
         },
         live: {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 2],
             live_log: [[0, 5, 10, 'all'], 0],
+            live_pv: [ON_OFF, 1],
         },
         extra: {
             cross_crash: [ON_OFF, 0],
