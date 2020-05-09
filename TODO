@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
 ~          : 2020-04-17 : load archive games without loading a new page
+2020-05-09 : 2020-05-09 : remember which season and game was opened last => open them by default
 2020-05-09 : 2020-05-07 : hover on final FEN => show popup with a board + copy fen button
 2020-05-09 : 2020-05-09 : use handle_hold for key events in addition to mouse events
 2020-05-09 : 2020-05-07 : show first diverging move in white/black PV

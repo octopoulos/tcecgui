@@ -493,18 +493,6 @@ function analyse_crosstable(data) {
 }
 
 /**
- * Handle the seasons file
- */
-function analyse_seasons(data) {
-    let seasons = (data || {}).Seasons;
-    if (!seasons)
-        return;
-
-    let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
-    update_table('season', rows);
-}
-
-/**
  * Change the page from quick/table
  * @param {string} parent quick, table
  * @param {string} value +1, -1, 0, 1, 2, ...
@@ -860,34 +848,6 @@ function filter_table_rows(parent, text) {
 }
 
 /**
- * Set table-season events
- */
-function set_season_events() {
-    let table = Id('table-season');
-
-    // expand/collapse
-    C('.season', function() {
-        let next = this.nextElementSibling;
-        Toggle(next);
-        Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, this);
-    }, table);
-
-    // open games
-    C('a[data-u]', function() {
-        let dico = {no_cache: true},
-            name = this.dataset.u,
-            prefix = `${HOST_ARCHIVE}/${name}`,
-            prefix_lower = `${HOST_ARCHIVE}/${Lower(name)}`;
-
-        download_table(`${prefix}_crash.xjson`, 'crash', null, dico);
-        download_table(`${prefix}_Crosstable.cjson`, 'cross', analyse_crosstable, dico);
-        download_table(`${prefix}_Enginerating.egjson`, null, null, dico);
-        download_table(`${prefix}_Schedule.sjson`, 'game', null, Assign({show: true}, dico));
-        // download_pgn();
-    }, table);
-}
-
-/**
  * Show tables depending on the event type
  * @param {string} type
  */
@@ -1039,6 +999,7 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
                     class_ = 'loss';
                 break;
             case 'download':
+            case 'pgn':
                 value = `<a href="${HOST_ARCHIVE}/${value}"><i data-svg="download"></i></a>`;
                 break;
             case 'engine':
@@ -1127,11 +1088,20 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
     if (name == 'season')
         set_season_events();
 
+    // open game?
+    // https://www.tcec-chess.com/json/TCEC_Testing_18_-_Cpu_Engine_Test1_1.pgjson?no-cache1589043742457
+    // https://www.tcec-chess.com/archive/tcec_testing_18_-_cpu_engine_test1_liveeval_1.1.json
+    // https://www.tcec-chess.com/archive/tcec_testing_18_-_cpu_engine_test1_liveeval1_1.1.json
     C('tr[data-g]', function() {
         Class('tr.active', '-active', true, table);
         Class(this, 'active');
+        if (Y.x == 'archive') {
+            save_option('game_id', this.dataset.g * 1);
+            LS(`open game? ${this.dataset.g}`);
+        }
     }, table);
 
+    // fen preview
     Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
         if (e.type == 'click')
             CopyClipboard(TEXT(this));
@@ -1166,8 +1136,87 @@ function update_table(name, rows, parent='table', {output, reset=true}={}) {
     }
 }
 
+// ARCHIVE
+//////////
+
+/**
+ * Handle the seasons file
+ */
+function analyse_seasons(data) {
+    let seasons = (data || {}).Seasons;
+    if (!seasons)
+        return;
+
+    let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
+    update_table('season', rows);
+
+    let node = _(`[data-u="${Y.event}"]`);
+    if (node) {
+        let parent = Parent(node, 'grid');
+        if (parent) {
+            Class(node, 'active');
+            Class(node.nextElementSibling, 'active');
+            expand_season(parent.previousElementSibling, true);
+            open_event(Y.event);
+        }
+    }
+}
+
+/**
+ * Expand / collapse a season
+ * @param {Node} node
+ * @param {boolean=} show if not defined, then toggle
+ */
+function expand_season(node, show) {
+    let next = node.nextElementSibling;
+    if (show == undefined)
+        Toggle(next);
+    else
+        S(next, show);
+    Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, node);
+}
+
+/**
+ * Open an event
+ * - show the event games
+ * - open various tables
+ * @param {string} name
+ */
+function open_event(name) {
+    let dico = {no_cache: true},
+        prefix = `${HOST_ARCHIVE}/${name}`;
+        // prefix_lower = `${HOST_ARCHIVE}/${Lower(name)}`;
+
+    download_table(`${prefix}_crash.xjson`, 'crash', null, dico);
+    download_table(`${prefix}_Crosstable.cjson`, 'cross', analyse_crosstable, dico);
+    download_table(`${prefix}_Enginerating.egjson`, null, null, dico);
+    download_table(`${prefix}_Schedule.sjson`, 'game', null, Assign({show: true}, dico));
+    // download_pgn();
+    save_option('event', name);
+}
+
+/**
+ * Set table-season events
+ */
+function set_season_events() {
+    let table = Id('table-season');
+
+    // expand/collapse
+    C('.season', function() {
+        expand_season(this);
+    }, table);
+
+    // open games
+    C('a[data-u]', function() {
+        open_event(this.dataset.u);
+        Class('a.active', '-active', true, table);
+        Class(this, 'active');
+        Class(this.nextElementSibling, 'active');
+    }, table);
+}
+
 // BRACKETS / TOURNAMENT
-///////////
+////////////////////////
 
 /**
  * Handle tournament data
@@ -2351,6 +2400,8 @@ function start_game() {
 function startup_game() {
     //
     Assign(DEFAULTS, {
+        event: '',
+        game_id: 0,
         order: 'left|center|right',         // main panes order
         tabs: {},                           // opened tabs
         three: 0,                           // 3d scene

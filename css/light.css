@@ -574,6 +574,9 @@ grid {
 #table-season a {
     color: #212529;
 }
+#table-season .active {
+    color: #007bff;
+}
 #table-season grid {
     grid-template-columns: 1fr 1em;
 }
