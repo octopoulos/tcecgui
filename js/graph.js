@@ -363,7 +363,7 @@ function create_charts()
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards.board.set_ply(dico.ply);
+                xboards[Y.x].set_ply(dico.ply);
         });
     });
 }
@@ -565,7 +565,7 @@ function init_graph(callback) {
     function _done() {
         create_chart_data();
         create_charts();
-        update_player_chart(null, xboards.board.moves, 0);
+        update_player_chart(null, xboards[Y.x].moves, 0);
         callback();
     }
 

@@ -42,9 +42,15 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
     board_target,
     // vis: selector of the element to check visibility against, indicating that the board is visible or not
     BOARDS = {
-        board: {
+        archive: {
             last: '*',
-            vis: 'board',
+            main: true,
+            vis: 'archive',
+        },
+        live: {
+            last: '*',
+            main: true,
+            vis: 'live',
         },
         live0: {
             dual: 'live1',
@@ -78,6 +84,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             vis: 'table-pva',
         },
         xfen: {
+            hook: null,
             size: 24,
         }
     },
@@ -90,21 +97,24 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         tour: 60,
         winner: 3600 * 24,
     },
-    cur_ply = 0,                        // same as xboards.board.ply
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
     },
-    event_stats = {},
-    finished,
+    event_stats = {
+        archive: {},
+        live: {},
+    },
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
-    num_ply = 0,                        // same as xboards.board.moves.length
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
         sched: 10,
     },
-    pgn,
+    pgns = {
+        archive: null,
+        live: null,
+    },
     PIECE_SIZES = {
         _: 80,
         metro: 160,
@@ -128,7 +138,6 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         wikipedia: {},
     },
     players = [{}, {}],                 // current 2 players
-    prev_round,
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     QUEUES = ['h2h', 'stats'],
     ROUND_NAMES = {
@@ -159,7 +168,10 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
     },
     TIMEOUT_QUEUE = 100,                // check the queue after updating a table
     TIMEOUT_SEARCH = 100,               // filtering the table when input changes
-    tour_info = {},
+    tour_info = {
+        archive: {},
+        live: {},
+    },
     virtual_opened_table_special,
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
@@ -266,12 +278,13 @@ function calculate_score(text) {
 
 /**
  * Create a link to a game
+ * @param {string} section archive, live
  * @param {number} game
  * @param {string=} text if not set, then use game as the text
  * @returns {string}
  */
-function create_game_link(game, text) {
-    let link = `#x=archive&${tour_info.link}&game=${game}`;
+function create_game_link(section, game, text) {
+    let link = `#x=archive&${tour_info[section].link}&game=${game}`;
     return `<a href="${link}">${text || game}</a>`;
 }
 
@@ -347,6 +360,7 @@ function create_boards() {
                 hook: handle_board_events,
                 id: `#${key}`,
                 list: true,
+                name: key,
                 mode: 'html',
                 size: 24,
             }, BOARDS[key]),
@@ -374,14 +388,15 @@ function create_boards() {
 }
 
 /**
- * Reset all boards
+ * Reset sub boards
  */
-function reset_boards() {
+function reset_sub_boards() {
     Keys(xboards).forEach(key => {
-        xboards[key].reset();
+        let board = xboards[key];
+        if (!board.main)
+            board.reset();
     });
 }
-
 /**
  * Update the boards' theme
  * @param {number} mode update mode:
@@ -393,7 +408,7 @@ function update_board_theme(mode) {
     Keys(xboards).forEach(key => {
         // 1) skip?
         let board = xboards[key],
-            is_main = (key == 'board');
+            is_main = board.main;
         if (is_main) {
             if (!(mode & 5))
                 return;
@@ -429,9 +444,10 @@ function update_board_theme(mode) {
 /**
  * Analyse the crosstable data
  * - create table-stand + table-cross
+ * @param {string} section archive, live
  * @param {Object} data
  */
-function analyse_crosstable(data) {
+function analyse_crosstable(section, data) {
     if (!data)
         return;
 
@@ -481,7 +497,7 @@ function analyse_crosstable(data) {
         });
     }
 
-    update_table('stand', stand_rows);
+    update_table(section, 'stand', stand_rows);
 
     // 2) table-cross: might need to update the columns too
     let node = Id('table-cross'),
@@ -499,7 +515,7 @@ function analyse_crosstable(data) {
         translate_node(node);
     }
 
-    update_table('cross', cross_rows);
+    update_table(section, 'cross', cross_rows);
 }
 
 /**
@@ -514,7 +530,8 @@ function change_page(parent, value) {
 
     let page,
         page_key = `page_${parent}`,
-        data_x = SetDefault(table_data[Y.x], active, {data: []}),
+        section = Y.x,
+        data_x = SetDefault(table_data[section], active, {data: []}),
         num_row = data_x[`rows_${parent}`],
         num_page = Ceil(num_row / Y.rows_per_page);
 
@@ -530,7 +547,7 @@ function change_page(parent, value) {
 
     // refresh the table
     data_x[page_key] = page;
-    update_table(active, null, parent, {output: output});
+    update_table(section, active, null, parent, {output: output});
 }
 
 /**
@@ -547,7 +564,8 @@ function check_pagination(parent) {
         LS(`check_pagination: ${parent}/${name}`);
 
     // check if there's enough data
-    let data_x = table_data[Y.x][name];
+    let section = Y.x,
+        data_x = table_data[section][name];
     if (!data_x)
         return 0;
 
@@ -601,11 +619,11 @@ function check_queued_tables() {
         if (DEV.ui)
             LS(`queued: ${queued}`);
 
-        let [parent, table] = queued.split('/');
+        let [section, _parent, table] = queued.split('/');
         if (!QUEUES.includes(table))
             continue;
 
-        let data_x = table_data[Y.x].sched;
+        let data_x = table_data[section].sched;
         if (!data_x)
             continue;
 
@@ -614,11 +632,11 @@ function check_queued_tables() {
             let names = [players[0].name, players[1].name],
                 new_rows = data.filter(row => names.includes(row.white) && names.includes(row.black));
 
-            update_table(table, new_rows);
+            update_table(section, table, new_rows);
             check_paginations();
         }
         else
-            calculate_event_stats(data);
+            calculate_event_stats(section, data);
         removes.push(queued);
     }
 
@@ -730,21 +748,31 @@ function create_tables() {
  * Download live data when the graph is ready
  */
 function download_live() {
-    if (Y.x != 'live')
+    let section = 'live';
+    if (section != Y.x)
         return;
 
     // evals
-    download_table(`data.json?no-cache${Now()}`, null, data => {update_live_eval(data, 0);});
-    download_table(`data1.json?no-cache${Now()}`, null, data => {update_live_eval(data, 1);});
+    download_table(section, `data.json?no-cache${Now()}`, null, data => {
+        update_live_eval(section, data, 0);
+    });
+    download_table(section, `data1.json?no-cache${Now()}`, null, data => {
+        update_live_eval(section, data, 1);
+    });
 
     // live engines
-    download_table('liveeval.json', null, data => {update_live_eval(data, 0);});
-    download_table('liveeval1.json', null, data => {update_live_eval(data, 1);});
+    download_table(section, 'liveeval.json', null, data => {
+        update_live_eval(section, data, 0);
+    });
+    download_table(section, 'liveeval1.json', null, data => {
+        update_live_eval(section, data, 1);
+    });
 }
 
 /**
  * Download static JSON for a table
  * + cache support = can load the data from localStorage if it was recent
+ * @param {string} section archive, live
  * @param {string} url url
  * @param {string=} name table name
  * @param {function=} callback
@@ -753,7 +781,7 @@ function download_live() {
  * @param {boolean=} only_cache only load data if it's cached
  * @param {boolean=} show open the table after wards
  */
-function download_table(url, name, callback, {add_delta, no_cache, only_cache, show}={}) {
+function download_table(section, url, name, callback, {add_delta, no_cache, only_cache, show}={}) {
     function _done(data, cached) {
         if (DEV.json) {
             LS(`${url}:`);
@@ -772,8 +800,8 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
             if (callback)
                 callback(data);
             else if (name) {
-                update_table(name, data);
-                if (show)
+                update_table(section, name, data);
+                if (show && section == Y.x)
                     open_table(name);
             }
         }
@@ -784,7 +812,7 @@ function download_table(url, name, callback, {add_delta, no_cache, only_cache, s
 
     if (!no_cache && timeout) {
         // save cache separately for Live and Archive
-        key = `table_${name}_${Y.x}`;
+        key = `table_${name}_${section}`;
         let cache = get_object(key);
         if (cache && (only_cache || Now() < cache.time + timeout)) {
             if (DEV.json)
@@ -827,16 +855,22 @@ function download_tables(only_cache) {
     if (!only_cache)
         download_gamelist();
 
-    if (Y.x == 'live') {
-        if (!only_cache) {
-            download_pgn('live.json');
-            download_live();
-        }
-        let dico = {only_cache: only_cache};
-        download_table('crosstable.json', 'cross', analyse_crosstable, dico);
-        download_table('schedule.json', 'sched', null, dico);
-        download_table('tournament.json', 'tour', analyse_tournament, dico);
+    let section = 'live';
+    if (section != Y.x)
+        return;
+
+    if (!only_cache) {
+        download_pgn(section, 'live.json');
+        download_live();
     }
+    let dico = {only_cache: only_cache};
+    download_table(section, 'crosstable.json', 'cross', data => {
+        analyse_crosstable(section, data);
+    }, dico);
+    download_table(section, 'schedule.json', 'sched', null, dico);
+    download_table(section, 'tournament.json', 'tour', data => {
+        analyse_tournament(section, data);
+    }, dico);
 }
 
 /**
@@ -847,11 +881,12 @@ function download_tables(only_cache) {
  */
 function filter_table_rows(parent, text) {
     let [active, output] = get_active_tab(parent),
-        data_x = table_data[Y.x][active];
+        section = Y.x,
+        data_x = table_data[section][active];
 
     if (data_x) {
         data_x[`filter_${parent}`] = text;
-        update_table(active, null, parent, {output: output});
+        update_table(section, active, null, parent, {output: output});
     }
 }
 
@@ -923,7 +958,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
         // special case
         if (is_sched)
-            calculate_estimates(data);
+            calculate_estimates(section, data);
     }
 
     // 2) handle pagination + filtering
@@ -939,8 +974,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         if (active == name) {
             let filter = data_x[`filter_${parent}`];
             if (filter) {
-                filter = Lower(filter);
-                data = data.filter(item => item._text.includes(filter));
+                let words = Lower(filter).split(' ');
+                data = data.filter(item => words.every(word => item._text.includes(word)));
             }
 
             let node = Id(`${parent}-pagin`),
@@ -1025,7 +1060,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'game':
                 value = row_id + 1;
                 if (row.moves)
-                    value = create_game_link(value);
+                    value = create_game_link(section, value);
                 break;
             case 'name':
                 class_ = 'loss';
@@ -1103,7 +1138,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     C('tr[data-g]', function() {
         Class('tr.active', '-active', true, table);
         Class(this, 'active');
-        if (Y.x == 'archive') {
+        if (section == 'archive') {
             save_option('game', this.dataset.g * 1);
             open_game();
         }
@@ -1127,7 +1162,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
             let node = Id(`table-${key}`);
             if (paginated && data_x.page_quick >= 0)
-                update_table(name, null, 'quick', {output: key});
+                update_table(section, name, null, 'quick', {output: key});
             else {
                 HTML(node, html);
                 data_x.page_quick = data_x[page_key];
@@ -1138,7 +1173,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // 6) create another table?
     if (is_sched) {
         for (let queue of QUEUES)
-            queued_tables.add(`${parent}/${queue}`);
+            queued_tables.add(`${section}/${parent}/${queue}`);
         if (players[0].name)
             add_timeout('queue', check_queued_tables, TIMEOUT_QUEUE);
     }
@@ -1151,12 +1186,13 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
  * Handle the seasons file
  */
 function analyse_seasons(data) {
-    let seasons = (data || {}).Seasons;
+    let seasons = (data || {}).Seasons,
+        section = 'archive';
     if (!seasons)
         return;
 
     let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
-    update_table('season', rows);
+    update_table(section, 'season', rows);
 
     let link = `season=${Y.season}&div=${Y.div}`,
         node = _(`[data-u="${link}"]`);
@@ -1166,7 +1202,7 @@ function analyse_seasons(data) {
             Class(node, 'active');
             Class(node.nextElementSibling, 'active');
             expand_season(parent.previousElementSibling, true);
-            tour_info.link = link;
+            tour_info[section].link = link;
             open_event(link);
         }
     }
@@ -1176,7 +1212,7 @@ function analyse_seasons(data) {
  * Download the game list, necessary for the archive and for the game links in Live
  */
 function download_gamelist() {
-    download_table('gamelist.json', 'season', analyse_seasons);
+    download_table('archive', 'gamelist.json', 'season', analyse_seasons);
 }
 
 /**
@@ -1200,7 +1236,8 @@ function expand_season(node, show) {
  * @param {string} name
  */
 function open_event(name) {
-    let data_x = table_data[Y.x].season;
+    let section = 'archive',
+        data_x = table_data[section].season;
     if (!data_x)
         return;
 
@@ -1227,11 +1264,12 @@ function open_event(name) {
     let dico = {no_cache: true},
         prefix = `${HOST_ARCHIVE}/${found}`;
 
-    download_table(`${prefix}_crash.xjson`, 'crash', null, dico);
-    download_table(`${prefix}_Crosstable.cjson`, 'cross', analyse_crosstable, dico);
-    download_table(`${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(`${prefix}_Schedule.sjson`, 'sched', null, Assign({show: true}, dico));
-    save_option('event', name);
+    download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
+    download_table(section, `${prefix}_Crosstable.cjson`, 'cross', data => {
+        analyse_crosstable(section, data);
+    }, dico);
+    download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
+    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: true}, dico));
 
     open_game();
 }
@@ -1243,11 +1281,16 @@ function open_game() {
     let event = tour_info.url,
         game = Y.game,
         prefix = `${HOST_ARCHIVE}/${event}`,
-        prefix_lower = `${HOST_ARCHIVE}/${Lower(event)}`;
+        prefix_lower = `${HOST_ARCHIVE}/${Lower(event)}`,
+        section = 'archive';
 
-    download_pgn(`${prefix}_${game}.pgjson`);
-    download_table(`${prefix_lower}_liveeval_1.${game}.json`, null, data => {update_live_eval(data, 0);});
-    download_table(`${prefix_lower}_liveeval1_1.${game}.json`, null, data => {update_live_eval(data, 1);});
+    download_pgn(section, `${prefix}_${game}.pgjson`);
+    download_table(section, `${prefix_lower}_liveeval_1.${game}.json`, null, data => {
+        update_live_eval(section, data, 0);
+    });
+    download_table(section, `${prefix_lower}_liveeval1_1.${game}.json`, null, data => {
+        update_live_eval(section, data, 1);
+    });
 }
 
 /**
@@ -1276,12 +1319,15 @@ function set_season_events() {
 
 /**
  * Handle tournament data
+ * @param {string} section archive, live
  * @param {Object} data
  */
-function analyse_tournament(data) {
-    Assign(tour_info, data);
+function analyse_tournament(section, data) {
+    Assign(tour_info[section], data);
     if (tour_info.cup)
-        download_table('bracket.json', 'brak', create_cup);
+        download_table(section, 'bracket.json', 'brak', data => {
+            create_cup(section, data);
+        });
 }
 
 /**
@@ -1311,9 +1357,10 @@ function calculate_seeds(num_team) {
  * Calculate tournament stats
  * - called after sched data is available, so, from queued tables
  * - called after calculate_estimates
+ * @param {string} section archive, live
  * @param {Object[]} rows
  */
-function calculate_event_stats(rows) {
+function calculate_event_stats(section, rows) {
     let crashes = 0,
         end = '',
         games = 0,
@@ -1359,12 +1406,13 @@ function calculate_event_stats(rows) {
         end = row.start;
     }
 
-    let [date, time] = FromTimestamp(event_stats._end);
+    let stats = event_stats[section],
+        [date, time] = FromTimestamp(stats._end);
 
-    Assign(event_stats, {
+    Assign(stats, {
         start_time: start,
         end_time: `${time} on 20${date.replace(/-/g, '.')}`,
-        duration: format_hhmmss(event_stats._duration),
+        duration: format_hhmmss(stats._duration),
         avg_moves: Round(moves / games),
         avg_time: format_hhmmss(seconds / games),
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
@@ -1372,18 +1420,18 @@ function calculate_event_stats(rows) {
         draw_rate: format_percent(results['1/2-1/2'] / games),
         crashes: crashes,
         games: games,
-        min_moves: `${min_moves[0]} [${create_game_link(min_moves[1])}]`,
-        max_moves: `${max_moves[0]} [${create_game_link(max_moves[1])}]`,
-        min_time: `${format_hhmmss(min_time[0])} [${create_game_link(min_time[1])}]`,
-        max_time: `${format_hhmmss(max_time[0])} [${create_game_link(max_time[1])}]`,
+        min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
+        max_moves: `${max_moves[0]} [${create_game_link(section, max_moves[1])}]`,
+        min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
+        max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
     });
 
     // create the table
-    let lines = Keys(event_stats)
+    let lines = Keys(stats)
         .filter(key => (key[0] != '_'))
         .map(key => {
             let title = Title(key.replace(/_/g, ' '));
-            return `<vert class="stats faround"><div class="stats-title" data-t="${title}"></div><div>${event_stats[key]}</div></vert>`;
+            return `<vert class="stats faround"><div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div></vert>`;
         });
 
     let node = Id('table-stats');
@@ -1394,8 +1442,10 @@ function calculate_event_stats(rows) {
 /**
  * Calculate the estimated times
  * - called when new schedule data is available
+ * @param {string} section
+ * @param {Object[]} rows
  */
-function calculate_estimates(rows) {
+function calculate_estimates(section, rows) {
     let end = '',
         games = 0,
         seconds = 0;
@@ -1438,7 +1488,7 @@ function calculate_estimates(rows) {
     items = rows[0].start.split(' on ');
     let start = Date.parse(`${items[1]} ${items[0]}`) / 1000;
 
-    Assign(event_stats, {
+    Assign(event_stats[section], {
         _duration: last + offset - start,
         _end: last + offset,
         _start: start,
@@ -1447,9 +1497,13 @@ function calculate_estimates(rows) {
 
 /**
  * Create the brackets
+ * @param {string} section archive, live
  * @param {Object} data
  */
-function create_bracket(data) {
+function create_bracket(section, data) {
+    if (section != Y.x)
+        return;
+
     // 1)
     window.event = data;
     let game = 1,
@@ -1564,9 +1618,10 @@ function create_bracket(data) {
 
 /**
  * Create a cup
+ * @param {string} section archive, live
  * @param {Object} data
  */
-function create_cup(data) {
+function create_cup(section, data) {
     show_tables('cup');
 
     let event = data.EventTable;
@@ -1574,7 +1629,7 @@ function create_cup(data) {
         let rows = Keys(event).map(key => {
             return Assign({round: key.split(' ').slice(-1)}, event[key]);
         });
-        update_table('event', rows);
+        update_table(section, 'event', rows);
     }
 
     create_bracket(data);
@@ -1605,8 +1660,10 @@ function check_adjudication(dico, total_moves) {
 
 /**
  * Download the PGN
+ * @param {string} section archive, live
+ * @param {string} url
  */
-function download_pgn(url) {
+function download_pgn(section, url) {
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
@@ -1617,18 +1674,65 @@ function download_pgn(url) {
             data.gameChanged = 1;
         }
 
-        pgn = null;
-        update_pgn(data);
+        pgns[section] = null;
+        update_pgn(section, data);
     });
+}
+
+/**
+ * Resize game elements
+ */
+function resize_game() {
+    // resize the boards
+    for (let [parent, key] of [['left', 'archive'], ['left', 'live']]) {
+        let width = Id(parent).clientWidth,
+            board = xboards[key];
+        if (board) {
+            board.hold_smooth();
+            board.resize(width);
+        }
+    }
+
+    resize_3d();
+}
+
+/**
+ * Update material info
+ * @param {Move} move
+ */
+function update_materials(move) {
+    let material = move.material,
+        materials = [[], []];
+    if (!material)
+        return;
+
+    'qrbnp'.split('').forEach(key => {
+        let value = material[key];
+        if (value) {
+            let id = (value > 0)? 0: 1,
+                color = id? 'b': 'w';
+            for (let i = 0; i < Abs(value); i ++)
+                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
+        }
+    });
+
+    for (let id = 0; id < 2; id ++) {
+        let node = Id(`material${id}`),
+            html = HTML(node),
+            material = materials[id].join('');
+        if (html != material)
+            HTML(node, material);
+    }
 }
 
 /**
  * Update engine info from a move
  * @param {number} ply
  * @param {Move} move
+ * @param {boolean=} finished game has finished
  * @param {boolean=} fresh is it the latest move?
  */
-function update_move_info(ply, move, fresh) {
+function update_move_info(ply, move, finished, fresh) {
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
@@ -1659,10 +1763,11 @@ function update_move_info(ply, move, fresh) {
 /**
  * Update PV info from a player move
  * - move contains pv.Moves with fen info for each move, so we can use this
+ * @param {string} section archive, live
  * @param {number} ply
  * @param {Move} move
  */
-function update_move_pv(ply, move) {
+function update_move_pv(section, ply, move) {
     if (!move)
         return;
 
@@ -1670,6 +1775,7 @@ function update_move_pv(ply, move) {
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         board = xboards[`pv${id}`],
+        main = xboards[section],
         node = Id(`player${id}`);
 
     HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
@@ -1680,13 +1786,13 @@ function update_move_pv(ply, move) {
     board.hold_smooth();
 
     if (move.pv)
-        board.add_moves(move.pv.Moves, ply, cur_ply + 1);
+        board.add_moves(move.pv.Moves, ply, main.ply + 1);
     else {
         // no pv available =>
         // - delete it if the move is in the past (ex: "book")
         // - keep it if this is the latest move, as we don't want to see PV disappearing
         // TODO: try to readjust the existing PV to match the current move
-        if (ply < num_ply - 1) {
+        if (ply < main.moves.length - 1) {
             board.moves[ply] = move;
             board.set_ply(ply);
         }
@@ -1696,15 +1802,19 @@ function update_move_pv(ply, move) {
 /**
  * Update the PGN
  * - white played => lastMoveLoaded=109
- * @param {Object} pgn_
+ * @param {string} section archive, live
+ * @param {Object} pgn
  */
-function update_pgn(pgn_) {
-    if (!xboards.board)
+function update_pgn(section, pgn) {
+    if (!xboards[section])
         return;
-    pgn = pgn_;
-    window.pgn = pgn;
+
+    // 0) section check
+    pgns[section] = pgn;
+    window.pgns = pgns;
 
     let headers = pgn.Headers,
+        is_same = (section == Y.x),
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
@@ -1715,7 +1825,7 @@ function update_pgn(pgn_) {
     // TODO: only change these when a new game was detected?
     if (pgn.Users)
         HTML('td[data-x="viewers"]', pgn.Users, overview);
-    if (headers) {
+    if (is_same && headers) {
         Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
             let value = headers[key];
             if (value == undefined)
@@ -1744,133 +1854,102 @@ function update_pgn(pgn_) {
         return;
 
     // 2) update the moves
-    let board = xboards.board,
+    let finished,
+        main = xboards[section],
         move = moves[num_move - 1],
-        last_ply = (pgn.numMovesToSend || 0) + start;
+        last_ply = (pgn.numMovesToSend || 0) + start,
+        num_ply = main.moves.length;
 
     // new game?
-    if (prev_round != headers.Round || !last_ply || last_ply < num_ply) {
-        LS(`new game: ${prev_round} => ${headers.Round} : last_ply=${last_ply} : num_ply=${num_ply}`);
-        reset_boards();
-        reset_charts();
-        prev_round = headers.Round;
+    if (main.round != headers.Round) {  // || !last_ply || last_ply < num_ply) {
+        LS(`new game: ${main.round} => ${headers.Round} : last_ply=${last_ply} : num_ply=${num_ply}`);
+        main.reset();
+        if (is_same) {
+            reset_sub_boards();
+            reset_charts();
+        }
+        main.round = headers.Round;
         new_game = true;
     }
 
-    board.add_moves(moves, start);
+    main.add_moves(moves, start);
 
     // only update the current chart
-    update_player_chart(null, moves, start);
+    if (is_same) {
+        update_player_chart(null, moves, start);
+        if (!new_game && Y.move_sound)
+            play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
-    if (!new_game && Y.move_sound)
-        play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+        // 3) check adjudication + update overview
+        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+        HTML('td[data-x="tb"]', tb, overview);
 
-    // 3) check adjudication + update overview
-    let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
-    HTML('td[data-x="tb"]', tb, overview);
-
-    let result = check_adjudication(move.adjudication, num_ply);
-    finished = headers.TerminationDetails;
-    result.adj_rule = finished;
-    Keys(result).forEach(key => {
-        HTML(`td[data-x="${key}"]`, result[key], overview);
-    });
-
-    S('[data-x="adj_rule"]', finished, overview);
-    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
-    if (finished) {
-        let result = headers.Result;
-        if (!new_game && Y.crowd_sound && Y.x == 'live')
-            play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
-        LS(result);
-        board.set_last(result);
-        LS(board.last);
-    }
-
-    // 4) engines
-    WB_TITLES.forEach((title, id) => {
-        let name = headers[title],
-            node = Id(`player${id}`),
-            short = get_short_name(name),
-            src = `image/engine/${short}.jpg`;
-
-        Assign(players[id], {
-            name: name,
-            short: short,
+        let result = check_adjudication(move.adjudication, num_ply);
+        finished = headers.TerminationDetails;
+        result.adj_rule = finished;
+        Keys(result).forEach(key => {
+            HTML(`td[data-x="${key}"]`, result[key], overview);
         });
 
-        HTML(`#engine${id}`, name);
-        HTML(`[data-x="name"]`, short, node);
-        HTML(`#score${id}`, headers[`${title}Elo`]);
-
-        let image = Id(`logo${id}`);
-        if (image.src != src) {
-            image.setAttribute('alt', name);
-            image.src = src;
+        S('[data-x="adj_rule"]', finished, overview);
+        S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
+        if (finished) {
+            let result = headers.Result;
+            if (!new_game && Y.crowd_sound && section == 'live')
+                play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+            LS(result);
+            main.set_last(result);
+            LS(main.last);
         }
-    });
 
-    // 5) clock
-    // num_ply % 2 tells us who plays next
-    num_ply = board.moves.length;
-    let who = num_ply % 2;
-    start_clock(who);
+        // 4) engines
+        WB_TITLES.forEach((title, id) => {
+            let name = headers[title],
+                node = Id(`player${id}`),
+                short = get_short_name(name),
+                src = `image/engine/${short}.jpg`;
 
-    // time control could be different for white and black
-    let tc = headers[`${WB_TITLES[who]}TimeControl`];
-    if (tc) {
-        let items = tc.split('+');
-        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+            Assign(players[id], {
+                name: name,
+                short: short,
+            });
+
+            HTML(`#engine${id}`, name);
+            HTML(`[data-x="name"]`, short, node);
+            HTML(`#score${id}`, headers[`${title}Elo`]);
+
+            let image = Id(`logo${id}`);
+            if (image.src != src) {
+                image.setAttribute('alt', name);
+                image.src = src;
+            }
+        });
+
+        // 5) clock
+        // num_ply % 2 tells us who plays next
+        num_ply = main.moves.length;
+        let who = num_ply % 2;
+        start_clock(who, finished);
+
+        // time control could be different for white and black
+        let tc = headers[`${WB_TITLES[who]}TimeControl`];
+        if (tc) {
+            let items = tc.split('+');
+            HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+        }
     }
 
     // got player info => can do h2h
     check_queued_tables();
 
-    for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
-        let move = moves[i];
-        update_move_info(start + i, move, true);
-        update_move_pv(start + i, move);
-    }
-
-    // material
-    let material = move.material,
-        materials = [[], []];
-    if (material) {
-        'qrbnp'.split('').forEach(key => {
-            let value = material[key];
-            if (value) {
-                let id = (value > 0)? 0: 1,
-                    color = id? 'b': 'w';
-                for (let i = 0; i < Abs(value); i ++)
-                    materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
-            }
-        });
-
-        for (let id = 0; id < 2; id ++) {
-            let node = Id(`material${id}`),
-                html = HTML(node),
-                material = materials[id].join('');
-            if (html != material)
-                HTML(node, material);
+    if (is_same) {
+        for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
+            let move = moves[i];
+            update_move_info(start + i, move, finished, true);
+            update_move_pv(section, start + i, move);
         }
+        update_materials(move);
     }
-}
-
-/**
- * Resize game elements
- */
-function resize_game() {
-    // resize the boards
-    for (let [parent, key] of [['left', 'board']]) {
-        let width = Id(parent).clientWidth,
-            board = xboards[key];
-        if (board) {
-            board.hold_smooth();
-            board.resize(width);
-        }
-    }
-
-    resize_3d();
 }
 
 // LIVE ACTION/DATA
@@ -1910,8 +1989,9 @@ function set_viewers(count) {
 /**
  * Start the clock for one player, and stop it for the other
  * @param {number} id
+ * @param {boolean=} finished
  */
-function start_clock(id) {
+function start_clock(id, finished) {
     if (Y.x != 'live')
         return;
 
@@ -1933,20 +2013,22 @@ function start_clock(id) {
 /**
  * Update data from one of the Live engines
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
+ * @param {string} section archive, live
  * @param {Object} data
  * @param {number} id 0, 1
  * @param {boolean=} force update with this data.pv even if there's more recent text
  */
-function update_live_eval(data, id, force) {
-    if (!data)
+function update_live_eval(section, data, id, force) {
+    if (section != Y.x || !data)
         return;
 
     let board = xboards[`live${id}`],
+        main = xboards[section],
         moves = data.moves;
     // moves => maybe old data?
     if (moves) {
-        if (data.round != prev_round) {
-            LS(`maybe old data => SKIP: ${data.round} vs ${prev_round}`);
+        if (data.round != main.round) {
+            LS(`maybe old data => SKIP: ${data.round} vs ${main.round}`);
             return;
         }
         // ply seems be offset by 1
@@ -1955,7 +2037,8 @@ function update_live_eval(data, id, force) {
         data = moves[moves.length - 1];
     }
 
-    let eval_ = data.eval,
+    let cur_ply = main.ply,
+        eval_ = data.eval,
         eval_text = eval_,
         invert = (cur_ply % 2)? -1: 1,
         short = get_short_name(data.engine),
@@ -1991,7 +2074,7 @@ function update_live_eval(data, id, force) {
 
     if (force)
         board.text = '';
-    board.add_moves_string(data.pv, cur_ply, cur_ply);
+    board.add_moves_string(data.pv, cur_ply, cur_ply + 1);
 
     // CHECK THIS
     if (DEV.eval) {
@@ -2004,10 +2087,13 @@ function update_live_eval(data, id, force) {
 /**
  * Update data from a Player
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
+ * @param {string} section archive, live
  * @param {Object} data
  */
-function update_player_eval(data) {
+function update_player_eval(section, data) {
     if (!Y.live_pv)
+        return;
+    if (section != Y.x)
         return;
 
     let eval_ = data.eval,
@@ -2026,7 +2112,8 @@ function update_player_eval(data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    let board = xboards[`pv${id}`];
+    let board = xboards[`pv${id}`],
+        num_ply = xboards[section].moves.length;
     board.add_moves_string(data.pv, num_ply - id, num_ply);
 
     // 2) update the engine info in the center
@@ -2170,11 +2257,13 @@ function game_action_key(code) {
         switch (code) {
         // left
         case 37:
+            clear_timeout('click_play');
             board_target.hold = 'prev';
             board_target.hold_button('prev', 0);
             break;
         // right
         case 39:
+            clear_timeout('click_play');
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
@@ -2229,6 +2318,8 @@ function random_position() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
+    let section = Y.x;
+
     switch (type) {
     case 'activate':
         board_target = board;
@@ -2251,23 +2342,28 @@ function handle_board_events(board, type, value) {
     // - if move is null, then hide the arrow
     case 'next':
         let id = board.live_id;
-        if (id != undefined)
-            xboards.board.arrow(id, value, ARROW_COLORS[id]);
+        if (id != undefined) {
+            LS(`next: ${id}`);
+            LS(value);
+            xboards[section].arrow(id, value, ARROW_COLORS[id]);
+        }
         break;
     // ply was set
     case 'ply':
-        if (board.id == '#board') {
+        if (board.key == section) {
             // update main board stats
-            cur_ply = board.ply;
+            let cur_ply = board.ply;
             update_move_info(cur_ply, value);
 
             // show PV's
-            update_move_pv(cur_ply - 1, board.moves[cur_ply - 1]);
-            update_move_pv(cur_ply, value);
+            update_move_pv(section, cur_ply - 1, board.moves[cur_ply - 1]);
+            update_move_pv(section, cur_ply, value);
 
             // show live engines
-            update_live_eval(xboards.live0.evals[cur_ply], 0, true);
-            update_live_eval(xboards.live1.evals[cur_ply], 1, true);
+            update_live_eval(section, xboards.live0.evals[cur_ply], 0, true);
+            update_live_eval(section, xboards.live1.evals[cur_ply], 1, true);
+
+            update_materials(value);
         }
         break;
     }
@@ -2309,7 +2405,8 @@ function open_table(sel, hide_table=true) {
 function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
-        is_chart = (parent == 'chart-tabs');
+        is_chart = (parent == 'chart-tabs'),
+        section = Y.x;
     if (DEV.ui)
         LS(`opened_table: ${parent}/${name}`);
 
@@ -2317,12 +2414,12 @@ function opened_table(node, name, tab) {
     save_option('tabs', Y.tabs);
 
     // 2) special cases
-    if (is_chart && CHART_NAMES[name] && xboards.board)
-        update_player_chart(name, xboards.board.moves, 0);
+    if (is_chart && CHART_NAMES[name] && xboards[section])
+        update_player_chart(name, xboards[section].moves, 0);
 
     switch (name) {
     case 'crash':
-        download_table('crash.json', name);
+        download_table(section, 'crash.json', name);
         break;
     case 'h2h':
         LS('h2h opened');
@@ -2348,10 +2445,10 @@ function opened_table(node, name, tab) {
         download_gamelist();
         break;
     case 'winner':
-        download_table('winners.json', name);
+        download_table(section, 'winners.json', name);
         break;
     default:
-        update_table(name);
+        update_table(section, name);
     }
 
     check_paginations();
@@ -2378,6 +2475,7 @@ function popup_custom(id, name, e, scolor) {
         show = true;
     else {
         if (name == 'engine') {
+            let pgn = pgns[Y.x];
             if (!pgn)
                 return;
 
@@ -2395,7 +2493,8 @@ function popup_custom(id, name, e, scolor) {
         else if (name == 'fen') {
             let fen = TEXT(e.target);
             xboards.xfen.hold_smooth();
-            xboards.xfen.set_fen(fen, true);
+            if (!xboards.xfen.set_fen(fen, true))
+                return;
         }
 
         // place the popup in a visible area on the screen
@@ -2421,6 +2520,7 @@ function popup_custom(id, name, e, scolor) {
     if (show) {
         clear_timeout(`popup-${name}`);
         Class(popup, 'popup-enable');
+        Show(popup);
     }
     else
         add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 500);
@@ -2502,7 +2602,7 @@ function startup_game() {
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
+            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
             show_ply: [['first', 'diverging'], 'diverging'],
         },
         control: {

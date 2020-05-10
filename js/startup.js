@@ -140,10 +140,12 @@ function check_hash_special() {
 
     let is_live = (Y.x == 'live'),
         parent = Id('tables');
-    Class('#archive', 'yellow', !is_live);
-    Class('#live', 'red', is_live);
+    Class('#nav-archive', 'yellow', !is_live);
+    Class('#nav-live', 'red', is_live);
     change_theme();
 
+    S('#archive', !is_live);
+    S('#live', is_live);
     S('[data-x="season"]', !is_live, parent);
     S('[data-x="log"]', is_live, parent);
 

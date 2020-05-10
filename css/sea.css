@@ -7,7 +7,8 @@ body {
 }
 
 /* board */
-#board .xmoves {
+#archive .xmoves,
+#live .xmoves {
     background: rgba(255, 255, 255, 0.5);
 }
 .live-pv,

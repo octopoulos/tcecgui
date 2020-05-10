@@ -374,7 +374,8 @@ grid {
     position: absolute;
     top: 0;
 }
-#board {
+#archive,
+#live {
     width: 100%;
 }
 .xcontrol {
@@ -434,7 +435,8 @@ grid {
 .move {
     font-size: 12px;
 }
-#board .xmoves {
+#archive .xmoves,
+#live .xmoves {
     background: transparent;
     border: none;
     font-size: 15px;

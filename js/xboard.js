@@ -112,7 +112,9 @@ class XBoard {
      * - last           // default result text, ex: *
      * - list           // show move list history
      * - live_id        // live engine id => will show arrows on the main board
+     * - main           // is it the main board?
      * - mode           // 3d, canvas, html, text
+     * - name           // key in BOARDS
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
      * - pv_id          // extra output selector for PV list
      * - rotate         // board rotation
@@ -132,7 +134,9 @@ class XBoard {
         this.last = options.last || '';
         this.list = options.list;
         this.live_id = options.live_id;
+        this.main = options.main;
         this.mode = options.mode || 'html';
+        this.name = options.name;
         this.notation = options.notation || 6;
         this.pv_id = options.pv_id;
         this.rotate = options.rotate || 0;
@@ -332,6 +336,7 @@ class XBoard {
         });
 
         this.moves = moves;
+
         if (this.real)
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
 
@@ -356,6 +361,7 @@ class XBoard {
     /**
      * Analyse the FEN and extract piece coordinates from it
      * - ideally do this only when starting a new game
+     * @returns {boolean}
      */
     analyse_fen() {
         // 1) create the grid + count the pieces
@@ -368,7 +374,7 @@ class XBoard {
             row = lines.length - 1;
 
         if (items.length < 6)
-            return;
+            return false;
 
         for (let line of lines) {
             let col = 0;
@@ -446,6 +452,7 @@ class XBoard {
         });
 
         this.grid = grid;
+        return true;
     }
 
     /**
@@ -1268,6 +1275,7 @@ class XBoard {
      * Set a new FEN
      * @param {string} fen
      * @param {boolean=} render
+     * @returns {boolean}
      */
     set_fen(fen, render) {
         if (DEV.board)
@@ -1276,9 +1284,20 @@ class XBoard {
             fen = START_FEN;
 
         this.fen = fen;
-        this.analyse_fen();
+        if (!this.analyse_fen())
+            return false;
+
         if (render)
             this.render(2);
+        return true;
+    }
+
+    /**
+     * Set the result (last item in the moves list)
+     * @param {string} text
+     */
+    set_last(text) {
+        HTML('.last', text);
     }
 
     /**
@@ -1314,14 +1333,6 @@ class XBoard {
             animate = true;
         this.animate(move, animate);
         return move;
-    }
-
-    /**
-     * Set the result (last item in the moves list)
-     * @param {string} text
-     */
-    set_last(text) {
-        HTML('.last', text);
     }
 
     /**
