@@ -490,6 +490,7 @@ grid {
 #xfen {
     margin: 2px;
 }
+#pva .xmoves,
 #xfen .xcontrol,
 #xfen .xmoves {
     display: none;

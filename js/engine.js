@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-05-11
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -11,7 +11,7 @@
 globals
 _, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, Id, InsertNodes, Keys,
 LoadLibrary, localStorage, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
-Resource, SetDefault, setTimeout, TEXT, Title, window
+Resource, SetDefault, setTimeout, TEXT, Title, Undefined, window
 */
 'use strict';
 
@@ -383,6 +383,8 @@ function create_canvas(width, height) {
  */
 function fill_combo(letter, values, select, dico, no_translate)
 {
+    dico = Undefined(dico, {});
+
     if (values == null)
         values = [DEFAULTS[letter]];
     if (select == null)
@@ -391,9 +393,6 @@ function fill_combo(letter, values, select, dico, no_translate)
     let found = 'all',
         group = false,
         lines = [];
-
-    if (dico === undefined)
-        dico = {};
 
     for (let value_ of values) {
         let selected,

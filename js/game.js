@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-05
+// @version 2020-05-11
 //
 // Game specific code:
 // - control the board, moves
@@ -19,8 +19,8 @@ listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, P
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
 show_modal, Sign, Split, start_3d, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
-update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true,
-Visible, window, XBoard, Y
+Undefined, update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true,
+virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -146,6 +146,11 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
     players = [{}, {}],                 // current 2 players
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     QUEUES = ['h2h', 'stats'],
+    RESULTS = {
+        '0-1': -1,
+        '1-0': 1,
+        '1/2-1/2': 0.5,
+    },
     ROUND_NAMES = {
         1: 'Final',
         2: 'SemiFinal',
@@ -368,7 +373,7 @@ function assign_boards() {
 }
 
 /**
- * Create 4 boards
+ * Create 8 boards
  * - should be done at startup since we want to see the boards ASAP
  */
 function create_boards() {
@@ -534,6 +539,41 @@ function analyse_crosstable(section, data) {
 }
 
 /**
+ * Calculate H2H
+ * - filter the rows
+ * - calculate the scores
+ * @param {Object[]} rows
+ * @returns {Object[]} filtered rows
+ */
+function calculate_h2h(rows) {
+    let names = {[players[0].name]: 1, [players[1].name]: 1},
+        new_rows = rows.filter(row => names[row.white] && names[row.black]);
+
+    // calculate h2h scores
+    for (let row of new_rows) {
+        let result = RESULTS[row.result];
+        if (result) {
+            if (result == 1)
+                names[row.white] += 1;
+            else if (result == -1)
+                names[row.black] += 1;
+            else {
+                names[row.black] += 0.5;
+                names[row.white] += 0.5;
+            }
+        }
+    }
+
+    // update players + UI info
+    players.forEach((player, id) => {
+        player.score = names[player.name] - 1;
+        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
+    });
+
+    return new_rows;
+}
+
+/**
  * Change the page from quick/table
  * @param {string} parent quick, table
  * @param {string} value +1, -1, 0, 1, 2, ...
@@ -644,10 +684,8 @@ function check_queued_tables() {
 
         let data = data_x.data;
         if (table == 'h2h') {
-            let names = [players[0].name, players[1].name],
-                new_rows = data.filter(row => names.includes(row.white) && names.includes(row.black));
-
-            update_table(section, table, new_rows);
+            let new_rows = calculate_h2h(data);
+            update_table(section, table, new_rows, parent);
             check_paginations();
         }
         else
@@ -1835,9 +1873,7 @@ function update_overview_basic(headers) {
 
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
-        let value = headers[key];
-        if (value == undefined)
-            value = '';
+        let value = Undefined(headers[key], '');
 
         // TCEC Season 17 => S17
         if (key == 'Event')
@@ -1854,17 +1890,19 @@ function update_overview_basic(headers) {
     WB_TITLES.forEach((title, id) => {
         let name = headers[title],
             node = Id(`player${id}`),
+            player = players[id],
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
 
-        Assign(players[id], {
+        Assign(player, {
+            elo: headers[`${title}Elo`],
             name: name,
             short: short,
         });
 
         HTML(`#engine${id}`, name);
         HTML(`[data-x="name"]`, short, node);
-        HTML(`#score${id}`, headers[`${title}Elo`]);
+        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
 
         let image = Id(`logo${id}`);
         if (image.src != src) {
@@ -2123,7 +2161,7 @@ function update_live_eval(section, data, id, force) {
         tb: FormatUnit(data.tbhits),
     };
     Keys(dico).forEach(key => {
-        HTML(`[data-x="${key}"]`, dico[key], node);
+        HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), node);
     });
 
     if (force)
@@ -2508,9 +2546,6 @@ function opened_table(node, name, tab) {
     case 'crash':
         download_table(section, 'crash.json', name);
         break;
-    case 'h2h':
-        LS('h2h opened');
-        break;
     case 'info':
         HTML(node, HTML('#desc'));
         break;
@@ -2527,6 +2562,9 @@ function opened_table(node, name, tab) {
             if (active == 'pv')
                 open_table('eval', false);
         }
+        break;
+    case 'pva':
+        xboards.pva.set_fen(board_target.fen, true);
         break;
     case 'season':
         download_gamelist();

@@ -10,8 +10,8 @@ globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
-S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, update_theme, Visible, window,
-X_SETTINGS, Y
+S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
+Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -1171,9 +1171,7 @@ function show_settings(name) {
                 '<vert class="fcenter">'
                 + `<select name="${key}">`
                     + settings[key][0].map(option => {
-                        let value = {off: 0, on: 1}[option];
-                        if (value == undefined)
-                            value = option;
+                        let value = Undefined({off: 0, on: 1}[option], option);
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')
                 + '</select>'

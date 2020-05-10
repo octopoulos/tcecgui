@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-08
+// @version 2020-05-10
 //
 // game board:
 // - 4 rendering modes:
@@ -1073,6 +1073,7 @@ class XBoard {
         }
 
         if (found) {
+            this.chess_load(this.fen);
             this.chess_move({from: SQUARES_INV[this.picked], to: found});
             this.set_fen(this.chess_fen(), true);
         }

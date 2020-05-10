@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-18
+// @version 2020-05-11
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1301,4 +1301,14 @@ function Stringify(object, depth=0, max_depth=2) {
 function Title(text) {
     text += '';
     return text.slice(0, 1).toUpperCase() + text.slice(1);
+}
+
+/**
+ * This can be replaced by the ?? operator in the future
+ * @param {*} value
+ * @param {*} def
+ * @returns {*}
+ */
+function Undefined(value, def) {
+    return (value !== undefined)? value: def;
 }

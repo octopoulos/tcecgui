@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-18
+// @version 2020-05-11
 //
 /*
 globals
@@ -19,7 +19,7 @@ create_module(IMPORT_PATH, [
 
 let {
         Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Split,
-        Stringify, Title,
+        Stringify, Title, Undefined,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,5 +168,21 @@ let {
 ].forEach(([text, answer], id) => {
     test(`Title:${id}`, () => {
         expect(Title(text)).toEqual(answer);
+    });
+});
+
+// Undefined
+[
+    [undefined, undefined, undefined],
+    [undefined, null, null],
+    [undefined, 0, 0],
+    [undefined, 5, 5],
+    [undefined, 'ok', 'ok'],
+    [null, 'ok', null],
+    ['', 'ok', ''],
+    [0, 'ok', 0],
+].forEach(([value, def, answer], id) => {
+    test(`Undefined:${id}`, () => {
+        expect(Undefined(value, def)).toEqual(answer);
     });
 });

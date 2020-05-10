@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-21
+// @version 2020-05-11
 //
 /*
 globals
@@ -17,15 +17,47 @@ create_module(IMPORT_PATH, [
     'common',
     'engine',
     'xboard',
+    //
     'game',
-], OUTPUT_MODULE, 'Assign tour_info');
+], OUTPUT_MODULE, 'Assign players tour_info');
 
 let {
-        Assign, calculate_probability, calculate_seeds, calculate_score, create_field_value, create_game_link,
-        format_hhmmss, format_percent, get_short_name, tour_info,
+        Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
+        create_game_link, format_hhmmss, format_percent, get_short_name, players, tour_info,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// calculate_h2h
+[
+    [
+        ['Counter', 'Marvin'],
+        [
+            {black: 'Stockfish', result: '0-1', white: 'Counter'},
+            {black: 'Marvin', result: '1/2-1/2', white: 'Counter'},
+            {black: 'Counter', result: '1-0', white: 'Marvin'},
+            {black: 'Counter', result: '1-0', white: 'Stockfish'},
+            {black: 'Marvin', result: '*', white: 'Counter'},
+        ],
+        [
+            {black: 'Marvin', result: '1/2-1/2', white: 'Counter'},
+            {black: 'Counter', result: '1-0', white: 'Marvin'},
+            {black: 'Marvin', result: '*', white: 'Counter'},
+        ],
+        [0.5, 1.5],
+    ],
+]
+ .forEach(([names, rows, answer, answer2], id) => {
+    test(`calculate_h2h:${id}`, () => {
+        for (let i = 0; i < names.length; i ++)
+            players[i].name = names[i];
+
+        expect(calculate_h2h(rows)).toEqual(answer);
+
+        for (let i = 0; i < answer2.length; i ++)
+            expect(players[i].score).toEqual(answer2[i]);
+    });
+});
 
 // calculate_probability
 [
