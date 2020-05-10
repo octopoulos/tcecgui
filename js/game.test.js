@@ -18,10 +18,11 @@ create_module(IMPORT_PATH, [
     'engine',
     'xboard',
     'game',
-], OUTPUT_MODULE);
+], OUTPUT_MODULE, 'Assign tour_info');
 
 let {
-        calculate_probability, calculate_seeds, calculate_score, create_field_value, get_short_name,
+        Assign, calculate_probability, calculate_seeds, calculate_score, create_field_value, create_game_link,
+        format_hhmmss, format_percent, get_short_name, tour_info,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +91,54 @@ let {
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
+    });
+});
+
+// create_game_link
+[
+    [{}, 'live', 1, '', '<a class=\"game\" href=\"#x=archive&undefined&game=1\">1</a>'],
+    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class=\"game\" href=\"#x=archive&season=18&div=l3&game=1\">1</a>'],
+]
+ .forEach(([info, section, game, text, answer], id) => {
+    test(`create_game_link:${id}`, () => {
+        Assign(tour_info[section], info);
+        expect(create_game_link(section, game, text)).toEqual(answer);
+    });
+});
+
+// format_hhmmss
+[
+    [null, '00:00:00'],
+    [NaN, 'aN:aN:aN'],
+    [Infinity, 'Infinityd, aN:aN:aN'],
+    ['', '00:00:00'],
+    [0, '00:00:00'],
+    [31, '00:00:31'],
+    [314, '00:05:14'],
+    [3141, '00:52:21'],
+    [31415, '08:43:35'],
+    [314159, '3d, 15:15:59'],
+]
+ .forEach(([seconds, answer], id) => {
+    test(`format_hhmmss:${id}`, () => {
+        expect(format_hhmmss(seconds)).toEqual(answer);
+    });
+});
+
+// format_percent
+[
+    [null, '0%'],
+    [NaN, 'NaN%'],
+    [Infinity, 'Infinity%'],
+    ['', '0%'],
+    [0, '0%'],
+    [0.98, '98%'],
+    [0.987654321, '98.77%'],
+    ['150', '15000%'],
+]
+ .forEach(([value, answer], id) => {
+    test(`format_percent:${id}`, () => {
+        expect(format_percent(value)).toEqual(answer);
     });
 });
 

@@ -19,12 +19,15 @@ create_module(IMPORT_PATH, [
     'libs/chess-quick',
     //
     'xboard',
-], OUTPUT_MODULE, 'Assign START_FEN XBoard'.split(' '));
+], OUTPUT_MODULE, 'Assign START_FEN XBoard');
 
 let {Assign, START_FEN, XBoard} = require(OUTPUT_MODULE);
 
-let xboard = new XBoard({id: 'console'});
-xboard.initialise();
+let archive = new XBoard({}),
+    live = new XBoard({id: 'console'});
+
+live.initialise();
+live.dual = archive;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,14 +47,25 @@ xboard.initialise();
     ],
 ].forEach(([text, answer], id) => {
     test(`add_moves_string:${id}`, () => {
-        xboard.add_moves_string(text);
+        live.add_moves_string(text);
 
         let offset = answer[0],
             array = new Array(offset);
         for (let i = 1; i < answer.length ; i ++)
             array[offset + i - 1] = answer[i];
 
-        expect(xboard.moves).toEqual(array);
+        expect(live.moves).toEqual(array);
+    });
+});
+
+// analyse_fen
+[
+    ['invalid fen', false],
+    [START_FEN, true],
+].forEach(([fen, answer], id) => {
+    test(`analyse_fen:${id}`, () => {
+        live.set_fen(fen);
+        expect(live.analyse_fen()).toEqual(answer);
     });
 });
 
@@ -62,10 +76,10 @@ xboard.initialise();
     [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
 ].forEach(([fen, moves, answer], id) => {
     test(`chess_fen:${id}`, () => {
-        xboard.chess_load(fen);
+        live.chess_load(fen);
         for (let move of moves)
-            xboard.chess_move(move);
-        expect(xboard.chess_fen()).toEqual(answer);
+            live.chess_move(move);
+        expect(live.chess_fen()).toEqual(answer);
     });
 });
 
@@ -74,8 +88,8 @@ xboard.initialise();
     START_FEN,
 ].forEach((fen, id) => {
     test(`chess_load:${id}`, () => {
-        xboard.chess_load(fen);
-        expect(xboard.chess_fen()).toEqual(fen);
+        live.chess_load(fen);
+        expect(live.chess_fen()).toEqual(fen);
     });
 });
 
@@ -85,8 +99,8 @@ xboard.initialise();
     [START_FEN, 'd4', {color: 'w', flags: 4, from: 99, piece: 'p', to: 67}],
 ].forEach(([fen, move, answer], id) => {
     test(`chess_move:${id}`, () => {
-        xboard.chess_load(fen);
-        expect(xboard.chess_move(move)).toEqual(answer);
+        live.chess_load(fen);
+        expect(live.chess_move(move)).toEqual(answer);
     });
 });
 
@@ -123,9 +137,9 @@ xboard.initialise();
     ],
 ].forEach(([fen, options, answer], id) => {
     test(`render_text:${id}`, () => {
-        Assign(xboard, options);
-        xboard.set_fen(fen);
-        expect(xboard.render_text()).toEqual(answer);
+        Assign(live, options);
+        live.set_fen(fen);
+        expect(live.render_text()).toEqual(answer);
     });
 });
 
@@ -135,8 +149,8 @@ xboard.initialise();
     '6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4',
 ].forEach((fen, id) => {
     test(`set_fen:${id}`, () => {
-        xboard.set_fen(fen);
-        expect(xboard.fen).toEqual(fen);
+        live.set_fen(fen);
+        expect(live.fen).toEqual(fen);
     });
 });
 
@@ -148,6 +162,6 @@ xboard.initialise();
     ['22. Kh1 Ra6 23. Qg3 Nf6', [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
 ].forEach(([text, answer], id) => {
     test(`split_move_string:${id}`, () => {
-        expect(xboard.split_move_string(text)).toEqual(answer);
+        expect(live.split_move_string(text)).toEqual(answer);
     });
 });

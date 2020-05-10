@@ -16,7 +16,7 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 create_module(IMPORT_PATH, [
     'common',
     'engine',
-], OUTPUT_MODULE, 'DEFAULTS|Keys|X_SETTINGS'.split('|'));
+], OUTPUT_MODULE, 'DEFAULTS Keys X_SETTINGS');
 
 let {DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OUTPUT_MODULE);
 

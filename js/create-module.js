@@ -19,12 +19,15 @@ let fs = require('fs'),
  * @param {string} path base path for all sources
  * @param {string[]} sources desired js to test + all its dependencies
  * @param {string} output path without .js for the combined output
- * @param {string[]} extra_exports ex: global variables that we want exported
+ * @param {string=} extra_exports ex: global variables that we want exported
  */
-function create_module(path, sources, output, extra_exports=[]) {
+function create_module(path, sources, output, extra_exports) {
     let all = '',
         filenames = sources.map(source => `${path}/${source}.js`),
         output_js = `${output}.js`;
+
+    if (extra_exports)
+        extra_exports = extra_exports.split(' ');
 
     // 1) check if the output exists and is more recent than every file
     if (fs.existsSync(output_js)) {
@@ -40,10 +43,12 @@ function create_module(path, sources, output, extra_exports=[]) {
                 exports += match[1];
             });
 
-            let misses = extra_exports.filter(name => !exports.includes(`${name}: ${name},`));
-            if (!misses.length)
-                return;
-            console.log(misses);
+            if (extra_exports) {
+                let misses = extra_exports.filter(name => !exports.includes(`${name}: ${name},`));
+                if (!misses.length)
+                    return;
+                console.log(misses);
+            }
         }
         else
             console.log(times);
@@ -60,7 +65,7 @@ function create_module(path, sources, output, extra_exports=[]) {
     XRegExp.forEach(all, /\nfunction (.*?)\(/g, match => {
         funcs.push(match[1]);
     });
-    if (extra_exports.length)
+    if (extra_exports)
         funcs = [...new Set([...funcs, ...extra_exports])];
     // console.log(funcs.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())));
 
