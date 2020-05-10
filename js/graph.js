@@ -449,13 +449,16 @@ function update_live_chart(moves, id, invert_black) {
     }
 
     for (let move of moves) {
-        let eval_ = move.eval2 || move.eval,
+        let eval_ = move.eval,
             ply = move.ply, // - 1,
             num = Floor(ply / 2),
             num2 = num - first_num;
 
-        if (invert_black && ply % 2 == 0)
+        if (invert_black && ply % 2 == 0) {
+            if (DEV.eval)
+                LS(`inverting black @${ply}: ${eval_} => ${-eval_}`);
             eval_ = -eval_;
+        }
 
         // check update_player_chart to understand
         dataset.data[num2] = {
@@ -506,7 +509,6 @@ function update_player_chart(name, moves, start) {
     }
 
     // 3) add data
-    // TODO: skip existing data except if at the very end?
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
             ply = start + i,

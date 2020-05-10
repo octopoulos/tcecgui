@@ -93,7 +93,7 @@ xboard.initialise();
 // render_text
 [
     [
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1',
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         {notation: 1 + 4},
         [
             '  a b c d e f g h',
@@ -108,7 +108,7 @@ xboard.initialise();
         ].join('\n'),
     ],
     [
-        '6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4',
+        '6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4 w KQkq - 0 1',
         {notation: 0},
         [
             '  ·   ·   · k ·',

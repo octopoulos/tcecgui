@@ -51,7 +51,7 @@ function _(sel, parent) {
 
 /**
  * Find multiple nodes
- * @param {string} sel CSS selector
+ * @param {string|Node[]} sel CSS selector OR list of nodes
  * @param {Node=} parent parent node, document by default
  * @returns {Node[]} found nodes
  * @example
@@ -60,12 +60,14 @@ function _(sel, parent) {
  */
 function A(sel, parent) {
     if (!sel) return;
+    if (typeof(sel) == 'object' && sel.length)
+        return sel;
     return (parent || document).querySelectorAll(sel);
 }
 
 /**
  * Execute a function on multiple nodes
- * @param {string} sel CSS selector
+ * @param {string|Node[]} sel CSS selector OR list of nodes
  * @param {function} callback (node, index=, array=)
  * @param {Node=} parent
  * @example
@@ -73,17 +75,22 @@ function A(sel, parent) {
  */
 function E(sel, callback, parent) {
     if (!sel) return;
-    A(sel, parent).forEach(callback);
+    if (typeof(sel) == 'object' && sel.length)
+        sel.forEach(callback);
+    else
+        A(sel, parent).forEach(callback);
 }
 
 /**
  * Get an element by ID
- * @param {string} id
+ * @param {string|Node} id
  * @param {Node=} parent parent node, document by default
  * @returns {Node=}
  */
 function Id(id, parent) {
     if (!id) return;
+    if (typeof(id) == 'object')
+        return id;
     return (parent || document).getElementById(id);
 }
 

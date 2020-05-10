@@ -11,8 +11,8 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Attrs,
-C, change_page, change_theme, check_hash, Class, create_field_value, DEV, document, download_live, download_tables,
-ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML,
+C, change_page, change_theme, changed_section, check_hash, Class, create_field_value, DEV, document, download_live,
+download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML,
 ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
 open_table, Parent, parse_dev, resize_game, Round,
@@ -153,18 +153,10 @@ function check_hash_special() {
     translate_node('#table-tabs');
 
     // changed section
-    // - click on the active tab, ex: schedule, stats
     if (Y.x != old_x) {
-        let active = get_active_tab('table')[2];
-        if (active && Visible(active))
-            open_table(active);
-        else {
-            LS('no active tab');
-            LS(active);
-        }
+        changed_section();
+        old_x = Y.x;
     }
-
-    old_x = Y.x;
 }
 
 /**

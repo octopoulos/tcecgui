@@ -97,6 +97,10 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         tour: 60,
         winner: 3600 * 24,
     },
+    DEFAULT_ACTIVES = {
+        archive: 'season',
+        live: 'stand',
+    },
     ENGINE_FEATURES = {
         AllieStein: 1,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
@@ -112,8 +116,8 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         sched: 10,
     },
     pgns = {
-        archive: null,
-        live: null,
+        archive: {},
+        live: {},
     },
     PIECE_SIZES = {
         _: 80,
@@ -285,7 +289,7 @@ function calculate_score(text) {
  */
 function create_game_link(section, game, text) {
     let link = `#x=archive&${tour_info[section].link}&game=${game}`;
-    return `<a href="${link}">${text || game}</a>`;
+    return `<a class="game" href="${link}">${text || game}</a>`;
 }
 
 /**
@@ -346,13 +350,28 @@ function get_short_name(engine)
 ////////
 
 /**
+ * Set the target board and make all sub boards point to that board
+ */
+function assign_boards() {
+    board_target = xboards[Y.x];
+
+    Keys(xboards).forEach(key => {
+        let board = BOARDS[key],
+            xboard = xboards[key];
+
+        xboard.real = board_target;
+        if (board.dual)
+            xboard.dual = xboards[board.dual];
+    });
+}
+
+/**
  * Create 4 boards
  * - should be done at startup since we want to see the boards ASAP
  */
 function create_boards() {
     // 1) create all boards
-    let keys = Keys(BOARDS),
-        first = keys[0];
+    let keys = Keys(BOARDS);
 
     keys.forEach(key => {
         let options = Assign({
@@ -373,15 +392,7 @@ function create_boards() {
     });
 
     // 2) set pointers: real board + duals
-    board_target = xboards[first];
-    keys.forEach(key => {
-        let board = BOARDS[key],
-            xboard = xboards[key];
-
-        xboard.real = board_target;
-        if (board.dual)
-            xboard.dual = xboards[board.dual];
-    });
+    assign_boards();
 
     // 3) update themes: this will render the boards too
     update_board_theme(3);
@@ -1808,6 +1819,130 @@ function update_move_pv(section, ply, move) {
 }
 
 /**
+ * Update basic overview info, before adding the moves
+ * @param {Object} headers
+ */
+function update_overview_basic(headers) {
+    if (!headers)
+        return;
+
+    let overview = Id('table-view'),
+        section = Y.x;
+
+    // 1) overview
+    Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
+        let value = headers[key];
+        if (value == undefined)
+            value = '';
+
+        // TCEC Season 17 => S17
+        if (key == 'Event')
+            value = value.replace('TCEC Season ', 'S');
+        else if (key == 'TimeControl') {
+            let items = value.split('+');
+            key = 'tc';
+            value = `${items[0]/60}'+${items[1]}"`;
+        }
+        HTML(`td[data-x="${Lower(key)}"]`, value, overview);
+    });
+
+    // 2) engines
+    WB_TITLES.forEach((title, id) => {
+        let name = headers[title],
+            node = Id(`player${id}`),
+            short = get_short_name(name),
+            src = `image/engine/${short}.jpg`;
+
+        Assign(players[id], {
+            name: name,
+            short: short,
+        });
+
+        HTML(`#engine${id}`, name);
+        HTML(`[data-x="name"]`, short, node);
+        HTML(`#score${id}`, headers[`${title}Elo`]);
+
+        let image = Id(`logo${id}`);
+        if (image.src != src) {
+            image.setAttribute('alt', name);
+            image.src = src;
+        }
+    });
+
+    // 3) title
+    let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game';
+    document.title = `${players[0].name} vs ${players[1].name} - TCEC - ${subtitle}`;
+}
+
+/**
+ * Update overview info, after adding the moves
+ * @param {Object} headers
+ * @param {Move[]} moves
+ * @param {number} start moves offset
+ * @param {boolean=} is_new have we received new moves (from update_pgn)?
+ */
+function update_overview_moves(headers, moves, start, is_new) {
+    if (!headers)
+        return;
+
+    let finished,
+        overview = Id('table-view'),
+        section = Y.x,
+        is_live = (section == 'live'),
+        main = xboards[section],
+        num_move = moves.length,
+        num_ply = main.moves.length,
+        move = moves[num_move - 1];
+
+    // 1) clock
+    // num_ply % 2 tells us who plays next
+    let who = num_ply % 2;
+    start_clock(who, finished);
+
+    // time control could be different for white and black
+    let tc = headers[`${WB_TITLES[who]}TimeControl`];
+    if (tc) {
+        let items = tc.split('+');
+        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+    }
+
+    // 2) only update the current chart
+    update_player_chart(null, moves, start);
+    if (is_live && is_new && Y.move_sound)
+        play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+
+    // 3) check adjudication
+    let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+    HTML('td[data-x="tb"]', tb, overview);
+
+    let result = check_adjudication(move.adjudication, num_ply);
+    finished = headers.TerminationDetails;
+    result.adj_rule = finished;
+    Keys(result).forEach(key => {
+        HTML(`td[data-x="${key}"]`, result[key], overview);
+    });
+
+    S('[data-x="adj_rule"]', finished, overview);
+    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
+    if (finished) {
+        let result = headers.Result;
+        if (is_live && is_new && Y.crowd_sound)
+            play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        main.set_last(result);
+    }
+    else
+        main.set_last(main.last);
+
+    // 4) materials
+    for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
+        let move = moves[i];
+        update_move_info(start + i, move, finished, true);
+        update_move_pv(section, start + i, move);
+    }
+    update_materials(move);
+}
+
+/**
  * Update the PGN
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
@@ -1817,7 +1952,7 @@ function update_pgn(section, pgn) {
     if (!xboards[section])
         return;
 
-    // 0) section check
+    // 1) section check
     pgns[section] = pgn;
     window.pgns = pgns;
 
@@ -1829,30 +1964,13 @@ function update_pgn(section, pgn) {
         overview = Id('table-view'),
         start = pgn.lastMoveLoaded || 0;
 
-    // 1) update overview
-    // TODO: only change these when a new game was detected?
+    // 2) update overview
     if (pgn.Users)
         HTML('td[data-x="viewers"]', pgn.Users, overview);
-    if (is_same && headers) {
-        Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
-            let value = headers[key];
-            if (value == undefined)
-                value = '';
+    if (is_same)
+        update_overview_basic(headers);
 
-            // TCEC Season 17 => S17
-            if (key == 'Event')
-                value = value.replace('TCEC Season ', 'S');
-            else if (key == 'TimeControl') {
-                let items = value.split('+');
-                key = 'tc';
-                value = `${items[0]/60}'+${items[1]}"`;
-            }
-            HTML(`td[data-x="${Lower(key)}"]`, value, overview);
-        });
-    }
-
-    // TODO: CHECK THIS
-    // missing something for new game detection ... look at tcec.js
+    // TODO: what's the utility of this?
     if (new_game) {
         LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;
@@ -1861,16 +1979,12 @@ function update_pgn(section, pgn) {
     if (!num_move)
         return;
 
-    // 2) update the moves
-    let finished,
-        main = xboards[section],
-        move = moves[num_move - 1],
-        last_ply = (pgn.numMovesToSend || 0) + start,
+    // 3) check for a new game
+    let main = xboards[section],
         num_ply = main.moves.length;
 
-    // new game?
-    if (main.round != headers.Round) {  // || !last_ply || last_ply < num_ply) {
-        LS(`new game: ${main.round} => ${headers.Round} : last_ply=${last_ply} : num_ply=${num_ply}`);
+    if (main.round != headers.Round) {
+        LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply}`);
         main.reset();
         if (is_same) {
             reset_sub_boards();
@@ -1880,87 +1994,13 @@ function update_pgn(section, pgn) {
         new_game = true;
     }
 
+    // 4) add the moves
     main.add_moves(moves, start);
-
-    // only update the current chart
-    if (is_same) {
-        update_player_chart(null, moves, start);
-        if (!new_game && Y.move_sound)
-            play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
-
-        // 3) check adjudication + update overview
-        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
-        HTML('td[data-x="tb"]', tb, overview);
-
-        let result = check_adjudication(move.adjudication, num_ply);
-        finished = headers.TerminationDetails;
-        result.adj_rule = finished;
-        Keys(result).forEach(key => {
-            HTML(`td[data-x="${key}"]`, result[key], overview);
-        });
-
-        S('[data-x="adj_rule"]', finished, overview);
-        S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
-        if (finished) {
-            let result = headers.Result;
-            if (!new_game && Y.crowd_sound && section == 'live')
-                play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
-            LS(result);
-            main.set_last(result);
-            LS(main.last);
-        }
-
-        // 4) engines
-        WB_TITLES.forEach((title, id) => {
-            let name = headers[title],
-                node = Id(`player${id}`),
-                short = get_short_name(name),
-                src = `image/engine/${short}.jpg`;
-
-            Assign(players[id], {
-                name: name,
-                short: short,
-            });
-
-            HTML(`#engine${id}`, name);
-            HTML(`[data-x="name"]`, short, node);
-            HTML(`#score${id}`, headers[`${title}Elo`]);
-
-            let image = Id(`logo${id}`);
-            if (image.src != src) {
-                image.setAttribute('alt', name);
-                image.src = src;
-            }
-        });
-
-        let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game';
-        document.title = `${players[0].name} vs ${players[1].name} - TCEC - ${subtitle}`;
-
-        // 5) clock
-        // num_ply % 2 tells us who plays next
-        num_ply = main.moves.length;
-        let who = num_ply % 2;
-        start_clock(who, finished);
-
-        // time control could be different for white and black
-        let tc = headers[`${WB_TITLES[who]}TimeControl`];
-        if (tc) {
-            let items = tc.split('+');
-            HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
-        }
-    }
+    if (is_same)
+        update_overview_moves(headers, moves, start, !new_game);
 
     // got player info => can do h2h
     check_queued_tables();
-
-    if (is_same) {
-        for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
-            let move = moves[i];
-            update_move_info(start + i, move, finished, true);
-            update_move_pv(section, start + i, move);
-        }
-        update_materials(move);
-    }
 }
 
 // LIVE ACTION/DATA
@@ -2051,7 +2091,7 @@ function update_live_eval(section, data, id, force) {
     let cur_ply = main.ply,
         eval_ = data.eval,
         eval_text = eval_,
-        invert = (cur_ply % 2)? -1: 1,
+        invert = (moves && (data.ply % 2 == 0))? -1: 1,
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
 
@@ -2068,7 +2108,6 @@ function update_live_eval(section, data, id, force) {
     if (Number.isFinite(eval_)) {
         eval_ = eval_ * invert;
         eval_text = eval_.toFixed(2);
-        data.eval2 = eval_;
     }
 
     let dico = {
@@ -2089,7 +2128,7 @@ function update_live_eval(section, data, id, force) {
 
     // CHECK THIS
     if (DEV.eval) {
-        LS(`live_eval${id} : eval=${eval_} : ply=${data.ply}`);
+        LS(`live_eval${id} : eval=${eval_} : ply=${data.ply} :`);
         LS(data);
     }
     update_live_chart(moves || [data], id + 2, !!moves);
@@ -2323,6 +2362,37 @@ function random_position() {
 /////////
 
 /**
+ * The section was changed archive <-> live
+ */
+function changed_section() {
+    let section = Y.x;
+    assign_boards();
+
+    // click on the active tab, ex: schedule, stats
+    // - if doesn't exist, then active the default tab
+    let active = get_active_tab('table')[2];
+    if (active && Visible(active))
+        open_table(active);
+    else
+        open_table(DEFAULT_ACTIVES[section]);
+
+    // update PGN
+    let pgn = pgns[section],
+        headers = pgn.Headers,
+        main = xboards[section];
+    if (!main)
+        return;
+
+    // reset some stuff
+    reset_sub_boards();
+    reset_charts();
+
+    // update overview
+    update_overview_basic(headers);
+    update_overview_moves(headers, xboards[section].moves, 0);
+}
+
+/**
  * Handle xboard events
  * @param {XBoard} board
  * @param {string} type
@@ -2354,8 +2424,10 @@ function handle_board_events(board, type, value) {
     case 'next':
         let id = board.live_id;
         if (id != undefined) {
-            LS(`next: ${id}`);
-            LS(value);
+            if (DEV.ply) {
+                LS(`next: ${id}`);
+                LS(value);
+            }
             xboards[section].arrow(id, value, ARROW_COLORS[id]);
         }
         break;

@@ -91,10 +91,11 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
  * @property {Object} adjudication
  * @property {boolean} book
  * @property {string} fen
- * @property {string} from
+ * @property {string|number} from
  * @property {Object} material
+ * @property {string} m                     // Bf6
  * @property {Object} pv
- * @property {string} to
+ * @property {string|number} to
  */
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,7 +202,7 @@ class XBoard {
                 .filter(parent => parent)
                 .map(parent => {
                     let last = _('.last', parent);
-                    if (!last) {
+                    if (!last && this.last) {
                         last = CreateNode('i', this.last, {class: 'last'});
                         parent.appendChild(last);
                     }
@@ -1297,7 +1298,8 @@ class XBoard {
      * @param {string} text
      */
     set_last(text) {
-        HTML('.last', text);
+        for (let parent of [this.xmoves, this.pv_node])
+            HTML('.last', text, parent);
     }
 
     /**

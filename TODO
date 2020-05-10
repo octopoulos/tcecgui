@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
+2020-05-10 : 2020-05-10 : update overview + charts when switching section
 2020-05-10 : 2020-05-10 : add manifest.json: with this, we can have a shortcut icon on phones
 2020-05-10 : 2020-05-03 : delete the old code
 2020-05-10 : 2020-05-10 : instant switch between archive and live
@@ -144,6 +145,7 @@ high:
 medium:
 -          : 2020-05-08 : show how many new moves have appeared when not viewing the last ply
 ~          : 2020-04-13 : add 3d board
+-          : 2020-05-10 : use sprites for materials + 2 kings
 low:
 -          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 -          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
