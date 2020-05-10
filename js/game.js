@@ -14,7 +14,7 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CopyClipboard,
 CreateNode, cube:true, DEFAULTS, DEV, document, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object,
-HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, Keys, KEYS,
+HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -2132,8 +2132,7 @@ function update_live_eval(section, data, id, force) {
 
     let cur_ply = main.ply,
         eval_ = data.eval,
-        eval_text = eval_,
-        invert = (moves && (data.ply % 2 == 0))? -1: 1,
+        invert = (moves && data.ply % 2 == 0),
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
 
@@ -2147,14 +2146,12 @@ function update_live_eval(section, data, id, force) {
         HTML(`[data-x="name"]`, short, node);
 
     // invert eval for black?
-    if (Number.isFinite(eval_)) {
-        eval_ = eval_ * invert;
-        eval_text = eval_.toFixed(2);
-    }
+    if (invert)
+        eval_ = invert_eval(eval_);
 
     let dico = {
         depth: data.depth,
-        eval: eval_text,
+        eval: Number.isFinite(eval_)? eval_.toFixed(2): eval_,
         node: FormatUnit(data.nodes),
         score: calculate_probability(short, eval_),
         speed: data.speed,

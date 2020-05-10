@@ -369,6 +369,23 @@ function create_charts()
 }
 
 /**
+ * Invert an eval:
+ * - 9 => -9
+ * - #M33 => -M#33, and -#M40 => #M40
+ * @param {string|number} eval_
+ */
+function invert_eval(eval_) {
+    if (!isNaN(eval_))
+        return -eval_;
+
+    if (!eval_)
+        return eval_;
+
+    // here, we have a string
+    return (eval_[0] == '-')? eval_.slice(1): `-${eval_}`;
+}
+
+/**
  * Create a dataset
  * - prevents excessive copy/pasting => makes the code a lot shorter!
  * @param {string} label
@@ -455,9 +472,9 @@ function update_live_chart(moves, id, invert_black) {
             num2 = num - first_num;
 
         if (invert_black && ply % 2 == 0) {
+            eval_ = invert_eval(eval_);
             if (DEV.eval)
-                LS(`inverting black @${ply}: ${eval_} => ${-eval_}`);
-            eval_ = -eval_;
+                LS(`inverting black @${ply}: ${move.eval} => ${eval_}`);
         }
 
         // check update_player_chart to understand
