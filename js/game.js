@@ -13,8 +13,8 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CopyClipboard,
-CreateNode, cube:true, DEFAULTS, DEV, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass,
-Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, Keys, KEYS,
+CreateNode, cube:true, DEFAULTS, DEV, document, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object,
+HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, Keys, KEYS,
 listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
 resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -315,19 +315,19 @@ function format_percent(value) {
  * Get the active tab name
  * + translate shortcuts
  * @param {string} parent
- * @returns {string[]} name, original
+ * @returns {[string, string, Node]} name, original, node
  */
 function get_active_tab(parent) {
     let active = _(`#${parent}-tabs .active`);
     if (!active)
-        return '';
+        return [];
 
     let name = active.dataset.x,
         translated = name;
     if (name.slice(0, 8) == 'shortcut')
         translated = Y[name];
 
-    return [translated, name];
+    return [translated, name, active];
 }
 
 /**
@@ -619,7 +619,7 @@ function check_queued_tables() {
         if (DEV.ui)
             LS(`queued: ${queued}`);
 
-        let [section, _parent, table] = queued.split('/');
+        let [section, parent, table] = queued.split('/');
         if (!QUEUES.includes(table))
             continue;
 
@@ -856,13 +856,14 @@ function download_tables(only_cache) {
         download_gamelist();
 
     let section = 'live';
-    if (section != Y.x)
-        return;
+    // if (section != Y.x)
+    //     return;
 
     if (!only_cache) {
         download_pgn(section, 'live.json');
         download_live();
     }
+
     let dico = {only_cache: only_cache};
     download_table(section, 'crosstable.json', 'cross', data => {
         analyse_crosstable(section, data);
@@ -1358,9 +1359,16 @@ function calculate_seeds(num_team) {
  * - called after sched data is available, so, from queued tables
  * - called after calculate_estimates
  * @param {string} section archive, live
- * @param {Object[]} rows
+ * @param {Object[]=} rows
  */
 function calculate_event_stats(section, rows) {
+    if (!rows) {
+        let data_x = table_data[section].sched;
+        if (!data_x)
+            return;
+        rows = data_x.data;
+    }
+
     let crashes = 0,
         end = '',
         games = 0,
@@ -1925,6 +1933,9 @@ function update_pgn(section, pgn) {
             }
         });
 
+        let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game';
+        document.title = `${players[0].name} vs ${players[1].name} - TCEC - ${subtitle}`;
+
         // 5) clock
         // num_ply % 2 tells us who plays next
         num_ply = main.moves.length;
@@ -2443,6 +2454,9 @@ function opened_table(node, name, tab) {
         break;
     case 'season':
         download_gamelist();
+        break;
+    case 'stats':
+        calculate_event_stats(section);
         break;
     case 'winner':
         download_table(section, 'winners.json', name);
