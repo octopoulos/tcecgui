@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
+2020-05-10 : 2020-05-03 : delete the old code
 2020-05-10 : 2020-05-10 : instant switch between archive and live
 2020-05-10 : 2020-04-17 : load archive games without loading a new page
 2020-05-09 : 2020-05-09 : remember which season and game was opened last => open them by default
@@ -141,7 +142,6 @@ high:
 -          : 2029-04-29 : add SVG connectors to the bracket
 medium:
 -          : 2020-05-08 : show how many new moves have appeared when not viewing the last ply
--          : 2020-05-03 : delete the old code
 ~          : 2020-04-13 : add 3d board
 low:
 -          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
