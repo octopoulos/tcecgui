@@ -41,7 +41,6 @@ function action_key(code) {
     switch (code) {
     // escape
     case 27:
-        LS(`action_key: ${code}`);
         show_popup();
         show_popup('about');
         break;
@@ -78,6 +77,8 @@ function change_setting_special(name, value) {
     switch (name) {
     case 'animate':
     case 'board_theme':
+    case 'custom_black':
+    case 'custom_white':
     case 'highlight_color':
     case 'highlight_size':
     case 'notation':
@@ -86,6 +87,8 @@ function change_setting_special(name, value) {
         break;
     case 'animate_pv':
     case 'board_theme_pv':
+    case 'custom_black_pv':
+    case 'custom_white_pv':
     case 'highlight_color_pv':
     case 'highlight_size_pv':
     case 'notation_pv':
@@ -582,7 +585,7 @@ function set_global_events() {
             if (dataset) {
                 let set = target.dataset.set;
                 if (set != undefined) {
-                    show_popup('options', true, {setting: set});
+                    show_popup('options', set != -1, {setting: set});
                     return;
                 }
             }

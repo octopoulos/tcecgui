@@ -1201,8 +1201,9 @@ function show_settings(name) {
         }
     });
 
+    // -1 to close the popup
     if (name)
-        lines.push('<a class="item item-title span" data-set="" data-t="OK"></a>');
+        lines.push('<a class="item item-title span" data-set="-1" data-t="OK"></a>');
 
     lines.push('</grid>');
     return lines.join('');

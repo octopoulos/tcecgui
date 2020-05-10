@@ -267,7 +267,7 @@ function set_text(node, text) {
  */
 function translate(text) {
     if (Y.lan == 'eng')
-        return text.includes('{')? null: text.split('_')[0];
+        return text.includes('{')? null: text.split('~')[0];
 
     // mode
     if (!translates)

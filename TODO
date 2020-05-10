@@ -2,6 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
+~          : 2020-05-10 : handle archive links
+2020-05-10 : 2020-05-10 : custom theme: manually set board colors
 2020-05-10 : 2020-05-10 : update overview + charts when switching section
 2020-05-10 : 2020-05-10 : add manifest.json: with this, we can have a shortcut icon on phones
 2020-05-10 : 2020-05-03 : delete the old code

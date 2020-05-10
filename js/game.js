@@ -28,16 +28,17 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
     BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
-        chess24: ['#9E7863', '#633526'],
+        chess24: ['#9e7863', '#633526'],
+        custom: [],
         dark: ['#797877', '#585655'],
-        dilena: ['#FFE5B6', '#B16228'],
+        dilena: ['#ffe5b6', '#b16228'],
         green: ['#f0e9db', '#7b9d86'],
-        leipzig: ['#FFFFFF', '#E1E1E1'],
-        metro: ['#FFFFFF', '#EFEFEF'],
+        leipzig: ['#ffffff', '#e1e1e1'],
+        metro: ['#ffffff', '#efefef'],
         red: ['#eaded0', '#b17278'],
-        symbol: ['#FFFFFF', '#58AC8A'],
-        uscf: ['#C3C6BE', '#727FA2'],
-        wikipedia: ['#FFCE9E', '#D18B47'],
+        symbol: ['#ffffff', '#58ac8a'],
+        uscf: ['#c3c6be', '#727fa2'],
+        wikipedia: ['#ffce9e', '#d18b47'],
     },
     board_target,
     // vis: selector of the element to check visibility against, indicating that the board is visible or not
@@ -430,11 +431,13 @@ function update_board_theme(mode) {
         // 2) update board
         if (mode & 3) {
             let suffix = is_main? '': '_pv',
+                board_theme = Y[`board_theme${suffix}`],
+                colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
                 theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
 
             Assign(board, {
-                colors: BOARD_THEMES[Y[`board_theme${suffix}`]],
+                colors: colors,
                 dirty: 3,
                 high_color: Y[`highlight_color${suffix}`],
                 high_size: Y[`highlight_size${suffix}`],
@@ -2561,12 +2564,13 @@ function popup_custom(id, name, e, scolor) {
         show = true;
     else {
         if (name == 'engine') {
-            let pgn = pgns[Y.x];
-            if (!pgn)
+            let pgn = pgns[Y.x],
+                headers = pgn.Headers;
+            if (!headers)
                 return;
 
             let title = Title(scolor),
-                engine = Split(pgn.Headers[title]),
+                engine = Split(headers[title]),
                 options = pgn[`${title}EngineOptions`],
                 lines = options.map(option => [option.Name, option.Value]);
 
@@ -2674,6 +2678,8 @@ function startup_game() {
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            custom_black: [{type: 'color'}, '#000000'],
+            custom_white: [{type: 'color'}, '#ffffff'],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
@@ -2684,6 +2690,8 @@ function startup_game() {
         board_pv: {
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pv: [{type: 'color'}, '#000000'],
+            custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
             notation_pv: [ON_OFF, 1],
