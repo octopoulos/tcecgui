@@ -3,7 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
 ~          : 2020-05-10 : handle archive links
--          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
+2020-05-10 : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 2020-05-10 : 2020-05-10 : some extra tests
 2020-05-10 : 2020-05-10 : custom theme: manually set board colors
 2020-05-10 : 2020-05-10 : update overview + charts when switching section
@@ -146,14 +146,15 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 -          : 2029-04-29 : add SVG connectors to the bracket
+-          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 medium:
 -          : 2020-05-08 : show how many new moves have appeared when not viewing the last ply
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-10 : use sprites for materials + 2 kings
 low:
 -          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
--          : 2020-04-14 : use clicks to move pieces on the board in interactive mode
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
+-          : 2020-05-02 : convert XBoard matrix to 128 array
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)

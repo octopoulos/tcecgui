@@ -24,7 +24,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, extract_fen_ply, Floor, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S,
+Events, extract_fen_ply, Floor, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S,
 SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
@@ -114,6 +114,7 @@ class XBoard {
      * - list           // show move list history
      * - live_id        // live engine id => will show arrows on the main board
      * - main           // is it the main board?
+     * - manual         // manual control enabled
      * - mode           // 3d, canvas, html, text
      * - name           // key in BOARDS
      * - notation       // 1:top cols, 2:bottom cols, 4:left rows, 8:right nows
@@ -136,6 +137,7 @@ class XBoard {
         this.list = options.list;
         this.live_id = options.live_id;
         this.main = options.main;
+        this.manual = options.manual;
         this.mode = options.mode || 'html';
         this.name = options.name;
         this.notation = options.notation || 6;
@@ -166,6 +168,7 @@ class XBoard {
         this.node = _(this.id);
         this.nodes = {};
         this.overlay = null;                            // svg objects will be added there
+        this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
@@ -685,7 +688,7 @@ class XBoard {
 
     /**
      * Temporary chess.js
-     * @param {string} text
+     * @param {string|Object} text
      * @returns {Object}
      */
     chess_move(text) {
@@ -857,12 +860,14 @@ class XBoard {
                 this.clicked_move_list(e, callback);
             });
 
-        // moving a piece by click
+        // place a picked piece
         C('.xsquares', e => {
-            callback(that, 'square', e);
+            this.place(e);
         }, this.node);
+
+        // pick a piece
         C('.xpieces', e => {
-            callback(that, 'piece', e);
+            this.pick(e);
         }, this.node);
     }
 
@@ -1029,6 +1034,52 @@ class XBoard {
     }
 
     /**
+     * Pick / release a piece
+     * - only HTML for now
+     * @param {Event} e
+     */
+    pick(e) {
+        if (!this.manual)
+            return;
+
+        let node = e.target;
+        while (node) {
+            if (HasClass(node, 'xpiece')) {
+                let coord = node.dataset.c;
+                this.picked = (this.picked == coord)? null: coord;
+                return;
+            }
+            node = node.parentNode;
+        }
+    }
+
+    /**
+     * Place a picked piece
+     * - only HTML for now
+     * @param {Event} e
+     */
+    place(e) {
+        if (!this.manual || !this.picked)
+            return;
+
+        let found,
+            node = e.target;
+        while (node) {
+            if (HasClass(node, 'xsquare')) {
+                found = node.dataset.q;
+                break;
+            }
+            node = node.parentNode;
+        }
+
+        if (found) {
+            this.chess_move({from: SQUARES_INV[this.picked], to: found});
+            this.set_fen(this.chess_fen(), true);
+        }
+        this.picked = null;
+    }
+
+    /**
      * Play button was pushed
      * @param {boolean=} stop
      */
@@ -1118,7 +1169,7 @@ class XBoard {
                         }
                     }
 
-                    lines.push(`<div class="xsquare" data-q="${col_name}${row_name}" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
+                    lines.push(`<div class="xsquare" data-c="${i * 16 + j}" data-q="${col_name}${row_name}" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
                 }
             }
 
@@ -1168,8 +1219,10 @@ class XBoard {
                     else
                         row = 7 - row;
 
-                    if (found)
+                    if (found) {
                         Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1;pointer-events:all`);
+                        node.dataset.c = row * 16 + col;
+                    }
                     else
                         Style(node, 'opacity:0;pointer-events:none');
                 }

@@ -337,11 +337,11 @@ grid {
     position: absolute;
 }
 .xoverlay {
+    pointer-events: none;
     position: absolute;
     z-index: 3;
 }
 .xpiece {
-    cursor: pointer;
     height: 1em;
     left: 0;
     position: absolute;
@@ -493,6 +493,9 @@ grid {
 #xfen .xcontrol,
 #xfen .xmoves {
     display: none;
+}
+#pva .xpiece {
+    cursor: pointer;
 }
 
 /* tables */

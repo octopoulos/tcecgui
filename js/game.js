@@ -80,6 +80,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             vis: 'table-pv',
         },
         pva: {
+            manual: true,
             size: 36,
             tab: 'pva',
             vis: 'table-pva',
