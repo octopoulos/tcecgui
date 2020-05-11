@@ -3,6 +3,7 @@ dark-archive.css
 - used in Archive mode
 - inherits from light.css AND dark.css
 */
-body {
+body,
+html {
     background: #352c27;
 }

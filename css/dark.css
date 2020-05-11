@@ -3,7 +3,8 @@ dark.css
 - used in Live mode
 - inherits from light.css
 */
-body {
+body,
+html {
     background: #333;
     color: #fff;
 }

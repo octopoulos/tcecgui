@@ -13,7 +13,8 @@ light.css
 html {
     overflow-x: hidden;
 }
-body {
+body,
+html {
     background: #dcdcdc;
     color: #212529;
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
@@ -1011,6 +1012,8 @@ grid {
 .google-ad {
     cursor: pointer;
 }
+#full0,
+#full1,
 #theme0,
 #theme1,
 #three,

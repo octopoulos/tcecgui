@@ -3,6 +3,7 @@ light-archive.css
 - used in Archive mode
 - inherits from light.css
 */
-body {
+body,
+html {
     background: #d8ccc3;
 }

@@ -2,7 +2,8 @@
 sea.css
 - inherits from light.css
 */
-body {
+body,
+html {
     background: #5ad;
 }
 
