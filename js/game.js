@@ -2578,6 +2578,8 @@ function handle_board_events(board, type, value) {
             update_move_info(cur_ply, value);
 
             // show PV's
+            // - important to reset the boards to prevent wrong compare_duals
+            reset_sub_boards();
             update_move_pv(section, cur_ply - 1, board.moves[cur_ply - 1]);
             update_move_pv(section, cur_ply, value);
 

@@ -57,6 +57,7 @@ function parse_dev() {
             p: 'pv',
             s: 'socket',                // socket messages
             u: 'ui',                    // UI events
+            x: 'xboard',
             y: 'ply',
         },
         text = Y.dev || '';

@@ -24,8 +24,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, extract_fen_ply, Floor, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Now, ON_OFF, S,
-SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
+Events, extract_fen_ply, Floor, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Min, Now,
+ON_OFF, S, SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -277,7 +277,7 @@ class XBoard {
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply)
-            add_timeout(`dual${this.id}`, () => {this.compare_duals(num_ply);}, Y.show_delay);
+            this.compare_duals(num_ply);
         else if (this.ply >= num_move - 1)
             this.set_ply(last_move, true);
 
@@ -368,7 +368,7 @@ class XBoard {
 
         // show diverging move in PV
         if (num_ply != undefined)
-            add_timeout(`dual${this.id}`, () => {this.compare_duals(num_ply);}, Y.show_delay);
+            this.compare_duals(num_ply);
     }
 
     /**
@@ -735,27 +735,45 @@ class XBoard {
         if (!dual)
             return;
 
+        clear_timeout(`dual${this.id}`);
+        clear_timeout(`dual${dual.id}`);
+
         let duals = dual.moves,
             moves = this.moves,
-            num_dual = duals.length,
-            num_move = moves.length,
-            ply = num_ply - 1;
+            num_move = Min(duals.length, moves.length),
+            ply = num_ply;
 
-        while (ply < num_dual && ply < num_move) {
-            let dual_fen = (duals[ply] || {}).fen,
-                move_fen = (moves[ply] || {}).fen;
-            if (!dual_fen || !move_fen)
+        for (let i = num_ply - 1; i < num_move; i ++) {
+            let dual_m = (duals[i] || {}).m,
+                move_m = (moves[i] || {}).m;
+            if (DEV.xboard)
+                LS(`${this.id} : i=${i} < ${num_move} : ${dual_m == move_m} : ${dual_m} = ${move_m}`);
+            if (!dual_m || !move_m)
                 break;
-            if (dual_fen != move_fen)
+            ply = i;
+            if (dual_m != move_m)
                 break;
-            ply ++;
         }
+        if (DEV.xboard)
+            LS(`${this.id} => ply=${ply}`);
 
         // render: jump directly to the position
-        this.hold_smooth();
-        dual.hold_smooth();
-        this.set_ply(ply, true);
-        dual.set_ply(ply, true);
+        for (let board of [this, dual]) {
+            board.hold_smooth();
+
+            if (ply == num_ply)
+                board.set_ply(ply, true);
+            // try to get to the ply without compute, if fails, then render the next ply + compute later
+            else if (board.set_ply(ply, true, true) == false) {
+                if (DEV.xboard)
+                    LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
+                board.set_ply(num_ply, true);
+                add_timeout(`dual${board.id}`, () => {
+                    board.hold_smooth();
+                    board.set_ply(ply, true);
+                }, Y.show_delay);
+            }
+        }
     }
 
     /**
@@ -1379,9 +1397,10 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
-     * @returns {Move}
+     * @param {boolean=} no_compute does not computer chess positions (slow down)
+     * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, animate) {
+    set_ply(ply, animate, no_compute) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
@@ -1396,9 +1415,12 @@ class XBoard {
             this.seen = ply;
         this.update_counter();
 
-        if (!move.fen)
+        if (!move.fen) {
+            if (no_compute)
+                return false;
             if (!this.chess_backtrack(ply))
                 return null;
+        }
         this.set_fen(move.fen, true);
 
         if (this.hook)
