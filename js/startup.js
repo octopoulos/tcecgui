@@ -10,10 +10,10 @@
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, Attrs,
-C, change_page, change_theme, changed_section, check_hash, Class, create_field_value, DEV, document, download_live,
-download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass, Hide, HOST, HTML,
-ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+api_translate_get, Assign, Attrs,
+C, change_page, change_theme, changed_hash, changed_section, check_hash, Class, create_field_value, DEV, document,
+download_live, download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass, Hide,
+HOST, HTML, ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
 open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, Show, show_banner, show_popup, show_settings, Split,
@@ -160,6 +160,7 @@ function check_hash_special() {
         changed_section();
         old_x = Y.x;
     }
+    changed_hash();
 }
 
 /**
@@ -479,6 +480,13 @@ function set_global_events() {
     Events(window, 'hashchange', () => {
         check_hash();
         parse_dev();
+    });
+    Events(window, 'popstate', e => {
+        let state = e.state;
+        if (!state)
+            return;
+        Assign(Y, state);
+        check_hash_special();
     });
 
     // keys

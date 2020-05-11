@@ -24,7 +24,7 @@ create_module(IMPORT_PATH, [
 let {Assign, START_FEN, XBoard} = require(OUTPUT_MODULE);
 
 let archive = new XBoard({}),
-    live = new XBoard({id: 'console'});
+    live = new XBoard({id: 'null'});
 
 live.initialise();
 live.dual = archive;

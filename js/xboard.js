@@ -30,6 +30,10 @@ SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, win
 'use strict';
 
 let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
+    CONSOLE_NULL = {
+        console: 1,
+        null: 1,
+    },
     CONTROLS = {
         start: {
             class: 'mirror',
@@ -109,7 +113,7 @@ class XBoard {
      * - border         // frame size
      * - dims           // [num_col, num_row]
      * - hook           // events callback
-     * - id             // output selector for HTML & text, can be 'console' too
+     * - id             // output selector for HTML & text, can be 'console' and 'null' too
      * - last           // default result text, ex: *
      * - list           // show move list history
      * - live_id        // live engine id => will show arrows on the main board
@@ -1027,10 +1031,15 @@ class XBoard {
      * @param {string} text
      */
     output(text) {
-        if (this.id == 'console')
+        switch (this.id) {
+        case 'console':
             LS(text);
-        else
+            break;
+        case 'null':
+            break;
+        default:
             HTML('.xsquares', text, this.node);
+        }
     }
 
     /**
@@ -1246,7 +1255,7 @@ class XBoard {
     render_text() {
         let grid = this.grid,
             lines = [],
-            notation = (this.id == 'console')? this.notation: 0,
+            notation = CONSOLE_NULL[this.id]? this.notation: 0,
             [num_row, num_col] = this.dims;
 
         // column notation

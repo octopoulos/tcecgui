@@ -12,7 +12,7 @@ let CHART_JS = 'js/libs/chart-quick.js',
     COLOR_BLACK = '#000000',
     COLOR_WHITE = '#efefef',
     ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000'],
-    ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'],
+    ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'],
     LIVE_ENGINES = [];
 
 let all_evals = [],

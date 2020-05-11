@@ -9,8 +9,8 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, HTML, Id, InsertNodes, Keys,
-LoadLibrary, localStorage, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
+_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, history, HTML, Id, InsertNodes, Keys,
+LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
 Resource, SetDefault, setTimeout, TEXT, Title, Undefined, window
 */
 'use strict';
@@ -42,7 +42,12 @@ let __PREFIX = '_',
     },
     libraries = {},
     Lower = (text) => (text.toLowerCase()),
+    QUERY_KEYS = {
+        '': '?',
+        hash: '#',
+    },
     scroll_target,
+    STATE_KEYS = {},
     THEMES = [''],
     TIMEOUT_translate = 3600 * 24,
     timers = {},
@@ -571,7 +576,7 @@ function update_theme(themes, callback, version=15) {
  * Check the query hash/string
  */
 function check_hash() {
-    let string = QueryString(false, '', '', {}, 'hash');
+    let string = QueryString({key: 'hash'});
     Assign(Y, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     sanitise_data();
 
@@ -646,6 +651,45 @@ function load_defaults() {
     // use browser language
     if (!Y.lan)
         guess_browser_language();
+}
+
+/**
+ * Push history state if it changed
+ * @param {Object} query
+ * @param {boolean=} replace replace the state instead of pushing it
+ * @param {string=} query_key
+ * @param {string=} go change URL location
+ * @returns {Object|boolean} dictionary of changes, or null if empty
+ */
+function push_state(query, replace, query_key='hash', go=null) {
+    query = query || {};
+    let changes = [],
+        state_keys = STATE_KEYS[Y.x] || STATE_KEYS._ || [],
+        new_state = Assign({}, ...state_keys.map(x => ({[x]: Undefined(query[x], Y[x])}))),
+        state = history.state,
+        url = QueryString({key: query_key, replace: new_state, string: true});
+
+    // state didn't change => return
+    if (state) {
+        changes = state_keys.filter(key => (new_state[key] !== state[key]));
+        if (!changes.length)
+            return null;
+    }
+
+    if (go)
+        location[go] = url;
+    else {
+        url = `${QUERY_KEYS[query_key]}${url}`;
+        let exist = location[query_key];
+        if (exist == url)
+            return;
+        if (replace)
+            history.replaceState(new_state, '', url);
+        else
+            history.pushState(new_state, '', url);
+    }
+
+    return Assign({}, ...changes.map(change => ({[change]: 1})));
 }
 
 /**

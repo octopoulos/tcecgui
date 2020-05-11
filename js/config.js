@@ -26,7 +26,7 @@ function startup_config() {
     HOST_ARCHIVE = 'archive/json';
 
     // 2 & 3 = live engines
-    ENGINE_NAMES = ['White', 'Black', 'Blueleela', '7Fish'];
+    ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'];
 
     // use Assign to append new NN engines here, by default: AllieStein & LCZero
     // - & 1 => NN engine

@@ -400,6 +400,7 @@ function HTML(sel, html, parent) {
     E(sel, node => {
         if (html !== undefined)
             node.innerHTML = html;
+        // FUTURE: use ?? operator
         if (result == undefined)
             result = node.innerHTML;
     }, parent);
@@ -746,6 +747,7 @@ function TEXT(sel, text, parent) {
     E(sel, node => {
         if (text !== undefined)
             node.innerHTML = text;
+        // FUTURE: use ?? operator
         if (result === undefined)
             result = node.textContent.trim();
     }, parent);
@@ -1115,41 +1117,34 @@ function Pad(value, size=2, pad='00') {
 
 /**
  * URL get query string, ordered + keep/discard/replace some elements
- * @param {boolean=} [stringify=false] true to have a sorted string, otherwise get a sorted object
- * @param {string[]} keep list of keys to keep
- * @param {string[]} discard list of keys to discard
- * @param {Object=} [replaces={}] add or replace items
- * @param {string=} [key='search'] hash, search
+ * @param {Object=} discard list of keys to discard
+ * @param {Object=} keep list of keys to keep
+ * @param {string=} query use this url instead of location[key]
+ * @param {Object=} replaces add or replace items
+ * @param {string=} key hash, search
+ * @param {boolean=} string true to have a sorted string, otherwise get a sorted object
  * @returns {string|Object} result object or string
- * @example
- * 'index.html/?q=query&lan=eng#dev=x2&mode=5'
- * QueryString()                                        // {lan: "eng", q: "query"}
- * QueryString(true)                                    // "lan=eng&q=query"
- * QueryString(null, ['lan'])                           // {lan: "eng"}
- * QueryString(null, null, ['lan'])                     // {q: "query"}
- * QueryString(null, null, null, {lan: 'fra'})          // {lan: "fra", q: "query"}
- * QueryString(null, null, null, null, 'hash')          // {dev: "x2", mode: "5"}
- * QueryString(null, null, null, {lan: 'fra'}, 'hash')  // {dev: "x2", lan: "fra", mode: "5"}
  */
-function QueryString(stringify=false, keep=null, discard=null, replaces={}, key='search')
+function QueryString({discard, keep, key='search', replace, query, string}={})
 {
     let dico = {},
-        items = key? location[key].slice(1).split('&'): [],
+        items = query? query.split('&'): (key? location[key].slice(1).split('&'): []),
         vector = [];
 
     for (let item of items) {
         let parts = item.split('=');
         if (parts.length == 2) {
-            if ((!keep || keep.includes(parts[0])) && (!discard || !discard.includes(parts[0]))) {
+            if ((!keep || keep[parts[0]]) && (!discard || !discard[parts[0]])) {
                 let value = decodeURIComponent(parts[1].replace(/\+/g," "));
                 dico[parts[0]] = (value == 'undefined')? undefined: value;
             }
         }
     }
-    Assign(dico, replaces);
+    if (replace)
+        Assign(dico, replace);
 
     // language=eng&section=1
-    if (stringify) {
+    if (string) {
         Keys(dico).forEach(key => {
             if (dico[key] !== undefined)
                 vector.push(`${key}=${encodeURIComponent(dico[key])}`);

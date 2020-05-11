@@ -78,6 +78,8 @@ let {
     [725.019, undefined, '725'],
     [NaN, undefined, 'N/A'],
     [Infinity, undefined, 'Infinity'],
+    [undefined, undefined, 'undefined'],
+    [undefined, '-', '-'],
     // check if we can feed the result back => stability
     ['7.8B', undefined, '7.8B'],
     ['58.3M', undefined, '58.3M'],
@@ -87,6 +89,7 @@ let {
     ['null', undefined, 'null'],
     ['null', '-', '-'],
     ['null', null, null],
+    ['-', undefined, '-'],
 ].forEach(([nodes, def, answer], id) => {
     test(`FormatUnit:${id}`, () => {
         expect(FormatUnit(nodes, def)).toEqual(answer);
@@ -126,13 +129,19 @@ let {
 
 // QueryString
 [
+    [{query: 'q=query&lan=eng'}, {lan: 'eng', q: 'query'}],
+    [{query: 'q=query&lan=eng', string: true}, 'lan=eng&q=query'],
+    [{keep: {lan: 1}, query: 'q=query&lan=eng'}, {lan: 'eng'}],
+    [{discard: {lan: 1}, query: 'q=query&lan=eng'}, {q: 'query'}],
+    [{query: 'q=query&lan=eng', replace: {lan: 'fra'}}, {lan: 'fra', q: 'query'}],
     [
-        [true, null, null, {class: "phantom", mode: "speed lap", game: "wipeout x"}, null],
-        'class=phantom&game=wipeout%20x&mode=speed%20lap'
+        {key: null, replace: {class: "phantom", mode: "speed lap", game: "wipeout x"}, string: true},
+        'class=phantom&game=wipeout%20x&mode=speed%20lap',
     ],
-].forEach(([[stringify, keep, discard, replaces, key], answer], id) => {
+    [{query: 'x=archive&season=18&div=l3&game=1', string: true}, 'div=l3&game=1&season=18&x=archive'],
+].forEach(([dico, answer], id) => {
     test(`QueryString:${id}`, () => {
-        expect(QueryString(stringify, keep, discard, replaces, key)).toEqual(answer);
+        expect(QueryString(dico)).toEqual(answer);
     });
 });
 
@@ -147,7 +156,6 @@ let {
         expect(Split(text, char)).toEqual(answer);
     });
 });
-
 
 // Stringify
 [

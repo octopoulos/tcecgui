@@ -44,7 +44,7 @@ let {
             {black: 'Counter', result: '1-0', white: 'Marvin'},
             {black: 'Marvin', result: '*', white: 'Counter'},
         ],
-        [0.5, 1.5],
+        ['0.5', '1.5'],
     ],
 ]
  .forEach(([names, rows, answer, answer2], id) => {
@@ -128,8 +128,8 @@ let {
 
 // create_game_link
 [
-    [{}, 'live', 1, '', '<a class=\"game\" href=\"#x=archive&undefined&game=1\">1</a>'],
-    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class=\"game\" href=\"#x=archive&season=18&div=l3&game=1\">1</a>'],
+    [{}, 'live', 1, '', '<a class="game" href="#game=1&x=archive">1</a>'],
+    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class="game" href="#div=l3&game=1&season=18&x=archive">1</a>'],
 ]
  .forEach(([info, section, game, text, answer], id) => {
     test(`create_game_link:${id}`, () => {

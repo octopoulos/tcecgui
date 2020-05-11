@@ -12,14 +12,14 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, Class, clear_timeout, controls, CopyClipboard,
-CreateNode, cube:true, DEFAULTS, DEV, document, Events, Exp, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object,
-HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
-listen_log, load_model, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow, reset_charts,
-resize_3d, Resource, resume_game, Round,
+C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Class, clear_timeout, controls,
+CopyClipboard, CreateNode, cube:true, DEFAULTS, DEV, document, Events, Exp, Floor, FormatUnit, FromSeconds,
+FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
+push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, start_3d, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node,
-Undefined, update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true,
+show_modal, Sign, Split, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate,
+translate_node, Undefined, update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
@@ -111,6 +111,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         archive: {},
         live: {},
     },
+    game_link,                          // current game link in the archive
     LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -292,10 +293,13 @@ function calculate_score(text) {
  * @param {string} section archive, live
  * @param {number} game
  * @param {string=} text if not set, then use game as the text
+ * @param {boolean=} only_link returns the link directly, instead of the <a ... > HTML
  * @returns {string}
  */
-function create_game_link(section, game, text) {
-    let link = `#x=archive&${tour_info[section].link}&game=${game}`;
+function create_game_link(section, game, text, only_link) {
+    let link = '#' + QueryString({query: `x=archive&${tour_info[section].link}&game=${game}`, string: true});
+    if (only_link)
+        return link;
     return `<a class="game" href="${link}">${text || game}</a>`;
 }
 
@@ -481,7 +485,7 @@ function analyse_crosstable(section, data) {
     for (let name of orders) {
         let dico = dicos[name],
             elo = dico.Rating,
-            new_elo = Round(elo + dico.Elo),
+            new_elo = Round(elo + (dico.Elo || 0)),
             results = dico.Results;
 
         // cross
@@ -496,20 +500,23 @@ function analyse_crosstable(section, data) {
             if (games) {
                 cross_row[abbrev] = games.Scores.map(game => {
                     let score = game.Result;
-                    return ` <a class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                    return ` <a data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('').slice(1);
             }
         });
         cross_rows.push(cross_row);
 
         // stand
+        let loss_b = Undefined(dico.LossAsBlack, dico.LossesAsBlack),
+            loss_w = Undefined(dico.LossAsWhite, dico.LossesAsWhite);
+
         stand_rows.push({
             crashes: dico.Strikes,
             diff: `${new_elo - elo} [${new_elo}]`,
             elo: elo,
             engine: name,
             games: dico.Games,
-            loss: `${dico.LossAsWhite + dico.LossAsBlack} [${dico.LossAsWhite}/${dico.LossAsBlack}]`,
+            loss: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
             points: dico.Score,
             rank: dico.Rank,
             sb: dico.Neustadtl,
@@ -565,10 +572,9 @@ function calculate_h2h(rows) {
     }
 
     // update players + UI info
-    players.forEach((player, id) => {
-        player.score = names[player.name] - 1;
-        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
-    });
+    for (let player of players)
+        player.score = (names[player.name] - 1).toFixed(1);
+    update_scores();
 
     return new_rows;
 }
@@ -1037,12 +1043,16 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 num_page = Ceil(num_row / row_page);
 
             // find the active row + update initial page
-            for (let row of data) {
-                if (!row.moves) {
-                    active_row = row._id;
-                    break;
+            if (section == 'archive')
+                active_row = Y.game - 1;
+            else
+                for (let row of data) {
+                    if (!row.moves) {
+                        active_row = row._id;
+                        break;
+                    }
                 }
-            }
+
             if (active_row >= 0)
                 data_x.row = active_row;
             if (page < 0)
@@ -1188,14 +1198,19 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     if (name == 'season')
         set_season_events();
 
-    // open game?
-    C('tr[data-g]', function() {
-        Class('tr.active', '-active', true, table);
-        Class(this, 'active');
+    // open game
+    C('[data-g]', function() {
+        if (this.tagName == 'TR') {
+            Class('tr.active', '-active', true, table);
+            Class(this, 'active');
+        }
+        let game = this.dataset.g * 1;
         if (section == 'archive') {
-            save_option('game', this.dataset.g * 1);
+            save_option('game', game);
             open_game();
         }
+        else
+            location.hash = create_game_link(section, game, '', true);
     }, table);
 
     // fen preview
@@ -1257,7 +1272,7 @@ function analyse_seasons(data) {
             Class(node.nextElementSibling, 'active');
             expand_season(parent.previousElementSibling, true);
             tour_info[section].link = link;
-            open_event(link);
+            open_event();
         }
     }
 }
@@ -1289,21 +1304,24 @@ function expand_season(node, show) {
  * - open various tables
  * @param {string} name
  */
-function open_event(name) {
+function open_event() {
     let section = 'archive',
         data_x = table_data[section].season;
     if (!data_x)
         return;
 
     let found,
-        data = data_x.data;
+        data = data_x.data,
+        info = tour_info[section],
+        link = `season=${Y.season}&div=${Y.div}`;
+
     Keys(data).forEach(key => {
         let subs = data[key].sub;
         Keys(subs).forEach(sub_key => {
             let sub = subs[sub_key];
-            if (sub.url == name) {
+            if (sub.url == link) {
                 found = sub.abb;
-                tour_info.cup = data[key].cup;
+                info.cup = data[key].cup;
                 return;
             }
         });
@@ -1311,7 +1329,10 @@ function open_event(name) {
             return;
     });
 
-    tour_info.url = found;
+    Assign(info, {
+        link: link,
+        url: found,
+    });
     if (!found)
         return;
 
@@ -1332,19 +1353,16 @@ function open_event(name) {
  * Open an archived game
  */
 function open_game() {
-    let event = tour_info.url,
-        game = Y.game,
-        prefix = `${HOST_ARCHIVE}/${event}`,
-        prefix_lower = `${HOST_ARCHIVE}/${Lower(event)}`,
-        section = 'archive';
+    let info = tour_info.archive,
+        event = info.url;
+    if (!event)
+        return;
 
-    download_pgn(section, `${prefix}_${game}.pgjson`);
-    download_table(section, `${prefix_lower}_liveeval_1.${game}.json`, null, data => {
-        update_live_eval(section, data, 0);
-    });
-    download_table(section, `${prefix_lower}_liveeval1_1.${game}.json`, null, data => {
-        update_live_eval(section, data, 1);
-    });
+    if (Y.season && Y.div && Y.game) {
+        push_state();
+        check_hash();
+    }
+    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`);
 }
 
 /**
@@ -1360,8 +1378,14 @@ function set_season_events() {
 
     // open games
     C('a[data-u]', function() {
+        // 'season=18&div=l3'
+        let dico = QueryString({query: this.dataset.u});
+        Keys(dico).forEach(key => {
+            save_option(key, dico[key]);
+        });
         save_option('game', 1);
-        open_event(this.dataset.u);
+
+        open_event();
         Class('a.active', '-active', true, table);
         Class(this, 'active');
         Class(this.nextElementSibling, 'active');
@@ -1378,7 +1402,7 @@ function set_season_events() {
  */
 function analyse_tournament(section, data) {
     Assign(tour_info[section], data);
-    if (tour_info.cup)
+    if (tour_info[section].cup)
         download_table(section, 'bracket.json', 'brak', data => {
             create_cup(section, data);
         });
@@ -1439,7 +1463,7 @@ function calculate_event_stats(section, rows) {
         start = rows.length? rows[0].start: '';
 
     for (let row of rows) {
-        let game = row.game,
+        let game = row._id + 1,
             move = row.moves,
             time = row.duration;
         if (!move)
@@ -1720,6 +1744,28 @@ function check_adjudication(dico, total_moves) {
 }
 
 /**
+ * Download live evals for the current even + a given round
+ * @param {number} round
+ */
+function download_live_evals(round) {
+    if (!round)
+        return;
+
+    let section = 'archive',
+        event = tour_info[section].url;
+    if (!event)
+        return;
+
+    let prefix = `${HOST_ARCHIVE}/${Lower(event)}_liveeval`;
+    download_table(section, `${prefix}_${round}.json`, null, data => {
+        update_live_eval(section, data, 0);
+    });
+    download_table(section, `${prefix}1_${round}.json`, null, data => {
+        update_live_eval(section, data, 1);
+    });
+}
+
+/**
  * Download the PGN
  * @param {string} section archive, live
  * @param {string} url
@@ -1733,6 +1779,10 @@ function download_pgn(section, url) {
             let last_mod = new Date(xhr.getResponseHeader('last-modified'));
             data.elapsed = Now(true) - last_mod.getTime() / 1000;
             data.gameChanged = 1;
+
+            // FUTURE: use ?? operator
+            if (section == 'archive' && data.Headers)
+                download_live_evals(data.Headers.Round);
         }
 
         pgns[section] = null;
@@ -1798,10 +1848,10 @@ function update_move_info(ply, move, finished, fresh) {
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         stats = {
-            depth: is_book? '-': `${move.d}/${move.sd}`,
+            depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
             eval: eval_,
-            node: is_book? '-': FormatUnit(move.n),
-            speed: is_book? '-': `${FormatUnit(move.s)}bps`,
+            node: is_book? '-': FormatUnit(move.n, '-'),
+            speed: is_book? '-': `${FormatUnit(move.s, '0')}bps`,
             tb: is_book? '-': FormatUnit(move.tb, '-'),
         };
 
@@ -1902,7 +1952,6 @@ function update_overview_basic(headers) {
 
         HTML(`#engine${id}`, name);
         HTML(`[data-x="name"]`, short, node);
-        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
 
         let image = Id(`logo${id}`);
         if (image.src != src) {
@@ -1910,6 +1959,7 @@ function update_overview_basic(headers) {
             image.src = src;
         }
     });
+    update_scores();
 
     // 3) title
     let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game';
@@ -2022,11 +2072,13 @@ function update_pgn(section, pgn) {
         return;
 
     // 3) check for a new game
+    // TODO: bug at this point
     let main = xboards[section],
         num_ply = main.moves.length;
 
     if (main.round != headers.Round) {
         LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply}`);
+        LS(pgn);
         main.reset();
         if (is_same) {
             reset_sub_boards();
@@ -2045,8 +2097,17 @@ function update_pgn(section, pgn) {
     check_queued_tables();
 }
 
-// LIVE ACTION/DATA
-///////////////////
+/**
+ * Update players' score in the UI
+ */
+function update_scores() {
+    players.forEach((player, id) => {
+        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
+    });
+}
+
+// LIVE ACTION / DATA
+/////////////////////
 
 /**
  * Clock countdown
@@ -2082,7 +2143,7 @@ function set_viewers(count) {
 /**
  * Start the clock for one player, and stop it for the other
  * @param {number} id
- * @param {boolean=} finished
+ * @param {boolean=} finished if true, then both clocks are stopped
  */
 function start_clock(id, finished) {
     if (Y.x != 'live')
@@ -2132,7 +2193,6 @@ function update_live_eval(section, data, id, force) {
 
     let cur_ply = main.ply,
         eval_ = data.eval,
-        invert = (moves && data.ply % 2 == 0),
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`);
 
@@ -2146,7 +2206,7 @@ function update_live_eval(section, data, id, force) {
         HTML(`[data-x="name"]`, short, node);
 
     // invert eval for black?
-    if (invert)
+    if (moves && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
     let dico = {
@@ -2399,6 +2459,28 @@ function random_position() {
 
 // EVENTS
 /////////
+
+/**
+ * Hash was changed => check if we should load a game
+ */
+function changed_hash() {
+    let keys = ['season', 'div', 'game'],
+        missing = 0,
+        string = keys.map(key => {
+            let value = Y[key];
+            if (value == undefined)
+                missing ++;
+            return `${key}=${value}`;
+        }).join('&');
+
+    if (missing || game_link == string)
+        return;
+
+    // new game link detected => try to load it
+    LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
+    game_link = string;
+    open_event();
+}
 
 /**
  * The section was changed archive <-> live
@@ -2694,14 +2776,20 @@ function start_game() {
 function startup_game() {
     //
     Assign(DEFAULTS, {
+        div: '',
         game: 0,
         order: 'left|center|right',         // main panes order
+        season: '',
         tabs: {},                           // opened tabs
         three: 0,                           // 3d scene
         twitch_chat: 1,
         twitch_dark: 1,
         twitch_video: 1,
         x: 'live',
+    });
+    Assign(STATE_KEYS, {
+        archive: ['x', 'season', 'div', 'game'],
+        live: ['x'],
     });
 
     let shortcuts = [...['off'], ...Keys(TABLES)];
