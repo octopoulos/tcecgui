@@ -896,6 +896,22 @@ class XBoard {
     }
 
     /**
+     * Get piece background
+     * @param {number} size
+     * @returns {[number, string, string]} piece_size, style, transform
+     */
+    get_piece_background(size) {
+        let theme = this.theme,
+            image = `url(theme/${theme.name}.${theme.ext})`,
+            piece_size = theme.size,
+            diff = (piece_size - size) / 2,
+            style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
+            transform = `transform:scale(${size / piece_size}) translate(-${diff - theme.off[0]}px,-${diff - theme.off[1]}px)`;
+
+        return [piece_size, style, transform];
+    }
+
+    /**
      * Hide arrows
      * - for now, only HTML code
      */
@@ -1173,8 +1189,7 @@ class XBoard {
         let colors = this.colors,
             dirty = this.dirty,
             [num_row, num_col] = this.dims,
-            rotate = this.rotate,
-            size = this.size;
+            rotate = this.rotate;
 
         // 1) draw empty board + notation
         if (dirty & 1) {
@@ -1219,13 +1234,8 @@ class XBoard {
             if (DEV.board)
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
-            let theme = this.theme,
-                image = `url(theme/${theme.name}.${theme.ext})`,
-                nodes = [],
-                piece_size = theme.size,
-                diff = (piece_size - size) / 2,
-                style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
-                transform = `transform:scale(${size / piece_size}) translate(-${diff - theme.off[0]}px,-${diff - theme.off[1]}px)`,
+            let nodes = [],
+                [piece_size, style, transform] = this.get_piece_background(this.size),
                 xpieces = _('.xpieces', this.node);
 
             Class(xpieces, 'smooth', this.smooth);

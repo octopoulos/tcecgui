@@ -687,7 +687,9 @@ grid {
 }
 #info0,
 #info1 {
+    height: 1.6em;
     padding-top: 0.4em;
+    width: 100%;
 }
 .icon > img {
     height: 20px;
@@ -728,8 +730,10 @@ grid {
 #material,
 #material0,
 #material1 {
+    align-content: start;
     background: transparent !important;
     height: 60px;
+    margin-top: -0.4em;
 }
 #material0 img,
 #material1 img {

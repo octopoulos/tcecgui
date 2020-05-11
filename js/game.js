@@ -18,9 +18,9 @@ FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, Insert
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate,
-translate_node, Undefined, update_live_chart, update_player_chart, update_svg, Upper, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, window, XBoard, Y
+show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
+translate, translate_node, Undefined, update_live_chart, update_player_chart, update_svg, Upper,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -474,6 +474,22 @@ function update_board_theme(mode) {
         board.hold_smooth();
         board.render(7);
     });
+
+    update_engine_pieces();
+}
+
+/**
+ * Update engine pieces using the main board theme
+ */
+function update_engine_pieces() {
+    let [piece_size, style] = xboards.live.get_piece_background(20);
+
+    for (let i = 0; i < 2; i ++) {
+        let node = Id(`king${i}`),
+            offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_size;
+        Style('div', `${style};background-position-x:${offset}px`, true, node);
+        Style(node, `transform:scale(${20 / piece_size})`);
+    }
 }
 
 // TABLES
@@ -1840,13 +1856,22 @@ function update_materials(move) {
     if (!material)
         return;
 
+    let size = 28,
+        [piece_size, style] = xboards.live.get_piece_background(size),
+        scale = size / piece_size;
+
     'qrbnp'.split('').forEach(key => {
         let value = material[key];
         if (value) {
-            let id = (value > 0)? 0: 1,
-                color = id? 'b': 'w';
-            for (let i = 0; i < Abs(value); i ++)
-                materials[id].push(`<div><img src="theme/wikipedia/${color}${Upper(key)}.svg"></div>`);
+            let id = (value > 0)? 0: 1;
+            for (let i = 0; i < Abs(value); i ++) {
+                let offset = -SPRITE_OFFSETS[id? key: Upper(key)] * piece_size;
+                materials[id].push(
+                    `<div style="height:${size}px;width:${size}px;transform:scale(${scale})">`
+                        + `<div style="${style};background-position-x:${offset}px"></div>`
+                    + '</div>'
+                );
+            }
         }
     });
 
