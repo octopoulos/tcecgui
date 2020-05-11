@@ -4,6 +4,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
 -          : 2020-05-10 : use sprites for materials + 2 kings
 -          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-05-11 : 2020-05-08 : show a counter of unseen moves
 2020-05-11 : 2020-05-11 : script.py should gzip files: index.html + css + js
 2020-05-11 : 2020-05-10 : handle archive links
 2020-05-11 : 2020-05-10 : handle wrong evals caused by M50 and -M50
@@ -152,7 +153,6 @@ DONE         CREATED      DESCRIPTION
 high:
 -          : 2029-04-29 : add SVG connectors to the bracket
 medium:
--          : 2020-05-08 : show how many new moves have appeared when not viewing the last ply
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 ~          : 2020-04-13 : add 3d board
 low:

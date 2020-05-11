@@ -37,12 +37,15 @@ CSS_FILES = [
 
 JS_FILES = {
     '4d': [
-        # '3d',
+        'libs/three',
+        'libs/stats',
+        'libs/GLTFLoader',
+        'libs/DRACOLoader',
+        'libs/camera-controls',
     ],
     'all': [
         'libs/socket.io',
-        # 'libs/chart-quick',
-        'libs/chess-quick',
+        # 'libs/chess-quick',
         ':common',
         ':engine',
         ':global',
@@ -56,13 +59,17 @@ JS_FILES = {
         ':config',
         'script',
     ],
+    'chart': [
+        'libs/chart-quick',
+    ],
 }
 
 NEED_GZIPS = {
     '4d_.js',
     'ammo.wasm.js',
     'ammo.wasm.wasm',
-    'chart-quick.js',
+    'chart_.js',
+    'chart.min.js',
     'dark.css',
     'dark-archive.css',
     'draco_decoder.js',
@@ -71,7 +78,6 @@ NEED_GZIPS = {
     'fra.json',
     'index.html',
     'jpn.json',
-    'light.css',
     'light-archive.css',
     'manifest.json',
     'pieces-draco.glb',
@@ -82,7 +88,7 @@ NEED_GZIPS = {
 }
 
 # don't gzip inside those folders
-SKIP_FOLDERS = {
+SKIP_GZIPS = {
     'archive',
     'doc',
     'image',
@@ -103,10 +109,12 @@ class Sync:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
+        self.clean = kwargs.get('clean')                                # type: bool
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
         self.no_debug = kwargs.get('no_debug')                          # type: bool
         self.no_process = kwargs.get('no_process')                      # type: bool
+        self.zip = kwargs.get('zip')                                    # type: bool
 
         self.logger = getLogger(self.__class__.__name__)
 
@@ -154,10 +162,16 @@ class Sync:
     def compress_gzip(self, filename: str):
         """Gzip compress a file
         """
+        output = f'{filename}.gz'
         with open(filename, 'rb') as f_in:
-            with gzip.open(f'{filename}.gz', 'wb') as f_out:
+            with gzip.open(output, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
-                print('g', end='')
+
+        # synchronise the date/time
+        if os.path.isfile(output):
+            info = os.stat(output)
+            os.utime(filename, (info.st_atime, info.st_mtime))
+            print('g', end='')
 
     def compress_js(self, filename: str) -> str:
         """Compress javascript
@@ -182,7 +196,7 @@ class Sync:
         run(args)
         return output
 
-    def gzip_files(self, folder: str, depth: int=0):
+    def gzip_files(self, folder: str, depth: int, delete: bool):
         """Gzip all wanted files, recursively
         """
         queues = []
@@ -194,7 +208,7 @@ class Sync:
 
             filename = os.path.join(folder, source)
             if os.path.isdir(filename):
-                if source not in SKIP_FOLDERS:
+                if source not in SKIP_GZIPS:
                     queues.append(filename)
                 continue
 
@@ -208,15 +222,18 @@ class Sync:
             source_time = os.path.getmtime(filename)
             if os.path.isfile(output):
                 destin_time = os.path.getmtime(output)
+                if delete:
+                    os.unlink(output)
+                    print('d', end='')
             else:
                 destin_time = 0
 
-            if source_time > destin_time:
+            if not delete and source_time != destin_time:
                 self.compress_gzip(filename)
-                print(f"g{'  ' * depth}{filename}")
+            print(f"{'  ' * depth}{filename}")
 
         for queue in queues:
-            self.gzip_files(queue, depth + 1)
+            self.gzip_files(queue, depth + 1, delete)
 
     @staticmethod
     def import_file(match: Any) -> str:
@@ -377,7 +394,10 @@ class Sync:
         """
         self.normalise_folders()
         self.create_index()
-        self.gzip_files(BASE)
+        if self.clean:
+            self.gzip_files(LOCAL, 0, True)
+        elif self.zip:
+            self.gzip_files(LOCAL, 0, False)
         return True
 
 

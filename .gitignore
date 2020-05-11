@@ -7,6 +7,7 @@
 
 *.gz
 *.jar
+*.min.js
 *_.css
 *_.js
 *-original.js
@@ -18,6 +19,7 @@
 all.*
 archive/
 bracket.json
+chart.js
 crash.json
 crosstable.json
 data*.json
@@ -33,5 +35,6 @@ sound/*.js
 svg/
 tempCodeRunnerFile.py
 test?.html
+three.js
 tournament.json
 winners.json

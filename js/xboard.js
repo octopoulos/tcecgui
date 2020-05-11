@@ -111,6 +111,7 @@ class XBoard {
      * @param {Object} options options:
      * @example
      * - border         // frame size
+     * - count          // add a counter in a red circle
      * - dims           // [num_col, num_row]
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' and 'null' too
@@ -134,6 +135,7 @@ class XBoard {
     constructor(options={}) {
         // options
         this.border = options.border || 2;
+        this.count = options.count;
         this.dims = options.dims || [8, 8];
         this.hook = options.hook;
         this.id = options.id;
@@ -177,6 +179,7 @@ class XBoard {
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
+        this.seen = 0;                                  // last seen move -> used to show the counter
         this.svgs = [];                                 // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
         this.xmoves = null;
@@ -277,6 +280,8 @@ class XBoard {
             add_timeout(`dual${this.id}`, () => {this.compare_duals(num_ply);}, Y.show_delay);
         else if (this.ply >= num_move - 1)
             this.set_ply(last_move, true);
+
+        this.update_counter();
     }
 
     /**
@@ -948,6 +953,10 @@ class XBoard {
                 attr = '';
             }
 
+            // counter
+            if (name == this.count)
+                svg += `<vert class="count fcenter dn"></vert>`;
+
             return `<vert class="control fcenter${class_}"${attr}>${svg}</vert>`;
         }).join('');
 
@@ -1301,6 +1310,7 @@ class XBoard {
     reset() {
         this.moves.length = 0;
         this.ply = 0;
+        this.seen = 0;
         this.text = '';
 
         HTML(this.xmoves, '');
@@ -1382,6 +1392,10 @@ class XBoard {
             return null;
 
         this.ply = ply;
+        if (ply > this.seen)
+            this.seen = ply;
+        this.update_counter();
+
         if (!move.fen)
             if (!this.chess_backtrack(ply))
                 return null;
@@ -1409,6 +1423,16 @@ class XBoard {
         let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
             ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
         return [ply, items];
+    }
+
+    /**
+     * Update the counter
+     */
+    update_counter() {
+        let node = _('.count', this.node),
+            unseen = this.moves.length - 1 - this.seen;
+        S(node, unseen > 0);
+        HTML(node, this.moves.length - 1 - this.seen);
     }
 
     /**

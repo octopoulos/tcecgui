@@ -53,6 +53,7 @@ function parse_dev() {
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files
             l: 'load',
+            n: 'new',                   // new game debugging
             p: 'pv',
             s: 'socket',                // socket messages
             u: 'ui',                    // UI events

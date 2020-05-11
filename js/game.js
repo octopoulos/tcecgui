@@ -49,6 +49,7 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             vis: 'archive',
         },
         live: {
+            count: 'end',
             last: '*',
             main: true,
             vis: 'live',
@@ -2064,7 +2065,8 @@ function update_pgn(section, pgn) {
 
     // TODO: what's the utility of this?
     if (new_game) {
-        LS(`new pgn: ${headers.Round}`);
+        if (DEV.new)
+            LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;
     }
 
@@ -2077,8 +2079,10 @@ function update_pgn(section, pgn) {
         num_ply = main.moves.length;
 
     if (main.round != headers.Round) {
-        LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply}`);
-        LS(pgn);
+        if (DEV.new) {
+            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply}`);
+            LS(pgn);
+        }
         main.reset();
         if (is_same) {
             reset_sub_boards();
@@ -2477,7 +2481,8 @@ function changed_hash() {
         return;
 
     // new game link detected => try to load it
-    LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
+    if (DEV.load)
+        LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
     game_link = string;
     open_event();
 }
