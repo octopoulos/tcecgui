@@ -400,14 +400,14 @@ grid {
     background: #f00;
     border-radius: 50%;
     color: #fff;
+    cursor: pointer;
     height: 1.5em;
     line-height: 1;
-    pointer-events: none;
     position: absolute;
     right: -0.5em;
     top: 0.2em;
     width: 1.5em;
-    z-index: -1;
+    z-index: 1;
 }
 .live-pv,
 .xmoves {

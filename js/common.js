@@ -826,11 +826,6 @@ function Choice(array, length) {
  * @param {number} max
  * @param {number=} min_set number becomes that value when lower than min
  * @returns {number} clamped number
- * @example
- * Clamp(-1, 1)             // 1
- * Clamp(-1, 1, null, 10)   // 10
- * Clamp(20, 1)             // 20
- * Clamp(20, 1, 10)         // 10
  */
 function Clamp(number, min, max, min_set) {
     return (number < min)? (Number.isFinite(min_set)? min_set: min): (number > max? max: number);
@@ -901,6 +896,7 @@ function DownloadObject(object, name, is_raw) {
  * @param {Object} vector
  * @param {string=} sep
  * @param {number=} align
+ * @returns {string}
  * @example
  * Format([-1, 1, Math.PI])                 // -1.000 : 1.000 : 3.142
  * Format(Math.PI)                          // 3.142
@@ -935,9 +931,7 @@ function Format(vector, sep=', ', align=null) {
  * Format a float
  * @param {number} text
  * @param {number=} align
- * @example
- * FormatFloat(-0.0001)     // 0
- * FormatFloat(Math.PI)     // 3.142
+ * @returns {string}
  */
 function FormatFloat(text, align) {
     if (Number.isFinite(text) && !Number.isInteger(text))
@@ -1008,8 +1002,6 @@ function FromSeconds(time) {
  * Convert stamp to date
  * @param {number} stamp timestamp in seconds
  * @returns {string[]} [date, time] string
- * @example
- * FromTimestamp(1576574884)    // ['19-12-17', '10:28:04']
  */
 function FromTimestamp(stamp) {
     if (!stamp)
@@ -1024,9 +1016,6 @@ function FromTimestamp(stamp) {
  * Hash a text
  * @param {string} text
  * @returns {number} hash
- * @example
- * HashText('apple')    // 2240512858
- * HashText('orange')   // 1138632238
  */
 function HashText(text) {
     let hash = 0;
@@ -1249,6 +1238,7 @@ function SetDefault(dico, key, def) {
  * Smart split, tries with | and if not found, then with ' '
  * @param {string} text
  * @param {string=} char
+ * @returns {string[]}
  */
 function Split(text, char) {
     if (char != undefined)
@@ -1263,8 +1253,6 @@ function Split(text, char) {
  * @param {number=} [depth=0]
  * @param {number=} [max_depth=2]
  * @returns {string} stringified object
- * @example
- * Stringify({point: {x: 1, y: 5}})     // "{"point":{"x":1,"y":5}}"
  */
 function Stringify(object, depth=0, max_depth=2) {
     if (depth > max_depth)
@@ -1278,7 +1266,7 @@ function Stringify(object, depth=0, max_depth=2) {
         else if (value instanceof Window)
             value = 'Window';
         else if (value instanceof Object)
-            value = Stringify(value, depth+1, max_depth);
+            value = Stringify(value, depth + 1, max_depth);
 
         obj[key] = value;
     }

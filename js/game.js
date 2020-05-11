@@ -305,6 +305,19 @@ function create_game_link(section, game, text, only_link) {
 }
 
 /**
+ * Format the eval to keep 1 or 2 decimals
+ * @param {number} value
+ * @returns {number}
+ */
+function format_eval(value) {
+    let float = parseFloat(value);
+    if (isNaN(float))
+        return value;
+
+    return parseFloat(float).toFixed((Abs(float) >= 10)? 1: 2);
+}
+
+/**
  * Format seconds to hh:mm:ss + handle days
  * @param {number} seconds
  * @returns {string}
@@ -1846,7 +1859,7 @@ function update_materials(move) {
  */
 function update_move_info(ply, move, finished, fresh) {
     let is_book = move.book,
-        eval_ = is_book? 'book': move.wv,
+        eval_ = is_book? 'book': format_eval(move.wv),
         id = ply % 2,
         stats = {
             depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
@@ -1890,7 +1903,7 @@ function update_move_pv(section, ply, move) {
         main = xboards[section],
         node = Id(`player${id}`);
 
-    HTML(`[data-x="eval"]`, is_book? '': move.wv, node);
+    HTML(`[data-x="eval"]`, is_book? '': format_eval(move.wv), node);
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
 
     // PV should jump directly to a new position, no transition
@@ -2174,7 +2187,7 @@ function start_clock(id, finished) {
  * @param {string} section archive, live
  * @param {Object} data
  * @param {number} id 0, 1
- * @param {boolean=} force update with this data.pv even if there's more recent text
+ * @param {boolean=} force update with this data.pv even if there's more recent text + forces invert_black
  */
 function update_live_eval(section, data, id, force) {
     if (section != Y.x || !data)
@@ -2210,12 +2223,12 @@ function update_live_eval(section, data, id, force) {
         HTML(`[data-x="name"]`, short, node);
 
     // invert eval for black?
-    if (moves && data.ply % 2 == 0)
+    if ((moves || force) && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
     let dico = {
         depth: data.depth,
-        eval: Number.isFinite(eval_)? eval_.toFixed(2): eval_,
+        eval: format_eval(eval_),
         node: FormatUnit(data.nodes),
         score: calculate_probability(short, eval_),
         speed: data.speed,
@@ -2234,7 +2247,7 @@ function update_live_eval(section, data, id, force) {
         LS(`live_eval${id} : eval=${eval_} : ply=${data.ply} :`);
         LS(data);
     }
-    update_live_chart(moves || [data], id + 2, !!moves);
+    update_live_chart(moves || [data], id + 2, !!moves || force);
 }
 
 /**
@@ -2257,7 +2270,7 @@ function update_player_eval(section, data) {
 
     // 1) update the live part on the left
     let dico = {
-        eval: eval_,
+        eval: format_eval(eval_),
         name: short,
         score: calculate_probability(short, eval_),
     };
@@ -2273,7 +2286,7 @@ function update_player_eval(section, data) {
     let stats = {
         depth: data.depth,
         engine: data.engine,
-        eval: eval_,
+        eval: format_eval(eval_),
         logo: short,
         node: FormatUnit(data.nodes),
         speed: data.speed,
@@ -2559,7 +2572,7 @@ function handle_board_events(board, type, value) {
         break;
     // ply was set
     case 'ply':
-        if (board.key == section) {
+        if (board.name == section) {
             // update main board stats
             let cur_ply = board.ply;
             update_move_info(cur_ply, value);

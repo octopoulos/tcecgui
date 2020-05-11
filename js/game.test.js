@@ -23,7 +23,7 @@ create_module(IMPORT_PATH, [
 
 let {
         Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
-        create_game_link, format_hhmmss, format_percent, get_short_name, players, tour_info,
+        create_game_link, format_eval, format_hhmmss, format_percent, get_short_name, players, tour_info,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +135,27 @@ let {
     test(`create_game_link:${id}`, () => {
         Assign(tour_info[section], info);
         expect(create_game_link(section, game, text)).toEqual(answer);
+    });
+});
+
+// format_eval
+[
+    [null, null],
+    [NaN, NaN],
+    [Infinity, 'Infinity'],
+    ['', ''],
+    [0, '0.00'],
+    [0.98, '0.98'],
+    [0.987654321, '0.99'],
+    ['150.142', '150.1'],
+    [10.15535, '10.2'],
+    [-198.42, '-198.4'],
+    ['-198.42', '-198.4'],
+    ['M#43', 'M#43'],
+]
+ .forEach(([value, answer], id) => {
+    test(`format_eval:${id}`, () => {
+        expect(format_eval(value)).toEqual(answer);
     });
 });
 

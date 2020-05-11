@@ -955,7 +955,7 @@ class XBoard {
 
             // counter
             if (name == this.count)
-                svg += `<vert class="count fcenter dn"></vert>`;
+                svg += `<vert class="count fcenter dn" data-x="end"></vert>`;
 
             return `<vert class="control fcenter${class_}"${attr}>${svg}</vert>`;
         }).join('');
