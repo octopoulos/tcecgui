@@ -1475,9 +1475,10 @@ class XBoard {
             Class(node, 'seen');
 
             // minimum scroll to make the cursor visible
+            // - try to keep 1 line visible above & under
             let y,
-                cursor_h = node.offsetHeight,
-                cursor_y = node.offsetTop,
+                cursor_h = node.offsetHeight + 48,
+                cursor_y = node.offsetTop - 20,
                 parent_h = parent.clientHeight,
                 parent_y = parent.scrollTop;
 
