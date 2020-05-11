@@ -992,12 +992,20 @@ function show_tables(type) {
  * @param {boolean=} reset clear the table before adding data to it (so far always the case)
  */
 function update_table(section, name, rows, parent='table', {output, reset=true}={}) {
-    // 1) update table data
+    // 1) resolve shortcut
+    let is_shortcut,
+        source = name;
+    if (name.slice(0, 8) == 'shortcut') {
+        name = Y[name];
+        is_shortcut = true;
+    }
+
+    // 2) update table data
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_sched = (name == 'sched'),
         page_key = `page_${parent}`,
-        table = Id(`table-${output || name}`),
+        table = Id(`table-${output || source}`),
         body = _('tbody', table);
 
     // reset or append?
@@ -1035,7 +1043,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             calculate_estimates(section, data);
     }
 
-    // 2) handle pagination + filtering
+    // 3) handle pagination + filtering
     let paginated,
         active_row = -1;
 
@@ -1087,7 +1095,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         data_x[page_key] = page;
     }
 
-    // 3) process all rows => render the HTML
+    // 4) process all rows => render the HTML
     let columns = Array.from(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
@@ -1208,7 +1216,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     update_svg(table);
     translate_node(table);
 
-    // 4) add events
+    // 5) add events
     if (name == 'season')
         set_season_events();
 
@@ -1234,7 +1242,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         popup_custom('popup-fen', 'fen', e);
     });
 
-    // 5) update shortcuts
+    // 6) update shortcuts
     if (parent != 'quick') {
         let html = HTML(table);
         for (let id = 1; id <= 2 ; id ++) {
@@ -1253,8 +1261,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }
     }
 
-    // 6) create another table?
-    if (is_sched) {
+    // 7) create another table?
+    if (!is_shortcut && is_sched) {
         for (let queue of QUEUES)
             queued_tables.add(`${section}/${parent}/${queue}`);
         if (players[0].name)
@@ -1267,6 +1275,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
 /**
  * Handle the seasons file
+ * @param {Object} data
  */
 function analyse_seasons(data) {
     let seasons = (data || {}).Seasons,
@@ -1316,7 +1325,6 @@ function expand_season(node, show) {
  * Open an event
  * - show the event games
  * - open various tables
- * @param {string} name
  */
 function open_event() {
     let section = 'archive',
@@ -1427,6 +1435,7 @@ function analyse_tournament(section, data) {
  * - assume the final will be 1-2 then work backwards
  * - support non power of 2 => 0 will be the 'skip' seed
  * @param {number} num_team
+ * @returns {number[]}
  */
 function calculate_seeds(num_team) {
     let number = 2,

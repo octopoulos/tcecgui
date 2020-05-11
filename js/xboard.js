@@ -735,9 +735,6 @@ class XBoard {
         if (!dual)
             return;
 
-        clear_timeout(`dual${this.id}`);
-        clear_timeout(`dual${dual.id}`);
-
         let duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
@@ -1404,6 +1401,8 @@ class XBoard {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
+        clear_timeout(`dual${this.id}`);
+
         // update the FEN
         // TODO: if delta = 1 => should add_move instead => faster
         let move = this.moves[ply];
@@ -1474,21 +1473,8 @@ class XBoard {
             Class('.seen', '-seen', true, parent);
             Class(node, 'seen');
 
-            // minimum scroll to make the cursor visible
-            // - try to keep 1 line visible above & under
-            let y,
-                cursor_h = node.offsetHeight + 48,
-                cursor_y = node.offsetTop - 20,
-                parent_h = parent.clientHeight,
-                parent_y = parent.scrollTop;
-
-            if (cursor_y < parent_y)
-                y = cursor_y;
-            else if (cursor_y + cursor_h > parent_y + parent_h)
-                y = cursor_y + cursor_h - parent_h;
-
-            if (y != undefined)
-                parent.scrollTop = y;
+            // keep the cursor in the center
+            parent.scrollTop = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
         }
     }
 }
