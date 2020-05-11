@@ -6,6 +6,7 @@
 Sync
 """
 
+import gzip
 from logging import getLogger
 import os
 import re
@@ -55,6 +56,42 @@ JS_FILES = {
         ':config',
         'script',
     ],
+}
+
+NEED_GZIPS = {
+    '4d_.js',
+    'ammo.wasm.js',
+    'ammo.wasm.wasm',
+    'chart-quick.js',
+    'dark.css',
+    'dark-archive.css',
+    'draco_decoder.js',
+    'draco_decoder.wasm',
+    'draco_wasm_wrapper.js',
+    'fra.json',
+    'index.html',
+    'jpn.json',
+    'light.css',
+    'light-archive.css',
+    'manifest.json',
+    'pieces-draco.glb',
+    'rus.json',
+    'sea.css',
+    'sea-archive.css',
+    'ukr.json',
+}
+
+# don't gzip inside those folders
+SKIP_FOLDERS = {
+    'archive',
+    'doc',
+    'image',
+    'model',
+    'node_modules',
+    'script',
+    'sound',
+    'test',
+    'theme',
 }
 
 
@@ -114,6 +151,14 @@ class Sync:
         data = re.sub(r'console\.(error|warn)\(.+?\);', '', data, flags=re.S)
         return data
 
+    def compress_gzip(self, filename: str):
+        """Gzip compress a file
+        """
+        with open(filename, 'rb') as f_in:
+            with gzip.open(f'{filename}.gz', 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+                print('g', end='')
+
     def compress_js(self, filename: str) -> str:
         """Compress javascript
         """
@@ -136,6 +181,42 @@ class Sync:
             args.extend(['--compilation_level', 'ADVANCED'])
         run(args)
         return output
+
+    def gzip_files(self, folder: str, depth: int=0):
+        """Gzip all wanted files, recursively
+        """
+        queues = []
+        sources = os.listdir(folder)
+
+        for source in sources:
+            if source.startswith(('.', '_')):
+                continue
+
+            filename = os.path.join(folder, source)
+            if os.path.isdir(filename):
+                if source not in SKIP_FOLDERS:
+                    queues.append(filename)
+                continue
+
+            # file
+            if not os.path.isfile(filename):
+                continue
+            if source not in NEED_GZIPS:
+                continue
+
+            output = f'{filename}.gz'
+            source_time = os.path.getmtime(filename)
+            if os.path.isfile(output):
+                destin_time = os.path.getmtime(output)
+            else:
+                destin_time = 0
+
+            if source_time > destin_time:
+                self.compress_gzip(filename)
+                print(f"g{'  ' * depth}{filename}")
+
+        for queue in queues:
+            self.gzip_files(queue, depth + 1)
 
     @staticmethod
     def import_file(match: Any) -> str:
@@ -288,13 +369,15 @@ class Sync:
             html = re.sub('<!-- .*? -->', '', html, flags=re.S)
 
         html = re.sub(r'\n\s+', '\n', html)
-        write_text_safe(os.path.join(LOCAL, 'index.html'), html)
+        filename = os.path.join(LOCAL, 'index.html')
+        write_text_safe(filename, html)
 
     def synchronise(self) -> bool:
         """Synchronise the files
         """
         self.normalise_folders()
         self.create_index()
+        self.gzip_files(BASE)
         return True
 
 

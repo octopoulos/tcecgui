@@ -5,6 +5,7 @@
 *.log
 /package-lock.json
 
+*.gz
 *.jar
 *_.css
 *_.js

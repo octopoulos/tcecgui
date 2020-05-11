@@ -1,10 +1,10 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-11 : script.py should gzip files: index.html + css + js
 ~          : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
 -          : 2020-05-10 : use sprites for materials + 2 kings
 -          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-05-11 : 2020-05-11 : script.py should gzip files: index.html + css + js
 2020-05-11 : 2020-05-10 : handle archive links
 2020-05-11 : 2020-05-10 : handle wrong evals caused by M50 and -M50
 2020-05-11 : 2020-05-10 : add missing score in Score(Elo)
