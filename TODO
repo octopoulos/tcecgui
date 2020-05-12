@@ -3,7 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2029-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
--          : 2020-05-02 : convert XBoard matrix to 128 array
+2020-05-12 : 2020-05-02 : convert XBoard matrix to 128 array
 2020-05-12 : 2020-05-12 : tests for page creation
 2020-05-12 : 2020-05-07 : show fewer pages in the pagination, page +- 2 + start/end + ... + < > => 11
 2020-05-12 : 2020-05-10 : PVA: 4 colors choice (white, black, blue, red)

@@ -163,7 +163,7 @@ class XBoard {
         this.dual = null;
         this.evals = [];                                // eval history
         this.fen = START_FEN;                           // current fen
-        this.grid = {};
+        this.grid = new Array(128);
         this.high_color = '';                           // highlight color
         this.high_size = 0.06;                          // highlight size
         this.hold = null;                               // mouse/touch hold target
@@ -380,39 +380,38 @@ class XBoard {
         // 1) create the grid + count the pieces
         let chars = [],
             counts = {},
-            grid = {},
+            grid = this.grid,
             items = this.fen.split(' '),
+            off = 0,
             lines = items[0].split('/'),
-            pieces = this.pieces,
-            row = lines.length - 1;
+            pieces = this.pieces;
 
         if (items.length < 6)
             return false;
+
+        grid.fill('');
 
         for (let line of lines) {
             let col = 0;
             for (let char of line.split('')) {
                 // piece
                 if (isNaN(char)) {
-                    grid[`${row}${col}`] = char;
-                    chars.push([char, row, col]);
+                    grid[off + col] = char;
+                    chars.push([char, off + col]);
                     let count = (counts[char] || 0) + 1,
                         items = pieces[char];
 
                     counts[char] = count;
                     if (count > items.length)
-                        items.push([0, -1, -1]);
+                        items.push([0, -1]);
                     col ++;
                 }
                 // void
-                else {
-                    for (let j = 0; j < parseInt(char); j ++) {
-                        grid[`${row}${col}`] = '';
-                        col ++;
-                    }
-                }
+                else
+                    col += parseInt(char);
             }
-            row --;
+
+            off += 16;
         }
 
         // 2) match chars and pieces
@@ -424,7 +423,7 @@ class XBoard {
         // perfect matches
         for (let char of chars) {
             for (let item of pieces[char[0]]) {
-                if (!item[0] && char[1] == item[1] && char[2] == item[2]) {
+                if (!item[0] && char[1] == item[1]) {
                     item[0] = 1;
                     char[0] = '';
                     break;
@@ -433,35 +432,32 @@ class XBoard {
         }
 
         // imperfect matches
-        for (let [char, row, col] of chars) {
+        for (let [char, index] of chars) {
             if (!char)
                 continue;
 
             let win,
-                best = 9999,
+                best = Infinity,
                 items = pieces[char];
             for (let item of items) {
                 if (item[0])
                     continue;
-                let diff = Abs(row - item[1]) + Abs(col - item[2]);
+                let diff = Abs((index >> 4) - (item[1] >> 4)) + Abs((index % 16) - (item[1] % 16));
                 if (diff < best) {
                     best = diff;
                     win = item;
                 }
             }
             win[0] = 1;
-            win[1] = row;
-            win[2] = col;
+            win[1] = index;
         }
 
         // move non found pieces off the board
-        let [num_row, num_col] = this.dims;
+        let [num_row] = this.dims;
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
-                if (!piece[0]) {
+                if (!piece[0])
                     piece[1] = -num_row;
-                    piece[2] = num_col * 2;
-                }
         });
 
         this.grid = grid;
@@ -1271,22 +1267,24 @@ class XBoard {
                     offset = -SPRITE_OFFSETS[char] * piece_size;
 
                 for (let item of items) {
-                    let [found, row, col, node] = item;
+                    let [found, index, node] = item,
+                        col = index % 16,
+                        row = index >> 4;
 
                     if (!node) {
                         let html = `<div style="${style};background-position-x:${offset}px"></div>`;
                         node = CreateNode('div', html, {class: 'xpiece'});
                         nodes.push(node);
-                        item[3] = node;
+                        item[2] = node;
                     }
                     // theme change
                     else if (dirty & 4)
                         Style('div', `${style};background-position-x:${offset}px`, true, node);
 
-                    if (rotate)
+                    if (rotate) {
                         col = 7 - col;
-                    else
                         row = 7 - row;
+                    }
 
                     if (found) {
                         Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1;pointer-events:all`);
@@ -1315,7 +1313,8 @@ class XBoard {
         let grid = this.grid,
             lines = [],
             notation = CONSOLE_NULL[this.id]? this.notation: 0,
-            [num_row, num_col] = this.dims;
+            [num_row, num_col] = this.dims,
+            off = 0;
 
         // column notation
         let scolumn = COLUMN_LETTERS.slice(0, num_col).join(' ');
@@ -1323,16 +1322,16 @@ class XBoard {
             lines.push(`  ${scolumn}`);
 
         // parse all cells
-        for (let i = num_row - 1; i >= 0; i --) {
+        for (let i = 0; i < num_row; i ++) {
             let vector = [];
 
             if (notation & 4)
-                vector.push(`${i + 1}`);
+                vector.push(`${8 - i}`);
 
             for (let j = 0; j < num_col; j ++) {
-                let char = grid[`${i}${j}`];
+                let char = grid[off + j];
                 if (!char)
-                    char = ((i + j) % 2)? ' ': '·';
+                    char = ((i + j) % 2)? '·': ' ';
                 vector.push(char);
             }
 
@@ -1340,6 +1339,7 @@ class XBoard {
                 vector.push(`${i + 1}`);
 
             lines.push(vector.join(' '));
+            off += 16;
         }
 
         if (notation & 2)
@@ -1358,6 +1358,7 @@ class XBoard {
      * Reset the moves
      */
     reset() {
+        this.grid.fill('');
         this.moves.length = 0;
         this.ply = 0;
         this.seen = 0;
