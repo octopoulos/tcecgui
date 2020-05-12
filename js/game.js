@@ -1208,7 +1208,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     lines = [`<a class="season"><i data-t="${name}"></i> <i data-svg="down"></i></a>`];
                 if (row.sub) {
                     lines.push('<grid class="dn">');
-                    let subs = row.sub.sort((a, b) => (b.dno || '').localeCompare(a.dno || ''));
+                    let subs = row.sub.sort((a, b) => (b.dno + '').localeCompare(a.dno + ''));
                     for (let sub of subs)
                         lines.push(
                             `<a class="sub" data-u="${sub.url}">${sub.menu}</a>`
