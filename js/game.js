@@ -694,8 +694,21 @@ function check_pagination(parent) {
     if (pages.length != num_page + 2) {
         let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
         if (parent != 'quick') {
-            for (let id = 0; id < num_page; id ++)
-                lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
+            let begin = page - 2,
+                end = page + 2;
+
+            if (begin < 0)
+                end -= begin;
+            else if (end > num_page - 1)
+                begin -= (end - num_page + 1);
+
+            for (let id = 0; id < num_page; id ++) {
+                let in_range = (id >= begin && id <= end);
+                if (in_range || id == 0 || id == num_page - 1)
+                    lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
+                else if (id == 1 || id == num_page - 2)
+                    lines.push('<a class="page2">...</a>');
+            }
         }
 
         lines.push('<a class="page page-next" data-p="+1">&gt;</a>');

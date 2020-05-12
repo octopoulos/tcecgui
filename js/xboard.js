@@ -893,6 +893,26 @@ class XBoard {
         C('.xpieces', e => {
             this.pick(e);
         }, this.node);
+
+        // PVA => extra events
+        if (this.manual) {
+            Events('.xsquares', 'mousemove', function(e) {
+                let found,
+                    target = e.target;
+                while (target) {
+                    if (HasClass(target, 'xsquare')) {
+                        found = target;
+                        break;
+                    }
+                    target = target.parentNode;
+                }
+                if (!found)
+                    return;
+
+                Style('.xhigh', 'background:transparent', true, this);
+                Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, found);
+            }, {}, this.node);
+        }
     }
 
     /**
@@ -1094,6 +1114,7 @@ class XBoard {
         let node = e.target;
         while (node) {
             if (HasClass(node, 'xpiece')) {
+                LS(node);
                 let coord = node.dataset.c;
                 this.picked = (this.picked == coord)? null: coord;
                 return;
@@ -1218,7 +1239,11 @@ class XBoard {
                         }
                     }
 
-                    lines.push(`<div class="xsquare" data-c="${i * 16 + j}" data-q="${col_name}${row_name}" style="background:${colors[even]}${style}">${note_x}${note_y}</div>`);
+                    lines.push(
+                        `<div class="xsquare" data-c="${i * 16 + j}" data-q="${col_name}${row_name}" style="background:${colors[even]}${style}">${note_x}${note_y}`
+                            + `<div class="xhigh"></div>`
+                        + `</div>`
+                    );
                 }
             }
 
