@@ -1,18 +1,20 @@
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="26" width="26" version="1.0" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
- <metadata>
-  <rdf:RDF>
-   <cc:Work rdf:about="">
-    <dc:format>image/svg+xml</dc:format>
-    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:title/>
-   </cc:Work>
-  </rdf:RDF>
- </metadata>
- <g transform="translate(0,-18.999998)">
-  <path stroke-linejoin="miter" d="m14,29.5c0.222,1.68-3.09,4.06-4.5,5-1.73,1.16-1.74,2.7-3,2.5-0.602-0.545,0.817-2.02,0-2-0.58,0,0.19,1.1-0.5,1.5-0.58,0-2.5,0.4-2.5-2.5,0-1.2,3.5-6.5,3.5-6.5s0.934-1.08,1-2c-0.419-0.575-0.258-1.48,0-2,0.365-0.731,1.5,1.5,1.5,1.5h1s0.5-1.5,1.5-2c0.517-0.258,0.5,2,0.5,2,6.07,0.578,9.29,4.37,9,16.5h-12.5c0-4.9,4.8-3.7,4.5-10.5" fill-rule="evenodd" stroke="#000" stroke-linecap="round" stroke-dasharray="none" stroke-miterlimit="4" stroke-width="1" fill="#000"/>
-  <path d="m9,23.5a0.5,0.5,0,1,1,-1,0,0.5,0.5,0,1,1,1,0z" transform="translate(-3.4999999,10)" stroke="#FFF" fill="#000"/>
-  <path stroke-linejoin="miter" d="M20.5,41.5c0.6-11.5-3.2-15.5-7-16" stroke="#FFF" stroke-linecap="round" stroke-miterlimit="4" stroke-dasharray="none" stroke-width="1" fill="none"/>
-  <path fill="#FFF" d="M9.1878,29.377a0.74402,1.0659,30,1,1,-1.2886,-0.744,0.74402,1.0659,30,0,1,1.2886,0.744z"/>
- </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="45" height="45">
+  <g style="opacity:1; fill:none; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-width:1.5; stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4; stroke-dasharray:none; stroke-opacity:1;">
+    <path
+      d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18"
+      style="fill:#000000; stroke:#000000;" />
+    <path
+      d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10"
+      style="fill:#000000; stroke:#000000;" />
+    <path
+      d="M 9.5 25.5 A 0.5 0.5 0 1 1 8.5,25.5 A 0.5 0.5 0 1 1 9.5 25.5 z"
+      style="fill:#ffffff; stroke:#ffffff;" />
+    <path
+      d="M 15 15.5 A 0.5 1.5 0 1 1  14,15.5 A 0.5 1.5 0 1 1  15 15.5 z"
+      transform="matrix(0.866,0.5,-0.5,0.866,9.693,-5.173)"
+      style="fill:#ffffff; stroke:#ffffff;" />
+    <path
+      d="M 24.55,10.4 L 24.1,11.85 L 24.6,12 C 27.75,13 30.25,14.49 32.5,18.75 C 34.75,23.01 35.75,29.06 35.25,39 L 35.2,39.5 L 37.45,39.5 L 37.5,39 C 38,28.94 36.62,22.15 34.25,17.66 C 31.88,13.17 28.46,11.02 25.06,10.5 L 24.55,10.4 z "
+      style="fill:#ffffff; stroke:none;" />
+  </g>
+</svg>
