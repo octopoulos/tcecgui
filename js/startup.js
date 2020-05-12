@@ -11,20 +11,26 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
-C, change_page, change_theme, changed_hash, changed_section, check_hash, Class, create_field_value, DEV, document,
-download_live, download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object, HasClass, Hide,
-HOST, HTML, ICONS:true, Id, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, Min, Now,
-open_table, Parent, parse_dev, resize_game, Round,
+C, change_page, change_theme, changed_hash, changed_section, check_hash, Clamp, Class, create_field_value, DEV,
+document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object,
+HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, merge_settings,
+Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, Show, show_banner, show_popup, show_settings, Split,
-start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, tcecHandleKey, THEMES, TIMEOUTS,
-toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme, update_twitch,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
+start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey, THEMES,
+TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
+update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, Y
 */
 'use strict';
 
-let old_x;
+let old_x,
+    // min & max allowed widths, when the value is <= min => automatic
+    PANEL_WIDTHS = {
+        left: [281, 630],
+        right: [350, 630],
+    },
+    TIMEOUT_SIZE = 1000;
 
 /**
  * Same as action_key_no_input, but when the key is up
@@ -98,6 +104,10 @@ function change_setting_special(name, value) {
     case 'live_log':
         if (Visible('#table-log'))
             listen_log();
+        break;
+    case 'panel_left':
+    case 'panel_right':
+        resize();
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -321,9 +331,20 @@ function opened_table_special(node, name, tab) {
 function resize() {
     let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
     Style('#chat', `height:${height}px;width:100%`);
+    resize_panels();
 
     adjust_popups();
     resize_game();
+}
+
+/**
+ * Resize the left & right panels
+ */
+function resize_panels() {
+    for (let name of ['left', 'right']) {
+        let value = Y[`panel_${name}`];
+        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
+    }
 }
 
 /**
@@ -614,8 +635,22 @@ function set_global_events() {
         Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
     C('.swap', function() {
-        let node = this.parentNode.parentNode;
-        move_pane(node, HasClass(this, 'mirror')? -1: 1);
+        let index = Index(this),
+            node = this.parentNode.parentNode;
+        // 1, 2 => < >
+        if (index <= 2)
+            move_pane(node, index * 2 - 3);
+        // 3, 4 => - +
+        else if (index <= 4) {
+            let name = `panel_${node.id}`,
+                sizer = _('.size', node),
+                width = PANEL_WIDTHS[node.id];
+            save_option(name, Clamp(Y[name] + (index * 2 - 7) * 10, width[0], width[1]));
+            HTML(sizer, Y[name]);
+            Show(sizer);
+            add_timeout('size', () => {Hide('.size');}, TIMEOUT_SIZE);
+            resize();
+        }
     });
 
     // theme + twitch
@@ -678,10 +713,12 @@ function startup() {
         info: 'VB="0 0 512 512"><PFC d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"/>',
         log: 'VB="0 0 448 512"><PFC d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/>',
         medal: 'VB="0 0 512 512"><PFC d="M223.75 130.75L154.62 15.54A31.997 31.997 0 0 0 127.18 0H16.03C3.08 0-4.5 14.57 2.92 25.18l111.27 158.96c29.72-27.77 67.52-46.83 109.56-53.39zM495.97 0H384.82c-11.24 0-21.66 5.9-27.44 15.54l-69.13 115.21c42.04 6.56 79.84 25.62 109.56 53.38L509.08 25.18C516.5 14.57 508.92 0 495.97 0zM256 160c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm92.52 157.26l-37.93 36.96 8.97 52.22c1.6 9.36-8.26 16.51-16.65 12.09L256 393.88l-46.9 24.65c-8.4 4.45-18.25-2.74-16.65-12.09l8.97-52.22-37.93-36.96c-6.82-6.64-3.05-18.23 6.35-19.59l52.43-7.64 23.43-47.52c2.11-4.28 6.19-6.39 10.28-6.39 4.11 0 8.22 2.14 10.33 6.39l23.43 47.52 52.43 7.64c9.4 1.36 13.17 12.95 6.35 19.59z"/>',
+        minus: 'VB="0 0 448 512"><PFC d="M416 208H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h384c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"/>',
         moon: 'VB="0 0 512 512"><PFC d="M283.211 512c78.962 0 151.079-35.925 198.857-94.792 7.068-8.708-.639-21.43-11.562-19.35-124.203 23.654-238.262-71.576-238.262-196.954 0-72.222 38.662-138.635 101.498-174.394 9.686-5.512 7.25-20.197-3.756-22.23A258.156 258.156 0 0 0 283.211 0c-141.309 0-256 114.511-256 256 0 141.309 114.511 256 256 256z"/>',
         next: 'VB="0 0 256 512"><PFC d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"/>',
         pause: 'VB="0 0 448 512"><PFC d="M144 479H48c-26.5 0-48-21.5-48-48V79c0-26.5 21.5-48 48-48h96c26.5 0 48 21.5 48 48v352c0 26.5-21.5 48-48 48zm304-48V79c0-26.5-21.5-48-48-48h-96c-26.5 0-48 21.5-48 48v352c0 26.5 21.5 48 48 48h96c26.5 0 48-21.5 48-48z"/>',
         play: 'VB="0 0 448 512"><PFC d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/>',
+        plus: 'VB="0 0 448 512"><PFC d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"/>',
         rotate: 'VB="0 0 512 512"><PFC d="M504.971 359.029c9.373 9.373 9.373 24.569 0 33.941l-80 79.984c-15.01 15.01-40.971 4.49-40.971-16.971V416h-58.785a12.004 12.004 0 0 1-8.773-3.812l-70.556-75.596 53.333-57.143L352 336h32v-39.981c0-21.438 25.943-31.998 40.971-16.971l80 79.981zM12 176h84l52.781 56.551 53.333-57.143-70.556-75.596A11.999 11.999 0 0 0 122.785 96H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12zm372 0v39.984c0 21.46 25.961 31.98 40.971 16.971l80-79.984c9.373-9.373 9.373-24.569 0-33.941l-80-79.981C409.943 24.021 384 34.582 384 56.019V96h-58.785a12.004 12.004 0 0 0-8.773 3.812L96 336H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h110.785c3.326 0 6.503-1.381 8.773-3.812L352 176h32z"/>',
         sun: 'VB="0 0 512 512"><PFC d="M256 160c-52.9 0-96 43.1-96 96s43.1 96 96 96 96-43.1 96-96-43.1-96-96-96zm246.4 80.5l-94.7-47.3 33.5-100.4c4.5-13.6-8.4-26.5-21.9-21.9l-100.4 33.5-47.4-94.8c-6.4-12.8-24.6-12.8-31 0l-47.3 94.7L92.7 70.8c-13.6-4.5-26.5 8.4-21.9 21.9l33.5 100.4-94.7 47.4c-12.8 6.4-12.8 24.6 0 31l94.7 47.3-33.5 100.5c-4.5 13.6 8.4 26.5 21.9 21.9l100.4-33.5 47.3 94.7c6.4 12.8 24.6 12.8 31 0l47.3-94.7 100.4 33.5c13.6 4.5 26.5-8.4 21.9-21.9l-33.5-100.4 94.7-47.3c13-6.5 13-24.7.2-31.1zm-155.9 106c-49.9 49.9-131.1 49.9-181 0-49.9-49.9-49.9-131.1 0-181 49.9-49.9 131.1-49.9 181 0 49.9 49.9 49.9 131.1 0 181z"/>',
         theater: 'VB="0 0 640 512"><PFC d="M206.86 245.15c-35.88 10.45-59.95 41.2-57.53 74.1 11.4-12.72 28.81-23.7 49.9-30.92l7.63-43.18zM95.81 295L64.08 115.49c-.29-1.62.28-2.62.24-2.65 57.76-32.06 123.12-49.01 189.01-49.01 1.61 0 3.23.17 4.85.19 13.95-13.47 31.73-22.83 51.59-26 18.89-3.02 38.05-4.55 57.18-5.32-9.99-13.95-24.48-24.23-41.77-27C301.27 1.89 277.24 0 253.32 0 176.66 0 101.02 19.42 33.2 57.06 9.03 70.48-3.92 98.48 1.05 126.58l31.73 179.51c14.23 80.52 136.33 142.08 204.45 142.08 3.59 0 6.75-.46 10.01-.8-13.52-17.08-28.94-40.48-39.5-67.58-47.61-12.98-106.06-51.62-111.93-84.79zm97.55-137.46c-.73-4.12-2.23-7.87-4.07-11.4-8.25 8.91-20.67 15.75-35.32 18.32-14.65 2.58-28.67.4-39.48-5.17-.52 3.94-.64 7.98.09 12.1 3.84 21.7 24.58 36.19 46.34 32.37 21.75-3.82 36.28-24.52 32.44-46.22zM606.8 120.9c-88.98-49.38-191.43-67.41-291.98-51.35-27.31 4.36-49.08 26.26-54.04 54.36l-31.73 179.51c-15.39 87.05 95.28 196.27 158.31 207.35 63.03 11.09 204.47-53.79 219.86-140.84l31.73-179.51c4.97-28.11-7.98-56.11-32.15-69.52zm-273.24 96.8c3.84-21.7 24.58-36.19 46.34-32.36 21.76 3.83 36.28 24.52 32.45 46.22-.73 4.12-2.23 7.87-4.07 11.4-8.25-8.91-20.67-15.75-35.32-18.32-14.65-2.58-28.67-.4-39.48 5.17-.53-3.95-.65-7.99.08-12.11zm70.47 198.76c-55.68-9.79-93.52-59.27-89.04-112.9 20.6 25.54 56.21 46.17 99.49 53.78 43.28 7.61 83.82.37 111.93-16.6-14.18 51.94-66.71 85.51-122.38 75.72zm130.3-151.34c-8.25-8.91-20.68-15.75-35.33-18.32-14.65-2.58-28.67-.4-39.48 5.17-.52-3.94-.64-7.98.09-12.1 3.84-21.7 24.58-36.19 46.34-32.37 21.75 3.83 36.28 24.52 32.45 46.22-.73 4.13-2.23 7.88-4.07 11.4z"/>',
@@ -705,6 +742,22 @@ function startup() {
     startup_config();
     startup_3d();
     startup_game();
+
+    let shortcuts = [...['off'], ...Keys(TABLES)];
+
+    merge_settings({
+        control: {
+            key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
+            key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
+        },
+        extra: {
+            cross_crash: [ON_OFF, 0],
+            panel_left: [{max: 630, min: 281, step: 1, type: 'number'}, 0],
+            panel_right: [{max: 630, min: 350, step: 1, type: 'number'}, 0],
+            shortcut_1: [shortcuts, 'stand'],
+            shortcut_2: [shortcuts, 'off'],
+        },
+    });
 
     set_global_events();
     set_game_events();

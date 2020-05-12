@@ -20,7 +20,7 @@ TWITCH_CHANNEL:true, TWITCH_CHAT:true
  * - first features are the ones that are changed the most frequently
  */
 function startup_config() {
-    LIVE_ENGINES = ['4x V100 6Men TB', '16TH 7Men TB'];
+    LIVE_ENGINES = ['1x2080 Ti 7Men TB', '16TH 7Men TB'];
 
     HOST = 'https://tcec-chess.com';
     HOST_ARCHIVE = 'archive/json';
@@ -62,6 +62,7 @@ function startup_config() {
             'TCEC_10.pdf': 'articles/TCEC_10.pdf',
             // again
             'b': 0,
+            'TCEC_Cup_5.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_5.pdf',
             'TCEC_Cup_4.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_4.pdf',
             'TCEC_Cup_3.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_3.pdf',
             'TCEC_Cup_2.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_2.pdf',

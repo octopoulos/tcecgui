@@ -1,7 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-12 : adjust right panel max width
+2020-05-13 : 2020-05-12 : adjust right panel max width
+2020-05-13 : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
 2020-05-13 : 2020-05-13 : new wikipedia svg pieces
 2020-05-13 : 2020-05-12 : choose log value inside the live log table
 2020-05-12 : 2020-05-12 : keep 2 decimals for the eval, but make those decimals smaller when the eval is high
@@ -165,7 +166,6 @@ DONE         CREATED      DESCRIPTION
 high:
 -          : 2020-05-12 : remember when mousedown happened + drag => use that to prevent Click events in .scroller
 -          : 2020-05-12 : disable row click => load game, except in the Archive
--          : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
 -          : 2020-05-12 : fix crowd sound not playing
 medium:
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow

@@ -378,6 +378,7 @@ grid {
     font-family: monospace;
     font-size: 0.3em;
     left: 0;
+    pointer-events: none;
     position: absolute;
     top: 0;
 }
@@ -511,6 +512,10 @@ grid {
 #xfen {
     margin: 2px;
 }
+#xfen,
+#xfen .xsquare {
+    pointer-events: none;
+}
 #pva .xmoves,
 #xfen .xcontrol,
 #xfen .xmoves {
@@ -598,7 +603,7 @@ grid {
     flex: 1;
 }
 #table-chat {
-    max-width: 510px;
+    max-width: 630px;
     width: 100%;
     z-index: 1;
 }
@@ -797,6 +802,7 @@ grid {
     margin-top: 0.8em;
     width: 95%;
 }
+#log,
 .search {
     border: 1px solid #ced4da;
     border-radius: 0.25em;
@@ -812,9 +818,6 @@ grid {
     font-family: monospace;
     max-height: 80vh;
     width: 100%;
-}
-#log {
-    padding: 0.5em;
 }
 
 /* bracket */
@@ -1027,6 +1030,9 @@ grid {
 }
 .swap:hover {
     color: rgb(0, 0, 0, 0.5);
+}
+.size {
+    margin: -0.2em 0 0 0.1em;
 }
 #chart-tabs {
     order: 2;

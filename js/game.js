@@ -2889,8 +2889,6 @@ function startup_game() {
         live: ['x'],
     });
 
-    let shortcuts = [...['off'], ...Keys(TABLES)];
-
     merge_settings({
         // separator
         _1: {},
@@ -2921,22 +2919,16 @@ function startup_game() {
             show_ply: [['first', 'diverging'], 'diverging'],
         },
         control: {
-            key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
-            key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
         },
         live: {
             live_engine_1: [ON_OFF, 1],
-            live_engine_2: [ON_OFF, 2],
+            live_engine_2: [ON_OFF, 1],
             live_log: [[0, 5, 10, 'all'], 0],
             live_pv: [ON_OFF, 1],
         },
         extra: {
-            cross_crash: [ON_OFF, 0],
-            panel_right: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
             rows_per_page: [[10, 20, 50, 100], 10],
-            shortcut_1: [shortcuts, 'stand'],
-            shortcut_2: [shortcuts, 'off'],
         },
     });
 
