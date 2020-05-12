@@ -310,7 +310,7 @@ function create_game_link(section, game, text, only_link) {
 }
 
 /**
- * Format the eval to keep 1 or 2 decimals
+ * Format the eval to make the 2 decimals smaller if the eval is high
  * @param {number} value
  * @returns {number}
  */
@@ -319,7 +319,14 @@ function format_eval(value) {
     if (isNaN(float))
         return value;
 
-    return parseFloat(float).toFixed((Abs(float) >= 10)? 1: 2);
+    let text = parseFloat(float).toFixed(2);
+    if (Abs(float) < 10)
+        return text;
+
+    let items = text.split('.');
+    if (items.length < 2)
+        return text;
+    return `<i>${items[0]}.</i><i style="font-size:${float >= 100? 0.75: 0.9}em">${items[1]}</i>`;
 }
 
 /**
@@ -1918,11 +1925,11 @@ function update_materials(move) {
  */
 function update_move_info(ply, move, finished, fresh) {
     let is_book = move.book,
-        eval_ = is_book? 'book': format_eval(move.wv),
+        eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         stats = {
             depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
-            eval: eval_,
+            eval: format_eval(eval_),
             node: is_book? '-': FormatUnit(move.n, '-'),
             speed: is_book? '-': `${FormatUnit(move.s, '0')}bps`,
             tb: is_book? '-': FormatUnit(move.tb, '-'),

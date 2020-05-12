@@ -1,8 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2029-04-29 : add SVG connectors to the bracket
-~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+-          : 2020-05-12 : adjust right panel max width
+2020-05-12 : 2020-05-12 : keep 2 decimals for the eval, but make those decimals smaller when the eval is high
 2020-05-12 : 2020-05-12 : fixed season sub ordering
 2020-05-12 : 2020-05-02 : convert XBoard matrix to 128 array
 2020-05-12 : 2020-05-12 : tests for page creation
@@ -161,7 +161,10 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-05-12 : remember when mousedown happened + drag => use that to prevent Click events in .scroller
 -          : 2020-05-12 : disable row click => load game, except in the Archive
+-          : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
+-          : 2020-05-12 : fix crowd sound not playing
 medium:
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 ~          : 2020-04-13 : add 3d board
@@ -172,6 +175,8 @@ medium:
 -          : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 low:
+-          : 2029-04-29 : add SVG connectors to the bracket
+~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
 -          : 2020-04-24 : add 3d dark room
