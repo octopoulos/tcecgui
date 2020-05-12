@@ -12,10 +12,10 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Class, clear_timeout, controls,
-CopyClipboard, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp, Floor, FormatUnit,
-FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys,
-KEYS,
+C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout, controls,
+CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp, Floor,
+FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
+invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -680,7 +680,7 @@ function check_pagination(parent) {
 
     let num_row = data_x[`rows_${parent}`] || 0,
         num_page = Ceil(num_row / Y.rows_per_page),
-        page = data_x[`page_${parent}`],
+        page = Clamp(data_x[`page_${parent}`], 0, num_page - 1),
         total = data_x.data.length;
 
     if (num_page < 2)
@@ -694,19 +694,11 @@ function check_pagination(parent) {
     if (pages.length != num_page + 2) {
         let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
         if (parent != 'quick') {
-            let begin = page - 2,
-                end = page + 2;
-
-            if (begin < 0)
-                end -= begin;
-            else if (end > num_page - 1)
-                begin -= (end - num_page + 1);
-
+            let array = create_page_array(num_page, page, 2);
             for (let id = 0; id < num_page; id ++) {
-                let in_range = (id >= begin && id <= end);
-                if (in_range || id == 0 || id == num_page - 1)
+                if (array[id] == 2)
                     lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
-                else if (id == 1 || id == num_page - 2)
+                else if (array[id])
                     lines.push('<a class="page2">...</a>');
             }
         }

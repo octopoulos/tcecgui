@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-18
+// @version 2020-05-12
 //
 /*
 globals
@@ -15,12 +15,39 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    //
     'engine',
 ], OUTPUT_MODULE, 'DEFAULTS Keys X_SETTINGS');
 
-let {DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OUTPUT_MODULE);
+let {create_page_array, DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// create_page_array
+[
+    [1, 0, 0, [2]],
+    [2, 0, 0, [2, 2]],
+    [3, 0, 0, [2, 2, 2]],
+    [4, 0, 0, [2, 2, 2, 2]],
+    [5, 0, 0, [2, 2, 2, 2, 2]],
+    [6, 0, 0, [2, 2, 2, 0, 1, 2]],
+    [7, 0, 0, [2, 2, 2, 0, 0, 1, 2]],
+    [8, 0, 0, [2, 2, 2, 0, 0, 0, 1, 2]],
+    [9, 0, 0, [2, 2, 2, 0, 0, 0, 0, 1, 2]],
+    [9, 1, 0, [2, 2, 2, 0, 0, 0, 0, 1, 2]],
+    [9, 2, 0, [2, 2, 2, 0, 0, 0, 0, 1, 2]],
+    [9, 3, 0, [2, 1, 0, 2, 0, 0, 0, 1, 2]],
+    [9, 4, 0, [2, 1, 0, 0, 2, 0, 0, 1, 2]],
+    [9, 4, 1, [2, 1, 0, 0, 2, 2, 0, 1, 2]],
+    [9, 4, 2, [2, 1, 0, 2, 2, 2, 0, 1, 2]],
+    [9, 5, 2, [2, 1, 0, 0, 2, 2, 2, 2, 2]],
+    [9, 6, 2, [2, 1, 0, 0, 2, 2, 2, 2, 2]],
+    [9, 5, 4, [2, 2, 2, 2, 2, 2, 2, 2, 2]],
+].forEach(([num_page, page, extra, answer], id) => {
+    test(`create_page_array:${id}`, () => {
+        expect(create_page_array(num_page, page, extra)).toEqual(answer);
+    });
+});
 
 // merge_settings
 [

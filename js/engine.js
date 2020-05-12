@@ -970,6 +970,50 @@ function touch_handle(e) {
     e.stopPropagation();
 }
 
+// UI
+/////
+
+/**
+ * Create an array of pages
+ * @param {number} num_page
+ * @param {number} page
+ * @param {number} extra
+ * @returns {number[]}
+ */
+function create_page_array(num_page, page, extra) {
+    if (num_page < 2)
+        return [2];
+
+    let array = new Array(num_page),
+        left = extra + (page <= 1 || page >= num_page - 2) * 1;
+
+    array.fill(0);
+    array[1] = 1;
+    array[num_page - 2] = 1;
+    array[0] = 2;
+    array[num_page - 1] = 2;
+    array[page]= 2;
+
+    let off = 1;
+    for (let i = 0; i < num_page && left > 0; i ++) {
+        let id = page + off;
+        if (id >= 0 && id < num_page && !array[id]) {
+            array[id] = 2;
+            left --;
+        }
+
+        off = -off;
+        if (off > 0)
+            off ++;
+    }
+
+    if (array[2])
+        array[1] = 2;
+    if (array[num_page - 3])
+        array[num_page - 2] = 2;
+    return array;
+}
+
 // API
 //////
 
