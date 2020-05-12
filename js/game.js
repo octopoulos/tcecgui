@@ -13,8 +13,9 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Class, clear_timeout, controls,
-CopyClipboard, CreateNode, cube:true, DEFAULTS, DEV, document, Events, Exp, Floor, FormatUnit, FromSeconds,
-FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+CopyClipboard, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp, Floor, FormatUnit,
+FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys,
+KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
@@ -85,6 +86,10 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             size: 36,
             tab: 'pva',
             vis: 'table-pva',
+        },
+        three: {
+            id: '#canvas',
+            mode: '3d',
         },
         xfen: {
             hook: null,
@@ -391,7 +396,7 @@ function assign_boards() {
 }
 
 /**
- * Create 8 boards
+ * Create 9 boards
  * - should be done at startup since we want to see the boards ASAP
  */
 function create_boards() {
@@ -421,6 +426,19 @@ function create_boards() {
 
     // 3) update themes: this will render the boards too
     update_board_theme(3);
+
+    // 4) pva colors
+    let lines = ENGINE_COLORS.map((color, id) => {
+        return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id % 2}" style="background:${color}"></div>`;
+    });
+    HTML('#colors', lines.join(''));
+
+    C('.color', function() {
+        let board = xboards[this.dataset.id];
+        xboards.pva.set_fen(board.fen, true);
+        Class('.color', '-active');
+        Class(this, 'active');
+    });
 }
 
 /**
@@ -675,9 +693,10 @@ function check_pagination(parent) {
 
     if (pages.length != num_page + 2) {
         let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
-        if (parent != 'quick')
+        if (parent != 'quick') {
             for (let id = 0; id < num_page; id ++)
                 lines.push(`<a class="page${page == id? ' active': ''}" data-p="${id}">${id + 1}</a>`);
+        }
 
         lines.push('<a class="page page-next" data-p="+1">&gt;</a>');
         HTML('.pages', lines.join(''), node);
@@ -2697,7 +2716,12 @@ function opened_table(node, name, tab) {
         }
         break;
     case 'pva':
-        xboards.pva.set_fen(board_target.fen, true);
+        let board = board_target;
+        if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
+            board = xboards.pv0;
+        Class('.color', '-active');
+        Class(`.color[data-id="${board.name}"]`, 'active');
+        xboards.pva.set_fen(board.fen, true);
         break;
     case 'season':
         download_gamelist();

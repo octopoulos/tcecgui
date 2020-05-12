@@ -2,7 +2,9 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-10 : highlight selected piece + possible moves in PVA
-2020-05-11 : 2020-05-10 : use sprites for materials + 2 kings
+-          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
+2020-05-12 : 2020-05-10 : PVA: 4 colors choice (white, black, blue, red)
+2020-05-12 : 2020-05-10 : use sprites for materials + 2 kings
 2020-05-11 : 2020-05-11 : fix shortcut click
 2020-05-11 : 2020-05-11 : full screen toggle: useful for mobile devices
 2020-05-11 : 2020-05-10 : show an extra move line above/under the current ply
@@ -161,11 +163,9 @@ medium:
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 low:
--          : 2020-05-07 : show fewer pages in the pagination, page +- 1 + start/end => 5 + < > = 7
 -          : 2020-05-02 : convert XBoard matrix to 128 array
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
--          : 2020-05-10 : paste FEN in PVA + 4 colors choice (white, black, blue, red)
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
