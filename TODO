@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2029-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-05-12 : 2020-05-12 : fixed season sub ordering
 2020-05-12 : 2020-05-02 : convert XBoard matrix to 128 array
 2020-05-12 : 2020-05-12 : tests for page creation
 2020-05-12 : 2020-05-07 : show fewer pages in the pagination, page +- 2 + start/end + ... + < > => 11
@@ -165,6 +166,9 @@ medium:
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+-          : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
+-          : 2020-05-12 : bug when game ends, graph duplicates itself
+-          : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
 low:
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
