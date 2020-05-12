@@ -114,7 +114,7 @@ function init_sockets() {
  */
 function insert_log(html) {
     let node = CreateNode('div', html);
-    InsertNodes('#table-log', [node], true);
+    InsertNodes('#live-log', [node], true);
 }
 
 /**

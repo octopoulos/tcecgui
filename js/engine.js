@@ -401,7 +401,7 @@ function fill_combo(letter, values, select, dico, no_translate)
 
     for (let value_ of values) {
         let selected,
-            items = value_.split('='),
+            items = (value_ + '').split('='),
             text = items.slice(-1)[0],
             value = Lower(items.slice(-2)[0]);
 

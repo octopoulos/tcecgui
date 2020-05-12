@@ -247,13 +247,19 @@
             </vert>
         </vert>
         <!-- right -->
-        <vert id="right">
+        <vert id="right" >
             <hori class="swaps fend">
                 <div class="swap mirror">
                     <i data-svg="next"></i>
                 </div>
                 <div class="swap">
                     <i data-svg="next"></i>
+                </div>
+                <div class="swap">
+                    <i data-svg="plus"></i>
+                </div>
+                <div class="swap">
+                    <i data-svg="minus"></i>
                 </div>
             </hori>
             <horis id="quick-tabs" class="tabs">
@@ -358,7 +364,12 @@
         <div id="table-h2h" class="scroller dn"></div>
         <div id="table-sched" class="scroller dn"></div>
         <horis id="table-stats" class="fcenter dn"></horis>
-        <div id="table-log" class="dn"></div>
+        <div id="table-log" class="dn">
+            <hori class="fend">
+                <select id="log"></select>
+            </hori>
+            <div id="live-log"></div>
+        </div>
         <div id="table-crash" class="scroller dn"></div>
         <!-- search -->
         <horis id="table-search" class="fend dn">

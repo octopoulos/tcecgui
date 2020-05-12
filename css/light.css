@@ -607,10 +607,6 @@ grid {
     padding: 1em;
     z-index: 1;
 }
-#table-log {
-    font-family: monospace;
-    max-height: 80vh;
-}
 #table-season a {
     color: #212529;
 }
@@ -811,6 +807,14 @@ grid {
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: 0;
+}
+#live-log {
+    font-family: monospace;
+    max-height: 80vh;
+    width: 100%;
+}
+#log {
+    padding: 0.5em;
 }
 
 /* bracket */
@@ -1094,10 +1098,10 @@ grid {
 /* allow text selection */
 pre,
 #footer,
+#live-log,
 #lives,
 #table-engine,
 #table-info,
-#table-log,
 .live-pv,
 .live-pv > a,
 .stats,
@@ -1153,7 +1157,7 @@ svg.down {
         width: 100%;
     }
     #right {
-        max-width: unset;
+        max-width: unset !important;
     }
 }
 @media (min-width: 930px) {

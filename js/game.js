@@ -13,15 +13,15 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout, controls,
-CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp, Floor,
-FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
-invert_eval, Keys, KEYS,
+CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp,
+fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input,
+InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
 show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
 translate, translate_node, Undefined, update_live_chart, update_player_chart, update_svg, Upper,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
@@ -2715,6 +2715,7 @@ function opened_table(node, name, tab) {
         HTML(node, HTML('#desc'));
         break;
     case 'log':
+        fill_combo('#log', X_SETTINGS.live.live_log[0]);
         listen_log();
         break;
     // change order + switch to default tab
@@ -2847,6 +2848,11 @@ function set_game_events() {
             filter_table_rows(parent, this.value);
         }, TIMEOUT_SEARCH);
     });
+
+    C('#log', function() {
+        save_option('live_log', this.value);
+        listen_log();
+    });
 }
 
 // STARTUP
@@ -2927,6 +2933,7 @@ function startup_game() {
         },
         extra: {
             cross_crash: [ON_OFF, 0],
+            panel_right: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
             rows_per_page: [[10, 20, 50, 100], 10],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
