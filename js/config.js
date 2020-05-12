@@ -47,18 +47,19 @@ function startup_config() {
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'
     LINKS = {
         articles: {
+            'Super Final 17 by GM Sadler.pdf': 'articles/Sufi_17_-_Sadler.pdf',
             'Super Final 16 by GM Sadler.pdf': 'articles/Sufi_16_-_Sadler.pdf',
             'Super Final 15 by GM Sadler.pdf': 'articles/Sufi_15_-_Sadler.pdf',
             'Super Final 14 by GM Sadler.pdf': 'articles/Sufi_14_-_Sadler.pdf',
             // separator
             'a': 0,
             'TCEC_16.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_15.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_14.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_13.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_12.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_11.pdf': 'articles/TCEC_16.pdf',
-            'TCEC_10.pdf': 'articles/TCEC_16.pdf',
+            'TCEC_15.pdf': 'articles/TCEC_15.pdf',
+            'TCEC_14.pdf': 'articles/TCEC_14.pdf',
+            'TCEC_13.pdf': 'articles/TCEC_13.pdf',
+            'TCEC_12.pdf': 'articles/TCEC_12.pdf',
+            'TCEC_11.pdf': 'articles/TCEC_11.pdf',
+            'TCEC_10.pdf': 'articles/TCEC_10.pdf',
             // again
             'b': 0,
             'TCEC_Cup_4.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_4.pdf',
