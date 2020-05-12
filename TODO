@@ -168,14 +168,14 @@ high:
 -          : 2020-05-12 : disable row click => load game, except in the Archive
 -          : 2020-05-12 : fix crowd sound not playing
 medium:
--          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
-~          : 2020-04-13 : add 3d board
--          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
--          : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
 -          : 2020-05-12 : bug when game ends, graph duplicates itself
 -          : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
 -          : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
+-          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
+~          : 2020-04-13 : add 3d board
+-          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+-          : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
 low:
 -          : 2029-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA

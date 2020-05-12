@@ -107,6 +107,7 @@ function change_setting_special(name, value) {
         break;
     case 'panel_left':
     case 'panel_right':
+    case 'window_width':
         resize();
         break;
     case 'shortcut_1':
@@ -329,6 +330,8 @@ function opened_table_special(node, name, tab) {
  * Resize the window => resize some other elements
  */
 function resize() {
+    Style(`#banners, #main`, `max-width:${Y.window_width}px`);
+
     let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
     Style('#chat', `height:${height}px;width:100%`);
     resize_panels();
@@ -756,6 +759,7 @@ function startup() {
             panel_right: [{max: 630, min: 350, step: 1, type: 'number'}, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
+            window_width: [{max: 3840, min: 256, step: 1, type: 'number'}, 1200],
         },
     });
 
