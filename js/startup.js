@@ -129,6 +129,8 @@ function change_theme(theme) {
     if (Y.x == 'archive')
         themes.push(`${theme}-archive`);
 
+    _('link[rel="shortcut icon"]').href = `image/favicon${theme.includes('dark')? 'b': ''}.ico`;
+
     S('#theme0', theme != def);
     S('#theme1', theme == def);
     update_theme(themes);
