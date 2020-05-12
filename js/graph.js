@@ -42,7 +42,7 @@ function clamp_eval(eval_)
     if (!isNaN(eval_))
         return Clamp(eval_ * 1, -MAX_EVAL, MAX_EVAL);
 
-    if (eval_ && eval_[0] == '-')
+    if (eval_ && eval_.includes('-'))
         eval_ = -MAX_EVAL;
     else if (eval_ != undefined)
         eval_ = MAX_EVAL;

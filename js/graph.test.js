@@ -37,6 +37,8 @@ let {clamp_eval, invert_eval} = require(OUTPUT_MODULE);
     ['something', 10],
     ['M#33', 10],
     ['-M#33', -10],
+    ['#18', 10],
+    ['#-18', -10],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
         expect(clamp_eval(eval_)).toEqual(answer);
