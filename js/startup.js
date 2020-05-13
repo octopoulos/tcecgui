@@ -197,12 +197,14 @@ function check_stream() {
     if (Y.stream == old_stream || !xboards.live)
         return;
 
-    Assign(Y, STREAM_SETTINGS);
+    old_stream = Y.stream;
+    if (old_stream)
+        Assign(Y, STREAM_SETTINGS);
+
     activate_tabs();
     change_theme(Y.theme);
     update_board_theme(3);
     resize();
-    old_stream = Y.stream;
 }
 
 /**
