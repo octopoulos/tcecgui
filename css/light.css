@@ -113,6 +113,9 @@ img,
 .pr {
     position: relative;
 }
+.smaller {
+    font-size: 0.75em;
+}
 .tal {
     text-align: left;
 }
@@ -704,6 +707,9 @@ grid {
 }
 #table-view th {
     padding: 0.2em 0.5em;
+}
+#table-view td[data-x="event"] {
+    font-weight: 700;
 }
 #info0,
 #info1 {

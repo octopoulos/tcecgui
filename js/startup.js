@@ -755,11 +755,11 @@ function startup() {
         },
         extra: {
             cross_crash: [ON_OFF, 0],
-            panel_left: [{max: 630, min: 281, step: 1, type: 'number'}, 0],
-            panel_right: [{max: 630, min: 350, step: 1, type: 'number'}, 0],
+            panel_left: [{max: 630, min: 281, type: 'number'}, 0],
+            panel_right: [{max: 630, min: 350, type: 'number'}, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
-            window_width: [{max: 3840, min: 256, step: 1, type: 'number'}, 1200],
+            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
         },
     });
 

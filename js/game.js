@@ -326,7 +326,7 @@ function format_eval(value) {
     let items = text.split('.');
     if (items.length < 2)
         return text;
-    return `<i>${items[0]}.</i><i style="font-size:${float >= 100? 0.75: 0.9}em">${items[1]}</i>`;
+    return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
 /**
