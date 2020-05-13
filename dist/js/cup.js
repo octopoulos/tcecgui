@@ -1,3 +1,5 @@
+'use strict';
+
 var roundDate = [];
 /* All times in GST, maintain proper formatting, if date is not decide just put 0 */
 var roundDateMan = [
@@ -53,22 +55,22 @@ var teamsx =
   [["Ethereal ", 6], ["RubiChess ", 11]],
 ];
 
-var bigData = {           
- teams : [            
- ],            
- results : [[ /* WINNER BRACKET */          
- [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],        
- [[0,0], [0,0], [0,0], [0,0]],          
- [[0,0], [0,0]],           
- [[0,0],           
-  [0,0]]            
- ]            
- ]            
-}            
+var bigData = {
+ teams : [
+ ],
+ results : [[ /* WINNER BRACKET */
+ [[0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0]],
+ [[0,0], [0,0], [0,0], [0,0]],
+ [[0,0], [0,0]],
+ [[0,0],
+  [0,0]]
+ ]
+ ]
+};
 
 var roundResults = [];
 
-var dummyCross = 
+var dummyCross =
 {
 	"Event" : "",
 	"Order" : [
@@ -119,15 +121,15 @@ var dummyCross =
 			"WinsAsWhite" : 0
 		}
 	}
-}
+};
 
 var gamesEachMatch = [];
 var columnsEvent = [
      {
        field: 'match',
        title: 'Round',
-       width: '4%'
-       ,sortable: true
+       width: '4%',
+       sortable: true,
      },
      {
        field: 'Winner',
@@ -147,9 +149,9 @@ var columnsEvent = [
      },
      {
        field: 'Score',
-       title: 'Score'
-      ,formatter: 'formatterEvent'
-      ,cellStyle: 'cellformatterEvent'
+       title: 'Score',
+       formatter: 'formatterEvent',
+       cellStyle: 'cellformatterEvent',
      }
    ];
 

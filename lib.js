@@ -1,7 +1,10 @@
-/* reused */
-const argv = require('yargs').argv;
-var _ = require('lodash');
-/* reused */
+/*
+globals
+console, exports, process, require
+*/
+'use strict';
+
+let Keys = Object.keys;
 
 function perror(errormsg)
 {
@@ -15,14 +18,15 @@ function getPrevPGN(id, name, menuData)
    var data = menuData;
    var prevpgn = [];
 
-   _.each(data.Seasons, function(value, key) {
+   Keys(data.Seasons).forEach(key => {
+      let value = data.Seasons[key];
       if (found)
       {
          return false;
       }
-      _.each(value.sub, function(subvalue,subkey) {
-         if ((parseInt(subvalue.dno) <= id) &&
-            (value.seasonName == name))
+      Keys(value.sub).forEach(subkey => {
+         let subvalue = value.sub[subkey];
+         if ((parseInt(subvalue.dno) <= id) && (value.seasonName == name))
          {
             var pgnStr = subvalue.abb + ".pgn";
             prevpgn.push(pgnStr);
@@ -45,12 +49,14 @@ function getPGN(id, jsonMenuData)
    localPgn.cup = 0;
    localPgn.eventtag = 0;
 
-   _.each(data.Seasons, function(value, key) {
+   Keys(data.Seasons).forEach(key => {
+      let value = data.Seasons[key];
       if (found)
       {
          return false;
       }
-      _.each(value.sub, function(subvalue,subkey) {
+      Keys(value.sub).forEach(subkey => {
+         let subvalue = value.sub[subkey];
          if ((subvalue.id == id) ||
             (subvalue.idf == id))
          {
@@ -80,11 +86,12 @@ function getPGN(id, jsonMenuData)
 
 function getUpdatedJSON(totalId, jsonMenuData)
 {
-   var found = 0;
+   // var found = 0;
    var data = jsonMenuData;
    let dno = 0;
 
-   _.each(data.Seasons, function(value, key) {
+   Keys(data.Seasons).forEach(key => {
+      let value = data.Seasons[key];
       if (key.localeCompare(totalId.no))
       {
          return true;
@@ -92,21 +99,22 @@ function getUpdatedJSON(totalId, jsonMenuData)
 
       console.log ("Found season:" + key);
 
-      _.each(value.sub, function(subvalue,subkey) {
-            dno = subvalue.dno;
-         });
+      Keys(value.sub).forEach(subkey => {
+         let subvalue = value.sub[subkey];
+         dno = subvalue.dno;
+      });
       dno = (parseInt(dno) + 4).toString();
-      totalId.dno = dno.padStart(4, '0'); 
+      totalId.dno = dno.padStart(4, '0');
       value.sub.push (totalId);
       //console.log ("STRXX:::::" + " jsonkey: " + value + " ," + JSON.stringify(data, null, '\t'));
    });
 
    data.newaddedid = totalId.id;
-   
+
    return data;
 }
 
-function getRandomSalt(fileName) 
+function getRandomSalt(fileName)
 {
    var timestamp = new Date().getTime().toString();
    var return_string = fileName + "_" + timestamp;
@@ -127,7 +135,7 @@ function getNewIdStruc(stringMessage, jsonMenuData)
    {
       nTagId = '';
    }
-   let nTagMenu = narray.slice(5).join(' ');;
+   let nTagMenu = narray.slice(5).join(' ');
    var nIdStr = '';
    var totalId = {};
    var bonus = 0;
@@ -154,7 +162,7 @@ function getNewIdStruc(stringMessage, jsonMenuData)
       }
       else
       {
-         nIdStr += nseasonNo;     
+         nIdStr += nseasonNo;
       }
    }
    else

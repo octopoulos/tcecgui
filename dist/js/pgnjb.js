@@ -1,11 +1,17 @@
 // Created by Steven Xia  --  Contributed to TCEC
+/*
+globals
+console, exports, require
+*/
+'use strict';
 
 const Chess = require("./chess.js");
 const pgnParse = require("./lib.js");
 const argv = require('yargs').argv;
 const fs = require("fs");
 
-let nomoves = 0;
+let Keys = Object.keys,
+    nomoves = 0;
 
 // for testing for the old format because move numbers are not separated from the moves with a space
 const NUMBERS = new Array(10);
@@ -73,7 +79,7 @@ function pv_to_json(chess, pv) {
          "m": move_notation,
          "from": moveFrom,
          "to": moveTo
-      })
+      });
    }
 
    return moves;
@@ -291,7 +297,7 @@ function sort_object(object) {
    } else {
       const sorted_object = {};
 
-      const keys = Object.keys(object).sort();
+      const keys = Keys(object).sort();
       let key;
       for (let index = 0; index < keys.length; index++) {
          key = keys[index];
@@ -373,7 +379,7 @@ for (let i = 0; i < res.length ; i++)
       return;
    }
 
-   if ((force || 
+   if ((force ||
         (games.length && (games.includes(j)))) ||
        !fs.existsSync(filename))
    {
@@ -382,7 +388,7 @@ for (let i = 0; i < res.length ; i++)
       fs.writeFileSync(filename,  output_json);
    }
 
-   if ((force || 
+   if ((force ||
         (games.length && (games.includes(j)))) ||
        !fs.existsSync(pgnName))
    {
