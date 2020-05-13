@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-12 : bug when game ends, graph duplicates itself
+2020-05-13 : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
 2020-05-13 : 2020-05-13 : basic dummy slot system: test it with graphs
 2020-05-13 : 2020-05-12 : fix crowd sound not playing
 2020-05-13 : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
@@ -170,7 +171,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
 medium:
 -          : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
