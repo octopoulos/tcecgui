@@ -1071,6 +1071,7 @@ grid {
 }
 .google-ad {
     cursor: pointer;
+    min-width: 450px;
 }
 #full0,
 #full1,

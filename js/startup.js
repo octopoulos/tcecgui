@@ -14,8 +14,8 @@ api_translate_get, Assign, Attrs,
 C, change_page, change_theme, changed_hash, changed_section, check_hash, Clamp, Class, create_field_value, DEV,
 document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object,
 HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, LS, Max, merge_settings,
-Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
+LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
+merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, Show, show_banner, show_popup, show_settings, Split,
 start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey, THEMES,
 TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
@@ -227,7 +227,7 @@ function init_globals() {
         }
     }, TIMEOUTS.adblock);
 
-    if (!DEV.ad)
+    if (!DEV.ad && location.port != 8080)
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 
