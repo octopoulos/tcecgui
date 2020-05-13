@@ -977,10 +977,6 @@ grid {
 #canvas {
     pointer-events: all;
 }
-#ad1,
-#ad2 {
-    max-height: 280px;
-}
 #banners,
 #main {
     margin-bottom: 1em;

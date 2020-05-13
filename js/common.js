@@ -1058,12 +1058,12 @@ function InvalidPhone(phone) {
  * Load a library
  * @param {string} url
  * @param {function=} callback
+ * @param {Object=} extra
  * @example
  * LoadLibrary('./script/3d.js')
  */
-function LoadLibrary(url, callback) {
-    let node = document.createElement('script');
-    node.src = url;
+function LoadLibrary(url, callback, extra) {
+    let node = CreateNode('script', null, Assign({src: url}, extra || {}));
     document.body.appendChild(node);
     if (callback)
         node.onload = callback;

@@ -247,7 +247,7 @@ function init_globals() {
 function insert_google_ad(id) {
     let html =
     `<ins class="adsbygoogle"
-        style="display:block;"
+        style="display:block;width:50%;max-height:280px"
         data-ad-client="ca-pub-6544406400639567"
         data-ad-slot="4926769371"
         data-ad-format="auto"
@@ -268,7 +268,7 @@ function insert_google_ads() {
     insert_google_ad(1);
     insert_google_ad(2);
 
-    load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
+    load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', null, {async: ''});
 }
 
 /**

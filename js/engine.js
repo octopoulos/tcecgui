@@ -166,8 +166,9 @@ function get_string(name, def) {
  * Load a library only once
  * @param {string} url
  * @param {function=} callback
+ * @param {Object=} extra
  */
-function load_library(url, callback) {
+function load_library(url, callback, extra) {
     if (!libraries[url])
         LoadLibrary(url, () => {
             if (DEV.load)
@@ -175,7 +176,7 @@ function load_library(url, callback) {
             libraries[url] = Now();
             if (callback)
                 callback();
-        });
+        }, extra);
     else
         LS(`already loaded: ${url}`);
 }
