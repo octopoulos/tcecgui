@@ -220,11 +220,6 @@ function init_globals() {
     }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
-    // TODO: change that
-    // add_timeout('update_live', () => {
-    //     updateLiveChart();
-    //     updateLiveEval();
-    // }, 2000);
     add_timeout('adblock', () => {
         if (_('.google-ad').clientHeight <= 0) {
             HTML('.adblock', HTML('#adblock'));
@@ -232,7 +227,8 @@ function init_globals() {
         }
     }, TIMEOUTS.adblock);
 
-    // add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+    if (!DEV.ad)
+        add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 
     LIVE_ENGINES.forEach((live, id) => {

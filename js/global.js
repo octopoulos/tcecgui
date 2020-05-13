@@ -44,6 +44,7 @@ function extract_fen_ply(fen) {
  */
 function parse_dev() {
     let names = {
+            a: 'ad',                    // disable ads (for development)
             b: 'board',
             c: 'chart',
             d: 'debug',
