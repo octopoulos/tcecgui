@@ -1060,6 +1060,13 @@ grid {
 }
 
 /* extras */
+#ad1 {
+    flex: 1;
+    margin: 0 1em;
+}
+#ad2 {
+    width: 90%;
+}
 .banner {
     height: 60px;
     max-height: 10vw;
@@ -1067,7 +1074,7 @@ grid {
 }
 .google-ad {
     cursor: pointer;
-    min-width: 450px;
+    width: 100%;
 }
 #full0,
 #full1,
