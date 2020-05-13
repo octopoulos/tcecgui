@@ -12,8 +12,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout, controls,
-CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp,
+C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
+controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp,
 fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input,
 InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
@@ -184,8 +184,8 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
-    TIMEOUT_QUEUE = 100,                // check the queue after updating a table
-    TIMEOUT_SEARCH = 100,               // filtering the table when input changes
+    TIMEOUT_queue = 100,                // check the queue after updating a table
+    TIMEOUT_search = 100,               // filtering the table when input changes
     tour_info = {
         archive: {},
         live: {},
@@ -1271,6 +1271,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // open game
     C('[data-g]', function() {
+        if (cannot_click())
+            return;
+
         if (this.tagName == 'TR') {
             Class('tr.active', '-active', true, table);
             Class(this, 'active');
@@ -1315,7 +1318,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         for (let queue of QUEUES)
             queued_tables.add(`${section}/${parent}/${queue}`);
         if (players[0].name)
-            add_timeout('queue', check_queued_tables, TIMEOUT_QUEUE);
+            add_timeout('queue', check_queued_tables, TIMEOUT_queue);
     }
 }
 
@@ -1444,11 +1447,16 @@ function set_season_events() {
 
     // expand/collapse
     C('.season', function() {
+        if (cannot_click())
+            return;
         expand_season(this);
     }, table);
 
     // open games
     C('a[data-u]', function() {
+        if (cannot_click())
+            return;
+
         // 'season=18&div=l3'
         let dico = QueryString({query: this.dataset.u});
         Keys(dico).forEach(key => {
@@ -2847,7 +2855,7 @@ function set_game_events() {
         add_timeout('search', () => {
             let parent = this.parentNode.id.split('-')[0];
             filter_table_rows(parent, this.value);
-        }, TIMEOUT_SEARCH);
+        }, TIMEOUT_search);
     });
 
     C('#log', function() {

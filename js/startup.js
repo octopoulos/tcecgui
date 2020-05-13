@@ -11,9 +11,10 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
-C, change_page, change_theme, changed_hash, changed_section, check_hash, Clamp, Class, create_field_value, DEV,
-document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key, game_action_keyup, get_object,
-HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+C, cannot_click, change_page, change_theme, changed_hash, changed_section, check_hash, Clamp, Class,
+create_field_value, DEV, document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key,
+game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES,
+Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup, show_settings,
@@ -29,7 +30,7 @@ let AD_STYLES = {
         1: 'width:100%;max-height:280px',
     },
     old_font_height,
-    old_stream,
+    old_stream = 0,
     old_window_height,
     old_x,
     // min & max allowed widths, when the value is <= min => automatic
@@ -38,8 +39,8 @@ let AD_STYLES = {
         right: [281, 720],
     },
     STREAM_SETTINGS = {},
-    TIMEOUT_FONT = 200,
-    TIMEOUT_SIZE = 1000;
+    TIMEOUT_font = 200,
+    TIMEOUT_size = 1000;
 
 /**
  * Same as action_key_no_input, but when the key is up
@@ -198,9 +199,12 @@ function check_stream() {
 
     __PREFIX = stream? 'ts_': 'tc_';
     load_defaults();
+    check_hash(true);
 
-    if (stream)
+    if (stream) {
         Assign(Y, STREAM_SETTINGS);
+        Y.stream = 1;
+    }
 
     activate_tabs();
     change_theme(Y.theme);
@@ -287,7 +291,13 @@ function init_globals() {
             old_font_height = font_height;
             old_window_height = window.innerHeight;
         }
-    }, TIMEOUT_FONT);
+
+        if (Y.stream) {
+            let top = Id('table-view').offsetTop;
+            if (window.scrollY != top)
+                window.scrollTo(0, top);
+        }
+    }, TIMEOUT_font);
 }
 
 /**
@@ -628,6 +638,9 @@ function set_global_events() {
 
     // click somewhere => close the popups
     Events(window, 'click', e => {
+        if (cannot_click())
+            return;
+
         let in_modal,
             target = e.target,
             dataset = target.dataset;
@@ -699,7 +712,7 @@ function set_global_events() {
             save_option(name, Clamp(Y[name] + (index * 2 - 7) * 10, width[0], width[1]));
             HTML(sizer, Y[name]);
             Show(sizer);
-            add_timeout('size', () => {Hide('.size');}, TIMEOUT_SIZE);
+            add_timeout('size', () => {Hide('.size');}, TIMEOUT_size);
             resize();
         }
     });

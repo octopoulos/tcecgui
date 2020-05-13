@@ -49,8 +49,10 @@ let __PREFIX = '_',
     scroll_target,
     STATE_KEYS = {},
     THEMES = [''],
+    TIMEOUT_touch = 0.5,
     TIMEOUT_translate = 3600 * 24,
     timers = {},
+    touch_done = 0,                                     // time when the touch was released
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
     touch_last = {x: 0, y: 0},
     TOUCH_MOVES = {mousemove: 1, touchmove: 2},
@@ -575,13 +577,14 @@ function update_theme(themes, callback, version=15) {
 
 /**
  * Check the query hash/string
+ * @param {boolean=} no_special
  */
-function check_hash() {
+function check_hash(no_special) {
     let string = QueryString({key: 'hash'});
     Assign(Y, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     sanitise_data();
 
-    if (virtual_check_hash_special)
+    if (!no_special && virtual_check_hash_special)
         virtual_check_hash_special();
 }
 
@@ -757,6 +760,14 @@ function add_move(change, stamp, ratio_x=1, ratio_y=1) {
         dy = (change.y - drag[0].y) * ratio_y;
     touch_moves.push([dx, dy, (stamp - drag[1])]);
     return [dx, dy];
+}
+
+/**
+ * We cannot click just after a touch drop, as that would cause misclick events
+ * @returns {boolean}
+ */
+function cannot_click() {
+    return (Now(true) < touch_done + TIMEOUT_touch);
 }
 
 /**
@@ -951,6 +962,7 @@ function touch_handle(e) {
         let absx = Abs(sumx),
             absy = Abs(sumy),
             elapsed = touch_now - touch_start;
+        touch_done = touch_now;
 
         // some movement => scroll
         if (absx > 1 || absy > 1) {

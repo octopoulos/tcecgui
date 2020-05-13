@@ -6,13 +6,14 @@
 /package-lock.json
 
 *.gz
-*.jar
-*.min.js
 *_.css
+*.jar
 *_.js
 *-original.js
 *+.js
+*.min.js
 *.pyc
+*.python
 *.rar
 4d.js
 all.*

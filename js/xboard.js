@@ -82,7 +82,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    TIMEOUT_CLICK = 200;
+    TIMEOUT_click = 200;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -945,7 +945,7 @@ class XBoard {
         let now = Now(true);
 
         // need this to prevent mouse up from doing another click
-        if (step >= 0 || now > this.hold_time + TIMEOUT_CLICK) {
+        if (step >= 0 || now > this.hold_time + TIMEOUT_click) {
             switch (name) {
             case 'next':
             case 'play':
