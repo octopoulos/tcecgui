@@ -319,11 +319,8 @@ function format_eval(value) {
     if (isNaN(float))
         return value;
 
-    let text = parseFloat(float).toFixed(2);
-    if (Abs(float) < 10)
-        return text;
-
-    let items = text.split('.');
+    let text = parseFloat(float).toFixed(2),
+        items = text.split('.');
     if (items.length < 2)
         return text;
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;

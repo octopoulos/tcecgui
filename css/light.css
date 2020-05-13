@@ -389,6 +389,9 @@ grid {
 #live {
     width: 100%;
 }
+#live-tabs {
+    margin-top: 1em;
+}
 .xcontrol {
     color: #007bff;
     font-size: 0.34em;
@@ -1010,6 +1013,9 @@ grid {
 #right.wide {
     flex: 1;
     min-width: 372px;
+}
+#chat {
+    max-height: 700px;
 }
 #footer {
     padding: 1em;

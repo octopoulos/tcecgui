@@ -332,7 +332,7 @@ function opened_table_special(node, name, tab) {
 function resize() {
     Style(`#banners, #main`, `max-width:${Y.window_width}px`);
 
-    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 90));
+    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 100));
     Style('#chat', `height:${height}px;width:100%`);
     resize_panels();
 
