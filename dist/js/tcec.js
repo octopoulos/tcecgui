@@ -6,7 +6,7 @@ pvBoardElwc = $('#pv-boardwc');
 pvBoardEla = $('#pv-boarda');
 pvBoardElac = $('#pv-boardac');
 
-var timezoneDiffH = -8;
+var timezoneDiffH = +4;
 var squareToHighlight = '';
 var pvSquareToHighlight = '';
 var crossTableInitialized = false;
