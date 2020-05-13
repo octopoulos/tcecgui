@@ -16,20 +16,27 @@ document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key
 HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_modal_events, Show, show_banner, show_popup, show_settings, Split,
-start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey, THEMES,
-TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
+S, save_option, screen, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup, show_settings,
+Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey,
+THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
 update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, Y
 */
 'use strict';
 
-let old_x,
+let AD_STYLES = {
+        0: 'width:100%;max-height:210px',
+        1: 'width:100%;max-height:280px',
+    },
+    old_font_height,
+    old_window_height,
+    old_x,
     // min & max allowed widths, when the value is <= min => automatic
     PANEL_WIDTHS = {
-        left: [281, 630],
-        right: [350, 630],
+        left: [281, 1200],
+        right: [281, 720],
     },
+    TIMEOUT_FONT = 200,
     TIMEOUT_SIZE = 1000;
 
 /**
@@ -238,6 +245,16 @@ function init_globals() {
     activate_tabs();
     if (Visible('#table-log'))
         listen_log();
+
+    // font size detector
+    setInterval(() => {
+        let font_height = Id('text').offsetHeight;
+        if (font_height != old_font_height || window.innerHeight != old_window_height) {
+            resize();
+            old_font_height = font_height;
+            old_window_height = window.innerHeight;
+        }
+    }, TIMEOUT_FONT);
 }
 
 /**
@@ -247,7 +264,7 @@ function init_globals() {
 function insert_google_ad(id) {
     let html =
     `<ins class="adsbygoogle"
-        style="display:block;width:100%;max-height:${id? 280: 210}px"
+        style="display:block;${AD_STYLES[id] || ''}"
         data-ad-client="ca-pub-6544406400639567"
         data-ad-slot="4926769371"
         data-ad-format="auto"
@@ -255,7 +272,6 @@ function insert_google_ad(id) {
     </ins>
     <div class="adblock dn">
     </div>`;
-    // <img src="image/ad${id}.png">
 
     HTML(`#ad${id} > hori`, html);
     (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -265,8 +281,8 @@ function insert_google_ad(id) {
  * Insert google ads after some time
  */
 function insert_google_ads() {
+    insert_google_ad(0);
     insert_google_ad(1);
-    insert_google_ad(2);
 
     load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', null, {async: ''});
 }
@@ -328,8 +344,11 @@ function opened_table_special(node, name, tab) {
 function resize() {
     Style(`#banners, #main`, `max-width:${Y.window_width}px`);
 
-    let height = Max(350, Round(Min(screen.availHeight, window.innerHeight) - 100));
-    Style('#chat', `height:${height}px;width:100%`);
+    let left_height = Id('left').clientHeight,
+        height = Min(left_height, window.innerHeight);
+
+    Style('#right', `max-height:${height}px`);
+    Style('#chat', `height:${Max(350, height - 100)}px;width:100%`);
     resize_panels();
 
     adjust_popups();
@@ -751,8 +770,8 @@ function startup() {
         },
         extra: {
             cross_crash: [ON_OFF, 0],
-            panel_left: [{max: 630, min: 281, type: 'number'}, 0],
-            panel_right: [{max: 630, min: 350, type: 'number'}, 0],
+            panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
+            panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
             window_width: [{max: 3840, min: 256, type: 'number'}, 1200],

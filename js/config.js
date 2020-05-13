@@ -9,7 +9,7 @@
 // (after everything except script.js)
 /*
 globals
-ARROW_COLORS:true, Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true,
+AD_STYLES, ARROW_COLORS:true, Assign, CHART_JS:true, COLOR_BLACK:true, COLOR_WHITE:true, DEFAULTS, ENGINE_COLORS:true,
 ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true, HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS,
 TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
@@ -85,13 +85,21 @@ function startup_config() {
         },
     };
 
+    // override style for the ads
+    // - the top ad=0, middle ad=1
+    // - the container has a 550px max width, so if you want more px, the width should be specified in px
+    Assign(AD_STYLES, {
+        0: 'width:100%;max-height:210px',
+        1: 'width:100%;max-height:280px',
+    });
+
     // startup timeouts in ms
     Assign(TIMEOUTS, {
         banner: 30 * 1000,
         google_ad: 5 * 1000,
         graph: 1 * 1000,
         tables: 100,
-        twitch: 8 * 1000,
+        twitch: 5 * 1000,
         users: 5 * 1000,
     });
 

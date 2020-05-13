@@ -922,7 +922,7 @@ class XBoard {
             piece_size = theme.size,
             diff = (piece_size - size) / 2,
             style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
-            transform = `transform:scale(${size / piece_size}) translate(-${diff - theme.off[0]}px,-${diff - theme.off[1]}px)`;
+            transform = `transform:scale(${size / piece_size}) translate(${theme.off[0] - diff}px,${theme.off[1] - diff}px)`;
 
         return [piece_size, style, transform];
     }

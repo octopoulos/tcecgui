@@ -237,6 +237,10 @@ grid {
     top: 15vh;
     z-index: 7;
 }
+#text {
+    left: -9999px;
+    position: absolute;
+}
 
 /* popups */
 #overlay {
@@ -578,6 +582,7 @@ grid {
 .rounded {
     border-radius: 4px 0 0 0;
 }
+.subscribe,
 .tab {
     border-radius: 4px;
     color: #07f;
@@ -590,9 +595,13 @@ grid {
 .tab:hover {
     color: #05b;
 }
+.subscribe,
 .tab.active {
     background: #07f;
     color: #fff;
+}
+.subscribe {
+    margin-right: 0.2em;
 }
 #tables {
     margin: 1em 0 1.5em 0;
@@ -609,7 +618,7 @@ grid {
     flex: 1;
 }
 #table-chat {
-    max-width: 630px;
+    max-width: 720px;
     width: 100%;
     z-index: 1;
 }
@@ -1010,9 +1019,6 @@ grid {
     flex: 1;
     min-width: 372px;
 }
-#chat {
-    max-height: 700px;
-}
 #footer {
     padding: 1em;
 }
@@ -1060,13 +1066,13 @@ grid {
 }
 
 /* extras */
-#ad1,
-#ad2 {
+#ad0,
+#ad1 {
     margin: 0 0.5em;
     max-width: 550px;
     width: 90%;
 }
-#ad1 {
+#ad0 {
     flex: 1;
 }
 .banner {

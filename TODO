@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-05-13 : 2020-05-13 : added subscribe/donate buttons + fix board size
 2020-05-13 : 2020-05-12 : adjust right panel max width
 2020-05-13 : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
 2020-05-13 : 2020-05-13 : new wikipedia svg pieces

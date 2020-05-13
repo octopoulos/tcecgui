@@ -41,6 +41,7 @@
 <div id="popup-fen" class="popup dn">
     <div id="xfen" class="xboard"></div>
 </div>
+<span id="text">&nbsp;</span>
 <vert id="modal" class="popup"></vert>
 <!-- https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/marker-end -->
 <svg class="markers" viewBox="0 0 10 10">
@@ -97,8 +98,8 @@
             <img src="image/tcec2.jpg" class="banner" alt="TCEC">
             <img src="image/cd.jpg" class="banner" alt="Chessdom">
         </div>
-        <!-- ad1 -->
-        <div id="ad1">
+        <!-- ad0 -->
+        <div id="ad0">
             <hori class="google-ad fcenter"></hori>
         </div>
         <form id="paypal" target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
@@ -292,10 +293,16 @@
                         <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
                         <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
                     </vert>
-                    <hori id="twitch-theme" class="fend">
-                        <i id="twitch0" data-svg="sun" class="dn"></i>
-                        <i id="twitch1" data-svg="moon" class="dn"></i>
-                        <i id="hide-chat" data-svg="x" class="dn"></i>
+                    <hori class="fbetween w100">
+                        <hori>
+                            <a class="subscribe" href="https://www.twitch.tv/products/tcecpoc/ticket" target="_blank" data-t="Subscribe"></a>
+                            <a class="subscribe" href="https://streamlabs.com/TCEC_Chess_TV" target="_blank" data-t="Donate"></a>
+                        </hori>
+                        <hori id="twitch-theme" class="fend">
+                            <i id="twitch0" data-svg="sun" class="dn"></i>
+                            <i id="twitch1" data-svg="moon" class="dn"></i>
+                            <i id="hide-chat" data-svg="x" class="dn"></i>
+                        </hori>
                     </hori>
                 </vert>
                 <div id="table-winner" class="scroller dn"></div>
@@ -309,8 +316,8 @@
             </vert>
         </vert>
     </hori>
-    <!-- ad2 -->
-    <div id="ad2">
+    <!-- ad1 -->
+    <div id="ad1">
         <hori class="google-ad fcenter"></hori>
     </div>
     <!-- tables -->
