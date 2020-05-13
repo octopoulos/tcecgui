@@ -40,6 +40,7 @@ function startup_config() {
     // - every option name is the same as what you see in the Options in English, but lowercase + underscores
     // => 'Arrow opacity' becomes 'arrow_opacity'
     Assign(STREAM_SETTINGS, {
+        no_ad: true,
         panel_left: 330,
         panel_right: 350,
         shortcut_1: 'stand',

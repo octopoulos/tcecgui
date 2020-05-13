@@ -70,8 +70,6 @@ function activate_tabs() {
     Keys(Y.tabs).forEach(key => {
         let value = Y.tabs[key],
             node = _(`#${key} > [data-x="${value}"]`);
-        LS(`key=${key} : value=${value}`);
-        LS(node);
         open_table(node);
     });
 }
@@ -194,17 +192,28 @@ function check_hash_special() {
  * Check stream settings
  */
 function check_stream() {
-    if (Y.stream == old_stream || !xboards.live)
+    let stream = Y.stream;
+    if (stream == old_stream)
         return;
 
-    old_stream = Y.stream;
-    if (old_stream)
+    __PREFIX = stream? 'ts_': 'tc_';
+    load_defaults();
+
+    if (stream)
         Assign(Y, STREAM_SETTINGS);
 
     activate_tabs();
     change_theme(Y.theme);
-    update_board_theme(3);
     resize();
+
+    if (stream)
+        window.scrollTo(0, Id('table-view').offsetTop);
+
+    // maybe the board has not been loaded yet
+    if (!xboards.live)
+        return;
+    update_board_theme(3);
+    old_stream = stream;
 }
 
 /**
@@ -258,7 +267,7 @@ function init_globals() {
         }
     }, TIMEOUTS.adblock);
 
-    if (!DEV.ad && location.port != 8080)
+    if (!Y.no_ad && !DEV.ad && location.port != 8080)
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 
