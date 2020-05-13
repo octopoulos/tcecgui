@@ -20,7 +20,7 @@ S, save_option, screen, set_game_events, set_modal_events, setInterval, Show, sh
 Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey,
 THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
 update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
-virtual_resize:true, Visible, window, Y
+virtual_resize:true, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -29,6 +29,7 @@ let AD_STYLES = {
         1: 'width:100%;max-height:280px',
     },
     old_font_height,
+    old_stream,
     old_window_height,
     old_x,
     // min & max allowed widths, when the value is <= min => automatic
@@ -36,6 +37,7 @@ let AD_STYLES = {
         left: [281, 1200],
         right: [281, 720],
     },
+    STREAM_SETTINGS = {},
     TIMEOUT_FONT = 200,
     TIMEOUT_SIZE = 1000;
 
@@ -68,6 +70,8 @@ function activate_tabs() {
     Keys(Y.tabs).forEach(key => {
         let value = Y.tabs[key],
             node = _(`#${key} > [data-x="${value}"]`);
+        LS(`key=${key} : value=${value}`);
+        LS(node);
         open_table(node);
     });
 }
@@ -108,14 +112,15 @@ function change_setting_special(name, value) {
     case 'piece_theme_pv':
         update_board_theme(2);
         break;
-    case 'live_log':
-        if (Visible('#table-log'))
-            listen_log();
-        break;
+    case 'chat_offset':
     case 'panel_left':
     case 'panel_right':
     case 'window_width':
         resize();
+        break;
+    case 'live_log':
+        if (Visible('#table-log'))
+            listen_log();
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -158,6 +163,8 @@ function change_theme(theme) {
  * Called whenever the page loads and whenever the hash changes
  */
 function check_hash_special() {
+    check_stream();
+
     if (!['archive', 'live'].includes(Y.x))
         Y.x = 'live';
 
@@ -181,6 +188,21 @@ function check_hash_special() {
         old_x = Y.x;
     }
     changed_hash();
+}
+
+/**
+ * Check stream settings
+ */
+function check_stream() {
+    if (Y.stream == old_stream || !xboards.live)
+        return;
+
+    Assign(Y, STREAM_SETTINGS);
+    activate_tabs();
+    change_theme(Y.theme);
+    update_board_theme(3);
+    resize();
+    old_stream = Y.stream;
 }
 
 /**
@@ -348,7 +370,7 @@ function resize() {
         height = Min(left_height, window.innerHeight);
 
     Style('#right', `max-height:${height}px`);
-    Style('#chat', `height:${Max(350, height - 100)}px;width:100%`);
+    Style('#chat', `height:${Max(350, height - 100 + Y.chat_offset)}px;width:100%`);
     resize_panels();
 
     adjust_popups();
@@ -769,6 +791,7 @@ function startup() {
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
         },
         extra: {
+            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
             cross_crash: [ON_OFF, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],

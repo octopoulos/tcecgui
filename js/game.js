@@ -312,15 +312,19 @@ function create_game_link(section, game, text, only_link) {
 /**
  * Format the eval to make the 2 decimals smaller if the eval is high
  * @param {number} value
+ * @param {boolean=} small_decimal make decimals smaller
  * @returns {number}
  */
-function format_eval(value) {
+function format_eval(value, small_decimal) {
     let float = parseFloat(value);
     if (isNaN(float))
         return value;
 
-    let text = parseFloat(float).toFixed(2),
-        items = text.split('.');
+    let text = parseFloat(float).toFixed(2);
+    if (!small_decimal)
+        return text;
+
+    let items = text.split('.');
     if (items.length < 2)
         return text;
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
@@ -1926,7 +1930,7 @@ function update_move_info(ply, move, finished, fresh) {
         id = ply % 2,
         stats = {
             depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
-            eval: format_eval(eval_),
+            eval: format_eval(eval_, true),
             node: is_book? '-': FormatUnit(move.n, '-'),
             speed: is_book? '-': `${FormatUnit(move.s, '0')}bps`,
             tb: is_book? '-': FormatUnit(move.tb, '-'),
@@ -2349,7 +2353,7 @@ function update_player_eval(section, data) {
     let stats = {
         depth: data.depth,
         engine: data.engine,
-        eval: format_eval(eval_),
+        eval: format_eval(eval_, true),
         logo: short,
         node: FormatUnit(data.nodes),
         speed: data.speed,
@@ -2874,6 +2878,7 @@ function startup_game() {
         game: 0,
         order: 'left|center|right',         // main panes order
         season: '',
+        stream: 0,
         tabs: {},                           // opened tabs
         three: 0,                           // 3d scene
         twitch_chat: 1,
@@ -2916,7 +2921,7 @@ function startup_game() {
             show_ply: [['first', 'diverging'], 'diverging'],
         },
         control: {
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1000],
+            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
         },
         live: {
             live_engine_1: [ON_OFF, 1],

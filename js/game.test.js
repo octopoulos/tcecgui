@@ -140,22 +140,24 @@ let {
 
 // format_eval
 [
-    [null, null],
-    [NaN, NaN],
-    [Infinity, 'Infinity'],
-    ['', ''],
-    [0, '<i>0.</i><i class="smaller">00</i>'],
-    [0.98, '<i>0.</i><i class="smaller">98</i>'],
-    [0.987654321, '<i>0.</i><i class="smaller">99</i>'],
-    ['150.142', '<i>150.</i><i class="smaller">14</i>'],
-    [10.15535, '<i>10.</i><i class="smaller">16</i>'],
-    [-198.42, '<i>-198.</i><i class="smaller">42</i>'],
-    ['-198.42', '<i>-198.</i><i class="smaller">42</i>'],
-    ['M#43', 'M#43'],
+    [null, undefined, null],
+    [NaN, undefined, NaN],
+    [Infinity, undefined, 'Infinity'],
+    ['', undefined, ''],
+    [0, undefined, '0.00'],
+    [0, true, '<i>0.</i><i class="smaller">00</i>'],
+    [0.98, true, '<i>0.</i><i class="smaller">98</i>'],
+    [0.987654321, false, '0.99'],
+    [0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
+    ['150.142', true, '<i>150.</i><i class="smaller">14</i>'],
+    [10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
+    [-198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['M#43', true, 'M#43'],
 ]
- .forEach(([value, answer], id) => {
+ .forEach(([value, small_decimal, answer], id) => {
     test(`format_eval:${id}`, () => {
-        expect(format_eval(value)).toEqual(answer);
+        expect(format_eval(value, small_decimal)).toEqual(answer);
     });
 });
 
