@@ -247,7 +247,7 @@ function init_globals() {
 function insert_google_ad(id) {
     let html =
     `<ins class="adsbygoogle"
-        style="display:block;width:100%;max-height:280px"
+        style="display:block;width:100%;max-height:${id? 280: 210}px"
         data-ad-client="ca-pub-6544406400639567"
         data-ad-slot="4926769371"
         data-ad-format="auto"

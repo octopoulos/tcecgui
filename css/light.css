@@ -1060,12 +1060,14 @@ grid {
 }
 
 /* extras */
+#ad1,
+#ad2 {
+    margin: 0 0.5em;
+    max-width: 550px;
+    width: 90%;
+}
 #ad1 {
     flex: 1;
-    margin: 0 1em;
-}
-#ad2 {
-    width: 90%;
 }
 .banner {
     height: 60px;
