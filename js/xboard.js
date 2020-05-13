@@ -182,6 +182,7 @@ class XBoard {
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.svgs = [];                                 // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
+        this.valid = true;
         this.xmoves = null;
     }
 
@@ -273,6 +274,7 @@ class XBoard {
                 HTML(parent, lines.join(''));
 
         let last_move = this.moves.length - 1;
+        this.valid = true;
 
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
@@ -349,6 +351,7 @@ class XBoard {
         });
 
         this.moves = moves;
+        this.valid = true;
 
         if (this.real)
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
@@ -461,6 +464,7 @@ class XBoard {
         });
 
         this.grid = grid;
+        this.valid = true;
         return true;
     }
 
@@ -722,14 +726,12 @@ class XBoard {
      * @param {number} num_ply current ply in the real game (not played yet)
      */
     compare_duals(num_ply) {
-        if (Y.show_ply == 'first') {
+        let dual = this.dual;
+
+        if (Y.show_ply == 'first' || !dual || !dual.valid) {
             this.set_ply(num_ply, true);
             return;
         }
-
-        let dual = this.dual;
-        if (!dual)
-            return;
 
         let duals = dual.moves,
             moves = this.moves,

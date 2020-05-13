@@ -451,12 +451,17 @@ function create_boards() {
 
 /**
  * Reset sub boards
+ * @param {number} mode &1:mark board invalid, &2:reset the board completely
  */
-function reset_sub_boards() {
+function reset_sub_boards(mode) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.main)
-            board.reset();
+        if (!board.main) {
+            if (mode & 1)
+                board.valid = false;
+            if (mode & 2)
+                board.reset();
+        }
     });
 }
 /**
@@ -2173,7 +2178,7 @@ function update_pgn(section, pgn) {
         }
         main.reset();
         if (is_same) {
-            reset_sub_boards();
+            reset_sub_boards(3);
             reset_charts();
         }
         main.round = headers.Round;
@@ -2598,7 +2603,7 @@ function changed_section() {
         return;
 
     // reset some stuff
-    reset_sub_boards();
+    reset_sub_boards(3);
     reset_charts();
 
     // update overview
@@ -2654,7 +2659,7 @@ function handle_board_events(board, type, value) {
 
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
-            reset_sub_boards();
+            reset_sub_boards(1);
             update_move_pv(section, cur_ply - 1, board.moves[cur_ply - 1]);
             update_move_pv(section, cur_ply, value);
 

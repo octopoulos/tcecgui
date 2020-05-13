@@ -3,8 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-12 : fix crowd sound not playing
 -          : 2020-05-12 : bug when game ends, graph duplicates itself
--          : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
-2020-05-12 : 2020-05-12 : remember when mousedown happened + drag => use that to prevent Click events in .scroller
+2020-05-13 : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
+2020-05-13 : 2020-05-12 : remember when mousedown happened + drag => use that to prevent Click events in .scroller
 2020-05-13 : 2020-05-13 : added subscribe/donate buttons + fix board size
 2020-05-13 : 2020-05-12 : adjust right panel max width
 2020-05-13 : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
