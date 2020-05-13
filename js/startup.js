@@ -11,7 +11,7 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
-C, cannot_click, change_page, change_theme, changed_hash, changed_section, check_hash, Clamp, Class,
+C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
 create_field_value, DEV, document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key,
 game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES,
 Keys, KEYS,
@@ -91,6 +91,9 @@ function adjust_popups() {
  */
 function change_setting_special(name, value) {
     switch (name) {
+    case 'all_graphs':
+        move_nodes();
+        break;
     case 'animate':
     case 'board_theme':
     case 'custom_black':
@@ -163,6 +166,7 @@ function change_theme(theme) {
  */
 function check_hash_special() {
     check_stream();
+    move_nodes();
 
     if (!['archive', 'live'].includes(Y.x))
         Y.x = 'live';
@@ -346,6 +350,40 @@ function load_google_analytics() {
 }
 
 /**
+ * Check if some elements should be moved around, like the charts
+ */
+function move_nodes() {
+    let all_graphs = Y.all_graphs,
+        destin = Id(all_graphs? 'charts2': 'charts'),
+        destin_nodes = destin.children,
+        parent = Id('charts-tab'),
+        source = Id(all_graphs? 'charts': 'charts2'),
+        source_nodes = source.children;
+
+    Keys(CHART_NAMES).forEach(key => {
+        S(`[data-x="${key}"]`, !all_graphs, parent);
+    });
+    S('[data-x="x"]', all_graphs, parent);
+
+    if (DEV.ui)
+        LS(`move nodes: ${all_graphs} : ${source_nodes.length} vs ${destin_nodes.length}`);
+    if (destin_nodes.length)
+        return;
+
+    // move all nodes
+    while (source_nodes.length)
+        destin.appendChild(source_nodes[0]);
+
+    Style(destin, 'margin:0 0 0.5em 0', true, all_graphs);
+    S('vert, vert > .label', all_graphs, destin);
+
+    if (all_graphs)
+        resize();
+    else
+        Style('vert', 'height:auto;transform:none;width:auto', true, destin);
+}
+
+/**
  * Move a pane left or right, swapping it with another
  * - call without arguments to initialise the panes at startup
  * @param {Node=} node
@@ -393,6 +431,20 @@ function resize() {
     Style('#right', `max-height:${height}px`);
     Style('#chat', `height:${Max(350, height - 100 + Y.chat_offset)}px;width:100%`);
     resize_panels();
+
+    // resize charts
+    if (Y.all_graphs) {
+        let destin = Id('charts2'),
+            scale = Min(1, (destin.clientWidth - 8) / 6 / (300 + 8));
+        // if (scale < 0.75)
+        //     scale = Min(2, (destin.clientWidth - 8) / 3 / (300 + 8));
+
+        let height = 255 * scale,
+            width = 300 * scale,
+            y_off = 255 * (scale - 1) / 2;
+        Style('vert', `height:${height}px;transform:translate(0, ${y_off}px) scale(${scale});width:${width}px`, true, destin);
+        Show('vert', destin);
+    }
 
     adjust_popups();
     resize_game();

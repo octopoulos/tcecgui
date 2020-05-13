@@ -230,14 +230,33 @@
                     <div class="tab" data-x="live" data-t="Live"></div>
                     <div class="tab" data-x="pv" data-t="PV"></div>
                     <div class="tab" data-x="pva" data-t="PV(A)"></div>
+                    <div class="tab dn" data-x="x" data-t="X"></div>
                 </horis>
                 <div id="charts">
-                    <canvas id="table-eval" height="230" class="graphs"></canvas>
-                    <canvas id="table-time" height="230" class="graphs dn"></canvas>
-                    <canvas id="table-speed" height="230" class="graphs dn"></canvas>
-                    <canvas id="table-node" height="230" class="graphs dn"></canvas>
-                    <canvas id="table-depth" height="230" class="graphs dn"></canvas>
-                    <canvas id="table-tb" height="230" class="graphs dn"></canvas>
+                    <vert id="table-eval">
+                        <canvas id="chart-eval" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="Eval"></div>
+                    </vert>
+                    <vert id="table-time" class="dn">
+                        <canvas id="chart-time" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="Time"></div>
+                    </vert>
+                    <vert id="table-speed" class="dn">
+                        <canvas id="chart-speed" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="Speed"></div>
+                    </vert>
+                    <vert id="table-node" class="dn">
+                        <canvas id="chart-node" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="Nodes"></div>
+                    </vert>
+                    <vert id="table-depth" class="dn">
+                        <canvas id="chart-depth" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="{Depth}/SD"></div>
+                    </vert>
+                    <vert id="table-tb" class="dn">
+                        <canvas id="chart-tb" height="230" class="graphs"></canvas>
+                        <div class="label dn" data-t="TB"></div>
+                    </vert>
                 </div>
                 <!-- pv -->
                 <vert id="table-pv" class="dn">
@@ -252,6 +271,7 @@
                     <vert id="pva" class="xboard"></vert>
                     <hori id="colors"></hori>
                 </vert>
+                <div id="table-x" class="dn"></div>
             </vert>
         </vert>
         <!-- right -->
@@ -316,6 +336,7 @@
             </vert>
         </vert>
     </hori>
+    <horis id="charts2" class="fcenter"></horis>
     <!-- ad1 -->
     <div id="ad1">
         <hori class="google-ad fcenter"></hori>

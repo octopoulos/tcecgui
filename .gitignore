@@ -30,6 +30,7 @@ index.html
 json/
 live*.json
 model/
+new.json
 schedule.json
 sound/*.js
 svg/

@@ -20,7 +20,7 @@ listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_O
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
 show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
-translate, translate_node, Undefined, update_live_chart, update_player_chart, update_svg, Upper,
+translate, translate_node, Undefined, update_live_chart, update_player_charts, update_svg, Upper,
 virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
@@ -535,6 +535,7 @@ function update_engine_pieces() {
 function analyse_crosstable(section, data) {
     if (!data)
         return;
+    SetDefault(table_data, section, {}).crossx = data;
 
     let cross_rows = [],
         dicos = data.Table,
@@ -593,7 +594,7 @@ function analyse_crosstable(section, data) {
         scolumns = Array.from(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
 
-    if (scolumns != snew_columns) {
+    if (scolumns != snew_columns && Y.x == section) {
         // make the extra columns the same size
         let extras = new_columns.slice(3),
             width = `${Floor(71 / (extras.length + 0.001))}%`,
@@ -1945,7 +1946,7 @@ function update_move_info(ply, move, finished, fresh) {
             depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
             eval: format_eval(eval_, true),
             node: is_book? '-': FormatUnit(move.n, '-'),
-            speed: is_book? '-': `${FormatUnit(move.s, '0')}bps`,
+            speed: is_book? '-': `${FormatUnit(move.s, '0')}nps`,
             tb: is_book? '-': FormatUnit(move.tb, '-'),
         };
 
@@ -2092,8 +2093,8 @@ function update_overview_moves(headers, moves, start, is_new) {
         HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
     }
 
-    // 2) only update the current chart
-    update_player_chart(null, moves, start);
+    // 2) update the current chart only (except if all_graphs is ON)
+    update_player_charts(null, moves, start);
     if (is_live && is_new && Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
@@ -2114,6 +2115,8 @@ function update_overview_moves(headers, moves, start, is_new) {
         let result = headers.Result;
         if (is_live && is_new && Y.crowd_sound)
             play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        if (DEV.new)
+            LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
         main.set_last(result);
     }
     else
@@ -2163,8 +2166,8 @@ function update_pgn(section, pgn) {
         pgn.gameChanged = 0;
     }
 
-    if (!num_move)
-        return;
+    if (is_same)
+        update_overview_moves(headers, moves, start, true, true);
 
     // 3) check for a new game
     // TODO: bug at this point
@@ -2173,7 +2176,7 @@ function update_pgn(section, pgn) {
 
     if (main.round != headers.Round) {
         if (DEV.new) {
-            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply}`);
+            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply} : num_move=${num_move}`);
             LS(pgn);
         }
         main.reset();
@@ -2185,10 +2188,11 @@ function update_pgn(section, pgn) {
         new_game = true;
     }
 
+    if (!num_move)
+        return;
+
     // 4) add the moves
     main.add_moves(moves, start);
-    if (is_same)
-        update_overview_moves(headers, moves, start, !new_game);
 
     // got player info => can do h2h
     check_queued_tables();
@@ -2719,11 +2723,14 @@ function opened_table(node, name, tab) {
 
     // 2) special cases
     if (is_chart && CHART_NAMES[name] && xboards[section])
-        update_player_chart(name, xboards[section].moves, 0);
+        update_player_charts(name, xboards[section].moves, 0);
 
     switch (name) {
     case 'crash':
         download_table(section, 'crash.json', name);
+        break;
+    case 'cross':
+        analyse_crosstable(section, table_data[section].crossx);
         break;
     case 'info':
         HTML(node, HTML('#desc'));
@@ -2943,6 +2950,7 @@ function startup_game() {
             live_pv: [ON_OFF, 1],
         },
         extra: {
+            all_graphs: [ON_OFF, 0, 'Show all graphs at the same time'],
             rows_per_page: [[10, 20, 50, 100], 10],
         },
     });

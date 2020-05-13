@@ -126,7 +126,7 @@ function create_charts()
     };
 
     // 2) create all charts
-    charts.depth = charts.depth || new Chart('table-depth', {
+    charts.depth = charts.depth || new Chart('chart-depth', {
         type: 'line',
         data: chart_data.depth,
         options: {...options, ...{
@@ -155,7 +155,7 @@ function create_charts()
         }},
     });
 
-    charts.eval = charts.eval || new Chart('table-eval', {
+    charts.eval = charts.eval || new Chart('chart-eval', {
         type: 'line',
         data: chart_data.eval,
         options: {...options, ...{
@@ -186,7 +186,7 @@ function create_charts()
         }},
     });
 
-    charts.node = charts.node || new Chart('table-node', {
+    charts.node = charts.node || new Chart('chart-node', {
         type: 'line',
         data: chart_data.node,
         options: {...options, ...{
@@ -230,7 +230,7 @@ function create_charts()
         }},
     });
 
-    charts.speed = charts.speed || new Chart('table-speed', {
+    charts.speed = charts.speed || new Chart('chart-speed', {
         type: 'line',
         data: chart_data.speed,
         options: {...options, ...{
@@ -275,7 +275,7 @@ function create_charts()
         }},
     });
 
-    charts.tb = charts.tb || new Chart('table-tb', {
+    charts.tb = charts.tb || new Chart('chart-tb', {
         type: 'line',
         data: chart_data.tb,
         options: {...options, ...{
@@ -319,7 +319,7 @@ function create_charts()
         }},
     });
 
-    charts.time = charts.time || new Chart('table-time', {
+    charts.time = charts.time || new Chart('chart-time', {
         type: 'line',
         data: chart_data.time,
         options: {...options, ...{
@@ -352,7 +352,7 @@ function create_charts()
 
     // 3) click events
     Keys(charts).forEach(name => {
-        C(`#table-${name}`, e => {
+        C(`#chart-${name}`, e => {
             let chart = charts[name],
                 point = chart.getElementAtEvent(e)[0];
             if (!point)
@@ -570,6 +570,23 @@ function update_player_chart(name, moves, start) {
     }
 
     charts[chart_id].update();
+}
+
+/**
+ * Update a player charts using new moves
+ * - designed for white & black, not live
+ * @param {string} name if empty then will use the current chart_id or update all charts
+ * @param {Move[]} moves
+ * @param {number} start starting ply for the moves
+ */
+function update_player_charts(name, moves, start) {
+    if (!name && Y.all_graphs) {
+        Keys(charts).forEach(key => {
+            update_player_chart(key, moves, start);
+        });
+    }
+    else
+        update_player_chart(name, moves, start);
 }
 
 // STARTUP

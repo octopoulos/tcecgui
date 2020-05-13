@@ -1162,15 +1162,20 @@ function show_settings(name) {
         // link or list
         let setting = settings[key][0],
             more_class = setting? '': ' span',
-            more_data = setting? '': ` data-set="${key}"`;
+            more_data = setting? '': ` data-set="${key}"`,
+            title = settings[key][2];
 
-        lines.push(`<a class="item${more_class}"${more_data} data-t="${Title(key).replace(/_/g, ' ')}"></a>`);
+        lines.push(
+            `<a class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+                + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
+            + '</a>'
+        );
 
         if (Array.isArray(setting)) {
             lines.push(
                 '<vert class="fcenter">'
                 + `<select name="${key}">`
-                    + settings[key][0].map(option => {
+                    + setting.map(option => {
                         let value = Undefined({off: 0, on: 1}[option], option);
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')

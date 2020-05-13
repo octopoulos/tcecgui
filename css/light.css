@@ -1064,6 +1064,12 @@ grid {
 #table-pva {
     order: 6;
 }
+#charts2 {
+    width: 100%;
+}
+#charts2 > vert {
+    margin: 2px;
+}
 
 /* extras */
 #ad0,
