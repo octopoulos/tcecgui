@@ -2,8 +2,8 @@
 //
 /*
 globals
-_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, Keys, load_library,
-LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
+_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, extract_fen_ply, Floor, FormatUnit, FromSeconds,
+Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
 */
 'use strict';
 
@@ -527,8 +527,17 @@ function update_player_chart(name, moves, start) {
     // 3) add data
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
-            ply = start + i,
-            num = Floor(ply / 2),
+            ply = move.ply;
+        if (ply == undefined) {
+            ply = extract_fen_ply(move.fen);
+            // !!start might be incorrect
+            if (isNaN(ply))
+                ply = start + i;
+            else
+                move.ply = ply;
+        }
+
+        let num = Floor(ply / 2),
             num2 = num - first_num;
 
         labels[num2] = num + 1;

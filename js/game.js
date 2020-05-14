@@ -2964,7 +2964,7 @@ function startup_game() {
         tabs: {},                           // opened tabs
         three: 0,                           // 3d scene
         twitch_chat: 1,
-        twitch_dark: 1,
+        twitch_dark: 0,
         twitch_video: device.mobile? 0: 1,
         x: 'live',
     });
@@ -3010,6 +3010,10 @@ function startup_game() {
         },
         // separator
         _2: {},
+        // backup: {
+        //     load_settings: [],
+        //     save_settings: [],
+        // },
         control: {
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
         },

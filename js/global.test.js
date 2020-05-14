@@ -24,6 +24,10 @@ let {extract_fen_ply} = require(OUTPUT_MODULE);
 
 // extract_fen_ply
 [
+    [undefined, undefined],
+    [null, undefined],
+    ['', undefined],
+    ['test', NaN],
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', -1],
     ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', 0],
     ['rnbqkbnr/pppppp1p/6p1/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2', 1],

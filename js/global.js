@@ -35,6 +35,8 @@ let HOST = 'https://tcec-chess.com',
  * @returns {number}
  */
 function extract_fen_ply(fen) {
+    if (!fen)
+        return;
     let items = fen.split(' ');
     return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
 }

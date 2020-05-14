@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the divering moves
 ~          : 2020-05-12 : bug when game ends, graph duplicates itself
+2020-05-14 : 2020-05-14 : Bulgarian language
 2020-05-14 : 2020-05-14 : move time bug in the history, the time should not show the clock time
 2020-05-14 : 2020-05-14 : fully resizeable graphs
 2020-05-14 : 2020-05-14 : resize center column + boards & graph
@@ -184,6 +185,7 @@ medium:
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+-          : 2020-05-14 : save and load settings
 low:
 -          : 2020-05-13 : drag and drop system using the dummies as targets
 -          : 2020-04-29 : add SVG connectors to the bracket
