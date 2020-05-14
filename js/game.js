@@ -608,7 +608,7 @@ function analyse_crosstable(section, data) {
         let extras = new_columns.slice(3),
             width = `${Floor(71 / (extras.length + 0.001))}%`,
             widths = [...['4%', '18%', '7%'], ...extras.map(() => width)],
-            head = create_table_columns(new_columns, widths);
+            head = create_table_columns(new_columns, widths, abbrevs);
         HTML('thead', head, node);
         translate_node(node);
     }
@@ -847,13 +847,16 @@ function create_table(columns, add_empty) {
  * - used when generating the dynamic Crosstable
  * @param {string[]} columns
  * @param {number[]=} widths optional width for each column
+ * @param {string[]=} no_translates don't translate those terms
  * @returns {string}
  */
-function create_table_columns(columns, widths) {
+function create_table_columns(columns, widths, no_translates=[]) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
-            style = widths? ` style="width:${widths[id]}"`: '';
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}" data-t="${value}"></th>`;
+            style = widths? ` style="width:${widths[id]}"`: '',
+            translate = no_translates.includes(value)? '': ` data-t="${value}"`;
+
+        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}">${translate? '': value}</th>`;
     }).join('');
 }
 
