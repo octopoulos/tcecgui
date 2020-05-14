@@ -13,14 +13,14 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
-controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, document, ENGINE_COLORS, Events, Exp,
-fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input,
-InsertNodes, invert_eval, Keys, KEYS,
+controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, ENGINE_COLORS,
+Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE,
+HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
-S, save_option, save_storage, scene, set_3d_events, set_camera_control, set_camera_id, SetDefault, Show, show_menu,
-show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
-translate, translate_node, Undefined, update_live_chart, update_player_charts, update_svg, Upper,
+S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
+Show, show_menu, show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle,
+touch_handle, translate, translate_node, Undefined, update_live_chart, update_player_charts, update_svg, Upper,
 virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
@@ -60,14 +60,14 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             live_id: 0,
             pv_id: '#table-live0 .live-pv',
             tab: 'live',
-            vis: 'table-live',
+            vis: 'table-kibitz',
         },
         live1: {
             dual: 'live0',
             live_id: 1,
             pv_id: '#table-live1 .live-pv',
             tab: 'live',
-            vis: 'table-live',
+            vis: 'table-kibitz',
         },
         pv0: {
             dual: 'pv1',
@@ -1884,6 +1884,9 @@ function download_pgn(section, url) {
 
         pgns[section] = null;
         update_pgn(section, data);
+
+        if (section == 'archive')
+            ScrollDocument('#table-view');
     });
 }
 
@@ -2111,6 +2114,8 @@ function update_overview_moves(headers, moves, start, is_new) {
 
     // 3) check adjudication
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+    if (tb <= 1)
+        tb = `<a href="https://syzygy-tables.info/?fen=${move.fen.replace(/ /g, '_')}" target="_blank">${tb}</a>`;
     HTML('td[data-x="tb"]', tb, overview);
 
     let result = check_adjudication(move.adjudication, num_ply);
@@ -2914,7 +2919,7 @@ function startup_game() {
         three: 0,                           // 3d scene
         twitch_chat: 1,
         twitch_dark: 1,
-        twitch_video: 1,
+        twitch_video: device.mobile? 0: 1,
         x: 'live',
     });
     Assign(STATE_KEYS, {

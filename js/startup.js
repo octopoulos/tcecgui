@@ -12,16 +12,16 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
-create_field_value, DEV, document, download_live, download_tables, ENGINE_COLORS, Events, game_action_key,
-game_action_keyup, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES,
-Keys, KEYS,
+create_field_value, detect_device, DEV, document, download_live, download_tables, ENGINE_COLORS, Events,
+game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
+init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
-S, save_option, screen, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup, show_settings,
-Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES, tcecHandleKey,
-THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug, update_theme,
-update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
-virtual_resize:true, Visible, window, xboards, Y
+S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
+show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
+tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug,
+update_theme, update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true,
+virtual_opened_table_special:true, virtual_resize:true, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -221,7 +221,7 @@ function check_stream() {
     resize();
 
     if (stream)
-        window.scrollTo(0, Id('table-view').offsetTop);
+        ScrollDocument('#table-view');
 
     // maybe the board has not been loaded yet
     if (!xboards.live)
@@ -302,11 +302,8 @@ function init_globals() {
             old_window_height = window.innerHeight;
         }
 
-        if (Y.stream) {
-            let top = Id('table-view').offsetTop;
-            if (window.scrollY != top)
-                window.scrollTo(0, top);
-        }
+        if (Y.stream)
+            ScrollDocument('#table-view');
     }, TIMEOUT_font);
 }
 
@@ -797,12 +794,22 @@ function set_global_events() {
             resize();
         });
     });
+
+    C('#nav-archive', () => {
+        // TODO: should scroll if there's no archive game loaded only??
+        if (Y.archive_scroll) {
+            ScrollDocument('#tables');
+            if (!['cross', 'h2h', 'sched', 'season'].includes(get_active_tab('table')[0]))
+                open_table('season');
+        }
+    });
 }
 
 /**
  * Load settings from Local Storage
  */
 function load_settings() {
+    detect_device();
     load_defaults();
 
     api_times = get_object('times') || {};
@@ -861,6 +868,7 @@ function startup() {
     virtual_resize = resize;
 
     // pre-process
+    detect_device();
     startup_config();
     startup_3d();
     startup_game();
@@ -873,6 +881,7 @@ function startup() {
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
         },
         extra: {
+            archive_scroll: [ON_OFF, 1],
             chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
             cross_crash: [ON_OFF, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
