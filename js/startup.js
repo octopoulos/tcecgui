@@ -891,8 +891,10 @@ function startup() {
     LANGUAGES = {
         bul: 'български',
         eng: 'English',
+        spa: 'Español',
         fra: 'français',
         jpn: '日本語',
+        pol: 'Polski',
         rus: 'русский',
         ukr: 'українська',
     };
