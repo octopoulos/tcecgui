@@ -2,6 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the diverging moves
+-          : 2020-05-14 : show both kibitzers
+2020-05-14 : 2020-05-14 : right click element => popup menu
 2020-05-14 : 2020-05-12 : bug when game ends, graph duplicates itself
 2020-05-14 : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
 2020-05-14 : 2020-05-14 : switch from 1 graph to all graphs => 5 graphs are outdated
@@ -193,7 +195,6 @@ low:
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
--          : 2020-05-14 : right click element => popup menu
 -          : 2020-05-14 : white and black arrows => arrow menu? + different color if they agree
 -          : 2020-05-14 : change colors of kibitzers
 lowest:

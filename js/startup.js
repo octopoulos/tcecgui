@@ -29,6 +29,15 @@ let AD_STYLES = {
         0: 'width:100%;max-height:210px',
         1: 'width:100%;max-height:280px',
     },
+    CONTEXT_MENUS = {
+        '#archive, #live': 'board',
+        '#charts, #charts2': 'graph',
+        '#eval0, #eval1': 'extra',
+        '#live0, #live1, #pv0, #pv1': 'board_pv',
+        '#lives': 'live',
+        '#quick-tabs, #tables': 'extra',
+        '.swaps, #table-chat': 'panel',
+    },
     old_center,
     old_font_height,
     old_stream = 0,
@@ -522,7 +531,7 @@ function set_3d_scene(three) {
  * @param {boolean=} instant popup appears instantly
  * @param {boolean=} overlay dark overlay is used behind the popup
  */
-function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
+function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
     S('#overlay', show && overlay);
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
@@ -565,7 +574,13 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting}={}) {
         translate_node(node);
 
         // align the popup with the target, if any
-        if (name && !px) {
+        if (xy) {
+            x = xy[0];
+            y = xy[1];
+            x2 = x;
+            y2 = y;
+        }
+        else if (name && !px) {
             let target = Id(name);
             if (target) {
                 let rect = target.getBoundingClientRect();
@@ -838,6 +853,14 @@ function set_global_events() {
                 open_table('season');
         }
     });
+
+    // context menus
+    Keys(CONTEXT_MENUS).forEach(key => {
+        Events(key, 'contextmenu', function(e) {
+            show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
+            e.preventDefault();
+        });
+    });
 }
 
 /**
@@ -923,7 +946,6 @@ function startup() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
-            cross_crash: [ON_OFF, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },
