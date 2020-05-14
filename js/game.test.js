@@ -19,11 +19,11 @@ create_module(IMPORT_PATH, [
     'xboard',
     //
     'game',
-], OUTPUT_MODULE, 'Assign players tour_info');
+], OUTPUT_MODULE, 'Assign players tour_info Y');
 
 let {
         Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
-        create_game_link, format_eval, format_hhmmss, format_percent, get_short_name, players, tour_info,
+        create_game_link, format_eval, format_hhmmss, format_percent, get_short_name, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -140,24 +140,31 @@ let {
 
 // format_eval
 [
-    [null, undefined, null],
-    [NaN, undefined, NaN],
-    [Infinity, undefined, 'Infinity'],
-    ['', undefined, ''],
-    [0, undefined, '0.00'],
-    [0, true, '<i>0.</i><i class="smaller">00</i>'],
-    [0.98, true, '<i>0.</i><i class="smaller">98</i>'],
-    [0.987654321, false, '0.99'],
-    [0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
-    ['150.142', true, '<i>150.</i><i class="smaller">14</i>'],
-    [10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
-    [-198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
-    ['-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
-    ['M#43', true, 'M#43'],
+    ['', null, undefined, null],
+    ['', NaN, undefined, NaN],
+    ['', Infinity, undefined, 'Infinity'],
+    ['', '', undefined, ''],
+    ['', 0, undefined, '0.00'],
+    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    ['always', 0, false, '0.00'],
+    ['>= 10', 0, true, '0.00'],
+    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    ['always', 0.98, true, '<i>0.</i><i class="smaller">98</i>'],
+    ['always', 0.987654321, false, '0.99'],
+    ['always', 0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
+    ['always', '150.142', true, '<i>150.</i><i class="smaller">14</i>'],
+    ['always', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
+    ['>= 10', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
+    ['>= 100', 10.15535, true, '10.16'],
+    ['always', -198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['always', '-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['never', '-198.42', true, '-198.42'],
+    ['always', 'M#43', true, 'M#43'],
 ]
- .forEach(([value, small_decimal, answer], id) => {
+ .forEach(([small_decimal, value, process, answer], id) => {
     test(`format_eval:${id}`, () => {
-        expect(format_eval(value, small_decimal)).toEqual(answer);
+        Y.small_decimal = small_decimal;
+        expect(format_eval(value, process)).toEqual(answer);
     });
 });
 

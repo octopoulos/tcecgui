@@ -224,7 +224,7 @@ class XBoard {
         for (let i = 0; i < num_new; i ++) {
             let extra = '',
                 move = moves[i],
-                ply = extract_fen_ply(move.fen);
+                ply = move.ply || extract_fen_ply(move.fen);
 
             if (DEV.fen && ply != start + i) {
                 LS(`add_moves: ${ply} != ${start + i}`);
@@ -232,6 +232,7 @@ class XBoard {
                 LS(this.moves);
                 break;
             }
+            move.ply = ply;
             this.moves[ply] = move;
 
             // TODO: remove this ... sometimes we need to add missing nodes
@@ -1189,7 +1190,7 @@ class XBoard {
      * 3d rendering
      */
     render_3d() {
-        LS('render_3d');
+        LS(`render_3d: ${T}`);
         if (!T)
             return;
     }
