@@ -312,21 +312,29 @@ function create_game_link(section, game, text, only_link) {
 /**
  * Format the eval to make the 2 decimals smaller if the eval is high
  * @param {number} value
- * @param {boolean=} small_decimal make decimals smaller
+ * @param {boolean=} process can make decimals smaller
  * @returns {number}
  */
-function format_eval(value, small_decimal) {
+function format_eval(value, process) {
     let float = parseFloat(value);
     if (isNaN(float))
         return value;
 
-    let text = parseFloat(float).toFixed(2);
-    if (!small_decimal)
+    let small_decimal = Y.small_decimal,
+        text = parseFloat(float).toFixed(2);
+
+    if (!process || small_decimal == 'never')
         return text;
 
     let items = text.split('.');
     if (items.length < 2)
         return text;
+
+    if (float < 10 && small_decimal != 'always')
+        return text;
+    if (float < 100 && small_decimal == '>= 100')
+        return text;
+
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
@@ -2955,6 +2963,7 @@ function startup_game() {
         extra: {
             all_graphs: [ON_OFF, 0, 'Show all graphs at the same time'],
             rows_per_page: [[10, 20, 50, 100], 10],
+            small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
         },
     });
 
