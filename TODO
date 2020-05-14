@@ -3,6 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the divering moves
 ~          : 2020-05-12 : bug when game ends, graph duplicates itself
+-          : 2020-05-14 : move time bug in the history, the time should not show the clock time
+2020-05-14 : 2020-05-14 : fully resizeable graphs
 2020-05-14 : 2020-05-14 : resize center column + boards & graph
 2020-05-14 : 2020-05-14 : tb link + archive scroll
 2020-05-14 : 2020-05-14 : mobile detect => disable twich video by default

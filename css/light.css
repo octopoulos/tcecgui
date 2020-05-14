@@ -998,7 +998,7 @@ grid {
     width: 95%;
 }
 #left {
-    flex: 2.6;
+    flex: 2.5;
     margin: 4px;
     max-width: calc(100vh - 400px);
     min-width: 281px;
@@ -1069,7 +1069,7 @@ grid {
 #table-pva {
     order: 6;
 }
-#charts > vert {
+.chart {
     position: relative;
 }
 #charts canvas {

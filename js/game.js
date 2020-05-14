@@ -2107,7 +2107,7 @@ function update_overview_moves(headers, moves, start, is_new) {
         HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
     }
 
-    // 2) update the current chart only (except if all_graphs is ON)
+    // 2) update the current chart only (except if graph_all is ON)
     update_player_charts(null, moves, start);
     if (is_live && is_new && Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
@@ -2710,6 +2710,7 @@ function open_table(sel, hide_table=true) {
 
     if (active) {
         Class(active, '-active');
+        // only hide if the table has the same parent
         if (hide_table)
             Hide(`#table-${active.dataset.x}`);
     }
@@ -2966,7 +2967,6 @@ function startup_game() {
         },
         dimension: {},
         extra: {
-            all_graphs: [ON_OFF, 0, 'Show all graphs at the same time'],
             rows_per_page: [[10, 20, 50, 100], 10],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
         },
