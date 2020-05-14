@@ -915,21 +915,23 @@ function startup() {
             key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
         },
-        dimension: {
-            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
+        graph: {
             graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
-            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
-            panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
-            panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
-            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
             cross_crash: [ON_OFF, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
+        },
+        panel: {
+            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
+            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
+            panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
+            panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
+            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
         },
     });
 
