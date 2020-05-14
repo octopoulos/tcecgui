@@ -1,0 +1,193 @@
+TODO
+=====
+DONE         CREATED      DESCRIPTION
+~          : 2020-05-12 : bug when game ends, graph duplicates itself
+2020-05-13 : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
+2020-05-13 : 2020-05-13 : basic dummy slot system: test it with graphs
+2020-05-13 : 2020-05-12 : fix crowd sound not playing
+2020-05-13 : 2020-05-12 : live pv disappears when game is too fast => should not reset sub boards but mark them dirty
+2020-05-13 : 2020-05-12 : remember when mousedown happened + drag => use that to prevent Click events in .scroller
+2020-05-13 : 2020-05-13 : added subscribe/donate buttons + fix board size
+2020-05-13 : 2020-05-12 : adjust right panel max width
+2020-05-13 : 2020-05-12 : xfen popup obstructs the view, should remove pointer-events when gone
+2020-05-13 : 2020-05-13 : new wikipedia svg pieces
+2020-05-13 : 2020-05-12 : choose log value inside the live log table
+2020-05-12 : 2020-05-12 : keep 2 decimals for the eval, but make those decimals smaller when the eval is high
+2020-05-12 : 2020-05-12 : fixed season sub ordering
+2020-05-12 : 2020-05-02 : convert XBoard matrix to 128 array
+2020-05-12 : 2020-05-12 : tests for page creation
+2020-05-12 : 2020-05-07 : show fewer pages in the pagination, page +- 2 + start/end + ... + < > => 11
+2020-05-12 : 2020-05-10 : PVA: 4 colors choice (white, black, blue, red)
+2020-05-12 : 2020-05-10 : use sprites for materials + 2 kings
+2020-05-11 : 2020-05-11 : fix shortcut click
+2020-05-11 : 2020-05-11 : full screen toggle: useful for mobile devices
+2020-05-11 : 2020-05-10 : show an extra move line above/under the current ply
+2020-05-11 : 2020-05-08 : fix highlight / sync issues in PV: do this through live testing + archive
+2020-05-11 : 2020-05-11 : improved eval formatting, ex: -198.42 should become -198.4
+2020-05-11 : 2020-05-08 : show a counter of unseen moves
+2020-05-11 : 2020-05-11 : script.py should gzip files: index.html + css + js
+2020-05-11 : 2020-05-10 : handle archive links
+2020-05-11 : 2020-05-10 : handle wrong evals caused by M50 and -M50
+2020-05-11 : 2020-05-10 : add missing score in Score(Elo)
+2020-05-10 : 2020-04-14 : use clicks to move pieces on the board in interactive mode
+2020-05-10 : 2020-05-10 : some extra tests
+2020-05-10 : 2020-05-10 : custom theme: manually set board colors
+2020-05-10 : 2020-05-10 : update overview + charts when switching section
+2020-05-10 : 2020-05-10 : add manifest.json: with this, we can have a shortcut icon on phones
+2020-05-10 : 2020-05-03 : delete the old code
+2020-05-10 : 2020-05-10 : instant switch between archive and live
+2020-05-10 : 2020-04-17 : load archive games without loading a new page
+2020-05-09 : 2020-05-09 : remember which season and game was opened last => open them by default
+2020-05-09 : 2020-05-07 : hover on final FEN => show popup with a board + copy fen button
+2020-05-09 : 2020-05-09 : use handle_hold for key events in addition to mouse events
+2020-05-09 : 2020-05-07 : show first diverging move in white/black PV
+2020-05-08 : 2020-05-08 : extract_fen_ply used in add_moves + DEV.fen can detect ply mismatches
+2020-05-08 : 2020-05-08 : separate themes for main board and PV
+2020-05-08 : 2020-05-08 : piece theme offsets, ex: dilena -15px
+2020-05-08 : 2020-05-04 : show move arrows
+2020-05-07 : 2020-05-07 : extra translations
+2020-05-07 : 2020-05-07 : make a smaller chart.js, small enough so it can be bundled
+2020-05-07 : 2020-04-23 : redesign event stats: use boxes => more efficient available screen space usage
+2020-05-07 : 2020-05-07 : calculate event stats
+2020-05-07 : 2020-05-07 : estimate stating date/time in schedule
+2020-05-07 : 2020-05-02 : live fen calculation after clicking on a ply with chess-quick.js (slow)
+2020-05-06 : 2020-05-06 : add_moves_string + add tests
+2020-05-05 : 2020-05-05 : remove unused client js/css including jquery, extensions, ...
+2020-05-05 : 2020-05-05 : remove every bootstrap file
+2020-05-05 : 2020-05-05 : make a faster/smaller version of chess.js
+2020-05-05 : 2020-04-30 : add search box for paginated tables
+2020-05-05 : 2020-05-03 : add pagination system
+2020-05-05 : 2020-05-01 : save table data in memory for live and archive + instant switch between them
+2020-05-04 : 2020-05-04 : compress create_charts + add click events
+2020-05-04 : 2020-05-04 : finish network.js: handle all events + live_log
+2020-05-04 : 2020-05-04 : engine colors should be more obvious in live PV
+2020-05-04 : 2020-05-04 : redo live charts
+2020-05-04 : 2020-05-04 : remember all active tabs, the same tabs will be opened when reloading the page
+2020-05-04 : 2020-05-04 : only update 1 chart if that's the only one we're watching
+2020-05-04 : 2020-05-04 : load libraries only once by remembering which ones have been loaded
+2020-05-04 : 2020-05-01 : redo player charts
+2020-05-04 : 2020-04-13 : add 3d scene toggle on top right
+2020-05-03 : 2020-05-03 : create a 3d scene and display the pieces
+2020-05-03 : 2020-04-13 : only load the 3d library/files when the user wants to use it
+2020-05-03 : 2020-05-03 : accurate javascript clock
+2020-05-03 : 2020-04-13 : modeled 3d pieces, 1.6k polygons for the queen
+2020-05-03 : 2020-04-13 : optimize layout for 2 PV's, they're not both visible on a 1024x screen
+2020-05-03 : 2020-05-03 : shortcut 1 & 2: can make a copy of any table appear on the top right
+2020-05-03 : 2020-04-13 : click on PV => keyboard should move in PV
+2020-05-03 : 2020-04-18 : handle keys correctly: proper key timings + hold key + button mapping
+2020-05-03 : 2020-04-13 : extra audio => capture, boom, check, draw, win ... ? or when favorite engine plays/winning
+2020-05-02 : 2020-04-13 : boost speed when going back & forth in positions, now it's too slow
+2020-05-02 : 2020-04-13 : accelerate setPvFromKey, updateEnginePv: not using them anymore
+2020-05-02 : 2020-05-02 : optimized create_pv_list with node insertion
+2020-05-02 : 2020-04-30 : automatically guess which piece was moved between 2 FEN's
+2020-05-02 : 2020-05-01 : combine all png into 1 image, for each theme => faster loading
+2020-05-01 : 2020-05-01 : delay google ads + analytics
+2020-05-01 : 2020-05-01 : show the seasons in archive
+2020-05-01 : 2020-05-01 : control highlight color + size, and display it on the board
+2020-05-01 : 2020-05-01 : optimized board/piece theme system
+2020-05-01 : 2020-05-01 : convert themes.js to png images
+2020-05-01 : 2020-04-24 : load cached data before the initial timeout => stand can appear directly when reload
+2020-04-30 : 2020-04-30 : sea theme: good example to let other people create their own themes
+2020-04-30 : 2020-04-30 : xboard rotation
+2020-04-29 : 2020-04-13 : dynamic options system: very easily extensible without extra code
+2020-04-29 : 2020-04-23 : remove moment.js, javascript can handle date/time just fine
+2020-04-28 : 2020-04-28 : calculate seeds + tests
+2020-04-28 : 2020-04-27 : draw basic brackets
+2020-04-24 : 2020-04-23 : light-archive.css and dark-archive.css => make skeleton theme
+2020-04-24 : 2020-04-13 : remove bootstrap locale folder
+2020-04-24 : 2020-04-17 : pv-boardwc == pv-boardw, and pv-boardbc == pv-boardb, => remove clones
+2020-04-24 : 2020-04-17 : clearly show if we're in the archive (yellow) or Live (red?)
+2020-04-24 : 2020-04-24 : new stucture: info -> about, rules, faq => no accidental misclick opening a new page
+2020-04-24 : 2020-04-20 : some 0/1 as parameters should be converted to false/true for readability
+2020-04-24 : 2020-04-13 : redo top navigation links without bootstrap
+2020-04-23 : 2020-04-23 : config.js for user configuration => 16TH 7Men TB + URL's + ...
+2020-04-23 : 2020-04-13 : add more Jest tests
+2020-04-23 : 2020-04-23 : swap panes using < > arrows
+2020-04-23 : 2020-04-23 : control of what sections can be translated or not
+2020-04-23 : 2020-04-23 : convenient way to enable/disable twitch: chat & video
+2020-04-23 : 2020-04-23 : json caching system: using localStorage + remember the time => minimise resources usage
+2020-04-23 : 2020-04-13 : add title + params + returns documentation for all functions, JsDoc format
+2020-04-23 : 2020-04-13 : merge B&W functions
+2020-04-23 : 2020-04-13 : remove most specific settings code: thousands of lines + difficult to add more settings
+2020-04-23 : 2020-04-21 : load charts library dynamically
+2020-04-23 : 2020-04-12 : convert all White and Black vars to arrays [w, b]
+2020-04-23 : 2020-04-18 : make < > buttons bigger, remove some buttons like dark mode
+2020-04-23 : 2020-04-22 : handle stand and cross tables
+2020-04-22 : 2020-04-22 : table data improvements: 1 small function can handle multiple tables
+2020-04-22 : 2020-04-22 : handle Live updates on the left
+2020-04-22 : 2020-04-22 : Xboard controls <<  < > >> + notation
+2020-04-22 : 2020-04-22 : autogen static Live tables, currently the whole table is recreated each time => slow
+2020-04-21 : 2020-04-21 : enable all tabs + twitch
+2020-04-21 : 2020-04-13 : convert themes to combo + dynamically load 1 theme at a time (save network)
+2020-04-21 : 2020-04-21 : embed ICONS to save requests
+2020-04-21 : 2020-04-13 : only keep fontawesome icons that are being used => faster loading
+2020-04-21 : 2020-04-21 : optimise images
+2020-04-21 : 2020-04-21 : new bootstrapTables without jquery nor bootstrap
+2020-04-21 : 2020-04-13 : remove as much bootstrap as possible => faster + save space
+2020-04-21 : 2020-04-13 : remove as much jquery as possible
+2020-04-21 : 2020-04-17 : remove duplicate ID's in html
+2020-04-21 : 2020-04-13 : remove all click triggers (they're hacks) in the js files
+2020-04-21 : 2020-04-13 : remove 80x onClick = ... from live.html
+2020-04-21 : 2020-04-21 : responsive layout for desktop and mobile
+2020-04-21 : 2020-04-13 : new overview table
+2020-04-21 : 2020-04-21 : download chart & socket.io for future embedding
+2020-04-21 : 2020-04-15 : FromSeconds => can remove redundant hhmm and hhmmss functions
+2020-04-21 : 2020-04-13 : replace several tables with grid/flex
+2020-04-21 : 2020-04-20 : make XBoard use the themes.js data
+2020-04-20 : 2020-04-16 : basic HTML rendering for XBoard
+2020-04-18 : 2020-04-13 : X_SETTINGS = much better settings system than what's now
+2020-04-17 : 2020-04-17 : improved INFO, using the new popup sytem
+2020-04-17 : 2020-04-13 : get rid of multiple big copy/paste in the code, if a code appears x times => in a function
+2020-04-17 : 2020-04-17 : remove tooltipster, use a better popup system without any library
+2020-04-17 : 2020-04-17 : archive.js
+2020-04-17 : 2020-04-17 : removed chat size since the auto size is good
+2020-04-17 : 2020-04-12 : remove all `var` = sources of bugs
+2020-04-17 : 2020-04-13 : smooth diagonal table scrolling, with mouse + touch
+2020-04-17 : 2020-04-15 : use the common 4 spaces indent
+2020-04-17 : 2020-04-16 : improved localStorage settings using Y
+2020-04-16 : 2020-04-16 : network.js
+2020-04-16 : 2020-04-16 : basic XBoard with text rendering
+2020-04-16 : 2020-04-13 : make a Python script to compress the css / js and embed the necessary ones in the html
+2020-04-15 : 2020-04-15 : optimise graphs.js
+2020-04-15 : 2020-04-13 : add 3d rendering options: shadow, texture quality, output, resolution
+2020-04-15 : 2020-04-15 : replace all localStorage code
+2020-04-15 : 2020-04-15 : improved format units + charts
+2020-04-14 : 2020-04-13 : convert translatable text to <tag data-t="some text"></tag>
+2020-04-14 : 2020-04-14 : replace setTimeout with add_timeout: safer and cancellable
+2020-04-14 : 2020-04-13 : fix audio exceptions
+2020-04-14 : 2020-04-13 : add DEV in the hash for fine debugging
+2020-04-14 : 2020-04-13 : add multi language support, starting with: eng, jpn, fra, rus, ukr, dynamically loaded
+2020-04-14 : 2020-04-13 : add engine.js
+2020-04-14 : 2020-04-13 : add `save_option` to change the setting + localStorage at the same time
+2020-04-14 : 2020-04-13 : gamepad support
+2020-04-14 : 2020-04-14 : DefaultFloat => when isNaN, takes the default value
+2020-04-14 : 2020-04-13 : add a few Jest tests
+2020-04-14 : 2020-04-14 : a bit larger navigation items on mobile
+2020-04-14 : 2020-04-13 : download_json.py to download all json files
+2020-04-13 : 2020-04-13 : fix the vertical line
+2020-04-13 : 2020-04-13 : remove axios, because `Resource` works fine => save space
+2020-04-13 : 2020-04-12 : correct chat height, to keep the board visible on desktops
+2020-04-12 : 2020-04-12 : correct table height (no internal vertical scroll)
+2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
+2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
+high:
+medium:
+-          : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
+-          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
+-          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
+~          : 2020-04-13 : add 3d board
+-          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+low:
+-          : 2020-05-13 : drag and drop system using the dummies as targets
+-          : 2020-04-29 : add SVG connectors to the bracket
+~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
+lowest:
+-          : 2020-04-24 : add 3d dark room
+-          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
+-          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
+-          : 2020-04-13 : add 3d players moving the pieces
+-          : 2020-04-13 : add 3d crowd based on the number of viewers
+-          : 2020-04-13 : add 3d tables + room
+-          : 2020-04-13 : VR support
+-          : 2020-04-23 : add tests for check_adjudication

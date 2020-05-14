@@ -6,6 +6,13 @@
 //  - find "COMMENTED!!" and uncomment the commented lines immediately following.
 //  - if there are uncommented lines directly after the comment block, comment that out.
 
+/*
+globals
+console, require
+*/
+'use strict';
+
+let Keys = Object.keys;
 
 // COMMENTED!!
 const shlib = require("./lib.js");
@@ -67,7 +74,7 @@ function pgn2crosstable(pgn, eventtable=false) {
 
     // process the PGNs --------------------------------------------------------
     for (let index = 0; index < pgn.length; index++) {
-        crosstable.Game += 1;
+        crosstable.Game ++;
         parse_pgn_for_crosstable(crosstable, pgn[index]);
     }
     delete crosstable.Game;
@@ -99,27 +106,27 @@ function get_eventtable(pgn) {
     let game_number = 0;
     for (let index = 0; index < pgn.length; index++) {
         game_info = parse_pgn_headers(pgn[index]);
-        engines_array = [game_info["White"], game_info["Black"]].sort();
+        engines_array = [game_info.White, game_info.Black].sort();
         engines_string = engines_array.join(EVENTTABLE_SPLIT_CHARS);
         if (!seen_matchups.includes(engines_string)) {
-            pairing_number += 1;
+            pairing_number ++;
             pairing_string = String(`Match ${pairing_number}`);
             eventtable.EventTable[pairing_string] = {
                 "Engines": engines_string
             };
             eventtable.CrossTable[pairing_string] = init_crosstable();
-            seen_matchups.push(engines_string)
+            seen_matchups.push(engines_string);
         } else {
             pairing_string = String(`Match ${seen_matchups.indexOf(engines_string) + 1}`);
         }
-        game_number += 1;
+        game_number ++;
         eventtable.CrossTable[pairing_string].Game = game_number;
         parse_pgn_for_crosstable(eventtable.CrossTable[pairing_string], pgn[index]);
         delete eventtable.CrossTable[pairing_string].Game;
     }
 
     // get the extra info for all the crosstables ------------------------------
-    const pairing_arrays = Object.keys(eventtable.EventTable);
+    const pairing_arrays = Keys(eventtable.EventTable);
     for (let index = 0; index < pairing_arrays.length; index++) {
         get_info(eventtable.CrossTable[pairing_arrays[index]]);
     }
@@ -131,24 +138,23 @@ function get_eventtable(pgn) {
         pairing_string = pairing_arrays[index];
         engine_eventtable = eventtable.EventTable[pairing_string];
         engine_crosstable = eventtable.CrossTable[pairing_string];
-        engines_array = engine_crosstable["Order"];
+        engines_array = engine_crosstable.Order;
 
         engine_eventtable.Winner = engines_array[0];
         engine_eventtable.Runner = engines_array[1];
         engine_eventtable.Games = engine_crosstable.Table[engines_array[0]].Games;
-        engine_eventtable.Points = [engine_crosstable.Table[engines_array[0]]["OrigScore"],
-            engine_crosstable.Table[engines_array[1]]["OrigScore"]].join("-");
-        engine_eventtable.Crashes = [engine_crosstable.Table[engines_array[0]]["Strikes"],
-            engine_crosstable.Table[engines_array[1]]["Strikes"]].join("-");
-        engine_eventtable.Score = engine_crosstable.Table[engines_array[0]]
-            ["Results"][engines_array[1]].Text;
+        engine_eventtable.Points = [engine_crosstable.Table[engines_array[0]].OrigScore,
+            engine_crosstable.Table[engines_array[1]].OrigScore].join("-");
+        engine_eventtable.Crashes = [engine_crosstable.Table[engines_array[0]].Strikes,
+            engine_crosstable.Table[engines_array[1]].Strikes].join("-");
+        engine_eventtable.Score = engine_crosstable.Table[engines_array[0]].Results[engines_array[1]].Text;
 
-        const games = engine_crosstable.Table[engines_array[0]]["Results"][engines_array[1]]["Scores"];
+        const games = engine_crosstable.Table[engines_array[0]].Results[engines_array[1]].Scores;
         const games_number_array = [];
         for (let game_index = 0; game_index < games.length; game_index++) {
-            games_number_array.push(games[game_index]["Game"]);
+            games_number_array.push(games[game_index].Game);
         }
-        engine_eventtable.Gamesno = games_number_array.join()
+        engine_eventtable.Gamesno = games_number_array.join();
     }
 
     return eventtable;
@@ -171,7 +177,7 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
     // game object to store the data -------------------------------------------
     const game = parse_pgn_headers(pgn);
 
-    if (!game["Time"] && !game["GameDuration"]) {
+    if (!game.Time && !game.GameDuration) {
         console.log("Failed for game:" + JSON.stringify(game));
         return;
     }
@@ -181,9 +187,9 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
         crosstable.Event = game.Event;
     }
 
-    if (!crosstable.Order.includes(game["White"])) {
-        crosstable.Order.push(game["White"]);
-        crosstable.Table[game["White"]] = {
+    if (!crosstable.Order.includes(game.White)) {
+        crosstable.Order.push(game.White);
+        crosstable.Table[game.White] = {
             // "Abbreviation": null,
             // "Elo": null,
             "Games": 0,
@@ -194,7 +200,7 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
             // "Neustadtl": null,
             // "Performance": null,
             // "Rank": null,
-            "Rating": parseInt(game["WhiteElo"]),
+            "Rating": parseInt(game.WhiteElo),
             "Results": {},
             "Score": 0,
             "Strikes": 0,
@@ -203,13 +209,13 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
         };
     }
 
-    if (isNaN(crosstable.Table[game["White"]].Rating)) {
-        crosstable.Table[game["White"]].Rating = Math.floor(3080 + 41 * Math.random());
+    if (isNaN(crosstable.Table[game.White].Rating)) {
+        crosstable.Table[game.White].Rating = Math.floor(3080 + 41 * Math.random());
     }
 
-    if (!crosstable.Order.includes(game["Black"])) {
-        crosstable.Order.push(game["Black"]);
-        crosstable.Table[game["Black"]] = {
+    if (!crosstable.Order.includes(game.Black)) {
+        crosstable.Order.push(game.Black);
+        crosstable.Table[game.Black] = {
             // "Abbreviation": null,
             // "Elo": null,
             "Games": 0,
@@ -220,7 +226,7 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
             // "Neustadtl": null,
             // "Performance": null,
             // "Rank": null,
-            "Rating": parseInt(game["BlackElo"]),
+            "Rating": parseInt(game.BlackElo),
             "Results": {},
             "Score": 0,
             "Strikes": 0,
@@ -229,68 +235,68 @@ function parse_pgn_for_crosstable(crosstable, pgn) {
         };
     }
 
-    if (isNaN(crosstable.Table[game["Black"]].Rating)) {
-        crosstable.Table[game["Black"]].Rating = Math.floor(3080 + 41 * Math.random());
+    if (isNaN(crosstable.Table[game.Black].Rating)) {
+        crosstable.Table[game.Black].Rating = Math.floor(3080 + 41 * Math.random());
     }
 
     // edit the `white` player's crosstable ------------------------------------
-    const white_table = crosstable.Table[game["White"]];
+    const white_table = crosstable.Table[game.White];
 
-    if (typeof (white_table.Results[game["Black"]]) === "undefined") {
-        white_table.Results[game["Black"]] = {
+    if (typeof (white_table.Results[game.Black]) === "undefined") {
+        white_table.Results[game.Black] = {
             "H2h": 0,
             "Scores": [],
             "Text": ""
-        }
+        };
     }
 
-    white_table.Results[game["Black"]].Scores.push({
+    white_table.Results[game.Black].Scores.push({
         "Game": crosstable.Game,
-        "Result": RESULT_LOOKUP[game["Result"]],
-        "Winner": WINNER_LOOKUP[game["Result"]],
+        "Result": RESULT_LOOKUP[game.Result],
+        "Winner": WINNER_LOOKUP[game.Result],
         "Side": "White"
     });
 
-    white_table.Results[game["Black"]].H2h += RESULT_LOOKUP[game["Result"]];
-    white_table.Results[game["Black"]].Text += TEXT_LOOKUP[RESULT_LOOKUP[game["Result"]]];
+    white_table.Results[game.Black].H2h += RESULT_LOOKUP[game.Result];
+    white_table.Results[game.Black].Text += TEXT_LOOKUP[RESULT_LOOKUP[game.Result]];
 
     // edit the `black` player's crosstable ------------------------------------
-    const black_table = crosstable.Table[game["Black"]];
+    const black_table = crosstable.Table[game.Black];
 
-    if (typeof (black_table.Results[game["White"]]) === "undefined") {
-        black_table.Results[game["White"]] = {
+    if (typeof (black_table.Results[game.White]) === "undefined") {
+        black_table.Results[game.White] = {
             "H2h": 0,
             "Scores": [],
             "Text": ""
-        }
+        };
     }
 
-    black_table.Results[game["White"]].Scores.push({
+    black_table.Results[game.White].Scores.push({
         "Game": crosstable.Game,
-        "Result": 1 - RESULT_LOOKUP[game["Result"]],
-        "Winner": WINNER_LOOKUP[game["Result"]],
+        "Result": 1 - RESULT_LOOKUP[game.Result],
+        "Winner": WINNER_LOOKUP[game.Result],
         "Side": "Black"
     });
 
-    black_table.Results[game["White"]].H2h += 1 - RESULT_LOOKUP[game["Result"]];
-    black_table.Results[game["White"]].Text += TEXT_LOOKUP[1 - RESULT_LOOKUP[game["Result"]]];
+    black_table.Results[game.White].H2h += 1 - RESULT_LOOKUP[game.Result];
+    black_table.Results[game.White].Text += TEXT_LOOKUP[1 - RESULT_LOOKUP[game.Result]];
 
     // add to `Strikes` if needed ----------------------------------------------
-    if (!game["TerminationDetails"]) {
-        if (game["Termination"]) {
-            game["TerminationDetails"] = game["Termination"];
+    if (!game.TerminationDetails) {
+        if (game.Termination) {
+            game.TerminationDetails = game.Termination;
         }
     }
 
     try {
-        if (!game["TerminationDetails"].match(NOT_CRASH_REGEX)) {
-            if (RESULT_LOOKUP[game["Result"]] === 1) {
-                crosstable.Table[game["Black"]].Strikes += 1;
-            } else if (RESULT_LOOKUP[game["Result"]] === 0) {
-                crosstable.Table[game["White"]].Strikes += 1;
+        if (!game.TerminationDetails.match(NOT_CRASH_REGEX)) {
+            if (RESULT_LOOKUP[game.Result] === 1) {
+                crosstable.Table[game.Black].Strikes ++;
+            } else if (RESULT_LOOKUP[game.Result] === 0) {
+                crosstable.Table[game.White].Strikes ++;
             } else {
-                crosstable.Table[game["White"]].Strikes += 1;
-                crosstable.Table[game["Black"]].Strikes += 1;
+                crosstable.Table[game.White].Strikes ++;
+                crosstable.Table[game.Black].Strikes ++;
             }
         }
     } catch (err) {
@@ -360,7 +366,7 @@ function getWinner(engine_table)
    {
       minDiff = 1.5;
    }
-   
+
    let maxDiff = Math.abs(engine_table.Score - otherScore);
    if (maxDiff >= minDiff)
    {
@@ -378,7 +384,7 @@ function getLead(engine_table)
     {
        return mLead;
     }
-    
+
     if (engine_table.OrigScore > (engine_table.Games/2))
     {
         mLead = 1;
@@ -398,7 +404,7 @@ function get_score_and_games(crosstable, engine, ignore_engines=[]) {
     let opponent;
     let opponent_table;
     let score = 0;
-    let keys = Object.keys(engine_table.Results);
+    let keys = Keys(engine_table.Results);
     for (let opponent_index = 0; opponent_index < keys.length; opponent_index++) {
         opponent = keys[opponent_index];
 
@@ -409,25 +415,25 @@ function get_score_and_games(crosstable, engine, ignore_engines=[]) {
         opponent_table = engine_table.Results[opponent].Scores;
         for (let index = 0; index < opponent_table.length; index++) {
             if (opponent_table[index].Side === "White") {
-                engine_table.GamesAsWhite += 1;
+                engine_table.GamesAsWhite ++;
             } else {
-                engine_table.GamesAsBlack += 1;
+                engine_table.GamesAsBlack ++;
             }
 
-            engine_table.Games += 1;
+            engine_table.Games ++;
             score += opponent_table[index].Result;
 
             if (opponent_table[index].Result === 1) {
                 if (opponent_table[index].Winner === "White") {
-                    engine_table.WinsAsWhite += 1;
+                    engine_table.WinsAsWhite ++;
                 } else {
-                    engine_table.WinsAsBlack += 1;
+                    engine_table.WinsAsBlack ++;
                 }
             } else if (opponent_table[index].Result === 0) {
                 if (opponent_table[index].Winner === "White") {
-                    engine_table.LossesAsBlack += 1;
+                    engine_table.LossesAsBlack ++;
                 } else {
-                    engine_table.LossesAsWhite += 1;
+                    engine_table.LossesAsWhite ++;
                 }
             }
         }
@@ -467,7 +473,7 @@ function get_extra_info(crosstable, engine, ignore_engines=[]) {
     let neustadtl_score = 0;
     let opponent;
     let opponent_score;
-    let keys = Object.keys(engine_table.Results);
+    let keys = Keys(engine_table.Results);
     for (let opponent_index = 0; opponent_index < keys.length; opponent_index++) {
         opponent = keys[opponent_index];
 
@@ -504,12 +510,12 @@ function rank_crosstable(crosstable, dq_strikes=99999) {
           } else if (engine1_data.Score === engine2_data.Score) {
               if (engine1_data.Strikes !== engine2_data.Strikes) {
                   return engine1_data.Strikes - engine2_data.Strikes;
-              } else if (engine1_data["Results"][engine2_name]["H2h"] !== engine2_data["Results"][engine1_name]["H2h"]) {
-                  return engine2_data["Results"][engine1_name]["H2h"] - engine1_data["Results"][engine2_name]["H2h"];
+              } else if (engine1_data.Results[engine2_name].H2h !== engine2_data.Results[engine1_name].H2h) {
+                  return engine2_data.Results[engine1_name].H2h - engine1_data.Results[engine2_name].H2h;
               } else if (engine1_wins !== engine2_wins) {
                   return engine2_wins - engine1_wins;
               } else if (engine1_data.WinsAsBlack !== engine2_data.WinsAsBlack) {
-                  return engine2_data.WinsAsBlack - engine1_data.WinsAsBlack
+                  return engine2_data.WinsAsBlack - engine1_data.WinsAsBlack;
               } else {
                   return engine2_data.Neustadtl - engine1_data.Neustadtl;
               }
@@ -618,7 +624,7 @@ function splitPgnsString(text) {
     let arr = text.split(/((?:1-0|1\/2-1\/2|0-1|\*)\n\n)/);
     let res = [];
     let j = 0;
-    for (let i = 0; i < arr.length; i = i + 2) {
+    for (let i = 0; i < arr.length; i += 2) {
         res[j++] = arr[i] + arr[i + 1];
     }
     return res;
@@ -641,7 +647,7 @@ function sort_object(object) {
     } else {
         const sorted_object = {};
 
-        const keys = Object.keys(object).sort();
+        const keys = Keys(object).sort();
         let key;
         for (let index = 0; index < keys.length; index++) {
             key = keys[index];
@@ -670,13 +676,13 @@ function getMatchPair(object)
     for (let index = 0; index < object.Order.length; index++) {
         let key = object.Order[index];
         if (object.Table.hasOwnProperty(key)) {
-            let entry = 
+            let entry =
             {
                 "name" : key,
                 "winner": object.Table[key].MWinner,
                 "score": object.Table[key].Score,
                 "flag": getShortEngineName(key)
-            }
+            };
             array.push(entry);
             engineSeedArray.push(key);
         }
@@ -699,14 +705,14 @@ function getMatchResPair(object)
     for (let index = 0; index < object.Order.length; index++) {
         let key = object.Order[index];
         if (object.Table.hasOwnProperty(key)) {
-            let entry = 
+            let entry =
             {
                 "name" : key,
                 "lead": object.Table[key].Mlead,
                 "score": getLeadScore(object.Table[key]),
                 "manual": 0,
                 "origscore": object.Table[key].OrigScore
-            }
+            };
             array.push(entry);
         }
     }
@@ -737,11 +743,11 @@ function getResultPair(object)
  let results = [
 /* [[0,0, "empty-bye"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "arun"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "last"]], */
      [[0,0, "empty-bye"], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0], [0,0, "last"]],
-     [[0,0], [0,0], [0,0], [0,0]],                                                                                                                                                                        
-     [[0,0], [0,0]],                                                                                                                                                                                      
-     [[0,0],                                                                                                                                                                                              
-      [0,0]]                                                                                                                                                                                              
- ]  
+     [[0,0], [0,0], [0,0], [0,0]],
+     [[0,0], [0,0]],
+     [[0,0],
+      [0,0]]
+ ];
 function generateResult(output_json)
 {
     let object = output_json.CrossTable;
@@ -758,28 +764,28 @@ function generateResult(output_json)
             {
                teamArray.push(getMatchPair(object[key]));
                results[0][totalMatches] = getResultPair(object[key]);
-               matchResArray.push(getMatchResPair(object[key])); 
+               matchResArray.push(getMatchResPair(object[key]));
             }
             else if (totalMatches < 12)
             {
                results[1][totalMatches-8] = getResultPair(object[key]);
-               matchResArray.push(getMatchResPair(object[key])); 
+               matchResArray.push(getMatchResPair(object[key]));
             }
             else if (totalMatches < 14)
             {
                results[2][totalMatches-12] = getResultPair(object[key]);
-               matchResArray.push(getMatchResPair(object[key])); 
+               matchResArray.push(getMatchResPair(object[key]));
             }
             else if (totalMatches == 14)
             {
                results[3][1] = getResultPair(object[key]);
-               matchResArray.push(getMatchResPair(object[key])); 
+               matchResArray.push(getMatchResPair(object[key]));
             }
             else if (totalMatches == 15)
             {
                results[4][0] = getResultPair(object[key]);
                matchResArray.push([0,0]);
-               matchResArray.push(getMatchResPair(object[key])); 
+               matchResArray.push(getMatchResPair(object[key]));
             }
             totalMatches = totalMatches + 1;
             if ((totalMatches == 8) ||
@@ -799,19 +805,15 @@ function generateResult(output_json)
     console.log ("Results is :" + JSON.stringify(results, null, '\t'));
 }
 
-function getShortEngineName(engine)                                                                                                                                                                   
-{                                                                                                                                                                                                     
-   let name = engine;                                                                                                                                                                                 
-   if (engine.match(/Baron/))                                                                                                                                                                         
-   {                                                                                                                                                                                                  
-      return 'Baron';                                                                                                                                                                                 
-   }                                                                                                                                                                                                  
-   else if (engine.indexOf(' ') > 0)                                                                                                                                                                  
-   {                                                                                                                                                                                                  
-      name = engine.substring(0, engine.indexOf(' '));                                                                                                                                                
-   }                                                                                                                                                                                                  
-   return name;                                                                                                                                                                                       
-}                                                                                                                                                                                                     
+/**
+ * Get the short name of an engine
+ * @param {string} engine Stockfish 20200407DC
+ * @returns {string} Stockfish
+ */
+function getShortEngineName(engine)
+{
+    return engine.includes('Baron')? 'Baron': engine.split(' ')[0];
+}
 
 function retArg(argVal, origVal)
 {
@@ -831,7 +833,7 @@ let filename = pgnPath + argv.singletag;
 let seasonFileName = argv.singletag + '.pgn';
 let cup = 0;
 let eventtable = false;
-let gamesReqd = undefined;
+let gamesReqd;  // = undefined;
 
 filename = retArg(argv.tag, filename);
 seasonFileName = retArg(argv.filename, seasonFileName);

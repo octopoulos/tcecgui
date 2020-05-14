@@ -1,5 +1,11 @@
+/*
+globals
+console, exports, require
+*/
+'use strict';
+
 const Chess = require("chess.js");
-const fs = require("fs");                                                                                                                                                                                                                     
+// const fs = require("fs");
 
 let neededFields = [
 "Black",
@@ -15,7 +21,7 @@ let neededFields = [
 "Date",
 "Opening",
 "Variation"
-]
+];
 
 let headerRegex = /(?:\[(\w+) "(.*?)"\]([\s\S]*))/;
 let moveRegex = /^(?:(?:[0-9]{1,4}\. )?([^ ]{2,6}))/;
@@ -28,12 +34,12 @@ var emptyPgnHeader = '[Event ""]\n[Site ""]\n[Date ""]\n[Round ""]\n[White ""]\n
 var pgnGame = [];
 var pgnHeader = [];
 
-function simpleHtmlentities(text) 
+function simpleHtmlentities(text)
 {
-   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function multiPgnToJson(pgnGame, generateFens) 
+function multiPgnToJson(pgnGame, generateFens)
 {
    let result = [];
 
@@ -47,22 +53,22 @@ function multiPgnToJson(pgnGame, generateFens)
 
  function multiPgnToJsonOld(pgnString,generateFens) {
    //Split into [headers1,moves1,headers2,moves2, ... ] array
-   separated = pgnString.split(/\r?\n\r?\n/);
-   let result = [];
+   let separated = pgnString.split(/\r?\n\r?\n/),
+      result = [];
 //var promises = [];
    for (let i = 1; i < separated.length; i += 2) {
       result.push(parsePgnToScheduleFormat(separated[i-1],separated[i],generateFens));
    }
-   return JSON.stringify(result, null, "\t"); 
+   return JSON.stringify(result, null, "\t");
 }
 
-function parsePgnToScheduleFormat(headerString,moveString,generateFens, gameno) 
+function parsePgnToScheduleFormat(headerString,moveString,generateFens, gameno)
 {
    let data = {};
    match = headerString.match(headerRegex);
-   while (match != null) 
+   while (match != null)
    {
-      if (neededFields.indexOf(match[1]) > -1) 
+      if (neededFields.indexOf(match[1]) > -1)
       {
          data[match[1]] = match[2];
       }
@@ -71,7 +77,7 @@ function parsePgnToScheduleFormat(headerString,moveString,generateFens, gameno)
 
    let result = createKnownHeaders(data);
 
-   try 
+   try
    {
       addFenAndEvaluation(result,moveString,generateFens, gameno);
    }
@@ -81,45 +87,45 @@ function parsePgnToScheduleFormat(headerString,moveString,generateFens, gameno)
    return result;
 }
 
-function createKnownHeaders(data) 
+function createKnownHeaders(data)
 {
    let result = {};
    result.Black = data.Black;
    result.White = data.White;
    result.Duration = data.GameDuration;
    result.ECO = data.ECO;
-   result.Game = ~~data.Round; // ~~"2.1" = 2, means Turn String to number and Floor 
+   result.Game = ~~data.Round; // ~~"2.1" = 2, means Turn String to number and Floor
    // parseInt("142") +1 = 143, 143/2 = 76.5, ~~76.5 = 76
    // parseInt("143") +1 = 144, 144/2 = 77, ~~77 = 77
    result.Moves = ~~((parseInt(data.PlyCount)+1) /2);// ~~ 3 times as quick as "Math.floor", same function
    result.Opening = data.Opening + (data.Variation ?  ", " + data.Variation : ""); // add variation if exists
    result.Result = data.Result;
    // PGN FORMAT 2019-02-23T23:54:32.001
-   // JSON FORM  23:54:32 on 2019-02-23 
+   // JSON FORM  23:54:32 on 2019-02-23
    result.Start = data.GameStartTime != null && data.GameStartTime.length > 19 ?
    data.GameStartTime.substr(11,8) + " on " + data.GameStartTime.substr(0,10) :
    data.Date;
    result.Termination = data.TerminationDetails || data.Termination;
    return result;
-}  
+}
 
-function addFenAndEvaluation(result,moveString,generateFens, gameno) 
+function addFenAndEvaluation(result,moveString,generateFens, gameno)
 {
    let movefail = moveString;
    let moves = moveString.split(/\}[ \r\n\t]+/);
    let chess = new Chess.Chess();
    result.worked = 0;
-   try 
+   try
    {
-      if (generateFens) 
+      if (generateFens)
       {
          chess.load_pgn(moveString);
          result.FinalFen = chess.fen();
       }
 
       //if starts with a number, for example 31. then it is a white move
-      let score = moves.length-1
-      if (moves[score].length > 9) 
+      let score = moves.length-1;
+      if (moves[score].length > 9)
       {
          result.Duration = moves[score].substr(moves[score].indexOf("Duration = ") +11, 8);
       }
@@ -131,22 +137,22 @@ function addFenAndEvaluation(result,moveString,generateFens, gameno)
       result.BlackEv = hasWhiteLastMove ? secondLastMoveEval : lastMoveEval;
       result.worked = 1;
    }
-   catch(err) 
+   catch(err)
    {
       console.log ("Xrror in game:" + gameno + " ,error:" + err + " movestring:" + JSON.stringify(result) + " ," + movefail);
-      result.WhiteEv = "?"
-      result.BlackEv = "?"
+      result.WhiteEv = "?";
+      result.BlackEv = "?";
    }
 
    return result;
 }
 
-function simpleHtmlentitiesDecode(text) 
+function simpleHtmlentitiesDecode(text)
 {
-   return text.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&")
+   return text.replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
 }
 
-function fixCommonPgnMistakes(text) 
+function fixCommonPgnMistakes(text)
 {
    text = text.replace(/[\u00A0\u180E\u2000-\u200A\u202F\u205F\u3000]/g, " ");
    text = text.replace(/\u00BD/g, "1/2");
@@ -154,54 +160,58 @@ function fixCommonPgnMistakes(text)
    text = text.replace(/\u2024/g, ".");
    text = text.replace(/[\u2025-\u2026]/g, "...");
    text = text.replace(/\\"/g, "'");
-   return text
+   return text;
 }
 
 function pgnGameFromPgnText(pgnText)
-{   
+{
    var headMatch, prevHead, newHead, startNew, afterNew, lastOpen, checkedGame, validHead;
    pgnText = simpleHtmlentities(fixCommonPgnMistakes(pgnText));
 
    pgnText = pgnText.replace(/(^|\n)%.*(\n|$)/g, "\n");
-   numberOfGames = 0;
+   let numberOfGames = 0;
    checkedGame = "";
-   while (headMatch = pgnHeaderBlockRegExp.exec(pgnText)) 
+   while (true)
    {
+      headMatch = pgnHeaderBlockRegExp.exec(pgnText);
+      if (!headMatch)
+         break;
+
       newHead = headMatch[0];
       startNew = pgnText.indexOf(newHead);
       afterNew = startNew + newHead.length;
-      if (prevHead) 
-      { 
+      if (prevHead)
+      {
          checkedGame += pgnText.slice(0, startNew);
          validHead = ((lastOpen = checkedGame.lastIndexOf("{")) < 0) || (checkedGame.lastIndexOf("}")) > lastOpen;
-         if (validHead) 
+         if (validHead)
          {
             pgnHeader[numberOfGames] = prevHead;
             pgnGame[numberOfGames++] = checkedGame;
-            checkedGame = ""
-         } 
-         else 
-         {
-            checkedGame += newHead
+            checkedGame = "";
          }
-      } 
-      else 
-      {
-         validHead = !0
+         else
+         {
+            checkedGame += newHead;
+         }
       }
-      if (validHead) 
+      else
       {
-         prevHead = newHead
+         validHead = !0;
       }
-      pgnText = pgnText.slice(afterNew)
+      if (validHead)
+      {
+         prevHead = newHead;
+      }
+      pgnText = pgnText.slice(afterNew);
    }
-   if (prevHead) 
+   if (prevHead)
    {
       pgnHeader[numberOfGames] = prevHead;
       checkedGame += pgnText;
-      pgnGame[numberOfGames++] = checkedGame
+      pgnGame[numberOfGames++] = checkedGame;
    }
-   return (numberOfGames > 0)
+   return (numberOfGames > 0);
 }
 
 function returnPGN(pgnText, generateFens, reqdLength)
@@ -227,7 +237,7 @@ function returnPGN(pgnText, generateFens, reqdLength)
    return pgnFull;
 }
 
-exports.returnPGN = returnPGN;                                                                                                                                                                        
+exports.returnPGN = returnPGN;
 exports.multiPgnToJson = multiPgnToJson;
 exports.pgn2schedule = multiPgnToJson;
 exports.multiPgnToJsonOld = multiPgnToJsonOld;

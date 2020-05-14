@@ -1,0 +1,56 @@
+/*
+sea.css
+- inherits from light.css
+*/
+body,
+html {
+    background: #5ad;
+}
+
+/* board */
+#archive .xmoves,
+#live .xmoves {
+    background: rgba(255, 255, 255, 0.5);
+}
+.live-pv,
+.xmoves {
+    background: rgba(255, 255, 255, 0.6);
+}
+.xcontrol {
+    color: #06d;
+}
+.control:hover {
+    color: #04b;
+}
+
+/* tables */
+.scroller tr:nth-child(2n) {
+    background: rgba(255, 255, 255, 0.3);
+}
+.scroller tr:nth-child(2n + 1) {
+    background: rgba(255, 255, 255, 0.2);
+}
+.scroller tr:hover {
+    background: rgba(255, 255, 255, 0.45);
+}
+.tab {
+    color: #fff;
+}
+.tab:hover {
+    color: #ffc;
+}
+.tab.active {
+    background: #b60;
+    color: #fff;
+}
+#table-engine > * {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* extras */
+#show-chat,
+#show-video,
+.adblock {
+    border: 1px dotted #ff0;
+    color: #ff0;
+}

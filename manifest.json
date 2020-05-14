@@ -1,0 +1,9 @@
+{
+    "background_color": "#3367D6",
+    "display": "standalone",
+    "name": "TCEC Chess",
+    "scope": "/",
+    "short_name": "TCEC",
+    "start_url": "/",
+    "theme_color": "#3367D6"
+}
