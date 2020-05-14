@@ -2182,9 +2182,6 @@ function update_pgn(section, pgn) {
         pgn.gameChanged = 0;
     }
 
-    if (is_same)
-        update_overview_moves(headers, moves, start, true, true);
-
     // 3) check for a new game
     // TODO: bug at this point
     let main = xboards[section],
@@ -2209,6 +2206,8 @@ function update_pgn(section, pgn) {
 
     // 4) add the moves
     main.add_moves(moves, start);
+    if (is_same)
+        update_overview_moves(headers, moves, start, true, true);
 
     // got player info => can do h2h
     check_queued_tables();
