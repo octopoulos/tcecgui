@@ -497,7 +497,7 @@ function update_board_theme(mode) {
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
-                theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
+                theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
 
             Assign(board, {
                 colors: colors,
