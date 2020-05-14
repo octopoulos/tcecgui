@@ -21,6 +21,7 @@ archive/
 bracket.json
 chart.js
 crash.json
+create_list.js
 crosstable.json
 data*.json
 doc/
@@ -33,6 +34,7 @@ model/
 new.json
 schedule.json
 sound/*.js
+stream.html
 svg/
 tempCodeRunnerFile.py
 test?.html

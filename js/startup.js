@@ -197,6 +197,12 @@ function check_hash_special() {
  * Check stream settings
  */
 function check_stream() {
+    // stream.html => also activates stream=1
+    if (location.pathname.includes('stream.html')) {
+        Y.stream = 1;
+        Y.x = 'live';
+    }
+
     let stream = Y.stream;
     if (stream == old_stream)
         return;

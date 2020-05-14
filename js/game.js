@@ -1203,7 +1203,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     value = create_game_link(section, value);
                 break;
             case 'name':
-                class_ = 'loss';
+                if (row.link) {
+                    let query = QueryString({query: row.link.split('?').slice(-1)[0], replace: {x: 'archive'}, string: true});
+                    value = `<a class="loss" href="#${query}">${value}</a>`;
+                }
                 break;
             case 'score':
                 if (is_winner)
