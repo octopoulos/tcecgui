@@ -12,7 +12,7 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
-create_field_value, detect_device, DEV, document, download_live, download_tables, ENGINE_COLORS, Events,
+create_field_value, detect_device, DEV, document, download_live, download_tables, E, ENGINE_COLORS, Events,
 game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
 init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
@@ -29,12 +29,14 @@ let AD_STYLES = {
         0: 'width:100%;max-height:210px',
         1: 'width:100%;max-height:280px',
     },
+    old_center,
     old_font_height,
     old_stream = 0,
     old_window_height,
     old_x,
     // min & max allowed widths, when the value is <= min => automatic
     PANEL_WIDTHS = {
+        center: [300, 720],
         left: [281, 1200],
         right: [281, 720],
     },
@@ -115,10 +117,14 @@ function change_setting_special(name, value) {
         update_board_theme(2);
         break;
     case 'chat_offset':
+    case 'panel_center':
     case 'panel_left':
     case 'panel_right':
     case 'window_width':
         resize();
+        break;
+    case 'graph_aspect_ratio':
+        resize_panels(true);
         break;
     case 'live_log':
         if (Visible('#table-log'))
@@ -455,12 +461,33 @@ function resize() {
 
 /**
  * Resize the left & right panels
+ * @param {boolean=} force
  */
-function resize_panels() {
-    for (let name of ['left', 'right']) {
+function resize_panels(force) {
+    for (let name of ['center', 'left', 'right']) {
         let value = Y[`panel_${name}`];
         Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
     }
+
+    // special case for center panel
+    let width = Id('center').clientWidth;
+    if (!force && width == old_center)
+        return;
+
+    Attrs('#eval', 'data-t', (width > 330)? 'Evaluation': 'Eval');
+    translate_node('#table-engine');
+
+    let center = Id('center');
+    Class('.xmoves', 'column', width < 390, center);
+    Class('.xboard', 'fcol', width >= 390, center);
+    Class('#table-kibitz, #table-pv', 'frow', width >= 390);
+
+    // resize all charts
+    E('canvas', node => {
+        let parent = node.parentNode;
+        Style(parent, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
+    }, center);
+    old_center = width;
 }
 
 /**
@@ -880,15 +907,19 @@ function startup() {
             key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
         },
-        extra: {
-            archive_scroll: [ON_OFF, 1],
+        dimension: {
             chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
-            cross_crash: [ON_OFF, 0],
+            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01}, 1.5],
+            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
+            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
+        },
+        extra: {
+            archive_scroll: [ON_OFF, 1],
+            cross_crash: [ON_OFF, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
-            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
         },
     });
 

@@ -41,6 +41,7 @@ function startup_config() {
     // => 'Arrow opacity' becomes 'arrow_opacity'
     Assign(STREAM_SETTINGS, {
         no_ad: true,
+        panel_center: 300,
         panel_left: 330,
         panel_right: 350,
         shortcut_1: 'stand',
