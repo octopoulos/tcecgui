@@ -896,6 +896,7 @@ function startup() {
         jpn: '日本語',
         pol: 'Polski',
         rus: 'русский',
+        spa: 'Español',
         ukr: 'українська',
     };
 
