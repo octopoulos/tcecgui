@@ -578,7 +578,7 @@ class XBoard {
      */
     arrow_html(id, dico, color) {
         // 1) no move => hide the arrow
-        if (!dico || !dico.piece) {
+        if (!dico || !dico.piece || !Y.arrow_opacity) {
             Hide(this.svgs[id]);
             return;
         }

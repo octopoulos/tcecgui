@@ -541,6 +541,10 @@ function update_player_chart(name, moves, start) {
             num2 = num - first_num;
 
         labels[num2] = num + 1;
+        if (num2 < 0) {
+            LS(`num=${num} : first_num=${first_num} : start=${start}`);
+            LS(moves);
+        }
         if (!move)
             continue;
 

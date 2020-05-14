@@ -196,6 +196,10 @@ grid {
     line-height: 0.3;
     padding: 0.15em;
 }
+#sub-header {
+    max-width: 1500px;
+    width: 100%;
+}
 #section {
     z-index: 1;
 }
@@ -555,7 +559,7 @@ grid {
 #table-log,
 #table-stats {
     font-size: 0.9em;
-    max-width: 1200px;
+    max-width: 1500px;
     overflow-x: auto;
     pointer-events: auto;
     width: 95%;
@@ -609,9 +613,10 @@ grid {
     margin: 1em 0 1.5em 0;
     width: 100%;
 }
+#table-search,
 #tables .tabs,
 .pagin {
-    max-width: 1200px;
+    max-width: 1500px;
     width: 95%;
 }
 #chart-tabs {
@@ -994,7 +999,7 @@ grid {
 #banners,
 #main {
     margin-bottom: 1em;
-    max-width: 1200px;
+    max-width: 1500px;
     width: 95%;
 }
 #left {

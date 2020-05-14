@@ -330,9 +330,10 @@ function format_eval(value, process) {
     if (items.length < 2)
         return text;
 
-    if (float < 10 && small_decimal != 'always')
+    let abs = Abs(float);
+    if (abs < 10 && small_decimal != 'always')
         return text;
-    if (float < 100 && small_decimal == '>= 100')
+    if (abs < 100 && small_decimal == '>= 100')
         return text;
 
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
