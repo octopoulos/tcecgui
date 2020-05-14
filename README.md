@@ -27,7 +27,9 @@ Licence
 Credits
 -------
 
-The TCEC GUI is based on the work by Ben Reese and Arun Sathyamurthy,
+TCEC GUI completely rewritten by octopoulos in Apr-May 2020.
+
+Old version of the TCEC GUI is based on the work by Ben Reese and Arun Sathyamurthy,
 forked from the [github.com/coolchess123/tceccutechess](https://github.com/coolchess123/tceccutechess)
 repository. The original software was provided with the
 [ISC](https://www.isc.org/licenses/) and
