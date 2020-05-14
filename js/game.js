@@ -2964,6 +2964,7 @@ function startup_game() {
             live_log: [[0, 5, 10, 'all'], 0],
             live_pv: [ON_OFF, 1],
         },
+        dimension: {},
         extra: {
             all_graphs: [ON_OFF, 0, 'Show all graphs at the same time'],
             rows_per_page: [[10, 20, 50, 100], 10],

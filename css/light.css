@@ -49,6 +49,11 @@ verts {
     -webkit-flex-direction: column;
     flex-direction: column;
 }
+.frow,
+.frows {
+    -webkit-flex-direction: row;
+    flex-direction: row;
+}
 .faround {
     -webkit-justify-content: space-around;
     justify-content: space-around;
@@ -441,6 +446,12 @@ grid {
     position: relative;
     width: 100%;
 }
+.xmoves.column {
+    font-size: 12px;
+    height: 192px;
+    overflow-y: scroll;
+    width: 8em;
+}
 #player1 .live-pv,
 #pv1 .xmoves {
     background: #000;
@@ -498,15 +509,6 @@ grid {
 }
 .void {
     background-color: #191919;
-}
-#live0 .xmoves,
-#live1 .xmoves,
-#pv0 .xmoves,
-#pv1 .xmoves {
-    font-size: 12px;
-    height: 192px;
-    overflow-y: scroll;
-    width: 8em;
 }
 #live0 .turn,
 #live1 .turn,
@@ -611,6 +613,9 @@ grid {
 .pagin {
     max-width: 1200px;
     width: 95%;
+}
+#chart-tabs {
+    margin-top: 1em;
 }
 #chart-tabs .tab,
 #right .tab,
@@ -770,7 +775,7 @@ grid {
 #material1 {
     align-content: start;
     background: transparent !important;
-    height: 60px;
+    height: 50px;
     margin-top: -0.4em;
 }
 #material0 img,
@@ -1064,6 +1069,13 @@ grid {
 #table-pva {
     order: 6;
 }
+#charts > vert {
+    position: relative;
+}
+#charts canvas {
+    width: 300px;
+    height: 230px;
+}
 #charts2 {
     width: 100%;
 }
@@ -1198,6 +1210,6 @@ svg.down {
 }
 @media (min-width: 930px) {
     #center {
-        margin: 4px 2%;
+        margin: 4px 1.5%;
     }
 }

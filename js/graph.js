@@ -114,9 +114,8 @@ function create_charts()
         legend: {
             display: false
         },
-        // the chart.js responsive code is broken
-        // for ex, load the page with PV(A) tab activated by default, then go to Eval tab => chart won't appear
-        responsive: false,
+        maintainAspectRatio: false,
+        responsive: true,
         title: {
             display: false,
         },
