@@ -1,6 +1,6 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-05-14
 //
 /*
 globals
@@ -18,7 +18,7 @@ create_module(IMPORT_PATH, [
     'graph',
 ], OUTPUT_MODULE);
 
-let {clamp_eval, invert_eval} = require(OUTPUT_MODULE);
+let {clamp_eval, fix_labels, invert_eval} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -42,6 +42,19 @@ let {clamp_eval, invert_eval} = require(OUTPUT_MODULE);
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
         expect(clamp_eval(eval_)).toEqual(answer);
+    });
+});
+
+// fix_labels
+[
+    [[7, 8, 9, undefined, undefined, 12], [7, 8, 9, 10, 11, 12]],
+    [[undefined, 10, 11], [9, 10, 11]],
+    [[undefined, undefined, 11], [9, 10, 11]],
+    [[undefined, 10, undefined], [undefined, 10, undefined]],
+].forEach(([labels, answer], id) => {
+    test(`fix_labels:${id}`, () => {
+        fix_labels(labels);
+        expect(labels).toEqual(answer);
     });
 });
 

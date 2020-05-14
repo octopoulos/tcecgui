@@ -24,7 +24,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, extract_fen_ply, Floor, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Min, Now,
+Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Min, Now,
 ON_OFF, S, SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
@@ -224,7 +224,7 @@ class XBoard {
         for (let i = 0; i < num_new; i ++) {
             let extra = '',
                 move = moves[i],
-                ply = move.ply || extract_fen_ply(move.fen);
+                ply = get_move_ply(move);
 
             if (DEV.fen && ply != start + i) {
                 LS(`add_moves: ${ply} != ${start + i}`);
@@ -667,7 +667,7 @@ class XBoard {
                 }
 
                 if (DEV.fen) {
-                    let ply = extract_fen_ply(move.fen);
+                    let ply = get_move_ply(move);
                     if (ply != curr) {
                         LS(`chess_backtrack: ${ply} != ${curr}`);
                         LS(moves);

@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
 controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, ENGINE_COLORS,
-Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_object, HasClass, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -2093,10 +2093,9 @@ function update_overview_basic(section, headers) {
  * @param {string} section
  * @param {Object} headers
  * @param {Move[]} moves
- * @param {number} start moves offset
  * @param {boolean=} is_new have we received new moves (from update_pgn)?
  */
-function update_overview_moves(section, headers, moves, start, is_new) {
+function update_overview_moves(section, headers, moves, is_new) {
     if (!headers)
         return;
 
@@ -2127,7 +2126,7 @@ function update_overview_moves(section, headers, moves, start, is_new) {
         return;
 
     // 2) update the current chart only (except if graph_all is ON)
-    update_player_charts(null, moves, start);
+    update_player_charts(null, moves);
     if (is_live && is_new && Y.move_sound)
         play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
@@ -2159,9 +2158,10 @@ function update_overview_moves(section, headers, moves, start, is_new) {
 
     // 4) materials
     for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
-        let move = moves[i];
-        update_move_info(start + i, move, true);
-        update_move_pv(section, start + i, move);
+        let move = moves[i],
+            ply = get_move_ply(move);
+        update_move_info(ply, move, true);
+        update_move_pv(section, ply, move);
     }
     update_materials(move);
 }
@@ -2185,8 +2185,7 @@ function update_pgn(section, pgn) {
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
-        overview = Id('table-view'),
-        start = pgn.lastMoveLoaded || 0;
+        overview = Id('table-view');
 
     // 2) update overview
     if (pgn.Users)
@@ -2224,9 +2223,9 @@ function update_pgn(section, pgn) {
         return;
 
     // 4) add the moves
-    main.add_moves(moves, start);
+    main.add_moves(moves);
     if (is_same)
-        update_overview_moves(section, headers, moves, start, true, true);
+        update_overview_moves(section, headers, moves, true, true);
 
     // got player info => can do h2h
     check_queued_tables();
@@ -2677,7 +2676,7 @@ function changed_section() {
 
     // update overview
     update_overview_basic(section, headers);
-    update_overview_moves(section, headers, xboards[section].moves, 0);
+    update_overview_moves(section, headers, xboards[section].moves);
 }
 
 /**
@@ -2789,7 +2788,7 @@ function opened_table(node, name, tab) {
 
     // 2) special cases
     if (is_chart && CHART_NAMES[name] && xboards[section])
-        update_player_charts(name, xboards[section].moves, 0);
+        update_player_charts(name, xboards[section].moves);
 
     switch (name) {
     case 'crash':
@@ -3011,6 +3010,7 @@ function startup_game() {
             live_engine_2: [ON_OFF, 1],
             live_log: [[0, 5, 10, 'all'], 0],
             live_pv: [ON_OFF, 1],
+            live_tabs: [ON_OFF, 1],
         },
         // separator
         _2: {},

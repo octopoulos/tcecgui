@@ -32,13 +32,35 @@ let HOST = 'https://tcec-chess.com',
  * Extract the ply from a FEN
  * - first move: ply=0 (white has just moved, it's black's turn now)
  * @param {string} fen
- * @returns {number}
+ * @returns {number} -2 on error, -1 on the initial position, otherwise >= 0
  */
 function extract_fen_ply(fen) {
     if (!fen)
-        return;
-    let items = fen.split(' ');
-    return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+        return -2;
+    let items = fen.split(' '),
+        ply = (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+
+    return (ply >= -1)? ply: -2;
+}
+
+/**
+ * Get the move ply, either directly or by looking at the FEN
+ * - also update move.ply
+ * @param {Move} move
+ * @returns {number} ply -2 on error, -1 on the initial position, otherwise >= 0
+ */
+function get_move_ply(move) {
+    if (!move)
+        return -2;
+    if (move.ply != undefined)
+        return move.ply;
+
+    let ply = extract_fen_ply(move.fen);
+    if (ply >= -1) {
+        move.ply = ply;
+        return ply;
+    }
+    return -2;
 }
 
 /**
