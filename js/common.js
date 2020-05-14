@@ -597,6 +597,26 @@ function S(sel, show, parent, mode='') {
 }
 
 /**
+ * Scroll the document to the top
+ * @param {string|number=} top if undefined then returns the scrollTop value
+ * @returns {number}
+ */
+function ScrollDocument(top) {
+    let scroll = document.scrollingElement;
+    if (top != undefined) {
+        // top can be a selector too
+        if (isNaN(top)) {
+            top = _(top);
+            if (!top)
+                return;
+            top = top.offsetTop;
+        }
+        scroll.scrollTop = top;
+    }
+    return scroll.scrollTop;
+}
+
+/**
  * Show nodes
  * + handle dn
  * @param {string|Node} sel CSS selector or node

@@ -2,6 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-12 : bug when game ends, graph duplicates itself
+2020-05-14 : 2020-05-14 : tb link + archive scroll
+2020-05-14 : 2020-05-14 : mobile detect => disable twich video by default
 2020-05-14 : 2020-05-14 : small decimal options
 2020-05-13 : 2020-05-12 : font size + select is incorrect on the phone => use android debugging
 2020-05-13 : 2020-05-13 : basic dummy slot system: test it with graphs
@@ -183,7 +185,6 @@ low:
 -          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
--          : 2020-05-14 : mobile detect => disable twich video by default
 -          : 2020-05-14 : switch from 1 graph to all graphs => 5 graphs are outdated
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 lowest:

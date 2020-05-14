@@ -11,7 +11,7 @@
 globals
 _, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, history, HTML, Id, InsertNodes, Keys,
 LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
-Resource, SetDefault, setTimeout, TEXT, Title, Undefined, window
+Resource, ScrollDocument, SetDefault, setTimeout, TEXT, Title, Undefined, window
 */
 'use strict';
 
@@ -819,9 +819,8 @@ function set_scroll() {
 
     // vertical
     if (drag_scroll & 2) {
-        let scroll = document.scrollingElement;
-        scroll.scrollTop = touch_scroll.y;
-        touch_scroll.y = document.scrollingElement.scrollTop;
+        ScrollDocument(touch_scroll.y);
+        touch_scroll.y = ScrollDocument();
     }
 }
 
@@ -916,7 +915,7 @@ function touch_handle(e) {
         touch_now = Now(true);
         touch_scroll = {
             x: drag_target.scrollLeft,
-            y: document.scrollingElement.scrollTop,
+            y: ScrollDocument(),
         };
         touch_speed = {x: 0, y: 0};
         touch_start = touch_now;
