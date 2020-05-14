@@ -804,8 +804,9 @@ function create_field_value(text) {
  * - we don't want to recreate the table each time, that's why this creation will give a boost
  * @param {Node|string} node node or selector
  * @param {boolean} is_live live => has more info
+ * @param {number} id 0, 1
  */
-function create_live_table(node, is_live) {
+function create_live_table(node, is_live, id) {
     let html =
         '<vert class="live fastart">'
             + '<div class="live-basic">'
@@ -816,7 +817,8 @@ function create_live_table(node, is_live) {
         html +=
             '<div class="live-more">'
                 + '[D: <i data-x="depth"></i> | TB: <i data-x="tb"></i> | Sp: <i data-x="speed"></i> | N: <i data-x="node"></i>]'
-            + '</div>';
+            + '</div>'
+            + `<div class="live-engine engine" data-x="live+${id}"></div>`;
 
     html +=
             '<horis class="live-pv"></horis>'
@@ -874,7 +876,7 @@ function create_tables() {
 
     // 2) live tables
     for (let node of LIVE_TABLES)
-        create_live_table(node, node.includes('live'));
+        create_live_table(node, node.includes('live'), node.slice(-1));
 
     // 3) mouse/touch scroll
     Events('.scroller', '!touchstart touchmove touchend', () => {});

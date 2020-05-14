@@ -139,6 +139,9 @@ function change_setting_special(name, value) {
         if (Visible('#table-log'))
             listen_log();
         break;
+    case 'live_tabs':
+        show_live_engines();
+        break;
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
@@ -300,9 +303,7 @@ function init_globals() {
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 
-    LIVE_ENGINES.forEach((live, id) => {
-        HTML(`[data-x="live${id}"]`, live);
-    });
+    show_live_engines();
 
     activate_tabs();
     if (Visible('#table-log'))
@@ -521,6 +522,24 @@ function set_3d_scene(three) {
     S('#canvas', three);
     if (three)
         start_3d();
+}
+
+/**
+ * Show live engines
+ */
+function show_live_engines() {
+    LIVE_ENGINES.forEach((live, id) => {
+        HTML(`[data-x="live${id}"]`, live);
+        let items = live.split(/ (?=\dMen)/);
+        live = items.join('<br>');
+        HTML(`[data-x="live+${id}"]`, live);
+    });
+
+    let live_tabs = Y.live_tabs;
+    S('#live-tabs', live_tabs);
+    S('#live-texts, #table-live0, #table-live1', !live_tabs);
+    if (live_tabs)
+        open_table(Y.tabs['live-tabs']);
 }
 
 /**

@@ -310,8 +310,7 @@ grid {
 }
 #modal input,
 #modal select {
-    /* height: calc(100% - 0.5em); */
-    padding: 0.5em;
+    padding: 0.2em;
     width: calc(100% - 0.5em);
 }
 #popup-about {
@@ -329,7 +328,7 @@ grid {
     transition: none;
 }
 .item {
-    padding: 0.5em 2em 0.5em 1em;
+    padding: 0.3em 2em 0.3em 1em;
     width: 100%;
 }
 .item-title {
@@ -404,6 +403,9 @@ grid {
 }
 #live-tabs {
     margin-top: 1em;
+}
+#live-texts {
+    margin-top: 0.5em;
 }
 .xcontrol {
     color: #007bff;
@@ -950,12 +952,20 @@ grid {
 }
 .live {
     margin-top: 0.1em;
+    position: relative;
 }
 .live-basic {
     font-size: 0.95em;
     font-weight: 500;
     margin: 0.15em 0;
     z-index: 1;
+}
+.live-engine {
+    font-size: 0.75em;
+    position: absolute;
+    right: 0;
+    top: 0.6em;
+    text-align: right;
 }
 .live-more {
     font-size: 0.8em;
