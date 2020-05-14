@@ -128,7 +128,7 @@ function create_charts()
     charts.depth = charts.depth || new Chart('chart-depth', {
         type: 'line',
         data: chart_data.depth,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             legend: {
                 display: true,
                 position: 'bottom',
@@ -151,13 +151,13 @@ function create_charts()
                     },
                 }],
             },
-        }},
+        }),
     });
 
     charts.eval = charts.eval || new Chart('chart-eval', {
         type: 'line',
         data: chart_data.eval,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             bezierCurve: false,
             legend: {
                 display: true,
@@ -182,13 +182,13 @@ function create_charts()
                 }],
             },
             spanGaps: true,
-        }},
+        }),
     });
 
     charts.node = charts.node || new Chart('chart-node', {
         type: 'line',
         data: chart_data.node,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -226,13 +226,13 @@ function create_charts()
                     },
                 },
             },
-        }},
+        }),
     });
 
     charts.speed = charts.speed || new Chart('chart-speed', {
         type: 'line',
         data: chart_data.speed,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -271,13 +271,13 @@ function create_charts()
                     },
                 },
             },
-        }},
+        }),
     });
 
     charts.tb = charts.tb || new Chart('chart-tb', {
         type: 'line',
         data: chart_data.tb,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             scales: {
                 yAxes: [{
                     type: 'linear',
@@ -315,13 +315,13 @@ function create_charts()
                     },
                 },
             },
-        }},
+        }),
     });
 
     charts.time = charts.time || new Chart('chart-time', {
         type: 'line',
         data: chart_data.time,
-        options: {...options, ...{
+        options: Assign(Assign({}, options), {
             backgroundColor: 'rgb(10,10,10)',
             scales: {
                 yAxes: [{
@@ -346,7 +346,7 @@ function create_charts()
                     },
                 },
             },
-        }},
+        }),
     });
 
     // 3) click events
@@ -551,7 +551,7 @@ function update_player_chart(name, moves, start) {
 
         switch (chart_id) {
         case 'depth':
-            datasets[ply % 2 + 2].data[num2] = {...dico, ...{y: move.sd}};
+            datasets[ply % 2 + 2].data[num2] = Assign(Assign({}, dico), {y: move.sd});
             dico.y = move.d;
             break;
         case 'eval':
