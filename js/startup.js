@@ -392,7 +392,7 @@ function move_nodes() {
             open_table('x');
         let board = xboards[Y.x];
         if (board)
-            update_player_charts(null, board.moves, 0);
+            update_player_charts(null, board.moves);
     }
     else if (active == 'x')
         open_table('eval');

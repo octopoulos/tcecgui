@@ -1,8 +1,10 @@
 // graph.js
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2020-05-14
 //
 /*
 globals
-_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, extract_fen_ply, Floor, FormatUnit, FromSeconds,
+_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
 Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
 */
 'use strict';
@@ -368,6 +370,25 @@ function create_charts()
 }
 
 /**
+ * Fix labels that are undefined
+ * - the last label needs to be set, otherwise there won't be any change
+ * @param {string[]} labels
+ */
+function fix_labels(labels) {
+    let num_label = labels.length;
+    if (!num_label)
+        return;
+
+    let offset = labels[num_label - 1] - num_label + 1;
+    if (isNaN(offset))
+        return;
+
+    for (let i = 0; i < num_label; i ++)
+        if (labels[i] == undefined)
+            labels[i] = i + offset;
+}
+
+/**
  * Invert an eval:
  * - 9 => -9
  * - #M33 => -M#33, and -#M40 => #M40
@@ -449,26 +470,19 @@ function update_live_chart(moves, id, invert_black) {
         return;
 
     let dataset = data.datasets[id],
-        labels = data.labels,
-        // ??? MAYBE NOT => first ply is 1 here, but the code counts from 0
-        ply = moves[0].ply, // - 1,
-        num = Floor(ply / 2);
-
-    if (first_num < 0)
-        first_num = num;
-
-    // add missing labels backwards
-    for (let i = num - first_num; i >= 0 && !labels[i]; i --) {
-        if (DEV.chart)
-            LS(`label1: ${i} => ${i + 1 + first_num}`);
-        labels[i] = i + 1 + first_num;
-    }
+        labels = data.labels;
 
     for (let move of moves) {
         let eval_ = move.eval,
-            ply = move.ply, // - 1,
-            num = Floor(ply / 2),
-            num2 = num - first_num;
+            ply = get_move_ply(move),
+            num = Floor(ply / 2);
+        if (ply < -1)
+            continue;
+
+        if (first_num < 0 || num < first_num)
+            first_num = num;
+        let num2 = num - first_num;
+        labels[num2] = num + 1;
 
         if (invert_black && ply % 2 == 0) {
             eval_ = invert_eval(eval_);
@@ -485,6 +499,7 @@ function update_live_chart(moves, id, invert_black) {
         };
     }
 
+    fix_labels(labels);
     charts.eval.update();
 }
 
@@ -493,9 +508,8 @@ function update_live_chart(moves, id, invert_black) {
  * - designed for white & black, not live
  * @param {string} name if empty then will use the current chart_id
  * @param {Move[]} moves
- * @param {number} start starting ply for the moves
  */
-function update_player_chart(name, moves, start) {
+function update_player_chart(name, moves) {
     // 1) update ID
     if (name)
         chart_id = name;
@@ -513,40 +527,18 @@ function update_player_chart(name, moves, start) {
     while (offset < num_move && (!moves[offset] || moves[offset].book))
         offset ++;
 
-    let start_num = Floor((start + offset) / 2);
-    if (first_num < 0)
-        first_num = start_num;
-
-    // add missing labels backwards
-    for (let i = start_num - first_num; i >= 0 && !labels[i]; i --) {
-        if (DEV.chart)
-            LS(`label0: ${i} => ${i + 1 + first_num}`);
-        labels[i] = i + 1 + first_num;
-    }
-
     // 3) add data
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
-            ply = move.ply;
-        if (ply == undefined) {
-            ply = extract_fen_ply(move.fen);
-            // !!start might be incorrect
-            if (isNaN(ply))
-                ply = start + i;
-            else
-                move.ply = ply;
-        }
-
-        let num = Floor(ply / 2),
-            num2 = num - first_num;
-
-        labels[num2] = num + 1;
-        if (num2 < 0) {
-            LS(`num=${num} : first_num=${first_num} : start=${start}`);
-            LS(moves);
-        }
-        if (!move)
+            ply = get_move_ply(move),
+            num = Floor(ply / 2);
+        if (ply < -1)
             continue;
+
+        if (first_num < 0 || num < first_num)
+            first_num = num;
+        let num2 = num - first_num;
+        labels[num2] = num + 1;
 
         let dico = {
             x: num + 1,     // move number
@@ -581,6 +573,7 @@ function update_player_chart(name, moves, start) {
         datasets[ply % 2].data[num2] = dico;
     }
 
+    fix_labels(labels);
     charts[chart_id].update();
 }
 
@@ -589,16 +582,15 @@ function update_player_chart(name, moves, start) {
  * - designed for white & black, not live
  * @param {string} name if empty then will use the current chart_id or update all charts
  * @param {Move[]} moves
- * @param {number} start starting ply for the moves
  */
-function update_player_charts(name, moves, start) {
+function update_player_charts(name, moves) {
     if (!name && Y.graph_all) {
         Keys(charts).forEach(key => {
-            update_player_chart(key, moves, start);
+            update_player_chart(key, moves);
         });
     }
     else
-        update_player_chart(name, moves, start);
+        update_player_chart(name, moves);
 }
 
 // STARTUP
@@ -613,7 +605,7 @@ function init_graph(callback) {
     function _done() {
         create_chart_data();
         create_charts();
-        update_player_chart(null, xboards[Y.x].moves, 0);
+        update_player_chart(null, xboards[Y.x].moves);
         callback();
     }
 
