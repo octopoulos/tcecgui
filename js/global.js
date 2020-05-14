@@ -57,6 +57,7 @@ function parse_dev() {
             n: 'new',                   // new game debugging
             p: 'pv',
             s: 'socket',                // socket messages
+            T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             x: 'xboard',
             y: 'ply',

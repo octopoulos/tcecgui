@@ -63,6 +63,7 @@ let __PREFIX = '_',
     touch_start,
     TOUCH_STARTS = {mousedown: 1, mouseenter: 1, touchstart: 2},
     translates = {},
+    TRANSLATES = {},
     Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
     virtual_check_hash_special,
@@ -274,6 +275,9 @@ function set_text(node, text) {
  * @returns {string|null} translated text
  */
 function translate(text) {
+    if (DEV.translate)
+        TRANSLATES[text] = '';
+
     if (Y.lan == 'eng')
         return text.includes('{')? null: text.split('~')[0];
 

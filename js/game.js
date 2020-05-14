@@ -1949,13 +1949,13 @@ function update_materials(move) {
  * Update engine info from a move
  * @param {number} ply
  * @param {Move} move
- * @param {boolean=} finished game has finished
  * @param {boolean=} fresh is it the latest move?
  */
-function update_move_info(ply, move, finished, fresh) {
+function update_move_info(ply, move, fresh) {
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
+        num_ply = xboards[Y.x].moves.length,
         stats = {
             depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
             eval: format_eval(eval_, true),
@@ -1976,8 +1976,13 @@ function update_move_info(ply, move, finished, fresh) {
             time: move.mt * 1,
         });
 
-    update_clock(id);
-    start_clock(id, finished);
+    // past move?
+    if (ply < num_ply - 1)
+        update_clock(id, move);
+    else {
+        update_clock(0);
+        update_clock(1);
+    }
 }
 
 /**
@@ -2021,14 +2026,16 @@ function update_move_pv(section, ply, move) {
 
 /**
  * Update basic overview info, before adding the moves
+ * @param {string} section
  * @param {Object} headers
  */
-function update_overview_basic(headers) {
+function update_overview_basic(section, headers) {
     if (!headers)
         return;
+    if (section != Y.x)
+        return;
 
-    let overview = Id('table-view'),
-        section = Y.x;
+    let overview = Id('table-view');
 
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
@@ -2041,6 +2048,8 @@ function update_overview_basic(headers) {
             let items = value.split('+');
             key = 'tc';
             value = `${items[0]/60}'+${items[1]}"`;
+            players[0].tc = items[0] * 1;
+            players[1].tc = items[0] * 1;
         }
         HTML(`td[data-x="${Lower(key)}"]`, value, overview);
     });
@@ -2077,18 +2086,18 @@ function update_overview_basic(headers) {
 
 /**
  * Update overview info, after adding the moves
+ * @param {string} section
  * @param {Object} headers
  * @param {Move[]} moves
  * @param {number} start moves offset
  * @param {boolean=} is_new have we received new moves (from update_pgn)?
  */
-function update_overview_moves(headers, moves, start, is_new) {
+function update_overview_moves(section, headers, moves, start, is_new) {
     if (!headers)
         return;
 
     let finished,
         overview = Id('table-view'),
-        section = Y.x,
         is_live = (section == 'live'),
         main = xboards[section],
         num_move = moves.length,
@@ -2097,15 +2106,21 @@ function update_overview_moves(headers, moves, start, is_new) {
 
     // 1) clock
     // num_ply % 2 tells us who plays next
-    let who = num_ply % 2;
-    start_clock(who, finished);
+    if (is_live) {
+        let who = num_ply % 2;
+        start_clock(who, finished);
 
-    // time control could be different for white and black
-    let tc = headers[`${WB_TITLES[who]}TimeControl`];
-    if (tc) {
-        let items = tc.split('+');
-        HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+        // time control could be different for white and black
+        let tc = headers[`${WB_TITLES[who]}TimeControl`];
+        if (tc) {
+            let items = tc.split('+');
+            HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
+            players[who].tc = items[0] * 1;
+        }
     }
+
+    if (section != Y.x)
+        return;
 
     // 2) update the current chart only (except if graph_all is ON)
     update_player_charts(null, moves, start);
@@ -2141,7 +2156,7 @@ function update_overview_moves(headers, moves, start, is_new) {
     // 4) materials
     for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
         let move = moves[i];
-        update_move_info(start + i, move, finished, true);
+        update_move_info(start + i, move, true);
         update_move_pv(section, start + i, move);
     }
     update_materials(move);
@@ -2173,7 +2188,7 @@ function update_pgn(section, pgn) {
     if (pgn.Users)
         HTML('td[data-x="viewers"]', pgn.Users, overview);
     if (is_same)
-        update_overview_basic(headers);
+        update_overview_basic(section, headers);
 
     // TODO: what's the utility of this?
     if (new_game) {
@@ -2207,10 +2222,17 @@ function update_pgn(section, pgn) {
     // 4) add the moves
     main.add_moves(moves, start);
     if (is_same)
-        update_overview_moves(headers, moves, start, true, true);
+        update_overview_moves(section, headers, moves, start, true, true);
 
     // got player info => can do h2h
     check_queued_tables();
+
+    if (new_game)
+        for (let player of players)
+            Assign(player, {
+                elapsed: 0,
+                left: player.tc,
+            });
 }
 
 /**
@@ -2268,8 +2290,7 @@ function start_clock(id, finished) {
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
-    clear_timeout('clock0');
-    clear_timeout('clock1');
+    stop_clock([0, 1]);
 
     if (!finished) {
         Assign(players[id], {
@@ -2278,6 +2299,15 @@ function start_clock(id, finished) {
         });
         clock_tick(id);
     }
+}
+
+/**
+ * Stop the clock(s)
+ * @param {number[]} ids
+ */
+function stop_clock(ids) {
+    for (let id of ids)
+        clear_timeout(`clock${id}`);
 }
 
 /**
@@ -2408,12 +2438,28 @@ function update_player_eval(section, data) {
 
 /**
  * Update the left + time UI info
+ * @param {number} id
+ * @param {Move} move move from the past
  */
-function update_clock(id) {
-    let player = players[id],
-        elapsed = player.elapsed,
-        left = player.left,
+function update_clock(id, move) {
+    let elapsed, left, time,
+        player = players[id];
+
+    if (move) {
+        elapsed = 0;
+        left = move.tl;
+        time = move.mt / 1000;
+    }
+    else {
+        // looking at the past => don't update anything
+        let board = xboards[Y.x];
+        if (board && board.ply < board.moves.length - 1)
+            return;
+
+        elapsed = player.elapsed;
+        left = player.left;
         time = Round((elapsed > 0? elapsed: player.time) / 1000);
+    }
 
     left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
@@ -2626,8 +2672,8 @@ function changed_section() {
     reset_charts();
 
     // update overview
-    update_overview_basic(headers);
-    update_overview_moves(headers, xboards[section].moves, 0);
+    update_overview_basic(section, headers);
+    update_overview_moves(section, headers, xboards[section].moves, 0);
 }
 
 /**
@@ -2956,20 +3002,23 @@ function startup_game() {
             show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
             show_ply: [['first', 'diverging'], 'diverging'],
         },
-        control: {
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
-        },
         live: {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_log: [[0, 5, 10, 'all'], 0],
             live_pv: [ON_OFF, 1],
         },
-        dimension: {},
+        // separator
+        _2: {},
+        control: {
+            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
+        },
         extra: {
             rows_per_page: [[10, 20, 50, 100], 10],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
         },
+        graph: {},
+        panel: {},
     });
 
     virtual_init_3d_special = init_3d_special;
