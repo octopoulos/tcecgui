@@ -20,7 +20,7 @@ merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Ro
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
 tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug,
-update_theme, update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true,
+update_player_charts, update_theme, update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_opened_table_special:true, virtual_resize:true, Visible, window, xboards, Y
 */
 'use strict';
@@ -93,9 +93,6 @@ function adjust_popups() {
  */
 function change_setting_special(name, value) {
     switch (name) {
-    case 'all_graphs':
-        move_nodes();
-        break;
     case 'animate':
     case 'board_theme':
     case 'custom_black':
@@ -122,6 +119,9 @@ function change_setting_special(name, value) {
     case 'panel_right':
     case 'window_width':
         resize();
+        break;
+    case 'graph_all':
+        move_nodes();
         break;
     case 'graph_aspect_ratio':
         resize_panels(true);
@@ -362,20 +362,21 @@ function load_google_analytics() {
  * Check if some elements should be moved around, like the charts
  */
 function move_nodes() {
-    let all_graphs = Y.all_graphs,
-        destin = Id(all_graphs? 'charts2': 'charts'),
+    let active = get_active_tab('chart')[0],
+        graph_all = Y.graph_all,
+        destin = Id(graph_all? 'charts2': 'charts'),
         destin_nodes = destin.children,
         parent = Id('charts-tab'),
-        source = Id(all_graphs? 'charts': 'charts2'),
+        source = Id(graph_all? 'charts': 'charts2'),
         source_nodes = source.children;
 
     Keys(CHART_NAMES).forEach(key => {
-        S(`[data-x="${key}"]`, !all_graphs, parent);
+        S(`[data-x="${key}"]`, !graph_all, parent);
     });
-    S('[data-x="x"]', all_graphs, parent);
+    S('[data-x="x"]', graph_all, parent);
 
     if (DEV.ui)
-        LS(`move nodes: ${all_graphs} : ${source_nodes.length} vs ${destin_nodes.length}`);
+        LS(`move nodes: ${graph_all} : ${source_nodes.length} vs ${destin_nodes.length}`);
     if (destin_nodes.length)
         return;
 
@@ -383,13 +384,21 @@ function move_nodes() {
     while (source_nodes.length)
         destin.appendChild(source_nodes[0]);
 
-    Style(destin, 'margin:0 0 0.5em 0', true, all_graphs);
-    S('vert, vert > .label', all_graphs, destin);
+    Style(destin, 'margin:0 0 0.5em 0', true, graph_all);
+    S('vert, vert > .label', graph_all, destin);
 
-    if (all_graphs)
-        resize();
-    else
-        Style('vert', 'height:auto;transform:none;width:auto', true, destin);
+    if (graph_all) {
+        if (CHART_NAMES[active])
+            open_table('x');
+        let board = xboards[Y.x];
+        if (board)
+            update_player_charts(null, board.moves, 0);
+    }
+    else if (active == 'x')
+        open_table('eval');
+
+    resize();
+    resize_panels(true);
 }
 
 /**
@@ -442,16 +451,15 @@ function resize() {
     resize_panels();
 
     // resize charts
-    if (Y.all_graphs) {
+    if (Y.graph_all) {
         let destin = Id('charts2'),
-            scale = Min(1, (destin.clientWidth - 8) / 6 / (300 + 8));
-        // if (scale < 0.75)
-        //     scale = Min(2, (destin.clientWidth - 8) / 3 / (300 + 8));
+            width = destin.clientWidth / 6 - 8;
 
-        let height = 255 * scale,
-            width = 300 * scale,
-            y_off = 255 * (scale - 1) / 2;
-        Style('vert', `height:${height}px;transform:translate(0, ${y_off}px) scale(${scale});width:${width}px`, true, destin);
+        if (width < Y.graph_min_width)
+            width *= 2;
+        let height = width / Max(0.5, Y.graph_aspect_ratio);
+
+        Style('.chart', `height:${height}px;width:${width}px`, true, destin);
         Show('vert', destin);
     }
 
@@ -909,7 +917,9 @@ function startup() {
         },
         dimension: {
             chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
-            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01}, 1.5],
+            graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
+            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
+            graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],

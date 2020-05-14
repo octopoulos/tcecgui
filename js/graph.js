@@ -579,7 +579,7 @@ function update_player_chart(name, moves, start) {
  * @param {number} start starting ply for the moves
  */
 function update_player_charts(name, moves, start) {
-    if (!name && Y.all_graphs) {
+    if (!name && Y.graph_all) {
         Keys(charts).forEach(key => {
             update_player_chart(key, moves, start);
         });
