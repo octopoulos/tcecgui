@@ -2,7 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the diverging moves
--          : 2020-05-14 : show both kibitzers
+2020-05-14 : 2020-05-14 : option to show both kibitzers
 2020-05-14 : 2020-05-14 : right click element => popup menu
 2020-05-14 : 2020-05-12 : bug when game ends, graph duplicates itself
 2020-05-14 : 2020-05-12 : bug when game starts, graph starts at move 7 instead of 4
