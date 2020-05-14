@@ -131,6 +131,7 @@ if __name__=="__main__":
                                 if b.turn==chess.BLACK:
                                    color = 1
                                 nodes_int = 0
+                                depth_int = 0
                                 for i, token in enumerate(l):
                                     if b.turn==chess.BLACK:
                                         color = 1
@@ -143,6 +144,7 @@ if __name__=="__main__":
                                             score = "#%i" % (score_no,)
                                     elif token=="depth":
                                         depth = l[i+1]
+                                        depth_int = int(depth)
                                     elif token=="seldepth":
                                         seldepth = l[i+1]
                                     elif token=="nodes":
@@ -162,7 +164,7 @@ if __name__=="__main__":
                                 if not speed and nodes_int and time_s:
                                     speed = str_SI(int(round(nodes_int/time_s)), postfix="nps")
                                 if fail == 0 and pv_str:
-                                    if time.time() - previous_update >= UPDATE_INTERVAL:
+                                    if time.time() - previous_update >= UPDATE_INTERVAL and depth_int>=10:
                                         load = os.getloadavg()[0]
                                         with open("load.json", "w") as fp_out: fp_out.write(str(load))
                                         if load < 10:
