@@ -441,7 +441,7 @@ function opened_table_special(node, name, tab) {
  * Resize the window => resize some other elements
  */
 function resize() {
-    Style(`#banners, #main`, `max-width:${Y.window_width}px`);
+    Style(`#main`, `max-width:${Y.window_width}px`);
 
     let left_height = Id('left').clientHeight,
         height = Min(left_height, window.innerHeight);
@@ -844,7 +844,6 @@ function set_global_events() {
  * Load settings from Local Storage
  */
 function load_settings() {
-    detect_device();
     load_defaults();
 
     api_times = get_object('times') || {};
@@ -904,7 +903,6 @@ function startup() {
     virtual_resize = resize;
 
     // pre-process
-    detect_device();
     startup_config();
     startup_3d();
     startup_game();
@@ -932,7 +930,7 @@ function startup() {
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
-            window_width: [{max: 3840, min: 256, type: 'number'}, 1200],
+            window_width: [{max: 3840, min: 256, type: 'number'}, 1500],
         },
     });
 
