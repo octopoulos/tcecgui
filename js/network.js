@@ -30,6 +30,8 @@ let prev_room = 0,
  * + handle all messages
  */
 function init_sockets() {
+    if (DEV.no_socket)
+        return;
     socket = io.connect(HOST);
 
     // live_log

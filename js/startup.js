@@ -12,7 +12,7 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
-create_field_value, detect_device, DEV, document, download_live, download_tables, E, ENGINE_COLORS, Events,
+clear_timeout, create_field_value, detect_device, DEV, document, download_live, download_tables, E, Events,
 game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
 init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
@@ -34,9 +34,9 @@ let AD_STYLES = {
         '#charts, #charts2': 'graph',
         '#eval0, #eval1': 'extra',
         '#lives': 'live',
+        '.pagin': 'extra',
         '#quick-tabs': 'quick',
         '#table-engine': 'engine',
-        '#tables': 'extra',
         '.swaps': 'panel',
     },
     old_center,
@@ -53,6 +53,7 @@ let AD_STYLES = {
     STREAM_SETTINGS = {},
     TIMEOUT_font = 200,
     TIMEOUT_graph = 500,
+    TIMEOUT_popup = 600,
     TIMEOUT_size = 1000;
 
 /**
@@ -70,8 +71,7 @@ function action_key(code) {
     switch (code) {
     // escape
     case 27:
-        show_popup();
-        show_popup('about');
+        close_popups();
         break;
     }
 }
@@ -103,6 +103,12 @@ function adjust_popups() {
  * @returns {boolean} true if we've handled the setting
  */
 function change_setting_special(name, value) {
+    // close contextual popup
+    clear_timeout('close_popup');
+    let modal = _('#modal');
+    if (modal && modal.dataset.xy)
+        add_timeout('close_popup', close_popups, TIMEOUT_popup);
+
     switch (name) {
     case 'animate':
     case 'board_theme':
@@ -132,6 +138,9 @@ function change_setting_special(name, value) {
     case 'window_width':
         resize();
         break;
+    case 'copy_moves':
+        LS('copy moves');
+        break;
     case 'graph_all':
         move_nodes();
         break;
@@ -144,14 +153,20 @@ function change_setting_special(name, value) {
     case 'graph_color_3':
     case 'graph_line':
     case 'graph_text':
-        update_chart_options(3);
+        update_chart_options(null, 3);
         break;
     case 'live_log':
         if (Visible('#table-log'))
             listen_log();
         break;
+    case 'live_move_height':
+        break;
     case 'live_tabs':
         show_live_engines();
+        break;
+    case 'move_height':
+        break;
+    case 'move_height_pv':
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -257,6 +272,14 @@ function check_stream() {
         return;
     update_board_theme(3);
     old_stream = stream;
+}
+
+/**
+ * Close all popups
+ */
+function close_popups() {
+    show_popup();
+    show_popup('about');
 }
 
 /**
@@ -487,7 +510,7 @@ function resize() {
     adjust_popups();
     resize_game();
 
-    add_timeout('graph_resize', () => {update_chart_options(2);}, TIMEOUT_graph);
+    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
 }
 
 /**
@@ -550,7 +573,7 @@ function show_live_engines() {
 
     let live_tabs = Y.live_tabs;
     S('#live-tabs', live_tabs);
-    S('#live-texts, #table-live0, #table-live1', !live_tabs);
+    S('#table-live0, #table-live1', !live_tabs);
     if (live_tabs)
         open_table(Y.tabs['live-tabs']);
 }
@@ -569,6 +592,10 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
     let node = (name == 'about')? Id('popup-about'): Id('modal');
     if (!node)
         return;
+
+    // don't adjust contextual popups
+    if (adjust && node.dataset.xy)
+        adjust = false;
 
     if (show || adjust) {
         let html = '',
@@ -611,6 +638,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             y = xy[1];
             x2 = x;
             y2 = y;
+            node.dataset.xy = xy;
         }
         else if (name && !px) {
             let target = Id(name);
@@ -755,8 +783,7 @@ function set_global_events() {
         Hide(this);
     });
     C('.popup-close', function() {
-        show_popup();
-        show_popup('about');
+        close_popups();
         let parent = Parent(this, 'div|vert', 'popup');
         if (parent)
             Class(parent, '-popup-enable -popup-show');
@@ -769,8 +796,7 @@ function set_global_events() {
             show_popup(this.id, true);
     });
     C('#overlay', () => {
-        show_popup();
-        show_popup('about');
+        close_popups();
     });
 
     // click somewhere => close the popups
@@ -995,10 +1021,11 @@ function startup() {
         graph: {
             graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
-            graph_color_0: [{type: 'color'}, ENGINE_COLORS[0]],
-            graph_color_1: [{type: 'color'}, ENGINE_COLORS[1]],
-            graph_color_2: [{type: 'color'}, ENGINE_COLORS[2]],
-            graph_color_3: [{type: 'color'}, ENGINE_COLORS[3]],
+            graph_color_0: [{type: 'color'}, '#efefef'],
+            graph_color_1: [{type: 'color'}, '#000000'],
+            graph_color_2: [{type: 'color'}, '#007bff'],
+            graph_color_3: [{type: 'color'}, '#8b0000'],
+            graph_combine_23: [{type: 'color'}, '#007700'],
             graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
@@ -1007,10 +1034,10 @@ function startup() {
             archive_scroll: [ON_OFF, 1],
         },
         panel: {
-            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
+            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 390],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
-            window_width: [{max: 3840, min: 256, type: 'number'}, 1500],
+            window_width: [{max: 32000, min: 256, type: 'number'}, 1920],
         },
         quick: {
             chat_offset: [{max: 500, min: -500, type: 'number'}, 0],

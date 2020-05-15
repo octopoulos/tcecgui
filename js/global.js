@@ -81,6 +81,7 @@ function parse_dev() {
             n: 'new',                   // new game debugging
             p: 'pv',
             s: 'socket',                // socket messages
+            S: 'no_socket',
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             x: 'xboard',
@@ -102,4 +103,18 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+}
+
+/**
+ * Split a PV string into ply + array of strings
+ * @param {string} text
+ * @returns {[number, string[]]}
+ */
+function split_move_string(text) {
+    if (!text)
+        return [-2, []];
+
+    let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
+        ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
+    return [ply, items];
 }

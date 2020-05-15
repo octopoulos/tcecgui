@@ -13,20 +13,20 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
-controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, ENGINE_COLORS,
-Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, Events, Exp,
+fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE,
+HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
-Show, show_menu, show_modal, Sign, Split, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle,
-touch_handle, translate, translate_node, Undefined, update_live_chart, update_player_charts, update_svg, Upper,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
+Show, show_menu, show_modal, Sign, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT,
+TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node, Undefined, update_chart_options, update_live_chart,
+update_player_charts, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window,
+X_SETTINGS, XBoard, Y
 */
 'use strict';
 
-let ARROW_COLORS = ['#007bff', '#f08080'],
-    BOARD_THEMES = {
+let BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
         chess24: ['#9e7863', '#633526'],
@@ -59,14 +59,14 @@ let ARROW_COLORS = ['#007bff', '#f08080'],
             dual: 'live1',
             live_id: 0,
             pv_id: '#table-live0 .live-pv',
-            tab: 'live',
+            tab: 'kibitz',
             vis: 'table-kibitz',
         },
         live1: {
             dual: 'live0',
             live_id: 1,
             pv_id: '#table-live1 .live-pv',
-            tab: 'live',
+            tab: 'kibitz',
             vis: 'table-kibitz',
         },
         pv0: {
@@ -445,7 +445,8 @@ function create_boards() {
     update_board_theme(3);
 
     // 4) pva colors
-    let lines = ENGINE_COLORS.map((color, id) => {
+    let lines = [0, 1, 2, 3].map(id => {
+        let color = Y[`graph_color_${id}`];
         return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id % 2}" style="background:${color}"></div>`;
     });
     HTML('#colors', lines.join(''));
@@ -460,7 +461,10 @@ function create_boards() {
 
 /**
  * Reset sub boards
- * @param {number} mode &1:mark board invalid, &2:reset the board completely
+ * @param {number} mode:
+ * - &1 :mark board invalid
+ * - &2: reset the board completely
+ * - &4: reset board evals
  */
 function reset_sub_boards(mode) {
     Keys(xboards).forEach(key => {
@@ -469,7 +473,7 @@ function reset_sub_boards(mode) {
             if (mode & 1)
                 board.valid = false;
             if (mode & 2)
-                board.reset();
+                board.reset(mode & 4);
         }
     });
 }
@@ -1958,6 +1962,9 @@ function update_materials(move) {
  * @param {boolean=} fresh is it the latest move?
  */
 function update_move_info(ply, move, fresh) {
+    if (!move)
+        return;
+
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
@@ -2105,9 +2112,11 @@ function update_overview_moves(section, headers, moves, is_new) {
         overview = Id('table-view'),
         is_live = (section == 'live'),
         main = xboards[section],
+        cur_ply = main.ply,
         num_move = moves.length,
         num_ply = main.moves.length,
-        move = moves[num_move - 1];
+        move = moves[num_move - 1],
+        ply = get_move_ply(move);
 
     // 1) clock
     // num_ply % 2 tells us who plays next
@@ -2159,13 +2168,16 @@ function update_overview_moves(section, headers, moves, is_new) {
         main.set_last(main.last);
 
     // 4) materials
-    for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
-        let move = moves[i],
-            ply = get_move_ply(move);
-        update_move_info(ply, move, true);
-        update_move_pv(section, ply, move);
+    // - only update if the ply is the current one
+    if (ply == cur_ply) {
+        for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
+            let move = moves[i],
+                ply2 = get_move_ply(move);
+            update_move_info(ply2, move, true);
+            update_move_pv(section, ply2, move);
+        }
+        update_materials(move);
     }
-    update_materials(move);
 }
 
 /**
@@ -2212,9 +2224,9 @@ function update_pgn(section, pgn) {
             LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply} : num_move=${num_move}`);
             LS(pgn);
         }
-        main.reset();
+        main.reset(1);
         if (is_same) {
-            reset_sub_boards(3);
+            reset_sub_boards(7);
             reset_charts();
         }
         main.round = headers.Round;
@@ -2336,16 +2348,21 @@ function update_live_eval(section, data, id, force) {
             LS(`maybe old data => SKIP: ${data.round} vs ${main.round}`);
             return;
         }
-        // ply seems be offset by 1
-        for (let move of moves)
+        // ply is offset by 1
+        for (let move of moves) {
+            // LS(`move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
             board.evals[move.ply - 1] = move;
+        }
         data = moves[moves.length - 1];
     }
 
     let cur_ply = main.ply,
         eval_ = data.eval,
         short = get_short_name(data.engine),
-        node = Id(`table-live${id}`);
+        node = Id(`table-live${id}`),
+        [ply] = split_move_string(data.pv);
+
+    board.evals[ply] = data;
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
@@ -2360,27 +2377,28 @@ function update_live_eval(section, data, id, force) {
     if ((moves || force) && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
-    let dico = {
-        depth: data.depth,
-        eval: format_eval(eval_),
-        node: FormatUnit(data.nodes),
-        score: calculate_probability(short, eval_),
-        speed: data.speed,
-        tb: FormatUnit(data.tbhits),
-    };
-    Keys(dico).forEach(key => {
-        HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), node);
-    });
+    // should only update the info if we're watching the last ply
+    if (DEV.eval)
+        LS(`LE#${id} : cur_ply=${cur_ply} : ply=${ply}`);
+
+    if (ply == cur_ply + 1) {
+        let dico = {
+            depth: data.depth,
+            eval: format_eval(eval_),
+            node: FormatUnit(data.nodes),
+            score: calculate_probability(short, eval_),
+            speed: data.speed,
+            tb: FormatUnit(data.tbhits),
+        };
+        Keys(dico).forEach(key => {
+            HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), node);
+        });
+    }
 
     if (force)
         board.text = '';
-    board.add_moves_string(data.pv, cur_ply, cur_ply + 1);
+    board.add_moves_string(data.pv);
 
-    // CHECK THIS
-    if (DEV.eval) {
-        LS(`live_eval${id} : eval=${eval_} : ply=${data.ply} :`);
-        LS(data);
-    }
     update_live_chart(moves || [data], id + 2, !!moves || force);
 }
 
@@ -2396,9 +2414,9 @@ function update_player_eval(section, data) {
     if (section != Y.x)
         return;
 
-    let eval_ = data.eval,
+    let cur_ply = xboards[section].ply,
+        eval_ = data.eval,
         id = data.color,
-        // board = xboards[`pv${id}`],
         node = Id(`player${id}`),
         short = get_short_name(data.engine);
 
@@ -2412,32 +2430,32 @@ function update_player_eval(section, data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
-    let board = xboards[`pv${id}`],
-        num_ply = xboards[section].moves.length;
-    board.add_moves_string(data.pv, num_ply - id, num_ply);
+    let board = xboards[`pv${id}`];
+    board.add_moves_string(data.pv);
 
     // 2) update the engine info in the center
-    let stats = {
-        depth: data.depth,
-        engine: data.engine,
-        eval: format_eval(eval_, true),
-        logo: short,
-        node: FormatUnit(data.nodes),
-        speed: data.speed,
-        tb: FormatUnit(data.tbhits),
-    };
-    Keys(stats).forEach(key => {
-        HTML(`#${key}${id}`, stats[key]);
-    });
-
-    if (!data.ply)
-        data.ply = data.plynum;
-
-    // CHECK THIS
-    if (DEV.eval) {
-        LS(`play_eval${id} : eval=${eval_} : ply=${data.ply}`);
+    data.ply = split_move_string(data.pv)[0];
+    if (DEV.eval || id == 0) {
+        LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
         LS(data);
     }
+
+    // - only if the ply is the currently selected ply + 1
+    if (data.ply == cur_ply + 1) {
+        let stats = {
+            depth: data.depth,
+            engine: data.engine,
+            eval: format_eval(eval_, true),
+            logo: short,
+            node: FormatUnit(data.nodes),
+            speed: data.speed,
+            tb: FormatUnit(data.tbhits),
+        };
+        Keys(stats).forEach(key => {
+            HTML(`#${key}${id}`, stats[key]);
+        });
+    }
+
     update_live_chart([data], id);
 }
 
@@ -2717,20 +2735,25 @@ function handle_board_events(board, type, value) {
                 LS(`next: ${id}`);
                 LS(value);
             }
-            xboards[section].arrow(id, value, ARROW_COLORS[id]);
+            xboards[section].arrow(id, value, Y[`graph_color_${id + 2}`]);
         }
         break;
     // ply was set
+    // !! make sure it's set manually
     case 'ply':
         if (board.name == section) {
             // update main board stats
-            let cur_ply = board.ply;
+            let cur_ply = board.ply,
+                prev_ply = cur_ply - 1,
+                prev_move = board.moves[prev_ply];
+            LS('ply'+cur_ply);
+            update_move_info(prev_ply, prev_move);
             update_move_info(cur_ply, value);
 
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
             reset_sub_boards(1);
-            update_move_pv(section, cur_ply - 1, board.moves[cur_ply - 1]);
+            update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, value);
 
             // show live engines
@@ -2789,8 +2812,10 @@ function opened_table(node, name, tab) {
     save_option('tabs', Y.tabs);
 
     // 2) special cases
-    if (is_chart && CHART_NAMES[name] && xboards[section])
+    if (is_chart && CHART_NAMES[name] && xboards[section]) {
         update_player_charts(name, xboards[section].moves);
+        update_chart_options(name, 3);
+    }
 
     switch (name) {
     case 'crash':
@@ -3012,7 +3037,7 @@ function startup_game() {
             copy_moves: '',
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
-            live_move_size: [{max: 10, min: 2, type: 'number'}, 3],
+            live_move_height: [{max: 10, min: 2, type: 'number'}, 3],
             live_pv: [ON_OFF, 1],
             live_tabs: [ON_OFF, 1],
         },
@@ -3030,11 +3055,11 @@ function startup_game() {
         graph: {},
         moves: {
             copy_moves: '',
-            move_size: [{max: 10, min: 2, type: 'number'}, 5],
+            move_height: [{max: 10, min: 2, type: 'number'}, 5],
         },
         moves_pv: {
             copy_moves: '',
-            move_size_pv: [{max: 10, min: 2, type: 'number'}, 5],
+            move_height_pv: [{max: 10, min: 2, type: 'number'}, 5],
         },
         panel: {},
     });

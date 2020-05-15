@@ -8,7 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, KEY_TIMES, Keys, KEYS,
+C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, Input, KEY_TIMES,
+Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -1041,7 +1042,7 @@ function change_setting(name, value) {
     if (virtual_change_setting_special && virtual_change_setting_special(name, value))
         return;
 
-    switch(name) {
+    switch (name) {
     case 'language':
         save_option('lan', value);
         if (value == 'eng' || translates._lan == value)
@@ -1296,9 +1297,23 @@ function set_modal_events(parent) {
 
     // settings events
     parent = parent || Id('overlay');
-    Events('select, input', 'change', function() {
+
+    // click on item => toggle if possible
+    C('.item', function() {
+        let next = _('select', this.nextElementSibling);
+        if (next && next.options.length == 2) {
+            next.selectedIndex ^= 1;
+            change_setting(next.name, next.value);
+        }
+    }, parent);
+    //
+    Events('input, select', 'change', function() {
         change_setting(this.name, this.value);
     }, {}, parent);
+    Input('input, select', () => {
+        change_setting();
+    });
+    //
     C('div[name]', function() {
         change_setting(this.getAttribute('name'));
     }, parent);
