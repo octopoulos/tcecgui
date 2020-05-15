@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the diverging moves
+2020-05-15 : 2020-05-14 : full graph customization
 2020-05-14 : 2020-05-14 : option to show both kibitzers
 2020-05-14 : 2020-05-14 : right click element => popup menu
 2020-05-14 : 2020-05-12 : bug when game ends, graph duplicates itself
@@ -196,7 +197,6 @@ low:
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-14 : white and black arrows => arrow menu? + different color if they agree
--          : 2020-05-14 : change colors of kibitzers
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
