@@ -15,12 +15,79 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'engine',
+    //
     'graph',
-], OUTPUT_MODULE);
+], OUTPUT_MODULE, 'Assign chart_data Keys');
 
-let {clamp_eval, fix_labels, invert_eval} = require(OUTPUT_MODULE);
+let {
+    Assign, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys,
+} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// check_first_num
+[
+    [
+        12,
+        8,
+        [
+            [5, '', 6, '', 7, '', 8, '', 9, '', 10, '', 11, '', 12, '', 13, '', 14, ''],
+            [
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                {x: 7, ply: 12, eval: '0.31', y: 0.31},
+                undefined,
+                {x: 8, ply: 14, eval: '0.35', y: 0.35},
+                undefined,
+                {x: 9, ply: 16, eval: '0.59', y: 0.59},
+                undefined,
+                {x: 10, ply: 18, eval: '0.42', y: 0.42},
+                undefined,
+                {x: 11, ply: 20, eval: '0.63', y: 0.63},
+                undefined,
+                {x: 12, ply: 22, eval: '0.46', y: 0.46},
+                undefined,
+                {x: 13, ply: 24, eval: '0.48', y: 0.48},
+                undefined,
+                {x: 14, ply: 26, eval: '0.70', y: 0.7},
+            ],
+        ],
+    ],
+].forEach(([first_num, num, answer], id) => {
+    test(`check_first_num:${id}`, () => {
+        check_first_num(first_num);
+
+        Assign(chart_data, {
+            eval: {
+                datasets: [{data: []}, {data: []}, {data: []}, {data: []}],
+                labels: [7, '', 8, '', 9, '', 10, '', 11, '', 12, '', 13, '', 14, ''],
+            },
+        });
+
+        let data = chart_data.eval.datasets[0].data,
+            dico = {
+                0: {x: 7, ply: 12, eval: '0.31', y: 0.31},
+                2: {x: 8, ply: 14, eval: '0.35', y: 0.35},
+                4: {x: 9, ply: 16, eval: '0.59', y: 0.59},
+                6: {x: 10, ply: 18, eval: '0.42', y: 0.42},
+                8: {x: 11, ply: 20, eval: '0.63', y: 0.63},
+                10: {x: 12, ply: 22, eval: '0.46', y: 0.46},
+                12: {x: 13, ply: 24, eval: '0.48', y: 0.48},
+                14: {x: 14, ply: 26, eval: '0.70', y: 0.7},
+            };
+
+        Keys(dico).forEach(key => {
+            data[key] = dico[key];
+        });
+
+        check_first_num(num);
+        expect(chart_data.eval.labels).toEqual(answer[0]);
+        expect(chart_data.eval.datasets[0].data).toEqual(answer[1]);
+    });
+});
 
 // clamp_eval
 [

@@ -11,9 +11,6 @@ Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, wi
 
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
-    COLOR_BLACK = '#000000',
-    COLOR_WHITE = '#efefef',
-    ENGINE_COLORS = [COLOR_WHITE, COLOR_BLACK, '#007bff', '#8b0000'],
     ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'],
     LIVE_ENGINES = [];
 
@@ -33,6 +30,35 @@ let all_evals = [],
     MAX_EVAL = 10;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Check if the first_num should be modified
+ * - unshift the dataset & labels if needed
+ */
+function check_first_num(num) {
+    if (first_num >= 0 && first_num < num)
+        return;
+    if (DEV.ply)
+        LS(`first_num: ${first_num} => ${num}`);
+
+    if (first_num >= 0) {
+        Keys(chart_data).forEach(key => {
+            let data = chart_data[key];
+
+            // labels
+            for (let ply = first_num - 1 ; ply >= num; ply --)
+                data.labels.unshift((ply % 2)? '': ply / 2 + 1);
+
+            // datasets
+            for (let dataset of data.datasets) {
+                for (let ply = first_num - 1 ; ply >= num; ply --)
+                    dataset.data.unshift(undefined);
+            }
+        });
+    }
+
+    first_num = num;
+}
 
 /**
  * Clamp an eval
@@ -60,45 +86,45 @@ function clamp_eval(eval_)
 function create_chart_data() {
     Assign(chart_data, {
         depth: {
-            labels: [],
             datasets: [
-                new_dataset('W. Depth', COLOR_WHITE),
+                new_dataset('W. Depth', Y.graph_color_0),
                 new_dataset('B. Depth', '#1a1a1a', '', {borderDash: [10, 5]}),
                 new_dataset('W. Sel depth', '#b1b1b1'),
                 new_dataset('B. Sel depth', '#7e7e7e', '', {borderDash: [10, 5]}),
             ],
+            labels: [],
         },
         eval: {
-            labels: [],
             datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
+            labels: [],
         },
         node: {
-            labels: [],
             datasets: [
-                new_dataset('White Speeds', COLOR_WHITE, 'y-axis-1'),
-                new_dataset('Black Speed', COLOR_BLACK, 'y-axis-2'),
+                new_dataset('White Speeds', Y.graph_color_0, 'y-axis-1'),
+                new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
             ],
+            labels: [],
         },
         speed: {
-            labels: [],
             datasets: [
-                new_dataset('White Speeds',COLOR_WHITE, 'y-axis-1'),
-                new_dataset('Black Speed', COLOR_BLACK, 'y-axis-2'),
+                new_dataset('White Speeds',Y.graph_color_0, 'y-axis-1'),
+                new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
             ],
+            labels: [],
         },
         tb: {
-            labels: [],
             datasets: [
-                new_dataset('White TB Hits', COLOR_WHITE, 'tb-y-axis-1'),
-                new_dataset('Black TB Hits', COLOR_BLACK, 'tb-y-axis-2'),
+                new_dataset('White TB Hits', Y.graph_color_0, 'tb-y-axis-1'),
+                new_dataset('Black TB Hits', Y.graph_color_1, 'tb-y-axis-2'),
             ],
+            labels: [],
         },
         time: {
-            labels: [],
             datasets: [
-                new_dataset('White Time', COLOR_WHITE),
-                new_dataset('Black Time', COLOR_BLACK),
+                new_dataset('White Time', Y.graph_color_0),
+                new_dataset('Black Time', Y.graph_color_1),
             ],
+            labels: [],
         },
     });
 }
@@ -128,143 +154,141 @@ function create_charts()
 
     // 2) create all charts
     charts.depth = charts.depth || new Chart('chart-depth', {
-        type: 'line',
         data: chart_data.depth,
         options: Assign(Assign({}, options), {
             legend: {
                 display: true,
-                position: 'bottom',
                 fontSize: 5,
                 labels: {
                     boxWidth: 1,
                 },
+                position: 'bottom',
             },
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 'd-y-axis-1',
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
                 }],
+                yAxes: [{
+                    display: true,
+                    id: 'd-y-axis-1',
+                    position: 'left',
+                    type: 'linear',
+                }],
             },
         }),
+        type: 'line',
     });
 
     charts.eval = charts.eval || new Chart('chart-eval', {
-        type: 'line',
         data: chart_data.eval,
         options: Assign(Assign({}, options), {
             bezierCurve: false,
             legend: {
                 display: true,
-                position: 'bottom',
                 fontSize: 5,
+                position: 'bottom',
                 labels: {
                     boxWidth: 1
                 },
             },
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 'e-y-axis-1',
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
+                }],
+                yAxes: [{
+                    display: true,
+                    id: 'e-y-axis-1',
+                    position: 'left',
+                    type: 'linear',
                 }],
             },
             spanGaps: true,
         }),
+        type: 'line',
     });
 
     charts.node = charts.node || new Chart('chart-node', {
-        type: 'line',
         data: chart_data.node,
         options: Assign(Assign({}, options), {
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 'y-axis-1',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                }, {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    id: 'y-axis-2',
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
                 }],
+                yAxes: [{
+                    display: true,
+                    id: 'y-axis-1',
+                    position: 'left',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }, {
+                    display: true,
+                    gridLines: {
+                        drawOnChartArea: false,
+                    },
+                    id: 'y-axis-2',
+                    position: 'right',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }],
             },
             tooltips: {
-                mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
                         let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
                         return nodes;
                     },
                 },
+                mode: 'index',
             },
         }),
+        type: 'line',
     });
 
     charts.speed = charts.speed || new Chart('chart-speed', {
-        type: 'line',
         data: chart_data.speed,
         options: Assign(Assign({}, options), {
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 'y-axis-1',
-                    ticks: {
-                        callback: FormatUnit,
-                    }
-                }, {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    id: 'y-axis-2',
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
                 }],
+                yAxes: [{
+                    display: true,
+                    id: 'y-axis-1',
+                    position: 'left',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }, {
+                    display: true,
+                    gridLines: {
+                        drawOnChartArea: false,
+                    },
+                    id: 'y-axis-2',
+                    position: 'right',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }],
             },
             tooltips: {
-                mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
                         let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
@@ -272,83 +296,85 @@ function create_charts()
                         return `${speed}nps (${nodes} nodes)`;
                     },
                 },
+                mode: 'index',
             },
         }),
+        type: 'line',
     });
 
     charts.tb = charts.tb || new Chart('chart-tb', {
-        type: 'line',
         data: chart_data.tb,
         options: Assign(Assign({}, options), {
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 'tb-y-axis-1',
-                    ticks: {
-                        callback: FormatUnit,
-                    }
-                }, {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    id: 'tb-y-axis-2',
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
                 }],
+                yAxes: [{
+                    display: true,
+                    id: 'tb-y-axis-1',
+                    position: 'left',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }, {
+                    display: true,
+                    gridLines: {
+                        drawOnChartArea: false,
+                    },
+                    id: 'tb-y-axis-2',
+                    position: 'right',
+                    ticks: {
+                        callback: FormatUnit,
+                    },
+                    type: 'linear',
+                }],
             },
             tooltips: {
-                mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
                         let hits = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                         return hits;
                     },
                 },
+                mode: 'index',
             },
         }),
+        type: 'line',
     });
 
     charts.time = charts.time || new Chart('chart-time', {
-        type: 'line',
         data: chart_data.time,
         options: Assign(Assign({}, options), {
             backgroundColor: 'rgb(10,10,10)',
             scales: {
-                yAxes: [{
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    id: 't-y-axis-1',
-                }],
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 25,
                     },
                 }],
+                yAxes: [{
+                    display: true,
+                    id: 't-y-axis-1',
+                    position: 'left',
+                    type: 'linear',
+                }],
             },
             tooltips: {
-                mode: 'index',
                 callbacks: {
                     label: (tooltipItem, data) => {
                         let [_, min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
                         return `${min}:${Pad(sec)}`;
                     },
                 },
+                mode: 'index',
             },
         }),
+        type: 'line',
     });
 
     // 3) click events
@@ -364,11 +390,11 @@ function create_charts()
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards[Y.x].set_ply(dico.ply);
+                xboards[Y.x].set_ply(dico.ply, null, true);
         });
     });
 
-    update_chart_options(3);
+    update_chart_options(null, 3);
 }
 
 /**
@@ -461,26 +487,33 @@ function reset_charts()
 
 /**
  * Update chart options
+ * @param {string} name null for all charts
  * @param {number} mode &1:colors, &2:line + font size
  */
-function update_chart_options(mode) {
+function update_chart_options(name, mode) {
     // eval colors
     if (mode & 1) {
-        let data = chart_data.eval;
-        if (!data)
-            return;
-        let datasets = data.datasets;
+        if (!name || name == 'eval') {
+            let data = chart_data.eval;
+            if (!data)
+                return;
+            let datasets = data.datasets;
 
-        for (let id = 0; id < 4; id ++) {
-            let color = Y[`graph_color_${id}`],
-                dataset = datasets[id];
-            dataset.backgroundColor = color;
-            dataset.borderColor = color;
+            for (let id = 0; id < 4; id ++) {
+                let color = Y[`graph_color_${id}`];
+                Assign(datasets[id], {
+                    backgroundColor: color,
+                    borderColor: color,
+                });
+            }
         }
     }
 
     // line width + update
     Keys(charts).forEach(key => {
+        if (name && name != key)
+            return;
+
         let chart = charts[key];
         if (!chart)
             return;
@@ -498,10 +531,14 @@ function update_chart_options(mode) {
                     pointRadius: line_width,
                 });
 
-            // 316 px => 10
-            options.scales.xAxes[0].ticks.fontSize = text_size;
-            options.scales.yAxes[0].ticks.fontSize = text_size;
+            // axes
+            let scales = options.scales;
+            scales.xAxes[0].ticks.fontSize = text_size;
+            for (let yaxis of scales.yAxes)
+                yaxis.ticks.fontSize = text_size;
+
             options.legend.labels.fontSize = text_size;
+            options.legend.labels.padding = text_size * 0.8;
         }
 
         chart.update();
@@ -526,26 +563,25 @@ function update_live_chart(moves, id, invert_black) {
     for (let move of moves) {
         let eval_ = move.eval,
             ply = get_move_ply(move),
-            num = Floor(ply / 2);
+            num = ply;  // Floor(ply / 2);
         if (ply < -1)
             continue;
 
-        if (first_num < 0 || num < first_num)
-            first_num = num;
+        check_first_num(num);
         let num2 = num - first_num;
-        labels[num2] = num + 1;
+        labels[num2] = (num % 2)? '': num / 2 + 1;
 
         if (invert_black && ply % 2 == 0) {
             eval_ = invert_eval(eval_);
-            if (DEV.eval)
+            if (DEV.eval2)
                 LS(`inverting black @${ply}: ${move.eval} => ${eval_}`);
         }
 
         // check update_player_chart to understand
         dataset.data[num2] = {
             eval: eval_,
-            x: num + 1,
             ply: ply,
+            x: num / 2 + 1,
             y: clamp_eval(eval_),
         };
     }
@@ -582,18 +618,17 @@ function update_player_chart(name, moves) {
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
             ply = get_move_ply(move),
-            num = Floor(ply / 2);
+            num = ply;  // Floor(ply / 2);
         if (ply < -1)
             continue;
 
-        if (first_num < 0 || num < first_num)
-            first_num = num;
+        check_first_num(num);
         let num2 = num - first_num;
-        labels[num2] = num + 1;
+        labels[num2] = (num % 2)? '': num / 2 + 1;
 
         let dico = {
-            x: num + 1,     // move number
-            ply: ply,       // used for jumping to the position
+            x: num / 2 + 1,     // move number
+            ply: ply,           // used for jumping to the position
         };
 
         switch (chart_id) {
