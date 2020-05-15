@@ -2,6 +2,12 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : @ should be placed before the diverging moves
+-          : 2020-05-14 : save and load settings
+-          : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
+-          : 2020-05-14 : scroll can be cancelled
+-          : 2020-05-15 : click on settings name will toggle its option if it's on/off
+-          : 2020-05-15 : graph per ply
+2020-05-15 : 2020-05-14 : white and black arrows => arrow menu? + different color if they agree
 2020-05-15 : 2020-05-14 : full graph customization
 2020-05-14 : 2020-05-14 : option to show both kibitzers
 2020-05-14 : 2020-05-14 : right click element => popup menu
@@ -184,19 +190,18 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 medium:
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
--          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
-~          : 2020-04-13 : add 3d board
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
--          : 2020-05-14 : save and load settings
+-          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 low:
+-          : 2020-05-15 : keep dataset for live and for archive
+~          : 2020-04-13 : add 3d board
 -          : 2020-05-13 : drag and drop system using the dummies as targets
 -          : 2020-04-29 : add SVG connectors to the bracket
-~          : 2020-05-10 : highlight selected piece + possible moves in PVA
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
--          : 2020-05-14 : white and black arrows => arrow menu? + different color if they agree
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
