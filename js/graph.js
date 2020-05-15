@@ -62,15 +62,15 @@ function create_chart_data() {
         depth: {
             labels: [],
             datasets: [
-                new_dataset('White Depth', COLOR_WHITE),
-                new_dataset('Black Depth', '#1a1a1a', '', {borderDash: [10, 5]}),
-                new_dataset('W. Sel Depth', '#b1b1b1'),
-                new_dataset('B. Sel Depth', '#7e7e7e', '', {borderDash: [10, 5]}),
+                new_dataset('W. Depth', COLOR_WHITE),
+                new_dataset('B. Depth', '#1a1a1a', '', {borderDash: [10, 5]}),
+                new_dataset('W. Sel depth', '#b1b1b1'),
+                new_dataset('B. Sel depth', '#7e7e7e', '', {borderDash: [10, 5]}),
             ],
         },
         eval: {
             labels: [],
-            datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, ENGINE_COLORS[id])),
+            datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
         },
         node: {
             labels: [],
@@ -367,6 +367,8 @@ function create_charts()
                 xboards[Y.x].set_ply(dico.ply);
         });
     });
+
+    update_chart_options(3);
 }
 
 /**
@@ -454,6 +456,55 @@ function reset_charts()
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
+    });
+}
+
+/**
+ * Update chart options
+ * @param {number} mode &1:colors, &2:line + font size
+ */
+function update_chart_options(mode) {
+    // eval colors
+    if (mode & 1) {
+        let data = chart_data.eval;
+        if (!data)
+            return;
+        let datasets = data.datasets;
+
+        for (let id = 0; id < 4; id ++) {
+            let color = Y[`graph_color_${id}`],
+                dataset = datasets[id];
+            dataset.backgroundColor = color;
+            dataset.borderColor = color;
+        }
+    }
+
+    // line width + update
+    Keys(charts).forEach(key => {
+        let chart = charts[key];
+        if (!chart)
+            return;
+
+        if (mode & 2) {
+            let datasets = chart.data.datasets,
+                options = chart.options,
+                ratio = chart.canvas.parentNode.clientWidth / 300,
+                line_width = Y.graph_line * ratio,
+                text_size = Y.graph_text * ratio;
+
+            for (let dataset of datasets)
+                Assign(dataset, {
+                    borderWidth: line_width,
+                    pointRadius: line_width,
+                });
+
+            // 316 px => 10
+            options.scales.xAxes[0].ticks.fontSize = text_size;
+            options.scales.yAxes[0].ticks.fontSize = text_size;
+            options.legend.labels.fontSize = text_size;
+        }
+
+        chart.update();
     });
 }
 

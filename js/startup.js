@@ -19,9 +19,10 @@ LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, lo
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
-tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme, update_debug,
-update_player_charts, update_theme, update_twitch, virtual_change_setting_special:true, virtual_check_hash_special:true,
-virtual_opened_table_special:true, virtual_resize:true, Visible, window, xboards, Y
+tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme,
+update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
+virtual_resize:true, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -30,13 +31,13 @@ let AD_STYLES = {
         1: 'width:100%;max-height:280px',
     },
     CONTEXT_MENUS = {
-        '#archive, #live': 'board',
         '#charts, #charts2': 'graph',
         '#eval0, #eval1': 'extra',
-        '#live0, #live1, #pv0, #pv1': 'board_pv',
         '#lives': 'live',
-        '#quick-tabs, #tables': 'extra',
-        '.swaps, #table-chat': 'panel',
+        '#quick-tabs': 'quick',
+        '#table-engine': 'engine',
+        '#tables': 'extra',
+        '.swaps': 'panel',
     },
     old_center,
     old_font_height,
@@ -51,6 +52,7 @@ let AD_STYLES = {
     },
     STREAM_SETTINGS = {},
     TIMEOUT_font = 200,
+    TIMEOUT_graph = 500,
     TIMEOUT_size = 1000;
 
 /**
@@ -123,6 +125,7 @@ function change_setting_special(name, value) {
         update_board_theme(2);
         break;
     case 'chat_offset':
+    case 'graph_min_width':
     case 'panel_center':
     case 'panel_left':
     case 'panel_right':
@@ -134,6 +137,14 @@ function change_setting_special(name, value) {
         break;
     case 'graph_aspect_ratio':
         resize_panels(true);
+        break;
+    case 'graph_color_0':
+    case 'graph_color_1':
+    case 'graph_color_2':
+    case 'graph_color_3':
+    case 'graph_line':
+    case 'graph_text':
+        update_chart_options(3);
         break;
     case 'live_log':
         if (Visible('#table-log'))
@@ -475,6 +486,8 @@ function resize() {
 
     adjust_popups();
     resize_game();
+
+    add_timeout('graph_resize', () => {update_chart_options(2);}, TIMEOUT_graph);
 }
 
 /**
@@ -880,6 +893,27 @@ function set_global_events() {
             e.preventDefault();
         });
     });
+    Events('#archive, #live, #live0, #live1, #pv0, #pv1', 'contextmenu', function(e) {
+        let is_pv = '01'.includes(this.id.slice(-1)),
+            target = e.target;
+
+        while (target) {
+            let name;
+            if (HasClass(target, 'xcontrol'))
+                name = 'control';
+            else if (HasClass(target, 'xcontain'))
+                name = is_pv? 'board_pv': 'board';
+            else if (HasClass(target, 'xmoves'))
+                name = is_pv? 'moves_pv': 'moves';
+
+            if (name) {
+                show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
+                e.preventDefault();
+                return;
+            }
+            target = target.parentNode;
+        }
+    });
 }
 
 /**
@@ -933,10 +967,10 @@ function startup() {
     LANGUAGES = {
         bul: 'български',
         eng: 'English',
-        spa: 'Español',
+        spa: 'español',
         fra: 'français',
         jpn: '日本語',
-        pol: 'Polski',
+        pol: 'polski',
         rus: 'русский',
         ukr: 'українська',
     };
@@ -961,19 +995,27 @@ function startup() {
         graph: {
             graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
+            graph_color_0: [{type: 'color'}, ENGINE_COLORS[0]],
+            graph_color_1: [{type: 'color'}, ENGINE_COLORS[1]],
+            graph_color_2: [{type: 'color'}, ENGINE_COLORS[2]],
+            graph_color_3: [{type: 'color'}, ENGINE_COLORS[3]],
+            graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
+            graph_text: [{min: 1, max: 30, type: 'number'}, 10],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
-            shortcut_1: [shortcuts, 'stand'],
-            shortcut_2: [shortcuts, 'off'],
         },
         panel: {
-            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 0],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
             window_width: [{max: 3840, min: 256, type: 'number'}, 1500],
+        },
+        quick: {
+            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
+            shortcut_1: [shortcuts, 'stand'],
+            shortcut_2: [shortcuts, 'off'],
         },
     });
 

@@ -1011,7 +1011,7 @@ class XBoard {
         }).join('');
 
         HTML(this.node, [
-            '<div>',
+            '<div class="xcontain">',
                 '<div class="xframe"></div>',
                 '<grid class="xsquares"></grid>',
                 '<div class="xoverlay"></div>',

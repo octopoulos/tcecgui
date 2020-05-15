@@ -2803,7 +2803,7 @@ function opened_table(node, name, tab) {
         HTML(node, HTML('#desc'));
         break;
     case 'log':
-        fill_combo('#log', X_SETTINGS.live.live_log[0]);
+        fill_combo('#log', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
         break;
     // change order + switch to default tab
@@ -2963,6 +2963,7 @@ function startup_game() {
     Assign(DEFAULTS, {
         div: '',
         game: 0,
+        live_log: 0,
         order: 'left|center|right',         // main panes order
         season: '',
         stream: 0,
@@ -3008,26 +3009,33 @@ function startup_game() {
             show_ply: [['first', 'diverging'], 'diverging'],
         },
         live: {
+            copy_moves: '',
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
-            live_log: [[0, 5, 10, 'all'], 0],
+            live_move_size: [{max: 10, min: 2, type: 'number'}, 3],
             live_pv: [ON_OFF, 1],
             live_tabs: [ON_OFF, 1],
         },
         // separator
         _2: {},
-        // backup: {
-        //     load_settings: [],
-        //     save_settings: [],
-        // },
         control: {
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
         },
-        extra: {
-            rows_per_page: [[10, 20, 50, 100], 10],
+        engine: {
             small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
         },
+        extra: {
+            rows_per_page: [[10, 20, 50, 100], 10],
+        },
         graph: {},
+        moves: {
+            copy_moves: '',
+            move_size: [{max: 10, min: 2, type: 'number'}, 5],
+        },
+        moves_pv: {
+            copy_moves: '',
+            move_size_pv: [{max: 10, min: 2, type: 'number'}, 5],
+        },
         panel: {},
     });
 
