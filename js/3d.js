@@ -8,8 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, Input, KEY_TIMES,
-Keys, KEYS,
+C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format, HTML,
+Id, Input, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -1144,14 +1144,15 @@ function show_modal(show, text, title, name) {
 /**
  * Show a settings page
  * @param {string} name
+ * @param {boolean} xy
  * @returns {string} html
  */
-function show_settings(name) {
+function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
         settings = name? X_SETTINGS[name]: X_SETTINGS;
 
     if (name)
-        lines.push(`<div class="item-title span" data-set="" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+        lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
     Keys(settings).forEach(key => {
         // separator
@@ -1207,7 +1208,7 @@ function show_settings(name) {
 
     // -1 to close the popup
     if (name)
-        lines.push('<a class="item item-title span" data-set="-1" data-t="OK"></a>');
+        lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
 
     lines.push('</grid>');
     return lines.join('');
@@ -1307,12 +1308,19 @@ function set_modal_events(parent) {
         }
     }, parent);
     //
-    Events('input, select', 'change', function() {
+    Events('input, select', 'change', function(e) {
+        done_touch();
         change_setting(this.name, this.value);
     }, {}, parent);
     Input('input, select', () => {
+        done_touch();
         change_setting();
-    });
+    }, parent);
+    C('input, select', () => {
+        if (cannot_click())
+            return;
+        change_setting();
+    }, parent);
     //
     C('div[name]', function() {
         change_setting(this.getAttribute('name'));

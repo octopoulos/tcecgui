@@ -138,20 +138,27 @@ function create_charts()
 {
     // 1) common options
     let options = {
-        hoverMode: 'index',
-        legend: {
-            display: false
+            hoverMode: 'index',
+            legend: {
+                display: false
+            },
+            maintainAspectRatio: false,
+            responsive: true,
+            spanGaps: true,
+            title: {
+                display: false,
+            },
+            tooltips: {
+                mode: 'index',
+            },
         },
-        maintainAspectRatio: false,
-        responsive: true,
-        spanGaps: true,
-        title: {
-            display: false,
-        },
-        tooltips: {
-            mode: 'index',
-        },
-    };
+        x_axes = {
+            ticks: {
+                autoSkip: true,
+                callback: (tick, index) => (index % 2)? '': tick,
+                maxTicksLimit: 25,
+            },
+        };
 
     // 2) create all charts
     charts.depth = charts.depth || new Chart('chart-depth', {
@@ -166,12 +173,7 @@ function create_charts()
                 position: 'bottom',
             },
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 'd-y-axis-1',
@@ -196,13 +198,7 @@ function create_charts()
                 },
             },
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        callback: (tick, index) => (index % 2)? '': tick,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 'e-y-axis-1',
@@ -218,12 +214,7 @@ function create_charts()
         data: chart_data.node,
         options: Assign(Assign({}, options), {
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 'y-axis-1',
@@ -262,12 +253,7 @@ function create_charts()
         data: chart_data.speed,
         options: Assign(Assign({}, options), {
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 'y-axis-1',
@@ -307,12 +293,7 @@ function create_charts()
         data: chart_data.tb,
         options: Assign(Assign({}, options), {
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 'tb-y-axis-1',
@@ -350,14 +331,9 @@ function create_charts()
     charts.time = charts.time || new Chart('chart-time', {
         data: chart_data.time,
         options: Assign(Assign({}, options), {
-            backgroundColor: 'rgb(10,10,10)',
+            backgroundColor: 'rgb(10, 10, 10)',
             scales: {
-                xAxes: [{
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 25,
-                    },
-                }],
+                xAxes: [x_axes],
                 yAxes: [{
                     display: true,
                     id: 't-y-axis-1',

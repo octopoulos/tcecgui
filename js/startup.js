@@ -103,8 +103,11 @@ function adjust_popups() {
  * @returns {boolean} true if we've handled the setting
  */
 function change_setting_special(name, value) {
-    // close contextual popup
     clear_timeout('close_popup');
+    if (!name)
+        return false;
+
+    // close contextual popup
     let modal = _('#modal');
     if (modal && modal.dataset.xy)
         add_timeout('close_popup', close_popups, TIMEOUT_popup);
@@ -618,7 +621,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             y = win_y / 2;
             break;
         case 'options':
-            html = show_settings(setting);
+            html = show_settings(setting, xy);
             break;
         default:
             if (name)
@@ -1035,6 +1038,7 @@ function startup() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
+            scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
         },
         panel: {
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 390],

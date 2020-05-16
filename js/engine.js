@@ -775,6 +775,13 @@ function cannot_click() {
 }
 
 /**
+ * Finished touching which means we cannot click for a bit
+ */
+function done_touch() {
+    touch_done = Now(true);
+}
+
+/**
  * Get the changed touches + stamp
  * @param {Event} e
  * @returns {*[]} [changed_touches, stamp]
@@ -792,15 +799,18 @@ function get_changed_touches(e) {
  * Render the inertial scrolling
  */
 function render_scroll() {
+    if (!Y.scroll_inertia)
+        return;
+
     let now = Now(true),
         delta = Min(33, (now - touch_now) * 1000),
-        ratio = (drag_type == 'mouse')? 0.93: 0.96;
+        ratio = Y.scroll_inertia;
 
     touch_scroll.x -= touch_speed.x * delta;
     touch_scroll.y -= touch_speed.y * delta;
     set_scroll();
 
-    if (Abs(touch_speed.x) > 0.01 || Abs(touch_speed.y) > 0.01) {
+    if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
         requestAnimationFrame(render_scroll);
@@ -961,11 +971,11 @@ function touch_handle(e) {
                 break;
         }
 
-        touch_now = Now(true);
+        done_touch();
+        touch_now = touch_done;
         let absx = Abs(sumx),
             absy = Abs(sumy),
             elapsed = touch_now - touch_start;
-        touch_done = touch_now;
 
         // some movement => scroll
         if (absx > 1 || absy > 1) {
