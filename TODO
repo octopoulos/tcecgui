@@ -4,6 +4,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty?
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 -          : 2020-05-14 : @ should be placed before the diverging moves
+2020-05-16 : 2020-05-16 : add a zero mode to see the initial position
 2020-05-16 : 2020-05-16 : hide eval & moves
 2020-05-16 : 2020-05-16 : hide the live panel on the bottom left
 2020-05-16 : 2020-05-16 : option to show pv info under pv moves: name + eval + % (+ extra for kibitzers)

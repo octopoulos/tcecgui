@@ -222,19 +222,26 @@ class XBoard {
                         parent.appendChild(last);
                     }
                     return [parent, last];
-                });
+                }),
+            start = 0;
+
+        // add the initial position
+        if (!num_move && this.main)
+            start = -1;
 
         // proper moves
-        for (let i = 0; i < num_new; i ++) {
+        for (let i = start; i < num_new; i ++) {
             let move = moves[i],
                 ply = get_move_ply(move);
 
-            move.ply = ply;
-            this.moves[ply] = move;
-            num_book += move.book;
+            if (move) {
+                move.ply = ply;
+                this.moves[ply] = move;
+                num_book += move.book;
+            }
 
             // TODO: remove this ... sometimes we need to add missing nodes
-            if (ply < num_move)
+            if (i >= 0 && ply < num_move)
                 continue;
 
             // indicate current ply
@@ -246,14 +253,14 @@ class XBoard {
                     lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
                 else
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
+                        let node = CreateNode(i < 0? 'a': 'i', `${1 + ply / 2}.`, (i < 0)? {class: 'turn', 'data-i': -1}: {class: 'turn'});
                         parent.insertBefore(node, last);
                     }
             }
             else if (!i && is_ply)
                 lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
 
-            if (move.m) {
+            if (move && move.m) {
                 let class_ = move.book? 'book': 'real';
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
@@ -1079,8 +1086,9 @@ class XBoard {
      * @returns {boolean}
      */
     go_prev() {
-        let ply = this.ply - 1;
-        while (ply > 0 && !this.moves[ply])
+        let ply = this.ply - 1,
+            start = this.main? -1: 0;
+        while (ply > start && !this.moves[ply])
             ply --;
         return this.set_ply(ply, true, true);
     }
@@ -1094,6 +1102,11 @@ class XBoard {
             ply = 0;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
+
+        // initial board
+        if (!ply && this.main)
+            ply = -1;
+
         return this.set_ply(ply, null, true);
     }
 
@@ -1470,6 +1483,16 @@ class XBoard {
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
         clear_timeout(`dual${this.id}`);
+
+        // special case: initial board
+        if (ply == -1 && this.main) {
+            this.ply = -1;
+            this.set_fen(START_FEN, true);
+            this.hide_arrows();
+            this.update_cursor(ply);
+            this.animate({}, animate);
+            return {};
+        }
 
         // update the FEN
         // TODO: if delta = 1 => should add_move instead => faster
