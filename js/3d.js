@@ -1164,15 +1164,19 @@ function show_settings(name, xy) {
 
         // link or list
         let setting = settings[key][0],
-            more_class = setting? '': ' span',
+            is_string = (typeof(setting) == 'string')? ` name="${key}"`: '',
+            more_class = (setting && !is_string)? '': ' span',
             more_data = setting? '': ` data-set="${key}"`,
             title = settings[key][2];
 
         lines.push(
-            `<a class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+            `<a${is_string} class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
             + '</a>'
         );
+
+        if (is_string)
+            return;
 
         if (Array.isArray(setting)) {
             lines.push(
@@ -1302,10 +1306,15 @@ function set_modal_events(parent) {
 
     // click on item => toggle if possible
     C('.item', function() {
-        let next = _('select', this.nextElementSibling);
-        if (next && next.options.length == 2) {
-            next.selectedIndex ^= 1;
-            change_setting(next.name, next.value);
+        let name = this.name;
+        if (name)
+            change_setting(name);
+        else {
+            let next = _('select', this.nextElementSibling);
+            if (next && next.options.length == 2) {
+                next.selectedIndex ^= 1;
+                change_setting(next.name, next.value);
+            }
         }
     }, parent);
     //

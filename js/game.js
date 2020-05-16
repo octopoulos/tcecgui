@@ -3106,7 +3106,7 @@ function startup_game() {
             show_ply: [['first', 'diverging'], 'diverging'],
         },
         live: {
-            copy_moves: '',
+            copy_moves: '1',
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
@@ -3126,11 +3126,11 @@ function startup_game() {
         },
         graph: {},
         moves: {
-            copy_moves: '',
+            copy_moves: '1',
             move_height: [{max: 30, min: 5, type: 'number'}, 5],
         },
         moves_pv: {
-            copy_moves: '',
+            copy_moves: '1',
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
         panel: {},

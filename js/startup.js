@@ -14,9 +14,9 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
-clear_timeout, create_field_value, detect_device, DEV, document, download_live, download_tables, E, Events,
-game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
-init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+clear_timeout, CopyClipboard, create_field_value, detect_device, DEV, document, download_live, download_tables, E,
+Events, game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
+Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
@@ -41,6 +41,7 @@ let AD_STYLES = {
         '#table-engine': 'engine',
         '.swaps': 'panel',
     },
+    context_target,
     old_center,
     old_font_height,
     old_stream = 0,
@@ -144,7 +145,8 @@ function change_setting_special(name, value) {
         resize();
         break;
     case 'copy_moves':
-        LS('copy moves');
+        if (context_target)
+            CopyClipboard(context_target.innerText.replace(/\s/g, ' '));
         break;
     case 'graph_all':
         move_nodes();
@@ -929,6 +931,7 @@ function set_global_events() {
     // context menus
     Keys(CONTEXT_MENUS).forEach(key => {
         Events(key, 'contextmenu', function(e) {
+            context_target = e.target;
             show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
             e.preventDefault();
         });
@@ -952,6 +955,7 @@ function set_global_events() {
                 name = is_pv? 'moves_pv': 'moves';
 
             if (name) {
+                context_target = target;
                 show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
                 e.preventDefault();
                 return;
