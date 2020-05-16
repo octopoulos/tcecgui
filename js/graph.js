@@ -47,7 +47,7 @@ function check_first_num(num) {
 
             // labels
             for (let ply = first_num - 1 ; ply >= num; ply --)
-                data.labels.unshift((ply % 2)? '': ply / 2 + 1);
+                data.labels.unshift(ply / 2 + 1);
 
             // datasets
             for (let dataset of data.datasets) {
@@ -144,6 +144,7 @@ function create_charts()
         },
         maintainAspectRatio: false,
         responsive: true,
+        spanGaps: true,
         title: {
             display: false,
         },
@@ -198,6 +199,7 @@ function create_charts()
                 xAxes: [{
                     ticks: {
                         autoSkip: true,
+                        callback: (tick, index) => (index % 2)? '': tick,
                         maxTicksLimit: 25,
                     },
                 }],
@@ -208,7 +210,6 @@ function create_charts()
                     type: 'linear',
                 }],
             },
-            spanGaps: true,
         }),
         type: 'line',
     });
@@ -569,7 +570,7 @@ function update_live_chart(moves, id, invert_black) {
 
         check_first_num(num);
         let num2 = num - first_num;
-        labels[num2] = (num % 2)? '': num / 2 + 1;
+        labels[num2] = num / 2 + 1;
 
         if (invert_black && ply % 2 == 0) {
             eval_ = invert_eval(eval_);
@@ -624,7 +625,7 @@ function update_player_chart(name, moves) {
 
         check_first_num(num);
         let num2 = num - first_num;
-        labels[num2] = (num % 2)? '': num / 2 + 1;
+        labels[num2] = num / 2 + 1;
 
         let dico = {
             x: num / 2 + 1,     // move number

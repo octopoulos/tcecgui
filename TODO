@@ -5,6 +5,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-14 : save and load settings
 -          : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
 -          : 2020-05-14 : scroll can be cancelled
+2020-05-16 : 2020-05-15 : show timer when engine info is not visible
 2020-05-15 : 2020-05-15 : click on settings name to toggle the value
 2020-05-15 : 2020-05-15 : graph per ply
 2020-05-15 : 2020-05-14 : white and black arrows => arrow menu? + different color if they agree

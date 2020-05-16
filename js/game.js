@@ -477,6 +477,29 @@ function reset_sub_boards(mode) {
         }
     });
 }
+
+/**
+ * Show/hide the timers around the board
+ */
+function show_board_info() {
+    let [active] = get_active_tab('engine'),
+        main = xboards[Y.x],
+        node = main.node,
+        show = (active != 'engine');
+
+    S('.xbottom, .xtop', show, node);
+    Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
+    Class('.xtop', 'xcolor0 -xcolor1', main.rotate);
+
+    players.forEach((player, id) => {
+        let mini = _(`.xcolor${id}`, node);
+        HTML('.xeval', format_eval(player.eval, true), mini);
+        HTML(`.xleft`, player.sleft, mini);
+        HTML('.xshort', player.short, mini);
+        HTML(`.xtime`, player.stime, mini);
+    });
+}
+
 /**
  * Update the boards' theme
  * @param {number} mode update mode:
@@ -2018,6 +2041,7 @@ function update_move_pv(section, ply, move) {
 
     HTML(`[data-x="eval"]`, is_book? '': format_eval(move.wv), node);
     HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
+    HTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
 
     // PV should jump directly to a new position, no transition
     board.reset();
@@ -2083,6 +2107,7 @@ function update_overview_basic(section, headers) {
 
         HTML(`#engine${id}`, name);
         HTML(`[data-x="name"]`, short, node);
+        HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
         if (image.src != src) {
@@ -2307,6 +2332,10 @@ function start_clock(id, finished) {
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
+    let node = xboards.live.node;
+    S(`.xcolor${id} .xcog`, !finished, node);
+    Hide(`.xcolor${1 - id} .xcog`, node);
+
     stop_clock([0, 1]);
 
     if (!finished) {
@@ -2414,9 +2443,11 @@ function update_player_eval(section, data) {
     if (section != Y.x)
         return;
 
-    let cur_ply = xboards[section].ply,
+    let main = xboards[section],
+        cur_ply = main.ply,
         eval_ = data.eval,
         id = data.color,
+        mini = _(`.xcolor${id}`, main.node),
         node = Id(`player${id}`),
         short = get_short_name(data.engine);
 
@@ -2430,16 +2461,20 @@ function update_player_eval(section, data) {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
 
+    HTML(`.xshort`, short, mini);
+    HTML(`.xeval`, format_eval(eval_), mini);
+
+    // 2) add moves
     let board = xboards[`pv${id}`];
     board.add_moves_string(data.pv);
 
-    // 2) update the engine info in the center
     data.ply = split_move_string(data.pv)[0];
     if (DEV.eval || id == 0) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
         LS(data);
     }
 
+    // 3) update the engine info in the center
     // - only if the ply is the currently selected ply + 1
     if (data.ply == cur_ply + 1) {
         let stats = {
@@ -2466,6 +2501,7 @@ function update_player_eval(section, data) {
  */
 function update_clock(id, move) {
     let elapsed, left, time,
+        main = xboards[Y.x],
         player = players[id];
 
     if (move) {
@@ -2475,8 +2511,7 @@ function update_clock(id, move) {
     }
     else {
         // looking at the past => don't update anything
-        let board = xboards[Y.x];
-        if (board && board.ply < board.moves.length - 1)
+        if (main && main.ply < main.moves.length - 1)
             return;
 
         elapsed = player.elapsed;
@@ -2489,6 +2524,14 @@ function update_clock(id, move) {
 
     HTML(`#left${id}`, left);
     HTML(`#time${id}`, time);
+    player.sleft = left;
+    player.stime = time;
+
+    if (main) {
+        let mini = _(`.xcolor${id}`, main.node);
+        HTML(`.xleft`, left, mini);
+        HTML(`.xtime`, time, mini);
+    }
 }
 
 // INPUT / OUTPUT
@@ -2719,6 +2762,8 @@ function handle_board_events(board, type, value) {
             board.mode = (board.mode == 'html')? 'text': 'html';
             board.render(3);
         }
+        else if (value == 'rotate')
+            show_board_info();
         break;
     // move list => ply selected
     case 'move':
@@ -2804,7 +2849,8 @@ function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = (parent == 'chart-tabs'),
-        section = Y.x;
+        section = Y.x,
+        main = xboards[section];
     if (DEV.ui)
         LS(`opened_table: ${parent}/${name}`);
 
@@ -2812,8 +2858,8 @@ function opened_table(node, name, tab) {
     save_option('tabs', Y.tabs);
 
     // 2) special cases
-    if (is_chart && CHART_NAMES[name] && xboards[section]) {
-        update_player_charts(name, xboards[section].moves);
+    if (is_chart && CHART_NAMES[name] && main) {
+        update_player_charts(name, main.moves);
         update_chart_options(name, 3);
     }
 
@@ -2823,6 +2869,9 @@ function opened_table(node, name, tab) {
         break;
     case 'cross':
         analyse_crosstable(section, table_data[section].crossx);
+        break;
+    case 'engine':
+        show_board_info();
         break;
     case 'info':
         HTML(node, HTML('#desc'));
@@ -2837,6 +2886,7 @@ function opened_table(node, name, tab) {
         if (is_chart)
             open_table('engine', false);
         else {
+            show_board_info();
             let [active] = get_active_tab('chart');
             if (active == 'pv')
                 open_table('eval', false);

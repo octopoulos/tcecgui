@@ -346,6 +346,8 @@ grid {
 .xboard {
     line-height: 1em;
     margin-left: 4px;
+}
+.xcontain {
     position: relative;
 }
 .xframe {
@@ -356,6 +358,46 @@ grid {
     pointer-events: none;
     position: absolute;
     z-index: 3;
+}
+.xbottom,
+.xtop {
+    font-size: 16px;
+    height: 1.54em;
+    line-height: 1;
+    padding: 0.15em 0.1em 0.2em 1.3em;
+    position: relative;
+}
+.xbottom {
+    margin: 2px 0 0 -6px;
+}
+.xtop {
+    margin: 0 0 2px -6px;
+}
+.xcolor0 {
+    background: #fff;
+    color: #000;
+}
+.xcolor1 {
+    background: #000;
+    color: #fff;
+}
+.xshort {
+    width: 38%;
+}
+.xleft {
+    text-align: center;
+    width: 20%;
+}
+.xtime {
+    text-align: center;
+    width: 20%;
+}
+.xeval {
+    font-size: 1.3em;
+    font-weight: 500;
+    margin-top: -0.07em;
+    text-align: center;
+    width: 20%;
 }
 .xpiece {
     height: 1em;
@@ -766,7 +808,8 @@ grid {
     padding-bottom: 0.5em !important;
 }
 #cog0,
-#cog1 {
+#cog1,
+.xcog {
     animation: 6s spin infinite linear;
     position: absolute;
     top: 0;
@@ -776,6 +819,11 @@ grid {
 }
 #cog1 {
     right: 0.3em;
+}
+.xcog {
+    font-size: 0.85em;
+    left: 0.24em;
+    top: 22%;
 }
 #material,
 #material0,

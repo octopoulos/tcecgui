@@ -924,11 +924,14 @@ function set_global_events() {
             target = e.target;
 
         while (target) {
-            let name;
-            if (HasClass(target, 'xcontrol'))
-                name = 'control';
+            let dataset = target.dataset,
+                name;
+            if (dataset && ['next', 'prev'].includes(dataset.x))
+                return;
             else if (HasClass(target, 'xcontain'))
                 name = is_pv? 'board_pv': 'board';
+            else if (HasClass(target, 'xcontrol'))
+                name = 'control';
             else if (HasClass(target, 'xmoves'))
                 name = is_pv? 'moves_pv': 'moves';
 

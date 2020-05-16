@@ -833,10 +833,6 @@ class XBoard {
             case 'end':
                 that.go_end();
                 break;
-            // case 'next':
-            // case 'prev':
-            //     that.hold_button(name, -1);
-            //     break;
             case 'play':
                 that.play();
                 break;
@@ -844,6 +840,7 @@ class XBoard {
                 that.hold_smooth();
                 that.rotate = (that.rotate + 1) % 2;
                 that.render(3);
+                callback(that, 'control', name);
                 break;
             case 'start':
                 that.go_start();
@@ -1019,11 +1016,25 @@ class XBoard {
         }).join('');
 
         HTML(this.node, [
+            '<hori class="xtop xcolor1 dn">',
+                '<div class="xshort"></div>',
+                '<div class="xleft"></div>',
+                '<div class="xtime"></div>',
+                '<div class="xeval"></div>',
+                '<div class="xcog dn"><i data-svg="cog"></i></div>',
+            '</hori>',
             '<div class="xcontain">',
                 '<div class="xframe"></div>',
                 '<grid class="xsquares"></grid>',
                 '<div class="xoverlay"></div>',
                 '<div class="xpieces"></div>',
+                '<hori class="xbottom xcolor0 dn">',
+                    '<div class="xshort"></div>',
+                    '<div class="xleft"></div>',
+                    '<div class="xtime"></div>',
+                    '<div class="xeval"></div>',
+                    '<div class="xcog dn"><i data-svg="cog"></i></div>',
+                '</hori>',
                 `<hori class="xcontrol">${controls}</hori>`,
             '</div>',
             `<horis class="xmoves${this.list? '': ' dn'}"></horis>`,
