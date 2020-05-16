@@ -4,7 +4,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty?
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 -          : 2020-05-14 : @ should be placed before the diverging moves
--          : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
+2020-05-16 : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
 2020-05-16 : 2020-05-16 : copy moves to the clipboard
 2020-05-16 : 2020-05-16 : resize sub boards when panel is resized
 2020-05-16 : 2020-05-16 : resize move lists

@@ -467,7 +467,7 @@ function create_boards() {
 /**
  * Reset sub boards
  * @param {number} mode:
- * - &1 :mark board invalid
+ * - &1: mark board invalid
  * - &2: reset the board completely
  * - &4: reset board evals
  */
@@ -2070,7 +2070,7 @@ function update_move_pv(section, ply, move) {
     board.hold_smooth();
 
     if (move.pv)
-        board.add_moves(move.pv.Moves, ply, main.ply + 1);
+        board.add_moves(move.pv.Moves, false, main.ply + 1);
     else {
         // no pv available =>
         // - delete it if the move is in the past (ex: "book")
@@ -2284,7 +2284,7 @@ function update_pgn(section, pgn) {
         return;
 
     // 4) add the moves
-    main.add_moves(moves);
+    main.add_moves(moves, new_game);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
 

@@ -203,10 +203,10 @@ class XBoard {
      * - can handle 2 pv lists
      * - if num_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Move[]} moves
-     * @param {number} start starting ply for those moves
+     * @param {boolean=} new_game play the book moves if true
      * @param {number=} num_ply if defined, then this is the current ply in the game (not played yet)
      */
-    add_moves(moves, start, num_ply) {
+    add_moves(moves, new_game, num_ply) {
         let is_ply = (num_ply != undefined),
             lines = [],
             num_new = moves.length,
@@ -228,12 +228,6 @@ class XBoard {
                 move = moves[i],
                 ply = get_move_ply(move);
 
-            if (DEV.fen && ply != start + i) {
-                LS(`add_moves: ${ply} != ${start + i}`);
-                LS(moves);
-                LS(this.moves);
-                break;
-            }
             move.ply = ply;
             this.moves[ply] = move;
 
@@ -288,8 +282,18 @@ class XBoard {
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply)
             this.compare_duals(num_ply);
-        else if (this.ply >= num_move - 1)
-            this.set_ply(last_move, true);
+        else if (this.ply >= num_move - 1) {
+            // play book moves 1 by 1
+            if (new_game || this.moves[last_move].book) {
+                if (!timers.click_play) {
+                    this.set_fen(START_FEN, true);
+                    this.ply = -1;
+                    this.play();
+                }
+            }
+            else
+                this.set_ply(last_move, true);
+        }
 
         this.update_counter();
     }
