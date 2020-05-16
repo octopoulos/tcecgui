@@ -1073,10 +1073,10 @@ function startup() {
         graph: {
             graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
-            graph_color_0: [{type: 'color'}, '#efefef'],
-            graph_color_1: [{type: 'color'}, '#000000'],
-            graph_color_2: [{type: 'color'}, '#007bff'],
-            graph_color_3: [{type: 'color'}, '#8b0000'],
+            graph_color_0: [{type: 'color'}, '#fefdde'],
+            graph_color_1: [{type: 'color'}, '#02031e'],
+            graph_color_2: [{type: 'color'}, '#236ad6'],
+            graph_color_3: [{type: 'color'}, '#eb282d'],
             graph_combine_23: [{type: 'color'}, '#007700'],
             graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
@@ -1098,8 +1098,8 @@ function startup() {
         },
         panel: {
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
-            panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
-            panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
+            panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
+            panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
             window_width: [{max: 32000, min: 256, type: 'number'}, 1920],
         },
         quick: {
