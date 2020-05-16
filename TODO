@@ -1,9 +1,13 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-05-16 : interact with a PV => freeze it until another board is chosen
+-          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 -          : 2020-05-14 : @ should be placed before the diverging moves
 -          : 2020-05-14 : save and load settings
 -          : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
+-          : 2020-05-16 : copy moves to the clipboard
+2020-05-16 : 2020-05-16 : resize move lists
 2020-05-16 : 2020-05-14 : scroll inertia can be configured
 2020-05-16 : 2020-05-15 : show timer when engine info is not visible
 2020-05-15 : 2020-05-15 : click on settings name to toggle the value
@@ -194,7 +198,6 @@ high:
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 medium:
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
--          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 low:
 -          : 2020-05-15 : keep dataset for live and for archive

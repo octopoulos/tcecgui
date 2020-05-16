@@ -3087,9 +3087,9 @@ function startup_game() {
             copy_moves: '',
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
-            live_move_height: [{max: 10, min: 2, type: 'number'}, 3],
             live_pv: [ON_OFF, 1],
             live_tabs: [ON_OFF, 1],
+            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
         },
         // separator
         _2: {},
@@ -3105,11 +3105,11 @@ function startup_game() {
         graph: {},
         moves: {
             copy_moves: '',
-            move_height: [{max: 10, min: 2, type: 'number'}, 5],
+            move_height: [{max: 30, min: 5, type: 'number'}, 5],
         },
         moves_pv: {
             copy_moves: '',
-            move_height_pv: [{max: 10, min: 2, type: 'number'}, 5],
+            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
         panel: {},
     });

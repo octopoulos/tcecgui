@@ -1034,6 +1034,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
  */
 function change_setting(name, value) {
     if (value != undefined) {
+        // TODO: clamp the value if min/max are defined
         if (!isNaN(value))
             value *= 1;
         save_option(name, value);

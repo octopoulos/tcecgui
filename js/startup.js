@@ -5,6 +5,8 @@
 // Startup
 // - start everything: 3d, game, ...
 // - global window events
+// - resize window and elements
+// - handle most events / settings
 //
 // included after: common, engine, global, 3d, xboard, game, network
 /*
@@ -162,14 +164,13 @@ function change_setting_special(name, value) {
         if (Visible('#table-log'))
             listen_log();
         break;
-    case 'live_move_height':
-        break;
     case 'live_tabs':
         show_live_engines();
         break;
     case 'move_height':
-        break;
+    case 'move_height_live':
     case 'move_height_pv':
+        resize_move_lists();
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -340,6 +341,7 @@ function init_globals() {
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
 
+    resize_move_lists();
     show_live_engines();
 
     activate_tabs();
@@ -514,6 +516,15 @@ function resize() {
     resize_game();
 
     add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
+}
+
+/**
+ * Resize the move lists
+ */
+function resize_move_lists() {
+    Style('#archive .xmoves, #live .xmoves', `min-height:${Y.move_height}em`);
+    Style('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', `min-height:${Y.move_height_pv}em`);
+    Style('.live-pv', `min-height:${Y.move_height_live}em`);
 }
 
 /**
@@ -930,6 +941,8 @@ function set_global_events() {
             let dataset = target.dataset,
                 name;
             if (dataset && ['next', 'prev'].includes(dataset.x))
+                return;
+            else if (HasClass(target, 'xbottom'))
                 return;
             else if (HasClass(target, 'xcontain'))
                 name = is_pv? 'board_pv': 'board';

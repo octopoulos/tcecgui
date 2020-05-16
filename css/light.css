@@ -1216,8 +1216,10 @@ pre,
 .live-pv,
 .live-pv > a,
 .stats,
+.xbottom,
 .xmoves,
-.xmoves > a {
+.xmoves > a,
+.xtop {
     user-select: text;
 }
 
