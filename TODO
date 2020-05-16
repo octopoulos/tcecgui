@@ -1,9 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty?
--          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
--          : 2020-05-14 : @ should be placed before the diverging moves
+~          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+2020-05-16 : 2020-05-14 : @ should be placed before the diverging moves
 2020-05-16 : 2020-05-16 : add a zero mode to see the initial position
 2020-05-16 : 2020-05-16 : hide eval & moves
 2020-05-16 : 2020-05-16 : hide the live panel on the bottom left
@@ -201,6 +200,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+-          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty?
 medium:
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow

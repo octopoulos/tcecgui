@@ -171,6 +171,7 @@ class XBoard {
         this.high_size = 0.06;                          // highlight size
         this.hold = null;                               // mouse/touch hold target
         this.hold_time = 0;                             // last time the event was repeated
+        this.markers = [];                              // @
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
         this.next_smooth = false;                       // used to temporarily prevent transitions
@@ -231,7 +232,8 @@ class XBoard {
 
         // proper moves
         for (let i = start; i < num_new; i ++) {
-            let move = moves[i],
+            let extra = '',
+                move = moves[i],
                 ply = get_move_ply(move);
 
             if (move) {
@@ -245,8 +247,10 @@ class XBoard {
                 continue;
 
             // indicate current ply
-            if (is_ply && ply == cur_ply)
+            if (is_ply && ply == cur_ply) {
                 lines.push('<i>#</i>');
+                extra = ' current';
+            }
 
             if (ply % 2 == 0) {
                 if (is_ply)
@@ -261,7 +265,7 @@ class XBoard {
                 lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
 
             if (move && move.m) {
-                let class_ = move.book? 'book': 'real';
+                let class_ = `${move.book? 'book': 'real'}${extra}`;
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
                 else
@@ -388,7 +392,7 @@ class XBoard {
             }
 
             // show diverging move in PV
-            this.compare_duals(new_ply);
+            this.compare_duals(want_ply);
         }
     }
 
@@ -750,15 +754,16 @@ class XBoard {
             return;
         }
 
+        // compare the moves
         let duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
             ply = num_ply;
 
-        for (let i = num_ply - 1; i < num_move; i ++) {
+        for (let i = num_ply; i < num_move; i ++) {
             let dual_m = (duals[i] || {}).m,
                 move_m = (moves[i] || {}).m;
-            if (DEV.xboard)
+            if (DEV.div)
                 LS(`${this.id} : i=${i} < ${num_move} : ${dual_m == move_m} : ${dual_m} = ${move_m}`);
             if (!dual_m || !move_m)
                 break;
@@ -766,8 +771,12 @@ class XBoard {
             if (dual_m != move_m)
                 break;
         }
-        if (DEV.xboard)
+
+        if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
+
+        this.set_marker(ply);
+        dual.set_marker(ply);
 
         // render: jump directly to the position
         for (let board of [this, dual]) {
@@ -777,7 +786,7 @@ class XBoard {
                 board.set_ply(ply, true);
             // try to get to the ply without compute, if fails, then render the next ply + compute later
             else if (board.set_ply(ply, true, true) == false) {
-                if (DEV.xboard)
+                if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
                 board.set_ply(num_ply, true);
                 add_timeout(`dual${board.id}`, () => {
@@ -1056,6 +1065,8 @@ class XBoard {
 
         this.analyse_fen();
         update_svg();
+
+        this.markers = [CreateNode('i', '@'), CreateNode('i', '@')];
 
         if (this.hook)
             this.event_hook(this.hook);
@@ -1468,6 +1479,20 @@ class XBoard {
     set_last(text) {
         for (let parent of [this.xmoves, this.pv_node])
             HTML('.last', text, parent);
+    }
+
+    /**
+     * Set the @ marker
+     * @param {number} ply
+     */
+    set_marker(ply) {
+        [this.xmoves, this.pv_node].forEach((parent, id) => {
+            let child = _(`[data-i="${ply}"]`, parent);
+            if (child && (ply % 2 == 0))
+                child = child.previousElementSibling;
+            if (child)
+                parent.insertBefore(this.markers[id], child);
+        });
     }
 
     /**

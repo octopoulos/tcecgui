@@ -72,6 +72,7 @@ function parse_dev() {
             b: 'board',
             c: 'chart',
             d: 'debug',
+            D: 'div',
             e: 'eval',                  // live eval
             f: 'fen',                   // sanity check: FEN vs ply
             g: 'graph',
@@ -84,7 +85,6 @@ function parse_dev() {
             S: 'no_socket',
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
-            x: 'xboard',
             y: 'ply',
         },
         text = Y.dev || '';
