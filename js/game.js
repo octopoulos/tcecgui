@@ -20,9 +20,9 @@ listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_O
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
 Show, show_menu, show_modal, Sign, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT,
-TIMEOUTS, Title, Toggle, touch_handle, translate, translate_node, Undefined, update_chart_options, update_live_chart,
-update_player_charts, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window,
-X_SETTINGS, XBoard, Y
+TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
+update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
+virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
@@ -401,6 +401,17 @@ function get_short_name(engine)
     if (!engine)
         return '';
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
+}
+
+/**
+ * Get the timestamp in seconds from a date time
+ * - assume it's UTC
+ * @param {string} text
+ */
+function parse_date_time(text) {
+    let items = text.split(' on '),
+        seconds = Date.parse(`${items[1]} ${items[0]} UTC`) / 1000;
+    return seconds;
 }
 
 // BOARD
@@ -1289,6 +1300,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 }
                 value = lines.join('');
                 break;
+            case 'start':
+                let [date, time] = FromTimestamp(value);
+                value = `${row.started? '': translate_expression('{Estd}: ')}${time} on ${date}`;
+                break;
             case 'white':
                 if (row.result == '1-0')
                     class_ = 'win';
@@ -1590,7 +1605,6 @@ function calculate_event_stats(section, rows) {
     }
 
     let crashes = 0,
-        end = '',
         games = 0,
         max_moves = [-1, 0],
         max_time = [-1, 0],
@@ -1630,8 +1644,6 @@ function calculate_event_stats(section, rows) {
             max_time = [time, game];
         if (min_time[0] > time)
             min_time = [time, game];
-
-        end = row.start;
     }
 
     let stats = event_stats[section],
@@ -1674,8 +1686,8 @@ function calculate_event_stats(section, rows) {
  * @param {Object[]} rows
  */
 function calculate_estimates(section, rows) {
-    let end = '',
-        games = 0,
+    let games = 0,
+        last = 0,
         seconds = 0;
 
     for (let row of rows) {
@@ -1691,30 +1703,29 @@ function calculate_estimates(section, rows) {
             games ++;
             seconds += time;
         }
-        end = start;
+        row.start = parse_date_time(start);
+        row.started = true;
+        last = row.start;
     }
+    if (!last)
+        return;
 
     // 18:18:54 on 2020.05.06
     // => '2020.05.06 18:18:54': can be parsed by javascript correctly
-    let items = end.split(' on '),
-        last = Date.parse(`${items[1]} ${items[0]}`) / 1000,
-        average = seconds / games,
+    let average = seconds / games,
         offset = average;
 
     // set the estimates
-    // TODO: handle timezone (not needed if times are UTC ...)
     for (let row of rows) {
         if (row.start)
             continue;
 
-        let [date, time] = FromTimestamp(last + offset);
-        row.start = `Estd: ${time} on 20${date.replace(/-/g, '.')}`;
+        row.start = last + offset;
         offset += average;
     }
 
     // update some stats
-    items = rows[0].start.split(' on ');
-    let start = Date.parse(`${items[1]} ${items[0]}`) / 1000;
+    let start = rows[0].start;
 
     Assign(event_stats[section], {
         _duration: last + offset - start,
@@ -2434,7 +2445,7 @@ function update_live_eval(section, data, id, force_ply) {
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
-        HTML('.live-pv', `<i>${translate('off')}</i>`, node);
+        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
         return;
     }
 
@@ -2706,6 +2717,11 @@ function game_action_keyup(code) {
         clear_timeout('click_next');
         break;
     }
+
+    if ([37, 39].includes(code))
+        Keys(xboards).forEach(key => {
+            xboards[key].hold = null;
+        });
 }
 
 // 3D SCENE
@@ -3129,7 +3145,7 @@ function startup_game() {
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
-            show_ply: [['first', 'diverging'], 'diverging'],
+            show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
         live: {
