@@ -3144,7 +3144,7 @@ function startup_game() {
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
+            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },

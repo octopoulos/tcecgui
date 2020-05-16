@@ -162,6 +162,7 @@ class XBoard {
         this.chess = new Chess();
         this.colors = ['#eee', '#111'];
         this.coords = {};
+        this.delayed_ply = -2;
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
         this.evals = [];                                // eval history
@@ -170,6 +171,7 @@ class XBoard {
         this.high_color = '';                           // highlight color
         this.high_size = 0.06;                          // highlight size
         this.hold = null;                               // mouse/touch hold target
+        this.hold_step = 0;
         this.hold_time = 0;                             // last time the event was repeated
         this.markers = [];                              // @
         this.move2 = null;                              // previous move
@@ -652,6 +654,15 @@ class XBoard {
     }
 
     /**
+     * Check if there's a delayed ply
+     */
+    check_delayed_ply() {
+        let ply = this.delayed_ply;
+        if (ply > -2)
+            this.set_ply(ply);
+    }
+
+    /**
      * Calculate the FEN for the ply, by looking at the previously saved FEN's
      * @param {number} ply
      * @returns {boolean}
@@ -747,14 +758,28 @@ class XBoard {
      * @param {number} num_ply current ply in the real game (not played yet)
      */
     compare_duals(num_ply) {
-        let dual = this.dual;
+        let dual = this.dual,
+            real = this.real,
+            show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
+            show_ply = Y.show_ply;
 
-        if (Y.show_ply == 'first' || !dual || !dual.valid) {
+        // last
+        if (show_ply == 'last') {
+            let ply = this.moves.length - 1;
+            this.set_ply(show_delay? num_ply: ply, true);
+
+            if (show_delay && ply > num_ply)
+                this.set_delayed_ply(ply);
+            return;
+        }
+
+        // first, or if no dual
+        if (show_ply == 'first' || !dual || !dual.valid) {
             this.set_ply(num_ply, true);
             return;
         }
 
-        // compare the moves
+        // diverging => compare the moves
         let duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
@@ -788,11 +813,10 @@ class XBoard {
             else if (board.set_ply(ply, true, true) == false) {
                 if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
-                board.set_ply(num_ply, true);
-                add_timeout(`dual${board.id}`, () => {
-                    board.hold_smooth();
-                    board.set_ply(ply, true);
-                }, Y.show_delay);
+
+                board.set_ply(show_delay? num_ply: ply, true);
+                if (show_delay)
+                    this.set_delayed_ply(ply);
             }
         }
     }
@@ -896,6 +920,7 @@ class XBoard {
                     clear_timeout(`click_next`);
                     clear_timeout(`click_prev`);
                 }
+                that.hold = null;
             }
         }, {}, this.node);
 
@@ -967,6 +992,7 @@ class XBoard {
      * @param {number} step -1 for no repeat
      */
     hold_button(name, step) {
+        this.hold_step = step;
         let now = Now(true);
 
         // need this to prevent mouse up from doing another click
@@ -1452,6 +1478,24 @@ class XBoard {
     }
 
     /**
+     * Set a delayed ply
+     * @param {number} ply
+     */
+    set_delayed_ply(ply) {
+        this.delayed_ply = ply;
+
+        add_timeout(`dual${this.id}`, () => {
+            let ply = this.delayed_ply;
+            if (DEV.div)
+                LS(`${this.id}: delayed_ply=${ply}`);
+            if (ply > -2) {
+                this.hold_smooth();
+                this.set_ply(this.delayed_ply, true);
+            }
+        }, Y.show_delay);
+    }
+
+    /**
      * Set a new FEN
      * @param {string} fen
      * @param {boolean=} render
@@ -1508,6 +1552,7 @@ class XBoard {
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
         clear_timeout(`dual${this.id}`);
+        this.delayed_ply = -2;
 
         // special case: initial board
         if (ply == -1 && this.main) {
