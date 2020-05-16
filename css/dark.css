@@ -102,18 +102,22 @@ html {
 }
 
 /* lives */
+#box-live0 .engine,
 #table-live0 .engine {
     background: #007bff;
     color: #fff;
 }
+#box-live1 .engine,
 #table-live1 .engine {
     background: #8b0000;
     color: #fff;
 }
+#box-pv0 .engine,
 #player0 .engine {
     background: #666;
     color: #fff;
 }
+#box-pv1 .engine,
 #player1 .engine {
     background: #000;
     color: #fff;

@@ -113,7 +113,7 @@ function change_setting_special(name, value) {
     // close contextual popup
     let modal = _('#modal');
     if (modal && modal.dataset.xy)
-        add_timeout('close_popup', close_popups, TIMEOUT_popup);
+        add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
 
     switch (name) {
     case 'animate':
@@ -145,8 +145,11 @@ function change_setting_special(name, value) {
         resize();
         break;
     case 'copy_moves':
-        if (context_target)
-            CopyClipboard(context_target.innerText.replace(/\s/g, ' '));
+        let target = context_target;
+        while (target && !HasClass(target, 'live-pv') && !HasClass(target, 'xmoves'))
+            target = target.parentNode;
+        if (target)
+            CopyClipboard(target.innerText.replace(/\s/g, ' '));
         break;
     case 'graph_all':
         move_nodes();
@@ -177,6 +180,9 @@ function change_setting_special(name, value) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
+        break;
+    case 'status_pv':
+        resize_panels(true);
         break;
     case 'theme':
         change_theme(value);
@@ -548,9 +554,12 @@ function resize_panels(force) {
     Attrs('#eval', 'data-t', (width > 330)? 'Evaluation': 'Eval');
     translate_node('#table-engine');
 
-    Class('.xmoves', 'column', width < 390, center);
-    Class('.xboard', 'fcol', width >= 390, center);
-    Class('#table-kibitz, #table-pv', 'frow', width >= 390);
+    let is_hori = (width >= 390);
+    Class('.xmoves', 'column', !is_hori, center);
+    Class('.xboard', 'fcol', is_hori, center);
+    Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
+    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
+    S('.status', Y.status_pv);
 
     // resize all charts
     E('canvas', node => {
@@ -1057,8 +1066,18 @@ function startup() {
             archive_scroll: [ON_OFF, 1],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
         },
+        hide: {
+            hide_eval_0: [ON_OFF, 0],
+            hide_eval_1: [ON_OFF, 0],
+            hide_eval_2: [ON_OFF, 0],
+            hide_eval_3: [ON_OFF, 0],
+            hide_moves_0: [ON_OFF, 0],
+            hide_moves_1: [ON_OFF, 0],
+            hide_moves_2: [ON_OFF, 0],
+            hide_moves_3: [ON_OFF, 0],
+        },
         panel: {
-            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 390],
+            panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 0],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 0],
             window_width: [{max: 32000, min: 256, type: 'number'}, 1920],

@@ -4,6 +4,9 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty?
 -          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 -          : 2020-05-14 : @ should be placed before the diverging moves
+-          : 2020-05-16 : hide eval & moves
+~          : 2020-05-16 : hide the live panel on the bottom left
+2020-05-16 : 2020-05-16 : option to show pv info under pv moves: name + eval + % (+ extra for kibitzers)
 2020-05-16 : 2020-05-16 : audio delay option
 2020-05-16 : 2020-05-15 : play the book moves 1 by 1, starting from the initial FEN
 2020-05-16 : 2020-05-16 : copy moves to the clipboard
@@ -200,6 +203,7 @@ high:
 medium:
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
+-          : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
 low:
 -          : 2020-05-15 : keep dataset for live and for archive
 ~          : 2020-04-13 : add 3d board

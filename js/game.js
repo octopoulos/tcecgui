@@ -123,7 +123,12 @@ let BOARD_THEMES = {
         live: {},
     },
     game_link,                          // current game link in the archive
-    LIVE_TABLES = Split('#table-live0 #table-live1 #player0 #player1'),
+    LIVE_TABLES = [
+        ['#table-live0', '#box-live0 .status'],
+        ['#table-live1', '#box-live1 .status'],
+        ['#player0', '#box-pv0 .status'],
+        ['#player1', '#box-pv1 .status'],
+    ],
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -834,11 +839,10 @@ function create_field_value(text) {
 /**
  * Create a Live table
  * - we don't want to recreate the table each time, that's why this creation will give a boost
- * @param {Node|string} node node or selector
  * @param {boolean} is_live live => has more info
  * @param {number} id 0, 1
  */
-function create_live_table(node, is_live, id) {
+function create_live_table(is_live, id) {
     let html =
         '<vert class="live fastart">'
             + '<div class="live-basic">'
@@ -853,9 +857,9 @@ function create_live_table(node, is_live, id) {
             + `<div class="live-engine engine" data-x="live+${id}"></div>`;
 
     html +=
-            '<horis class="live-pv"></horis>'
+            '{TEMP}'
         + '</vert>';
-    HTML(node, html);
+    return html;
 }
 
 /**
@@ -907,8 +911,11 @@ function create_tables() {
     translate_node('body');
 
     // 2) live tables
-    for (let node of LIVE_TABLES)
-        create_live_table(node, node.includes('live'), node.slice(-1));
+    for (let [node, box_node] of LIVE_TABLES) {
+        let html = create_live_table(node.includes('live'), node.slice(-1));
+        HTML(node, html.replace('{TEMP}', '<horis class="live-pv"></horis>'));
+        HTML(box_node, html.replace('{TEMP}', ''));
+    }
 
     // 3) mouse/touch scroll
     Events('.scroller', '!touchstart touchmove touchend', () => {});
@@ -2058,11 +2065,16 @@ function update_move_pv(section, ply, move) {
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         board = xboards[`pv${id}`],
+        box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
-        node = Id(`player${id}`);
+        node = Id(`player${id}`),
+        status_eval = is_book? '': format_eval(move.wv),
+        status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
-    HTML(`[data-x="eval"]`, is_book? '': format_eval(move.wv), node);
-    HTML(`[data-x="score"]`, is_book? 'book': calculate_probability(players[id].short, eval_), node);
+    for (let child of [box_node, node]) {
+        HTML(`[data-x="eval"]`, status_eval, child);
+        HTML(`[data-x="score"]`, status_score, child);
+    }
     HTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
 
     // PV should jump directly to a new position, no transition
@@ -2070,7 +2082,7 @@ function update_move_pv(section, ply, move) {
     board.hold_smooth();
 
     if (move.pv)
-        board.add_moves(move.pv.Moves, main.ply + 1);
+        board.add_moves(move.pv.Moves, main.ply);
     else {
         // no pv available =>
         // - delete it if the move is in the past (ex: "book")
@@ -2115,7 +2127,8 @@ function update_overview_basic(section, headers) {
 
     // 2) engines
     WB_TITLES.forEach((title, id) => {
-        let name = headers[title],
+        let box_node = _(`#box-pv${id} .status`),
+            name = headers[title],
             node = Id(`player${id}`),
             player = players[id],
             short = get_short_name(name),
@@ -2127,8 +2140,10 @@ function update_overview_basic(section, headers) {
             short: short,
         });
 
+        for (let child of [box_node, node])
+            HTML(`[data-x="name"]`, short, child);
+
         HTML(`#engine${id}`, name);
-        HTML(`[data-x="name"]`, short, node);
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
@@ -2382,9 +2397,9 @@ function stop_clock(ids) {
  * @param {string} section archive, live
  * @param {Object} data
  * @param {number} id 0, 1
- * @param {boolean=} force update with this data.pv even if there's more recent text + forces invert_black
+ * @param {number=} force_ply update with this data.pv even if there's more recent text + forces invert_black
  */
-function update_live_eval(section, data, id, force) {
+function update_live_eval(section, data, id, force_ply) {
     if (section != Y.x || !data)
         return;
 
@@ -2405,7 +2420,8 @@ function update_live_eval(section, data, id, force) {
         data = moves[moves.length - 1];
     }
 
-    let cur_ply = main.ply,
+    let box_node = _(`#box-live${id} .status`),
+        cur_ply = main.ply,
         eval_ = data.eval,
         short = get_short_name(data.engine),
         node = Id(`table-live${id}`),
@@ -2420,17 +2436,14 @@ function update_live_eval(section, data, id, force) {
     }
 
     if (short)
-        HTML(`[data-x="name"]`, short, node);
+        for (let child of [box_node, node])
+            HTML(`[data-x="name"]`, short, child);
 
     // invert eval for black?
-    if ((moves || force) && data.ply % 2 == 0)
+    if ((moves || force_ply) && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
-    // should only update the info if we're watching the last ply
-    if (DEV.eval)
-        LS(`LE#${id} : cur_ply=${cur_ply} : ply=${ply}`);
-
-    if (ply == cur_ply + 1) {
+    if (ply == cur_ply + 1 || force_ply) {
         let dico = {
             depth: data.depth,
             eval: format_eval(eval_),
@@ -2440,15 +2453,16 @@ function update_live_eval(section, data, id, force) {
             tb: FormatUnit(data.tbhits),
         };
         Keys(dico).forEach(key => {
-            HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), node);
+            for (let child of [box_node, node])
+                HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), child);
         });
     }
 
-    if (force)
+    if (force_ply)
         board.text = '';
-    board.add_moves_string(data.pv);
+    board.add_moves_string(data.pv, force_ply);
 
-    update_live_chart(moves || [data], id + 2, !!moves || force);
+    update_live_chart(moves || [data], id + 2, !!moves || force_ply);
 }
 
 /**
@@ -2489,7 +2503,7 @@ function update_player_eval(section, data) {
     board.add_moves_string(data.pv);
 
     data.ply = split_move_string(data.pv)[0];
-    if (DEV.eval || id == 0) {
+    if (DEV.eval) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
         LS(data);
     }
@@ -2822,8 +2836,8 @@ function handle_board_events(board, type, value) {
             update_move_pv(section, cur_ply, value);
 
             // show live engines
-            update_live_eval(section, xboards.live0.evals[cur_ply], 0, true);
-            update_live_eval(section, xboards.live1.evals[cur_ply], 1, true);
+            update_live_eval(section, xboards.live0.evals[cur_ply], 0, cur_ply);
+            update_live_eval(section, xboards.live1.evals[cur_ply], 1, cur_ply);
 
             update_materials(value);
         }
@@ -3108,6 +3122,7 @@ function startup_game() {
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 100],
             show_ply: [['first', 'diverging'], 'diverging'],
+            status_pv: [ON_OFF, 1],
         },
         live: {
             copy_moves: '1',
@@ -3130,6 +3145,7 @@ function startup_game() {
             rows_per_page: [[10, 20, 50, 100], 10],
         },
         graph: {},
+        hide: {},
         moves: {
             copy_moves: '1',
             move_height: [{max: 30, min: 5, type: 'number'}, 5],

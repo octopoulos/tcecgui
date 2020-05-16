@@ -203,12 +203,12 @@ class XBoard {
      * Add new moves
      * - handle PGN format from TCEC
      * - can handle 2 pv lists
-     * - if num_ply is defined, then create a new HTML from scratch => no node insertion
+     * - if cur_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Move[]} moves
-     * @param {number=} num_ply if defined, then this is the current ply in the game (not played yet)
+     * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves(moves, num_ply) {
-        let is_ply = (num_ply != undefined),
+    add_moves(moves, cur_ply) {
+        let is_ply = (cur_ply != undefined),
             lines = [],
             num_book = 0,
             num_new = moves.length,
@@ -226,8 +226,7 @@ class XBoard {
 
         // proper moves
         for (let i = 0; i < num_new; i ++) {
-            let extra = '',
-                move = moves[i],
+            let move = moves[i],
                 ply = get_move_ply(move);
 
             move.ply = ply;
@@ -238,12 +237,9 @@ class XBoard {
             if (ply < num_move)
                 continue;
 
-            if (is_ply) {
-                if (ply == num_ply) {
-                    extra = ' seen';
-                    lines.push('<i>@</i>');
-                }
-            }
+            // indicate current ply
+            if (is_ply && ply == cur_ply)
+                lines.push('<i>#</i>');
 
             if (ply % 2 == 0) {
                 if (is_ply)
@@ -258,7 +254,7 @@ class XBoard {
                 lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
 
             if (move.m) {
-                let class_ = `${move.book? 'book': 'real'}${extra}`;
+                let class_ = move.book? 'book': 'real';
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
                 else
@@ -276,15 +272,10 @@ class XBoard {
         let last_move = this.moves.length - 1;
         this.valid = true;
 
-        if (this.name == 'pv0') {
-            LS(`AM${this.id} : is_ply=${is_ply} : num_ply=${num_ply} : last_move=${last_move}`);
-            LS(moves);
-        }
-
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply)
-            this.compare_duals(num_ply);
+            this.compare_duals(cur_ply);
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new - 2) {
@@ -307,17 +298,19 @@ class XBoard {
      * - used in live pv, not for real moves
      * - completely replaces the moves list with this one
      * @param {string} text
+     * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves_string(text) {
+    add_moves_string(text, cur_ply) {
         if (!text)
             return;
 
         // 1) no change or older => skip
-        if (this.text == text)
+        if (this.text == text || this.text.includes(text))
             return;
 
         let [new_ply, new_items] = split_move_string(text),
-            [old_ply] = split_move_string(this.text);
+            [old_ply] = split_move_string(this.text),
+            want_ply = cur_ply? cur_ply: new_ply;
         if (new_ply < old_ply) {
             if (DEV.ply)
                 LS(`${this.id}: add_moves_string: ${new_ply} < ${old_ply}`);
@@ -327,8 +320,7 @@ class XBoard {
         this.text = text;
 
         // 2) update the moves
-        let first_seen,
-            first_ply = -1,
+        let first_ply = -1,
             lines = [],
             moves = [],
             ply = new_ply;
@@ -337,10 +329,10 @@ class XBoard {
             if (first_ply < 0 && ply >= 0)
                 first_ply = ply;
 
-            if (!first_seen && ply == new_ply) {
-                lines.push('<i>@</i>');
-                first_seen = true;
-            }
+            // if (!first_seen && ply == new_ply) {
+            //     lines.push('<i>@</i>');
+            //     first_seen = true;
+            // }
 
             if (item == '...') {
                 lines.push('<i>...</i>');
@@ -359,7 +351,7 @@ class XBoard {
                 moves[ply] = {
                     m: item,
                 };
-                lines.push(`<a class="real${ply == new_ply? ' seen': ''}" data-i="${ply}">${item}</a>`);
+                lines.push(`<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${item}</a>`);
                 ply ++;
             }
         });
@@ -367,14 +359,13 @@ class XBoard {
         this.moves = moves;
         this.valid = true;
 
-        let is_current = true;
-        if (this.real) {
+        // only update if this is the current ply + 1, or if we want a specific ply
+        let is_current = (new_ply == cur_ply);
+        if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
-            // LS(`AMS: new_ply=${new_ply} : cur_ply=${this.real.ply}`);
         }
 
-        // only update if this is the current ply + 1
         if (is_current) {
             let html = lines.join('');
             for (let parent of [this.xmoves, this.pv_node])
