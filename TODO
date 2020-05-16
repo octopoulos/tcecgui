@@ -2,8 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
-~          : 2020-05-16 : delayed ply system: improved speed and response time
-~          : 2020-05-16 : show ply: last
+2020-05-17 : 2020-05-16 : delayed ply system: improved speed and response time
+2020-05-17 : 2020-05-16 : show ply: last
 2020-05-17 : 2020-05-17 : handle UTC dates + estimates
 2020-05-16 : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 2020-05-16 : 2020-05-14 : @ should be placed before the diverging moves
