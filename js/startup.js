@@ -151,11 +151,21 @@ function change_setting_special(name, value) {
         if (target)
             CopyClipboard(target.innerText.replace(/\s/g, ' '));
         break;
+    case 'hide_eval_0':
+    case 'hide_eval_1':
+    case 'hide_eval_2':
+    case 'hide_eval_3':
+    case 'hide_moves_0':
+    case 'hide_moves_1':
+    case 'hide_moves_2':
+    case 'hide_moves_3':
+    case 'live_hide':
+    case 'graph_aspect_ratio':
+    case 'status_pv':
+        resize_panels(true);
+        break;
     case 'graph_all':
         move_nodes();
-        break;
-    case 'graph_aspect_ratio':
-        resize_panels(true);
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -180,9 +190,6 @@ function change_setting_special(name, value) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
-        break;
-    case 'status_pv':
-        resize_panels(true);
         break;
     case 'theme':
         change_theme(value);
@@ -274,7 +281,7 @@ function check_stream() {
 
     activate_tabs();
     change_theme(Y.theme);
-    resize();
+    resize(true);
 
     if (stream)
         ScrollDocument('#table-view');
@@ -555,11 +562,24 @@ function resize_panels(force) {
     translate_node('#table-engine');
 
     let is_hori = (width >= 390);
+
+    // show/hide stuff
+    S('#lives', !Y.live_hide);
+    S('.status', Y.status_pv);
+    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
+    S('#box-pv0 .eval, #player0 .eval', !Y.hide_eval_0);
+    S('#box-pv1 .eval, #player1 .eval', !Y.hide_eval_1);
+    S('#box-live0 .eval, #table-live0 .eval', !Y.hide_eval_2);
+    S('#box-live1 .eval, #table-live1 .eval', !Y.hide_eval_3);
+    S('#pv0 .xmoves, #player0 .live-pv', !Y.hide_moves_0);
+    S('#pv1 .xmoves, #player1 .live-pv', !Y.hide_moves_1);
+    S('#live0 .xmoves, #table-live0 .live-pv', !Y.hide_moves_2);
+    S('#live1 .xmoves, #table-live1 .live-pv', !Y.hide_moves_3);
+
+    // column/row mode
     Class('.xmoves', 'column', !is_hori, center);
     Class('.xboard', 'fcol', is_hori, center);
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
-    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
-    S('.status', Y.status_pv);
 
     // resize all charts
     E('canvas', node => {
@@ -1100,5 +1120,5 @@ function startup() {
 
     init_sockets();
     init_globals();
-    resize();
+    resize(true);
 }

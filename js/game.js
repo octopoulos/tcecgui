@@ -846,12 +846,13 @@ function create_live_table(is_live, id) {
     let html =
         '<vert class="live fastart">'
             + '<div class="live-basic">'
-                + '<i class="engine" data-x="name"></i> <i data-x="eval"></i> <i class="live-score">[<i data-x="score"></i>]</i>'
+                + '<i class="engine" data-x="name"></i>'
+                + ' <i class="eval" data-x="eval"></i> <i class="live-score eval">[<i data-x="score"></i>]</i>'
             + '</div>';
 
     if (is_live)
         html +=
-            '<div class="live-more">'
+            '<div class="live-more eval">'
                 + '[D: <i data-x="depth"></i> | TB: <i data-x="tb"></i> | Sp: <i data-x="speed"></i> | N: <i data-x="node"></i>]'
             + '</div>'
             + `<div class="live-engine engine" data-x="live+${id}"></div>`;
@@ -2071,11 +2072,13 @@ function update_move_pv(section, ply, move) {
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
-    for (let child of [box_node, node]) {
-        HTML(`[data-x="eval"]`, status_eval, child);
-        HTML(`[data-x="score"]`, status_score, child);
+    if (!Y[`hide_eval_${id}`]) {
+        for (let child of [box_node, node]) {
+            HTML(`[data-x="eval"]`, status_eval, child);
+            HTML(`[data-x="score"]`, status_score, child);
+        }
+        HTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
     }
-    HTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
 
     // PV should jump directly to a new position, no transition
     board.reset();
@@ -2444,17 +2447,23 @@ function update_live_eval(section, data, id, force_ply) {
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
-        let dico = {
-            depth: data.depth,
-            eval: format_eval(eval_),
-            node: FormatUnit(data.nodes),
-            score: calculate_probability(short, eval_),
-            speed: data.speed,
-            tb: FormatUnit(data.tbhits),
-        };
+        let is_hide = Y[`hide_eval_${id + 2}`],
+            dico = {
+                depth: data.depth,
+                eval: is_hide? 'hide*': format_eval(eval_),
+                node: FormatUnit(data.nodes),
+                score: is_hide? 'hide*': calculate_probability(short, eval_),
+                speed: data.speed,
+                tb: FormatUnit(data.tbhits),
+            };
+
         Keys(dico).forEach(key => {
+            let value = dico[key];
+            if (value == 'hide*')
+                return;
+
             for (let child of [box_node, node])
-                HTML(`[data-x="${key}"]`, Undefined(dico[key], '-'), child);
+                HTML(`[data-x="${key}"]`, Undefined(value, '-'), child);
         });
     }
 
@@ -3128,6 +3137,7 @@ function startup_game() {
             copy_moves: '1',
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
+            live_hide: [ON_OFF, 0],
             live_pv: [ON_OFF, 1],
             live_tabs: [ON_OFF, 1],
             move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
@@ -3145,7 +3155,9 @@ function startup_game() {
             rows_per_page: [[10, 20, 50, 100], 10],
         },
         graph: {},
-        hide: {},
+        hide: {
+            live_hide: [ON_OFF, 0],
+        },
         moves: {
             copy_moves: '1',
             move_height: [{max: 30, min: 5, type: 'number'}, 5],
