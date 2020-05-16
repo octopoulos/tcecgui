@@ -59,6 +59,7 @@ let BOARD_THEMES = {
             dual: 'live1',
             live_id: 0,
             pv_id: '#table-live0 .live-pv',
+            sub: 2,
             tab: 'kibitz',
             vis: 'table-kibitz',
         },
@@ -66,24 +67,28 @@ let BOARD_THEMES = {
             dual: 'live0',
             live_id: 1,
             pv_id: '#table-live1 .live-pv',
+            sub: 2,
             tab: 'kibitz',
             vis: 'table-kibitz',
         },
         pv0: {
             dual: 'pv1',
             pv_id: '#player0 .live-pv',
+            sub: 2,
             tab: 'pv',
             vis: 'table-pv',
         },
         pv1: {
             dual: 'pv0',
             pv_id: '#player1 .live-pv',
+            sub: 2,
             tab: 'pv',
             vis: 'table-pv',
         },
         pva: {
             manual: true,
             size: 36,
+            sub: 1,
             tab: 'pva',
             vis: 'table-pva',
         },
@@ -1927,7 +1932,7 @@ function download_pgn(section, url) {
  * Resize game elements
  */
 function resize_game() {
-    // resize the boards
+    // main boards
     for (let [parent, key] of [['left', 'archive'], ['left', 'live']]) {
         let width = Id(parent).clientWidth,
             board = xboards[key];
@@ -1937,7 +1942,24 @@ function resize_game() {
         }
     }
 
+    // sub boards
+    let center = Id('center'),
+        width = center.clientWidth;
+    Keys(xboards).forEach(key => {
+        let board = xboards[key];
+        if (!board.sub)
+            return;
+
+        let size = Clamp(width / board.sub - 4, 196, 320);
+        board.hold_smooth();
+        board.resize(size);
+    });
+
     resize_3d();
+}
+
+function resize_sub_boards() {
+
 }
 
 /**

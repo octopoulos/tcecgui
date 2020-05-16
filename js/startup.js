@@ -446,8 +446,7 @@ function move_nodes() {
     else if (active == 'x')
         open_table('eval');
 
-    resize();
-    resize_panels(true);
+    resize(true);
 }
 
 /**
@@ -488,8 +487,9 @@ function opened_table_special(node, name, tab) {
 
 /**
  * Resize the window => resize some other elements
+ * @param {boolean=} force
  */
-function resize() {
+function resize(force) {
     Style(`#main`, `max-width:${Y.window_width}px`);
 
     let left_height = Id('left').clientHeight,
@@ -497,7 +497,7 @@ function resize() {
 
     Style('#right', `max-height:${height}px`);
     Style('#chat', `height:${Max(350, height - 100 + Y.chat_offset)}px;width:100%`);
-    resize_panels();
+    resize_panels(force);
 
     // resize charts
     if (Y.graph_all) {
@@ -538,14 +538,14 @@ function resize_panels(force) {
     }
 
     // special case for center panel
-    let width = Id('center').clientWidth;
+    let center = Id('center'),
+        width = center.clientWidth;
     if (!force && width == old_center)
         return;
 
     Attrs('#eval', 'data-t', (width > 330)? 'Evaluation': 'Eval');
     translate_node('#table-engine');
 
-    let center = Id('center');
     Class('.xmoves', 'column', width < 390, center);
     Class('.xboard', 'fcol', width >= 390, center);
     Class('#table-kibitz, #table-pv', 'frow', width >= 390);

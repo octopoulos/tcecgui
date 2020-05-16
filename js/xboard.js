@@ -127,6 +127,7 @@ class XBoard {
      * - rotate         // board rotation
      * - size           // square size in px (resize will recalculate it)
      * - smooth         // smooth piece animation
+     * - sub            //
      * - tab            // tab name to use with 'open_table' to make the board visible
      * - theme          // {ext: 'png', name: 'dilena', off: 15, size: 80}
      * - vis            // id of the visible element to know if the board is visible or not
@@ -151,6 +152,7 @@ class XBoard {
         this.rotate = options.rotate || 0;
         this.size = options.size || 16;
         this.smooth = options.smooth;
+        this.sub = options.sub;
         this.tab = options.tab;
         this.theme = options.theme;
         this.vis = Id(options.vis);
@@ -1402,10 +1404,11 @@ class XBoard {
      * @param {boolean=} render
      */
     resize(width, render=true) {
+        let node = this.node;
         if (!width) {
-            if (!this.node)
+            if (!node)
                 return;
-            width = this.node.clientWidth;
+            width = node.clientWidth;
         }
 
         let border = this.border,
@@ -1414,9 +1417,10 @@ class XBoard {
             frame_size = size * num_col + border * 2,
             frame_size2 = size * num_col;
 
-        Style(this.node, `font-size:${size}px`);
-        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, this.node);
-        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, this.node);
+        Style(node, `font-size:${size}px`);
+        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, node);
+        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, node);
+        Style('.xmoves', `max-width:${frame_size2}px`, true, node);
 
         this.size = size;
         if (render)
