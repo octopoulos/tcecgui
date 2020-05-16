@@ -2834,7 +2834,6 @@ function handle_board_events(board, type, value) {
             let cur_ply = board.ply,
                 prev_ply = cur_ply - 1,
                 prev_move = board.moves[prev_ply];
-            LS('ply'+cur_ply);
             update_move_info(prev_ply, prev_move);
             update_move_info(cur_ply, value);
 

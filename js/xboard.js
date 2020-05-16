@@ -248,7 +248,7 @@ class XBoard {
 
             // indicate current ply
             if (is_ply && ply == cur_ply) {
-                lines.push('<i>#</i>');
+                // lines.push('<i>#</i>');
                 extra = ' current';
             }
 
@@ -289,7 +289,7 @@ class XBoard {
             this.compare_duals(cur_ply);
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
-            if (num_book && num_book >= num_new - 2) {
+            if (num_book && num_book >= num_new) {
                 if (!timers.click_play) {
                     this.set_fen(START_FEN, true);
                     this.ply = -1;

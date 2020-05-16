@@ -1,7 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-05-11 : diverging ply doesn't seem to work well during Live?
+2020-05-16 : 2020-05-11 : diverging ply doesn't seem to work well during Live?
 2020-05-16 : 2020-05-14 : @ should be placed before the diverging moves
 2020-05-16 : 2020-05-16 : add a zero mode to see the initial position
 2020-05-16 : 2020-05-16 : hide eval & moves
