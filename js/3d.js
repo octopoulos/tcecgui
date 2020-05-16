@@ -8,7 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, Class, clear_timeout, DEFAULTS, DEV, document, Events, Exp, Format, HTML, Id, KEY_TIMES, Keys, KEYS,
+C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
+HasClass, HTML, Id, Input, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -1024,7 +1025,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
 }
 
 // UI
-////////
+/////
 
 /**
  * Change a setting
@@ -1033,6 +1034,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
  */
 function change_setting(name, value) {
     if (value != undefined) {
+        // TODO: clamp the value if min/max are defined
         if (!isNaN(value))
             value *= 1;
         save_option(name, value);
@@ -1041,7 +1043,7 @@ function change_setting(name, value) {
     if (virtual_change_setting_special && virtual_change_setting_special(name, value))
         return;
 
-    switch(name) {
+    switch (name) {
     case 'language':
         save_option('lan', value);
         if (value == 'eng' || translates._lan == value)
@@ -1143,14 +1145,15 @@ function show_modal(show, text, title, name) {
 /**
  * Show a settings page
  * @param {string} name
+ * @param {boolean} xy
  * @returns {string} html
  */
-function show_settings(name) {
+function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
         settings = name? X_SETTINGS[name]: X_SETTINGS;
 
     if (name)
-        lines.push(`<div class="item-title span" data-set="" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+        lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
     Keys(settings).forEach(key => {
         // separator
@@ -1161,15 +1164,19 @@ function show_settings(name) {
 
         // link or list
         let setting = settings[key][0],
-            more_class = setting? '': ' span',
+            is_string = (typeof(setting) == 'string')? ` name="${key}"`: '',
+            more_class = (setting && !is_string)? '': ' span',
             more_data = setting? '': ` data-set="${key}"`,
             title = settings[key][2];
 
         lines.push(
-            `<a class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+            `<a${is_string} class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
             + '</a>'
         );
+
+        if (is_string)
+            return;
 
         if (Array.isArray(setting)) {
             lines.push(
@@ -1206,7 +1213,7 @@ function show_settings(name) {
 
     // -1 to close the popup
     if (name)
-        lines.push('<a class="item item-title span" data-set="-1" data-t="OK"></a>');
+        lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
 
     lines.push('</grid>');
     return lines.join('');
@@ -1296,9 +1303,41 @@ function set_modal_events(parent) {
 
     // settings events
     parent = parent || Id('overlay');
-    Events('select, input', 'change', function() {
+
+    // click on item => toggle if possible
+    C('.item', function() {
+        if (HasClass(this, 'item-title'))
+            return;
+
+        let name = this.name;
+        if (name)
+            change_setting(name);
+        else {
+            let next = this.nextElementSibling;
+            if (next) {
+                next = _('select', next);
+                if (next && next.options.length == 2) {
+                    next.selectedIndex ^= 1;
+                    change_setting(next.name, next.value);
+                }
+            }
+        }
+    }, parent);
+    //
+    Events('input, select', 'change', function() {
+        done_touch();
         change_setting(this.name, this.value);
     }, {}, parent);
+    Input('input, select', () => {
+        done_touch();
+        change_setting();
+    }, parent);
+    C('input, select', () => {
+        if (cannot_click())
+            return;
+        change_setting();
+    }, parent);
+    //
     C('div[name]', function() {
         change_setting(this.getAttribute('name'));
     }, parent);
@@ -1329,8 +1368,6 @@ function startup_3d() {
             theme: [THEMES, THEMES[0]],
         },
         audio: {
-            crowd_sound: [ON_OFF, 1],
-            move_sound: [ON_OFF, 1],
             sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
             voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
             volume: [{min: 0, max: 10, type: 'number'}, 5],

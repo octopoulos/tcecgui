@@ -23,9 +23,10 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Min, Now,
-ON_OFF, S, SetDefault, Show, Sign, Split, Style, T, timers, update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
+CreateSVG, DEV, Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings,
+Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers, update_svg,
+Upper, Visible, window, Y
 */
 'use strict';
 
@@ -127,6 +128,7 @@ class XBoard {
      * - rotate         // board rotation
      * - size           // square size in px (resize will recalculate it)
      * - smooth         // smooth piece animation
+     * - sub            //
      * - tab            // tab name to use with 'open_table' to make the board visible
      * - theme          // {ext: 'png', name: 'dilena', off: 15, size: 80}
      * - vis            // id of the visible element to know if the board is visible or not
@@ -151,6 +153,7 @@ class XBoard {
         this.rotate = options.rotate || 0;
         this.size = options.size || 16;
         this.smooth = options.smooth;
+        this.sub = options.sub;
         this.tab = options.tab;
         this.theme = options.theme;
         this.vis = Id(options.vis);
@@ -168,6 +171,7 @@ class XBoard {
         this.high_size = 0.06;                          // highlight size
         this.hold = null;                               // mouse/touch hold target
         this.hold_time = 0;                             // last time the event was repeated
+        this.markers = [];                              // @
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
         this.next_smooth = false;                       // used to temporarily prevent transitions
@@ -176,6 +180,7 @@ class XBoard {
         this.overlay = null;                            // svg objects will be added there
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
+        this.play_mode = 'play';
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
@@ -199,14 +204,14 @@ class XBoard {
      * Add new moves
      * - handle PGN format from TCEC
      * - can handle 2 pv lists
-     * - if num_ply is defined, then create a new HTML from scratch => no node insertion
+     * - if cur_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Move[]} moves
-     * @param {number} start starting ply for those moves
-     * @param {number=} num_ply if defined, then this is the current ply in the game (not played yet)
+     * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves(moves, start, num_ply) {
-        let is_ply = (num_ply != undefined),
+    add_moves(moves, cur_ply) {
+        let is_ply = (cur_ply != undefined),
             lines = [],
+            num_book = 0,
             num_new = moves.length,
             num_move = this.moves.length,
             parent_lasts = [this.xmoves, this.pv_node]
@@ -218,32 +223,33 @@ class XBoard {
                         parent.appendChild(last);
                     }
                     return [parent, last];
-                });
+                }),
+            start = 0;
+
+        // add the initial position
+        if (!num_move && this.main)
+            start = -1;
 
         // proper moves
-        for (let i = 0; i < num_new; i ++) {
+        for (let i = start; i < num_new; i ++) {
             let extra = '',
                 move = moves[i],
                 ply = get_move_ply(move);
 
-            if (DEV.fen && ply != start + i) {
-                LS(`add_moves: ${ply} != ${start + i}`);
-                LS(moves);
-                LS(this.moves);
-                break;
+            if (move) {
+                move.ply = ply;
+                this.moves[ply] = move;
+                num_book += move.book;
             }
-            move.ply = ply;
-            this.moves[ply] = move;
 
             // TODO: remove this ... sometimes we need to add missing nodes
-            if (ply < num_move)
+            if (i >= 0 && ply < num_move)
                 continue;
 
-            if (is_ply) {
-                if (ply == num_ply) {
-                    extra = ' seen';
-                    lines.push('<i>@</i>');
-                }
+            // indicate current ply
+            if (is_ply && ply == cur_ply) {
+                // lines.push('<i>#</i>');
+                extra = ' current';
             }
 
             if (ply % 2 == 0) {
@@ -251,14 +257,14 @@ class XBoard {
                     lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
                 else
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
+                        let node = CreateNode(i < 0? 'a': 'i', `${1 + ply / 2}.`, (i < 0)? {class: 'turn', 'data-i': -1}: {class: 'turn'});
                         parent.insertBefore(node, last);
                     }
             }
             else if (!i && is_ply)
                 lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
 
-            if (move.m) {
+            if (move && move.m) {
                 let class_ = `${move.book? 'book': 'real'}${extra}`;
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
@@ -280,9 +286,20 @@ class XBoard {
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply)
-            this.compare_duals(num_ply);
-        else if (this.ply >= num_move - 1)
-            this.set_ply(last_move, true);
+            this.compare_duals(cur_ply);
+        else if (this.ply >= num_move - 1) {
+            // play book moves 1 by 1
+            if (num_book && num_book >= num_new) {
+                if (!timers.click_play) {
+                    this.set_fen(START_FEN, true);
+                    this.ply = -1;
+                    this.play_mode = 'book';
+                    this.play();
+                }
+            }
+            else
+                this.set_ply(last_move, true);
+        }
 
         this.update_counter();
     }
@@ -292,19 +309,19 @@ class XBoard {
      * - used in live pv, not for real moves
      * - completely replaces the moves list with this one
      * @param {string} text
-     * @param {number} start starting ply, not necessary if the text contains turn info
-     * @param {number} num_ply current ply in the real game (not played yet)
+     * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves_string(text, start, num_ply) {
+    add_moves_string(text, cur_ply) {
         if (!text)
             return;
 
         // 1) no change or older => skip
-        if (this.text == text)
+        if (this.text == text || this.text.includes(text))
             return;
 
-        let [new_ply, new_items] = this.split_move_string(text),
-            [old_ply] = this.split_move_string(this.text);
+        let [new_ply, new_items] = split_move_string(text),
+            [old_ply] = split_move_string(this.text),
+            want_ply = cur_ply? cur_ply: new_ply;
         if (new_ply < old_ply) {
             if (DEV.ply)
                 LS(`${this.id}: add_moves_string: ${new_ply} < ${old_ply}`);
@@ -314,20 +331,19 @@ class XBoard {
         this.text = text;
 
         // 2) update the moves
-        let first_seen,
-            first_ply = -1,
+        let first_ply = -1,
             lines = [],
             moves = [],
-            ply = start;
+            ply = new_ply;
 
         new_items.forEach(item => {
             if (first_ply < 0 && ply >= 0)
                 first_ply = ply;
 
-            if (!first_seen && ply == num_ply) {
-                lines.push('<i>@</i>');
-                first_seen = true;
-            }
+            // if (!first_seen && ply == new_ply) {
+            //     lines.push('<i>@</i>');
+            //     first_seen = true;
+            // }
 
             if (item == '...') {
                 lines.push('<i>...</i>');
@@ -346,7 +362,7 @@ class XBoard {
                 moves[ply] = {
                     m: item,
                 };
-                lines.push(`<a class="real${ply == num_ply? ' seen': ''}" data-i="${ply}">${item}</a>`);
+                lines.push(`<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${item}</a>`);
                 ply ++;
             }
         });
@@ -354,25 +370,30 @@ class XBoard {
         this.moves = moves;
         this.valid = true;
 
-        if (this.real)
+        // only update if this is the current ply + 1, or if we want a specific ply
+        let is_current = (new_ply == cur_ply);
+        if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
-
-        let html = lines.join('');
-        for (let parent of [this.xmoves, this.pv_node])
-            HTML(parent, html);
-
-        // 3) update the cursor
-        // live engine => show an arrow for the next move
-        if (this.live_id != undefined || Visible(this.vis)) {
-            this.hold_smooth();
-            let move = this.set_ply(num_ply, false);
-            if (this.hook)
-                this.hook(this, 'next', move);
+            is_current = (new_ply == this.real.ply + 1);
         }
 
-        // show diverging move in PV
-        if (num_ply != undefined)
-            this.compare_duals(num_ply);
+        if (is_current) {
+            let html = lines.join('');
+            for (let parent of [this.xmoves, this.pv_node])
+                HTML(parent, html);
+
+            // 3) update the cursor
+            // live engine => show an arrow for the next move
+            if (this.live_id != undefined || Visible(this.vis)) {
+                this.hold_smooth();
+                let move = this.set_ply(new_ply, false);
+                if (this.hook)
+                    this.hook(this, 'next', move);
+            }
+
+            // show diverging move in PV
+            this.compare_duals(want_ply);
+        }
     }
 
     /**
@@ -613,14 +634,13 @@ class XBoard {
             path = `M${x1} ${y1} L${x2} ${y2}`;
         }
 
-        // hide the 2nd arrow if it has the same path as the first
+        // 2 arrows have the same path => hide the other + modify the color
         let other = this.svgs[1 - id];
         if (other) {
             let path2 = _('path', other).getAttribute('d');
             if (path == path2) {
-                Hide(this.svgs[1]);
-                if (id == 1)
-                    return;
+                color = Y.graph_combine_23;
+                Hide(other);
             }
         }
 
@@ -715,7 +735,7 @@ class XBoard {
             ply = target.dataset.i;
 
         if (ply != undefined)
-            this.set_ply(ply * 1, true);
+            this.set_ply(ply * 1, true, true);
 
         callback(this, 'move', ply);
     }
@@ -734,15 +754,16 @@ class XBoard {
             return;
         }
 
+        // compare the moves
         let duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
             ply = num_ply;
 
-        for (let i = num_ply - 1; i < num_move; i ++) {
+        for (let i = num_ply; i < num_move; i ++) {
             let dual_m = (duals[i] || {}).m,
                 move_m = (moves[i] || {}).m;
-            if (DEV.xboard)
+            if (DEV.div)
                 LS(`${this.id} : i=${i} < ${num_move} : ${dual_m == move_m} : ${dual_m} = ${move_m}`);
             if (!dual_m || !move_m)
                 break;
@@ -750,8 +771,12 @@ class XBoard {
             if (dual_m != move_m)
                 break;
         }
-        if (DEV.xboard)
+
+        if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
+
+        this.set_marker(ply);
+        dual.set_marker(ply);
 
         // render: jump directly to the position
         for (let board of [this, dual]) {
@@ -761,7 +786,7 @@ class XBoard {
                 board.set_ply(ply, true);
             // try to get to the ply without compute, if fails, then render the next ply + compute later
             else if (board.set_ply(ply, true, true) == false) {
-                if (DEV.xboard)
+                if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
                 board.set_ply(num_ply, true);
                 add_timeout(`dual${board.id}`, () => {
@@ -825,10 +850,6 @@ class XBoard {
             case 'end':
                 that.go_end();
                 break;
-            // case 'next':
-            // case 'prev':
-            //     that.hold_button(name, -1);
-            //     break;
             case 'play':
                 that.play();
                 break;
@@ -836,6 +857,7 @@ class XBoard {
                 that.hold_smooth();
                 that.rotate = (that.rotate + 1) % 2;
                 that.render(3);
+                callback(that, 'control', name);
                 break;
             case 'start':
                 that.go_start();
@@ -970,7 +992,7 @@ class XBoard {
 
         this.hold_time = now;
 
-        let timeout = (name == 'play')? Y.play_every: (step? Y.key_repeat: Y.key_repeat_initial);
+        let timeout = (name == 'play')? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
     }
 
@@ -1011,11 +1033,25 @@ class XBoard {
         }).join('');
 
         HTML(this.node, [
+            '<hori class="xtop xcolor1 dn">',
+                '<div class="xshort"></div>',
+                '<div class="xleft"></div>',
+                '<div class="xtime"></div>',
+                '<div class="xeval"></div>',
+                '<div class="xcog dn"><i data-svg="cog"></i></div>',
+            '</hori>',
             '<div class="xcontain">',
                 '<div class="xframe"></div>',
                 '<grid class="xsquares"></grid>',
                 '<div class="xoverlay"></div>',
                 '<div class="xpieces"></div>',
+                '<hori class="xbottom xcolor0 dn">',
+                    '<div class="xshort"></div>',
+                    '<div class="xleft"></div>',
+                    '<div class="xtime"></div>',
+                    '<div class="xeval"></div>',
+                    '<div class="xcog dn"><i data-svg="cog"></i></div>',
+                '</hori>',
                 `<hori class="xcontrol">${controls}</hori>`,
             '</div>',
             `<horis class="xmoves${this.list? '': ' dn'}"></horis>`,
@@ -1030,6 +1066,8 @@ class XBoard {
         this.analyse_fen();
         update_svg();
 
+        this.markers = [CreateNode('i', '@'), CreateNode('i', '@')];
+
         if (this.hook)
             this.event_hook(this.hook);
     }
@@ -1039,7 +1077,7 @@ class XBoard {
      * @returns {boolean}
      */
     go_end() {
-        return this.set_ply(this.moves.length - 1);
+        return this.set_ply(this.moves.length - 1, null, true);
     }
 
     /**
@@ -1051,7 +1089,7 @@ class XBoard {
             ply = this.ply + 1;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
-        return this.set_ply(ply);
+        return this.set_ply(ply, true, true);
     }
 
     /**
@@ -1059,10 +1097,11 @@ class XBoard {
      * @returns {boolean}
      */
     go_prev() {
-        let ply = this.ply - 1;
-        while (ply > 0 && !this.moves[ply])
+        let ply = this.ply - 1,
+            start = this.main? -1: 0;
+        while (ply > start && !this.moves[ply])
             ply --;
-        return this.set_ply(ply);
+        return this.set_ply(ply, true, true);
     }
 
     /**
@@ -1074,7 +1113,12 @@ class XBoard {
             ply = 0;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
-        return this.set_ply(ply);
+
+        // initial board
+        if (!ply && this.main)
+            ply = -1;
+
+        return this.set_ply(ply, null, true);
     }
 
     /**
@@ -1157,6 +1201,7 @@ class XBoard {
         if (stop || timers.click_play) {
             clear_timeout('click_play');
             stop = true;
+            this.play_mode = 'play';
         }
         else
             this.hold_button('play', 0);
@@ -1359,8 +1404,9 @@ class XBoard {
 
     /**
      * Reset the moves
+     * @param {boolean=} reset_evals
      */
-    reset() {
+    reset(reset_evals) {
         this.grid.fill('');
         this.moves.length = 0;
         this.ply = 0;
@@ -1369,6 +1415,10 @@ class XBoard {
 
         HTML(this.xmoves, '');
         HTML(this.pv_node, '');
+
+        if (reset_evals)
+            this.evals.length = 0;
+
         this.set_last(this.last);
     }
 
@@ -1378,10 +1428,11 @@ class XBoard {
      * @param {boolean=} render
      */
     resize(width, render=true) {
+        let node = this.node;
         if (!width) {
-            if (!this.node)
+            if (!node)
                 return;
-            width = this.node.clientWidth;
+            width = node.clientWidth;
         }
 
         let border = this.border,
@@ -1390,9 +1441,10 @@ class XBoard {
             frame_size = size * num_col + border * 2,
             frame_size2 = size * num_col;
 
-        Style(this.node, `font-size:${size}px`);
-        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, this.node);
-        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, this.node);
+        Style(node, `font-size:${size}px`);
+        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, node);
+        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, node);
+        Style('.xmoves', `max-width:${frame_size2}px`, true, node);
 
         this.size = size;
         if (render)
@@ -1430,17 +1482,42 @@ class XBoard {
     }
 
     /**
+     * Set the @ marker
+     * @param {number} ply
+     */
+    set_marker(ply) {
+        [this.xmoves, this.pv_node].forEach((parent, id) => {
+            let child = _(`[data-i="${ply}"]`, parent);
+            if (child && (ply % 2 == 0))
+                child = child.previousElementSibling;
+            if (child)
+                parent.insertBefore(this.markers[id], child);
+        });
+    }
+
+    /**
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
+     * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
      * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, animate, no_compute) {
+    set_ply(ply, animate, manual, no_compute) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
         clear_timeout(`dual${this.id}`);
+
+        // special case: initial board
+        if (ply == -1 && this.main) {
+            this.ply = -1;
+            this.set_fen(START_FEN, true);
+            this.hide_arrows();
+            this.update_cursor(ply);
+            this.animate({}, animate);
+            return {};
+        }
 
         // update the FEN
         // TODO: if delta = 1 => should add_move instead => faster
@@ -1461,28 +1538,25 @@ class XBoard {
         }
         this.set_fen(move.fen, true);
 
-        if (this.hook)
+        let is_last = (ply == this.moves.length - 1);
+
+        // play sound?
+        if (this.name == 'live' && Y.move_sound && (is_last || (this.play_mode == 'book' && Y.book_sound)))
+            add_timeout(`ply${ply}`, () => {
+                play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+            }, Y.audio_delay);
+
+        if (manual && this.hook)
             this.hook(this, 'ply', move);
 
         // new move => remove arrows from the past
         this.hide_arrows();
 
         this.update_cursor(ply);
-        if (animate == undefined && (!this.smooth || ply == this.moves.length - 1))
+        if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
         return move;
-    }
-
-    /**
-     *
-     * @param {string} text
-     * @returns {[number, string[]]}
-     */
-    split_move_string(text) {
-        let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
-            ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
-        return [ply, items];
     }
 
     /**

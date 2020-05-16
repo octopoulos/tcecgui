@@ -346,6 +346,8 @@ grid {
 .xboard {
     line-height: 1em;
     margin-left: 4px;
+}
+.xcontain {
     position: relative;
 }
 .xframe {
@@ -356,6 +358,52 @@ grid {
     pointer-events: none;
     position: absolute;
     z-index: 3;
+}
+.xbottom,
+.xtop {
+    font-size: 16px;
+    height: 1.54em;
+    line-height: 1;
+    padding: 0.15em 0.1em 0.2em 1.3em;
+    position: relative;
+}
+.xbottom {
+    margin: 2px 0 0 -6px;
+}
+.xtop {
+    margin: 0 0 2px -6px;
+}
+.status {
+    font-size: 14px;
+    margin-left: 0.2em;
+    margin-top: -0.2em;
+    width: calc(100% - 0.6em);
+}
+.xcolor0 {
+    background: #fff;
+    color: #000;
+}
+.xcolor1 {
+    background: #000;
+    color: #fff;
+}
+.xshort {
+    width: 38%;
+}
+.xleft {
+    text-align: center;
+    width: 20%;
+}
+.xtime {
+    text-align: center;
+    width: 20%;
+}
+.xeval {
+    font-size: 1.3em;
+    font-weight: 500;
+    margin-top: -0.07em;
+    text-align: center;
+    width: 20%;
 }
 .xpiece {
     height: 1em;
@@ -508,6 +556,9 @@ grid {
 #player1 .turn,
 #pv1 .turn {
     color: #fff;
+}
+.current {
+    font-weight: 700;
 }
 .seen {
     background-color: #222 !important;
@@ -766,7 +817,8 @@ grid {
     padding-bottom: 0.5em !important;
 }
 #cog0,
-#cog1 {
+#cog1,
+.xcog {
     animation: 6s spin infinite linear;
     position: absolute;
     top: 0;
@@ -776,6 +828,11 @@ grid {
 }
 #cog1 {
     right: 0.3em;
+}
+.xcog {
+    font-size: 0.85em;
+    left: 0.24em;
+    top: 22%;
 }
 #material,
 #material0,
@@ -970,6 +1027,7 @@ grid {
 .live-more {
     font-size: 0.8em;
     margin-bottom: 0.15em;
+    max-width: calc(100% - 3em);
     z-index: 1;
 }
 .live-pv {
@@ -983,15 +1041,19 @@ grid {
     border-radius: 0.1em;
     padding: 0 0.1em;
 }
+#box-live0 .engine,
 #table-live0 .engine {
     color: #007bff;
 }
+#box-live1 .engine,
 #table-live1 .engine {
     color: #8b0000;
 }
+#box-pv0 .engine,
 #player0 .engine {
     color: #666;
 }
+#box-pv1 .engine,
 #player1 .engine {
     color: #000;
 }
@@ -1020,7 +1082,7 @@ grid {
 }
 #center {
     flex: 2;
-    max-width: 320px;
+    max-width: 390px;
     margin: 4px;
     min-width: 300px;
 }
@@ -1168,8 +1230,10 @@ pre,
 .live-pv,
 .live-pv > a,
 .stats,
+.xbottom,
 .xmoves,
-.xmoves > a {
+.xmoves > a,
+.xtop {
     user-select: text;
 }
 

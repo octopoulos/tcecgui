@@ -15,10 +15,11 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    //
     'global',
 ], OUTPUT_MODULE);
 
-let {extract_fen_ply, get_move_ply} = require(OUTPUT_MODULE);
+let {extract_fen_ply, get_move_ply, split_move_string} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -59,5 +60,18 @@ let {extract_fen_ply, get_move_ply} = require(OUTPUT_MODULE);
         expect(get_move_ply(move)).toEqual(answer);
         if (answer >= -1)
             expect(move.ply).toEqual(answer);
+    });
+});
+
+// split_move_string
+[
+    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', [17, ['9', '...', 'd5', '10.', 'O-O-O', 'dxe4', '11.', 'g5', 'Nd5']]],
+    ['23. Qd2 Nf6 24. f3 Ra6', [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
+    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
+    ['22...f5 23. Qd2', [43, ['22', '...', 'f5', '23.', 'Qd2']]],
+    ['22. Kh1 Ra6 23. Qg3 Nf6', [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
+].forEach(([text, answer], id) => {
+    test(`split_move_string:${id}`, () => {
+        expect(split_move_string(text)).toEqual(answer);
     });
 });
