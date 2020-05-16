@@ -2070,7 +2070,7 @@ function update_move_pv(section, ply, move) {
     board.hold_smooth();
 
     if (move.pv)
-        board.add_moves(move.pv.Moves, false, main.ply + 1);
+        board.add_moves(move.pv.Moves, main.ply + 1);
     else {
         // no pv available =>
         // - delete it if the move is in the past (ex: "book")
@@ -2185,8 +2185,6 @@ function update_overview_moves(section, headers, moves, is_new) {
 
     // 2) update the current chart only (except if graph_all is ON)
     update_player_charts(null, moves);
-    if (is_live && is_new && Y.move_sound)
-        play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
 
     // 3) check adjudication
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
@@ -2284,7 +2282,7 @@ function update_pgn(section, pgn) {
         return;
 
     // 4) add the moves
-    main.add_moves(moves, new_game);
+    main.add_moves(moves);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
 
@@ -3077,6 +3075,12 @@ function startup_game() {
     });
 
     merge_settings({
+        audio: {
+            audio_delay: [{max: 2000, min: 0, type: 'number'}, 0],
+            book_sound: [ON_OFF, 1],
+            crowd_sound: [ON_OFF, 1],
+            move_sound: [ON_OFF, 1],
+        },
         // separator
         _1: {},
         board: {
@@ -3116,6 +3120,7 @@ function startup_game() {
         // separator
         _2: {},
         control: {
+            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
             play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
         },
         engine: {

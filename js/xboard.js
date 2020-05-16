@@ -23,9 +23,10 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV,
-Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings, Min, Now,
-ON_OFF, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
+CreateSVG, DEV, Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings,
+Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers, update_svg,
+Upper, Visible, window, Y
 */
 'use strict';
 
@@ -178,6 +179,7 @@ class XBoard {
         this.overlay = null;                            // svg objects will be added there
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
+        this.play_mode = 'play';
         this.ply = 0;                                   // current ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
@@ -203,12 +205,12 @@ class XBoard {
      * - can handle 2 pv lists
      * - if num_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Move[]} moves
-     * @param {boolean=} new_game play the book moves if true
      * @param {number=} num_ply if defined, then this is the current ply in the game (not played yet)
      */
-    add_moves(moves, new_game, num_ply) {
+    add_moves(moves, num_ply) {
         let is_ply = (num_ply != undefined),
             lines = [],
+            num_book = 0,
             num_new = moves.length,
             num_move = this.moves.length,
             parent_lasts = [this.xmoves, this.pv_node]
@@ -230,6 +232,7 @@ class XBoard {
 
             move.ply = ply;
             this.moves[ply] = move;
+            num_book += move.book;
 
             // TODO: remove this ... sometimes we need to add missing nodes
             if (ply < num_move)
@@ -284,10 +287,11 @@ class XBoard {
             this.compare_duals(num_ply);
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
-            if (new_game || this.moves[last_move].book) {
+            if (num_book && num_book >= num_new - 2) {
                 if (!timers.click_play) {
                     this.set_fen(START_FEN, true);
                     this.ply = -1;
+                    this.play_mode = 'book';
                     this.play();
                 }
             }
@@ -981,7 +985,7 @@ class XBoard {
 
         this.hold_time = now;
 
-        let timeout = (name == 'play')? Y.play_every: (step? Y.key_repeat: Y.key_repeat_initial);
+        let timeout = (name == 'play')? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
     }
 
@@ -1182,6 +1186,7 @@ class XBoard {
         if (stop || timers.click_play) {
             clear_timeout('click_play');
             stop = true;
+            this.play_mode = 'play';
         }
         else
             this.hold_button('play', 0);
@@ -1494,6 +1499,14 @@ class XBoard {
         }
         this.set_fen(move.fen, true);
 
+        let is_last = (ply == this.moves.length - 1);
+
+        // play sound?
+        if (this.name == 'live' && Y.move_sound && (is_last || (this.play_mode == 'book' && Y.book_sound)))
+            add_timeout(`ply${ply}`, () => {
+                play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+            }, Y.audio_delay);
+
         if (manual && this.hook)
             this.hook(this, 'ply', move);
 
@@ -1501,7 +1514,7 @@ class XBoard {
         this.hide_arrows();
 
         this.update_cursor(ply);
-        if (animate == undefined && (!this.smooth || ply == this.moves.length - 1))
+        if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
         return move;

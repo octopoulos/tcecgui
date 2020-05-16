@@ -8,8 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format, HTML,
-Id, Input, KEY_TIMES, Keys, KEYS,
+C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
+HasClass, HTML, Id, Input, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -1025,7 +1025,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
 }
 
 // UI
-////////
+/////
 
 /**
  * Change a setting
@@ -1306,19 +1306,25 @@ function set_modal_events(parent) {
 
     // click on item => toggle if possible
     C('.item', function() {
+        if (HasClass(this, 'item-title'))
+            return;
+
         let name = this.name;
         if (name)
             change_setting(name);
         else {
-            let next = _('select', this.nextElementSibling);
-            if (next && next.options.length == 2) {
-                next.selectedIndex ^= 1;
-                change_setting(next.name, next.value);
+            let next = this.nextElementSibling;
+            if (next) {
+                next = _('select', next);
+                if (next && next.options.length == 2) {
+                    next.selectedIndex ^= 1;
+                    change_setting(next.name, next.value);
+                }
             }
         }
     }, parent);
     //
-    Events('input, select', 'change', function(e) {
+    Events('input, select', 'change', function() {
         done_touch();
         change_setting(this.name, this.value);
     }, {}, parent);
@@ -1362,8 +1368,6 @@ function startup_3d() {
             theme: [THEMES, THEMES[0]],
         },
         audio: {
-            crowd_sound: [ON_OFF, 1],
-            move_sound: [ON_OFF, 1],
             sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
             voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
             volume: [{min: 0, max: 10, type: 'number'}, 5],
