@@ -764,6 +764,8 @@ class XBoard {
      * @returns {string}
      */
     chess_mobility() {
+        this.chess.load(this.fen);
+
         let checked = this.chess.checked(),
             moves = this.chess.moves({legal: true}),
             sign = this.chess.turn() == 'w'? '-': '';

@@ -2050,6 +2050,22 @@ function update_materials(move) {
 }
 
 /**
+ * Update mobility
+ */
+function update_mobility() {
+    let main = xboards[Y.x],
+        mobility = main.chess_mobility(),
+        ply = main.ply,
+        turn = ply % 2;
+
+    if (mobility[0] == '-')
+        mobility = mobility.slice(1);
+
+    HTML(`#g${turn}`, mobility);
+    HTML(`#g${1 - turn}`, '&nbsp;');
+}
+
+/**
  * Update engine info from a move
  * @param {number} ply
  * @param {Move} move
@@ -2346,6 +2362,7 @@ function update_pgn(section, pgn) {
     main.add_moves(moves);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
+    update_mobility();
 
     // got player info => can do h2h
     check_queued_tables();
@@ -2939,6 +2956,7 @@ function handle_board_events(board, type, value) {
             update_live_eval(section, xboards.live1.evals[cur_ply], 1, cur_ply);
 
             update_materials(value);
+            update_mobility();
         }
         break;
     }
