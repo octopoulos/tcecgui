@@ -345,12 +345,13 @@ function format_eval(value, process) {
     if (items.length < 2)
         return text;
 
-    let abs = Abs(float);
-    if (abs < 10 && small_decimal != 'always')
-        return text;
-    if (abs < 100 && small_decimal == '>= 100')
-        return text;
-
+    if (small_decimal != 'always') {
+        let abs = Abs(float);
+        if (abs < 10 && small_decimal == '>= 10')
+            return text;
+        if (abs < 100 && small_decimal == '>= 100')
+            return text;
+    }
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
@@ -2053,8 +2054,13 @@ function update_materials(move) {
  * Update mobility
  */
 function update_mobility() {
-    let main = xboards[Y.x],
-        mobility = main.chess_mobility(),
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    main.chess_load(main.fen);
+
+    let mobility = main.chess_mobility(),
         ply = main.ply,
         turn = ply % 2;
 
