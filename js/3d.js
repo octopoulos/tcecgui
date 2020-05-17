@@ -1031,8 +1031,9 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
  * Change a setting
  * @param {string} name
  * @param {string|number} value
+ * @param {boolean=} no_close don't close the popup
  */
-function change_setting(name, value) {
+function change_setting(name, value, no_close) {
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
         if (!isNaN(value))
@@ -1040,7 +1041,7 @@ function change_setting(name, value) {
         save_option(name, value);
     }
 
-    if (virtual_change_setting_special && virtual_change_setting_special(name, value))
+    if (virtual_change_setting_special && virtual_change_setting_special(name, value, no_close))
         return;
 
     switch (name) {
@@ -1323,15 +1324,36 @@ function set_modal_events(parent) {
             }
         }
     }, parent);
-    //
+
+    // right click on item => reset to default
+    Events('.item', 'contextmenu', function(e) {
+        let next = this.nextElementSibling;
+        if (next) {
+            next = _('input, select', next);
+            if (next) {
+                let name = next.name,
+                    def = DEFAULTS[name];
+                if (def != undefined) {
+                    next.value = def;
+                    save_option(name, def);
+                    change_setting(name, def, true);
+                }
+            }
+        }
+        e.preventDefault();
+    }, parent);
+
+    // inputs
     Events('input, select', 'change', function() {
         done_touch();
         change_setting(this.name, this.value);
     }, {}, parent);
+    //
     Input('input, select', () => {
         done_touch();
         change_setting();
     }, parent);
+    //
     C('input, select', () => {
         if (cannot_click())
             return;

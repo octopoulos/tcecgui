@@ -1,12 +1,15 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-05-17 : bug when all charts are visible + page reload => only 1 updates, need to toggle to see data
+-          : 2020-05-17 : live tabs off => reload => only 1 kibitzer is shown
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
 -          : 2020-05-17 : arrow can become green, but once it's green it stays green
 -          : 2020-05-17 : input should not cause auto close, only select
 -          : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
 -          : 2020-05-17 : chessdb + lichess links
 ~          : 2020-05-17 : arrows don't rotate with the board
+2020-05-17 : 2020-05-17 : reset invididual settings to default with right click
 2020-05-17 : 2020-05-17 : add archive links to the cross table
 2020-05-17 : 2020-05-16 : delayed ply system: improved speed and response time
 2020-05-17 : 2020-05-16 : show ply: last
@@ -210,8 +213,8 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
--          : 2020-05-16 : changed a ply in a PV => freeze it until another board is chosen + mark it dirty? lock/unlock
--          : 2020-05-17 :
+-          : 2020-05-16 : lock / unlock a PV
+-          : 2020-04-29 : add SVG connectors to the bracket
 medium:
 -          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
@@ -220,12 +223,8 @@ low:
 -          : 2020-05-15 : keep dataset for live and for archive
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-13 : drag and drop system using the dummies as targets
--          : 2020-04-29 : add SVG connectors to the bracket
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
--          : 2020-05-14 : save and load settings
--          : 2020-05-17 : bug when all charts are visible + page reload => only 1 updates, need to toggle to see data
--          : 2020-05-17 : live tabs off => reload => only 1 kibitzer is shown
 lowest:
 -          : 2020-05-17 : change kibitzer colors
 -          : 2020-04-24 : add 3d dark room
