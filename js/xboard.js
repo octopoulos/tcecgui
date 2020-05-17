@@ -812,6 +812,9 @@ class XBoard {
      * @param {number} num_ply current ply in the real game (not played yet)
      */
     compare_duals(num_ply) {
+        if (this.locked)
+            return;
+
         let dual = this.dual,
             real = this.real,
             show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
@@ -828,7 +831,7 @@ class XBoard {
         }
 
         // first, or if no dual
-        if (show_ply == 'first' || !dual || !dual.valid) {
+        if (show_ply == 'first' || !dual || !dual.valid || dual.locked) {
             this.set_ply(num_ply, {hold: true});
             return;
         }
