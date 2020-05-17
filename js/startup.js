@@ -641,7 +641,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
 
     // don't adjust contextual popups
     if (adjust && node.dataset.xy)
-        adjust = false;
+        return;
 
     if (show || adjust) {
         let html = '',

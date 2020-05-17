@@ -1345,18 +1345,18 @@ function set_modal_events(parent) {
     // inputs
     Events('input, select', 'change', function() {
         done_touch();
-        change_setting(this.name, this.value);
+        change_setting(this.name, this.value, this.tagName == 'INPUT');
     }, {}, parent);
     //
-    Input('input, select', () => {
+    Input('input, select', function() {
         done_touch();
-        change_setting();
+        change_setting(undefined, undefined, this.tagName == 'INPUT');
     }, parent);
     //
-    C('input, select', () => {
+    C('input, select', function() {
         if (cannot_click())
             return;
-        change_setting();
+        change_setting(undefined, undefined, this.tagName == 'INPUT');
     }, parent);
     //
     C('div[name]', function() {

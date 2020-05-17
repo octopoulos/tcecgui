@@ -4,9 +4,9 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-05-17 : bug when all charts are visible + page reload => only 1 updates, need to toggle to see data
 -          : 2020-05-17 : live tabs off => reload => only 1 kibitzer is shown
 -          : 2020-05-17 : arrow can become green, but once it's green it stays green
--          : 2020-05-17 : input should not cause auto close, only select
--          : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
+~          : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
 ~          : 2020-05-17 : arrows don't rotate with the board
+2020-05-17 : 2020-05-17 : input should not cause auto close, only select
 2020-05-17 : 2020-05-17 : export settings
 2020-05-17 : 2020-05-17 : chessdb + lichess analyses
 2020-05-17 : 2020-05-17 : extra common tests
