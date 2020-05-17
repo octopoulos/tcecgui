@@ -410,7 +410,7 @@ function get_short_name(engine)
  */
 function parse_date_time(text) {
     let items = text.split(' on '),
-        seconds = Date.parse(`${items[1]} ${items[0]} UTC`) / 1000;
+        seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
     return seconds;
 }
 
@@ -1302,7 +1302,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'start':
                 let [date, time] = FromTimestamp(value);
-                value = `${row.started? '': translate_expression('{Estd}: ')}${time} on ${date}`;
+                value = `${row.started? '': translate_expression('{Estd}: ')}${time} on 20${date}`;
                 break;
             case 'white':
                 if (row.result == '1-0')
