@@ -1,9 +1,12 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-29 : add SVG connectors to the bracket
+~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-17 : arrow can become green, but once it's green it stays green
-~          : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
 ~          : 2020-05-17 : display mobility
+2020-05-18 : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
+2020-05-17 : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 2020-05-17 : 2020-05-16 : lock / unlock a PV
 2020-05-17 : 2020-05-17 : bug when all charts are visible + page reload => only 1 updates, need to toggle to see data
 2020-05-17 : 2020-05-17 : live tabs off => reload => only 1 kibitzer is shown
@@ -216,10 +219,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
-~          : 2020-05-10 : highlight selected piece + possible moves in PVA
--          : 2020-04-29 : add SVG connectors to the bracket
 medium:
--          : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 -          : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays

@@ -506,12 +506,24 @@ function reset_sub_boards(mode) {
 
 /**
  * Show/hide the timers around the board
+ * @param {boolean=} show undefined => show when center/engine is disabled
  */
-function show_board_info() {
-    let [active] = get_active_tab('engine'),
-        main = xboards[Y.x],
-        node = main.node,
-        show = (active != 'engine');
+function show_board_info(show) {
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    let node = main.node,
+        status = Y.status;
+
+    if (show == undefined) {
+        if (status == 'auto') {
+            let [active] = get_active_tab('engine');
+            show = (active != 'engine');
+        }
+        else
+            show = status;
+    }
 
     S('.xbottom, .xtop', show, node);
     Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
@@ -1423,6 +1435,10 @@ function analyse_seasons(data) {
     let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
     update_table(section, 'season', rows);
 
+    // don't load an archive game unless we're in the archive
+    if (Y.x != section)
+        return;
+
     let link = `season=${Y.season}&div=${Y.div}`,
         node = _(`[data-u="${link}"]`);
     if (node) {
@@ -1981,6 +1997,13 @@ function resize_game() {
         board.resize(size);
     });
 
+    // status
+    if (Y.status == 'auto') {
+        let crect = Id('center').getBoundingClientRect(),
+            lrect = Id('left').getBoundingClientRect();
+        show_board_info(crect.top > lrect.top + lrect.height);
+    }
+
     resize_3d();
 }
 
@@ -2312,6 +2335,8 @@ function update_pgn(section, pgn) {
         }
         main.round = headers.Round;
         new_game = true;
+        update_move_info(0, {});
+        update_move_info(1, {});
     }
 
     if (!num_move)
@@ -2786,6 +2811,9 @@ function change_setting_game(name, value) {
             if (!board.main)
                 board.compare_duals(main.ply);
         });
+        break;
+    case 'status':
+        show_board_info();
         break;
     }
 }
