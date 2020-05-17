@@ -15,8 +15,8 @@ _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, CHART_NAMES,
 check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
-download_live, download_tables, E, Events, game_action_key, game_action_keyup, get_active_tab, get_object,
-HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+download_live, download_tables, DownloadObject, E, Events, game_action_key, game_action_keyup, get_active_tab,
+get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
@@ -145,6 +145,9 @@ function change_setting_special(name, value, no_close) {
     case 'panel_right':
     case 'window_width':
         resize();
+        break;
+    case 'export_settings':
+        DownloadObject(Y, 'tcec-settings.json');
         break;
     case 'hide_eval_0':
     case 'hide_eval_1':

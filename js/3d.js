@@ -1046,11 +1046,10 @@ function change_setting(name, value, no_close) {
 
     switch (name) {
     case 'language':
-        save_option('lan', value);
         if (value == 'eng' || translates._lan == value)
             translate_node('body');
         else if (value != 'eng')
-            add_timeout('lan', api_translate_get, 100);
+            add_timeout('language', api_translate_get, 100);
         break;
     case 'theme':
         update_theme([value]);
@@ -1386,6 +1385,7 @@ function start_3d() {
 function startup_3d() {
     merge_settings({
         general: {
+            export_settings: '1',
             language: [LANGUAGES, 'eng'],
             theme: [THEMES, THEMES[0]],
         },
