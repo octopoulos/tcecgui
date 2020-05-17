@@ -2759,6 +2759,9 @@ function random_position() {
  * - called by change_setting_special
  */
 function change_setting_game(name, value) {
+    let section = Y.x,
+        main = xboards[section];
+
     switch (name) {
     case 'analysis_chessdb':
     case 'analysis_lichess':
@@ -2776,6 +2779,13 @@ function change_setting_game(name, value) {
             target = target.parentNode;
         if (target)
             CopyClipboard(target.innerText.replace(/\s/g, ' '));
+        break;
+    case 'show_ply':
+        Keys(xboards).forEach(key => {
+            let board = xboards[key];
+            if (!board.main)
+                board.compare_duals(main.ply);
+        });
         break;
     }
 }
@@ -2841,7 +2851,8 @@ function changed_section() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x;
+    let section = Y.x,
+        main = xboards[section];
 
     switch (type) {
     case 'activate':
@@ -2854,8 +2865,16 @@ function handle_board_events(board, type, value) {
             board.mode = (board.mode == 'html')? 'text': 'html';
             board.render(3);
         }
-        else if (value == 'rotate')
+        else if (value == 'rotate') {
             show_board_info();
+            // redraw the arrows
+            Keys(xboards).forEach(key => {
+                let board = xboards[key],
+                    id = board.live_id;
+                if (id != undefined)
+                    main.arrow(id, board.next, Y[`graph_color_${id + 2}`]);
+            });
+        }
         break;
     // move list => ply selected
     case 'move':
@@ -2868,7 +2887,7 @@ function handle_board_events(board, type, value) {
     case 'next':
         let id = board.live_id;
         if (id != undefined)
-            xboards[section].arrow(id, value, Y[`graph_color_${id + 2}`]);
+            main.arrow(id, value, Y[`graph_color_${id + 2}`]);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -2916,6 +2935,10 @@ function open_table(sel, hide_table=true) {
     if (active) {
         Class(active, '-active');
         // only hide if the table has the same parent
+        // + special cases
+        if (['live0', 'live1'].includes(key) && !Y.live_tabs)
+            hide_table = false;
+
         if (hide_table)
             Hide(`#table-${active.dataset.x}`);
     }

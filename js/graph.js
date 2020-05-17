@@ -669,7 +669,7 @@ function init_graph(callback) {
     function _done() {
         create_chart_data();
         create_charts();
-        update_player_chart(null, xboards[Y.x].moves);
+        update_player_charts(null, xboards[Y.x].moves);
         callback();
     }
 
