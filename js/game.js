@@ -2278,8 +2278,8 @@ function update_overview_moves(section, headers, moves, is_new) {
     S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
     if (finished) {
         let result = headers.Result;
-        if (is_live && is_new && Y.crowd_sound)
-            play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        if (is_live && is_new)
+            play_sound(audiobox, (result == '1/2-1/2')? Y.sound_draw: Y.sound_win);
         if (DEV.new)
             LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
         main.set_last(result);
@@ -3213,8 +3213,12 @@ function startup_game() {
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 0],
             book_sound: [ON_OFF, 1],
-            crowd_sound: [ON_OFF, 1],
-            move_sound: [ON_OFF, 1],
+            sound_capture: [['off', 'capture.mp3'], 'capture.mp3'],
+            sound_check: [['off', 'check'], 'check'],
+            sound_checkmate: [['off', 'checkmate'], 'checkmate'],
+            sound_draw: [['off', 'draw'], 'draw'],
+            sound_move: [['off', 'move', 'move.mp3'], 'move'],
+            sound_win: [['off', 'win'], 'win'],
         },
         // separator
         _1: {},

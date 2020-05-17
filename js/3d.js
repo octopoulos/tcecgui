@@ -970,8 +970,14 @@ function gamepad_update() {
  * @param {number=} volume
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0, voice, volume=1}={}) {
-    if (!cube || !cube.sounds)
+    if (!cube || !cube.sounds || !name)
         return;
+
+    // ext can be in the name
+    let items = name.split('.');
+    if (items.length == 1)
+        name = `${name}.${ext}`;
+
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
     if (audio && frame && audio.frame == frame)
@@ -1002,7 +1008,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
 
     // load & seek
     if (!audio) {
-        audio = new Audio(`sound/${_ || name}.${ext}`);
+        audio = new Audio(`sound/${_ || name}`);
         audio.promise = Promise.resolve();
         cube.sounds[name] = audio;
     }

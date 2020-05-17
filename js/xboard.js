@@ -1676,9 +1676,20 @@ class XBoard {
         let is_last = (ply == this.moves.length - 1);
 
         // play sound?
-        if (this.name == 'live' && Y.move_sound && (is_last || (this.play_mode == 'book' && Y.book_sound)))
+        if (this.name == 'live' && (is_last || (this.play_mode == 'book' && Y.book_sound)))
             add_timeout(`ply${ply}`, () => {
-                play_sound(audiobox, 'move', {ext: 'mp3', interrupt: true});
+                let name = 'move',
+                    text = move.m,
+                    last = text.slice(-1);
+
+                if (last == '#')
+                    name = 'checkmate';
+                if (last == '+')
+                    name = 'check';
+                else if (text.includes('x'))
+                    name = 'capture';
+
+                play_sound(audiobox, Y[`sound_${name}`], {interrupt: true});
             }, Y.audio_delay);
 
         if (manual && this.hook)

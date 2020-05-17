@@ -4,6 +4,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-17 : arrow can become green, but once it's green it stays green
+2020-05-18 : 2020-05-18 : new sounds
 2020-05-18 : 2020-05-17 : display basic mobility
 2020-05-18 : 2020-05-17 : enable board status option: auto/on/off + auto activate when engine info is off screen
 2020-05-17 : 2020-05-12 : Live reload => trying to load Archive files too ... should delay that until we click
