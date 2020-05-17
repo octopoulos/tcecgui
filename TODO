@@ -217,6 +217,7 @@ low:
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-14 : save and load settings
+-          : 2020-05-17 : bug when all charts are visible + page reload => only 1 updates, need to toggle to see data
 lowest:
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
