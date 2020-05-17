@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
 controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, Events, Exp,
-fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -26,7 +26,11 @@ virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
-let BOARD_THEMES = {
+let ANALYSIS_URLS = {
+        chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
+        lichess: 'https://lichess.org/analysis/standard/{FEN}',
+    },
+    BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
         chess24: ['#9e7863', '#633526'],
@@ -110,7 +114,7 @@ let BOARD_THEMES = {
         tour: 60,
         winner: 3600 * 24,
     },
-    CHESSDB_URL = 'https://www.chessdb.cn/queryc_en/{FEN}',
+    context_target,
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -124,7 +128,6 @@ let BOARD_THEMES = {
         live: {},
     },
     game_link,                          // current game link in the archive
-    LICHESS_URL = 'https://lichess.org/analysis/standard/{FEN}',
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
@@ -2752,6 +2755,32 @@ function random_position() {
 /////////
 
 /**
+ * Changed a game setting
+ * - called by change_setting_special
+ */
+function change_setting_game(name, value) {
+    switch (name) {
+    case 'analysis_chessdb':
+    case 'analysis_lichess':
+        let parent = Parent(context_target, null, 'xboard');
+        if (parent) {
+            let board = xboards[parent.id],
+                url = ANALYSIS_URLS[name.split('_')[1]];
+            if (board)
+                window.open(url.replace('{FEN}', board.fen), '_blank');
+        }
+        break;
+    case 'copy_moves':
+        let target = context_target;
+        while (target && !HasClasses(target, 'live-pv xmoves'))
+            target = target.parentNode;
+        if (target)
+            CopyClipboard(target.innerText.replace(/\s/g, ' '));
+        break;
+    }
+}
+
+/**
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
@@ -3121,31 +3150,31 @@ function startup_game() {
         // separator
         _1: {},
         board: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
             animate: [ON_OFF, 1],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
-            chessdb_analysis: 1,
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
-            lichess_analysis: 1,
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
             status: [['auto', 'on', 'off'], 'auto'],
         },
         board_pv: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
-            chessdb_analysis: 1,
             custom_black_pv: [{type: 'color'}, '#000000'],
             custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
-            lichess_analysis: 1,
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],

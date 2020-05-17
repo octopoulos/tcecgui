@@ -155,7 +155,8 @@ function create_charts()
         x_axes = {
             ticks: {
                 autoSkip: true,
-                callback: (tick, index) => (index % 2)? '': tick,
+                callback: tick => ((tick * 2) % 2)? '': tick,
+                // TODO: this value should change with the canvas width
                 maxTicksLimit: 25,
             },
         };
@@ -367,7 +368,7 @@ function create_charts()
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards[Y.x].set_ply(dico.ply, null, true);
+                xboards[Y.x].set_ply(dico.ply, {manual: true});
         });
     });
 

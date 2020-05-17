@@ -13,10 +13,10 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
-C, cannot_click, change_page, change_theme, changed_hash, changed_section, CHART_NAMES, check_hash, Clamp, Class,
-clear_timeout, CopyClipboard, create_field_value, detect_device, DEV, document, download_live, download_tables, E,
-Events, game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id,
-Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, CHART_NAMES,
+check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
+download_live, download_tables, E, Events, game_action_key, game_action_keyup, get_active_tab, get_object,
+HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
@@ -41,7 +41,6 @@ let AD_STYLES = {
         '#table-engine': 'engine',
         '.swaps': 'panel',
     },
-    context_target,
     old_center,
     old_font_height,
     old_stream = 0,
@@ -103,17 +102,20 @@ function adjust_popups() {
  * Handler for change settings
  * @param {string} name
  * @param {string|number} value
+ * @param {boolean=} no_close don't close the popup
  * @returns {boolean} true if we've handled the setting
  */
-function change_setting_special(name, value) {
+function change_setting_special(name, value, no_close) {
     clear_timeout('close_popup');
     if (!name)
         return false;
 
-    // close contextual popup
-    let modal = _('#modal');
-    if (modal && modal.dataset.xy)
-        add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
+    // close contextual popup if we used a SELECT
+    if (!no_close) {
+        let modal = _('#modal');
+        if (modal && modal.dataset.xy)
+            add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
+    }
 
     switch (name) {
     case 'animate':
@@ -143,13 +145,6 @@ function change_setting_special(name, value) {
     case 'panel_right':
     case 'window_width':
         resize();
-        break;
-    case 'copy_moves':
-        let target = context_target;
-        while (target && !HasClass(target, 'live-pv') && !HasClass(target, 'xmoves'))
-            target = target.parentNode;
-        if (target)
-            CopyClipboard(target.innerText.replace(/\s/g, ' '));
         break;
     case 'hide_eval_0':
     case 'hide_eval_1':
@@ -195,7 +190,7 @@ function change_setting_special(name, value) {
         change_theme(value);
         break;
     default:
-        return false;
+        return change_setting_game(name, value);
     }
 
     return true;
@@ -299,6 +294,9 @@ function check_stream() {
 function close_popups() {
     show_popup();
     show_popup('about');
+
+    // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
+    HTML('#modal', '');
 }
 
 /**
