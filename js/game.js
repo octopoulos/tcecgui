@@ -110,6 +110,7 @@ let BOARD_THEMES = {
         tour: 60,
         winner: 3600 * 24,
     },
+    CHESSDB_URL = 'https://www.chessdb.cn/queryc_en/{FEN}',
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -123,6 +124,7 @@ let BOARD_THEMES = {
         live: {},
     },
     game_link,                          // current game link in the archive
+    LICHESS_URL = 'https://lichess.org/analysis/standard/{FEN}',
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
@@ -618,8 +620,9 @@ function analyse_crosstable(section, data) {
             let games = results[orders[id]];
             if (games) {
                 cross_row[abbrev] = games.Scores.map(game => {
-                    let score = game.Result;
-                    return ` <a data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                    let link = create_game_link(section, game.Game, '', true),
+                        score = game.Result;
+                    return ` <a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('').slice(1);
             }
         });
@@ -1361,7 +1364,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             save_option('game', game);
             open_game();
         }
-        else
+        // make sure the game is over
+        else if (_('a.game[href]', this))
             location.hash = create_game_link(section, game, '', true);
     }, table);
 
@@ -2834,13 +2838,8 @@ function handle_board_events(board, type, value) {
     // - if move is null, then hide the arrow
     case 'next':
         let id = board.live_id;
-        if (id != undefined) {
-            if (DEV.ply) {
-                LS(`next: ${id}`);
-                LS(value);
-            }
+        if (id != undefined)
             xboards[section].arrow(id, value, Y[`graph_color_${id + 2}`]);
-        }
         break;
     // ply was set
     // !! make sure it's set manually
@@ -3126,22 +3125,27 @@ function startup_game() {
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            chessdb_analysis: 1,
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
+            lichess_analysis: 1,
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
+            status: [['auto', 'on', 'off'], 'auto'],
         },
         board_pv: {
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            chessdb_analysis: 1,
             custom_black_pv: [{type: 'color'}, '#000000'],
             custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
             highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
+            lichess_analysis: 1,
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
