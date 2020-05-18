@@ -2,9 +2,9 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 -          : 2020-04-29 : add SVG connectors to the bracket
-~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-18 : arrow overlap => show the longer one under the shorter one, ex: => and ==>
 -          : 2020-05-18 : click on mobility => cannot move forward, must go back first
+~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 2002-05-18 : 2020-05-18 : ticks can disappear
 2002-05-18 : 2020-05-17 : arrow can become green, but once it's green it stays green
 2002-05-18 : 2020-05-18 : Mobility full name under the chart in graph_all
@@ -231,12 +231,11 @@ medium:
 -          : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
 low:
--          : 2020-05-15 : keep dataset for live and for archive
 ~          : 2020-04-13 : add 3d board
--          : 2020-05-13 : drag and drop system using the dummies as targets
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
+-          : 2020-05-13 : drag and drop system using the dummies as targets
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
