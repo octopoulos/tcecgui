@@ -237,12 +237,12 @@
                 <!-- charts -->
                 <horis id="chart-tabs" class="tabs">
                     <div class="tab active" data-x="eval" data-t="Eval"></div>
+                    <div class="tab" data-x="mobil" data-t="Mobil"></div>
                     <div class="tab" data-x="time" data-t="Time"></div>
                     <div class="tab" data-x="speed" data-t="Speed"></div>
                     <div class="tab" data-x="node" data-t="Nodes"></div>
                     <div class="tab" data-x="depth" data-t="{Depth}/SD"></div>
                     <div class="tab" data-x="tb" data-t="TB"></div>
-                    <div class="tab" data-x="mobil" data-t="Mobil"></div>
                     <div class="tab" data-x="kibitz" data-t="Kibitz"></div>
                     <div class="tab" data-x="pv" data-t="PV"></div>
                     <div class="tab" data-x="pva" data-t="PV(A)"></div>
@@ -256,6 +256,12 @@
                             <canvas id="chart-eval" class="graphs"></canvas>
                         </div>
                         <div class="label dn" data-t="Eval"></div>
+                    </vert>
+                    <vert id="table-mobil">
+                        <div class="chart">
+                            <canvas id="chart-mobil" class="graphs"></canvas>
+                        </div>
+                        <div class="label dn" data-t="Mobil"></div>
                     </vert>
                     <vert id="table-time" class="dn">
                         <div class="chart">
@@ -286,12 +292,6 @@
                             <canvas id="chart-tb" class="graphs"></canvas>
                         </div>
                         <div class="label dn" data-t="TB"></div>
-                    </vert>
-                    <vert id="table-mobil">
-                        <div class="chart">
-                            <canvas id="chart-mobil" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Mobil"></div>
                     </vert>
                 </div>
                 <!-- pv -->
