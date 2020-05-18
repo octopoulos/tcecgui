@@ -23,7 +23,7 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
 CreateSVG, DEV, Events, extract_fen_ply, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS,
 merge_settings, Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers,
 update_svg, Upper, Visible, window, Y
@@ -581,7 +581,7 @@ class XBoard {
      * Show an arrow
      * @param {number} id object id, there can be multiple arrows
      * @param {Object} dico {captured, color, from, piece, to}
-     * @param {string} color
+     * @param {number} color
      */
     arrow(id, dico, color) {
         let func = `arrow_${this.mode}`;
@@ -593,7 +593,7 @@ class XBoard {
      * Display a 3d arrow
      * @param {number} id
      * @param {Object} dico
-     * @param {string} color
+     * @param {number} color
      */
     arrow_3d(id, dico, color) {
 
@@ -603,7 +603,7 @@ class XBoard {
      * Draw an arrow on the canvas
      * @param {number} id
      * @param {Object} dico
-     * @param {string} color
+     * @param {number} color
      */
     arrow_canvas(id, dico, color) {
 
@@ -613,7 +613,7 @@ class XBoard {
      * Create an SVG arrow
      * @param {number} id svg id, there can be multiple arrows
      * @param {Object} dico contains move info, if null then hide the arrow
-     * @param {string} color
+     * @param {number} color
      */
     arrow_html(id, dico, color) {
         // 1) no move => hide the arrow
@@ -665,21 +665,22 @@ class XBoard {
         }
 
         // 2 arrows have the same path => hide the other + modify the color
-        let other = this.svgs[1 - id];
+        let other = this.svgs[1 - id],
+            scolor = Y[`graph_color_${color}`];
         if (other) {
             let path2 = _('path', other).getAttribute('d');
             if (path == path2) {
-                color = Y.graph_combine_23;
+                scolor = Y.graph_combine_23;
                 Hide(other);
             }
             // other color might be green => should recolor it
-            else if (Visible(other)) {
-            }
+            else if (color >= 2)
+                Attrs('path', 'stroke', Y[`graph_color_${5 - color}`], other);
         }
 
         // 3) show the arrow
         let body = this.create_svg(id);
-        HTML(_('svg', body), `<path stroke="${color}" stroke-width="${Y.arrow_width}" d="${path}"/>`);
+        HTML(_('svg', body), `<path stroke="${scolor}" stroke-width="${Y.arrow_width}" d="${path}"/>`);
         Style(body, `opacity:${Y.arrow_opacity}`);
         Show(body);
     }
@@ -695,6 +696,7 @@ class XBoard {
 
     /**
      * Call this when new moves arrive
+     * @returns {boolean}
      */
     check_locked(object) {
         if (this.locked) {

@@ -13,7 +13,7 @@
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs,
-C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, CHART_NAMES,
+C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
 check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, game_action_key, game_action_keyup, get_active_tab,
 get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
@@ -435,7 +435,7 @@ function move_nodes() {
         source = Id(graph_all? 'charts': 'charts2'),
         source_nodes = source.children;
 
-    Keys(CHART_NAMES).forEach(key => {
+    Keys(charts).forEach(key => {
         S(`[data-x="${key}"]`, !graph_all, parent);
     });
     S('[data-x="x"]', graph_all, parent);
@@ -453,7 +453,7 @@ function move_nodes() {
     S('vert, vert > .label', graph_all, destin);
 
     if (graph_all) {
-        if (CHART_NAMES[active])
+        if (charts[active])
             open_table('x');
         let board = xboards[Y.x];
         if (board)

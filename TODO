@@ -4,7 +4,10 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-18 : arrow overlap => show the longer one under the shorter one, ex: => and ==>
--          : 2020-05-17 : arrow can become green, but once it's green it stays green
+-          : 2020-05-18 : click on mobility => cannot move forward, must go back first
+2002-05-18 : 2020-05-18 : ticks can disappear
+2002-05-18 : 2020-05-17 : arrow can become green, but once it's green it stays green
+2002-05-18 : 2020-05-18 : Mobility full name under the chart in graph_all
 2002-05-18 : 2020-05-18 : mobility chart
 2002-05-18 : 2002-05-18 : r-mobility
 2020-05-18 : 2020-05-18 : new sounds
