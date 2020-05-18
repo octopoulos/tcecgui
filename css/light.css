@@ -1081,7 +1081,7 @@ grid {
     width: 95%;
 }
 #left {
-    flex: 2.5;
+    flex: 2;
     margin: 4px;
     max-width: calc(100vh - 400px);
     min-width: 281px;

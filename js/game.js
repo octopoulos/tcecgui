@@ -12,10 +12,10 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
-controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, Events, Exp,
-fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
+clear_timeout, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document,
+Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses,
+Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -342,8 +342,6 @@ function format_eval(value, process) {
         return text;
 
     let items = text.split('.');
-    if (items.length < 2)
-        return text;
 
     if (small_decimal != 'always') {
         let abs = Abs(float);
@@ -2924,7 +2922,7 @@ function handle_board_events(board, type, value) {
                 let board = xboards[key],
                     id = board.live_id;
                 if (id != undefined)
-                    main.arrow(id, board.next, Y[`graph_color_${id + 2}`]);
+                    main.arrow(id, board.next, id + 2);
             });
         }
         break;
@@ -2939,7 +2937,7 @@ function handle_board_events(board, type, value) {
     case 'next':
         let id = board.live_id;
         if (id != undefined)
-            main.arrow(id, value, Y[`graph_color_${id + 2}`]);
+            main.arrow(id, value, id + 2);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -3020,7 +3018,9 @@ function opened_table(node, name, tab) {
     save_option('tabs', Y.tabs);
 
     // 2) special cases
-    if (is_chart && CHART_NAMES[name] && main) {
+    if (is_chart)
+        chart_id = name;
+    if (is_chart && charts[name] && main) {
         update_player_charts(name, main.moves);
         update_chart_options(name, 3);
     }
