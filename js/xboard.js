@@ -24,9 +24,9 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
-CreateSVG, DEV, Events, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, merge_settings,
-Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers, update_svg,
-Upper, Visible, window, Y
+CreateSVG, DEV, Events, extract_fen_ply, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS,
+merge_settings, Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers,
+update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -169,6 +169,7 @@ class XBoard {
         this.dual = null;
         this.evals = [];                                // eval history
         this.fen = START_FEN;                           // current fen
+        this.goal = [-1, -1];
         this.grid = new Array(128);
         this.high_color = '';                           // highlight color
         this.high_size = 0.06;                          // highlight size
@@ -312,6 +313,15 @@ class XBoard {
         }
 
         this.update_counter();
+
+        // update mobility
+        if (this.main) {
+            for (let move of moves) {
+                if (!move.fen)
+                    continue;
+                this.chess_mobility(move);
+            }
+        }
     }
 
     /**
@@ -761,14 +771,38 @@ class XBoard {
 
     /**
      * Calculate the mobility
+     * @param {Move=} move if defined, then will get the fen from that move, and update the move
+     * @param {string=} fen
      * @returns {string}
      */
-    chess_mobility() {
+    chess_mobility(move, fen) {
+        if (move) {
+            if (move.mobile != undefined)
+                return move.mobile;
+            fen = move.fen;
+        }
+        this.chess.load(fen);
+
+        // calculate
         let checked = this.chess.checked(),
             moves = this.chess.moves({legal: true}),
-            sign = this.chess.turn() == 'w'? '-': '';
+            ply = extract_fen_ply(fen),
+            sign = this.chess.turn() == 'w'? -1: 1,
+            score = sign * (moves.length + (checked? 0: 0.5));
 
-        return `${sign}G${moves.length}${checked? '.0': '.5'}`;
+        if (this.goal[0] < 0 || Abs(score) < this.goal[0])
+            this.goal = [score, ply];
+
+        if (move) {
+            move.goal = [...this.goal];
+            move.mobile = score;
+        }
+
+        if (DEV.mobile) {
+            LS(`mobility: ${fen}`);
+            LS(`=> ${score}: ${ply} :: ${this.goal}`);
+        }
+        return score;
     }
 
     /**
@@ -1501,6 +1535,7 @@ class XBoard {
         if (this.check_locked())
             return;
 
+        this.goal = [-1, -1];
         this.grid.fill('');
         this.moves.length = 0;
         this.next = null;

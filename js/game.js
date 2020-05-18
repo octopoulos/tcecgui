@@ -2058,17 +2058,18 @@ function update_mobility() {
     if (!main)
         return;
 
-    main.chess_load(main.fen);
+    let ply = main.ply,
+        move = main.moves[ply];
+    if (!move)
+        return;
 
-    let mobility = main.chess_mobility(),
-        ply = main.ply,
-        turn = ply % 2;
+    let mobility = main.chess_mobility(move),
+        node = Id('mobile'),
+        [goal, gply] = move.goal;
 
-    if (mobility[0] == '-')
-        mobility = mobility.slice(1);
-
-    HTML(`#g${turn}`, mobility);
-    HTML(`#g${1 - turn}`, '&nbsp;');
+    HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
+    node.dataset.i = gply;
+    HTML(`#mobile${1 - ply % 2}`, Abs(mobility));
 }
 
 /**
@@ -3159,6 +3160,11 @@ function set_game_events() {
     // engine popup
     Events('#info0, #info1, #popup', 'click mouseenter mousemove mouseleave', function(e) {
         popup_custom('popup', 'engine', e, WHITE_BLACK[this.id.slice(-1)] || this.id);
+    });
+    C('#mobile', function() {
+        let ply = this.dataset.i;
+        if (ply != undefined)
+            xboards[Y.x].set_ply(ply, {manual: true});
     });
 
     // tabs
