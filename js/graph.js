@@ -18,13 +18,13 @@ let all_evals = [],
     chart_data = {},
     chart_id = 'eval',                  // currently selected chart: eval, node, ...
     CHART_NAMES = {
-        eval: 1,
-        time: 1,
-        speed: 1,
-        node: 1,
         depth: 1,
-        tb: 1,
+        eval: 1,
         mobil: 1,
+        node: 1,
+        speed: 1,
+        tb: 1,
+        time: 1,
     },
     charts = {},
     first_num = -1,
@@ -620,7 +620,8 @@ function update_player_chart(name, moves) {
     let datasets = data.datasets,
         labels = data.labels,
         num_move = moves.length,
-        offset = 0;
+        offset = 0,
+        ply_offset = (chart_id == 'mobil') * 1;
 
     // 2) skip all book moves
     while (offset < num_move && (!moves[offset] || moves[offset].book))
@@ -630,7 +631,7 @@ function update_player_chart(name, moves) {
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
             ply = get_move_ply(move),
-            num = ply;  // Floor(ply / 2);
+            num = ply;
         if (ply < -1)
             continue;
 
@@ -653,12 +654,9 @@ function update_player_chart(name, moves) {
             dico.y = clamp_eval(move.wv);
             break;
         case 'mobil':
-            let move2 = moves[i - 1];
-            if (!move2)
-                continue;
-            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move2.goal[0])});
-            dico.mobil = move2.mobil;
-            dico.y = Abs(move2.mobil);
+            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move.goal[0])});
+            dico.mobil = move.mobil;
+            dico.y = Abs(move.mobil);
             break;
         case 'node':
             dico.nodes = move.n;
@@ -676,7 +674,7 @@ function update_player_chart(name, moves) {
             break;
         }
 
-        datasets[ply % 2].data[num2] = dico;
+        datasets[(ply + ply_offset) % 2].data[num2] = dico;
     }
 
     fix_labels(labels);
