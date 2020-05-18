@@ -222,12 +222,6 @@ function Class(sel, class_, add=true, parent=null) {
 /**
  * Check if a list contains a pattern, using ^, $, *
  * @returns {boolean}
- * @example
- * Contain(['dn', 'mode'], 'mode')      // true, exact match
- * Contain(['dn', 'mode'], 'mod')       // false, exact match
- * Contain(['dn', 'mode'], '^mod')      // true, start
- * Contain(['dn', 'mode'], '*od')       // true, anywhere
- * Contain(['dn', 'mode'], '$de')       // true, end
  */
 function Contain(list, pattern) {
     let first = pattern.substr(0, 1),
@@ -342,7 +336,7 @@ function Events(sel, events, callback, options, parent) {
 /**
  * Check if a node has a class
  * @param {string|Node} node CSS selector or node
- * @param {string} class_
+ * @param {string} class_ can be multiple classes separated by spaces
  * @returns {boolean}
  */
 function HasClass(node, class_) {
@@ -352,6 +346,41 @@ function HasClass(node, class_) {
         return;
 
     return node.classList && node.classList.contains(class_);
+}
+
+/**
+ * Check if a node has classes
+ * @param {string|Node} node CSS selector or node
+ * @param {string} class_ can be multiple classes separated by spaces, with +/- and ^$* patterns
+ * @returns {boolean}
+ */
+function HasClasses(node, classes) {
+    if (typeof(node) == 'string')
+        node = _(node);
+    if (!node)
+        return;
+
+    let list = node.classList;
+    if (!list)
+        return;
+
+    // match all classes, ex: 'visible -shown'
+    for (let item of classes.split(' ')) {
+        let a = item.substr(0, 1),
+            b = item.substr(1);
+        if (a == '-') {
+            if (Contain(list, b))
+                return false;
+        }
+        else if (a == '+') {
+            if (!Contain(list, b))
+                return false;
+        }
+        else if (!Contain(list, item))
+            return false;
+    }
+
+    return true;
 }
 
 /**
@@ -917,10 +946,6 @@ function DownloadObject(object, name, is_raw) {
  * @param {string=} sep
  * @param {number=} align
  * @returns {string}
- * @example
- * Format([-1, 1, Math.PI])                 // -1.000 : 1.000 : 3.142
- * Format(Math.PI)                          // 3.142
- * Format({x: 1, y: 9, z: 2, w: -0.0004})   // 1.000 : 9.000 : 2.000 : 0.000
  */
 function Format(vector, sep=', ', align=null) {
     // null, undefined
@@ -1051,10 +1076,6 @@ function HashText(text) {
  * Check if an email is invalid
  * @param {string} email
  * @returns {boolean}
- * @example
- * InvalidEmail('hello@mail.com')   // false
- * InvalidEmail('hello@mail')       // true
- * InvalidEmail('hello')            // true
  */
 function InvalidEmail(email) {
     return !/^\w[\w.-]+@\w[\w-]+(\.\w+)+$/.test(email);
@@ -1064,11 +1085,6 @@ function InvalidEmail(email) {
  * Check if phone is invalid
  * @param {string} phone
  * @returns {boolean}
- * @example
- * InvalidPhone('911')              // true
- * InvalidPhone('+32 460-885 567')  // false
- * InvalidPhone('380(632345599')    // true
- * InvalidPhone('380(63)2345599')   // false
  */
 function InvalidPhone(phone) {
     return !/^[+]?([ -]?\d+|\(\d+\)){5,}$/.test(phone);

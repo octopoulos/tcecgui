@@ -19,7 +19,7 @@ let __PREFIX = '_',
     api = {},
     api_times = {},
     DEFAULTS = {
-        lan: '',
+        language: '',
         theme: '',
     },
     DEV = {},
@@ -278,7 +278,7 @@ function translate(text) {
     if (DEV.translate)
         TRANSLATES[text] = '';
 
-    if (Y.lan == 'eng')
+    if (Y.language == 'eng')
         return text.includes('{')? null: text.split('~')[0];
 
     // mode
@@ -625,7 +625,7 @@ function guess_browser_language() {
         lan = lan.split('-')[0];
         let index = indices[lan];
         if (index) {
-            Y.lan = index;
+            Y.language = index;
             break;
         }
     }
@@ -657,7 +657,7 @@ function load_defaults() {
     });
 
     // use browser language
-    if (!Y.lan)
+    if (!Y.language)
         guess_browser_language();
 }
 
@@ -1048,13 +1048,13 @@ function create_page_array(num_page, page, extra) {
  */
 function api_translate_get() {
     // 1) cached?
-    if (Y.lan == 'eng' || (translates._lan == Y.lan && Now() < (api_times.translate || 0) + TIMEOUT_translate)) {
+    if (Y.language == 'eng' || (translates._lan == Y.language && Now() < (api_times.translate || 0) + TIMEOUT_translate)) {
         translate_node('body');
         return;
     }
 
     // 2) call the API
-    Resource(`translate/${Y.lan}.json`, (code, data) => {
+    Resource(`translate/${Y.language}.json`, (code, data) => {
         if (code != 200)
             return;
         translates = data;

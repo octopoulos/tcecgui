@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, CHART_NAMES, check_hash, Clamp, Class, clear_timeout,
 controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document, Events, Exp,
-fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
 push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -26,7 +26,11 @@ virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
-let BOARD_THEMES = {
+let ANALYSIS_URLS = {
+        chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
+        lichess: 'https://lichess.org/analysis/standard/{FEN}',
+    },
+    BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
         chess24: ['#9e7863', '#633526'],
@@ -110,6 +114,7 @@ let BOARD_THEMES = {
         tour: 60,
         winner: 3600 * 24,
     },
+    context_target,
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -340,12 +345,13 @@ function format_eval(value, process) {
     if (items.length < 2)
         return text;
 
-    let abs = Abs(float);
-    if (abs < 10 && small_decimal != 'always')
-        return text;
-    if (abs < 100 && small_decimal == '>= 100')
-        return text;
-
+    if (small_decimal != 'always') {
+        let abs = Abs(float);
+        if (abs < 10 && small_decimal == '>= 10')
+            return text;
+        if (abs < 100 && small_decimal == '>= 100')
+            return text;
+    }
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
@@ -501,12 +507,24 @@ function reset_sub_boards(mode) {
 
 /**
  * Show/hide the timers around the board
+ * @param {boolean=} show undefined => show when center/engine is disabled
  */
-function show_board_info() {
-    let [active] = get_active_tab('engine'),
-        main = xboards[Y.x],
-        node = main.node,
-        show = (active != 'engine');
+function show_board_info(show) {
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    let node = main.node,
+        status = Y.status;
+
+    if (show == undefined) {
+        if (status == 'auto') {
+            let [active] = get_active_tab('engine');
+            show = (active != 'engine');
+        }
+        else
+            show = status;
+    }
 
     S('.xbottom, .xtop', show, node);
     Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
@@ -618,8 +636,9 @@ function analyse_crosstable(section, data) {
             let games = results[orders[id]];
             if (games) {
                 cross_row[abbrev] = games.Scores.map(game => {
-                    let score = game.Result;
-                    return ` <a data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                    let link = create_game_link(section, game.Game, '', true),
+                        score = game.Result;
+                    return ` <a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('').slice(1);
             }
         });
@@ -1361,7 +1380,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             save_option('game', game);
             open_game();
         }
-        else
+        // make sure the game is over
+        else if (_('a.game[href]', this))
             location.hash = create_game_link(section, game, '', true);
     }, table);
 
@@ -1415,6 +1435,10 @@ function analyse_seasons(data) {
 
     let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
     update_table(section, 'season', rows);
+
+    // don't load an archive game unless we're in the archive
+    if (Y.x != section)
+        return;
 
     let link = `season=${Y.season}&div=${Y.div}`,
         node = _(`[data-u="${link}"]`);
@@ -1974,6 +1998,13 @@ function resize_game() {
         board.resize(size);
     });
 
+    // status
+    if (Y.status == 'auto') {
+        let crect = Id('center').getBoundingClientRect(),
+            lrect = Id('left').getBoundingClientRect();
+        show_board_info(crect.top > lrect.top + lrect.height);
+    }
+
     resize_3d();
 }
 
@@ -2017,6 +2048,28 @@ function update_materials(move) {
         if (html != material)
             HTML(node, material);
     }
+}
+
+/**
+ * Update mobility
+ */
+function update_mobility() {
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    let ply = main.ply,
+        move = main.moves[ply];
+    if (!move)
+        return;
+
+    let mobility = main.chess_mobility(move),
+        node = Id('mobile'),
+        [goal, gply] = move.goal;
+
+    HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
+    node.dataset.i = gply;
+    HTML(`#mobile${1 - ply % 2}`, Abs(mobility));
 }
 
 /**
@@ -2232,8 +2285,8 @@ function update_overview_moves(section, headers, moves, is_new) {
     S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
     if (finished) {
         let result = headers.Result;
-        if (is_live && is_new && Y.crowd_sound)
-            play_sound(audiobox, (result == '1/2-1/2')? 'draw': 'win');
+        if (is_live && is_new)
+            play_sound(audiobox, (result == '1/2-1/2')? Y.sound_draw: Y.sound_win);
         if (DEV.new)
             LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
         main.set_last(result);
@@ -2305,6 +2358,8 @@ function update_pgn(section, pgn) {
         }
         main.round = headers.Round;
         new_game = true;
+        update_move_info(0, {});
+        update_move_info(1, {});
     }
 
     if (!num_move)
@@ -2314,6 +2369,7 @@ function update_pgn(section, pgn) {
     main.add_moves(moves);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
+    update_mobility();
 
     // got player info => can do h2h
     check_queued_tables();
@@ -2748,6 +2804,45 @@ function random_position() {
 /////////
 
 /**
+ * Changed a game setting
+ * - called by change_setting_special
+ */
+function change_setting_game(name, value) {
+    let section = Y.x,
+        main = xboards[section];
+
+    switch (name) {
+    case 'analysis_chessdb':
+    case 'analysis_lichess':
+        let parent = Parent(context_target, null, 'xboard');
+        if (parent) {
+            let board = xboards[parent.id],
+                url = ANALYSIS_URLS[name.split('_')[1]];
+            if (board)
+                window.open(url.replace('{FEN}', board.fen), '_blank');
+        }
+        break;
+    case 'copy_moves':
+        let target = context_target;
+        while (target && !HasClasses(target, 'live-pv xmoves'))
+            target = target.parentNode;
+        if (target)
+            CopyClipboard(target.innerText.replace(/\s/g, ' '));
+        break;
+    case 'show_ply':
+        Keys(xboards).forEach(key => {
+            let board = xboards[key];
+            if (!board.main)
+                board.compare_duals(main.ply);
+        });
+        break;
+    case 'status':
+        show_board_info();
+        break;
+    }
+}
+
+/**
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
@@ -2808,7 +2903,8 @@ function changed_section() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x;
+    let section = Y.x,
+        main = xboards[section];
 
     switch (type) {
     case 'activate':
@@ -2821,8 +2917,16 @@ function handle_board_events(board, type, value) {
             board.mode = (board.mode == 'html')? 'text': 'html';
             board.render(3);
         }
-        else if (value == 'rotate')
+        else if (value == 'rotate') {
             show_board_info();
+            // redraw the arrows
+            Keys(xboards).forEach(key => {
+                let board = xboards[key],
+                    id = board.live_id;
+                if (id != undefined)
+                    main.arrow(id, board.next, Y[`graph_color_${id + 2}`]);
+            });
+        }
         break;
     // move list => ply selected
     case 'move':
@@ -2834,13 +2938,8 @@ function handle_board_events(board, type, value) {
     // - if move is null, then hide the arrow
     case 'next':
         let id = board.live_id;
-        if (id != undefined) {
-            if (DEV.ply) {
-                LS(`next: ${id}`);
-                LS(value);
-            }
-            xboards[section].arrow(id, value, Y[`graph_color_${id + 2}`]);
-        }
+        if (id != undefined)
+            main.arrow(id, value, Y[`graph_color_${id + 2}`]);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -2864,6 +2963,7 @@ function handle_board_events(board, type, value) {
             update_live_eval(section, xboards.live1.evals[cur_ply], 1, cur_ply);
 
             update_materials(value);
+            update_mobility();
         }
         break;
     }
@@ -2888,6 +2988,10 @@ function open_table(sel, hide_table=true) {
     if (active) {
         Class(active, '-active');
         // only hide if the table has the same parent
+        // + special cases
+        if (['live0', 'live1'].includes(key) && !Y.live_tabs)
+            hide_table = false;
+
         if (hide_table)
             Hide(`#table-${active.dataset.x}`);
     }
@@ -3057,6 +3161,11 @@ function set_game_events() {
     Events('#info0, #info1, #popup', 'click mouseenter mousemove mouseleave', function(e) {
         popup_custom('popup', 'engine', e, WHITE_BLACK[this.id.slice(-1)] || this.id);
     });
+    C('#mobile', function() {
+        let ply = this.dataset.i;
+        if (ply != undefined)
+            xboards[Y.x].set_ply(ply, {manual: true});
+    });
 
     // tabs
     C('div.tab', function() {
@@ -3116,12 +3225,18 @@ function startup_game() {
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 0],
             book_sound: [ON_OFF, 1],
-            crowd_sound: [ON_OFF, 1],
-            move_sound: [ON_OFF, 1],
+            sound_capture: [['off', 'capture.mp3'], 'capture.mp3'],
+            sound_check: [['off', 'check'], 'check'],
+            sound_checkmate: [['off', 'checkmate'], 'checkmate'],
+            sound_draw: [['off', 'draw'], 'draw'],
+            sound_move: [['off', 'move', 'move.mp3'], 'move'],
+            sound_win: [['off', 'win'], 'win'],
         },
         // separator
         _1: {},
         board: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
             animate: [ON_OFF, 1],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
@@ -3134,8 +3249,11 @@ function startup_game() {
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
+            status: [['auto', 'on', 'off'], 'auto'],
         },
         board_pv: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             custom_black_pv: [{type: 'color'}, '#000000'],

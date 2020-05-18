@@ -18,8 +18,8 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-        Clamp, DefaultFloat, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText, QueryString, Split,
-        Stringify, Title, Undefined,
+        Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
+        InvalidEmail, InvalidPhone, QueryString, Split, Stringify, Title, Undefined,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,6 +37,19 @@ let {
     });
 });
 
+// Contain
+[
+    [['dn', 'mode'], 'mode', true],
+    [['dn', 'mode'], 'mod', false],
+    [['dn', 'mode'], '^mod', true],
+    [['dn', 'mode'], '*od', true],
+    [['dn', 'mode'], '$de', true],
+].forEach(([list, pattern, answer], id) => {
+    test(`Contain:${id}`, () => {
+        expect(Contain(list, pattern)).toEqual(answer);
+    });
+});
+
 // DefaultFloat
 [
     [undefined, undefined, undefined],
@@ -49,6 +62,18 @@ let {
 ].forEach(([value, def, answer], id) => {
     test(`DefaultFloat:${id}`, () => {
         expect(DefaultFloat(value, def)).toEqual(answer);
+    });
+});
+
+// Format
+[
+    [[-1, 1, Math.PI], undefined, undefined, '-1, 1, 3.142'],
+    [[-1, 1, Math.PI], ' : ', undefined, '-1 : 1 : 3.142'],
+    [Math.PI, undefined, undefined, '3.142'],
+    [{x: 1, y: 9, z: 2, w: -0.0004}, undefined, undefined, '1, 9, 2, 0'],
+].forEach(([vector, sep, align, answer], id) => {
+    test(`Format:${id}`, () => {
+        expect(Format(vector, sep, align)).toEqual(answer);
     });
 });
 
@@ -124,6 +149,29 @@ let {
 ].forEach(([text, answer], id) => {
     test(`HashText:${id}`, () => {
         expect(HashText(text)).toEqual(answer);
+    });
+});
+
+// InvalidEmail
+[
+    ['hello@mail.com', false],
+    ['hello@mail', true],
+    ['hello', true],
+].forEach(([email, answer], id) => {
+    test(`InvalidEmail:${id}`, () => {
+        expect(InvalidEmail(email)).toEqual(answer);
+    });
+});
+
+// InvalidPhone
+[
+    ['911', true],
+    ['+32 460-885 567', false],
+    ['380(632345599', true],
+    ['380(63)2345599', false],
+].forEach(([phone, answer], id) => {
+    test(`InvalidPhone:${id}`, () => {
+        expect(InvalidPhone(phone)).toEqual(answer);
     });
 });
 

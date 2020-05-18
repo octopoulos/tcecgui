@@ -94,6 +94,19 @@ live.dual = archive;
     });
 });
 
+// chess_mobility
+[
+    ['5k2/5Q2/5K2/8/8/8/8/8 b - - 0 1', 0],
+    ['8/8/8/8/8/5k2/5p2/5K2 w - - 0 1', -0.5],
+    ['8/8/7k/5B2/6K1/8/8/8 b - - 0 1', 1.5],
+    ['8/8/4k3/5q2/6K1/8/8/8 w - - 0 1', -2],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', -20.5],
+].forEach(([fen, answer], id) => {
+    test(`chess_mobility:${id}`, () => {
+        expect(live.chess_mobility(null, fen)).toEqual(answer);
+    });
+});
+
 // chess_move
 [
     [START_FEN, 'd5', null],

@@ -20,6 +20,7 @@ all.*
 archive/
 bracket.json
 chart.js
+chess.js
 crash.json
 create_list.js
 crosstable.json

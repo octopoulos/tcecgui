@@ -970,8 +970,14 @@ function gamepad_update() {
  * @param {number=} volume
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0, voice, volume=1}={}) {
-    if (!cube || !cube.sounds)
+    if (!cube || !cube.sounds || !name)
         return;
+
+    // ext can be in the name
+    let items = name.split('.');
+    if (items.length == 1)
+        name = `${name}.${ext}`;
+
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
     if (audio && frame && audio.frame == frame)
@@ -1002,7 +1008,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
 
     // load & seek
     if (!audio) {
-        audio = new Audio(`sound/${_ || name}.${ext}`);
+        audio = new Audio(`sound/${_ || name}`);
         audio.promise = Promise.resolve();
         cube.sounds[name] = audio;
     }
@@ -1031,8 +1037,9 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
  * Change a setting
  * @param {string} name
  * @param {string|number} value
+ * @param {boolean=} no_close don't close the popup
  */
-function change_setting(name, value) {
+function change_setting(name, value, no_close) {
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
         if (!isNaN(value))
@@ -1040,16 +1047,15 @@ function change_setting(name, value) {
         save_option(name, value);
     }
 
-    if (virtual_change_setting_special && virtual_change_setting_special(name, value))
+    if (virtual_change_setting_special && virtual_change_setting_special(name, value, no_close))
         return;
 
     switch (name) {
     case 'language':
-        save_option('lan', value);
         if (value == 'eng' || translates._lan == value)
             translate_node('body');
         else if (value != 'eng')
-            add_timeout('lan', api_translate_get, 100);
+            add_timeout('language', api_translate_get, 100);
         break;
     case 'theme':
         update_theme([value]);
@@ -1323,19 +1329,40 @@ function set_modal_events(parent) {
             }
         }
     }, parent);
-    //
+
+    // right click on item => reset to default
+    Events('.item', 'contextmenu', function(e) {
+        let next = this.nextElementSibling;
+        if (next) {
+            next = _('input, select', next);
+            if (next) {
+                let name = next.name,
+                    def = DEFAULTS[name];
+                if (def != undefined) {
+                    next.value = def;
+                    save_option(name, def);
+                    change_setting(name, def, true);
+                }
+            }
+        }
+        e.preventDefault();
+    }, parent);
+
+    // inputs
     Events('input, select', 'change', function() {
         done_touch();
-        change_setting(this.name, this.value);
+        change_setting(this.name, this.value, this.tagName == 'INPUT');
     }, {}, parent);
-    Input('input, select', () => {
+    //
+    Input('input, select', function() {
         done_touch();
-        change_setting();
+        change_setting(undefined, undefined, this.tagName == 'INPUT');
     }, parent);
-    C('input, select', () => {
+    //
+    C('input, select', function() {
         if (cannot_click())
             return;
-        change_setting();
+        change_setting(undefined, undefined, this.tagName == 'INPUT');
     }, parent);
     //
     C('div[name]', function() {
@@ -1364,6 +1391,7 @@ function start_3d() {
 function startup_3d() {
     merge_settings({
         general: {
+            export_settings: '1',
             language: [LANGUAGES, 'eng'],
             theme: [THEMES, THEMES[0]],
         },

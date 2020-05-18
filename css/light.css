@@ -560,6 +560,12 @@ grid {
 .current {
     font-weight: 700;
 }
+.mobil:after {
+    content: '>';
+}
+.mobil:before {
+    content: '<';
+}
 .seen {
     background-color: #222 !important;
     color: #ff0 !important;
