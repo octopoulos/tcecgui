@@ -101,8 +101,8 @@ function create_chart_data() {
         },
         mobil: {
             datasets: [
-                new_dataset('B. Mobility', Y.graph_color_1),
                 new_dataset('W. Mobility', Y.graph_color_0),
+                new_dataset('B. Mobility', Y.graph_color_1),
                 new_dataset('r-mobility', '#7e7eff', '', {borderDash: [10, 5]}),
             ],
             labels: [],
@@ -653,9 +653,12 @@ function update_player_chart(name, moves) {
             dico.y = clamp_eval(move.wv);
             break;
         case 'mobil':
-            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move.goal[0])});
-            dico.mobil = move.mobil;
-            dico.y = Abs(move.mobil);
+            let move2 = moves[i - 1];
+            if (!move2)
+                continue;
+            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move2.goal[0])});
+            dico.mobil = move2.mobil;
+            dico.y = Abs(move2.mobil);
             break;
         case 'node':
             dico.nodes = move.n;
