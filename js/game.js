@@ -1669,11 +1669,12 @@ function calculate_event_stats(section, rows) {
     }
 
     let stats = event_stats[section],
-        [date, time] = FromTimestamp(stats._end);
+        [end_date, end_time] = FromTimestamp(stats._end),
+        [start_date, start_time] = FromTimestamp(start);
 
     Assign(stats, {
-        start_time: start,
-        end_time: `${time} on 20${date.replace(/-/g, '.')}`,
+        start_time: `${start_time} on 20${start_date}`,
+        end_time: `${end_time} on 20${end_date}`,
         duration: format_hhmmss(stats._duration),
         avg_moves: Round(moves / games),
         avg_time: format_hhmmss(seconds / games),
