@@ -618,10 +618,10 @@ function update_player_chart(name, moves) {
         return;
 
     let datasets = data.datasets,
+        invert_wb = (chart_id == 'mobil') * 1,
         labels = data.labels,
         num_move = moves.length,
-        offset = 0,
-        ply_offset = (chart_id == 'mobil') * 1;
+        offset = 0;
 
     // 2) skip all book moves
     while (offset < num_move && (!moves[offset] || moves[offset].book))
@@ -674,7 +674,7 @@ function update_player_chart(name, moves) {
             break;
         }
 
-        datasets[(ply + ply_offset) % 2].data[num2] = dico;
+        datasets[(ply + invert_wb) % 2].data[num2] = dico;
     }
 
     fix_labels(labels);
