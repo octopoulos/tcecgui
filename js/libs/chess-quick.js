@@ -839,9 +839,5 @@ var Chess = function(fen) {
         reset: () => {
             return reset();
         },
-
-        turn: () => {
-            return turn;
-        },
     };
 };

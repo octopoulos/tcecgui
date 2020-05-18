@@ -169,7 +169,7 @@ class XBoard {
         this.dual = null;
         this.evals = [];                                // eval history
         this.fen = START_FEN;                           // current fen
-        this.goal = [-1, -1];
+        this.goal = [-20.5, -1];
         this.grid = new Array(128);
         this.high_color = '';                           // highlight color
         this.high_size = 0.06;                          // highlight size
@@ -771,34 +771,31 @@ class XBoard {
 
     /**
      * Calculate the mobility
-     * @param {Move=} move if defined, then will get the fen from that move, and update the move
-     * @param {string=} fen
+     * @param {Move} move
      * @returns {string}
      */
-    chess_mobility(move, fen) {
-        if (move) {
-            if (move.mobile != undefined)
-                return move.mobile;
-            fen = move.fen;
-        }
+    chess_mobility(move) {
+        if (move.mobil != undefined)
+            return move.mobil;
+
+        let fen = move.fen,
+            ply = get_move_ply(move);
         this.chess.load(fen);
 
         // calculate
         let checked = this.chess.checked(),
             moves = this.chess.moves({legal: true}),
-            ply = extract_fen_ply(fen),
-            sign = this.chess.turn() == 'w'? -1: 1,
+            rule50 = fen.split(' ')[4] * 1,
+            sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
 
-        if (this.goal[0] < 0 || Abs(score) < this.goal[0])
+        if (!rule50 || Abs(score) < Abs(this.goal[0]))
             this.goal = [score, ply];
 
-        if (move) {
-            move.goal = [...this.goal];
-            move.mobile = score;
-        }
+        move.goal = [...this.goal];
+        move.mobil = score;
 
-        if (DEV.mobile) {
+        if (DEV.mobil) {
             LS(`mobility: ${fen}`);
             LS(`=> ${score}: ${ply} :: ${this.goal}`);
         }
@@ -1535,7 +1532,7 @@ class XBoard {
         if (this.check_locked())
             return;
 
-        this.goal = [-1, -1];
+        this.goal = [-20.5, -1];
         this.grid.fill('');
         this.moves.length = 0;
         this.next = null;

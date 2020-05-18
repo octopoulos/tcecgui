@@ -4,7 +4,7 @@
 //
 /*
 globals
-_, $, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
+_, $, Abs, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
 Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
 */
 'use strict';
@@ -24,6 +24,7 @@ let all_evals = [],
         node: 1,
         depth: 1,
         tb: 1,
+        mobil: 1,
     },
     charts = {},
     first_num = -1,
@@ -98,6 +99,14 @@ function create_chart_data() {
             datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
             labels: [],
         },
+        mobil: {
+            datasets: [
+                new_dataset('W. Mobility', Y.graph_color_0),
+                new_dataset('B. Mobility', Y.graph_color_1),
+                new_dataset('r-mobility', '#7e7eff', '', {borderDash: [10, 5]}),
+            ],
+            labels: [],
+        },
         node: {
             datasets: [
                 new_dataset('White Speeds', Y.graph_color_0, 'y-axis-1'),
@@ -114,8 +123,8 @@ function create_chart_data() {
         },
         tb: {
             datasets: [
-                new_dataset('White TB Hits', Y.graph_color_0, 'tb-y-axis-1'),
-                new_dataset('Black TB Hits', Y.graph_color_1, 'tb-y-axis-2'),
+                new_dataset('White TB Hits', Y.graph_color_0, 'y-axis-1'),
+                new_dataset('Black TB Hits', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],
         },
@@ -202,7 +211,32 @@ function create_charts()
                 xAxes: [x_axes],
                 yAxes: [{
                     display: true,
-                    id: 'e-y-axis-1',
+                    id: 'y-axis-1',
+                    position: 'left',
+                    type: 'linear',
+                }],
+            },
+        }),
+        type: 'line',
+    });
+
+    charts.mobil = charts.mobil || new Chart('chart-mobil', {
+        data: chart_data.mobil,
+        options: Assign(Assign({}, options), {
+            bezierCurve: false,
+            legend: {
+                display: true,
+                fontSize: 5,
+                position: 'bottom',
+                labels: {
+                    boxWidth: 1
+                },
+            },
+            scales: {
+                xAxes: [x_axes],
+                yAxes: [{
+                    display: true,
+                    id: 'y-axis-1',
                     position: 'left',
                     type: 'linear',
                 }],
@@ -297,7 +331,7 @@ function create_charts()
                 xAxes: [x_axes],
                 yAxes: [{
                     display: true,
-                    id: 'tb-y-axis-1',
+                    id: 'y-axis-1',
                     position: 'left',
                     ticks: {
                         callback: FormatUnit,
@@ -308,7 +342,7 @@ function create_charts()
                     gridLines: {
                         drawOnChartArea: false,
                     },
-                    id: 'tb-y-axis-2',
+                    id: 'y-axis-2',
                     position: 'right',
                     ticks: {
                         callback: FormatUnit,
@@ -617,6 +651,11 @@ function update_player_chart(name, moves) {
         case 'eval':
             dico.eval = move.wv;
             dico.y = clamp_eval(move.wv);
+            break;
+        case 'mobil':
+            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move.goal[0])});
+            dico.mobil = move.mobil;
+            dico.y = Abs(move.mobil);
             break;
         case 'node':
             dico.nodes = move.n;
