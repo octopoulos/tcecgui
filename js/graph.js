@@ -621,7 +621,8 @@ function update_player_chart(name, moves) {
         invert_wb = (chart_id == 'mobil') * 1,
         labels = data.labels,
         num_move = moves.length,
-        offset = 0;
+        offset = 0,
+        ply_offset = (chart_id == 'mobil') * 1;
 
     // 2) skip all book moves
     while (offset < num_move && (!moves[offset] || moves[offset].book))
