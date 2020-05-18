@@ -17,14 +17,35 @@ let CHART_JS = 'js/libs/chart-quick.js',
 let all_evals = [],
     chart_data = {},
     chart_id = 'eval',                  // currently selected chart: eval, node, ...
-    CHART_NAMES = {
-        depth: 1,
-        eval: 1,
-        mobil: 1,
-        node: 1,
-        speed: 1,
-        tb: 1,
-        time: 1,
+    CHART_LEGEND = {
+        display: true,
+        fontSize: 5,
+        position: 'bottom',
+        labels: {
+            boxWidth: 1
+        },
+    },
+    CHART_OPTIONS = {
+        bezierCurve: false,
+        hoverMode: 'index',
+        legend: {
+            display: false
+        },
+        maintainAspectRatio: false,
+        responsive: true,
+        spanGaps: true,
+        title: {
+            display: false,
+        },
+        tooltips: {
+            mode: 'index',
+        },
+    },
+    CHART_X_AXES = {
+        ticks: {
+            callback: (value, _index, values) => (values.length < 25)? value: Floor(value),
+            maxTicksLimit: 25,
+        },
     },
     charts = {},
     first_num = -1,
@@ -145,251 +166,29 @@ function create_chart_data() {
  */
 function create_charts()
 {
-    // 1) common options
-    let options = {
-            hoverMode: 'index',
-            legend: {
-                display: false
-            },
-            maintainAspectRatio: false,
-            responsive: true,
-            spanGaps: true,
-            title: {
-                display: false,
-            },
-            tooltips: {
-                mode: 'index',
-            },
-        },
-        x_axes = {
-            ticks: {
-                autoSkip: true,
-                callback: tick => ((tick * 2) % 2)? '': tick,
-                // TODO: this value should change with the canvas width
-                maxTicksLimit: 25,
-            },
-        };
-
-    // 2) create all charts
-    charts.depth = charts.depth || new Chart('chart-depth', {
-        data: chart_data.depth,
-        options: Assign(Assign({}, options), {
-            legend: {
-                display: true,
-                fontSize: 5,
-                labels: {
-                    boxWidth: 1,
-                },
-                position: 'bottom',
-            },
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'd-y-axis-1',
-                    position: 'left',
-                    type: 'linear',
-                }],
-            },
-        }),
-        type: 'line',
+    // 1) create all charts
+    new_chart('depth', true, [1]);
+    new_chart('eval', true, [1]);
+    new_chart('mobil', true, [1]);
+    new_chart('node', false, [1, 2], FormatUnit, (tooltipItem, data) => {
+        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
+        return nodes;
     });
-
-    charts.eval = charts.eval || new Chart('chart-eval', {
-        data: chart_data.eval,
-        options: Assign(Assign({}, options), {
-            bezierCurve: false,
-            legend: {
-                display: true,
-                fontSize: 5,
-                position: 'bottom',
-                labels: {
-                    boxWidth: 1
-                },
-            },
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'y-axis-1',
-                    position: 'left',
-                    type: 'linear',
-                }],
-            },
-        }),
-        type: 'line',
+    new_chart('speed', false, [1, 2], FormatUnit, (tooltipItem, data) => {
+        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
+            speed = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+        return `${speed}nps (${nodes} nodes)`;
     });
-
-    charts.mobil = charts.mobil || new Chart('chart-mobil', {
-        data: chart_data.mobil,
-        options: Assign(Assign({}, options), {
-            bezierCurve: false,
-            legend: {
-                display: true,
-                fontSize: 5,
-                position: 'bottom',
-                labels: {
-                    boxWidth: 1
-                },
-            },
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'y-axis-1',
-                    position: 'left',
-                    type: 'linear',
-                }],
-            },
-        }),
-        type: 'line',
+    new_chart('tb', false, [1, 2], FormatUnit, (tooltipItem, data) => {
+        let hits = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+        return hits;
     });
+    new_chart('time', false, [1], undefined, (tooltipItem, data) => {
+        let [_, min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+        return `${min}:${Pad(sec)}`;
+    }, {backgroundColor: 'rgb(10, 10, 10)'});
 
-    charts.node = charts.node || new Chart('chart-node', {
-        data: chart_data.node,
-        options: Assign(Assign({}, options), {
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'y-axis-1',
-                    position: 'left',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }, {
-                    display: true,
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    id: 'y-axis-2',
-                    position: 'right',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }],
-            },
-            tooltips: {
-                callbacks: {
-                    label: (tooltipItem, data) => {
-                        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
-                        return nodes;
-                    },
-                },
-                mode: 'index',
-            },
-        }),
-        type: 'line',
-    });
-
-    charts.speed = charts.speed || new Chart('chart-speed', {
-        data: chart_data.speed,
-        options: Assign(Assign({}, options), {
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'y-axis-1',
-                    position: 'left',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }, {
-                    display: true,
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    id: 'y-axis-2',
-                    position: 'right',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }],
-            },
-            tooltips: {
-                callbacks: {
-                    label: (tooltipItem, data) => {
-                        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
-                            speed = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
-                        return `${speed}nps (${nodes} nodes)`;
-                    },
-                },
-                mode: 'index',
-            },
-        }),
-        type: 'line',
-    });
-
-    charts.tb = charts.tb || new Chart('chart-tb', {
-        data: chart_data.tb,
-        options: Assign(Assign({}, options), {
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 'y-axis-1',
-                    position: 'left',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }, {
-                    display: true,
-                    gridLines: {
-                        drawOnChartArea: false,
-                    },
-                    id: 'y-axis-2',
-                    position: 'right',
-                    ticks: {
-                        callback: FormatUnit,
-                    },
-                    type: 'linear',
-                }],
-            },
-            tooltips: {
-                callbacks: {
-                    label: (tooltipItem, data) => {
-                        let hits = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
-                        return hits;
-                    },
-                },
-                mode: 'index',
-            },
-        }),
-        type: 'line',
-    });
-
-    charts.time = charts.time || new Chart('chart-time', {
-        data: chart_data.time,
-        options: Assign(Assign({}, options), {
-            backgroundColor: 'rgb(10, 10, 10)',
-            scales: {
-                xAxes: [x_axes],
-                yAxes: [{
-                    display: true,
-                    id: 't-y-axis-1',
-                    position: 'left',
-                    type: 'linear',
-                }],
-            },
-            tooltips: {
-                callbacks: {
-                    label: (tooltipItem, data) => {
-                        let [_, min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
-                        return `${min}:${Pad(sec)}`;
-                    },
-                },
-                mode: 'index',
-            },
-        }),
-        type: 'line',
-    });
-
-    // 3) click events
+    // 2) click events
     Keys(charts).forEach(name => {
         C(`#chart-${name}`, e => {
             let chart = charts[name],
@@ -446,6 +245,45 @@ function invert_eval(eval_) {
 }
 
 /**
+ * Create a new chart
+ * - an element with id="chart-{name}" must exist
+ * @param {string} name
+ * @param {boolean} has_legend
+ * @param {number[]} y_axes [1] or [1, 2]
+ * @param {function=} scale_callback FormatUnit
+ * @param {function=} tooltip_callback
+ * @param {Object=} dico
+ */
+function new_chart(name, has_legend, y_axes, scale_callback, tooltip_callback, dico) {
+    let options = Assign(Assign({}, CHART_OPTIONS), {
+        scales: {
+            xAxes: [CHART_X_AXES],
+            yAxes: y_axes.map(id => new_y_axis(id, scale_callback)),
+        },
+    });
+
+    if (has_legend)
+        options.legend = Assign({}, CHART_LEGEND);
+
+    if (tooltip_callback)
+        options.tooltips = {
+            callbacks: {
+                label: tooltip_callback,
+            },
+            mode: 'index',
+        };
+
+    if (dico)
+        Assign(options, dico);
+
+    charts[name] = charts[name] || new Chart(`chart-${name}`, {
+        data: chart_data[name],
+        options: options,
+        type: 'line',
+    });
+}
+
+/**
  * Create a dataset
  * - prevents excessive copy/pasting => makes the code a lot shorter!
  * @param {string} label
@@ -468,6 +306,32 @@ function new_dataset(label, color, yaxis, dico) {
     if (dico)
         Assign(dataset, dico);
     return dataset;
+}
+
+/**
+ * Create a Y axis
+ * @param {number} id 1 for left, 2 for right
+ * @param {function=} callback
+ * @param {Object=} dico
+ * @returns {Object}
+ */
+function new_y_axis(id, callback, dico) {
+    let y_axis = {
+        display: true,
+        id: `y-axis-${id}`,
+        position: (id == 1)? 'left': 'right',
+        type: 'linear',
+    };
+
+    if (id == 2)
+        y_axis.gridLines = {drawOnChartArea: false};
+
+    if (callback)
+        y_axis.ticks = {callback: callback};
+
+    if (dico)
+        Assign(y_axis, dico);
+    return y_axis;
 }
 
 /**
@@ -621,8 +485,7 @@ function update_player_chart(name, moves) {
         invert_wb = (chart_id == 'mobil') * 1,
         labels = data.labels,
         num_move = moves.length,
-        offset = 0,
-        ply_offset = (chart_id == 'mobil') * 1;
+        offset = 0;
 
     // 2) skip all book moves
     while (offset < num_move && (!moves[offset] || moves[offset].book))
