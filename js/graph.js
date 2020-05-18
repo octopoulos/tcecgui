@@ -101,8 +101,8 @@ function create_chart_data() {
         },
         mobil: {
             datasets: [
-                new_dataset('W. Mobility', Y.graph_color_0),
                 new_dataset('B. Mobility', Y.graph_color_1),
+                new_dataset('W. Mobility', Y.graph_color_0),
                 new_dataset('r-mobility', '#7e7eff', '', {borderDash: [10, 5]}),
             ],
             labels: [],
