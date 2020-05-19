@@ -18,11 +18,12 @@ check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value
 download_live, download_tables, DownloadObject, E, Events, game_action_key, game_action_keyup, get_active_tab,
 get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, popup_custom, reset_old_settings, resize_game, Round,
+merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, popup_custom, reset_old_settings,
+resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
 tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme,
-update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
+update_chart_options, update_debug, update_player_charts, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, xboards, Y
 */
@@ -34,7 +35,7 @@ let AD_STYLES = {
     },
     CONTEXT_MENUS = {
         '#charts, #charts2': 'graph',
-        '#eval0, #eval1': 'extra',
+        '#eval0, #eval1, #quick-search, #table-search': 'extra',
         '#lives': 'live',
         '.pagin': 'extra',
         '#quick-tabs': 'quick',
@@ -99,6 +100,16 @@ function adjust_popups() {
 }
 
 /**
+ * Generate the combined color
+ */
+function arrow_combine_colors() {
+    let mix = mix_hex_colors(Y.arrow_color_2, Y.arrow_color_3, 0.5),
+        field = 'arrow_combine_23';
+    save_option(field, mix);
+    (_(`input[name="${field}"]`) || {}).value = mix;
+}
+
+/**
  * Handler for change settings
  * @param {string} name
  * @param {string|number} value
@@ -116,6 +127,8 @@ function change_setting_special(name, value, no_close) {
         if (modal && modal.dataset.xy)
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
+
+    let field;
 
     switch (name) {
     case 'animate':
@@ -142,19 +155,23 @@ function change_setting_special(name, value, no_close) {
     case 'window_width':
         resize();
         break;
+    case 'combine_colors':
+        arrow_combine_colors();
+        break;
     case 'copy_from_graph':
-        for (let id = 0; id < 4; id ++) {
+        for (let id = 2; id < 4; id ++) {
             let field = `arrow_color_${id}`;
             save_option(field, Y[`graph_color_${id}`]);
             (_(`input[name="${field}"]`) || {}).value = Y[field];
         }
+        arrow_combine_colors();
         break;
     case 'custom_black':
     case 'custom_black_pv':
     case 'custom_white':
     case 'custom_white_pv':
-        let is_pv = (name.slice(-2) == 'pv'),
-            field = `board_theme${is_pv? '_pv': ''}`;
+        let is_pv = (name.slice(-2) == 'pv');
+        field = `board_theme${is_pv? '_pv': ''}`;
         save_option(field, 'custom');
         (_(`select[name="${field}"]`) || {}).value = Y[field];
         update_board_theme(is_pv? 2: 1);
@@ -193,6 +210,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'live_tabs':
         show_live_engines();
+        break;
+    case 'mobility':
+        update_visible();
         break;
     case 'move_height':
     case 'move_height_live':
@@ -348,6 +368,8 @@ function create_url_list(dico) {
  * Ran once at the last initialisation step
  */
 function init_globals() {
+    HTML('#version', VERSION);
+
     // load local data directly, and later online data
     update_shortcuts();
     download_tables(true);
@@ -564,6 +586,8 @@ function resize_move_lists() {
  * @param {boolean=} force
  */
 function resize_panels(force) {
+    update_visible();
+
     // swaps
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
@@ -583,22 +607,9 @@ function resize_panels(force) {
     Attrs('#eval', {'data-t': (width > 330)? 'Evaluation': 'Eval'});
     translate_node('#table-engine');
 
-    let is_hori = (width >= 390);
-
-    // show/hide stuff
-    S('#lives', !Y.live_hide);
-    S('.status', Y.status_pv);
-    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
-    S('#box-pv0 .eval, #player0 .eval', !Y.hide_eval_0);
-    S('#box-pv1 .eval, #player1 .eval', !Y.hide_eval_1);
-    S('#box-live0 .eval, #table-live0 .eval', !Y.hide_eval_2);
-    S('#box-live1 .eval, #table-live1 .eval', !Y.hide_eval_3);
-    S('#pv0 .xmoves, #player0 .live-pv', !Y.hide_moves_0);
-    S('#pv1 .xmoves, #player1 .live-pv', !Y.hide_moves_1);
-    S('#live0 .xmoves, #table-live0 .live-pv', !Y.hide_moves_2);
-    S('#live1 .xmoves, #table-live1 .live-pv', !Y.hide_moves_3);
-
     // column/row mode
+    let is_hori = (width >= 390);
+    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
     Class('.xmoves', 'column', !is_hori, center);
     Class('.xboard', 'fcol', is_hori, center);
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
@@ -780,6 +791,23 @@ function update_shortcuts() {
         }
         S(tab, shortcut);
     }
+}
+
+/**
+ * Show/hide stuff
+ */
+function update_visible() {
+    S('#lives', !Y.live_hide);
+    S('.status', Y.status_pv);
+    S('#box-pv0 .eval, #player0 .eval', !Y.hide_eval_0);
+    S('#box-pv1 .eval, #player1 .eval', !Y.hide_eval_1);
+    S('#box-live0 .eval, #table-live0 .eval', !Y.hide_eval_2);
+    S('#box-live1 .eval, #table-live1 .eval', !Y.hide_eval_3);
+    S('#pv0 .xmoves, #player0 .live-pv', !Y.hide_moves_0);
+    S('#pv1 .xmoves, #player1 .live-pv', !Y.hide_moves_1);
+    S('#live0 .xmoves, #table-live0 .live-pv', !Y.hide_moves_2);
+    S('#live1 .xmoves, #table-live1 .live-pv', !Y.hide_moves_3);
+    S('#mobil_, #mobil0, #mobil1', Y.mobility);
 }
 
 // MAIN
@@ -989,6 +1017,14 @@ function set_global_events() {
     Keys(CONTEXT_MENUS).forEach(key => {
         Events(key, 'contextmenu', function(e) {
             context_target = e.target;
+
+            // skip some elements
+            let tag = context_target.tagName;
+            if (['INPUT', 'SELECT'].includes(tag))
+                return;
+            if (tag == 'A' && context_target.href)
+                return;
+
             show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
             e.preventDefault();
         });
@@ -1009,7 +1045,7 @@ function set_global_events() {
             else if (HasClass(target, 'xcontrol'))
                 name = 'control';
             else if (HasClass(target, 'xmoves'))
-                name = is_pv? 'moves_pv': 'moves';
+                name = `copy${is_pv? '_pv': ''}`;
 
             if (name) {
                 context_target = target;
@@ -1094,9 +1130,12 @@ function startup() {
     startup_3d();
     startup_game();
 
-    let shortcuts = [...['off'], ...Keys(TABLES)];
+    let positions = ['off', 'bottom', 'center', 'left', 'right', 'top'],
+        shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
+        // new column after 7 items
+        _split: 9,
         control: {
             key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
@@ -1125,6 +1164,7 @@ function startup() {
             hide_moves_1: [ON_OFF, 0],
             hide_moves_2: [ON_OFF, 0],
             hide_moves_3: [ON_OFF, 0],
+            live_hide: [ON_OFF, 0],
         },
         panel: {
             panel_adjust: [ON_OFF, 1],
@@ -1132,6 +1172,21 @@ function startup() {
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
             window_width: [{max: 32000, min: 256, type: 'number'}, 1920],
+        },
+        position: {
+            board_kibitz: [positions, 'center'],
+            board_pv: [positions, 'center'],
+            board_pva: [positions, 'center'],
+            engine: [positions, 'center'],
+            graph_depth: [positions, 'center'],
+            graph_eval: [positions, 'center'],
+            graph_mobil: [positions, 'center'],
+            graph_node: [positions, 'center'],
+            graph_speed: [positions, 'center'],
+            graph_tb: [positions, 'center'],
+            graph_time: [positions, 'center'],
+            move_kibitz: [positions, 'left'],
+            move_pv: [positions, 'left'],
         },
         quick: {
             chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
