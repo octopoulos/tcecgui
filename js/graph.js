@@ -43,8 +43,8 @@ let all_evals = [],
     },
     CHART_X_AXES = {
         ticks: {
-            callback: (value, _index, values) => (values.length < 25)? value: Floor(value),
-            maxTicksLimit: 25,
+            callback: (value, _index, values) => (values.length <= 20)? value: Floor(value),
+            maxTicksLimit: 20,
         },
     },
     charts = {},

@@ -116,12 +116,11 @@ function change_setting_special(name, value, no_close) {
         if (modal && modal.dataset.xy)
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
+    LS(`name=${name} : value=${value}`);
 
     switch (name) {
     case 'animate':
     case 'board_theme':
-    case 'custom_black':
-    case 'custom_white':
     case 'highlight_color':
     case 'highlight_size':
     case 'notation':
@@ -130,8 +129,6 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'animate_pv':
     case 'board_theme_pv':
-    case 'custom_black_pv':
-    case 'custom_white_pv':
     case 'highlight_color_pv':
     case 'highlight_size_pv':
     case 'notation_pv':
@@ -145,6 +142,23 @@ function change_setting_special(name, value, no_close) {
     case 'panel_right':
     case 'window_width':
         resize();
+        break;
+    case 'copy_from_graph':
+        for (let id = 0; id < 4; id ++) {
+            let field = `arrow_color_${id}`;
+            save_option(field, Y[`graph_color_${id}`]);
+            (_(`input[name="${field}"]`) || {}).value = Y[field];
+        }
+        break;
+    case 'custom_black':
+    case 'custom_black_pv':
+    case 'custom_white':
+    case 'custom_white_pv':
+        let is_pv = (name.slice(-2) == 'pv'),
+            field = `board_theme${is_pv? '_pv': ''}`;
+        save_option(field, 'custom');
+        (_(`select[name="${field}"]`) || {}).value = Y[field];
+        update_board_theme(is_pv? 2: 1);
         break;
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
@@ -692,7 +706,6 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             y = xy[1];
             x2 = x;
             y2 = y;
-            node.dataset.xy = xy;
         }
         else if (name && !px) {
             let target = Id(name);
@@ -729,6 +742,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             }
         }
 
+        node.dataset.xy = xy || '';
         Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
     }
 
@@ -897,7 +911,14 @@ function set_global_events() {
             if (dataset) {
                 let set = target.dataset.set;
                 if (set != undefined) {
-                    show_popup('options', set != -1, {setting: set});
+                    let parent = Parent(target, null, 'popup'),
+                        xy = '';
+                    if (parent && parent.dataset) {
+                        let item = parent.dataset.xy;
+                        if (item)
+                            xy = item.split(',').map(item => item * 1);
+                    }
+                    show_popup('options', set != -1, {setting: set, xy: xy});
                     return;
                 }
             }
@@ -1087,7 +1108,6 @@ function startup() {
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
-            graph_combine_23: [{type: 'color'}, '#007700'],
             graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],

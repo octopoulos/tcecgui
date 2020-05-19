@@ -61,7 +61,7 @@ let ANALYSIS_URLS = {
         },
         live0: {
             dual: 'live1',
-            live_id: 0,
+            live_id: 2,
             pv_id: '#table-live0 .live-pv',
             sub: 2,
             tab: 'kibitz',
@@ -69,7 +69,7 @@ let ANALYSIS_URLS = {
         },
         live1: {
             dual: 'live0',
-            live_id: 1,
+            live_id: 3,
             pv_id: '#table-live1 .live-pv',
             sub: 2,
             tab: 'kibitz',
@@ -77,6 +77,7 @@ let ANALYSIS_URLS = {
         },
         pv0: {
             dual: 'pv1',
+            live_id: 0,
             pv_id: '#player0 .live-pv',
             sub: 2,
             tab: 'pv',
@@ -84,6 +85,7 @@ let ANALYSIS_URLS = {
         },
         pv1: {
             dual: 'pv0',
+            live_id: 1,
             pv_id: '#player1 .live-pv',
             sub: 2,
             tab: 'pv',
@@ -521,7 +523,7 @@ function show_board_info(show) {
             show = (active != 'engine');
         }
         else
-            show = status;
+            show = (status != 0);
     }
 
     S('.xbottom, .xtop', show, node);
@@ -562,6 +564,7 @@ function update_board_theme(mode) {
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
+                smooth = Y[`animate${suffix}`],
                 theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
 
             Assign(board, {
@@ -570,12 +573,13 @@ function update_board_theme(mode) {
                 high_color: Y[`highlight_color${suffix}`],
                 high_size: Y[`highlight_size${suffix}`],
                 notation: Y[`notation${suffix}`]? 6: 0,
-                smooth: Y[`animate${suffix}`],
+                smooth: smooth,
+                smooth0: smooth,
                 theme: theme,
             });
         }
 
-        board.hold_smooth();
+        board.instant();
         board.render(7);
     });
 
@@ -1979,7 +1983,7 @@ function resize_game() {
         let width = Id(parent).clientWidth,
             board = xboards[key];
         if (board) {
-            board.hold_smooth();
+            board.instant();
             board.resize(width);
         }
     }
@@ -1993,7 +1997,7 @@ function resize_game() {
             return;
 
         let size = Clamp(width / board.sub - 4, 196, 320);
-        board.hold_smooth();
+        board.instant();
         board.resize(size);
     });
 
@@ -2145,7 +2149,7 @@ function update_move_pv(section, ply, move) {
 
     // PV should jump directly to a new position, no transition
     board.reset();
-    board.hold_smooth();
+    board.instant();
 
     if (move.pv)
         board.add_moves(move.pv.Moves, main.ply);
@@ -2923,7 +2927,7 @@ function handle_board_events(board, type, value) {
                 let board = xboards[key],
                     id = board.live_id;
                 if (id != undefined)
-                    main.arrow(id, board.next, id + 2);
+                    main.arrow(id, board.next, id);
             });
         }
         break;
@@ -2936,9 +2940,12 @@ function handle_board_events(board, type, value) {
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
-        let id = board.live_id;
-        if (id != undefined)
-            main.arrow(id, value, id + 2);
+        let arrow_from = Y.arrow_from,
+            id = board.live_id;
+        if (id != undefined) {
+            if (['all', id < 2? 'player': 'kibitzer'].includes(arrow_from))
+                main.arrow(id, value);
+        }
         break;
     // ply was set
     // !! make sure it's set manually
@@ -3118,7 +3125,7 @@ function popup_custom(id, name, e, scolor) {
         }
         else if (name == 'fen') {
             let fen = TEXT(e.target);
-            xboards.xfen.hold_smooth();
+            xboards.xfen.instant();
             if (!xboards.xfen.set_fen(fen, true))
                 return;
         }
@@ -3206,8 +3213,10 @@ function startup_game() {
     Assign(DEFAULTS, {
         div: '',
         game: 0,
+        link: '',                           // live link
         live_log: 0,
         order: 'left|center|right',         // main panes order
+        round: '',                          // live round
         season: '',
         stream: 0,
         tabs: {},                           // opened tabs
@@ -3235,12 +3244,22 @@ function startup_game() {
         },
         // separator
         _1: {},
+        arrow: {
+            arrow_color_0: [{type: 'color'}, '#fefdde'],
+            arrow_color_1: [{type: 'color'}, '#02031e'],
+            arrow_color_2: [{type: 'color'}, '#236ad6'],
+            arrow_color_3: [{type: 'color'}, '#eb282d'],
+            arrow_combine_23: [{type: 'color'}, '#007700'],
+            arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
+            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
+            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
+            copy_from_graph: '1',
+        },
         board: {
             analysis_chessdb: '1',
             analysis_lichess: '1',
             animate: [ON_OFF, 1],
-            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
+            arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
@@ -3293,10 +3312,12 @@ function startup_game() {
             live_hide: [ON_OFF, 0],
         },
         moves: {
+            _pop: true,
             copy_moves: '1',
             move_height: [{max: 30, min: 5, type: 'number'}, 5],
         },
         moves_pv: {
+            _pop: true,
             copy_moves: '1',
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },

@@ -1233,6 +1233,7 @@ pre,
 #lives,
 #table-engine,
 #table-info,
+#table-view,
 .live-pv,
 .live-pv > a,
 .stats,
@@ -1254,17 +1255,11 @@ svg.down {
     position: absolute;
     z-index: -1;
 }
-#mk0,
-#mk1 {
-    fill: #999;
-}
 .arrow {
     fill: none;
     height: 100%;
     left: 0;
     opacity: 0.7;
-    marker-end: url(#mk1);
-    marker-start: url(#mk0);
     pointer-events: none;
     position: absolute;
     stroke-linejoin: round;
@@ -1279,9 +1274,16 @@ svg.down {
 }
 
 /* media */
-@media (max-width: 639px) {
+@media (max-width: 640px) {
     .google-ad {
         display: none;
+    }
+    #header {
+        padding: 0;
+    }
+    #modal,
+    #popup-about {
+        font-size: 13px;
     }
 }
 @media (max-width: 866px) {

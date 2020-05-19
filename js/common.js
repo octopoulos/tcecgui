@@ -99,34 +99,60 @@ function Id(id, parent) {
 /**
  * Change attributes
  * @param {string|Node} sel CSS selector or node
- * @param {string} attr attribute to change
- * @param {string|boolean=} value value to set
+ * @param {Object} attrs attribute to change
  * @param {Node=} parent
- * @example
- * Attrs('input', 'disabled', true)                 // disable all inputs
- * Attrs('input', 'disabled', false)                // enable all inputs
- * Attrs('input', 'disabled')                       // enable all inputs
- * Attrs('a', 'href', 'https://www.google.com')     // all links will link to google
  */
-function Attrs(sel, attr, value, parent) {
+function Attrs(sel, attrs, parent) {
     if (!sel) return;
     if (typeof(sel) == 'object') {
-        if (typeof(value) == 'string')
-            sel.setAttribute(attr, value);
-        else if (value === true)
-            sel.setAttribute(attr, attr);
-        else
-            sel.removeAttribute(attr);
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                sel.removeAttribute(key);
+            else
+                sel.setAttribute(key, value);
+        });
         return;
     }
     //
     E(sel, node => {
-        if (typeof(value) == 'string')
-            node.setAttribute(attr, value);
-        else if (value === true)
-            node.setAttribute(attr, attr);
-        else
-            node.removeAttribute(attr);
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                node.removeAttribute(key);
+            else
+                node.setAttribute(key, value);
+        });
+    }, parent);
+}
+
+/**
+ * Change attributes
+ * @param {string|Node} sel
+ * @param {Object} attrs
+ * @param {Node=} parent
+ */
+function AttrsNS(sel, attrs, parent) {
+    if (!sel) return;
+    if (typeof(sel) == 'object') {
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                sel.removeAttributeNS(null, key);
+            else
+                sel.setAttributeNS(null, key, value);
+        });
+        return;
+    }
+    //
+    E(sel, node => {
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                node.removeAttributeNS(null, key);
+            else
+                node.setAttributeNS(null, key, value);
+        });
     }, parent);
 }
 
@@ -260,11 +286,12 @@ function Contain(list, pattern) {
  * @param {string} tag
  * @param {string=} html
  * @param {Object=} attrs
+ * @param {Object[]=} children
  * @returns {Node} created node
  * @example
  * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
  */
-function CreateNode(tag, html, attrs) {
+function CreateNode(tag, html, attrs, children) {
     let node = document.createElement(tag);
     if (html)
         node.innerHTML = html;
@@ -272,6 +299,11 @@ function CreateNode(tag, html, attrs) {
         Keys(attrs).forEach(key => {
             node.setAttribute(key, attrs[key]);
         });
+
+    if (children)
+        for (let child of children)
+            node.appendChild(child);
+
     return node;
 }
 
@@ -279,13 +311,20 @@ function CreateNode(tag, html, attrs) {
  * Create an SVG node
  * @param {string} type
  * @param {Object=} attrs
+ * @param {Object[]=} children
+ * @returns {Node} created node
  */
-function CreateSVG(type, attrs) {
+function CreateSVG(type, attrs, children) {
     let node = document.createElementNS(NAMESPACE_SVG, type);
     if (attrs)
         Keys(attrs).forEach(key => {
             node.setAttributeNS(null, key, attrs[key]);
         });
+
+    if (children)
+        for (let child of children)
+            node.appendChild(child);
+
     return node;
 }
 

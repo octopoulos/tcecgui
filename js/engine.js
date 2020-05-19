@@ -265,7 +265,7 @@ function resize_text(text, resize)
  * @param {string} text
  */
 function set_text(node, text) {
-    Attrs(node, 'data-t', text);
+    Attrs(node, {'data-t': text});
     TEXT(node, translate_expression(text));
 }
 

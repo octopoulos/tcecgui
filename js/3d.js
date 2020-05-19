@@ -1126,7 +1126,7 @@ function show_modal(show, text, title, name) {
 
     let node = Id('modal');
     if (typeof(text) == 'string') {
-        Attrs('#modal-title', 'data-t', title? title: '');
+        Attrs('#modal-title', {'data-t': title? title: ''});
         HTML(node, text);
         translate_node(node);
     }
@@ -1168,27 +1168,33 @@ function show_settings(name, xy) {
             return;
         }
 
+        // only in popup
+        let setting = settings[key];
+        if (setting._pop)
+            return;
+
         // link or list
-        let setting = settings[key][0],
-            is_string = (typeof(setting) == 'string')? ` name="${key}"`: '',
-            more_class = (setting && !is_string)? '': ' span',
-            more_data = setting? '': ` data-set="${key}"`,
+        let data = setting[0],
+            is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
+            more_class = (data && !is_string)? '': ' span',
+            more_data = data? '': ` data-set="${key}"`,
             title = settings[key][2];
 
         lines.push(
             `<a${is_string} class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
+                + ((setting == '')? ' ...': '')
             + '</a>'
         );
 
         if (is_string)
             return;
 
-        if (Array.isArray(setting)) {
+        if (Array.isArray(data)) {
             lines.push(
                 '<vert class="fcenter">'
                 + `<select name="${key}">`
-                    + setting.map(option => {
+                    + data.map(option => {
                         let value = Undefined({off: 0, on: 1}[option], option);
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')
@@ -1196,19 +1202,19 @@ function show_settings(name, xy) {
                 + '</vert>'
             );
         }
-        else if (setting) {
-            if (setting.type)
+        else if (data) {
+            if (data.type)
                 lines.push(
                     '<vert class="fcenter">'
-                    + `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`
+                    + `<input name="${key}" type="${data.type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`
                     + '</vert>'
                 );
             else
                 lines.push(
                     '<vert class="fcenter">'
                     + `<select name="${key}">`
-                        + Keys(setting).map(value => {
-                            let option = setting[value];
+                        + Keys(data).map(value => {
+                            let option = data[value];
                             return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
