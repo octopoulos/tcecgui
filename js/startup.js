@@ -116,7 +116,6 @@ function change_setting_special(name, value, no_close) {
         if (modal && modal.dataset.xy)
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
-    LS(`name=${name} : value=${value}`);
 
     switch (name) {
     case 'animate':

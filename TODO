@@ -6,6 +6,9 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-18 : arrow overlap => show the longer one under the shorter one, ex: => and ==>
 ~          : 2020-05-18 : white/black arrows
+2020-05-19 : 2020-05-19 : capture sound + more audio options
+2020-05-19 : 2020-05:19 : mix_hex_colors function + tests
+2020-05-19 : 2020-05-19 : improved Japanese
 2020-05-19 : 2020-05-19 : improved menu system
 2020-05-19 : 2020-05-19 : panel_adjust option
 2020-05-18 : 2020-05-18 : improved size for mobile header / popup

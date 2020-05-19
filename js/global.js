@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Clamp, DEV:true, LS, Pad, Round, Y
+DEV:true, LS, Pad, Round, Y
 */
 'use strict';
 
@@ -59,6 +59,11 @@ function get_move_ply(move) {
  * @returns {string} #808080
  */
 function mix_hex_colors(color1, color2, mix) {
+    if (mix <= 0)
+        return color1;
+    else if (mix >= 1)
+        return color2;
+
     let off1 = (color1[0] == '#')? 1: 0,
         off2 = (color2[0] == '#')? 1: 0;
 
@@ -66,7 +71,7 @@ function mix_hex_colors(color1, color2, mix) {
         let color =
               parseInt(color1.slice(off1 + i, off1 + i + 2), 16) * (1 - mix)
             + parseInt(color2.slice(off2 + i, off2 + i + 2), 16) * mix;
-        return Pad(Round(Clamp(color, 0, 255)).toString(16));
+        return Pad(Round(color).toString(16));
     }).join('');
 }
 
