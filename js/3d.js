@@ -19,6 +19,7 @@ Visible, window, X_SETTINGS, Y
 let audiobox = {
         sounds: {},
     },
+    AUTO_ON_OFF = ['auto', 'on', 'off'],
     axes = [0, 0, 0, 0],
     AXIS_DEAD_ZONE = 0.2,
     AXIS_MAPPING = [
@@ -1156,15 +1157,40 @@ function show_modal(show, text, title, name) {
  */
 function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
-        settings = name? X_SETTINGS[name]: X_SETTINGS;
+        settings = name? X_SETTINGS[name]: X_SETTINGS,
+        keys = Keys(settings),
+        split = settings._split;
+
+    // set multiple columns
+    if (split) {
+        let new_keys = [],
+            offset = split;
+        keys = keys.filter(key => (key != '_split' && !settings[key]._pop));
+
+        for (let i = 0; i < split; i ++) {
+            new_keys.push(keys[i]);
+            if (keys[i][0] == '_')
+                new_keys.push('');
+            else {
+                new_keys.push(keys[offset] || '');
+                offset ++;
+            }
+        }
+        keys = new_keys;
+    }
 
     if (name)
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
-    Keys(settings).forEach(key => {
+    keys.forEach(key => {
         // separator
         if (key[0] == '_') {
-            lines.push('<hr class="span">');
+            lines.push(`<hr${split? '': ' class="span"'}>`);
+            return;
+        }
+
+        if (!key && split) {
+            lines.push('<div></div>');
             return;
         }
 
@@ -1176,7 +1202,7 @@ function show_settings(name, xy) {
         // link or list
         let data = setting[0],
             is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
-            more_class = (data && !is_string)? '': ' span',
+            more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${key}"`,
             title = settings[key][2];
 
@@ -1413,7 +1439,7 @@ function startup_3d() {
             lighting: [['low', 'medium', 'high'], 'high'],
             resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
             shadow: [Keys(SHADOW_QUALITIES), 'high'],
-            texture: [['auto', 'on', 'off'], 'auto'],
+            texture: [AUTO_ON_OFF, 'auto'],
         },
     });
 

@@ -190,13 +190,24 @@ function load_library(url, callback, extra) {
  */
 function merge_settings(x_settings) {
     Keys(x_settings).forEach(name => {
-        let exists = SetDefault(X_SETTINGS, name, {});
-        Assign(exists, x_settings[name]);
-        X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+        let value = x_settings[name];
+
+        // audio: { ... }
+        if (typeof(value) == 'object') {
+            let exists = SetDefault(X_SETTINGS, name, {});
+            Assign(exists, value);
+            X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+        }
+        // _split: 8
+        else
+            X_SETTINGS[name] = value;
     });
+
+    // update defaults
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
-        Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
+        if (typeof(settings) == 'object')
+            Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
     });
 }
 
