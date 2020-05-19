@@ -18,7 +18,7 @@ check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value
 download_live, download_tables, DownloadObject, E, Events, game_action_key, game_action_keyup, get_active_tab,
 get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, resize_game, Round,
+merge_settings, Min, Now, ON_OFF, open_table, Parent, parse_dev, popup_custom, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
 tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme,
@@ -159,6 +159,7 @@ function change_setting_special(name, value, no_close) {
     case 'hide_moves_3':
     case 'live_hide':
     case 'graph_aspect_ratio':
+    case 'panel_adjust':
     case 'status_pv':
         resize_panels(true);
         break;
@@ -243,13 +244,14 @@ function check_hash_special() {
     S('[data-x="season"]', !is_live, parent);
     S('[data-x="log"]', is_live, parent);
 
-    Attrs('[data-x="sched"] i[data-t]', 'data-t', is_live? 'Schedule': 'Games');
+    Attrs('[data-x="sched"] i[data-t]', {'data-t': is_live? 'Schedule': 'Games'});
     translate_node('#table-tabs');
 
     // changed section
     if (Y.x != old_x) {
         changed_section();
         old_x = Y.x;
+        close_popups();
     }
     changed_hash();
 }
@@ -297,6 +299,7 @@ function check_stream() {
 function close_popups() {
     show_popup();
     show_popup('about');
+    popup_custom('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML('#modal', '');
@@ -548,6 +551,11 @@ function resize_move_lists() {
  * @param {boolean=} force
  */
 function resize_panels(force) {
+    // swaps
+    S('.swap', Y.panel_adjust);
+    Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
+
+    // widths
     for (let name of ['center', 'left', 'right']) {
         let value = Y[`panel_${name}`];
         Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
@@ -559,7 +567,7 @@ function resize_panels(force) {
     if (!force && width == old_center)
         return;
 
-    Attrs('#eval', 'data-t', (width > 330)? 'Evaluation': 'Eval');
+    Attrs('#eval', {'data-t': (width > 330)? 'Evaluation': 'Eval'});
     translate_node('#table-engine');
 
     let is_hori = (width >= 390);
@@ -897,15 +905,14 @@ function set_global_events() {
             target = target.parentNode;
         }
 
-        if (!in_modal) {
-            show_popup('');
-            show_popup('about');
-        }
+        if (!in_modal)
+            close_popups();
     });
 
     // swap panes
     Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
-        Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
+        if (Y.panel_adjust)
+            Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
     C('.swap', function() {
         let index = Index(this),
@@ -1100,6 +1107,7 @@ function startup() {
             hide_moves_3: [ON_OFF, 0],
         },
         panel: {
+            panel_adjust: [ON_OFF, 1],
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
