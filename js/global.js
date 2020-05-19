@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-DEV:true, LS, Pad, Round, Y
+DEV:true, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
 */
 'use strict';
 
@@ -24,7 +24,8 @@ let HOST = 'https://tcec-chess.com',
         three: 1 * 1000,                // 3d scene
         twitch: 5 * 1000,
         users: 5 * 1000,
-    };
+    },
+    VERSION = '2020-05-19';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,6 +117,28 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+}
+
+/**
+ * Reset some settings if the version is too old
+ */
+function reset_old_settings() {
+    if (Y.version == VERSION)
+        return;
+
+    let updates = ['audio'];
+    for (let update of updates) {
+        LS(`reset ${update} settings ...`);
+        let settings = X_SETTINGS[update];
+
+        Keys(settings).forEach(key => {
+            let value = settings[key];
+            if (Array.isArray(value))
+                save_option(key, value[1]);
+        });
+    }
+
+    save_option('version', VERSION);
 }
 
 /**
