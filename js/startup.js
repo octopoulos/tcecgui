@@ -15,14 +15,15 @@ _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add
 api_translate_get, Assign, Attrs,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
 check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
-download_live, download_tables, DownloadObject, E, Events, game_action_key, game_action_keyup, get_active_tab,
-get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, KEY_TIMES, Keys, KEYS,
+download_live, download_tables, DownloadObject, E, Events, full_scroll, game_action_key, game_action_keyup,
+get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen,
+KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, popup_custom, reset_old_settings,
 resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
-tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, translate_node, translates:true, update_board_theme,
+tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, touch_handle, translate_node, translates:true, update_board_theme,
 update_chart_options, update_debug, update_player_charts, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, xboards, Y
@@ -546,9 +547,7 @@ function opened_table_special(node, name, tab) {
 function resize(force) {
     Style(`#main`, `max-width:${Y.window_width}px`);
 
-    let left_height = Id('left').clientHeight,
-        height = Min(left_height, window.innerHeight);
-
+    let height = window.innerHeight;
     Style('#right', `max-height:${height}px`);
     Style('#chat', `height:${Max(350, height - 100 + Y.chat_offset)}px;width:100%`);
     resize_panels(force);
@@ -753,6 +752,8 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
         }
 
         node.dataset.xy = xy || '';
+        x += full_scroll.x;
+        y += full_scroll.y;
         Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
     }
 
@@ -1056,6 +1057,13 @@ function set_global_events() {
             target = target.parentNode;
         }
     });
+
+    // fullscreen scrolling
+    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', function(e) {
+        if (!is_fullscreen())
+            return;
+        touch_handle(e, true);
+    });
 }
 
 /**
@@ -1189,7 +1197,7 @@ function startup() {
             move_pv: [positions, 'left'],
         },
         quick: {
-            chat_offset: [{max: 500, min: -500, type: 'number'}, 0],
+            chat_offset: [{max: 800, min: -800, type: 'number'}, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },

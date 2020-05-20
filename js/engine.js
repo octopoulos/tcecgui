@@ -9,9 +9,9 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, history, HTML, Id, InsertNodes, Keys,
-LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
-Resource, ScrollDocument, SetDefault, setTimeout, TEXT, Title, Undefined, window
+_, A, Abs, Assign, Attrs, Clamp, clearTimeout, CreateNode, DefaultFloat, document, E, HasClass, history, HTML, Id,
+InsertNodes, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString,
+requestAnimationFrame, Resource, ScrollDocument, SetDefault, setTimeout, Style, TEXT, Title, Undefined, window
 */
 'use strict';
 
@@ -29,6 +29,7 @@ let __PREFIX = '_',
     drag_scroll = 3,
     drag_target,
     drag_type,
+    full_scroll = {x: 0, y: 0},
     ICONS = {},
     KEY_TIMES = {},
     KEYS = {},
@@ -808,8 +809,9 @@ function get_changed_touches(e) {
 
 /**
  * Render the inertial scrolling
+ * @param {boolean} full
  */
-function render_scroll() {
+function render_scroll(full) {
     if (!Y.scroll_inertia)
         return;
 
@@ -819,33 +821,42 @@ function render_scroll() {
 
     touch_scroll.x -= touch_speed.x * delta;
     touch_scroll.y -= touch_speed.y * delta;
-    set_scroll();
+    set_scroll(full);
 
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
-        requestAnimationFrame(render_scroll);
+        requestAnimationFrame(() => {render_scroll(full);});
     }
     touch_now = now;
 }
 
 /**
  * Set the scroll
+ * @param {boolean} full
  */
-function set_scroll() {
-    // horizontal
+function set_scroll(full) {
     let node = drag_target || scroll_target;
     if (!node)
         return;
-    if (drag_scroll & 1) {
-        node.scrollLeft = touch_scroll.x;
-        touch_scroll.x = node.scrollLeft;
-    }
 
-    // vertical
-    if (drag_scroll & 2) {
-        ScrollDocument(touch_scroll.y);
-        touch_scroll.y = ScrollDocument();
+    if (full) {
+        touch_scroll.x = Clamp(touch_scroll.x, 0, node.clientWidth - window.innerWidth);
+        touch_scroll.y = Clamp(touch_scroll.y, 0, node.clientHeight - window.innerHeight);
+        Style(drag_target, `transform:translate(${-touch_scroll.x}px,${-touch_scroll.y}px)`);
+    }
+    else {
+        // horizontal
+        if (drag_scroll & 1) {
+            node.scrollLeft = touch_scroll.x;
+            touch_scroll.x = node.scrollLeft;
+        }
+
+        // vertical
+        if (drag_scroll & 2) {
+            ScrollDocument(touch_scroll.y);
+            touch_scroll.y = ScrollDocument();
+        }
     }
 }
 
@@ -908,11 +919,14 @@ function touch_event(e) {
 
 /**
  * Handle a touch event
+ * - supports full screen scroll
  * @param {Event} e
+ * @param {boolean=} full full screen scrolling
  */
-function touch_handle(e) {
+function touch_handle(e, full) {
     let buttons = e.buttons,
         [change, stamp, error] = touch_event(e),
+        target = e.target,
         type = e.type,
         type5 = type.slice(0, 5);
 
@@ -925,25 +939,43 @@ function touch_handle(e) {
         if (type5 == 'mouse' && buttons != 1)
             return;
         // input => skip
-        if (['INPUT', 'SELECT'].includes(e.target.tagName))
+        if (['INPUT', 'SELECT'].includes(target.tagName))
             return;
         // can only acquire a new target with a click
         if (type == 'mouseenter' && !old_target)
             return;
 
         clear_timeout('touch_end');
+
+        drag_target = Parent(target, 'div', 'scroller', null, true);
+        if (drag_target)
+            full = false;
+
+        if (full)
+            drag_target = Id('body');
+        else {
+            // maybe the object is already fully visible?
+            // TODO: limit x and y directions individually
+            let child = drag_target.firstElementChild,
+                child_height = child.clientHeight,
+                child_width = child.clientWidth;
+
+            if (child_height <= drag_target.clientHeight && child_width <= drag_target.clientWidth)
+                return;
+        }
+
         drag = [change, stamp];
-        drag_target = Parent(e.target, 'div', 'scroller', null, true);
         drag_type = type5;
         touch_last = change;
         touch_moves = [];
         touch_now = Now(true);
-        touch_scroll = {
+        touch_speed = {x: 0, y: 0};
+        touch_start = touch_now;
+
+        touch_scroll = full? full_scroll: {
             x: drag_target.scrollLeft,
             y: ScrollDocument(),
         };
-        touch_speed = {x: 0, y: 0};
-        touch_start = touch_now;
     }
     else if (TOUCH_MOVES[type]) {
         if (!drag)
@@ -953,13 +985,16 @@ function touch_handle(e) {
             stop_drag();
             return;
         }
+        if (HasClass(drag_target, 'scroller'))
+            full = false;
 
         drag_moved = true;
         let [dx, dy] = add_move(change, stamp);
         touch_last = change;
         touch_scroll.x -= dx;
         touch_scroll.y -= dy;
-        set_scroll();
+        set_scroll(full);
+
         drag = [change, stamp];
 
         if (e.cancelable || type5 != 'touch')
@@ -968,6 +1003,9 @@ function touch_handle(e) {
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
             return;
+        if (HasClass(drag_target, 'scroller'))
+            full = false;
+
         add_move(change, stamp);
 
         // inertia during the last 100ms
@@ -988,19 +1026,24 @@ function touch_handle(e) {
             absy = Abs(sumy),
             elapsed = touch_now - touch_start;
 
-        // some movement => scroll
-        if (absx > 1 || absy > 1) {
-            scroll_target = drag_target;
-            touch_speed = {x: sumx / time, y: sumy / time};
-            requestAnimationFrame(render_scroll);
-        }
-        // big movement or average duration => prevent click
-        if (type != 'mouseleave') {
-            drag = null;
-            if (absx > 2 || absy > 2 || (elapsed > 0.3 && elapsed < 1))
-                add_timeout('touch_end', stop_drag, 10);
-            else
-                stop_drag();
+        // full is not working yet here
+        if (full)
+            stop_drag();
+        else {
+            // some movement => scroll
+            if (absx > 1 || absy > 1) {
+                scroll_target = drag_target;
+                touch_speed = {x: sumx / time, y: sumy / time};
+                requestAnimationFrame(() => {render_scroll(full);});
+            }
+            // big movement or average duration => prevent click
+            if (type != 'mouseleave') {
+                drag = null;
+                if (absx > 2 || absy > 2 || (elapsed > 0.3 && elapsed < 1))
+                    add_timeout('touch_end', stop_drag, 10);
+                else
+                    stop_drag();
+            }
         }
     }
 

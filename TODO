@@ -6,7 +6,10 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-18 : arrow overlap => show the longer one under the shorter one, ex: => and ==>
 ~          : 2020-05-18 : white/black arrows
-~          : 2020-05-19 : custom graph locations
+2020-05-20 : 2020-05-18 : full screen scrolling
+2020-05-20 : 2020-05-19 : disable .scroller when the table is fully visible
+2020-05-20 : 2020-05-20 : moving pieces => above the others
+2020-05-19 : 2020-05-19 : custom graph locations: placeholders
 2020-05-19 : 2020-05-19 : 2 columns for the options menu
 2020-05-19 : 2020-05-19 : auto reset old settings, ex for audio
 2020-05-19 : 2020-05-19 : capture sound + more audio options
@@ -236,7 +239,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-05-18 : full screen scrolling
 medium:
 -          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 -          : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
@@ -245,7 +247,6 @@ low:
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
--          : 2020-05-19 : disable .scroller when the table is fully visible
 lowest:
 -          : 2020-05-13 : drag and drop system using the dummies as targets
 -          : 2020-04-24 : add 3d dark room
