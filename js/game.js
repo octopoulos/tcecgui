@@ -11,7 +11,7 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, AUTO_ON_OFF,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
 clear_timeout, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document,
 Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses,
@@ -21,7 +21,7 @@ push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
 Show, show_menu, show_modal, Sign, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT,
 TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
-update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
+update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
@@ -201,6 +201,7 @@ let ANALYSIS_URLS = {
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
+    TIMEOUT_arrow = 1000,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
     tour_info = {
@@ -440,6 +441,70 @@ function assign_boards() {
 }
 
 /**
+ * Check if the live ID can draw an arrow
+ * @param {XBoard} xboard
+ */
+function check_draw_arrow(board) {
+    let id = board.live_id,
+        main = xboards[Y.x];
+
+    if (!main || id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
+        return;
+
+    let draw = false,
+        moves = main.moves,
+        board_moves = board.moves,
+        next = board.next,
+        ply = main.ply,
+        next_ply = ply + 1;
+
+    // wrong color?
+    if (board.name.slice(0, 2) == 'pv' && next_ply % 2 != id % 2)
+        return;
+
+    // wrong current move?
+    if (moves[ply] && board_moves[ply]) {
+        let fen = moves[ply].fen;
+
+        if (fen != board_moves[ply].fen) {
+            if (DEV.arrow)
+                LS(`${board.id} wrong fen @${ply} / ${ply / 2 + 1}`);
+        }
+        else {
+            if (DEV.arrow)
+                LS(`${board.id} correct fen @${ply} / ${ply / 2 + 1}`);
+
+            next = board_moves[next_ply];
+            if (next) {
+                board.next = next;
+                if (next.from == undefined && next.m) {
+                    board.chess_load(fen);
+                    let result = board.chess_move(next.m);
+                    Assign(next, result);
+                    next.ply = next_ply;
+                    if (DEV.arrow)
+                        LS(`${board.id} chess ${next.m} => ${next.from} - ${next.to} @${next_ply} / ${next_ply / 2 + 1}`);
+                }
+                draw = true;
+            }
+        }
+    }
+    else if (next && next.ply == next_ply) {
+        if (DEV.arrow)
+            LS(`${board.id} OK next @${next_ply} / ${next_ply / 2 + 1}`);
+        draw = true;
+    }
+
+    if (draw) {
+        main.arrow(id, next);
+        if (DEV.arrow)
+            LS(`     => draw: ${next.m} : ${next.from} => ${next.to} @${next.ply} / ${next.ply / 2 + 1}`);
+    }
+    else if (DEV.arrow)
+        LS(`${board.id} no arrow`);
+}
+
+/**
  * Create 9 boards
  * - should be done at startup since we want to see the boards ASAP
  */
@@ -483,6 +548,19 @@ function create_boards() {
         xboards.pva.set_fen(board.fen, true);
         Class('.color', '-active');
         Class(this, 'active');
+    });
+}
+
+/**
+ * Redraw the arrows
+ */
+function redraw_arrows() {
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    Keys(xboards).forEach(key => {
+        check_draw_arrow(xboards[key]);
     });
 }
 
@@ -811,7 +889,7 @@ function check_paginations() {
     for (let parent of PAGINATION_PARENTS) {
         let num_page = check_pagination(parent);
         S(`#${parent}-pagin`, num_page > 1);
-        S(`#${parent}-search`, Abs(num_page) > 1);
+        S(`#${parent}-search`, Abs(num_page) >= 1);
     }
 }
 
@@ -1147,6 +1225,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         page_key = `page_${parent}`,
         table = Id(`table-${output || source}`),
         body = _('tbody', table);
+
+    // wrap text?
+    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
+    if (wrap == 'auto')
+        wrap = Y.wrap;
+    Style(body, 'white-space:nowrap', !wrap);
 
     // reset or append?
     // - except if rows is null
@@ -2372,7 +2456,9 @@ function update_pgn(section, pgn) {
     main.add_moves(moves);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
+
     update_mobility();
+    add_timeout('arrow', redraw_arrows, Max(TIMEOUT_arrow, Y.play_every + 100));
 
     // got player info => can do h2h
     check_queued_tables();
@@ -2811,9 +2897,11 @@ function random_position() {
  * - called by change_setting_special
  */
 function change_setting_game(name, value) {
-    let section = Y.x,
+    let prefix = name.split('_')[0],
+        section = Y.x,
         main = xboards[section];
 
+    // using exact name
     switch (name) {
     case 'analysis_chessdb':
     case 'analysis_lichess':
@@ -2841,6 +2929,16 @@ function change_setting_game(name, value) {
         break;
     case 'status':
         show_board_info();
+        break;
+    }
+
+    // using prefix
+    switch (prefix) {
+    case 'arrow':
+        redraw_arrows();
+        break;
+    case 'wrap':
+        update_table(section, get_active_tab('table')[0], null, 'table');
         break;
     }
 }
@@ -2906,8 +3004,7 @@ function changed_section() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x,
-        main = xboards[section];
+    let section = Y.x;
 
     switch (type) {
     case 'activate':
@@ -2922,13 +3019,7 @@ function handle_board_events(board, type, value) {
         }
         else if (value == 'rotate') {
             show_board_info();
-            // redraw the arrows
-            Keys(xboards).forEach(key => {
-                let board = xboards[key],
-                    id = board.live_id;
-                if (id != undefined)
-                    main.arrow(id, board.next, id);
-            });
+            redraw_arrows();
         }
         break;
     // move list => ply selected
@@ -2940,12 +3031,8 @@ function handle_board_events(board, type, value) {
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
-        let arrow_from = Y.arrow_from,
-            id = board.live_id;
-        if (id != undefined) {
-            if (['all', id < 2? 'player': 'kibitzer'].includes(arrow_from))
-                main.arrow(id, value);
-        }
+        if (!xboards[section].hold)
+            check_draw_arrow(board);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -2970,6 +3057,8 @@ function handle_board_events(board, type, value) {
 
             update_materials(value);
             update_mobility();
+            if (DEV.arrow)
+                add_timeout('arrow', redraw_arrows, Max(TIMEOUT_arrow, Y.play_every + 100));
         }
         break;
     }
@@ -3224,6 +3313,7 @@ function startup_game() {
         twitch_chat: 1,
         twitch_dark: 0,
         twitch_video: device.mobile? 0: 1,
+        version: VERSION,
         x: 'live',
     });
     Assign(STATE_KEYS, {
@@ -3233,9 +3323,11 @@ function startup_game() {
 
     merge_settings({
         audio: {
-            audio_delay: [{max: 2000, min: 0, type: 'number'}, 0],
+            audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
+            audio_moves: [['none', 'all', 'last'], 'last'],
             book_sound: [ON_OFF, 1],
-            sound_capture: [['off', 'capture.mp3'], 'capture.mp3'],
+            capture_delay: [{max: 1000, min: -1000, type: 'number'}, -200],
+            sound_capture: [['off', 'capture'], 'capture'],
             sound_check: [['off', 'check'], 'check'],
             sound_checkmate: [['off', 'checkmate'], 'checkmate'],
             sound_draw: [['off', 'draw'], 'draw'],
@@ -3245,14 +3337,23 @@ function startup_game() {
         // separator
         _1: {},
         arrow: {
-            arrow_color_0: [{type: 'color'}, '#fefdde'],
-            arrow_color_1: [{type: 'color'}, '#02031e'],
+            arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
+            arrow_base_color: [{type: 'color'}, '#a5a5a5'],
+            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.00],
+            arrow_color_0: [{type: 'color'}, '#cdcdbe'],
+            arrow_color_1: [{type: 'color'}, '#666666'],
             arrow_color_2: [{type: 'color'}, '#236ad6'],
             arrow_color_3: [{type: 'color'}, '#eb282d'],
             arrow_combine_23: [{type: 'color'}, '#007700'],
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
+            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.25],
+            arrow_head_color: [{type: 'color'}, '#a5a5a5'],
+            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.00],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
+            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
+            combine_colors: '1',
             copy_from_graph: '1',
         },
         board: {
@@ -3269,7 +3370,7 @@ function startup_game() {
             highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
-            status: [['auto', 'on', 'off'], 'auto'],
+            status: [AUTO_ON_OFF, 'auto'],
         },
         board_pv: {
             analysis_chessdb: '1',
@@ -3286,6 +3387,25 @@ function startup_game() {
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
+        // separator
+        control: {
+            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
+            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
+        },
+        engine: {
+            mobility: [ON_OFF, 1],
+            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
+        },
+        extra: {
+            rows_per_page: [[10, 20, 50, 100], 10],
+            wrap: [ON_OFF, 1],
+            wrap_cross: [AUTO_ON_OFF, 'auto'],
+            wrap_h2h: [AUTO_ON_OFF, 'auto'],
+            wrap_sched: [AUTO_ON_OFF, 'auto'],
+            wrap_stand: [AUTO_ON_OFF, 'auto'],
+        },
+        graph: {},
+        hide: {},
         live: {
             copy_moves: '1',
             live_engine_1: [ON_OFF, 1],
@@ -3295,33 +3415,22 @@ function startup_game() {
             live_tabs: [ON_OFF, 1],
             move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
         },
-        // separator
-        _2: {},
-        control: {
-            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
-        },
-        engine: {
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
-        },
-        extra: {
-            rows_per_page: [[10, 20, 50, 100], 10],
-        },
-        graph: {},
-        hide: {
-            live_hide: [ON_OFF, 0],
-        },
         moves: {
+            move_height: [{max: 30, min: 5, type: 'number'}, 5],
+            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
+            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
+        },
+        // popup only
+        copy: {
             _pop: true,
             copy_moves: '1',
             move_height: [{max: 30, min: 5, type: 'number'}, 5],
         },
-        moves_pv: {
+        copy_pv: {
             _pop: true,
             copy_moves: '1',
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
-        panel: {},
     });
 
     virtual_init_3d_special = init_3d_special;

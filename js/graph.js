@@ -434,12 +434,14 @@ function update_live_chart(moves, id, invert_black) {
         return;
 
     let dataset = data.datasets[id],
-        labels = data.labels;
+        labels = data.labels,
+        last_ply = -1;
 
+    // 1) add moves
     for (let move of moves) {
         let eval_ = move.eval,
             ply = get_move_ply(move),
-            num = ply;  // Floor(ply / 2);
+            num = ply;
         if (ply < -1)
             continue;
 
@@ -460,7 +462,11 @@ function update_live_chart(moves, id, invert_black) {
             x: num / 2 + 1,
             y: clamp_eval(eval_),
         };
+        last_ply = ply;
     }
+
+    // 2) remove moves that are after the last move
+    // - could have been sent by error just after a new game started
 
     fix_labels(labels);
     charts.eval.update();

@@ -81,7 +81,8 @@ function mix_hex_colors(color1, color2, mix) {
  */
 function parse_dev() {
     let names = {
-            a: 'ad',                    // disable ads (for development)
+            a: 'arrow',
+            A: 'ad',                    // disable ads (for development)
             b: 'board',
             c: 'chart',
             d: 'debug',

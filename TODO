@@ -1,11 +1,14 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-04-29 : delete graph info that is too far ahead
 -          : 2020-04-29 : add SVG connectors to the bracket
 -          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 -          : 2020-05-18 : arrow overlap => show the longer one under the shorter one, ex: => and ==>
-~          : 2020-05-18 : white/black arrows
+
+2020-05-20 : 2020-05-18 : white/black arrows
+2020-05-20 : 2020-05-10 : [delete PV if real move doesn't match], but if matches => use next as arrow
 2020-05-20 : 2020-05-18 : full screen scrolling
 2020-05-20 : 2020-05-19 : disable .scroller when the table is fully visible
 2020-05-20 : 2020-05-20 : moving pieces => above the others
@@ -240,7 +243,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 medium:
--          : 2020-05-10 : delete PV if real move doesn't match, but if matches => use next as arrow
 -          : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
 low:
