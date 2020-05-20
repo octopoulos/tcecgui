@@ -960,7 +960,6 @@ class XBoard {
             marker_path = CreateSVG('path', {d: `M0 0l5 5l-5 5z`}),
             options = {
                 markerUnits: 'strokeWidth',
-                // markerUnits: 'userSpaceOnUse',
                 orient: 'auto',
                 refX: 5,
                 refY: 5,

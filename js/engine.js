@@ -30,6 +30,7 @@ let __PREFIX = '_',
     drag_target,
     drag_type,
     full_scroll = {x: 0, y: 0},
+    full_target,
     ICONS = {},
     KEY_TIMES = {},
     KEYS = {},
@@ -645,9 +646,12 @@ function guess_browser_language() {
 
 /**
  * Check if the browser is in full screen mode
+ * @returns {Node}
  */
 function is_fullscreen() {
-    return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    let full = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    full_target = full? Id('body'): null;
+    return full;
 }
 
 /**
@@ -809,9 +813,8 @@ function get_changed_touches(e) {
 
 /**
  * Render the inertial scrolling
- * @param {boolean} full
  */
-function render_scroll(full) {
+function render_scroll() {
     if (!Y.scroll_inertia)
         return;
 
@@ -821,42 +824,43 @@ function render_scroll(full) {
 
     touch_scroll.x -= touch_speed.x * delta;
     touch_scroll.y -= touch_speed.y * delta;
-    set_scroll(full);
+    if (full_target) {
+        full_scroll.x -= touch_speed.x * delta;
+        full_scroll.y -= touch_speed.y * delta;
+    }
+    set_scroll();
 
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
-        requestAnimationFrame(() => {render_scroll(full);});
+        requestAnimationFrame(render_scroll);
     }
     touch_now = now;
 }
 
 /**
  * Set the scroll
- * @param {boolean} full
  */
-function set_scroll(full) {
+function set_scroll() {
     let node = drag_target || scroll_target;
-    if (!node)
-        return;
 
-    if (full) {
-        touch_scroll.x = Clamp(touch_scroll.x, 0, node.clientWidth - window.innerWidth);
-        touch_scroll.y = Clamp(touch_scroll.y, 0, node.clientHeight - window.innerHeight);
-        Style(drag_target, `transform:translate(${-touch_scroll.x}px,${-touch_scroll.y}px)`);
-    }
-    else {
+    if (node) {
         // horizontal
         if (drag_scroll & 1) {
             node.scrollLeft = touch_scroll.x;
             touch_scroll.x = node.scrollLeft;
         }
-
         // vertical
         if (drag_scroll & 2) {
             ScrollDocument(touch_scroll.y);
             touch_scroll.y = ScrollDocument();
         }
+    }
+
+    if (full_target) {
+        full_scroll.x = Clamp(full_scroll.x, 0, full_target.clientWidth - window.innerWidth);
+        full_scroll.y = Clamp(full_scroll.y, 0, full_target.clientHeight - window.innerHeight);
+        Style(full_target, `transform:translate(${-full_scroll.x}px,${-full_scroll.y}px)`);
     }
 }
 
@@ -924,14 +928,14 @@ function touch_event(e) {
  * @param {boolean=} full full screen scrolling
  */
 function touch_handle(e, full) {
+    if (full == undefined)
+        full = is_fullscreen();
+
     let buttons = e.buttons,
-        [change, stamp, error] = touch_event(e),
+        [change, stamp] = touch_event(e),
         target = e.target,
         type = e.type,
         type5 = type.slice(0, 5);
-
-    if (error > 150 * 150)
-        return;
 
     if (TOUCH_STARTS[type]) {
         let old_target = drag_target;
@@ -948,12 +952,7 @@ function touch_handle(e, full) {
         clear_timeout('touch_end');
 
         drag_target = Parent(target, 'div', 'scroller', null, true);
-        if (drag_target)
-            full = false;
-
-        if (full)
-            drag_target = Id('body');
-        else {
+        if (!full_target) {
             // maybe the object is already fully visible?
             // TODO: limit x and y directions individually
             let child = drag_target.firstElementChild,
@@ -972,8 +971,8 @@ function touch_handle(e, full) {
         touch_speed = {x: 0, y: 0};
         touch_start = touch_now;
 
-        touch_scroll = full? full_scroll: {
-            x: drag_target.scrollLeft,
+        touch_scroll = {
+            x: drag_target? drag_target.scrollLeft: 0,
             y: ScrollDocument(),
         };
     }
@@ -985,15 +984,18 @@ function touch_handle(e, full) {
             stop_drag();
             return;
         }
-        if (HasClass(drag_target, 'scroller'))
-            full = false;
 
         drag_moved = true;
         let [dx, dy] = add_move(change, stamp);
         touch_last = change;
+
         touch_scroll.x -= dx;
         touch_scroll.y -= dy;
-        set_scroll(full);
+        if (full_target) {
+            full_scroll.x -= dx;
+            full_scroll.y -= dy;
+        }
+        set_scroll();
 
         drag = [change, stamp];
 
@@ -1003,8 +1005,6 @@ function touch_handle(e, full) {
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
             return;
-        if (HasClass(drag_target, 'scroller'))
-            full = false;
 
         add_move(change, stamp);
 
@@ -1026,24 +1026,19 @@ function touch_handle(e, full) {
             absy = Abs(sumy),
             elapsed = touch_now - touch_start;
 
-        // full is not working yet here
-        if (full)
-            stop_drag();
-        else {
-            // some movement => scroll
-            if (absx > 1 || absy > 1) {
-                scroll_target = drag_target;
-                touch_speed = {x: sumx / time, y: sumy / time};
-                requestAnimationFrame(() => {render_scroll(full);});
-            }
-            // big movement or average duration => prevent click
-            if (type != 'mouseleave') {
-                drag = null;
-                if (absx > 2 || absy > 2 || (elapsed > 0.3 && elapsed < 1))
-                    add_timeout('touch_end', stop_drag, 10);
-                else
-                    stop_drag();
-            }
+        // some movement => scroll
+        if (absx > 1 || absy > 1) {
+            scroll_target = drag_target;
+            touch_speed = {x: sumx / time, y: sumy / time};
+            requestAnimationFrame(render_scroll);
+        }
+        // big movement or average duration => prevent click
+        if (type != 'mouseleave') {
+            drag = null;
+            if (absx > 2 || absy > 2 || (elapsed > 0.3 && elapsed < 1))
+                add_timeout('touch_end', stop_drag, 10);
+            else
+                stop_drag();
         }
     }
 

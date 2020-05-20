@@ -38,7 +38,7 @@ let AD_STYLES = {
         '#charts, #charts2': 'graph',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
         '#lives': 'live',
-        '.pagin': 'extra',
+        '.pagin, #table-tabs': 'extra',
         '#quick-tabs': 'quick',
         '#table-engine': 'engine',
         '.swaps': 'panel',
@@ -101,16 +101,6 @@ function adjust_popups() {
 }
 
 /**
- * Generate the combined color
- */
-function arrow_combine_colors() {
-    let mix = mix_hex_colors(Y.arrow_color_2, Y.arrow_color_3, 0.5),
-        field = 'arrow_combine_23';
-    save_option(field, mix);
-    (_(`input[name="${field}"]`) || {}).value = mix;
-}
-
-/**
  * Handler for change settings
  * @param {string} name
  * @param {string|number} value
@@ -148,6 +138,12 @@ function change_setting_special(name, value, no_close) {
     case 'piece_theme_pv':
         update_board_theme(2);
         break;
+    case 'board_kibitz':
+        break;
+    case 'board_pv':
+        break;
+    case 'board_pva':
+        break;
     case 'chat_offset':
     case 'graph_min_width':
     case 'panel_center':
@@ -155,17 +151,6 @@ function change_setting_special(name, value, no_close) {
     case 'panel_right':
     case 'window_width':
         resize();
-        break;
-    case 'combine_colors':
-        arrow_combine_colors();
-        break;
-    case 'copy_from_graph':
-        for (let id = 2; id < 4; id ++) {
-            let field = `arrow_color_${id}`;
-            save_option(field, Y[`graph_color_${id}`]);
-            (_(`input[name="${field}"]`) || {}).value = Y[field];
-        }
-        arrow_combine_colors();
         break;
     case 'custom_black':
     case 'custom_black_pv':
@@ -177,8 +162,21 @@ function change_setting_special(name, value, no_close) {
         (_(`select[name="${field}"]`) || {}).value = Y[field];
         update_board_theme(is_pv? 2: 1);
         break;
+    case 'drag_and_drop':
+        set_draggable();
+        break;
+    case 'engine':
+        break;
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
+        break;
+    case 'graph_depth':
+    case 'graph_eval':
+    case 'graph_mobile':
+    case 'graph_node':
+    case 'graph_speed':
+    case 'graph_tb':
+    case 'graph_time':
         break;
     case 'hide_eval_0':
     case 'hide_eval_1':
@@ -209,9 +207,6 @@ function change_setting_special(name, value, no_close) {
         if (Visible('#table-log'))
             listen_log();
         break;
-    case 'live_tabs':
-        show_live_engines();
-        break;
     case 'mobility':
         update_visible();
         break;
@@ -220,12 +215,20 @@ function change_setting_special(name, value, no_close) {
     case 'move_height_pv':
         resize_move_lists();
         break;
+    case 'moves_kibitz':
+        break;
+    case 'moves_pv':
+        break;
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
         break;
     case 'theme':
         change_theme(value);
+        break;
+    case 'use_for_arrow':
+        for (let id = 2; id < 4; id ++)
+            save_option(`arrow_color_${id}`, Y[`graph_color_${id}`]);
         break;
     default:
         return change_setting_game(name, value);
@@ -400,6 +403,8 @@ function init_globals() {
     show_live_engines();
 
     activate_tabs();
+    set_draggable();
+
     if (Visible('#table-log'))
         listen_log();
 
@@ -638,6 +643,17 @@ function set_3d_scene(three) {
 }
 
 /**
+ * Set some elements to be draggable or not
+ */
+function set_draggable() {
+    let chart_ids = Keys(charts).map(key => `#table-${key}`).join(', '),
+        drag = !!Y.drag_and_drop;
+
+    Attrs(chart_ids, {draggable: drag});
+    Attrs('#player0, #player1, #table-engine, #table-live0, #table-live1, .xboard', {draggable: drag});
+}
+
+/**
  * Show live engines
  */
 function show_live_engines() {
@@ -647,12 +663,6 @@ function show_live_engines() {
         live = items.join('<br>');
         HTML(`[data-x="live+${id}"]`, live);
     });
-
-    let live_tabs = Y.live_tabs;
-    S('#live-tabs', live_tabs);
-    S('#table-live0, #table-live1', !live_tabs);
-    if (live_tabs)
-        open_table(Y.tabs['live-tabs']);
 }
 
 /**
@@ -1158,10 +1168,14 @@ function startup() {
             graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
+            position: '',
+            use_for_arrow: '1',
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
+            drag_and_drop: [ON_OFF, 0],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
+            tab_background: [['none', 'gradient'], 'gradient'],
         },
         hide: {
             hide_eval_0: [ON_OFF, 0],
@@ -1193,8 +1207,8 @@ function startup() {
             graph_speed: [positions, 'center'],
             graph_tb: [positions, 'center'],
             graph_time: [positions, 'center'],
-            move_kibitz: [positions, 'left'],
-            move_pv: [positions, 'left'],
+            moves_kibitz: [positions, 'left'],
+            moves_pv: [positions, 'left'],
         },
         quick: {
             chat_offset: [{max: 800, min: -800, type: 'number'}, 0],

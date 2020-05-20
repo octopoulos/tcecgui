@@ -201,7 +201,6 @@ let ANALYSIS_URLS = {
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
-    TIMEOUT_arrow = 1000,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
     tour_info = {
@@ -2458,7 +2457,7 @@ function update_pgn(section, pgn) {
         update_overview_moves(section, headers, moves, true, true);
 
     update_mobility();
-    add_timeout('arrow', redraw_arrows, Max(TIMEOUT_arrow, Y.play_every + 100));
+    add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
 
     // got player info => can do h2h
     check_queued_tables();
@@ -3058,7 +3057,7 @@ function handle_board_events(board, type, value) {
             update_materials(value);
             update_mobility();
             if (DEV.arrow)
-                add_timeout('arrow', redraw_arrows, Max(TIMEOUT_arrow, Y.play_every + 100));
+                add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
         }
         break;
     }
@@ -3083,10 +3082,6 @@ function open_table(sel, hide_table=true) {
     if (active) {
         Class(active, '-active');
         // only hide if the table has the same parent
-        // + special cases
-        if (['live0', 'live1'].includes(key) && !Y.live_tabs)
-            hide_table = false;
-
         if (hide_table)
             Hide(`#table-${active.dataset.x}`);
     }
@@ -3340,7 +3335,7 @@ function startup_game() {
             arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
             arrow_base_color: [{type: 'color'}, '#a5a5a5'],
             arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
-            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.00],
+            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
             arrow_color_0: [{type: 'color'}, '#cdcdbe'],
             arrow_color_1: [{type: 'color'}, '#666666'],
             arrow_color_2: [{type: 'color'}, '#236ad6'],
@@ -3349,12 +3344,12 @@ function startup_game() {
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
             arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.25],
             arrow_head_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
-            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.00],
+            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
+            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
+            arrow_history_lag: [{max: 5000, min: 0, type: 'number'}, 1300],
+            arrow_moves: [['all', 'last'], 'last'],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
-            combine_colors: '1',
-            copy_from_graph: '1',
         },
         board: {
             analysis_chessdb: '1',
@@ -3412,7 +3407,6 @@ function startup_game() {
             live_engine_2: [ON_OFF, 1],
             live_hide: [ON_OFF, 0],
             live_pv: [ON_OFF, 1],
-            live_tabs: [ON_OFF, 1],
             move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
         },
         moves: {

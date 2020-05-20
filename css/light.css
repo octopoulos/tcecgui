@@ -309,6 +309,9 @@ grid {
 #modal a {
     color: #000;
 }
+#modal a.off {
+    color: #f00;
+}
 #modal input,
 #modal select {
     padding: 0.2em;
@@ -449,9 +452,6 @@ grid {
 #archive,
 #live {
     width: 100%;
-}
-#live-tabs {
-    margin-top: 1em;
 }
 #live-texts {
     margin-top: 0.5em;

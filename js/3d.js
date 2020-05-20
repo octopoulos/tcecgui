@@ -1207,7 +1207,7 @@ function show_settings(name, xy) {
             title = settings[key][2];
 
         lines.push(
-            `<a${is_string} class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+            `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'
