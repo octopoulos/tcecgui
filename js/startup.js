@@ -12,21 +12,21 @@
 /*
 globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, Assign, Attrs,
+api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
 check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, full_scroll, game_action_key, game_action_keyup,
 get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen,
 KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, popup_custom, reset_old_settings,
-resize_game, Round,
+merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
+reset_old_settings, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
 show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
 tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, touch_handle, translate_node, translates:true, update_board_theme,
 update_chart_options, update_debug, update_player_charts, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
-virtual_resize:true, Visible, window, xboards, Y
+virtual_resize:true, Visible, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -101,6 +101,25 @@ function adjust_popups() {
 }
 
 /**
+ * Use an audio set
+ * @param {string} set custom, grand bamboo
+ */
+function audio_set(set) {
+    let audio_settings = X_SETTINGS.audio,
+        prefix = `${set} - `;
+
+    Keys(audio_settings).forEach(key => {
+        if (key.slice(0, 6) != 'sound_')
+            return;
+        let choice = audio_settings[key][0].filter(value => value.slice(0, prefix.length) == prefix)[0];
+        if (choice != undefined) {
+            save_option(key, choice);
+            _(`select[name="${key}"]`).value = choice;
+        }
+    });
+}
+
+/**
  * Handler for change settings
  * @param {string} name
  * @param {string|number} value
@@ -137,6 +156,9 @@ function change_setting_special(name, value, no_close) {
     case 'notation_pv':
     case 'piece_theme_pv':
         update_board_theme(2);
+        break;
+    case 'audio_set':
+        audio_set(value);
         break;
     case 'board_kibitz':
         break;
@@ -1074,6 +1096,23 @@ function set_global_events() {
             return;
         touch_handle(e, true);
     });
+
+    // drag and drop
+    Events(window, 'dragenter dragover', e => {
+        LS(e);
+        e.stopPropagation();
+        e.preventDefault();
+    });
+    Events(window, 'dragexit dragleave', e => {
+        LS(e);
+        if (e.target.tagName == 'HTML')
+            Hide('#rectangle');
+    });
+    Events(window, 'drop', e => {
+        LS(e);
+        e.stopPropagation();
+        e.preventDefault();
+    });
 }
 
 /**
@@ -1148,15 +1187,104 @@ function startup() {
     startup_3d();
     startup_game();
 
-    let positions = ['off', 'bottom', 'center', 'left', 'right', 'top'],
+    let bamboo = 'grand bamboo',
+        bamboo2 = `${bamboo} - `,
+        old = 'old - move.mp3',
+        positions = ['off', 'bottom', 'center', 'center top', 'left', 'right', 'top'],
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
-        // new column after 7 items
+        // new column after 9 items
         _split: 9,
+        audio: {
+            audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
+            audio_moves: [['none', 'all', 'last'], 'last'],
+            audio_set: [['custom', bamboo, 'old'], 'custom'],
+            book_sound: [ON_OFF, 1],
+            capture_delay: [{max: 1000, min: -1000, type: 'number'}, -200],
+            sound_capture: [['off', `${bamboo2}capture`, old], `${bamboo2}capture`],
+            sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
+            sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
+            sound_draw: [['off', 'draw'], 'draw'],
+            sound_move: [['off', `${bamboo2}move`, old], `${bamboo2}move`],
+            sound_move_pawn: [['off', `${bamboo2}move pawn`, old], `${bamboo2}move pawn`],
+            sound_win: [['off', 'win'], 'win'],
+        },
+        // separator
+        _1: {},
+        arrow: {
+            arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
+            arrow_base_color: [{type: 'color'}, '#a5a5a5'],
+            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
+            arrow_color_0: [{type: 'color'}, '#cdcdbe'],
+            arrow_color_1: [{type: 'color'}, '#666666'],
+            arrow_color_2: [{type: 'color'}, '#236ad6'],
+            arrow_color_3: [{type: 'color'}, '#eb282d'],
+            arrow_combine_23: [{type: 'color'}, '#007700'],
+            arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
+            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.25],
+            arrow_head_color: [{type: 'color'}, '#a5a5a5'],
+            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
+            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
+            arrow_history_lag: [{max: 5000, min: 0, type: 'number'}, 1300],
+            arrow_moves: [['all', 'last'], 'last'],
+            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
+            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
+        },
+        board: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
+            animate: [ON_OFF, 1],
+            arrow: '',
+            board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            custom_black: [{type: 'color'}, '#000000'],
+            custom_white: [{type: 'color'}, '#ffffff'],
+            highlight_color: [{type: 'color'}, '#ffff00'],
+            // 1100 looks good too
+            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
+            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
+            notation: [ON_OFF, 1],
+            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
+            status: [AUTO_ON_OFF, 'auto'],
+        },
+        board_pv: {
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
+            animate_pv: [ON_OFF, 1],
+            board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pv: [{type: 'color'}, '#000000'],
+            custom_white_pv: [{type: 'color'}, '#ffffff'],
+            highlight_color_pv: [{type: 'color'}, '#ffff00'],
+            highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
+            notation_pv: [ON_OFF, 1],
+            piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
+            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
+            show_ply: [['first', 'diverging', 'last'], 'diverging'],
+            status_pv: [ON_OFF, 1],
+        },
+        // separator
         control: {
+            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
             key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
             key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
+            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
+        },
+        engine: {
+            mobility: [ON_OFF, 1],
+            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
+        },
+        extra: {
+            archive_scroll: [ON_OFF, 1],
+            drag_and_drop: [ON_OFF, 0],
+            rows_per_page: [[10, 20, 50, 100], 10],
+            scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
+            tab_background: [['none', 'gradient'], 'gradient'],
+            wrap: [ON_OFF, 1],
+            wrap_cross: [AUTO_ON_OFF, 'auto'],
+            wrap_h2h: [AUTO_ON_OFF, 'auto'],
+            wrap_sched: [AUTO_ON_OFF, 'auto'],
+            wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
             graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
@@ -1171,12 +1299,6 @@ function startup() {
             position: '',
             use_for_arrow: '1',
         },
-        extra: {
-            archive_scroll: [ON_OFF, 1],
-            drag_and_drop: [ON_OFF, 0],
-            scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
-            tab_background: [['none', 'gradient'], 'gradient'],
-        },
         hide: {
             hide_eval_0: [ON_OFF, 0],
             hide_eval_1: [ON_OFF, 0],
@@ -1188,8 +1310,22 @@ function startup() {
             hide_moves_3: [ON_OFF, 0],
             live_hide: [ON_OFF, 0],
         },
+        live: {
+            copy_moves: '1',
+            live_engine_1: [ON_OFF, 1],
+            live_engine_2: [ON_OFF, 1],
+            live_hide: [ON_OFF, 0],
+            live_pv: [ON_OFF, 1],
+            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
+        },
+        moves: {
+            move_height: [{max: 30, min: 5, type: 'number'}, 5],
+            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
+            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
+        },
         panel: {
             panel_adjust: [ON_OFF, 1],
+            panel_background: [['none', 'gradient'], 'gradient'],
             panel_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
             panel_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
             panel_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
@@ -1214,6 +1350,17 @@ function startup() {
             chat_offset: [{max: 800, min: -800, type: 'number'}, 0],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
+        },
+        // popup only
+        copy: {
+            _pop: true,
+            copy_moves: '1',
+            move_height: [{max: 30, min: 5, type: 'number'}, 5],
+        },
+        copy_pv: {
+            _pop: true,
+            copy_moves: '1',
+            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
     });
 

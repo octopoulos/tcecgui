@@ -1784,7 +1784,7 @@ class XBoard {
                 offset = 0,
                 text = move.m,
                 last = text.slice(-1),
-                sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': 'move', audio_delay]];
+                sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
 
             if (text.includes('x')) {
                 let capture_delay = Y.capture_delay;

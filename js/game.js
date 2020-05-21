@@ -11,13 +11,13 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox, AUTO_ON_OFF,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
 clear_timeout, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document,
 Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses,
 Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
-push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
+listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
+reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
 Show, show_menu, show_modal, Sign, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT,
 TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
@@ -3314,117 +3314,6 @@ function startup_game() {
     Assign(STATE_KEYS, {
         archive: ['x', 'season', 'div', 'game'],
         live: ['x'],
-    });
-
-    merge_settings({
-        audio: {
-            audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
-            audio_moves: [['none', 'all', 'last'], 'last'],
-            book_sound: [ON_OFF, 1],
-            capture_delay: [{max: 1000, min: -1000, type: 'number'}, -200],
-            sound_capture: [['off', 'capture'], 'capture'],
-            sound_check: [['off', 'check'], 'check'],
-            sound_checkmate: [['off', 'checkmate'], 'checkmate'],
-            sound_draw: [['off', 'draw'], 'draw'],
-            sound_move: [['off', 'move', 'move.mp3'], 'move'],
-            sound_win: [['off', 'win'], 'win'],
-        },
-        // separator
-        _1: {},
-        arrow: {
-            arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
-            arrow_base_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
-            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
-            arrow_color_0: [{type: 'color'}, '#cdcdbe'],
-            arrow_color_1: [{type: 'color'}, '#666666'],
-            arrow_color_2: [{type: 'color'}, '#236ad6'],
-            arrow_color_3: [{type: 'color'}, '#eb282d'],
-            arrow_combine_23: [{type: 'color'}, '#007700'],
-            arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
-            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.25],
-            arrow_head_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
-            arrow_history_lag: [{max: 5000, min: 0, type: 'number'}, 1300],
-            arrow_moves: [['all', 'last'], 'last'],
-            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
-        },
-        board: {
-            analysis_chessdb: '1',
-            analysis_lichess: '1',
-            animate: [ON_OFF, 1],
-            arrow: '',
-            board_theme: [Keys(BOARD_THEMES), 'chess24'],
-            custom_black: [{type: 'color'}, '#000000'],
-            custom_white: [{type: 'color'}, '#ffffff'],
-            highlight_color: [{type: 'color'}, '#ffff00'],
-            // 1100 looks good too
-            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
-            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
-            notation: [ON_OFF, 1],
-            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
-            status: [AUTO_ON_OFF, 'auto'],
-        },
-        board_pv: {
-            analysis_chessdb: '1',
-            analysis_lichess: '1',
-            animate_pv: [ON_OFF, 1],
-            board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
-            custom_black_pv: [{type: 'color'}, '#000000'],
-            custom_white_pv: [{type: 'color'}, '#ffffff'],
-            highlight_color_pv: [{type: 'color'}, '#ffff00'],
-            highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
-            notation_pv: [ON_OFF, 1],
-            piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
-            show_ply: [['first', 'diverging', 'last'], 'diverging'],
-            status_pv: [ON_OFF, 1],
-        },
-        // separator
-        control: {
-            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
-        },
-        engine: {
-            mobility: [ON_OFF, 1],
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
-        },
-        extra: {
-            rows_per_page: [[10, 20, 50, 100], 10],
-            wrap: [ON_OFF, 1],
-            wrap_cross: [AUTO_ON_OFF, 'auto'],
-            wrap_h2h: [AUTO_ON_OFF, 'auto'],
-            wrap_sched: [AUTO_ON_OFF, 'auto'],
-            wrap_stand: [AUTO_ON_OFF, 'auto'],
-        },
-        graph: {},
-        hide: {},
-        live: {
-            copy_moves: '1',
-            live_engine_1: [ON_OFF, 1],
-            live_engine_2: [ON_OFF, 1],
-            live_hide: [ON_OFF, 0],
-            live_pv: [ON_OFF, 1],
-            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
-        },
-        moves: {
-            move_height: [{max: 30, min: 5, type: 'number'}, 5],
-            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
-            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
-        },
-        // popup only
-        copy: {
-            _pop: true,
-            copy_moves: '1',
-            move_height: [{max: 30, min: 5, type: 'number'}, 5],
-        },
-        copy_pv: {
-            _pop: true,
-            copy_moves: '1',
-            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
-        },
     });
 
     virtual_init_3d_special = init_3d_special;
