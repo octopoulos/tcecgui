@@ -342,9 +342,9 @@ function reset_chart(chart) {
     if (!chart)
         return;
 
-    let data = chart.data;
-    data.labels.length = 0;
-    for (let dataset of data.datasets)
+    let data_c = chart.data;
+    data_c.labels.length = 0;
+    for (let dataset of data_c.datasets)
         dataset.data.length = 0;
 
     chart.update();
@@ -358,6 +358,21 @@ function reset_charts()
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
+    });
+}
+
+/**
+ * Slice charts from a specific index (ply - first_num)
+ * @param {number} from
+ * @param {number} to
+ */
+function slice_charts(from, to) {
+    Keys(chart_data).forEach(key => {
+        let data_c = chart_data[key];
+
+        data_c.labels = data_c.labels.slice(from, to);
+        for (let dataset of data_c.datasets)
+            dataset.data = dataset.data.slice(from, to);
     });
 }
 
@@ -429,12 +444,13 @@ function update_chart_options(name, mode) {
  * @param {boolean=} invert_black invert black evals
  */
 function update_live_chart(moves, id, invert_black) {
-    let data = chart_data.eval;
-    if (!data)
+    let data_c = chart_data.eval;
+    if (!data_c)
         return;
 
-    let dataset = data.datasets[id],
-        labels = data.labels,
+    let dataset = data_c.datasets[id],
+        data = dataset.data,
+        labels = data_c.labels,
         last_ply = -1;
 
     // 1) add moves
@@ -456,7 +472,7 @@ function update_live_chart(moves, id, invert_black) {
         }
 
         // check update_player_chart to understand
-        dataset.data[num2] = {
+        data[num2] = {
             eval: eval_,
             ply: ply,
             x: num / 2 + 1,
@@ -467,6 +483,12 @@ function update_live_chart(moves, id, invert_black) {
 
     // 2) remove moves that are after the last move
     // - could have been sent by error just after a new game started
+    let limit = last_ply - first_num + 1;
+    if (labels.length > limit) {
+        if (DEV.ply)
+            LS(`LC${id}: ${last_ply} -> ${limit} : ${data.length}/${labels.length}`);
+        slice_charts(0, limit);
+    }
 
     fix_labels(labels);
     charts.eval.update();
