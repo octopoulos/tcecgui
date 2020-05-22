@@ -193,7 +193,12 @@ class XBoard {
         this.real = null;                               // pointer to a board with the real moves
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
-        this.svgs = [];                                 // svg objects for the arrows
+        this.svgs = [
+            {id: 0},
+            {id: 1},
+            {id: 2},
+            {id: 3},
+        ];                                              // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
         this.valid = true;
         this.xmoves = null;
@@ -622,8 +627,9 @@ class XBoard {
      */
     arrow_html(id, dico) {
         // 1) no move => hide the arrow
+        // TODO: maybe some restoration is needed here
         if (!dico || !dico.from || !Y.arrow_opacity) {
-            Hide(this.svgs[id]);
+            Hide(this.svgs[id].svg);
             return;
         }
 
@@ -684,40 +690,62 @@ class XBoard {
         }
 
         // 3) arrow conflicts
-        // - black and white = only 1 arrow can exist
         // - arrows have the same path => hide the other + modify the color
-        let other_id = id + 1 - (id % 2) * 2,
-            other = this.svgs[other_id],
+        let shead,
+            dual_id = id + 1 - (id % 2) * 2,
+            dual = this.svgs[dual_id],
             scolor = Y[`arrow_color_${id}`];
 
-        if (other)
-            if (id < 2)
-                Hide(other);
-            else {
-                let path2 = _('svg > path', other).getAttributeNS(null, 'd');
-                if (path == path2) {
-                    scolor = Y.arrow_combine_23;
-                    Hide(other);
+        for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
+            let other_id = other.id;
+            if (id < 2) {
+                // black and white = only 1 arrow can exist
+                if (other_id < 2)
+                    Hide(other.svg);
+                else {
+                    AttrsNS(`#mk${other_id}_1`, {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
+                    Hide(this.svgs[id].svg);
+                    return;
                 }
-                // other color might be green => should recolor it
-                else
-                    AttrsNS('svg > path', {stroke: Y[`arrow_color_${other_id}`]}, other);
             }
+            else {
+                if (other_id >= 2)
+                    scolor = Y.arrow_combine_23;
+                else
+                    shead = mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${other_id}`], 0.6);
+                Hide(other.svg);
+            }
+        }
+
+        // other color might be green => should recolor it
+        if (id >= 2)
+            AttrsNS('svg > path', {stroke: Y[`arrow_color_${dual_id}`]}, dual.svg);
 
         // 4) show the arrow
         let body = this.create_svg(id),
             color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
-            color_head = mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
+            color_head = shead || mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
             marker0 = Id(`mk${id}_0`),
             marker1 = Id(`mk${id}_1`),
-            paths = A('svg > path', body);
+            paths = A('svg > path', body),
+            svg = this.svgs[id];
 
         AttrsNS(marker0, {fill: color_base, stroke: scolor, 'stroke-width': Y.arrow_base_border});
         AttrsNS(marker1, {fill: color_head, stroke: scolor, 'stroke-width': Y.arrow_head_border});
 
         AttrsNS(paths[0], {d: path, stroke: scolor, 'stroke-width': Y.arrow_width});
+        svg.dist = delta_x + delta_y;
+        svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity}`);
         Show(body);
+
+        // 5) shorter distances above
+        [...this.svgs]
+            .sort((a, b) => ((b.dist || 0) - (a.dist || 0)))
+            .forEach((svg, id) => {
+                LS(`${id}): ${svg.id} : ${svg.dist} : ${svg.path}`);
+                Style(svg.svg, `z-index:${id}`);
+            });
     }
 
     /**
@@ -951,7 +979,7 @@ class XBoard {
      * @returns {Node}
      */
     create_svg(id) {
-        let arrow = this.svgs[id];
+        let arrow = this.svgs[id].svg;
         if (arrow)
             return arrow;
 
@@ -984,10 +1012,10 @@ class XBoard {
 
         AttrsNS(path, {'marker-end': `url(#mk${id}_1)`, 'marker-start': `url(#mk${id}_0)`});
 
-        arrow = CreateNode('div', null, {class: 'arrow'}, [svg]);
+        arrow = CreateNode('div', null, {class: 'arrow', id: `ar${id}`}, [svg]);
 
         this.overlay.appendChild(arrow);
-        this.svgs[id] = arrow;
+        this.svgs[id].svg = arrow;
         return arrow;
     }
 
@@ -1134,7 +1162,7 @@ class XBoard {
      */
     hide_arrows() {
         for (let svg of this.svgs)
-            Hide(svg);
+            Hide(svg.svg);
     }
 
     /**

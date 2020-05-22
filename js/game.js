@@ -3056,7 +3056,7 @@ function handle_board_events(board, type, value) {
 
             update_materials(value);
             update_mobility();
-            if (DEV.arrow)
+            if (Y.arrow_moves == 'all')
                 add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
         }
         break;

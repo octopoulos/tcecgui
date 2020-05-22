@@ -1223,7 +1223,7 @@ function startup() {
             arrow_color_3: [{type: 'color'}, '#eb282d'],
             arrow_combine_23: [{type: 'color'}, '#007700'],
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
-            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.25],
+            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.5],
             arrow_head_color: [{type: 'color'}, '#a5a5a5'],
             arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
