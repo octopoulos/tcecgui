@@ -1374,6 +1374,9 @@ function set_modal_events(parent) {
             }
         }
     }, parent);
+    C('.item2', function() {
+        change_setting(this.dataset.t);
+    });
 
     // right click on item => reset to default
     Events('.item', 'contextmenu', function(e) {

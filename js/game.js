@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-05-23
 //
 // Game specific code:
 // - control the board, moves
@@ -13,9 +13,9 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
-clear_timeout, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV,
-device, document, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply,
-get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+clear_timeout, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
+Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -3300,25 +3300,6 @@ function start_game() {
  * Initialise structures with game specific data
  */
 function startup_game() {
-    //
-    Assign(DEFAULTS, {
-        areas: {},
-        div: '',
-        game: 0,
-        link: '',                           // live link
-        live_log: 0,
-        order: 'left|center|right',         // main panes order
-        round: '',                          // live round
-        season: '',
-        stream: 0,
-        tabs: {},                           // opened tabs
-        three: 0,                           // 3d scene
-        twitch_chat: 1,
-        twitch_dark: 0,
-        twitch_video: device.mobile? 0: 1,
-        version: VERSION,
-        x: 'live',
-    });
     Assign(STATE_KEYS, {
         archive: ['x', 'season', 'div', 'game'],
         live: ['x'],

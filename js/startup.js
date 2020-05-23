@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-04
+// @version 2020-05-23
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -14,10 +14,10 @@ globals
 _, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
-check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, detect_device, DEV, document,
-download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key, game_action_keyup,
-get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen,
-KEY_TIMES, Keys, KEYS,
+check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, DEFAULTS, detect_device, DEV,
+document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
+game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph,
+init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
 reset_old_settings, resize_game, Round,
@@ -168,6 +168,8 @@ function change_setting_special(name, value, no_close) {
     case 'board_pva':
         break;
     case 'chat_offset':
+    case 'column_bottom':
+    case 'column_top':
     case 'graph_min_width':
     case 'max_center':
     case 'max_left':
@@ -201,8 +203,6 @@ function change_setting_special(name, value, no_close) {
     case 'graph_tb':
     case 'graph_time':
         break;
-    case 'column_bottom':
-    case 'column_top':
     case 'hide_eval_0':
     case 'hide_eval_1':
     case 'hide_eval_2':
@@ -227,6 +227,9 @@ function change_setting_special(name, value, no_close) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
+    case 'hide':
+        hide_element(context_target);
+        break;
     case 'live_log':
         if (Visible('#table-log'))
             listen_log();
@@ -246,6 +249,9 @@ function change_setting_special(name, value, no_close) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
+        break;
+    case 'tabbed':
+        tab_element(context_target);
         break;
     case 'theme':
         change_theme(value);
@@ -393,6 +399,30 @@ function create_url_list(dico) {
 }
 
 /**
+ * Hide a drag element
+ * @param {Node} node
+ */
+function hide_element(node) {
+    node = Parent(node, {class_: 'drag'});
+    if (!node)
+        return;
+
+    let areas = Y.areas,
+        id = node.id;
+
+    Keys(areas).forEach(key => {
+        for (let vector of areas[key])
+            if (vector[0] == id) {
+                vector[2] = 0;
+                break;
+            }
+    });
+
+    Hide(node);
+    populate_areas();
+}
+
+/**
  * Ran once at the last initialisation step
  */
 function init_globals() {
@@ -428,6 +458,7 @@ function init_globals() {
 
     activate_tabs();
     set_draggable();
+    populate_areas();
 
     if (Visible('#table-log'))
         listen_log();
@@ -572,6 +603,26 @@ function opened_table_special(node, name, tab) {
 }
 
 /**
+ * Populate areas
+ */
+function populate_areas() {
+    let areas = Y.areas;
+    Keys(areas).forEach(key => {
+        let parent = Id(key);
+        if (!parent)
+            return;
+
+        for (let [id, tab, vis] of areas[key]) {
+            let node = Id(id);
+            if (!node)
+                continue;
+            parent.appendChild(node);
+            S(node, (vis == undefined)? true: vis);
+        }
+    });
+}
+
+/**
  * Resize the window => resize some other elements
  * @param {boolean=} force
  */
@@ -676,10 +727,7 @@ function set_3d_scene(three) {
  * Set some elements to be draggable or not
  */
 function set_draggable() {
-    let chart_ids = Keys(charts).map(key => `#table-${key}`).join(', '),
-        drag = !!Y.drag_and_drop;
-
-    // Attrs(chart_ids, {draggable: drag});
+    let drag = !!Y.drag_and_drop;
     Attrs('.drag', {draggable: drag});
 }
 
@@ -813,14 +861,40 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
 }
 
 /**
+ * Add a drag element to a tab group
+ * @param {Node} node
+ */
+function tab_element(node) {
+    node = Parent(node, {class_: 'drag'});
+    if (!node)
+        return;
+
+    let areas = Y.areas,
+        id = node.id;
+
+    Keys(areas).forEach(key => {
+        for (let vector of areas[key])
+            if (vector[0] == id) {
+                vector[1] = vector[1]? 0: 1;
+                break;
+            }
+    });
+
+    populate_areas();
+}
+
+/**
  * Update the shortcuts on the top right
  * - copy the tab text
  * - copy the table html
+ * TODO: delete this
  */
 function update_shortcuts() {
     for (let id = 1; id <= 2 ; id ++) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
+        if (!tab)
+            continue;
 
         if (shortcut) {
             let target = _(`.tab[data-x="${shortcut}"]`);
@@ -1155,9 +1229,9 @@ function set_global_events() {
             else
                 parent.appendChild(drag_source);
 
-            LS(parents);
             for (let parent of parents)
-                Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => [child.id, child.dataset.tab || 0]);
+                Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(
+                    child => [child.id, child.dataset.tab || 0, child.dataset.vis || 1]);
 
             save_option('areas', Y.areas);
             resize_panels();
@@ -1241,10 +1315,30 @@ function startup() {
     startup_3d();
     startup_game();
 
+    Assign(DEFAULTS, {
+        areas: {},
+        div: '',
+        game: 0,
+        link: '',                           // live link
+        live_log: 0,
+        order: 'left|center|right',         // main panes order
+        round: '',                          // live round
+        season: '',
+        stream: 0,
+        tabs: {},                           // opened tabs
+        three: 0,                           // 3d scene
+        twitch_chat: 1,
+        twitch_dark: 0,
+        twitch_video: 1,
+        version: VERSION,
+        x: 'live',
+
+    });
+
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
         old = 'old - move.mp3',
-        positions = ['off', 'bottom', 'center0', 'center1', 'left0', 'left1', 'right0', 'right1', 'top'],
+        positions = ['off', 'bottom', 'center', 'left', 'right', 'top'],
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({

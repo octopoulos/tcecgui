@@ -75,7 +75,7 @@
                 <i data-svg="down"></i>
             </div>
         </horis>
-        <horis id="quick" class="fend">
+        <horis id="icons" class="fend">
             <i id="theme0" data-svg="sun" class="dn"></i>
             <i id="theme1" data-svg="moon" class="dn"></i>
             <!-- <i id="three" data-svg="cube" data-t="3D scene" data-t2="title"></i> -->
@@ -123,13 +123,8 @@
             </hori>
             <!-- left0 -->
             <vert id="left0" class="area">
-                <horis class="tabs"></horis>
                 <div id="archive" class="xboard drag dn"></div>
                 <div id="live" class="xboard drag"></div>
-            </vert>
-            <!-- left1 -->
-            <vert id="left1" class="area">
-                <horis class="tabs"></horis>
                 <div id="player0" class="drag"></div>
                 <div id="player1" class="drag"></div>
                 <div id="table-live0" class="drag"></div>
@@ -155,12 +150,7 @@
             </hori>
             <!-- center0 -->
             <vert id="center0" class="area">
-                <horis class="tabs"></horis>
                 <!-- engines -->
-                <horis id="engine-tabs" class="tabs">
-                    <div class="tab active" data-x="engine" data-t="Engine Info"></div>
-                    <div class="tab" data-x="pv" data-t="PV"></div>
-                </horis>
                 <grid id="table-engine" class="grid3 drag">
                     <hori id="info0" class="fcenter">
                         <hori id="king0" class="icon fcenter">
@@ -228,26 +218,7 @@
                     <i id="material"></i>
                     <horis id="material1" class="fcenter"></horis>
                 </grid>
-            </vert>
-            <!-- center1 -->
-            <vert id="center1" class="area">
-                <horis class="tabs"></horis>
                 <!-- charts -->
-                <horis id="chart-tabs" class="tabs">
-                    <div class="tab active" data-x="eval" data-t="Eval"></div>
-                    <div class="tab" data-x="mobil" data-t="Mob"></div>
-                    <div class="tab" data-x="time" data-t="Time"></div>
-                    <div class="tab" data-x="depth" data-t="D/SD"></div>
-                    <div class="tab" data-x="speed" data-t="Speed"></div>
-                    <div class="tab" data-x="node" data-t="Nodes"></div>
-                    <div class="tab" data-x="tb" data-t="TB"></div>
-                    <div class="tab" data-x="kibitz" data-t="Kibitz"></div>
-                    <div class="tab" data-x="pv" data-t="PV"></div>
-                    <div class="tab" data-x="pva" data-t="PV(A)"></div>
-                    <div class="tab dn" data-x="archive" data-t="Archive"></div>
-                    <div class="tab dn" data-x="live" data-t="Live"></div>
-                    <div class="tab dn" data-x="x" data-t="X"></div>
-                </horis>
                 <vert id="table-eval" class="drag">
                     <div class="chart">
                         <canvas id="chart-eval" class="graphs"></canvas>
@@ -337,14 +308,6 @@
             </hori>
             <!-- right0 -->
             <vert id="right0" class="area">
-                <horis class="tabs"></horis>
-                <horis id="quick-tabs" class="tabs">
-                    <div class="tab active" data-x="chat" data-t="Chat"></div>
-                    <div class="tab" data-x="winner" data-t="Winners"></div>
-                    <div class="tab" data-x="info" data-t="Info"></div>
-                    <div class="tab" data-x="shortcut_1"></div>
-                    <div class="tab" data-x="shortcut_2"></div>
-                </horis>
                 <!-- pagination -->
                 <horis id="quick-pagin" class="pagin fbetween dn">
                     <div>
@@ -379,10 +342,6 @@
                 <horis id="quick-search" class="fend dn">
                     <input class="search" data-t="Search" data-t2="placeholder">
                 </horis>
-            </vert>
-            <!-- right1 -->
-            <vert id="right1" class="area">
-                <horis class="tabs"></horis>
             </vert>
         </vert>
     </hori>
