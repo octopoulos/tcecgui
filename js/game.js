@@ -13,9 +13,9 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
-clear_timeout, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document,
-Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses,
-Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+clear_timeout, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV,
+device, document, Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object,
+HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -116,7 +116,6 @@ let ANALYSIS_URLS = {
         tour: 60,
         winner: 3600 * 24,
     },
-    context_target,
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -679,6 +678,18 @@ function update_engine_pieces() {
 
 // TABLES
 /////////
+
+/**
+ * Add a table to the queue
+ * @param {string} section
+ * @param {string} parent
+ */
+function add_queue(section, parent) {
+    for (let queue of QUEUES)
+        queued_tables.add(`${section}/${parent}/${queue}`);
+    if (players[0].name)
+        add_timeout('queue', check_queued_tables, TIMEOUT_queue);
+}
 
 /**
  * Analyse the crosstable data
@@ -1497,12 +1508,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 7) create another table?
-    if (!is_shortcut && is_sched) {
-        for (let queue of QUEUES)
-            queued_tables.add(`${section}/${parent}/${queue}`);
-        if (players[0].name)
-            add_timeout('queue', check_queued_tables, TIMEOUT_queue);
-    }
+    if (!is_shortcut && is_sched)
+        add_queue(section, parent);
 }
 
 // ARCHIVE
@@ -1528,7 +1535,7 @@ function analyse_seasons(data) {
     let link = `season=${Y.season}&div=${Y.div}`,
         node = _(`[data-u="${link}"]`);
     if (node) {
-        let parent = Parent(node, 'grid');
+        let parent = Parent(node, {tag: 'grid'});
         if (parent) {
             Class(node, 'active');
             Class(node.nextElementSibling, 'active');
@@ -2462,12 +2469,14 @@ function update_pgn(section, pgn) {
     // got player info => can do h2h
     check_queued_tables();
 
-    if (new_game)
+    if (new_game) {
         for (let player of players)
             Assign(player, {
                 elapsed: 0,
                 left: player.tc,
             });
+        add_queue(section, 'table');
+    }
 }
 
 /**
@@ -2720,7 +2729,7 @@ function update_clock(id, move) {
     left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
-    HTML(`#left${id}`, left);
+    HTML(`#remain${id}`, left);
     HTML(`#time${id}`, time);
     player.sleft = left;
     player.stime = time;
@@ -2904,7 +2913,7 @@ function change_setting_game(name, value) {
     switch (name) {
     case 'analysis_chessdb':
     case 'analysis_lichess':
-        let parent = Parent(context_target, null, 'xboard');
+        let parent = Parent(context_target, {class_: 'xboard'});
         if (parent) {
             let board = xboards[parent.id],
                 url = ANALYSIS_URLS[name.split('_')[1]];
@@ -2913,9 +2922,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'copy_moves':
-        let target = context_target;
-        while (target && !HasClasses(target, 'live-pv xmoves'))
-            target = target.parentNode;
+        let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
         if (target)
             CopyClipboard(target.innerText.replace(/\s/g, ' '));
         break;
@@ -3074,7 +3081,7 @@ function open_table(sel, hide_table=true) {
     if (!sel)
         return;
 
-    let parent = Parent(sel, 'horis', 'tabs'),
+    let parent = Parent(sel, {class_: 'tabs'}),
         active = _('.active', parent),
         key = sel.dataset.x,
         node = Id(`table-${key}`);

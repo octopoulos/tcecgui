@@ -35,14 +35,15 @@ let AD_STYLES = {
         1: 'width:100%;max-height:280px',
     },
     CONTEXT_MENUS = {
-        '#charts, #charts2': 'graph',
+        '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
-        '#lives': 'live',
+        '#player0, #player1, #table-live0, #table-live1': 'live',
         '.pagin, #table-tabs': 'extra',
         '#quick-tabs': 'quick',
         '#table-engine': 'engine',
         '.swaps': 'panel',
     },
+    drag_source,
     old_center,
     old_font_height,
     old_stream = 0,
@@ -495,10 +496,10 @@ function load_google_analytics() {
 function move_nodes() {
     let active = get_active_tab('chart')[0],
         graph_all = Y.graph_all,
-        destin = Id(graph_all? 'charts2': 'charts'),
+        destin = Id(graph_all? 'bottom': 'charts'),
         destin_nodes = destin.children,
         parent = Id('charts-tab'),
-        source = Id(graph_all? 'charts': 'charts2'),
+        source = Id(graph_all? 'charts': 'bottom'),
         source_nodes = source.children;
 
     Keys(charts).forEach(key => {
@@ -581,7 +582,7 @@ function resize(force) {
 
     // resize charts
     if (Y.graph_all) {
-        let destin = Id('charts2'),
+        let destin = Id('bottom'),
             width = destin.clientWidth / 6 - 8;
 
         if (width < Y.graph_min_width)
@@ -671,8 +672,8 @@ function set_draggable() {
     let chart_ids = Keys(charts).map(key => `#table-${key}`).join(', '),
         drag = !!Y.drag_and_drop;
 
-    Attrs(chart_ids, {draggable: drag});
-    Attrs('#player0, #player1, #table-engine, #table-live0, #table-live1, .xboard', {draggable: drag});
+    // Attrs(chart_ids, {draggable: drag});
+    Attrs('.drag', {draggable: drag});
 }
 
 /**
@@ -727,6 +728,8 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             y = win_y / 2;
             break;
         case 'options':
+            if (!xy)
+                context_target = null;
             html = show_settings(setting, xy);
             break;
         default:
@@ -912,7 +915,7 @@ function set_global_events() {
     });
     C('.popup-close', function() {
         close_popups();
-        let parent = Parent(this, 'div|vert', 'popup');
+        let parent = Parent(this, {class_: 'popup', tag: 'div vert'});
         if (parent)
             Class(parent, '-popup-enable -popup-show');
     });
@@ -961,7 +964,7 @@ function set_global_events() {
                 return;
             }
             if (HasClass(target, 'page')) {
-                let parent = Parent(target, 'horis', 'pagin');
+                let parent = Parent(target, {class_: 'pagin'});
                 change_page(parent.id.split('-')[0], target.dataset.p);
                 break;
             }
@@ -971,7 +974,7 @@ function set_global_events() {
             if (dataset) {
                 let set = target.dataset.set;
                 if (set != undefined) {
-                    let parent = Parent(target, null, 'popup'),
+                    let parent = Parent(target, {class_: 'popup'}),
                         xy = '';
                     if (parent && parent.dataset) {
                         let item = parent.dataset.xy;
@@ -1098,18 +1101,36 @@ function set_global_events() {
     });
 
     // drag and drop
+    Events(window, 'dragstart', e => {
+        let parent = Parent(e.target, {attrs: 'draggable=true', self: true});
+        if (parent)
+            drag_source = parent;
+    });
     Events(window, 'dragenter dragover', e => {
-        LS(e);
+        let parent = Parent(e.target, {class_: 'area', self: true});
+        if (parent) {
+            let rect = parent.getBoundingClientRect();
+            Style('#rect', `left:${rect.left}px;height:${rect.height}px;top:${rect.top}px;width:${rect.width}px`);
+            Show('#rect');
+        }
         e.stopPropagation();
         e.preventDefault();
     });
     Events(window, 'dragexit dragleave', e => {
-        LS(e);
         if (e.target.tagName == 'HTML')
-            Hide('#rectangle');
+            Hide('#rect');
     });
     Events(window, 'drop', e => {
-        LS(e);
+        let child = Parent(e.target, {class_: 'drag', self:true}),
+            parent = Parent(e.target, {class_: 'area', self: true});
+        if (parent) {
+            LS(`DROP: ${drag_source.id} INTO ${parent.id} / ${child? child.id: '???'}`);
+            if (child)
+                parent.insertBefore(drag_source, child);
+            else
+                parent.appendChild(drag_source);
+        }
+        Hide('#rect');
         e.stopPropagation();
         e.preventDefault();
     });
@@ -1190,7 +1211,7 @@ function startup() {
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
         old = 'old - move.mp3',
-        positions = ['off', 'bottom', 'center', 'center top', 'left', 'right', 'top'],
+        positions = ['off', 'bottom', 'center0', 'center1', 'left0', 'left1', 'right0', 'right1', 'top'],
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
@@ -1215,7 +1236,7 @@ function startup() {
         arrow: {
             arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
             arrow_base_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
             arrow_color_0: [{type: 'color'}, '#cdcdbe'],
             arrow_color_1: [{type: 'color'}, '#666666'],

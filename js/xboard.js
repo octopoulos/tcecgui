@@ -25,7 +25,7 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys,
-Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split,
+Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
 split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
@@ -743,7 +743,6 @@ class XBoard {
         [...this.svgs]
             .sort((a, b) => ((b.dist || 0) - (a.dist || 0)))
             .forEach((svg, id) => {
-                LS(`${id}): ${svg.id} : ${svg.dist} : ${svg.path}`);
                 Style(svg.svg, `z-index:${id}`);
             });
     }
@@ -1122,20 +1121,11 @@ class XBoard {
         // PVA => extra events
         if (this.manual) {
             Events('.xsquares', 'mousemove', function(e) {
-                let found,
-                    target = e.target;
-                while (target) {
-                    if (HasClass(target, 'xsquare')) {
-                        found = target;
-                        break;
-                    }
-                    target = target.parentNode;
+                let target = Parent(e.target, {class_: 'xsquare'});
+                if (target) {
+                    Style('.xhigh', 'background:transparent', true, this);
+                    Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, target);
                 }
-                if (!found)
-                    return;
-
-                Style('.xhigh', 'background:transparent', true, this);
-                Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, found);
             }, {}, this.node);
         }
     }
@@ -1364,15 +1354,10 @@ class XBoard {
         if (!this.manual)
             return;
 
-        let node = e.target;
-        while (node) {
-            if (HasClass(node, 'xpiece')) {
-                LS(node);
-                let coord = node.dataset.c;
-                this.picked = (this.picked == coord)? null: coord;
-                return;
-            }
-            node = node.parentNode;
+        let node = Parent(e.target, {class_: 'xpiece'});
+        if (node) {
+            let coord = node.dataset.c;
+            this.picked = (this.picked == coord)? null: coord;
         }
     }
 
@@ -1385,16 +1370,7 @@ class XBoard {
         if (!this.manual || !this.picked)
             return;
 
-        let found,
-            node = e.target;
-        while (node) {
-            if (HasClass(node, 'xsquare')) {
-                found = node.dataset.q;
-                break;
-            }
-            node = node.parentNode;
-        }
-
+        let found = Parent(e.target, {class_: 'xsquare'});
         if (found) {
             this.chess_load(this.fen);
             this.chess_move({from: SQUARES_INV[this.picked], to: found});

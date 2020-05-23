@@ -483,8 +483,8 @@ function update_live_chart(moves, id, invert_black) {
 
     // 2) remove moves that are after the last move
     // - could have been sent by error just after a new game started
-    let limit = last_ply - first_num + 1;
-    if (labels.length > limit) {
+    let limit = last_ply - first_num + 2;
+    if (labels.length >= limit) {
         if (DEV.ply)
             LS(`LC${id}: ${last_ply} -> ${limit} : ${data.length}/${labels.length}`);
         slice_charts(0, limit);

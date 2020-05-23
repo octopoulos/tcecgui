@@ -388,7 +388,7 @@ function HasClass(node, class_) {
 }
 
 /**
- * Check if a node has classes
+ * Check if a node has all classes
  * @param {string|Node} node CSS selector or node
  * @param {string} class_ can be multiple classes separated by spaces, with +/- and ^$* patterns
  * @returns {boolean}
@@ -415,7 +415,7 @@ function HasClasses(node, classes) {
             if (!Contain(list, b))
                 return false;
         }
-        else if (!Contain(list, item))
+        else if (!item.split('|').some(key => Contain(list, key)))
             return false;
     }
 
@@ -547,16 +547,16 @@ function InsertNodes(parent, nodes, preprend) {
 /**
  * Find a parent node by tagName and class
  * @param {string|Node} node CSS selector or node
- * @param {string=} type
- * @param {string=} class_
  * @param {string=} attrs
- * @param {boolean=} be_self true => the parent can be the node itself
+ * @param {string=} class_ 'live-pv|xmoves'
+ * @param {boolean=} self true => the parent can be the node itself
+ * @param {string=} tag 'a div'
  * @returns {Node=} parent node or null or undefined
  * @example
- * Parent(node, 'div', '', 'id=ok')         // find a parent with tag <div> and whose ID='ok'
- * Parent(node, 'a|div', '', 'id=ok')       // find a parent with tag <a> or <div> and whose ID='ok'
+ * Parent(node, {attrs: 'id=ok', tag: 'div')        // find a parent with tag <div> and whose ID='ok'
+ * Parent(node, {attrs: 'id=ok', tag: 'a div')      // find a parent with tag <a> or <div> and whose ID='ok'
  */
-function Parent(node, type, class_, attrs, be_self) {
+function Parent(node, {tag, class_, attrs, self}={}) {
     if (typeof(node) == 'string')
         node = _(node);
     if (!node)
@@ -565,10 +565,10 @@ function Parent(node, type, class_, attrs, be_self) {
     let aitems = attrs? attrs.split(' '): [],
         citems = class_? class_.split(' '): [],
         parent = node,
-        types = type? type.split('|'): null;
+        tags = tag? tag.split(' '): null;
 
     for (let depth = 0; ; depth ++) {
-        if (depth || !be_self) {
+        if (depth || !self) {
             parent = parent.parentNode;
             if (!parent || !parent.tagName)
                 return null;
@@ -576,7 +576,7 @@ function Parent(node, type, class_, attrs, be_self) {
         let ok = true;
 
         // 1) tag
-        if (types && !types.includes(parent.tagName.toLowerCase()))
+        if (tags && !tags.includes(parent.tagName.toLowerCase()))
             continue;
 
         // 2) match all attrs
@@ -601,12 +601,14 @@ function Parent(node, type, class_, attrs, be_self) {
                     ok = false;
                     break;
                 }
-            } else if (a == '+') {
+            }
+            else if (a == '+') {
                 if (!Contain(list, b)) {
                     ok = false;
                     break;
                 }
-            } else if (!Contain(list, item)) {
+            }
+            else if (!item.split('|').some(key => Contain(list, key))) {
                 ok = false;
                 break;
             }

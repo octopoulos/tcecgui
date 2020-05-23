@@ -10,7 +10,7 @@ globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
 HasClass, HTML, Id, Input, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
+LANGUAGES, load_library, LS, merge_settings, navigator, Now, Parent, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
 */
@@ -68,6 +68,7 @@ let audiobox = {
     },
     clock,
     clock2,
+    context_target,
     controls,
     cube,
     cubes = [],
@@ -1250,7 +1251,16 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    if (name)
+    let parent = Parent(context_target, {class_: 'drag'});
+    if (parent)
+        lines.push(
+            `<hori class="span">`
+                + `<div class="item2" data-set="-1" data-t="ok"></div>`
+                + `<div class="item2" data-t="tabbed"></div>`
+                + `<div class="item2" data-t="hide"></div>`
+            + '</hori>'
+        );
+    else if (name)
         lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
 
     lines.push('</grid>');

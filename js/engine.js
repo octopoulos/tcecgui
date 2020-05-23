@@ -951,7 +951,7 @@ function touch_handle(e, full) {
 
         clear_timeout('touch_end');
 
-        drag_target = Parent(target, 'div', 'scroller', null, true);
+        drag_target = Parent(target, {class_: 'scroller', self: true, tag: 'div'});
         if (!full_target) {
             // maybe the object is already fully visible?
             // TODO: limit x and y directions individually

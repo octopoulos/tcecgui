@@ -331,15 +331,21 @@ grid {
 #popup-about.instant {
     transition: none;
 }
-.item {
+.item,
+.item2 {
     padding: 0.3em 2em 0.3em 1em;
     width: 100%;
+}
+.item2 {
+    font-variant: small-caps;
+    text-align: center;
 }
 .item-title {
     padding: 0.3em;
     text-align: center;
 }
-.item:hover {
+.item:hover,
+.item2:hover {
     background: rgba(0, 0, 0, 0.1);
 }
 .span {
@@ -452,9 +458,6 @@ grid {
 #archive,
 #live {
     width: 100%;
-}
-#live-texts {
-    margin-top: 0.5em;
 }
 .xcontrol {
     color: #007bff;
@@ -1066,6 +1069,43 @@ grid {
 }
 
 /* container */
+.area {
+    min-height: 1em;
+    width: 100%;
+}
+#bottom {
+    background: orange;
+}
+#bottom > vert {
+    margin: 2px;
+}
+#center0 {
+    background: #5a5;
+}
+#center1 {
+    background: #808;
+}
+#left0 {
+    background: #555;
+}
+#left1 {
+    background: #088;
+}
+#right0 {
+    background: #55a;
+}
+#right1 {
+    background: #880;
+}
+#top {
+    background: green;
+}
+#rect {
+    border: 8px solid rgba(255, 0, 0, 0.8);
+    pointer-events: none;
+    position: fixed;
+    z-index: 9;
+}
 #meta-canvas {
     height: 100%;
     pointer-events: none;
@@ -1082,6 +1122,7 @@ grid {
     width: 95%;
 }
 #left {
+    background: #533;
     flex: 2;
     margin: 4px;
     max-width: calc(100vh - 400px);
@@ -1094,6 +1135,7 @@ grid {
     min-width: 300px;
 }
 #right {
+    background: #335;
     flex: 2;
     margin: 4px;
     max-width: 395px;
@@ -1162,12 +1204,6 @@ grid {
 #charts canvas {
     width: 300px;
     height: 230px;
-}
-#charts2 {
-    width: 100%;
-}
-#charts2 > vert {
-    margin: 2px;
 }
 
 /* extras */
