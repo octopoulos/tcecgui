@@ -39,10 +39,10 @@ function startup_config() {
     // - every option name is the same as what you see in the Options in English, but lowercase + underscores
     // => 'Arrow opacity' becomes 'arrow_opacity'
     Assign(STREAM_SETTINGS, {
+        max_center: 300,
+        max_left: 330,
+        max_right: 350,
         no_ad: true,
-        panel_center: 300,
-        panel_left: 330,
-        panel_right: 350,
         shortcut_1: 'stand',
         // activating the shortcut tab
         tabs: {

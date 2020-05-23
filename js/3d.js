@@ -9,7 +9,7 @@
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
-HasClass, HTML, Id, Input, KEY_TIMES, Keys, KEYS,
+HasClass, HTML, Id, Input, IsArray, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, Now, Parent, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -1184,6 +1184,9 @@ function show_settings(name, xy) {
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
     keys.forEach(key => {
+        if (key == '_pop')
+            return;
+
         // separator
         if (key[0] == '_') {
             lines.push(`<hr${split? '': ' class="span"'}>`);
@@ -1217,7 +1220,7 @@ function show_settings(name, xy) {
         if (is_string)
             return;
 
-        if (Array.isArray(data)) {
+        if (IsArray(data)) {
             lines.push(
                 '<vert class="fcenter">'
                 + `<select name="${key}">`

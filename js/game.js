@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
 clear_timeout, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV,
-device, document, Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object,
-HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
+device, document, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply,
+get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
@@ -757,7 +757,7 @@ function analyse_crosstable(section, data) {
     // 2) table-cross: might need to update the columns too
     let node = Id('table-cross'),
         new_columns = [...Split(TABLES.cross), ...abbrevs],
-        scolumns = Array.from(A('th', node)).map(node => node.textContent).join('|'),
+        scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
 
     if (scolumns != snew_columns && Y.x == section) {
@@ -1256,7 +1256,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     if (rows) {
-        if (!Array.isArray(rows))
+        if (!IsArray(rows))
             return;
 
         // translate row keys + calculate _id and _text
@@ -1330,7 +1330,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 4) process all rows => render the HTML
-    let columns = Array.from(A('th', table)).map(node => node.dataset.x),
+    let columns = From(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
         is_winner = (name == 'winner'),
@@ -2760,7 +2760,7 @@ function game_action_key(code) {
     if (Visible('#overlay')) {
         let changes = 0,
             parent = Visible('#modal')? Id('modal'): Id('modal2'),
-            items = Array.from(A('.item', parent)).filter(item => Visible(item)),
+            items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
             node = items[index],
@@ -3302,6 +3302,7 @@ function start_game() {
 function startup_game() {
     //
     Assign(DEFAULTS, {
+        areas: {},
         div: '',
         game: 0,
         link: '',                           // live link

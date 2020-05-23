@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-DEV:true, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
+DEV:true, IsArray, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
 */
 'use strict';
 
@@ -134,7 +134,7 @@ function reset_old_settings() {
 
         Keys(settings).forEach(key => {
             let value = settings[key];
-            if (Array.isArray(value))
+            if (IsArray(value))
                 save_option(key, value[1]);
         });
     }

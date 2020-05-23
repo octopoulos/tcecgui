@@ -337,6 +337,7 @@ grid {
     width: 100%;
 }
 .item2 {
+    cursor: pointer;
     font-variant: small-caps;
     text-align: center;
 }
@@ -1006,17 +1007,6 @@ grid {
 }
 
 /* live */
-#lives {
-    margin-top: 0.5em;
-    width: 100%;
-}
-#lives .tabs {
-    margin-bottom: 0.1em;
-}
-#lives > * {
-    margin-bottom: 0.1em;
-    width: 100%;
-}
 .live {
     margin-top: 0.1em;
     position: relative;
@@ -1070,38 +1060,20 @@ grid {
 
 /* container */
 .area {
+    flex: 1;
     min-height: 1em;
     width: 100%;
 }
-#bottom {
-    background: orange;
+.area > * {
+    margin: 2px;
+    width: 100%;
 }
 #bottom > vert {
     margin: 2px;
 }
-#center0 {
-    background: #5a5;
-}
-#center1 {
-    background: #808;
-}
-#left0 {
-    background: #555;
-}
-#left1 {
-    background: #088;
-}
-#right0 {
-    background: #55a;
-}
-#right1 {
-    background: #880;
-}
-#top {
-    background: green;
-}
 #rect {
-    border: 8px solid rgba(255, 0, 0, 0.8);
+    border: 5px solid rgba(255, 0, 0, 0.8);
+    left: -9999px;
     pointer-events: none;
     position: fixed;
     z-index: 9;
@@ -1122,20 +1094,20 @@ grid {
     width: 95%;
 }
 #left {
-    background: #533;
     flex: 2;
     margin: 4px;
     max-width: calc(100vh - 400px);
+    min-height: 350px;
     min-width: 281px;
 }
 #center {
     flex: 2;
     max-width: 390px;
     margin: 4px;
+    min-height: 350px;
     min-width: 300px;
 }
 #right {
-    background: #335;
     flex: 2;
     margin: 4px;
     max-width: 395px;
@@ -1182,26 +1154,10 @@ grid {
 .size {
     margin: -0.2em 0 0 0.1em;
 }
-#chart-tabs {
-    order: 2;
-}
-#table-pv {
-    order: 3;
-}
-#charts {
-    order: 4;
-    z-index: 1;
-}
-#table-kibitz {
-    order: 5;
-}
-#table-pva {
-    order: 6;
-}
 .chart {
     position: relative;
 }
-#charts canvas {
+.graphs {
     width: 300px;
     height: 230px;
 }
@@ -1270,7 +1226,6 @@ grid {
 pre,
 #footer,
 #live-log,
-#lives,
 #table-engine,
 #table-info,
 #table-view,

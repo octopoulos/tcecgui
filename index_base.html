@@ -102,7 +102,7 @@
         </form>
     </horis>
     <div id="table-view" class="scroller"></div>
-    <horis id="top" class="area fcenter"></horis>
+    <horis id="top" class="area fcenter fastart"></horis>
     <hori id="main" class="fcenter fastart">
         <!-- left -->
         <vert id="left">
@@ -130,13 +130,10 @@
             <!-- left1 -->
             <vert id="left1" class="area">
                 <horis class="tabs"></horis>
-                <vert id="lives">
-                    <div id="player0" class="drag"></div>
-                    <div id="player1" class="drag"></div>
-                    <!-- lives -->
-                    <div id="table-live0" class="drag"></div>
-                    <div id="table-live1" class="drag"></div>
-                </vert>
+                <div id="player0" class="drag"></div>
+                <div id="player1" class="drag"></div>
+                <div id="table-live0" class="drag"></div>
+                <div id="table-live1" class="drag"></div>
             </vert>
         </vert>
         <!-- center -->
@@ -251,50 +248,48 @@
                     <div class="tab dn" data-x="live" data-t="Live"></div>
                     <div class="tab dn" data-x="x" data-t="X"></div>
                 </horis>
-                <div id="charts">
-                    <vert id="table-eval" class="drag">
-                        <div class="chart">
-                            <canvas id="chart-eval" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Eval"></div>
-                    </vert>
-                    <vert id="table-mobil" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-mobil" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Mobility"></div>
-                    </vert>
-                    <vert id="table-time" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-time" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Time"></div>
-                    </vert>
-                    <vert id="table-depth" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-depth" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="{Depth}/SD"></div>
-                    </vert>
-                    <vert id="table-speed" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-speed" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Speed"></div>
-                    </vert>
-                    <vert id="table-node" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-node" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="Nodes"></div>
-                    </vert>
-                    <vert id="table-tb" class="drag dn">
-                        <div class="chart">
-                            <canvas id="chart-tb" class="graphs"></canvas>
-                        </div>
-                        <div class="label dn" data-t="TB"></div>
-                    </vert>
-                </div>
+                <vert id="table-eval" class="drag">
+                    <div class="chart">
+                        <canvas id="chart-eval" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="Eval"></div>
+                </vert>
+                <vert id="table-mobil" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-mobil" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="Mobility"></div>
+                </vert>
+                <vert id="table-time" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-time" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="Time"></div>
+                </vert>
+                <vert id="table-depth" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-depth" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="{Depth}/SD"></div>
+                </vert>
+                <vert id="table-speed" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-speed" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="Speed"></div>
+                </vert>
+                <vert id="table-node" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-node" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="Nodes"></div>
+                </vert>
+                <vert id="table-tb" class="drag dn">
+                    <div class="chart">
+                        <canvas id="chart-tb" class="graphs"></canvas>
+                    </div>
+                    <div class="label dn" data-t="TB"></div>
+                </vert>
                 <!-- pv -->
                 <vert id="table-pv" class="drag dn">
                     <div id="box-pv0">
@@ -350,42 +345,40 @@
                     <div class="tab" data-x="shortcut_1"></div>
                     <div class="tab" data-x="shortcut_2"></div>
                 </horis>
-                <vert class="w100">
-                    <!-- pagination -->
-                    <horis id="quick-pagin" class="pagin fbetween dn">
-                        <div>
-                            <i class="row-filter"></i> / <i class="row-total"></i>
-                            <i data-t="rows"></i>
-                        </div>
-                        <horis class="pages"></horis>
-                    </horis>
-                    <!-- twitch chat -->
-                    <vert id="table-chat" class="drag">
-                        <vert class="w100">
-                            <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
-                            <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
-                        </vert>
-                        <hori class="fbetween w100">
-                            <hori>
-                                <a class="subscribe" href="https://www.twitch.tv/products/tcecpoc/ticket" target="_blank" data-t="Subscribe"></a>
-                                <a class="subscribe" href="https://streamlabs.com/TCEC_Chess_TV" target="_blank" data-t="Donate"></a>
-                            </hori>
-                            <hori id="twitch-theme" class="fend">
-                                <i id="twitch0" data-svg="sun" class="dn"></i>
-                                <i id="twitch1" data-svg="moon" class="dn"></i>
-                                <i id="hide-chat" data-svg="x" class="dn"></i>
-                            </hori>
-                        </hori>
+                <!-- pagination -->
+                <horis id="quick-pagin" class="pagin fbetween dn">
+                    <div>
+                        <i class="row-filter"></i> / <i class="row-total"></i>
+                        <i data-t="rows"></i>
+                    </div>
+                    <horis class="pages"></horis>
+                </horis>
+                <!-- twitch chat -->
+                <vert id="table-chat" class="drag">
+                    <vert class="w100">
+                        <iframe id="chat" frameborder="0" style="width: 100%" scrolling="no"></iframe>
+                        <a id="show-chat" class="dn" data-t="Enable Twitch chat"></a>
                     </vert>
-                    <div id="table-winner" class="scroller dn"></div>
-                    <div id="table-info" class="dn">INFO</div>
-                    <div id="table-shortcut_1" class="scroller dn"></div>
-                    <div id="table-shortcut_2" class="scroller dn"></div>
-                    <!-- search -->
-                    <horis id="quick-search" class="fend dn">
-                        <input class="search" data-t="Search" data-t2="placeholder">
-                    </horis>
+                    <hori class="fbetween w100">
+                        <hori>
+                            <a class="subscribe" href="https://www.twitch.tv/products/tcecpoc/ticket" target="_blank" data-t="Subscribe"></a>
+                            <a class="subscribe" href="https://streamlabs.com/TCEC_Chess_TV" target="_blank" data-t="Donate"></a>
+                        </hori>
+                        <hori id="twitch-theme" class="fend">
+                            <i id="twitch0" data-svg="sun" class="dn"></i>
+                            <i id="twitch1" data-svg="moon" class="dn"></i>
+                            <i id="hide-chat" data-svg="x" class="dn"></i>
+                        </hori>
+                    </hori>
                 </vert>
+                <div id="table-winner" class="scroller dn"></div>
+                <div id="table-info" class="dn">INFO</div>
+                <div id="table-shortcut_1" class="scroller dn"></div>
+                <div id="table-shortcut_2" class="scroller dn"></div>
+                <!-- search -->
+                <horis id="quick-search" class="fend dn">
+                    <input class="search" data-t="Search" data-t2="placeholder">
+                </horis>
             </vert>
             <!-- right1 -->
             <vert id="right1" class="area">

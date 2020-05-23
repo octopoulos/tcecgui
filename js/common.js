@@ -19,6 +19,8 @@ let Abs = Math.abs,
     Ceil = Math.ceil,
     Exp = Math.exp,
     Floor = Math.floor,
+    From = Array.from,
+    IsArray = Array.isArray,
     Keys = Object.keys,
     Max = Math.max,
     Min = Math.min,
@@ -993,8 +995,8 @@ function Format(vector, sep=', ', align=null) {
     if (vector == null)
         return vector;
     // [1, 2, 3]
-    if (Array.isArray(vector))
-        return vector.map(value => Format(Array.isArray(value)? value[0]: value, sep, align)).join(sep);
+    if (IsArray(vector))
+        return vector.map(value => Format(IsArray(value)? value[0]: value, sep, align)).join(sep);
     // Set()
     else if (vector instanceof Set)
         return vector.size;

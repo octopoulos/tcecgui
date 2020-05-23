@@ -24,8 +24,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard,
-CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys,
-Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
+CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, From, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes,
+Keys, Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
 split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
@@ -1480,7 +1480,7 @@ class XBoard {
             this.output(lines.join(''));
 
             // remember all the nodes for quick access
-            this.nodes = Assign({}, ...Array.from(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
+            this.nodes = Assign({}, ...From(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
             this.move2 = null;
         }
 
