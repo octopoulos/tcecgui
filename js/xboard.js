@@ -1639,6 +1639,7 @@ class XBoard {
         Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, node);
         Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, node);
         Style('.xmoves', `max-width:${frame_size2}px`, true, node);
+        Style('.xcontain', `width:${frame_size}px`, true, node);
 
         this.size = size;
         if (render)
