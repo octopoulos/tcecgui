@@ -182,6 +182,7 @@ tr {
 grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    min-width: 200px;
 }
 .grid2 {
     grid-template-columns: 0.5fr 1fr;
@@ -518,7 +519,7 @@ grid {
     overflow-y: scroll;
     width: 8em;
 }
-#player1 .live-pv,
+#moves-pv1 .live-pv,
 #pv1 .xmoves {
     background: #000;
     color: #fff;
@@ -557,7 +558,7 @@ grid {
 .real {
     color: #07f;
 }
-#player1 .real,
+#moves-pv1 .real,
 #pv1 .real {
     color: #7ce
 }
@@ -565,7 +566,7 @@ grid {
     color: #222;
     font-size: 13px;
 }
-#player1 .turn,
+#moves-pv1 .turn,
 #pv1 .turn {
     color: #fff;
 }
@@ -1048,11 +1049,11 @@ grid {
     color: #8b0000;
 }
 #box-pv0 .engine,
-#player0 .engine {
+#moves-pv0 .engine {
     color: #666;
 }
 #box-pv1 .engine,
-#player1 .engine {
+#moves-pv1 .engine {
     color: #000;
 }
 

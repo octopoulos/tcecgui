@@ -113,12 +113,12 @@ html {
     color: #fff;
 }
 #box-pv0 .engine,
-#player0 .engine {
+#moves-pv0 .engine {
     background: #666;
     color: #fff;
 }
 #box-pv1 .engine,
-#player1 .engine {
+#moves-pv1 .engine {
     background: #000;
     color: #fff;
 }

@@ -78,7 +78,7 @@ let ANALYSIS_URLS = {
         pv0: {
             dual: 'pv1',
             live_id: 0,
-            pv_id: '#player0 .live-pv',
+            pv_id: '#moves-pv0 .live-pv',
             sub: 2,
             tab: 'pv',
             vis: 'table-pv',
@@ -86,7 +86,7 @@ let ANALYSIS_URLS = {
         pv1: {
             dual: 'pv0',
             live_id: 1,
-            pv_id: '#player1 .live-pv',
+            pv_id: '#moves-pv1 .live-pv',
             sub: 2,
             tab: 'pv',
             vis: 'table-pv',
@@ -132,8 +132,8 @@ let ANALYSIS_URLS = {
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
-        ['#player0', '#box-pv0 .status'],
-        ['#player1', '#box-pv1 .status'],
+        ['#moves-pv0', '#box-pv0 .status'],
+        ['#moves-pv1', '#box-pv1 .status'],
     ],
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -2223,7 +2223,7 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
-        node = Id(`player${id}`),
+        node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
@@ -2287,7 +2287,7 @@ function update_overview_basic(section, headers) {
     WB_TITLES.forEach((title, id) => {
         let box_node = _(`#box-pv${id} .status`),
             name = headers[title],
-            node = Id(`player${id}`),
+            node = Id(`moves-pv${id}`),
             player = players[id],
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
@@ -2653,7 +2653,7 @@ function update_player_eval(section, data) {
         eval_ = data.eval,
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
-        node = Id(`player${id}`),
+        node = Id(`moves-pv${id}`),
         short = get_short_name(data.engine);
 
     // 1) update the live part on the left

@@ -16,12 +16,12 @@ api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS,
 detect_device, DEV, document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll,
-game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+game_action_key, game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, Hide, HOST, HTML, ICONS:true,
+Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
 reset_old_settings, resize_game, Round,
-S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner,
+S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, SetDefault, setInterval, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
 Undefined, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
@@ -37,9 +37,9 @@ let AD_STYLES = {
     CONTEXT_MENUS = {
         '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
-        '#player0, #player1, #table-live0, #table-live1': 'live',
+        '#moves-pv0, #moves-pv1, #table-live0, #table-live1': 'live',
         '.pagin, #table-tabs': 'extra',
-        '#quick-tabs': 'quick',
+        '#table-chat': 'quick',
         '#table-engine': 'engine',
         '.swaps': 'panel',
     },
@@ -61,6 +61,8 @@ let AD_STYLES = {
         mobil: 'Mob',
         node: 'Nodes',
         pv: 'PV',
+        pv0: 'White',
+        pv1: 'Black',
         pva: 'PV(A)',
         tb: 'TB',
     },
@@ -183,6 +185,11 @@ function change_setting_special(name, value, no_close) {
         (_(`select[name="${field}"]`) || {}).value = Y[field];
         update_board_theme(is_pv? 2: 1);
         break;
+    case 'default_positions':
+        Y.areas = Assign({}, DEFAULTS.areas);
+        populate_areas();
+        resize();
+        break;
     case 'drag_and_drop':
         set_draggable();
         break;
@@ -248,6 +255,12 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'theme':
         change_theme(value);
+        break;
+    case 'unhide':
+        Keys(context_areas).forEach(key => {
+            context_areas[key][2] |= 1;
+        });
+        populate_areas();
         break;
     case 'use_for_arrow':
         for (let id = 2; id < 4; id ++)
@@ -396,8 +409,7 @@ function create_url_list(dico) {
 function draw_rectangle(node) {
     if (!node)
         return;
-    let height = window.innerHeight,
-        rect = node.getBoundingClientRect(),
+    let rect = node.getBoundingClientRect(),
         y1 = Max(rect.top, 0),
         y2 = Min(rect.top + rect.height, window.innerHeight);
 
@@ -406,16 +418,96 @@ function draw_rectangle(node) {
 }
 
 /**
- * Hide a drag element
- * @param {Node} node
+ * Handle a drop event
+ * @param {Event} e
  */
-function hide_element(node) {
-    node = Parent(node, {class_: 'drag'});
+function handle_drop(e) {
+    let [child] = get_drop_id(e.target),
+        in_tab = 0,
+        parent = Parent(e.target, {class_: 'area', self: true}),
+        rect = child? child.getBoundingClientRect(): null;
+
+    // 1) resolve tab => nodes
+    if (HasClass(drag_source, 'drop')) {
+        drag_source = Id(drag_source.dataset.x);
+        in_tab |= 1;
+    }
+    if (HasClass(child, 'drop')) {
+        child = Id(child.dataset.x);
+        in_tab |= 2;
+    }
+
+    if (parent && drag_source != child) {
+        let next,
+            parent_areas = new Set([
+                Parent(drag_source, {class_: 'area'}).id,
+                parent.id,
+            ]),
+            prev_source = drag_source.previousElementSibling;
+
+        // 2) insert before or after
+        if (child) {
+            // same tabs parent => if source is before: insert after, otherwise insert before
+            if (in_tab == 3 || (!in_tab && parent_areas.size == 1))
+                next = (Index(drag_source) < Index(child));
+            else {
+                // this part can be improved
+                if (parent.tagName == 'HORIS' || (in_tab & 2)) {
+                    if (e.clientX >= rect.left + rect.width / 2)
+                        next = true;
+                }
+                else if (e.clientY >= rect.top + rect.height / 2)
+                    next = true;
+            }
+        }
+        parent.insertBefore(drag_source, next? child.nextElementSibling: child);
+
+        // 3) from/to tabs
+        let context_area = SetDefault(context_areas, drag_source.id, [drag_source.id, 0, 1]);
+        if (in_tab & 2) {
+            if (next) {
+                let prev_context = context_areas[child.id] || [];
+                context_area[1] = prev_context[1] || 0;
+                prev_context[1] = 1;
+            }
+            else
+                context_area[1] = 1;
+        }
+        else
+            context_area[1] = 0;
+
+        if (prev_source) {
+            let prev_context = context_areas[prev_source.id] || [];
+            prev_context[1] = context_area[1];
+        }
+
+        // 4) update areas
+        for (let parent of parent_areas)
+            Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => {
+                let context_area = context_areas[child.id] || [];
+                return [child.id, context_area[1] || 0, context_area[2] || 1];
+            });
+
+        populate_areas();
+        resize_panels();
+    }
+
+    Hide('#rect');
+    Class('.area', '-dragging');
+
+    e.stopPropagation();
+    e.preventDefault();
+}
+
+/**
+ * Hide a drag element
+ * @param {Node} target
+ */
+function hide_element(target) {
+    let [node, id] = get_drop_id(target),
+        areas = Y.areas;
     if (!node)
         return;
-
-    let areas = Y.areas,
-        id = node.id;
 
     Keys(areas).forEach(key => {
         for (let vector of areas[key])
@@ -568,8 +660,7 @@ function opened_table_special(node, name, tab) {
  * Populate areas
  */
 function populate_areas() {
-    let prev_tab,
-        tabs,
+    let tabs,
         areas = Y.areas;
 
     // 1) process all areas
@@ -584,7 +675,8 @@ function populate_areas() {
         }, parent);
 
         // add children + create tabs
-        let exist = 0;
+        let prev_tab,
+            exist = 0;
         for (let vector of areas[key]) {
             let [id, tab, show] = vector,
                 node = Id(id);
@@ -596,17 +688,20 @@ function populate_areas() {
                     tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
                     parent.appendChild(tabs);
                 }
-                let title = id.split('-');
-                title = title.slice(-title.length + 1).join('-');
-                title = TAB_NAMES[title] || Title(title);
 
-                tabs.appendChild(CreateNode('div', '', {
-                    class: `tab drop${(show & 2)? ' active': ''}`,
-                    'data-abbr': title,
-                    'data-label': HTML('.label', undefined, node) || '',
-                    'data-t': title,
-                    'data-x': id,
-                }));
+                if (show & 1) {
+                    let title = id.split('-');
+                    title = title.slice(-title.length + 1).join('-');
+                    title = TAB_NAMES[title] || Title(title);
+
+                    tabs.appendChild(CreateNode('div', '', {
+                        class: `tab drop${(show & 2)? ' active': ''}`,
+                        'data-abbr': title,
+                        'data-label': HTML('.label', undefined, node) || '',
+                        'data-t': title,
+                        'data-x': id,
+                    }));
+                }
                 show = show & 2;
             }
             else
@@ -625,40 +720,25 @@ function populate_areas() {
     // 2) activate tabs
     E('.tabs', node => {
         let tabs = From(A('.tab', node)),
-            num_tab = tabs.length,
-            actives = tabs.filter(node => HasClass(node, 'active')),
-            num_active = actives.length;
+            actives = tabs.filter(node => HasClass(node, 'active'));
 
         // few tabs => show full label
-        if (num_tab < 4)
+        if (tabs.length < 4)
             for (let tab of tabs) {
                 let dataset = tab.dataset;
                 dataset.t = dataset.label || dataset.abbr;
             }
 
-        // only 1 active tab
-        if (!num_active) {
-            let node = tabs[0],
-                target = node.dataset.x;
-            Class(node, 'active');
-
-            context_areas[target][2] |= 2;
-            Show(Id(target));
-        }
-        else if (num_active > 1) {
-            for (let i = 1; i < num_active; i ++) {
-                let node = actives[i],
-                    target = node.dataset.x;
-
-                Class(node, '-active');
-                context_areas[target][2] |= 2;
-            }
-        }
+        open_table(actives.length? actives[0]: tabs[0]);
     });
 
     save_option('areas', Y.areas);
     translate_node('body');
     set_draggable();
+
+    let is_live = (Y.x == 'live');
+    S('#archive', !is_live);
+    S('#live', is_live);
 }
 
 /**
@@ -666,7 +746,10 @@ function populate_areas() {
  * @param {boolean=} force
  */
 function resize(force) {
-    Style(`#bottom, #main, #top`, `max-width:${Y.max_window}px`);
+    Style(
+        '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status, #table-tabs, #top',
+        `max-width:${Y.max_window}px`
+    );
     Style('#chat', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
     resize_panels(force);
@@ -885,15 +968,13 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
 
 /**
  * Add a drag element to a tab group
- * @param {Node} node
+ * @param {Node} target
  */
-function tab_element(node) {
-    node = Parent(node, {class_: 'drag'});
+function tab_element(target) {
+    let [node, id] = get_drop_id(target),
+        areas = Y.areas;
     if (!node)
         return;
-
-    let areas = Y.areas,
-        id = node.id;
 
     Keys(areas).forEach(key => {
         for (let vector of areas[key])
@@ -938,15 +1019,85 @@ function update_shortcuts() {
  */
 function update_visible() {
     S('.status', Y.status_pv);
-    S('#box-pv0 .eval, #player0 .eval', !Y.hide_eval_0);
-    S('#box-pv1 .eval, #player1 .eval', !Y.hide_eval_1);
+    S('#box-pv0 .eval, #moves-pv0 .eval', !Y.hide_eval_0);
+    S('#box-pv1 .eval, #moves-pv1 .eval', !Y.hide_eval_1);
     S('#box-live0 .eval, #table-live0 .eval', !Y.hide_eval_2);
     S('#box-live1 .eval, #table-live1 .eval', !Y.hide_eval_3);
-    S('#pv0 .xmoves, #player0 .live-pv', !Y.hide_moves_0);
-    S('#pv1 .xmoves, #player1 .live-pv', !Y.hide_moves_1);
+    S('#pv0 .xmoves, #moves-pv0 .live-pv', !Y.hide_moves_0);
+    S('#pv1 .xmoves, #moves-pv1 .live-pv', !Y.hide_moves_1);
     S('#live0 .xmoves, #table-live0 .live-pv', !Y.hide_moves_2);
     S('#live1 .xmoves, #table-live1 .live-pv', !Y.hide_moves_3);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
+}
+
+/**
+ * Handle a general window click
+ * @param {Event} e
+ */
+function window_click(e) {
+    if (cannot_click())
+        return;
+
+    let in_modal,
+        target = e.target,
+        dataset = target.dataset;
+
+    // special cases
+    if (dataset) {
+        let id = dataset.id;
+        if (id == 'about') {
+            show_popup('');
+            show_popup(id, true, {overlay: true});
+            return;
+        }
+    }
+
+    while (target) {
+        let id = target.id;
+        if (id) {
+            if (['archive', 'live'].includes(id))
+                break;
+            if (id.includes('modal') || id.includes('popup')) {
+                in_modal = id;
+                return;
+            }
+        }
+        if (HasClass(target, 'nav')) {
+            in_modal = true;
+            return;
+        }
+        if (HasClass(target, 'page')) {
+            let parent = Parent(target, {class_: 'pagin'});
+            change_page(parent.id.split('-')[0], target.dataset.p);
+            break;
+        }
+        if (HasClass(target, 'tab')) {
+            open_table(target);
+            break;
+        }
+
+        // sub settings
+        let dataset = target.dataset;
+        if (dataset) {
+            let set = target.dataset.set;
+            if (set != undefined) {
+                let parent = Parent(target, {class_: 'popup'}),
+                    xy = '';
+                if (parent && parent.dataset) {
+                    let item = parent.dataset.xy;
+                    if (item)
+                        xy = item.split(',').map(item => item * 1);
+                }
+                show_popup('options', set != -1, {setting: set, xy: xy});
+                return;
+            }
+        }
+
+        target = target.parentNode;
+    }
+
+    if (!in_modal)
+        close_popups();
 }
 
 // MAIN
@@ -1034,71 +1185,7 @@ function set_global_events() {
     });
 
     // click somewhere => close the popups
-    Events(window, 'click', e => {
-        if (cannot_click())
-            return;
-
-        let in_modal,
-            target = e.target,
-            dataset = target.dataset;
-
-        // special cases
-        if (dataset) {
-            let id = dataset.id;
-            if (id == 'about') {
-                show_popup('');
-                show_popup(id, true, {overlay: true});
-                return;
-            }
-        }
-
-        while (target) {
-            let id = target.id;
-            if (id) {
-                if (['archive', 'live'].includes(id))
-                    break;
-                if (id.includes('modal') || id.includes('popup')) {
-                    in_modal = id;
-                    return;
-                }
-            }
-            if (HasClass(target, 'nav')) {
-                in_modal = true;
-                return;
-            }
-            if (HasClass(target, 'page')) {
-                let parent = Parent(target, {class_: 'pagin'});
-                change_page(parent.id.split('-')[0], target.dataset.p);
-                break;
-            }
-            if (HasClass(target, 'tab')) {
-                open_table(target);
-                break;
-            }
-
-            // sub settings
-            let dataset = target.dataset;
-            if (dataset) {
-                let set = target.dataset.set;
-                if (set != undefined) {
-                    let parent = Parent(target, {class_: 'popup'}),
-                        xy = '';
-                    if (parent && parent.dataset) {
-                        let item = parent.dataset.xy;
-                        if (item)
-                            xy = item.split(',').map(item => item * 1);
-                    }
-                    show_popup('options', set != -1, {setting: set, xy: xy});
-                    return;
-                }
-            }
-
-            target = target.parentNode;
-        }
-
-        if (!in_modal)
-            close_popups();
-    });
+    Events(window, 'click', window_click);
 
     // swap panes
     Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
@@ -1199,9 +1286,17 @@ function set_global_events() {
             target = target.parentNode;
         }
     });
+    Events(window, 'contextmenu', e => {
+        let target = e.target;
+        if (HasClass(target, 'tab')) {
+            context_target = target;
+            show_popup('options', true, {setting: 'tab', xy: [e.clientX, e.clientY]});
+            e.preventDefault();
+        }
+    });
 
     // fullscreen scrolling
-    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', function(e) {
+    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
         if (!is_fullscreen())
             return;
         touch_handle(e, true);
@@ -1214,7 +1309,7 @@ function set_global_events() {
             drag_source = parent;
     });
     Events(window, 'dragenter dragover', e => {
-        let child = Parent(e.target, {class_: 'drag|drop', self:true}),
+        let [child] = get_drop_id(e.target),
             parent = Parent(e.target, {class_: 'area', self: true});
 
         draw_rectangle(child || parent);
@@ -1228,50 +1323,7 @@ function set_global_events() {
             Hide('#rect');
         }
     });
-    Events(window, 'drop', e => {
-        let child = Parent(e.target, {class_: 'drag|drop', self:true}),
-            parent = Parent(e.target, {class_: 'area', self: true});
-
-        if (parent && drag_source != child) {
-            if (HasClass(child, 'drop')) {
-                LS('INSERTING IN TAB!');
-            }
-            else {
-                let parents = new Set([
-                    Parent(drag_source, {class_: 'area'}).id,
-                    parent.id,
-                ]);
-
-                if (child) {
-                    let rect = child.getBoundingClientRect();
-                    if (parent.tagName == 'HORIS') {
-                        if (e.clientX >= rect.left + rect.width / 2)
-                            child = child.nextElementSibling;
-                    }
-                    else if (e.clientY >= rect.top + rect.height / 2)
-                        child = child.nextElementSibling;
-                    parent.insertBefore(drag_source, child);
-                }
-                else
-                    parent.appendChild(drag_source);
-
-                for (let parent of parents)
-                    Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => {
-                        let context_area = context_areas[child.id] || {};
-                        return [child.id, context_area[1] || 0, context_area[2] || 1];
-                    });
-
-                save_option('areas', Y.areas);
-                resize_panels();
-            }
-        }
-
-        Hide('#rect');
-        Class('.area', '-dragging');
-
-        e.stopPropagation();
-        e.preventDefault();
-    });
+    Events(window, 'drop', handle_drop);
 }
 
 /**
@@ -1347,7 +1399,38 @@ function startup() {
     startup_game();
 
     Assign(DEFAULTS, {
-        areas: {},
+        areas: {
+            center0: [
+                ['table-engine', 1, 1],
+                ['table-pv', 0, 1],
+                ['table-eval', 1, 1],
+                ['table-mobil', 1, 1],
+                ['table-time', 1, 1],
+                ['table-depth', 1, 1],
+                ['table-speed', 1, 1],
+                ['table-node', 1, 1],
+                ['table-tb', 1, 1],
+                ['table-kibitz', 1, 1],
+                ['table-pva', 1, 1],
+            ],
+            left0: [
+                ['archive', 0, 1],
+                ['live', 0, 1],
+                ['moves-pv0', 0, 1],
+                ['moves-pv1', 0, 1],
+                ['table-live0', 0, 1],
+                ['table-live1', 0, 1],
+            ],
+            right0: [
+                ['quick-pagin', 0, 1],
+                ['table-chat', 1, 1],
+                ['table-winner', 1, 1],
+                ['table-info', 1, 1],
+                ['table-shortcut_1', 1, 1],
+                ['table-shortcut_2', 0, 1],
+                ['table-quick-search', 0, 1],
+            ],
+        },
         div: '',
         game: 0,
         link: '',                           // live link
@@ -1453,7 +1536,7 @@ function startup() {
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
         },
         extra: {
-            archive_scroll: [ON_OFF, 1],
+            archive_scroll: [ON_OFF, 0],
             drag_and_drop: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
@@ -1473,7 +1556,6 @@ function startup() {
             graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
-            position: '',
             use_for_arrow: '1',
         },
         hide: {
@@ -1499,34 +1581,19 @@ function startup() {
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
         panel: {
-            column_bottom: [{max: 8, min: 1, type: 'number'}, 3],
-            column_top: [{max: 8, min: 1, type: 'number'}, 3],
+            column_bottom: [{max: 8, min: 1, type: 'number'}, 2],
+            column_top: [{max: 8, min: 1, type: 'number'}, 4],
+            default_positions: '1',
             max_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
             max_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
             max_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
             max_window: [{max: 32000, min: 256, type: 'number'}, 1920],
             panel_adjust: [ON_OFF, 1],
             panel_background: [['none', 'gradient'], 'gradient'],
-        },
-        position: {
-            board_kibitz: [positions, 'center'],
-            board_pv: [positions, 'center'],
-            board_pva: [positions, 'center'],
-            engine: [positions, 'center'],
-            graph_depth: [positions, 'center'],
-            graph_eval: [positions, 'center'],
-            graph_mobil: [positions, 'center'],
-            graph_node: [positions, 'center'],
-            graph_speed: [positions, 'center'],
-            graph_tb: [positions, 'center'],
-            graph_time: [positions, 'center'],
-            moves_kibitz: [positions, 'left'],
-            moves_pv: [positions, 'left'],
-            restore_defaults: '1',
-            show_hidden: '1',
+            unhide: '1',
         },
         quick: {
-            chat_height: [{max: 1600, min: 100, type: 'number'}, 350],
+            chat_height: [{max: 1600, min: 100, type: 'number'}, 600],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },

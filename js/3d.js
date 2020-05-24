@@ -1101,6 +1101,16 @@ function gamepad_modal() {
 }
 
 /**
+ * Get the drag and drop id
+ * @param {Node} target
+ * @returns {[Node, string]}
+ */
+function get_drop_id(target) {
+    let parent = Parent(target, {class_: 'drag|drop', self: true});
+    return [parent, parent? (parent.id || parent.dataset.x): null];
+}
+
+/**
  * Close the modal and resume the game
  */
 function resume_game() {
@@ -1159,8 +1169,8 @@ function show_modal(show, text, title, name) {
  */
 function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
-        parent = Parent(context_target, {class_: 'drag'}),
-        settings = name? X_SETTINGS[name]: X_SETTINGS,
+        parent_id = get_drop_id(context_target)[1],
+        settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
         keys = Keys(settings),
         split = settings._split;
 
@@ -1185,8 +1195,8 @@ function show_settings(name, xy) {
     if (name)
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
-    if (parent)
-        lines.push(`<div class="item2 span">${parent.id}</div>`);
+    if (parent_id)
+        lines.push(`<div class="item2 span">${parent_id}</div>`);
 
     keys.forEach(key => {
         if (key == '_pop')
@@ -1259,8 +1269,8 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    if (parent) {
-        let context_area = context_areas[parent.id] || {};
+    if (parent_id) {
+        let context_area = context_areas[parent_id] || {};
         lines.push(
             `<hori class="span">`
                 + `<div class="item2" data-set="-1" data-t="ok"></div>`
