@@ -188,7 +188,6 @@ function change_setting_special(name, value, no_close) {
     case 'default_positions':
         Y.areas = Assign({}, DEFAULTS.areas);
         populate_areas();
-        resize();
         break;
     case 'drag_and_drop':
         set_draggable();
@@ -489,7 +488,6 @@ function handle_drop(e) {
             });
 
         populate_areas();
-        resize_panels();
     }
 
     Hide('#rect');
@@ -658,6 +656,7 @@ function opened_table_special(node, name, tab) {
 
 /**
  * Populate areas
+ * - TODO: only modify if there's a change => chat won't reload
  */
 function populate_areas() {
     let tabs,
@@ -739,6 +738,8 @@ function populate_areas() {
     let is_live = (Y.x == 'live');
     S('#archive', !is_live);
     S('#live', is_live);
+
+    resize();
 }
 
 /**
@@ -753,6 +754,15 @@ function resize(force) {
     Style('#chat', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
     resize_panels(force);
+
+    // resize charts
+    Keys(charts).forEach(key => {
+        let node = Id(`table-${key}`),
+            width = node.clientWidth - 2,
+            height = width / Max(0.5, Y.graph_aspect_ratio);
+        Style('.chart', `height:${height}px;width:${width}px`, true, node);
+    });
+
     adjust_popups();
     resize_game();
 
@@ -1585,8 +1595,8 @@ function startup() {
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
         panel: {
-            column_bottom: [{max: 8, min: 1, type: 'number'}, 2],
-            column_top: [{max: 8, min: 1, type: 'number'}, 4],
+            column_bottom: [{max: 8, min: 1, type: 'number'}, 4],
+            column_top: [{max: 8, min: 1, type: 'number'}, 2],
             default_positions: '1',
             max_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
             max_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
