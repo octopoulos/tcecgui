@@ -68,6 +68,7 @@ let audiobox = {
     },
     clock,
     clock2,
+    context_areas = {},
     context_target,
     controls,
     cube,
@@ -1158,6 +1159,7 @@ function show_modal(show, text, title, name) {
  */
 function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
+        parent = Parent(context_target, {class_: 'drag'}),
         settings = name? X_SETTINGS[name]: X_SETTINGS,
         keys = Keys(settings),
         split = settings._split;
@@ -1182,6 +1184,9 @@ function show_settings(name, xy) {
 
     if (name)
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+
+    if (parent)
+        lines.push(`<div class="item2 span">${parent.id}</div>`);
 
     keys.forEach(key => {
         if (key == '_pop')
@@ -1254,15 +1259,16 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    let parent = Parent(context_target, {class_: 'drag'});
-    if (parent)
+    if (parent) {
+        let context_area = context_areas[parent.id] || {};
         lines.push(
             `<hori class="span">`
                 + `<div class="item2" data-set="-1" data-t="ok"></div>`
-                + `<div class="item2" data-t="tabbed"></div>`
+                + `<div class="item2${context_area[1]? ' active': ''}" data-t="tabbed"></div>`
                 + `<div class="item2" data-t="hide"></div>`
             + '</hori>'
         );
+    }
     else if (name)
         lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
 

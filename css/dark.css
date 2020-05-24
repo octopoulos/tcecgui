@@ -124,6 +124,9 @@ html {
 }
 
 /* extras */
+.dragging {
+    background: rgba(255, 200, 200, 0.05);
+}
 #show-chat,
 #show-video,
 .adblock {

@@ -44,10 +44,6 @@ function startup_config() {
         max_right: 350,
         no_ad: true,
         shortcut_1: 'stand',
-        // activating the shortcut tab
-        tabs: {
-            'quick-tabs': 'shortcut_1',
-        },
         theme: 'dark',
         twitch_chat: 0,
         twitch_video: 0,

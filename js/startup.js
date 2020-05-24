@@ -11,21 +11,21 @@
 // included after: common, engine, global, 3d, xboard, game, network
 /*
 globals
-_, __PREFIX:true, $, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
+_, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
-check_hash, Clamp, Class, clear_timeout, context_target:true, create_field_value, DEFAULTS, detect_device, DEV,
-document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
-game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index, init_graph,
-init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS,
+detect_device, DEV, document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll,
+game_action_key, game_action_keyup, get_active_tab, get_object, HasClass, Hide, HOST, HTML, ICONS:true, Id, Index,
+init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
 reset_old_settings, resize_game, Round,
-S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner, show_popup,
-show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
-tcecHandleKey, THEMES, TIMEOUTS, toggle_fullscreen, touch_handle, translate_node, translates:true, update_board_theme,
-update_chart_options, update_debug, update_player_charts, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
+S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, setInterval, Show, show_banner,
+show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
+TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
+Undefined, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
+VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, window, X_SETTINGS, xboards, Y
 */
 'use strict';
@@ -56,6 +56,14 @@ let AD_STYLES = {
         right: [281, 720],
     },
     STREAM_SETTINGS = {},
+    TAB_NAMES = {
+        depth: 'D/SD',
+        mobil: 'Mob',
+        node: 'Nodes',
+        pv: 'PV',
+        pva: 'PV(A)',
+        tb: 'TB',
+    },
     TIMEOUT_font = 200,
     TIMEOUT_graph = 500,
     TIMEOUT_popup = 600,
@@ -79,18 +87,6 @@ function action_key(code) {
         close_popups();
         break;
     }
-}
-
-/**
- * Restore all activated tabs at startup
- * - must be done only after all tabs have been created
- */
-function activate_tabs() {
-    Keys(Y.tabs).forEach(key => {
-        let value = Y.tabs[key],
-            node = _(`#${key} > [data-x="${value}"]`);
-        open_table(node);
-    });
 }
 
 /**
@@ -167,7 +163,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'board_pva':
         break;
-    case 'chat_offset':
+    case 'chat_height':
     case 'column_bottom':
     case 'column_top':
     case 'graph_min_width':
@@ -215,9 +211,6 @@ function change_setting_special(name, value, no_close) {
     case 'panel_adjust':
     case 'status_pv':
         resize_panels(true);
-        break;
-    case 'graph_all':
-        move_nodes();
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -295,7 +288,6 @@ function change_theme(theme) {
  */
 function check_hash_special() {
     check_stream();
-    move_nodes();
 
     if (!['archive', 'live'].includes(Y.x))
         Y.x = 'live';
@@ -346,7 +338,6 @@ function check_stream() {
         Y.stream = 1;
     }
 
-    activate_tabs();
     change_theme(Y.theme);
     resize(true);
 
@@ -399,6 +390,22 @@ function create_url_list(dico) {
 }
 
 /**
+ * Draw a rectangle around the node
+ * @param {Node} node
+ */
+function draw_rectangle(node) {
+    if (!node)
+        return;
+    let height = window.innerHeight,
+        rect = node.getBoundingClientRect(),
+        y1 = Max(rect.top, 0),
+        y2 = Min(rect.top + rect.height, window.innerHeight);
+
+    Style('#rect', `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
+    Show('#rect');
+}
+
+/**
  * Hide a drag element
  * @param {Node} node
  */
@@ -413,7 +420,7 @@ function hide_element(node) {
     Keys(areas).forEach(key => {
         for (let vector of areas[key])
             if (vector[0] == id) {
-                vector[2] = 0;
+                vector[2] &= ~1;
                 break;
             }
     });
@@ -456,7 +463,6 @@ function init_globals() {
     resize_move_lists();
     show_live_engines();
 
-    activate_tabs();
     set_draggable();
     populate_areas();
 
@@ -523,50 +529,6 @@ function load_google_analytics() {
 }
 
 /**
- * Check if some elements should be moved around, like the charts
- */
-function move_nodes() {
-    return;
-
-    // let active = get_active_tab('chart')[0],
-    //     graph_all = Y.graph_all,
-    //     destin = Id(graph_all? 'bottom': 'charts'),
-    //     destin_nodes = destin.children,
-    //     parent = Id('charts-tab'),
-    //     source = Id(graph_all? 'charts': 'bottom'),
-    //     source_nodes = source.children;
-
-    // Keys(charts).forEach(key => {
-    //     S(`[data-x="${key}"]`, !graph_all, parent);
-    // });
-    // S('[data-x="x"]', graph_all, parent);
-
-    // if (DEV.ui)
-    //     LS(`move nodes: ${graph_all} : ${source_nodes.length} vs ${destin_nodes.length}`);
-    // if (destin_nodes.length)
-    //     return;
-
-    // // move all nodes
-    // while (source_nodes.length)
-    //     destin.appendChild(source_nodes[0]);
-
-    // Style(destin, 'margin:0 0 0.5em 0', true, graph_all);
-    // S('vert, vert > .label', graph_all, destin);
-
-    // if (graph_all) {
-    //     if (charts[active])
-    //         open_table('x');
-    //     let board = xboards[Y.x];
-    //     if (board)
-    //         update_player_charts(null, board.moves);
-    // }
-    // else if (active == 'x')
-    //     open_table('eval');
-
-    // resize(true);
-}
-
-/**
  * Move a pane left or right, swapping it with another
  * - call without arguments to initialise the panes at startup
  * @param {Node=} node
@@ -606,20 +568,97 @@ function opened_table_special(node, name, tab) {
  * Populate areas
  */
 function populate_areas() {
-    let areas = Y.areas;
+    let prev_tab,
+        tabs,
+        areas = Y.areas;
+
+    // 1) process all areas
     Keys(areas).forEach(key => {
         let parent = Id(key);
         if (!parent)
             return;
 
-        for (let [id, tab, vis] of areas[key]) {
-            let node = Id(id);
+        // remove tabs
+        E('.tabs', node => {
+            node.remove();
+        }, parent);
+
+        // add children + create tabs
+        let exist = 0;
+        for (let vector of areas[key]) {
+            let [id, tab, show] = vector,
+                node = Id(id);
             if (!node)
                 continue;
+
+            if (tab || prev_tab) {
+                if (!prev_tab) {
+                    tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
+                    parent.appendChild(tabs);
+                }
+                let title = id.split('-');
+                title = title.slice(-title.length + 1).join('-');
+                title = TAB_NAMES[title] || Title(title);
+
+                tabs.appendChild(CreateNode('div', '', {
+                    class: `tab drop${(show & 2)? ' active': ''}`,
+                    'data-abbr': title,
+                    'data-label': HTML('.label', undefined, node) || '',
+                    'data-t': title,
+                    'data-x': id,
+                }));
+                show = show & 2;
+            }
+            else
+                tabs = null;
+
             parent.appendChild(node);
-            S(node, (vis == undefined)? true: vis);
+            S(node, Undefined(show, 1));
+            S('.label', !tab && !prev_tab, node);
+
+            context_areas[id] = vector;
+            prev_tab = tab;
+            exist ++;
         }
     });
+
+    // 2) activate tabs
+    E('.tabs', node => {
+        let tabs = From(A('.tab', node)),
+            num_tab = tabs.length,
+            actives = tabs.filter(node => HasClass(node, 'active')),
+            num_active = actives.length;
+
+        // few tabs => show full label
+        if (num_tab < 4)
+            for (let tab of tabs) {
+                let dataset = tab.dataset;
+                dataset.t = dataset.label || dataset.abbr;
+            }
+
+        // only 1 active tab
+        if (!num_active) {
+            let node = tabs[0],
+                target = node.dataset.x;
+            Class(node, 'active');
+
+            context_areas[target][2] |= 2;
+            Show(Id(target));
+        }
+        else if (num_active > 1) {
+            for (let i = 1; i < num_active; i ++) {
+                let node = actives[i],
+                    target = node.dataset.x;
+
+                Class(node, '-active');
+                context_areas[target][2] |= 2;
+            }
+        }
+    });
+
+    save_option('areas', Y.areas);
+    translate_node('body');
+    set_draggable();
 }
 
 /**
@@ -627,26 +666,10 @@ function populate_areas() {
  * @param {boolean=} force
  */
 function resize(force) {
-    Style(`#main`, `max-width:${Y.max_window}px`);
+    Style(`#bottom, #main, #top`, `max-width:${Y.max_window}px`);
+    Style('#chat', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
-    let height = window.innerHeight;
-    Style('#right', `max-height:${height}px`);
-    Style('#chat', `height:${Max(350, height - 100 + Y.chat_offset)}px;width:100%`);
     resize_panels(force);
-
-    // resize charts
-    if (Y.graph_all) {
-        let destin = Id('bottom'),
-            width = destin.clientWidth / 6 - 8;
-
-        if (width < Y.graph_min_width)
-            width *= 2;
-        let height = width / Max(0.5, Y.graph_aspect_ratio);
-
-        Style('.chart', `height:${height}px;width:${width}px`, true, destin);
-        Show('vert', destin);
-    }
-
     adjust_popups();
     resize_game();
 
@@ -700,10 +723,10 @@ function resize_panels(force) {
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
 
     // resize all charts
-    E('canvas', node => {
+    E('canvas.graphs', node => {
         let parent = node.parentNode;
         Style(parent, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
-    }, center);
+    });
     old_center = width;
 }
 
@@ -728,7 +751,7 @@ function set_3d_scene(three) {
  */
 function set_draggable() {
     let drag = !!Y.drag_and_drop;
-    Attrs('.drag', {draggable: drag});
+    Attrs('.drag, .drop', {draggable: drag});
 }
 
 /**
@@ -1048,6 +1071,10 @@ function set_global_events() {
                 change_page(parent.id.split('-')[0], target.dataset.p);
                 break;
             }
+            if (HasClass(target, 'tab')) {
+                open_table(target);
+                break;
+            }
 
             // sub settings
             let dataset = target.dataset;
@@ -1145,7 +1172,7 @@ function set_global_events() {
             e.preventDefault();
         });
     });
-    Events('#archive, #live, #live0, #live1, #pv0, #pv1', 'contextmenu', function(e) {
+    Events('#archive, #live, #live0, #live1, #pv0, #pv1, #pva', 'contextmenu', function(e) {
         let is_pv = '01'.includes(this.id.slice(-1)),
             target = e.target;
 
@@ -1187,57 +1214,61 @@ function set_global_events() {
             drag_source = parent;
     });
     Events(window, 'dragenter dragover', e => {
-        let child = Parent(e.target, {class_: 'drag', self:true}),
+        let child = Parent(e.target, {class_: 'drag|drop', self:true}),
             parent = Parent(e.target, {class_: 'area', self: true});
-        if (child) {
-            let rect = child.getBoundingClientRect();
-            Style('#rect', `left:${rect.left}px;height:${rect.height}px;top:${rect.top}px;width:${rect.width}px`);
-            Show('#rect');
-        }
-        else if (parent) {
-            let rect = parent.getBoundingClientRect();
-            Style('#rect', `left:${rect.left}px;height:${rect.height}px;top:${rect.top}px;width:${rect.width}px`);
-            Show('#rect');
-        }
+
+        draw_rectangle(child || parent);
+        Class('.area', 'dragging');
         e.stopPropagation();
         e.preventDefault();
     });
     Events(window, 'dragexit dragleave', e => {
-        if (e.target.tagName == 'HTML')
+        if (e.target.tagName == 'HTML') {
+            Class('.area', '-dragging');
             Hide('#rect');
+        }
     });
     Events(window, 'drop', e => {
-        let child = Parent(e.target, {class_: 'drag', self:true}),
+        let child = Parent(e.target, {class_: 'drag|drop', self:true}),
             parent = Parent(e.target, {class_: 'area', self: true});
 
-        if (parent) {
-            let parents = new Set([
-                Parent(drag_source, {class_: 'area'}).id,
-                parent.id,
-            ]);
-
-            if (child) {
-                let rect = child.getBoundingClientRect();
-                if (parent.tagName == 'HORIS') {
-                    if (e.clientX >= rect.left + rect.width / 2)
-                        child = child.nextElementSibling;
-                }
-                else if (e.clientY >= rect.top + rect.height / 2)
-                    child = child.nextElementSibling;
-                parent.insertBefore(drag_source, child);
+        if (parent && drag_source != child) {
+            if (HasClass(child, 'drop')) {
+                LS('INSERTING IN TAB!');
             }
-            else
-                parent.appendChild(drag_source);
+            else {
+                let parents = new Set([
+                    Parent(drag_source, {class_: 'area'}).id,
+                    parent.id,
+                ]);
 
-            for (let parent of parents)
-                Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(
-                    child => [child.id, child.dataset.tab || 0, child.dataset.vis || 1]);
+                if (child) {
+                    let rect = child.getBoundingClientRect();
+                    if (parent.tagName == 'HORIS') {
+                        if (e.clientX >= rect.left + rect.width / 2)
+                            child = child.nextElementSibling;
+                    }
+                    else if (e.clientY >= rect.top + rect.height / 2)
+                        child = child.nextElementSibling;
+                    parent.insertBefore(drag_source, child);
+                }
+                else
+                    parent.appendChild(drag_source);
 
-            save_option('areas', Y.areas);
-            resize_panels();
+                for (let parent of parents)
+                    Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => {
+                        let context_area = context_areas[child.id] || {};
+                        return [child.id, context_area[1] || 0, context_area[2] || 1];
+                    });
+
+                save_option('areas', Y.areas);
+                resize_panels();
+            }
         }
 
         Hide('#rect');
+        Class('.area', '-dragging');
+
         e.stopPropagation();
         e.preventDefault();
     });
@@ -1325,7 +1356,6 @@ function startup() {
         round: '',                          // live round
         season: '',
         stream: 0,
-        tabs: {},                           // opened tabs
         three: 0,                           // 3d scene
         twitch_chat: 1,
         twitch_dark: 0,
@@ -1424,7 +1454,7 @@ function startup() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
-            drag_and_drop: [ON_OFF, 0],
+            drag_and_drop: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
             tab_background: [['none', 'gradient'], 'gradient'],
@@ -1435,7 +1465,6 @@ function startup() {
             wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
-            graph_all: [ON_OFF, 0, 'Show all graphs at the same time'],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
@@ -1493,9 +1522,11 @@ function startup() {
             graph_time: [positions, 'center'],
             moves_kibitz: [positions, 'left'],
             moves_pv: [positions, 'left'],
+            restore_defaults: '1',
+            show_hidden: '1',
         },
         quick: {
-            chat_offset: [{max: 800, min: -800, type: 'number'}, 0],
+            chat_height: [{max: 1600, min: 100, type: 'number'}, 350],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'off'],
         },

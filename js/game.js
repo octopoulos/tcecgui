@@ -12,9 +12,9 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
-clear_timeout, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
-Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
+C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
+context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, Exp,
+fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
 HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
@@ -595,8 +595,12 @@ function show_board_info(show) {
 
     if (show == undefined) {
         if (status == 'auto') {
-            let [active] = get_active_tab('engine');
-            show = (active != 'engine');
+            let engine = Id('table-engine'),
+                rect = engine.getBoundingClientRect();
+
+            if (!Visible(engine) || rect.top < 0 || rect.top + rect.height > window.height
+                    || rect.left < 0 || rect.left + rect.width > window.innerWidth)
+                show = true;
         }
         else
             show = (status != 0);
@@ -2091,13 +2095,7 @@ function resize_game() {
         board.resize(size);
     });
 
-    // status
-    if (Y.status == 'auto') {
-        let crect = Id('center').getBoundingClientRect(),
-            lrect = Id('left').getBoundingClientRect();
-        show_board_info(crect.top > lrect.top + lrect.height);
-    }
-
+    show_board_info();
     resize_3d();
 }
 
@@ -2358,7 +2356,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     if (section != Y.x)
         return;
 
-    // 2) update the current chart only (except if graph_all is ON)
+    // 2) update the visible charts
     update_player_charts(null, moves);
 
     // 3) check adjudication
@@ -3072,30 +3070,37 @@ function handle_board_events(board, type, value) {
 
 /**
  * Select a tab and open the corresponding table
- * @param {string|Node} sel tab name or node
- * @param {boolean=} hide_table hide the corresponding table (but PV is shared!)
+ * @param {string|Node} sel
  */
-function open_table(sel, hide_table=true) {
-    if (typeof(sel) == 'string')
-        sel = _(`.tab[data-x="${sel}"]`);
-    if (!sel)
+function open_table(sel) {
+    let tab = sel;
+
+    if (typeof(tab) == 'string') {
+        tab = _(`[data-x="${sel}"]`);
+        if (!tab)
+            tab = _(`[data-x="table-${sel}"]`);
+    }
+    if (!tab)
         return;
 
-    let parent = Parent(sel, {class_: 'tabs'}),
-        active = _('.active', parent),
-        key = sel.dataset.x,
-        node = Id(`table-${key}`);
+    let parent = Parent(tab, {class_: 'tabs'}),
+        target = tab.dataset.x;
 
-    if (active) {
-        Class(active, '-active');
-        // only hide if the table has the same parent
-        if (hide_table)
-            Hide(`#table-${active.dataset.x}`);
-    }
-    Class(sel, 'active');
+    Class('.tab', '-active', true, parent);
+    Class(tab, 'active');
+
+    E('.tab', node => {
+        Hide(Id(node.dataset.x));
+    }, parent);
+
+    let key = target,
+        node = Id(target);
+
+    if (key.slice(0, 6) == 'table-')
+        key = key.slice(6);
+
     Show(node);
-
-    opened_table(node, key, sel);
+    opened_table(node, key, tab);
 }
 
 /**
@@ -3107,18 +3112,13 @@ function open_table(sel, hide_table=true) {
 function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
-        is_chart = (parent == 'chart-tabs'),
+        is_chart = _('canvas', node),
         section = Y.x,
         main = xboards[section];
     if (DEV.ui)
         LS(`opened_table: ${parent}/${name}`);
 
-    Y.tabs[parent] = name;
-    save_option('tabs', Y.tabs);
-
     // 2) special cases
-    if (is_chart)
-        chart_id = name;
     if (is_chart && charts[name] && main) {
         update_player_charts(name, main.moves);
         update_chart_options(name, 3);
@@ -3131,27 +3131,12 @@ function opened_table(node, name, tab) {
     case 'cross':
         analyse_crosstable(section, table_data[section].crossx);
         break;
-    case 'engine':
-        show_board_info();
-        break;
     case 'info':
         HTML(node, HTML('#desc'));
         break;
     case 'log':
         fill_combo('#log', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
-        break;
-    // change order + switch to default tab
-    case 'pv':
-        Style('#table-pv', `order:${is_chart? 3: 1}`);
-        if (is_chart)
-            open_table('engine', false);
-        else {
-            show_board_info();
-            let [active] = get_active_tab('chart');
-            if (active == 'pv')
-                open_table('eval', false);
-        }
         break;
     case 'pva':
         let board = board_target;
@@ -3175,6 +3160,7 @@ function opened_table(node, name, tab) {
     }
 
     check_paginations();
+    show_board_info();
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);

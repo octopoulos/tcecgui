@@ -3,7 +3,9 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
-~          : 2020-05-23 : automatic tabs: tabbed => next child is in the same group
+-          : 2020-05-23 : dynamic pagination and search nodes
+~          : 2020-05-24 : drag and drop in tabs
+2020-05-23 : 2020-05-23 : auto generated tabs: tabbed => next child is in the same group
 2020-05-23 : 2020-05-23 : save and load positions: save id + tab for each area
 2020-05-23 : 2020-05-16 : option to completely remove the live engine info on the left => replaced with graph tabs
 2020-05-23 : 2020-05-23 : restructure index_base.html
