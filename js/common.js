@@ -19,6 +19,8 @@ let Abs = Math.abs,
     Ceil = Math.ceil,
     Exp = Math.exp,
     Floor = Math.floor,
+    From = Array.from,
+    IsArray = Array.isArray,
     Keys = Object.keys,
     Max = Math.max,
     Min = Math.min,
@@ -99,34 +101,60 @@ function Id(id, parent) {
 /**
  * Change attributes
  * @param {string|Node} sel CSS selector or node
- * @param {string} attr attribute to change
- * @param {string|boolean=} value value to set
+ * @param {Object} attrs attribute to change
  * @param {Node=} parent
- * @example
- * Attrs('input', 'disabled', true)                 // disable all inputs
- * Attrs('input', 'disabled', false)                // enable all inputs
- * Attrs('input', 'disabled')                       // enable all inputs
- * Attrs('a', 'href', 'https://www.google.com')     // all links will link to google
  */
-function Attrs(sel, attr, value, parent) {
+function Attrs(sel, attrs, parent) {
     if (!sel) return;
     if (typeof(sel) == 'object') {
-        if (typeof(value) == 'string')
-            sel.setAttribute(attr, value);
-        else if (value === true)
-            sel.setAttribute(attr, attr);
-        else
-            sel.removeAttribute(attr);
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                sel.removeAttribute(key);
+            else
+                sel.setAttribute(key, value);
+        });
         return;
     }
     //
     E(sel, node => {
-        if (typeof(value) == 'string')
-            node.setAttribute(attr, value);
-        else if (value === true)
-            node.setAttribute(attr, attr);
-        else
-            node.removeAttribute(attr);
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                node.removeAttribute(key);
+            else
+                node.setAttribute(key, value);
+        });
+    }, parent);
+}
+
+/**
+ * Change attributes
+ * @param {string|Node} sel
+ * @param {Object} attrs
+ * @param {Node=} parent
+ */
+function AttrsNS(sel, attrs, parent) {
+    if (!sel) return;
+    if (typeof(sel) == 'object') {
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                sel.removeAttributeNS(null, key);
+            else
+                sel.setAttributeNS(null, key, value);
+        });
+        return;
+    }
+    //
+    E(sel, node => {
+        Keys(attrs).forEach(key => {
+            let value = attrs[key];
+            if (value == undefined)
+                node.removeAttributeNS(null, key);
+            else
+                node.setAttributeNS(null, key, value);
+        });
     }, parent);
 }
 
@@ -260,11 +288,12 @@ function Contain(list, pattern) {
  * @param {string} tag
  * @param {string=} html
  * @param {Object=} attrs
+ * @param {Object[]=} children
  * @returns {Node} created node
  * @example
  * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
  */
-function CreateNode(tag, html, attrs) {
+function CreateNode(tag, html, attrs, children) {
     let node = document.createElement(tag);
     if (html)
         node.innerHTML = html;
@@ -272,6 +301,11 @@ function CreateNode(tag, html, attrs) {
         Keys(attrs).forEach(key => {
             node.setAttribute(key, attrs[key]);
         });
+
+    if (children)
+        for (let child of children)
+            node.appendChild(child);
+
     return node;
 }
 
@@ -279,13 +313,20 @@ function CreateNode(tag, html, attrs) {
  * Create an SVG node
  * @param {string} type
  * @param {Object=} attrs
+ * @param {Object[]=} children
+ * @returns {Node} created node
  */
-function CreateSVG(type, attrs) {
+function CreateSVG(type, attrs, children) {
     let node = document.createElementNS(NAMESPACE_SVG, type);
     if (attrs)
         Keys(attrs).forEach(key => {
             node.setAttributeNS(null, key, attrs[key]);
         });
+
+    if (children)
+        for (let child of children)
+            node.appendChild(child);
+
     return node;
 }
 
@@ -349,7 +390,7 @@ function HasClass(node, class_) {
 }
 
 /**
- * Check if a node has classes
+ * Check if a node has all classes
  * @param {string|Node} node CSS selector or node
  * @param {string} class_ can be multiple classes separated by spaces, with +/- and ^$* patterns
  * @returns {boolean}
@@ -376,7 +417,7 @@ function HasClasses(node, classes) {
             if (!Contain(list, b))
                 return false;
         }
-        else if (!Contain(list, item))
+        else if (!item.split('|').some(key => Contain(list, key)))
             return false;
     }
 
@@ -508,16 +549,16 @@ function InsertNodes(parent, nodes, preprend) {
 /**
  * Find a parent node by tagName and class
  * @param {string|Node} node CSS selector or node
- * @param {string=} type
- * @param {string=} class_
  * @param {string=} attrs
- * @param {boolean=} be_self true => the parent can be the node itself
+ * @param {string=} class_ 'live-pv|xmoves'
+ * @param {boolean=} self true => the parent can be the node itself
+ * @param {string=} tag 'a div'
  * @returns {Node=} parent node or null or undefined
  * @example
- * Parent(node, 'div', '', 'id=ok')         // find a parent with tag <div> and whose ID='ok'
- * Parent(node, 'a|div', '', 'id=ok')       // find a parent with tag <a> or <div> and whose ID='ok'
+ * Parent(node, {attrs: 'id=ok', tag: 'div')        // find a parent with tag <div> and whose ID='ok'
+ * Parent(node, {attrs: 'id=ok', tag: 'a div')      // find a parent with tag <a> or <div> and whose ID='ok'
  */
-function Parent(node, type, class_, attrs, be_self) {
+function Parent(node, {tag, class_, attrs, self}={}) {
     if (typeof(node) == 'string')
         node = _(node);
     if (!node)
@@ -526,10 +567,10 @@ function Parent(node, type, class_, attrs, be_self) {
     let aitems = attrs? attrs.split(' '): [],
         citems = class_? class_.split(' '): [],
         parent = node,
-        types = type? type.split('|'): null;
+        tags = tag? tag.split(' '): null;
 
     for (let depth = 0; ; depth ++) {
-        if (depth || !be_self) {
+        if (depth || !self) {
             parent = parent.parentNode;
             if (!parent || !parent.tagName)
                 return null;
@@ -537,7 +578,7 @@ function Parent(node, type, class_, attrs, be_self) {
         let ok = true;
 
         // 1) tag
-        if (types && !types.includes(parent.tagName.toLowerCase()))
+        if (tags && !tags.includes(parent.tagName.toLowerCase()))
             continue;
 
         // 2) match all attrs
@@ -562,12 +603,14 @@ function Parent(node, type, class_, attrs, be_self) {
                     ok = false;
                     break;
                 }
-            } else if (a == '+') {
+            }
+            else if (a == '+') {
                 if (!Contain(list, b)) {
                     ok = false;
                     break;
                 }
-            } else if (!Contain(list, item)) {
+            }
+            else if (!item.split('|').some(key => Contain(list, key))) {
                 ok = false;
                 break;
             }
@@ -952,8 +995,8 @@ function Format(vector, sep=', ', align=null) {
     if (vector == null)
         return vector;
     // [1, 2, 3]
-    if (Array.isArray(vector))
-        return vector.map(value => Format(Array.isArray(value)? value[0]: value, sep, align)).join(sep);
+    if (IsArray(vector))
+        return vector.map(value => Format(IsArray(value)? value[0]: value, sep, align)).join(sep);
     // Set()
     else if (vector instanceof Set)
         return vector.size;

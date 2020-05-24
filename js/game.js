@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-05-23
 //
 // Game specific code:
 // - control the board, moves
@@ -12,16 +12,16 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, camera_look, camera_pos, cannot_click, Ceil, change_setting, chart_id:true, charts, check_hash, Clamp, Class,
-clear_timeout, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEFAULTS, DEV, device, document,
-Events, Exp, fill_combo, Floor, FormatUnit, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, HasClasses,
-Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, merge_settings, Min, Now, ON_OFF, Pad, Parent, play_sound, Pow,
-push_state, QueryString, reset_charts, resize_3d, Resource, resume_game, Round,
+C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
+context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E,
+Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
+reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
 Show, show_menu, show_modal, Sign, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style, TEXT,
 TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
-update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
+update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
@@ -61,7 +61,7 @@ let ANALYSIS_URLS = {
         },
         live0: {
             dual: 'live1',
-            live_id: 0,
+            live_id: 2,
             pv_id: '#table-live0 .live-pv',
             sub: 2,
             tab: 'kibitz',
@@ -69,7 +69,7 @@ let ANALYSIS_URLS = {
         },
         live1: {
             dual: 'live0',
-            live_id: 1,
+            live_id: 3,
             pv_id: '#table-live1 .live-pv',
             sub: 2,
             tab: 'kibitz',
@@ -77,14 +77,16 @@ let ANALYSIS_URLS = {
         },
         pv0: {
             dual: 'pv1',
-            pv_id: '#player0 .live-pv',
+            live_id: 0,
+            pv_id: '#moves-pv0 .live-pv',
             sub: 2,
             tab: 'pv',
             vis: 'table-pv',
         },
         pv1: {
             dual: 'pv0',
-            pv_id: '#player1 .live-pv',
+            live_id: 1,
+            pv_id: '#moves-pv1 .live-pv',
             sub: 2,
             tab: 'pv',
             vis: 'table-pv',
@@ -114,7 +116,6 @@ let ANALYSIS_URLS = {
         tour: 60,
         winner: 3600 * 24,
     },
-    context_target,
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -131,8 +132,8 @@ let ANALYSIS_URLS = {
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
-        ['#player0', '#box-pv0 .status'],
-        ['#player1', '#box-pv1 .status'],
+        ['#moves-pv0', '#box-pv0 .status'],
+        ['#moves-pv1', '#box-pv1 .status'],
     ],
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -192,10 +193,10 @@ let ANALYSIS_URLS = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
-        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.Ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
+        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Loss} [W/B]|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
         view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
@@ -438,6 +439,70 @@ function assign_boards() {
 }
 
 /**
+ * Check if the live ID can draw an arrow
+ * @param {XBoard} xboard
+ */
+function check_draw_arrow(board) {
+    let id = board.live_id,
+        main = xboards[Y.x];
+
+    if (!main || id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
+        return;
+
+    let draw = false,
+        moves = main.moves,
+        board_moves = board.moves,
+        next = board.next,
+        ply = main.ply,
+        next_ply = ply + 1;
+
+    // wrong color?
+    if (board.name.slice(0, 2) == 'pv' && next_ply % 2 != id % 2)
+        return;
+
+    // wrong current move?
+    if (moves[ply] && board_moves[ply]) {
+        let fen = moves[ply].fen;
+
+        if (fen != board_moves[ply].fen) {
+            if (DEV.arrow)
+                LS(`${board.id} wrong fen @${ply} / ${ply / 2 + 1}`);
+        }
+        else {
+            if (DEV.arrow)
+                LS(`${board.id} correct fen @${ply} / ${ply / 2 + 1}`);
+
+            next = board_moves[next_ply];
+            if (next) {
+                board.next = next;
+                if (next.from == undefined && next.m) {
+                    board.chess_load(fen);
+                    let result = board.chess_move(next.m);
+                    Assign(next, result);
+                    next.ply = next_ply;
+                    if (DEV.arrow)
+                        LS(`${board.id} chess ${next.m} => ${next.from} - ${next.to} @${next_ply} / ${next_ply / 2 + 1}`);
+                }
+                draw = true;
+            }
+        }
+    }
+    else if (next && next.ply == next_ply) {
+        if (DEV.arrow)
+            LS(`${board.id} OK next @${next_ply} / ${next_ply / 2 + 1}`);
+        draw = true;
+    }
+
+    if (draw) {
+        main.arrow(id, next);
+        if (DEV.arrow)
+            LS(`     => draw: ${next.m} : ${next.from} => ${next.to} @${next.ply} / ${next.ply / 2 + 1}`);
+    }
+    else if (DEV.arrow)
+        LS(`${board.id} no arrow`);
+}
+
+/**
  * Create 9 boards
  * - should be done at startup since we want to see the boards ASAP
  */
@@ -485,6 +550,19 @@ function create_boards() {
 }
 
 /**
+ * Redraw the arrows
+ */
+function redraw_arrows() {
+    let main = xboards[Y.x];
+    if (!main)
+        return;
+
+    Keys(xboards).forEach(key => {
+        check_draw_arrow(xboards[key]);
+    });
+}
+
+/**
  * Reset sub boards
  * @param {number} mode:
  * - &1: mark board invalid
@@ -517,11 +595,15 @@ function show_board_info(show) {
 
     if (show == undefined) {
         if (status == 'auto') {
-            let [active] = get_active_tab('engine');
-            show = (active != 'engine');
+            let engine = Id('engine'),
+                rect = engine.getBoundingClientRect();
+
+            if (!Visible(engine) || rect.top < 0 || rect.top + rect.height > window.height
+                    || rect.left < 0 || rect.left + rect.width > window.innerWidth)
+                show = true;
         }
         else
-            show = status;
+            show = (status != 0);
     }
 
     S('.xbottom, .xtop', show, node);
@@ -562,6 +644,7 @@ function update_board_theme(mode) {
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
+                smooth = Y[`animate${suffix}`],
                 theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
 
             Assign(board, {
@@ -570,12 +653,13 @@ function update_board_theme(mode) {
                 high_color: Y[`highlight_color${suffix}`],
                 high_size: Y[`highlight_size${suffix}`],
                 notation: Y[`notation${suffix}`]? 6: 0,
-                smooth: Y[`animate${suffix}`],
+                smooth: smooth,
+                smooth0: smooth,
                 theme: theme,
             });
         }
 
-        board.hold_smooth();
+        board.instant();
         board.render(7);
     });
 
@@ -598,6 +682,18 @@ function update_engine_pieces() {
 
 // TABLES
 /////////
+
+/**
+ * Add a table to the queue
+ * @param {string} section
+ * @param {string} parent
+ */
+function add_queue(section, parent) {
+    for (let queue of QUEUES)
+        queued_tables.add(`${section}/${parent}/${queue}`);
+    if (players[0].name)
+        add_timeout('queue', check_queued_tables, TIMEOUT_queue);
+}
 
 /**
  * Analyse the crosstable data
@@ -652,7 +748,7 @@ function analyse_crosstable(section, data) {
             elo: elo,
             engine: name,
             games: dico.Games,
-            loss: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
+            losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
             points: dico.Score,
             rank: dico.Rank,
             sb: dico.Neustadtl,
@@ -665,7 +761,7 @@ function analyse_crosstable(section, data) {
     // 2) table-cross: might need to update the columns too
     let node = Id('table-cross'),
         new_columns = [...Split(TABLES.cross), ...abbrevs],
-        scolumns = Array.from(A('th', node)).map(node => node.textContent).join('|'),
+        scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
 
     if (scolumns != snew_columns && Y.x == section) {
@@ -781,7 +877,7 @@ function check_pagination(parent) {
 
     if (pages.length != num_page + 2) {
         let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
-        if (parent != 'quick') {
+        if (parent == 'table') {
             let array = create_page_array(num_page, page, 2);
             for (let id = 0; id < num_page; id ++) {
                 if (array[id] == 2)
@@ -807,7 +903,7 @@ function check_paginations() {
     for (let parent of PAGINATION_PARENTS) {
         let num_page = check_pagination(parent);
         S(`#${parent}-pagin`, num_page > 1);
-        S(`#${parent}-search`, Abs(num_page) > 1);
+        S(`#${parent}-search`, Abs(num_page) >= 1);
     }
 }
 
@@ -1141,8 +1237,17 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         data = data_x.data,
         is_sched = (name == 'sched'),
         page_key = `page_${parent}`,
-        table = Id(`table-${output || source}`),
+        table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
+
+    if (!table)
+        return;
+
+    // wrap text?
+    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
+    if (wrap == 'auto')
+        wrap = Y.wrap;
+    Style(body, 'white-space:nowrap', !wrap);
 
     // reset or append?
     // - except if rows is null
@@ -1158,7 +1263,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     if (rows) {
-        if (!Array.isArray(rows))
+        if (!IsArray(rows))
             return;
 
         // translate row keys + calculate _id and _text
@@ -1232,7 +1337,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 4) process all rows => render the HTML
-    let columns = Array.from(A('th', table)).map(node => node.dataset.x),
+    let columns = From(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
         is_winner = (name == 'winner'),
@@ -1280,7 +1385,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 td_class = 'fen';
                 break;
             case 'game':
-                value = row_id + 1;
                 if (row.moves)
                     value = create_game_link(section, value);
                 break;
@@ -1391,7 +1495,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     });
 
     // 6) update shortcuts
-    if (parent != 'quick') {
+    if (parent == 'table') {
         let html = HTML(table);
         for (let id = 1; id <= 2 ; id ++) {
             // shortcut matches this table?
@@ -1399,7 +1503,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             if (name != Y[key])
                 continue;
 
-            let node = Id(`table-${key}`);
+            let node = Id(key);
             if (paginated && data_x.page_quick >= 0)
                 update_table(section, name, null, 'quick', {output: key});
             else {
@@ -1410,12 +1514,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 7) create another table?
-    if (!is_shortcut && is_sched) {
-        for (let queue of QUEUES)
-            queued_tables.add(`${section}/${parent}/${queue}`);
-        if (players[0].name)
-            add_timeout('queue', check_queued_tables, TIMEOUT_queue);
-    }
+    if (!is_shortcut && is_sched)
+        add_queue(section, parent);
 }
 
 // ARCHIVE
@@ -1441,7 +1541,7 @@ function analyse_seasons(data) {
     let link = `season=${Y.season}&div=${Y.div}`,
         node = _(`[data-u="${link}"]`);
     if (node) {
-        let parent = Parent(node, 'grid');
+        let parent = Parent(node, {tag: 'grid'});
         if (parent) {
             Class(node, 'active');
             Class(node.nextElementSibling, 'active');
@@ -1979,7 +2079,7 @@ function resize_game() {
         let width = Id(parent).clientWidth,
             board = xboards[key];
         if (board) {
-            board.hold_smooth();
+            board.instant();
             board.resize(width);
         }
     }
@@ -1993,17 +2093,11 @@ function resize_game() {
             return;
 
         let size = Clamp(width / board.sub - 4, 196, 320);
-        board.hold_smooth();
+        board.instant();
         board.resize(size);
     });
 
-    // status
-    if (Y.status == 'auto') {
-        let crect = Id('center').getBoundingClientRect(),
-            lrect = Id('left').getBoundingClientRect();
-        show_board_info(crect.top > lrect.top + lrect.height);
-    }
-
+    show_board_info();
     resize_3d();
 }
 
@@ -2131,7 +2225,7 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
-        node = Id(`player${id}`),
+        node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
@@ -2145,7 +2239,7 @@ function update_move_pv(section, ply, move) {
 
     // PV should jump directly to a new position, no transition
     board.reset();
-    board.hold_smooth();
+    board.instant();
 
     if (move.pv)
         board.add_moves(move.pv.Moves, main.ply);
@@ -2195,7 +2289,7 @@ function update_overview_basic(section, headers) {
     WB_TITLES.forEach((title, id) => {
         let box_node = _(`#box-pv${id} .status`),
             name = headers[title],
-            node = Id(`player${id}`),
+            node = Id(`moves-pv${id}`),
             player = players[id],
             short = get_short_name(name),
             src = `image/engine/${short}.jpg`;
@@ -2264,7 +2358,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     if (section != Y.x)
         return;
 
-    // 2) update the current chart only (except if graph_all is ON)
+    // 2) update the visible charts
     update_player_charts(null, moves);
 
     // 3) check adjudication
@@ -2368,17 +2462,21 @@ function update_pgn(section, pgn) {
     main.add_moves(moves);
     if (is_same)
         update_overview_moves(section, headers, moves, true, true);
+
     update_mobility();
+    add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
 
     // got player info => can do h2h
     check_queued_tables();
 
-    if (new_game)
+    if (new_game) {
         for (let player of players)
             Assign(player, {
                 elapsed: 0,
                 left: player.tc,
             });
+        add_queue(section, 'table');
+    }
 }
 
 /**
@@ -2557,7 +2655,7 @@ function update_player_eval(section, data) {
         eval_ = data.eval,
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
-        node = Id(`player${id}`),
+        node = Id(`moves-pv${id}`),
         short = get_short_name(data.engine);
 
     // 1) update the live part on the left
@@ -2631,7 +2729,7 @@ function update_clock(id, move) {
     left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
-    HTML(`#left${id}`, left);
+    HTML(`#remain${id}`, left);
     HTML(`#time${id}`, time);
     player.sleft = left;
     player.stime = time;
@@ -2662,7 +2760,7 @@ function game_action_key(code) {
     if (Visible('#overlay')) {
         let changes = 0,
             parent = Visible('#modal')? Id('modal'): Id('modal2'),
-            items = Array.from(A('.item', parent)).filter(item => Visible(item)),
+            items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
             node = items[index],
@@ -2807,13 +2905,15 @@ function random_position() {
  * - called by change_setting_special
  */
 function change_setting_game(name, value) {
-    let section = Y.x,
+    let prefix = name.split('_')[0],
+        section = Y.x,
         main = xboards[section];
 
+    // using exact name
     switch (name) {
     case 'analysis_chessdb':
     case 'analysis_lichess':
-        let parent = Parent(context_target, null, 'xboard');
+        let parent = Parent(context_target, {class_: 'xboard'});
         if (parent) {
             let board = xboards[parent.id],
                 url = ANALYSIS_URLS[name.split('_')[1]];
@@ -2822,9 +2922,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'copy_moves':
-        let target = context_target;
-        while (target && !HasClasses(target, 'live-pv xmoves'))
-            target = target.parentNode;
+        let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
         if (target)
             CopyClipboard(target.innerText.replace(/\s/g, ' '));
         break;
@@ -2837,6 +2935,16 @@ function change_setting_game(name, value) {
         break;
     case 'status':
         show_board_info();
+        break;
+    }
+
+    // using prefix
+    switch (prefix) {
+    case 'arrow':
+        redraw_arrows();
+        break;
+    case 'wrap':
+        update_table(section, get_active_tab('table')[0], null, 'table');
         break;
     }
 }
@@ -2902,8 +3010,7 @@ function changed_section() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x,
-        main = xboards[section];
+    let section = Y.x;
 
     switch (type) {
     case 'activate':
@@ -2918,13 +3025,7 @@ function handle_board_events(board, type, value) {
         }
         else if (value == 'rotate') {
             show_board_info();
-            // redraw the arrows
-            Keys(xboards).forEach(key => {
-                let board = xboards[key],
-                    id = board.live_id;
-                if (id != undefined)
-                    main.arrow(id, board.next, id + 2);
-            });
+            redraw_arrows();
         }
         break;
     // move list => ply selected
@@ -2936,9 +3037,8 @@ function handle_board_events(board, type, value) {
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
-        let id = board.live_id;
-        if (id != undefined)
-            main.arrow(id, value, id + 2);
+        if (!xboards[section].hold)
+            check_draw_arrow(board);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -2963,6 +3063,8 @@ function handle_board_events(board, type, value) {
 
             update_materials(value);
             update_mobility();
+            if (Y.arrow_moves == 'all')
+                add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
         }
         break;
     }
@@ -2970,34 +3072,61 @@ function handle_board_events(board, type, value) {
 
 /**
  * Select a tab and open the corresponding table
- * @param {string|Node} sel tab name or node
- * @param {boolean=} hide_table hide the corresponding table (but PV is shared!)
+ * @param {string|Node} sel
  */
-function open_table(sel, hide_table=true) {
-    if (typeof(sel) == 'string')
-        sel = _(`.tab[data-x="${sel}"]`);
-    if (!sel)
+function open_table(sel) {
+    let tab = sel;
+
+    if (typeof(tab) == 'string') {
+        tab = _(`[data-x="${sel}"]`);
+        if (!tab)
+            tab = _(`[data-x="table-${sel}"]`);
+    }
+    if (!tab)
         return;
 
-    let parent = Parent(sel, 'horis', 'tabs'),
-        active = _('.active', parent),
-        key = sel.dataset.x,
-        node = Id(`table-${key}`);
+    let parent = Parent(tab, {class_: 'tabs'}),
+        target = tab.dataset.x;
 
-    if (active) {
-        Class(active, '-active');
-        // only hide if the table has the same parent
-        // + special cases
-        if (['live0', 'live1'].includes(key) && !Y.live_tabs)
-            hide_table = false;
+    // table?
+    if (parent.id == 'table-tabs') {
+        Y.table_tab[Y.x] = target;
+        save_option('table_tab');
 
-        if (hide_table)
-            Hide(`#table-${active.dataset.x}`);
+        // TODO: ugly hack, fix this later
+        if (target.slice(0, 6) != 'table-')
+            target = `table-${target}`;
+
+        for (let child of _('#tables').children)
+            if (!HasClass(child, 'tabs') && child.id.slice(0, 6) == 'table-')
+                Hide(child);
     }
-    Class(sel, 'active');
+
+    // deactivate other tabs
+    E('.tab', node => {
+        let context_area = context_areas[node.dataset.x];
+        if (context_area)
+            context_area[2] &= ~2;
+        Class(node, '-active');
+        Hide(Id(node.dataset.x));
+    }, parent);
+
+    // activate 1 tab
+    Class(tab, 'active');
+    let context_area = context_areas[target];
+    if (context_area)
+        context_area[2] |= 2;
+
+    save_option('areas');
+
+    let key = target,
+        node = Id(target);
     Show(node);
 
-    opened_table(node, key, sel);
+    // further processing
+    if (key.slice(0, 6) == 'table-')
+        key = key.slice(6);
+    opened_table(node, key, tab);
 }
 
 /**
@@ -3009,18 +3138,13 @@ function open_table(sel, hide_table=true) {
 function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
-        is_chart = (parent == 'chart-tabs'),
+        is_chart = _('canvas', node),
         section = Y.x,
         main = xboards[section];
     if (DEV.ui)
         LS(`opened_table: ${parent}/${name}`);
 
-    Y.tabs[parent] = name;
-    save_option('tabs', Y.tabs);
-
     // 2) special cases
-    if (is_chart)
-        chart_id = name;
     if (is_chart && charts[name] && main) {
         update_player_charts(name, main.moves);
         update_chart_options(name, 3);
@@ -3033,27 +3157,12 @@ function opened_table(node, name, tab) {
     case 'cross':
         analyse_crosstable(section, table_data[section].crossx);
         break;
-    case 'engine':
-        show_board_info();
-        break;
     case 'info':
         HTML(node, HTML('#desc'));
         break;
     case 'log':
-        fill_combo('#log', [0, 5, 10, 'all'], Y.live_log);
+        fill_combo('#nlog', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
-        break;
-    // change order + switch to default tab
-    case 'pv':
-        Style('#table-pv', `order:${is_chart? 3: 1}`);
-        if (is_chart)
-            open_table('engine', false);
-        else {
-            show_board_info();
-            let [active] = get_active_tab('chart');
-            if (active == 'pv')
-                open_table('eval', false);
-        }
         break;
     case 'pva':
         let board = board_target;
@@ -3077,6 +3186,7 @@ function opened_table(node, name, tab) {
     }
 
     check_paginations();
+    show_board_info();
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
@@ -3118,7 +3228,7 @@ function popup_custom(id, name, e, scolor) {
         }
         else if (name == 'fen') {
             let fen = TEXT(e.target);
-            xboards.xfen.hold_smooth();
+            xboards.xfen.instant();
             if (!xboards.xfen.set_fen(fen, true))
                 return;
         }
@@ -3180,7 +3290,7 @@ function set_game_events() {
         }, TIMEOUT_search);
     });
 
-    C('#log', function() {
+    C('#nlog', function() {
         save_option('live_log', this.value);
         listen_log();
     });
@@ -3202,105 +3312,9 @@ function start_game() {
  * Initialise structures with game specific data
  */
 function startup_game() {
-    //
-    Assign(DEFAULTS, {
-        div: '',
-        game: 0,
-        live_log: 0,
-        order: 'left|center|right',         // main panes order
-        season: '',
-        stream: 0,
-        tabs: {},                           // opened tabs
-        three: 0,                           // 3d scene
-        twitch_chat: 1,
-        twitch_dark: 0,
-        twitch_video: device.mobile? 0: 1,
-        x: 'live',
-    });
     Assign(STATE_KEYS, {
         archive: ['x', 'season', 'div', 'game'],
         live: ['x'],
-    });
-
-    merge_settings({
-        audio: {
-            audio_delay: [{max: 2000, min: 0, type: 'number'}, 0],
-            book_sound: [ON_OFF, 1],
-            sound_capture: [['off', 'capture.mp3'], 'capture.mp3'],
-            sound_check: [['off', 'check'], 'check'],
-            sound_checkmate: [['off', 'checkmate'], 'checkmate'],
-            sound_draw: [['off', 'draw'], 'draw'],
-            sound_move: [['off', 'move', 'move.mp3'], 'move'],
-            sound_win: [['off', 'win'], 'win'],
-        },
-        // separator
-        _1: {},
-        board: {
-            analysis_chessdb: '1',
-            analysis_lichess: '1',
-            animate: [ON_OFF, 1],
-            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.7],
-            board_theme: [Keys(BOARD_THEMES), 'chess24'],
-            custom_black: [{type: 'color'}, '#000000'],
-            custom_white: [{type: 'color'}, '#ffffff'],
-            highlight_color: [{type: 'color'}, '#ffff00'],
-            // 1100 looks good too
-            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
-            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
-            notation: [ON_OFF, 1],
-            piece_theme: [Keys(PIECE_THEMES), 'chess24'],
-            status: [['auto', 'on', 'off'], 'auto'],
-        },
-        board_pv: {
-            analysis_chessdb: '1',
-            analysis_lichess: '1',
-            animate_pv: [ON_OFF, 1],
-            board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
-            custom_black_pv: [{type: 'color'}, '#000000'],
-            custom_white_pv: [{type: 'color'}, '#ffffff'],
-            highlight_color_pv: [{type: 'color'}, '#ffff00'],
-            highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
-            notation_pv: [ON_OFF, 1],
-            piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
-            show_ply: [['first', 'diverging', 'last'], 'diverging'],
-            status_pv: [ON_OFF, 1],
-        },
-        live: {
-            copy_moves: '1',
-            live_engine_1: [ON_OFF, 1],
-            live_engine_2: [ON_OFF, 1],
-            live_hide: [ON_OFF, 0],
-            live_pv: [ON_OFF, 1],
-            live_tabs: [ON_OFF, 1],
-            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
-        },
-        // separator
-        _2: {},
-        control: {
-            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
-        },
-        engine: {
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], 'on'],
-        },
-        extra: {
-            rows_per_page: [[10, 20, 50, 100], 10],
-        },
-        graph: {},
-        hide: {
-            live_hide: [ON_OFF, 0],
-        },
-        moves: {
-            copy_moves: '1',
-            move_height: [{max: 30, min: 5, type: 'number'}, 5],
-        },
-        moves_pv: {
-            copy_moves: '1',
-            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
-        },
-        panel: {},
     });
 
     virtual_init_3d_special = init_3d_special;

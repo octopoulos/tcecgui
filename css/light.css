@@ -139,7 +139,8 @@ h5 {
     margin-top: 0.2em;
 }
 hr {
-    border: 0.5px solid #e2e5e8;
+    border: 0;
+    border-bottom: 1px solid #e2e5e8;
     color: #e9ecef;
     margin: 0;
     width: 100%;
@@ -181,6 +182,7 @@ tr {
 grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    min-width: 240px;
 }
 .grid2 {
     grid-template-columns: 0.5fr 1fr;
@@ -212,7 +214,7 @@ grid {
 .nav:hover {
     color: #ddd;
 }
-#quick {
+#icons {
     flex: 1;
 }
 .red {
@@ -244,7 +246,7 @@ grid {
     max-height: 70vh;
     position: fixed;
     top: 15vh;
-    z-index: 7;
+    z-index: 8;
 }
 #text {
     left: -9999px;
@@ -259,7 +261,7 @@ grid {
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 4;
+    z-index: 5;
 }
 #popup > grid {
     max-height: 40vh;
@@ -284,7 +286,7 @@ grid {
     top: 0;
     transition: opacity 0.5s;
     user-select: text;
-    z-index: 5;
+    z-index: 6;
 }
 .popup-close {
     cursor: pointer;
@@ -299,14 +301,17 @@ grid {
 #popup-about {
     background: #f5f5f5;
     color: #000;
-    max-height: 80vh;
-    max-width: 80vw;
+    max-height: 85vh;
+    max-width: 85vw;
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0;
 }
 #modal a {
     color: #000;
+}
+#modal a.off {
+    color: #f00;
 }
 #modal input,
 #modal select {
@@ -331,12 +336,26 @@ grid {
     padding: 0.3em 2em 0.3em 1em;
     width: 100%;
 }
+.item2 {
+    cursor: pointer;
+    font-variant: small-caps;
+    padding: 0.3em;
+    text-align: center;
+    width: 100%;
+}
 .item-title {
     padding: 0.3em;
     text-align: center;
 }
-.item:hover {
+.item:hover,
+.item2:hover {
     background: rgba(0, 0, 0, 0.1);
+}
+.item2.active {
+    background: rgba(208, 208, 224, 0.7);
+}
+.item2.active:hover {
+    background: rgba(208, 208, 224, 0.9);
 }
 .span {
     grid-column: 1/3;
@@ -357,7 +376,7 @@ grid {
 .xoverlay {
     pointer-events: none;
     position: absolute;
-    z-index: 3;
+    z-index: 4;
 }
 .xbottom,
 .xtop {
@@ -449,12 +468,6 @@ grid {
 #live {
     width: 100%;
 }
-#live-tabs {
-    margin-top: 1em;
-}
-#live-texts {
-    margin-top: 0.5em;
-}
 .xcontrol {
     color: #007bff;
     font-size: 0.34em;
@@ -506,7 +519,7 @@ grid {
     overflow-y: scroll;
     width: 8em;
 }
-#player1 .live-pv,
+#moves-pv1 .live-pv,
 #pv1 .xmoves {
     background: #000;
     color: #fff;
@@ -545,7 +558,7 @@ grid {
 .real {
     color: #07f;
 }
-#player1 .real,
+#moves-pv1 .real,
 #pv1 .real {
     color: #7ce
 }
@@ -553,7 +566,7 @@ grid {
     color: #222;
     font-size: 13px;
 }
-#player1 .turn,
+#moves-pv1 .turn,
 #pv1 .turn {
     color: #fff;
 }
@@ -678,14 +691,6 @@ grid {
     max-width: 1500px;
     width: 95%;
 }
-#chart-tabs {
-    margin-top: 1em;
-}
-#chart-tabs .tab,
-#right .tab,
-#tables .tab {
-    flex: 1;
-}
 #table-chat {
     max-width: 720px;
     width: 100%;
@@ -705,8 +710,8 @@ grid {
 #table-season grid {
     grid-template-columns: 1fr 1em;
 }
-#table-shortcut_1,
-#table-shortcut_2,
+#shortcut_1,
+#shortcut_2,
 #table-winner {
     max-height: 90vh;
     overflow-x: hidden;
@@ -762,19 +767,19 @@ grid {
 }
 
 /* engines */
-#table-engine {
+#engine {
     margin-bottom: 0.7em;
     width: 100%;
     z-index: 1;
 }
-#table-engine > div {
+#engine > div {
     padding: 0.2em;
 }
-#table-engine > * {
+#engine > * {
     background: rgba(0, 0, 0, 0.04);
     text-align: center;
 }
-#table-engine [data-t] {
+#engine [data-t] {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
@@ -895,7 +900,7 @@ grid {
     margin-top: 0.8em;
     width: 95%;
 }
-#log,
+#nlog,
 .search {
     border: 1px solid #ced4da;
     border-radius: 0.25em;
@@ -1002,25 +1007,13 @@ grid {
 }
 
 /* live */
-#lives {
-    margin-top: 0.5em;
-    width: 100%;
-}
-#lives .tabs {
-    margin-bottom: 0.1em;
-}
-#lives > * {
-    margin-bottom: 0.1em;
-    width: 100%;
-}
 .live {
-    margin-top: 0.1em;
     position: relative;
 }
 .live-basic {
     font-size: 0.95em;
     font-weight: 500;
-    margin: 0.15em 0;
+    margin-bottom: 0.15em;
     z-index: 1;
 }
 .live-engine {
@@ -1056,15 +1049,38 @@ grid {
     color: #8b0000;
 }
 #box-pv0 .engine,
-#player0 .engine {
+#moves-pv0 .engine {
     color: #666;
 }
 #box-pv1 .engine,
-#player1 .engine {
+#moves-pv1 .engine {
     color: #000;
 }
 
 /* container */
+.area {
+    flex: 1;
+    /* min-height: 1em; */
+    width: 100%;
+}
+.drag {
+    margin: 2px 2px 6px 2px;
+    width: 100%;
+}
+.dragging {
+    background: rgba(192, 64, 64, 0.08);
+    min-height: 4em;
+}
+#bottom > vert {
+    margin: 2px;
+}
+#rect {
+    border: 5px solid rgba(255, 0, 0, 0.8);
+    left: -9999px;
+    pointer-events: none;
+    position: fixed;
+    z-index: 9;
+}
 #meta-canvas {
     height: 100%;
     pointer-events: none;
@@ -1084,12 +1100,14 @@ grid {
     flex: 2;
     margin: 4px;
     max-width: calc(100vh - 400px);
+    min-height: 350px;
     min-width: 281px;
 }
 #center {
     flex: 2;
     max-width: 390px;
     margin: 4px;
+    min-height: 350px;
     min-width: 300px;
 }
 #right {
@@ -1116,9 +1134,15 @@ grid {
 #desc {
     max-width: 666px;
 }
+#version {
+    font-size: small;
+}
 .tabs {
     justify-content: center;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.2em;
+}
+.tabs > .tab {
+    flex: 1;
 }
 .swaps {
     width: 100%;
@@ -1136,34 +1160,12 @@ grid {
 .size {
     margin: -0.2em 0 0 0.1em;
 }
-#chart-tabs {
-    order: 2;
-}
-#table-pv {
-    order: 3;
-}
-#charts {
-    order: 4;
-    z-index: 1;
-}
-#table-kibitz {
-    order: 5;
-}
-#table-pva {
-    order: 6;
-}
 .chart {
     position: relative;
 }
-#charts canvas {
+.graphs {
     width: 300px;
     height: 230px;
-}
-#charts2 {
-    width: 100%;
-}
-#charts2 > vert {
-    margin: 2px;
 }
 
 /* extras */
@@ -1228,11 +1230,11 @@ grid {
 
 /* allow text selection */
 pre,
+#engine,
 #footer,
 #live-log,
-#lives,
-#table-engine,
 #table-info,
+#table-view,
 .live-pv,
 .live-pv > a,
 .stats,
@@ -1254,17 +1256,11 @@ svg.down {
     position: absolute;
     z-index: -1;
 }
-#mk0,
-#mk1 {
-    fill: #999;
-}
 .arrow {
     fill: none;
     height: 100%;
     left: 0;
     opacity: 0.7;
-    marker-end: url(#mk1);
-    marker-start: url(#mk0);
     pointer-events: none;
     position: absolute;
     stroke-linejoin: round;
@@ -1279,9 +1275,16 @@ svg.down {
 }
 
 /* media */
-@media (max-width: 639px) {
+@media (max-width: 640px) {
     .google-ad {
         display: none;
+    }
+    #header {
+        padding: 0;
+    }
+    #modal,
+    #popup-about {
+        font-size: 13px;
     }
 }
 @media (max-width: 866px) {

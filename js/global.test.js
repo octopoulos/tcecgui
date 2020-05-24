@@ -19,7 +19,7 @@ create_module(IMPORT_PATH, [
     'global',
 ], OUTPUT_MODULE);
 
-let {extract_fen_ply, get_move_ply, split_move_string} = require(OUTPUT_MODULE);
+let {get_move_ply, mix_hex_colors, split_move_string} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -42,6 +42,21 @@ let {extract_fen_ply, get_move_ply, split_move_string} = require(OUTPUT_MODULE);
         expect(get_move_ply(move)).toEqual(answer);
         if (answer >= -1)
             expect(move.ply).toEqual(answer);
+    });
+});
+
+// mix_hex_colors
+[
+    ['#ffffff', '#000000', 0.5, '#808080'],
+    ['#000000', '#ffffff', 0.5, '#808080'],
+    ['#ffffff', '#000000', 0.3, '#b3b3b3'],
+    ['#ff0000', '#0000ff', 0.2, '#cc0033'],
+    ['#ff0000', '#0000ff', 0, '#ff0000'],
+    ['#ff0000', '#0000ff', 1, '#0000ff'],
+    ['#ff0000', '#0000ff', 2, '#0000ff'],
+].forEach(([color1, color2, mix, answer], id) => {
+    test(`mix_hex_colors:${id}`, () => {
+        expect(mix_hex_colors(color1, color2, mix)).toEqual(answer);
     });
 });
 

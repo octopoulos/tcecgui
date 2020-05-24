@@ -43,7 +43,7 @@ html {
     background: #b60;
     color: #fff;
 }
-#table-engine > * {
+#engine > * {
     background: rgba(255, 255, 255, 0.2);
 }
 

@@ -14,6 +14,8 @@ define, exports
 'use strict';
 
 var Chess = function(fen) {
+    let current_fen = '';
+
     var BLACK = 'b';
     var WHITE = 'w';
 
@@ -202,8 +204,7 @@ var Chess = function(fen) {
                 var color = board[i].color;
                 var piece = board[i].type;
 
-                fen += (color === WHITE) ?
-                                 piece.toUpperCase() : piece.toLowerCase();
+                fen += (color === WHITE)? piece.toUpperCase() : piece.toLowerCase();
             }
 
             if ((i + 1) & 0x88) {
@@ -230,7 +231,8 @@ var Chess = function(fen) {
         cflags = cflags || '-';
         var epflags = (ep_square === EMPTY) ? '-' : algebraic(ep_square);
 
-        return [fen, turn, cflags, epflags, half_moves, move_number].join(' ');
+        current_fen = [fen, turn, cflags, epflags, half_moves, move_number].join(' ');
+        return current_fen;
     }
 
     function put(piece, square) {
@@ -644,9 +646,9 @@ var Chess = function(fen) {
         board[move.from].type = move.piece;    // to undo any promotions
         board[move.to] = null;
 
-        if (move.flags & BITS.CAPTURE) {
+        if (move.flags & BITS.CAPTURE)
             board[move.to] = {type: move.captured, color: them};
-        } else if (move.flags & BITS.EP_CAPTURE) {
+        else if (move.flags & BITS.EP_CAPTURE) {
             var index;
             if (us === BLACK) {
                 index = move.to - 16;
@@ -788,12 +790,17 @@ var Chess = function(fen) {
             return clear();
         },
 
-        load: fen => {
-            return load(fen);
+        curr_fen: () => {
+            return current_fen;
         },
 
         fen: () => {
             return generate_fen();
+        },
+
+        load: fen => {
+            if (fen != current_fen)
+                return load(fen);
         },
 
         /**
@@ -825,6 +832,7 @@ var Chess = function(fen) {
                 return null;
 
             make_move(move_obj);
+            current_fen = '';
             return move_obj;
         },
 

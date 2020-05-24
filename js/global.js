@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-DEV:true, LS, Y
+DEV:true, IsArray, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
 */
 'use strict';
 
@@ -24,7 +24,8 @@ let HOST = 'https://tcec-chess.com',
         three: 1 * 1000,                // 3d scene
         twitch: 5 * 1000,
         users: 5 * 1000,
-    };
+    },
+    VERSION = '20200522';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -52,11 +53,36 @@ function get_move_ply(move) {
 }
 
 /**
+ * Mix 2 hex colors
+ * @param {string} color1 #ffff00, ffff00
+ * @param {string} color2 #0000ff
+ * @param {number} mix how much of color2 to use, 0..1
+ * @returns {string} #808080
+ */
+function mix_hex_colors(color1, color2, mix) {
+    if (mix <= 0)
+        return color1;
+    else if (mix >= 1)
+        return color2;
+
+    let off1 = (color1[0] == '#')? 1: 0,
+        off2 = (color2[0] == '#')? 1: 0;
+
+    return '#' + [0, 2, 4].map(i => {
+        let color =
+              parseInt(color1.slice(off1 + i, off1 + i + 2), 16) * (1 - mix)
+            + parseInt(color2.slice(off2 + i, off2 + i + 2), 16) * mix;
+        return Pad(Round(color).toString(16));
+    }).join('');
+}
+
+/**
  * Parse DEV
  */
 function parse_dev() {
     let names = {
-            a: 'ad',                    // disable ads (for development)
+            a: 'arrow',
+            A: 'ad',                    // disable ads (for development)
             b: 'board',
             c: 'chart',
             d: 'debug',
@@ -92,6 +118,28 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+}
+
+/**
+ * Reset some settings if the version is too old
+ */
+function reset_old_settings() {
+    if (Y.version == VERSION)
+        return;
+
+    let updates = ['audio'];
+    for (let update of updates) {
+        LS(`reset ${update} settings ...`);
+        let settings = X_SETTINGS[update];
+
+        Keys(settings).forEach(key => {
+            let value = settings[key];
+            if (IsArray(value))
+                save_option(key, value[1]);
+        });
+    }
+
+    save_option('version', VERSION);
 }
 
 /**

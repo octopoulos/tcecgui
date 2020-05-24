@@ -23,10 +23,10 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard, CreateNode,
-CreateSVG, DEV, Events, extract_fen_ply, Floor, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes, Keys, Lower, LS,
-merge_settings, Min, Now, ON_OFF, play_sound, S, SetDefault, Show, Sign, Split, split_move_string, Style, T, timers,
-update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard,
+CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, From, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes,
+Keys, Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
+split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
 */
 'use strict';
 
@@ -120,7 +120,7 @@ class XBoard {
      * - id             // output selector for HTML & text, can be 'console' and 'null' too
      * - last           // default result text, ex: *
      * - list           // show move list history
-     * - live_id        // live engine id => will show arrows on the main board
+     * - live_id        // 0,1: player id, 2,3: live engine id => will show arrows on the main board
      * - main           // is it the main board?
      * - manual         // manual control enabled
      * - mode           // 3d, canvas, html, text
@@ -182,7 +182,6 @@ class XBoard {
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
         this.next = null;
-        this.next_smooth = false;                       // used to temporarily prevent transitions
         this.node = _(this.id);
         this.nodes = {};
         this.overlay = null;                            // svg objects will be added there
@@ -193,7 +192,13 @@ class XBoard {
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
         this.seen = 0;                                  // last seen move -> used to show the counter
-        this.svgs = [];                                 // svg objects for the arrows
+        this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.svgs = [
+            {id: 0},
+            {id: 1},
+            {id: 2},
+            {id: 3},
+        ];                                              // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
         this.valid = true;
         this.xmoves = null;
@@ -312,6 +317,15 @@ class XBoard {
                 this.set_ply(last_move, {animate: true});
         }
 
+        // next move
+        if (this.hook) {
+            let next = this.moves[this.real.ply + 1];
+            if (next) {
+                this.next = next;
+                this.hook(this, 'next', next);
+            }
+        }
+
         this.update_counter();
 
         // update mobility
@@ -402,7 +416,7 @@ class XBoard {
             // 3) update the cursor
             // live engine => show an arrow for the next move
             if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(new_ply, {hold: true});
+                let move = this.set_ply(new_ply, {hold: true, render: false});
                 if (this.hook) {
                     this.next = move;
                     this.hook(this, 'next', move);
@@ -581,21 +595,19 @@ class XBoard {
      * Show an arrow
      * @param {number} id object id, there can be multiple arrows
      * @param {Object} dico {captured, color, from, piece, to}
-     * @param {number} color
      */
-    arrow(id, dico, color) {
+    arrow(id, dico) {
         let func = `arrow_${this.mode}`;
         if (this[func])
-            this[func](id, dico, color);
+            this[func](id, dico);
     }
 
     /**
      * Display a 3d arrow
      * @param {number} id
      * @param {Object} dico
-     * @param {number} color
      */
-    arrow_3d(id, dico, color) {
+    arrow_3d(id, dico) {
 
     }
 
@@ -603,9 +615,8 @@ class XBoard {
      * Draw an arrow on the canvas
      * @param {number} id
      * @param {Object} dico
-     * @param {number} color
      */
-    arrow_canvas(id, dico, color) {
+    arrow_canvas(id, dico) {
 
     }
 
@@ -613,16 +624,21 @@ class XBoard {
      * Create an SVG arrow
      * @param {number} id svg id, there can be multiple arrows
      * @param {Object} dico contains move info, if null then hide the arrow
-     * @param {number} color
      */
-    arrow_html(id, dico, color) {
+    arrow_html(id, dico) {
         // 1) no move => hide the arrow
-        if (!dico || !dico.piece || !Y.arrow_opacity) {
-            Hide(this.svgs[id]);
+        // TODO: maybe some restoration is needed here
+        if (!dico || !dico.from || !Y.arrow_opacity) {
+            Hide(this.svgs[id].svg);
             return;
         }
 
-        // 2) got a move => calculate the arrow
+        // 2) got a move => get coordinates
+        if (typeof(dico.from) == 'string') {
+            dico.from = SQUARES[dico.from];
+            dico.to = SQUARES[dico.to];
+        }
+
         let path,
             x1 = dico.from % 16,
             x2 = dico.to % 16,
@@ -640,49 +656,95 @@ class XBoard {
         x2 = 5 + 10 * x2;
         y1 = 5 + 10 * y1;
         y2 = 5 + 10 * y2;
+        let delta_x = Abs(x1 - x2),
+            delta_y = Abs(y1 - y2),
+            sx = Sign(x1 - x2),
+            sy = Sign(y1 - y2);
 
+        // 3) calculate the path
         // knight = L shape path
-        if (dico.piece == 'n') {
+        if (delta_x && delta_y && delta_x != delta_y) {
             let x3, y3;
-            if (Abs(x1 - x2) > Abs(y1 - y2)) {
+            if (delta_x > delta_y) {
                 x3 = x2;
                 y3 = y1;
-                y2 += Sign(y1 - y2) * 2.5;
+                y2 += sy * 2.4;
             }
             else {
                 x3 = x1;
                 y3 = y2;
-                x2 += Sign(x1 - x2) * 2.5;
+                x2 += sx * 2.4;
             }
+            x1 += Sign(x3 - x1) * 1.68;
+            y1 += Sign(y3 - y1) * 1.68;
             path = `M${x1} ${y1} L${x3} ${y3} L${x2} ${y2}`;
         }
         // diagonal => divide factor by sqrt(2)
         else {
-            let factor = (x1 == x2 || y1 == y2)? 2.5: 1.77;
-            x2 += Sign(x1 - x2) * factor;
-            y2 += Sign(y1 - y2) * factor;
+            let factor = (!delta_x || !delta_y)? 2.4: 1.7;
+            x1 -= sx * factor * 0.7;
+            y1 -= sy * factor * 0.7;
+            x2 += sx * factor;
+            y2 += sy * factor;
             path = `M${x1} ${y1} L${x2} ${y2}`;
         }
 
-        // 2 arrows have the same path => hide the other + modify the color
-        let other = this.svgs[1 - id],
-            scolor = Y[`graph_color_${color}`];
-        if (other) {
-            let path2 = _('path', other).getAttribute('d');
-            if (path == path2) {
-                scolor = Y.graph_combine_23;
-                Hide(other);
+        // 3) arrow conflicts
+        // - arrows have the same path => hide the other + modify the color
+        let shead,
+            dual_id = id + 1 - (id % 2) * 2,
+            dual = this.svgs[dual_id],
+            scolor = Y[`arrow_color_${id}`];
+
+        for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
+            let other_id = other.id;
+            if (id < 2) {
+                // black and white = only 1 arrow can exist
+                if (other_id < 2)
+                    Hide(other.svg);
+                else {
+                    AttrsNS(`#mk${other_id}_1`, {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
+                    Hide(this.svgs[id].svg);
+                    return;
+                }
             }
-            // other color might be green => should recolor it
-            else if (color >= 2)
-                Attrs('path', 'stroke', Y[`graph_color_${5 - color}`], other);
+            else {
+                if (other_id >= 2)
+                    scolor = Y.arrow_combine_23;
+                else
+                    shead = mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${other_id}`], 0.6);
+                Hide(other.svg);
+            }
         }
 
-        // 3) show the arrow
-        let body = this.create_svg(id);
-        HTML(_('svg', body), `<path stroke="${scolor}" stroke-width="${Y.arrow_width}" d="${path}"/>`);
+        // other color might be green => should recolor it
+        if (id >= 2)
+            AttrsNS('svg > path', {stroke: Y[`arrow_color_${dual_id}`]}, dual.svg);
+
+        // 4) show the arrow
+        let body = this.create_svg(id),
+            color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
+            color_head = shead || mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
+            marker0 = Id(`mk${id}_0`),
+            marker1 = Id(`mk${id}_1`),
+            paths = A('svg > path', body),
+            svg = this.svgs[id];
+
+        AttrsNS(marker0, {fill: color_base, stroke: scolor, 'stroke-width': Y.arrow_base_border});
+        AttrsNS(marker1, {fill: color_head, stroke: scolor, 'stroke-width': Y.arrow_head_border});
+
+        AttrsNS(paths[0], {d: path, stroke: scolor, 'stroke-width': Y.arrow_width});
+        svg.dist = delta_x + delta_y;
+        svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity}`);
         Show(body);
+
+        // 5) shorter distances above
+        [...this.svgs]
+            .sort((a, b) => ((b.dist || 0) - (a.dist || 0)))
+            .forEach((svg, id) => {
+                Style(svg.svg, `z-index:${id}`);
+            });
     }
 
     /**
@@ -739,6 +801,8 @@ class XBoard {
                     }
                     Assign(move_next, result);
                     move_next.fen = this.chess_fen();
+                    // LS(`next=${next} : ${get_move_ply(move_next)}`);
+                    move_next.ply = next;
                 }
 
                 if (DEV.fen) {
@@ -909,26 +973,48 @@ class XBoard {
 
     /**
      * Create an svg arrow part
+     * https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/marker-end
      * @param {string} id
-     * @param {function} callback can return nodes to be added to the svg
      * @returns {Node}
      */
-    create_svg(id, callback) {
-        let arrow = this.svgs[id];
+    create_svg(id) {
+        let arrow = this.svgs[id].svg;
         if (arrow)
             return arrow;
 
-        arrow = CreateNode('div', null, {class: 'arrow'});
-        let svg = CreateSVG('svg', {viewBox: '0 0 80 80'});
-        if (callback) {
-            let nodes = callback(svg);
-            if (nodes)
-                for (let node of nodes)
-                    svg.appendChild(node);
-        }
-        arrow.appendChild(svg);
+        let color = Y[`arrow_color_${id}`],
+            marker_circle = CreateSVG('circle', {cx: 5, cy: 5, r: 3}),
+            marker_path = CreateSVG('path', {d: `M0 0l5 5l-5 5z`}),
+            options = {
+                markerUnits: 'strokeWidth',
+                orient: 'auto',
+                refX: 5,
+                refY: 5,
+                viewBox: '0 0 10 10',
+            },
+            markers = [
+                CreateSVG('marker', Assign(options, {
+                    fill: color,
+                    id: `mk${id}_0`,
+                    markerHeight: Y.arrow_base_size,
+                }), [marker_circle]),
+                CreateSVG('marker', Assign(options, {
+                    fill: color,
+                    id: `mk${id}_1`,
+                    markerHeight: Y.arrow_head_size,
+                    refX: 1,
+                }), [marker_path]),
+            ],
+            defs = CreateSVG('defs', null, markers),
+            path = CreateSVG('path'),
+            svg = CreateSVG('svg', {viewBox: '0 0 80 80'}, [defs, path]);
+
+        AttrsNS(path, {'marker-end': `url(#mk${id}_1)`, 'marker-start': `url(#mk${id}_0)`});
+
+        arrow = CreateNode('div', null, {class: 'arrow', id: `ar${id}`}, [svg]);
+
         this.overlay.appendChild(arrow);
-        this.svgs[id] = arrow;
+        this.svgs[id].svg = arrow;
         return arrow;
     }
 
@@ -967,8 +1053,8 @@ class XBoard {
                 that.play();
                 break;
             case 'rotate':
-                that.hold_smooth();
                 that.rotate = (that.rotate + 1) % 2;
+                that.instant();
                 that.render(3);
                 callback(that, 'control', name);
                 break;
@@ -1035,20 +1121,11 @@ class XBoard {
         // PVA => extra events
         if (this.manual) {
             Events('.xsquares', 'mousemove', function(e) {
-                let found,
-                    target = e.target;
-                while (target) {
-                    if (HasClass(target, 'xsquare')) {
-                        found = target;
-                        break;
-                    }
-                    target = target.parentNode;
+                let target = Parent(e.target, {class_: 'xsquare'});
+                if (target) {
+                    Style('.xhigh', 'background:transparent', true, this);
+                    Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, target);
                 }
-                if (!found)
-                    return;
-
-                Style('.xhigh', 'background:transparent', true, this);
-                Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, found);
             }, {}, this.node);
         }
     }
@@ -1064,7 +1141,7 @@ class XBoard {
             piece_size = theme.size,
             diff = (piece_size - size) / 2,
             style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
-            transform = `transform:scale(${size / piece_size}) translate(${theme.off[0] - diff}px,${theme.off[1] - diff}px)`;
+            transform = `scale(${size / piece_size}) translate(${theme.off[0] - diff}px, ${theme.off[1] - diff}px)`;
 
         return [piece_size, style, transform];
     }
@@ -1075,7 +1152,7 @@ class XBoard {
      */
     hide_arrows() {
         for (let svg of this.svgs)
-            Hide(svg);
+            Hide(svg.svg);
     }
 
     /**
@@ -1248,8 +1325,7 @@ class XBoard {
     /**
      * Hold the smooth value for 1 render frame
      */
-    hold_smooth() {
-        this.next_smooth = this.smooth;
+    instant() {
         this.smooth = false;
     }
 
@@ -1278,15 +1354,10 @@ class XBoard {
         if (!this.manual)
             return;
 
-        let node = e.target;
-        while (node) {
-            if (HasClass(node, 'xpiece')) {
-                LS(node);
-                let coord = node.dataset.c;
-                this.picked = (this.picked == coord)? null: coord;
-                return;
-            }
-            node = node.parentNode;
+        let node = Parent(e.target, {class_: 'xpiece'});
+        if (node) {
+            let coord = node.dataset.c;
+            this.picked = (this.picked == coord)? null: coord;
         }
     }
 
@@ -1299,16 +1370,7 @@ class XBoard {
         if (!this.manual || !this.picked)
             return;
 
-        let found,
-            node = e.target;
-        while (node) {
-            if (HasClass(node, 'xsquare')) {
-                found = node.dataset.q;
-                break;
-            }
-            node = node.parentNode;
-        }
-
+        let found = Parent(e.target, {class_: 'xsquare'});
         if (found) {
             this.chess_load(this.fen);
             this.chess_move({from: SQUARES_INV[this.picked], to: found});
@@ -1350,9 +1412,9 @@ class XBoard {
             this.animate(this.moves[this.ply], this.smooth);
         }
 
-        // restore smooth after `hold_smooth`
-        if (this.next_smooth)
-            this.smooth = this.next_smooth;
+        // restore smooth
+        if (this.smooth0)
+            this.smooth = this.smooth0;
     }
 
     /**
@@ -1418,7 +1480,7 @@ class XBoard {
             this.output(lines.join(''));
 
             // remember all the nodes for quick access
-            this.nodes = Assign({}, ...Array.from(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
+            this.nodes = Assign({}, ...From(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
             this.move2 = null;
         }
 
@@ -1459,7 +1521,10 @@ class XBoard {
                     }
 
                     if (found) {
-                        Style(node, `${transform} translate(${col * piece_size}px,${row * piece_size}px);opacity:1;pointer-events:all`);
+                        let style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
+                            z_index = (node.style.transform == style_transform)? 2: 3;
+
+                        Style(node, `transform:${style_transform};opacity:1;pointer-events:all;z-index:${z_index}`);
                         node.dataset.c = row * 16 + col;
                     }
                     else
@@ -1664,12 +1729,12 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
-     * @param {boolean=} hold call hold_smooth
+     * @param {boolean=} hold call instant()
      * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
      * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, {animate, hold, manual, no_compute}={}) {
+    set_ply(ply, {animate, hold, manual, no_compute, render=true}={}) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate}`);
 
@@ -1677,7 +1742,7 @@ class XBoard {
         this.delayed_ply = -2;
 
         if (hold)
-            this.hold_smooth();
+            this.instant();
 
         // special case: initial board
         if (ply == -1 && this.main) {
@@ -1706,26 +1771,39 @@ class XBoard {
             if (!this.chess_backtrack(ply))
                 return null;
         }
+
+        if (!render)
+            return move;
+
         this.set_fen(move.fen, true);
 
-        let is_last = (ply == this.moves.length - 1);
-
         // play sound?
-        if (this.name == 'live' && (is_last || (this.play_mode == 'book' && Y.book_sound)))
-            add_timeout(`ply${ply}`, () => {
-                let name = 'move',
-                    text = move.m,
-                    last = text.slice(-1);
+        // - multiple sounds can be played with different delays
+        let audio_moves = Y.audio_moves,
+            is_last = (ply == this.moves.length - 1),
+            can_audio = (audio_moves == 'all' || (is_last && audio_moves == 'last'));
 
-                if (last == '#')
-                    name = 'checkmate';
-                if (last == '+')
-                    name = 'check';
-                else if (text.includes('x'))
-                    name = 'capture';
+        if (this.name == 'live' && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
+            let audio_delay = Y.audio_delay,
+                offset = 0,
+                text = move.m,
+                last = text.slice(-1),
+                sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
 
-                play_sound(audiobox, Y[`sound_${name}`], {interrupt: true});
-            }, Y.audio_delay);
+            if (text.includes('x')) {
+                let capture_delay = Y.capture_delay;
+                if (capture_delay < 0)
+                    offset = -capture_delay;
+                sounds.push(['capture', audio_delay + capture_delay]);
+            }
+
+            sounds.sort((a, b) => (a[1] - b[1]));
+
+            for (let [name, delay] of sounds)
+                add_timeout(`ply${ply}+${name}`, () => {
+                    play_sound(audiobox, Y[`sound_${name}`], {interrupt: true});
+                }, delay + offset);
+        }
 
         if (manual && this.hook)
             this.hook(this, 'ply', move);

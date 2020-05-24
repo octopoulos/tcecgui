@@ -9,9 +9,9 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, clearTimeout, CreateNode, DefaultFloat, document, E, history, HTML, Id, InsertNodes, Keys,
-LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame,
-Resource, ScrollDocument, SetDefault, setTimeout, TEXT, Title, Undefined, window
+_, A, Abs, Assign, Attrs, Clamp, clearTimeout, CreateNode, DefaultFloat, document, E, HasClass, history, HTML, Id,
+InsertNodes, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString,
+requestAnimationFrame, Resource, ScrollDocument, SetDefault, setTimeout, Style, TEXT, Title, Undefined, window
 */
 'use strict';
 
@@ -29,6 +29,8 @@ let __PREFIX = '_',
     drag_scroll = 3,
     drag_target,
     drag_type,
+    full_scroll = {x: 0, y: 0},
+    full_target,
     ICONS = {},
     KEY_TIMES = {},
     KEYS = {},
@@ -190,13 +192,24 @@ function load_library(url, callback, extra) {
  */
 function merge_settings(x_settings) {
     Keys(x_settings).forEach(name => {
-        let exists = SetDefault(X_SETTINGS, name, {});
-        Assign(exists, x_settings[name]);
-        X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+        let value = x_settings[name];
+
+        // audio: { ... }
+        if (typeof(value) == 'object') {
+            let exists = SetDefault(X_SETTINGS, name, {});
+            Assign(exists, value);
+            X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+        }
+        // _split: 8
+        else
+            X_SETTINGS[name] = value;
     });
+
+    // update defaults
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
-        Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
+        if (typeof(settings) == 'object')
+            Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
     });
 }
 
@@ -211,10 +224,13 @@ function remove_storage(name) {
 /**
  * Save a Y value + to Local Storage
  * @param {string} name
- * @param {*} value value for the name
+ * @param {*} value value for the name, undefined to save Y[name]
  */
 function save_option(name, value) {
-    Y[name] = value;
+    if (value === undefined)
+        value = Y[name];
+    else
+        Y[name] = value;
     save_storage(name, value);
 }
 
@@ -265,7 +281,7 @@ function resize_text(text, resize)
  * @param {string} text
  */
 function set_text(node, text) {
-    Attrs(node, 'data-t', text);
+    Attrs(node, {'data-t': text});
     TEXT(node, translate_expression(text));
 }
 
@@ -633,9 +649,12 @@ function guess_browser_language() {
 
 /**
  * Check if the browser is in full screen mode
+ * @returns {Node}
  */
 function is_fullscreen() {
-    return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    let full = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    full_target = full? Id('body'): null;
+    return full;
 }
 
 /**
@@ -808,6 +827,10 @@ function render_scroll() {
 
     touch_scroll.x -= touch_speed.x * delta;
     touch_scroll.y -= touch_speed.y * delta;
+    if (full_target) {
+        full_scroll.x -= touch_speed.x * delta;
+        full_scroll.y -= touch_speed.y * delta;
+    }
     set_scroll();
 
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
@@ -822,19 +845,25 @@ function render_scroll() {
  * Set the scroll
  */
 function set_scroll() {
-    // horizontal
     let node = drag_target || scroll_target;
-    if (!node)
-        return;
-    if (drag_scroll & 1) {
-        node.scrollLeft = touch_scroll.x;
-        touch_scroll.x = node.scrollLeft;
+
+    if (node) {
+        // horizontal
+        if (drag_scroll & 1) {
+            node.scrollLeft = touch_scroll.x;
+            touch_scroll.x = node.scrollLeft;
+        }
+        // vertical
+        if (drag_scroll & 2) {
+            ScrollDocument(touch_scroll.y);
+            touch_scroll.y = ScrollDocument();
+        }
     }
 
-    // vertical
-    if (drag_scroll & 2) {
-        ScrollDocument(touch_scroll.y);
-        touch_scroll.y = ScrollDocument();
+    if (full_target) {
+        full_scroll.x = Clamp(full_scroll.x, 0, full_target.clientWidth - window.innerWidth);
+        full_scroll.y = Clamp(full_scroll.y, 0, full_target.clientHeight - window.innerHeight);
+        Style(full_target, `transform:translate(${-full_scroll.x}px,${-full_scroll.y}px)`);
     }
 }
 
@@ -897,16 +926,19 @@ function touch_event(e) {
 
 /**
  * Handle a touch event
+ * - supports full screen scroll
  * @param {Event} e
+ * @param {boolean=} full full screen scrolling
  */
-function touch_handle(e) {
+function touch_handle(e, full) {
+    if (full == undefined)
+        full = is_fullscreen();
+
     let buttons = e.buttons,
-        [change, stamp, error] = touch_event(e),
+        [change, stamp] = touch_event(e),
+        target = e.target,
         type = e.type,
         type5 = type.slice(0, 5);
-
-    if (error > 150 * 150)
-        return;
 
     if (TOUCH_STARTS[type]) {
         let old_target = drag_target;
@@ -914,25 +946,38 @@ function touch_handle(e) {
         if (type5 == 'mouse' && buttons != 1)
             return;
         // input => skip
-        if (['INPUT', 'SELECT'].includes(e.target.tagName))
+        if (['INPUT', 'SELECT'].includes(target.tagName))
             return;
         // can only acquire a new target with a click
         if (type == 'mouseenter' && !old_target)
             return;
 
         clear_timeout('touch_end');
+
+        drag_target = Parent(target, {class_: 'scroller', self: true, tag: 'div'});
+        if (!full_target) {
+            // maybe the object is already fully visible?
+            // TODO: limit x and y directions individually
+            let child = drag_target.firstElementChild,
+                child_height = child.clientHeight,
+                child_width = child.clientWidth;
+
+            if (child_height <= drag_target.clientHeight && child_width <= drag_target.clientWidth)
+                return;
+        }
+
         drag = [change, stamp];
-        drag_target = Parent(e.target, 'div', 'scroller', null, true);
         drag_type = type5;
         touch_last = change;
         touch_moves = [];
         touch_now = Now(true);
-        touch_scroll = {
-            x: drag_target.scrollLeft,
-            y: ScrollDocument(),
-        };
         touch_speed = {x: 0, y: 0};
         touch_start = touch_now;
+
+        touch_scroll = {
+            x: drag_target? drag_target.scrollLeft: 0,
+            y: ScrollDocument(),
+        };
     }
     else if (TOUCH_MOVES[type]) {
         if (!drag)
@@ -946,9 +991,15 @@ function touch_handle(e) {
         drag_moved = true;
         let [dx, dy] = add_move(change, stamp);
         touch_last = change;
+
         touch_scroll.x -= dx;
         touch_scroll.y -= dy;
+        if (full_target) {
+            full_scroll.x -= dx;
+            full_scroll.y -= dy;
+        }
         set_scroll();
+
         drag = [change, stamp];
 
         if (e.cancelable || type5 != 'touch')
@@ -957,6 +1008,7 @@ function touch_handle(e) {
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
             return;
+
         add_move(change, stamp);
 
         // inertia during the last 100ms
@@ -994,6 +1046,18 @@ function touch_handle(e) {
     }
 
     e.stopPropagation();
+}
+
+/**
+ * Handle a wheel event
+ * @param {Event} e
+ */
+function wheel_event(e) {
+    if (full_target) {
+        full_scroll.x -= e.wheelDeltaX / 6;
+        full_scroll.y -= e.wheelDeltaY / 6;
+    }
+    set_scroll();
 }
 
 // UI

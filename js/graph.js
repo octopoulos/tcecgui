@@ -5,7 +5,7 @@
 /*
 globals
 _, $, Abs, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
-Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, xboards, window, Y
+Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, Visible, xboards, window, Y
 */
 'use strict';
 
@@ -16,7 +16,6 @@ let CHART_JS = 'js/libs/chart-quick.js',
 
 let all_evals = [],
     chart_data = {},
-    chart_id = 'eval',                  // currently selected chart: eval, node, ...
     CHART_LEGEND = {
         display: true,
         fontSize: 5,
@@ -43,8 +42,8 @@ let all_evals = [],
     },
     CHART_X_AXES = {
         ticks: {
-            callback: (value, _index, values) => (values.length < 25)? value: Floor(value),
-            maxTicksLimit: 25,
+            callback: (value, _index, values) => (values.length <= 20)? value: Floor(value),
+            maxTicksLimit: 20,
         },
     },
     charts = {},
@@ -342,9 +341,9 @@ function reset_chart(chart) {
     if (!chart)
         return;
 
-    let data = chart.data;
-    data.labels.length = 0;
-    for (let dataset of data.datasets)
+    let data_c = chart.data;
+    data_c.labels.length = 0;
+    for (let dataset of data_c.datasets)
         dataset.data.length = 0;
 
     chart.update();
@@ -359,6 +358,25 @@ function reset_charts()
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
+}
+
+/**
+ * Slice charts from a specific index (ply - first_num)
+ * @param {number} from
+ * @param {number} to
+ */
+function slice_charts(from, to) {
+    if (DEV.chart)
+        Keys(charts).forEach(key => {
+            let chart = charts[key],
+                data_c = chart_data[key];
+
+            data_c.labels = data_c.labels.slice(from, to);
+            for (let dataset of data_c.datasets)
+                dataset.data = dataset.data.slice(from, to);
+
+            chart.update();
+        });
 }
 
 /**
@@ -429,17 +447,20 @@ function update_chart_options(name, mode) {
  * @param {boolean=} invert_black invert black evals
  */
 function update_live_chart(moves, id, invert_black) {
-    let data = chart_data.eval;
-    if (!data)
+    let data_c = chart_data.eval;
+    if (!data_c)
         return;
 
-    let dataset = data.datasets[id],
-        labels = data.labels;
+    let dataset = data_c.datasets[id],
+        data = dataset.data,
+        labels = data_c.labels,
+        last_ply = -1;
 
+    // 1) add moves
     for (let move of moves) {
         let eval_ = move.eval,
             ply = get_move_ply(move),
-            num = ply;  // Floor(ply / 2);
+            num = ply;
         if (ply < -1)
             continue;
 
@@ -454,12 +475,22 @@ function update_live_chart(moves, id, invert_black) {
         }
 
         // check update_player_chart to understand
-        dataset.data[num2] = {
+        data[num2] = {
             eval: eval_,
             ply: ply,
             x: num / 2 + 1,
             y: clamp_eval(eval_),
         };
+        last_ply = ply;
+    }
+
+    // 2) remove moves that are after the last move
+    // - could have been sent by error just after a new game started
+    let limit = last_ply - first_num + 2;
+    if (labels.length >= limit) {
+        if (DEV.ply)
+            LS(`LC${id}: ${last_ply} -> ${limit} : ${data.length}/${labels.length}`);
+        slice_charts(0, limit);
     }
 
     fix_labels(labels);
@@ -469,29 +500,28 @@ function update_live_chart(moves, id, invert_black) {
 /**
  * Update a player chart using new moves
  * - designed for white & black, not live
- * @param {string} name if empty then will use the current chart_id
+ * @param {string} name
  * @param {Move[]} moves
  */
 function update_player_chart(name, moves) {
-    // 1) update ID
-    if (name)
-        chart_id = name;
+    if (!Visible(`#table-${name}`))
+        return;
 
-    let data = chart_data[chart_id];
+    let data = chart_data[name];
     if (!data)
         return;
 
     let datasets = data.datasets,
-        invert_wb = (chart_id == 'mobil') * 1,
+        invert_wb = (name == 'mobil') * 1,
         labels = data.labels,
         num_move = moves.length,
         offset = 0;
 
-    // 2) skip all book moves
+    // 1) skip all book moves
     while (offset < num_move && (!moves[offset] || moves[offset].book))
         offset ++;
 
-    // 3) add data
+    // 2) add data
     for (let i = offset; i < num_move ; i ++) {
         let move = moves[i],
             ply = get_move_ply(move),
@@ -508,7 +538,7 @@ function update_player_chart(name, moves) {
             ply: ply,           // used for jumping to the position
         };
 
-        switch (chart_id) {
+        switch (name) {
         case 'depth':
             datasets[ply % 2 + 2].data[num2] = Assign(Assign({}, dico), {y: move.sd});
             dico.y = move.d;
@@ -542,17 +572,17 @@ function update_player_chart(name, moves) {
     }
 
     fix_labels(labels);
-    charts[chart_id].update();
+    charts[name].update();
 }
 
 /**
  * Update a player charts using new moves
  * - designed for white & black, not live
- * @param {string} name if empty then will use the current chart_id or update all charts
+ * @param {string} name empty => update all charts
  * @param {Move[]} moves
  */
 function update_player_charts(name, moves) {
-    if (!name && Y.graph_all) {
+    if (!name) {
         Keys(charts).forEach(key => {
             update_player_chart(key, moves);
         });

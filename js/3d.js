@@ -9,8 +9,8 @@
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
-HasClass, HTML, Id, Input, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, Now, requestAnimationFrame,
+HasClass, HTML, Id, Input, IsArray, KEY_TIMES, Keys, KEYS,
+LANGUAGES, load_library, LS, merge_settings, navigator, Now, Parent, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
 */
@@ -19,6 +19,7 @@ Visible, window, X_SETTINGS, Y
 let audiobox = {
         sounds: {},
     },
+    AUTO_ON_OFF = ['auto', 'on', 'off'],
     axes = [0, 0, 0, 0],
     AXIS_DEAD_ZONE = 0.2,
     AXIS_MAPPING = [
@@ -67,6 +68,8 @@ let audiobox = {
     },
     clock,
     clock2,
+    context_areas = {},
+    context_target,
     controls,
     cube,
     cubes = [],
@@ -1098,6 +1101,16 @@ function gamepad_modal() {
 }
 
 /**
+ * Get the drag and drop id
+ * @param {Node} target
+ * @returns {[Node, string]}
+ */
+function get_drop_id(target) {
+    let parent = Parent(target, {class_: 'drag|drop', self: true});
+    return [parent, parent? (parent.id || parent.dataset.x): null];
+}
+
+/**
  * Close the modal and resume the game
  */
 function resume_game() {
@@ -1126,7 +1139,7 @@ function show_modal(show, text, title, name) {
 
     let node = Id('modal');
     if (typeof(text) == 'string') {
-        Attrs('#modal-title', 'data-t', title? title: '');
+        Attrs('#modal-title', {'data-t': title? title: ''});
         HTML(node, text);
         translate_node(node);
     }
@@ -1156,39 +1169,77 @@ function show_modal(show, text, title, name) {
  */
 function show_settings(name, xy) {
     let lines = ['<grid class="noselect">'],
-        settings = name? X_SETTINGS[name]: X_SETTINGS;
+        parent_id = get_drop_id(context_target)[1],
+        settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
+        keys = Keys(settings),
+        split = settings._split;
+
+    // set multiple columns
+    if (split) {
+        let new_keys = [],
+            offset = split;
+        keys = keys.filter(key => (key != '_split' && !settings[key]._pop));
+
+        for (let i = 0; i < split; i ++) {
+            new_keys.push(keys[i]);
+            if (keys[i][0] == '_')
+                new_keys.push('');
+            else {
+                new_keys.push(keys[offset] || '');
+                offset ++;
+            }
+        }
+        keys = new_keys;
+    }
 
     if (name)
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
-    Keys(settings).forEach(key => {
+    if (parent_id)
+        lines.push(`<div class="item2 span">${parent_id}</div>`);
+
+    keys.forEach(key => {
+        if (key == '_pop')
+            return;
+
         // separator
         if (key[0] == '_') {
-            lines.push('<hr class="span">');
+            lines.push(`<hr${split? '': ' class="span"'}>`);
             return;
         }
 
+        if (!key && split) {
+            lines.push('<div></div>');
+            return;
+        }
+
+        // only in popup
+        let setting = settings[key];
+        if (setting._pop)
+            return;
+
         // link or list
-        let setting = settings[key][0],
-            is_string = (typeof(setting) == 'string')? ` name="${key}"`: '',
-            more_class = (setting && !is_string)? '': ' span',
-            more_data = setting? '': ` data-set="${key}"`,
+        let data = setting[0],
+            is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
+            more_class = (split || (data && !is_string))? '': ' span',
+            more_data = data? '': ` data-set="${key}"`,
             title = settings[key][2];
 
         lines.push(
-            `<a${is_string} class="item${more_class}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+            `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
+                + ((setting == '')? ' ...': '')
             + '</a>'
         );
 
         if (is_string)
             return;
 
-        if (Array.isArray(setting)) {
+        if (IsArray(data)) {
             lines.push(
                 '<vert class="fcenter">'
                 + `<select name="${key}">`
-                    + setting.map(option => {
+                    + data.map(option => {
                         let value = Undefined({off: 0, on: 1}[option], option);
                         return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                     }).join('')
@@ -1196,19 +1247,19 @@ function show_settings(name, xy) {
                 + '</vert>'
             );
         }
-        else if (setting) {
-            if (setting.type)
+        else if (data) {
+            if (data.type)
                 lines.push(
                     '<vert class="fcenter">'
-                    + `<input name="${key}" type="${setting.type}" class="setting" min="${setting.min}" max="${setting.max}" step="${setting.step || 1}" value="${Y[key]}">`
+                    + `<input name="${key}" type="${data.type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`
                     + '</vert>'
                 );
             else
                 lines.push(
                     '<vert class="fcenter">'
                     + `<select name="${key}">`
-                        + Keys(setting).map(value => {
-                            let option = setting[value];
+                        + Keys(data).map(value => {
+                            let option = data[value];
                             return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
@@ -1218,7 +1269,17 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    if (name)
+    if (parent_id) {
+        let context_area = context_areas[parent_id] || {};
+        lines.push(
+            `<hori class="span">`
+                + `<div class="item2" data-set="-1" data-t="ok"></div>`
+                + `<div class="item2${context_area[1]? ' active': ''}" data-t="join next"></div>`
+                + `<div class="item2" data-t="hide"></div>`
+            + '</hori>'
+        );
+    }
+    else if (name)
         lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
 
     lines.push('</grid>');
@@ -1329,6 +1390,9 @@ function set_modal_events(parent) {
             }
         }
     }, parent);
+    C('.item2', function() {
+        change_setting(this.dataset.t.replace(/ /g, '_'));
+    });
 
     // right click on item => reset to default
     Events('.item', 'contextmenu', function(e) {
@@ -1407,7 +1471,7 @@ function startup_3d() {
             lighting: [['low', 'medium', 'high'], 'high'],
             resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
             shadow: [Keys(SHADOW_QUALITIES), 'high'],
-            texture: [['auto', 'on', 'off'], 'auto'],
+            texture: [AUTO_ON_OFF, 'auto'],
         },
     });
 

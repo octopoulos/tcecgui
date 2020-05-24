@@ -39,15 +39,22 @@ function startup_config() {
     // - every option name is the same as what you see in the Options in English, but lowercase + underscores
     // => 'Arrow opacity' becomes 'arrow_opacity'
     Assign(STREAM_SETTINGS, {
-        no_ad: true,
-        panel_center: 300,
-        panel_left: 330,
-        panel_right: 350,
-        shortcut_1: 'stand',
-        // activating the shortcut tab
-        tabs: {
-            'quick-tabs': 'shortcut_1',
+        areas: {
+            right0: [
+                ['quick-pagin', 0, 1],
+                ['table-chat', 1, 2],
+                ['table-winner', 1, 2],
+                ['table-info', 1, 2],
+                ['shortcut_1', 1, 3],
+                ['shortcut_2', 0, 0],
+                ['quick-search', 0, 1],
+            ],
         },
+        max_center: 300,
+        max_left: 330,
+        max_right: 350,
+        no_ad: true,
+        shortcut_1: 'stand',
         theme: 'dark',
         twitch_chat: 0,
         twitch_video: 0,

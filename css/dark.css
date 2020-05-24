@@ -22,6 +22,9 @@ html {
 .item:hover {
     background: rgba(255, 255, 255, 0.1)
 }
+.item2.active {
+    background: rgba(100, 100, 200, 0.9);
+}
 
 /* board */
 .xframe {
@@ -72,7 +75,7 @@ html {
 .scroller tr.active:hover {
     background: #535456;
 }
-#table-engine > * {
+#engine > * {
     background: rgba(1, 9, 26, 0.28);
 }
 #table-season a {
@@ -113,17 +116,20 @@ html {
     color: #fff;
 }
 #box-pv0 .engine,
-#player0 .engine {
+#moves-pv0 .engine {
     background: #666;
     color: #fff;
 }
 #box-pv1 .engine,
-#player1 .engine {
+#moves-pv1 .engine {
     background: #000;
     color: #fff;
 }
 
 /* extras */
+.dragging {
+    background: rgba(255, 200, 200, 0.05);
+}
 #show-chat,
 #show-video,
 .adblock {
