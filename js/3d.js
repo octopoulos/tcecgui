@@ -1168,7 +1168,7 @@ function show_modal(show, text, title, name) {
  * @returns {string} html
  */
 function show_settings(name, xy) {
-    let lines = ['<grid class="noselect">'],
+    let lines = ['<grid class="w100 noselect">'],
         parent_id = get_drop_id(context_target)[1],
         settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
         keys = Keys(settings),
@@ -1199,12 +1199,10 @@ function show_settings(name, xy) {
         lines.push(`<div class="item2 span">${parent_id}</div>`);
 
     keys.forEach(key => {
-        if (key == '_pop')
-            return;
-
         // separator
         if (key[0] == '_') {
-            lines.push(`<hr${split? '': ' class="span"'}>`);
+            if (parseInt(key[1]))
+                lines.push(`<hr${split? '': ' class="span"'}>`);
             return;
         }
 
@@ -1219,15 +1217,21 @@ function show_settings(name, xy) {
             return;
 
         // link or list
-        let data = setting[0],
+        let color = setting._color,
+            data = setting[0],
             is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${key}"`,
             title = settings[key][2];
 
+        // TODO: improve that part, it can be customised better
+        if (is_string && data == '2')
+            color = '#f00';
+        let style = color? ` style="color:${color}"`: '';
+
         lines.push(
             `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
-                + `<i data-t="${Title(key).replace(/_/g, ' ')}"></i>`
+                + `<i data-t="${Title(key).replace(/_/g, ' ')}"${style}></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'
         );
@@ -1280,7 +1284,7 @@ function show_settings(name, xy) {
         );
     }
     else if (name)
-        lines.push(`<a class="item item-title span" data-set="-1" data-t="OK"></a>`);
+        lines.push(`<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
 
     lines.push('</grid>');
     return lines.join('');
