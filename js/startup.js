@@ -442,7 +442,8 @@ function handle_drop(e) {
                 Parent(drag_source, {class_: 'area'}).id,
                 parent.id,
             ]),
-            prev_source = drag_source.previousElementSibling;
+            prev_source = drag_source.previousElementSibling,
+            prev_tabbed = (context_areas[drag_source.id] || [])[1];
 
         // 2) insert before or after
         if (child) {
@@ -475,9 +476,10 @@ function handle_drop(e) {
         else
             context_area[1] = 0;
 
-        if (prev_source) {
-            let prev_context = context_areas[prev_source.id] || [];
-            prev_context[1] = context_area[1];
+        // zero the last tab
+        if ((in_tab & 1) && prev_source && prev_tabbed == 0) {
+            let prev_context = context_areas[prev_source.id || prev_source.dataset.x] || [];
+            prev_context[1] = 0;
         }
 
         // 4) update areas
