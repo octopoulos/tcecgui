@@ -1240,6 +1240,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
 
+    if (!table)
+        return;
+
     // wrap text?
     let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
     if (wrap == 'auto')
