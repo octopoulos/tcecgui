@@ -35,12 +35,12 @@ let AD_STYLES = {
         1: 'width:100%;max-height:280px',
     },
     CONTEXT_MENUS = {
-        '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
+        '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
         '#moves-pv0, #moves-pv1, #table-live0, #table-live1': 'live',
         '.pagin, #table-tabs': 'extra',
         '#table-chat': 'quick',
-        '#table-engine': 'engine',
+        '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
         '.swaps': 'panel',
     },
     drag_source,
@@ -811,7 +811,7 @@ function resize_panels(force) {
         return;
 
     Attrs('#eval', {'data-t': (width > 330)? 'Evaluation': 'Eval'});
-    translate_node('#table-engine');
+    translate_node('#engine');
 
     // column/row mode
     let is_hori = (width >= 390);
@@ -1423,8 +1423,9 @@ function startup() {
     Assign(DEFAULTS, {
         areas: {
             center0: [
-                ['table-engine', 1, 1],
-                ['table-pv', 0, 1],
+                ['engine', 1, 3],
+                ['table-pv', 1, 1],
+                ['table-pva', 0, 1],
                 ['table-eval', 1, 1],
                 ['table-mobil', 1, 1],
                 ['table-time', 1, 1],
@@ -1432,8 +1433,7 @@ function startup() {
                 ['table-speed', 1, 1],
                 ['table-node', 1, 1],
                 ['table-tb', 1, 1],
-                ['table-kibitz', 1, 1],
-                ['table-pva', 1, 1],
+                ['table-kibitz', 0, 1],
             ],
             left0: [
                 ['archive', 0, 1],
@@ -1445,7 +1445,7 @@ function startup() {
             ],
             right0: [
                 ['quick-pagin', 0, 1],
-                ['table-chat', 1, 1],
+                ['table-chat', 1, 3],
                 ['table-winner', 1, 1],
                 ['table-info', 1, 1],
                 ['shortcut_1', 1, 1],

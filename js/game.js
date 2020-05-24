@@ -595,7 +595,7 @@ function show_board_info(show) {
 
     if (show == undefined) {
         if (status == 'auto') {
-            let engine = Id('table-engine'),
+            let engine = Id('engine'),
                 rect = engine.getBoundingClientRect();
 
             if (!Visible(engine) || rect.top < 0 || rect.top + rect.height > window.height

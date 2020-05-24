@@ -352,10 +352,10 @@ grid {
     background: rgba(0, 0, 0, 0.1);
 }
 .item2.active {
-    background: rgba(100, 100, 200, 0.9);
+    background: rgba(208, 208, 224, 0.7);
 }
 .item2.active:hover {
-    background: rgba(100, 100, 200, 0.75);
+    background: rgba(208, 208, 224, 0.9);
 }
 .span {
     grid-column: 1/3;
@@ -767,19 +767,19 @@ grid {
 }
 
 /* engines */
-#table-engine {
+#engine {
     margin-bottom: 0.7em;
     width: 100%;
     z-index: 1;
 }
-#table-engine > div {
+#engine > div {
     padding: 0.2em;
 }
-#table-engine > * {
+#engine > * {
     background: rgba(0, 0, 0, 0.04);
     text-align: center;
 }
-#table-engine [data-t] {
+#engine [data-t] {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
@@ -1230,9 +1230,9 @@ grid {
 
 /* allow text selection */
 pre,
+#engine,
 #footer,
 #live-log,
-#table-engine,
 #table-info,
 #table-view,
 .live-pv,
