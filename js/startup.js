@@ -1621,7 +1621,7 @@ function startup() {
         quick: {
             chat_height: [{max: 1600, min: 100, type: 'number'}, 600],
             shortcut_1: [shortcuts, 'stand'],
-            shortcut_2: [shortcuts, 'off'],
+            shortcut_2: [shortcuts, 'sched'],
         },
         // popup only
         copy: {

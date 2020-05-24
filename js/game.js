@@ -3159,7 +3159,7 @@ function opened_table(node, name, tab) {
         HTML(node, HTML('#desc'));
         break;
     case 'log':
-        fill_combo('#log', [0, 5, 10, 'all'], Y.live_log);
+        fill_combo('#nlog', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
         break;
     case 'pva':
@@ -3288,7 +3288,7 @@ function set_game_events() {
         }, TIMEOUT_search);
     });
 
-    C('#log', function() {
+    C('#nlog', function() {
         save_option('live_log', this.value);
         listen_log();
     });
