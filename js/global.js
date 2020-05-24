@@ -85,6 +85,7 @@ function parse_dev() {
             A: 'ad',                    // disable ads (for development)
             b: 'board',
             c: 'chart',
+            C: 'cup',                   // force loading bracket.json
             d: 'debug',
             D: 'div',
             e: 'eval',                  // live eval

@@ -16,8 +16,8 @@ api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS,
 detect_device, DEV, document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll,
-game_action_key, game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, Hide, HOST, HTML, ICONS:true,
-Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+game_action_key, game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
+ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
 reset_old_settings, resize_game, Round,
@@ -174,6 +174,14 @@ function change_setting_special(name, value, no_close) {
     case 'max_right':
     case 'max_window':
         resize();
+        break;
+    case 'click_here_to_RESET_everything':
+        localStorage.clear();
+        Assign(Y, DEFAULTS);
+        load_settings();
+        init_globals();
+        resize(true);
+        close_popups();
         break;
     case 'custom_black':
     case 'custom_black_pv':
@@ -1303,7 +1311,7 @@ function set_global_events() {
     });
     Events(window, 'contextmenu', e => {
         let target = e.target;
-        if (HasClass(target, 'tab')) {
+        if (HasClasses(target, 'tab drop')) {
             let id = target.dataset.x,
                 name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
             context_target = target;
@@ -1477,7 +1485,6 @@ function startup() {
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
         old = 'old - move.mp3',
-        positions = ['off', 'bottom', 'center', 'left', 'right', 'top'],
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
@@ -1486,15 +1493,15 @@ function startup() {
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
             audio_moves: [['none', 'all', 'last'], 'last'],
-            audio_set: [['custom', bamboo, 'old'], 'custom'],
+            audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             book_sound: [ON_OFF, 1],
             capture_delay: [{max: 1000, min: -1000, type: 'number'}, -200],
-            sound_capture: [['off', `${bamboo2}capture`, old], `${bamboo2}capture`],
+            sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
             sound_draw: [['off', 'draw'], 'draw'],
-            sound_move: [['off', `${bamboo2}move`, old], `${bamboo2}move`],
-            sound_move_pawn: [['off', `${bamboo2}move pawn`, old], `${bamboo2}move pawn`],
+            sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
+            sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'win'], 'win'],
         },
         // separator
@@ -1622,6 +1629,11 @@ function startup() {
             chat_height: [{max: 1600, min: 100, type: 'number'}, 600],
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'sched'],
+        },
+        reset: {
+            _cancel: true,
+            _color: '#f00',
+            click_here_to_RESET_everything: '2',
         },
         // popup only
         copy: {

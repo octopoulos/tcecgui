@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-14
+// @version 2020-05-24
 //
 /*
 globals
@@ -43,7 +43,7 @@ let all_evals = [],
     CHART_X_AXES = {
         ticks: {
             callback: (value, _index, values) => (values.length <= 20)? value: Floor(value),
-            maxTicksLimit: 20,
+            maxTicksLimit: 19,
         },
     },
     charts = {},
@@ -57,9 +57,9 @@ let all_evals = [],
  * - unshift the dataset & labels if needed
  */
 function check_first_num(num) {
-    if (first_num >= 0 && first_num < num)
+    if (first_num >= 0 && first_num <= num)
         return;
-    if (DEV.ply)
+    if (DEV.chart)
         LS(`first_num: ${first_num} => ${num}`);
 
     if (first_num >= 0) {
@@ -362,21 +362,30 @@ function reset_charts()
 
 /**
  * Slice charts from a specific index (ply - first_num)
- * @param {number} from
- * @param {number} to
+ * @param {number} last_ply
  */
-function slice_charts(from, to) {
+function slice_charts(last_ply) {
+    if (isNaN(last_ply))
+        return;
+
+    let from = 0,
+        to = last_ply - first_num + 2;
     if (DEV.chart)
-        Keys(charts).forEach(key => {
-            let chart = charts[key],
-                data_c = chart_data[key];
+        LS(`SC: ${last_ply} - ${first_num} + 2 = ${to}`);
 
-            data_c.labels = data_c.labels.slice(from, to);
-            for (let dataset of data_c.datasets)
-                dataset.data = dataset.data.slice(from, to);
+    Keys(charts).forEach(key => {
+        let chart = charts[key],
+            data_c = chart_data[key];
 
-            chart.update();
-        });
+        if (DEV.chart && data_c.labels.length > to)
+            LS(`SC:${chart.name} : ${data_c.labels.length} > ${to}`);
+
+        data_c.labels = data_c.labels.slice(from, to);
+        for (let dataset of data_c.datasets)
+            dataset.data = dataset.data.slice(from, to);
+
+        chart.update();
+    });
 }
 
 /**
@@ -453,10 +462,8 @@ function update_live_chart(moves, id, invert_black) {
 
     let dataset = data_c.datasets[id],
         data = dataset.data,
-        labels = data_c.labels,
-        last_ply = -1;
+        labels = data_c.labels;
 
-    // 1) add moves
     for (let move of moves) {
         let eval_ = move.eval,
             ply = get_move_ply(move),
@@ -481,16 +488,6 @@ function update_live_chart(moves, id, invert_black) {
             x: num / 2 + 1,
             y: clamp_eval(eval_),
         };
-        last_ply = ply;
-    }
-
-    // 2) remove moves that are after the last move
-    // - could have been sent by error just after a new game started
-    let limit = last_ply - first_num + 2;
-    if (labels.length >= limit) {
-        if (DEV.ply)
-            LS(`LC${id}: ${last_ply} -> ${limit} : ${data.length}/${labels.length}`);
-        slice_charts(0, limit);
     }
 
     fix_labels(labels);
