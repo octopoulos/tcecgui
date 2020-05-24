@@ -557,7 +557,6 @@ function init_globals() {
 
     set_draggable();
     populate_areas();
-    update_shortcuts();
 
     if (Visible('#table-log'))
         listen_log();
@@ -742,6 +741,7 @@ function populate_areas() {
     S('#archive', !is_live);
     S('#live', is_live);
 
+    update_shortcuts();
     resize();
 }
 
@@ -1448,7 +1448,7 @@ function startup() {
                 ['table-info', 1, 1],
                 ['shortcut_1', 1, 1],
                 ['shortcut_2', 0, 1],
-                ['table-quick-search', 0, 1],
+                ['quick-search', 0, 1],
             ],
         },
         div: '',
