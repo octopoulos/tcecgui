@@ -26,7 +26,7 @@ show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_conf
 TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
 Undefined, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
 VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
-virtual_resize:true, Visible, window, X_SETTINGS, xboards, Y
+virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -1310,6 +1310,11 @@ function set_global_events() {
         if (!is_fullscreen())
             return;
         touch_handle(e, true);
+    });
+    Events(window, 'wheel', e => {
+        if (!is_fullscreen())
+            return;
+        wheel_event(e, true);
     });
 
     // drag and drop

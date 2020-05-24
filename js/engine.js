@@ -1048,6 +1048,18 @@ function touch_handle(e, full) {
     e.stopPropagation();
 }
 
+/**
+ * Handle a wheel event
+ * @param {Event} e
+ */
+function wheel_event(e) {
+    if (full_target) {
+        full_scroll.x -= e.wheelDeltaX / 6;
+        full_scroll.y -= e.wheelDeltaY / 6;
+    }
+    set_scroll();
+}
+
 // UI
 /////
 
