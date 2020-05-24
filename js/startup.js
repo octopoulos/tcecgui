@@ -535,7 +535,10 @@ function init_globals() {
     update_twitch(null, null, true);
     add_timeout('twitch', update_twitch, TIMEOUTS.twitch);
     add_timeout('graph', () => {
-        init_graph(download_live);
+        init_graph(() => {
+            download_live();
+            resize();
+        });
     }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
