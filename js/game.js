@@ -877,7 +877,7 @@ function check_pagination(parent) {
 
     if (pages.length != num_page + 2) {
         let lines = ['<a class="page page-prev" data-p="-1">&lt;</a>'];
-        if (parent != 'quick') {
+        if (parent == 'table') {
             let array = create_page_array(num_page, page, 2);
             for (let id = 0; id < num_page; id ++) {
                 if (array[id] == 2)
@@ -1237,7 +1237,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         data = data_x.data,
         is_sched = (name == 'sched'),
         page_key = `page_${parent}`,
-        table = Id(`table-${output || source}`),
+        table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
 
     // wrap text?
@@ -1493,7 +1493,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     });
 
     // 6) update shortcuts
-    if (parent != 'quick') {
+    if (parent == 'table') {
         let html = HTML(table);
         for (let id = 1; id <= 2 ; id ++) {
             // shortcut matches this table?
@@ -1501,7 +1501,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             if (name != Y[key])
                 continue;
 
-            let node = Id(`table-${key}`);
+            let node = Id(key);
             if (paginated && data_x.page_quick >= 0)
                 update_table(section, name, null, 'quick', {output: key});
             else {
@@ -3090,6 +3090,14 @@ function open_table(sel) {
     if (parent.id == 'table-tabs') {
         Y.table_tab[Y.x] = target;
         save_option('table_tab');
+
+        // TODO: ugly hack, fix this later
+        if (target.slice(0, 6) != 'table-')
+            target = `table-${target}`;
+
+        for (let child of _('#tables').children)
+            if (!HasClass(child, 'tabs') && child.id.slice(0, 6) == 'table-')
+                Hide(child);
     }
 
     // deactivate other tabs

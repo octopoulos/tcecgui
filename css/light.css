@@ -710,8 +710,8 @@ grid {
 #table-season grid {
     grid-template-columns: 1fr 1em;
 }
-#table-shortcut_1,
-#table-shortcut_2,
+#shortcut_1,
+#shortcut_2,
 #table-winner {
     max-height: 90vh;
     overflow-x: hidden;

@@ -526,7 +526,6 @@ function init_globals() {
     HTML('#version', VERSION);
 
     // load local data directly, and later online data
-    update_shortcuts();
     download_tables(true);
     add_timeout('tables', download_tables, TIMEOUTS.tables);
 
@@ -558,6 +557,7 @@ function init_globals() {
 
     set_draggable();
     populate_areas();
+    update_shortcuts();
 
     if (Visible('#table-log'))
         listen_log();
@@ -1020,7 +1020,7 @@ function update_shortcuts() {
             if (target) {
                 tab.dataset.t = target.dataset.t;
                 translate_node(tab.parentNode);
-                HTML(`#table-shortcut_${id}`, HTML(`#table-${shortcut}`));
+                HTML(`#shortcut_${id}`, HTML(`#table-${shortcut}`));
             }
         }
         S(tab, shortcut);
@@ -1302,8 +1302,10 @@ function set_global_events() {
     Events(window, 'contextmenu', e => {
         let target = e.target;
         if (HasClass(target, 'tab')) {
+            let id = target.dataset.x,
+                name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
             context_target = target;
-            show_popup('options', true, {setting: 'tab', xy: [e.clientX, e.clientY]});
+            show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
             e.preventDefault();
         }
     });
@@ -1444,8 +1446,8 @@ function startup() {
                 ['table-chat', 1, 1],
                 ['table-winner', 1, 1],
                 ['table-info', 1, 1],
-                ['table-shortcut_1', 1, 1],
-                ['table-shortcut_2', 0, 1],
+                ['shortcut_1', 1, 1],
+                ['shortcut_2', 0, 1],
                 ['table-quick-search', 0, 1],
             ],
         },
