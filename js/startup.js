@@ -809,8 +809,8 @@ function resize_panels(force) {
     }
 
     Style('.area > *', 'max-width:100%');
-    Style('#bottom > *', `max-width:calc(${Floor(100 / Y.column_bottom)}% - ${Y.column_bottom * 4}px)`);
-    Style('#top > *', `max-width:calc(${Floor(100 / Y.column_top)}% - ${Y.column_top * 4}px)`);
+    Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
+    Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
     // special case for center panel
     let center = Id('center'),
