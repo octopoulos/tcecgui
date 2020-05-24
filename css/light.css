@@ -395,7 +395,7 @@ grid {
 .status {
     font-size: 14px;
     margin-left: 0.2em;
-    margin-top: -0.2em;
+    margin-top: 0.1em;
     width: calc(100% - 0.6em);
 }
 .xcolor0 {
@@ -1026,7 +1026,7 @@ grid {
 .live-more {
     font-size: 0.8em;
     margin-bottom: 0.15em;
-    max-width: calc(100% - 3em);
+    max-width: calc(100% - 4em);
     z-index: 1;
 }
 .live-pv {
@@ -1233,10 +1233,9 @@ pre,
 #engine,
 #footer,
 #live-log,
-#table-info,
-#table-view,
 .live-pv,
 .live-pv > a,
+.scroller,
 .stats,
 .xbottom,
 .xmoves,

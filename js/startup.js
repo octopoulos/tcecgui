@@ -1515,7 +1515,7 @@ function startup() {
             arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
             arrow_history_lag: [{max: 5000, min: 0, type: 'number'}, 1300],
-            arrow_moves: [['all', 'last'], 'last'],
+            arrow_moves: [['all', 'last'], 'all'],
             arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
             arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
         },
