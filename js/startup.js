@@ -24,7 +24,7 @@ reset_old_settings, resize_game, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, SetDefault, setInterval, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
-Undefined, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
+update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
 VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
 virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
@@ -707,7 +707,7 @@ function populate_areas() {
                 tabs = null;
 
             parent.appendChild(node);
-            S(node, Undefined(show, 1));
+            S(node, show & 1);
             S('.label', !tab && !prev_tab, node);
 
             context_areas[id] = vector;
