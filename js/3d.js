@@ -1274,7 +1274,7 @@ function show_settings(name, xy) {
         lines.push(
             `<hori class="span">`
                 + `<div class="item2" data-set="-1" data-t="ok"></div>`
-                + `<div class="item2${context_area[1]? ' active': ''}" data-t="tabbed"></div>`
+                + `<div class="item2${context_area[1]? ' active': ''}" data-t="join next"></div>`
                 + `<div class="item2" data-t="hide"></div>`
             + '</hori>'
         );
@@ -1391,7 +1391,7 @@ function set_modal_events(parent) {
         }
     }, parent);
     C('.item2', function() {
-        change_setting(this.dataset.t);
+        change_setting(this.dataset.t.replace(/ /g, '_'));
     });
 
     // right click on item => reset to default

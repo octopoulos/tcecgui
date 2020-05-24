@@ -182,7 +182,7 @@ tr {
 grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    min-width: 200px;
+    min-width: 240px;
 }
 .grid2 {
     grid-template-columns: 0.5fr 1fr;

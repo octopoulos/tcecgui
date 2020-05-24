@@ -197,6 +197,14 @@ function change_setting_special(name, value, no_close) {
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
         break;
+    case 'graph_color_0':
+    case 'graph_color_1':
+    case 'graph_color_2':
+    case 'graph_color_3':
+    case 'graph_line':
+    case 'graph_text':
+        update_chart_options(null, 3);
+        break;
     case 'graph_depth':
     case 'graph_eval':
     case 'graph_mobile':
@@ -218,16 +226,11 @@ function change_setting_special(name, value, no_close) {
     case 'status_pv':
         resize_panels(true);
         break;
-    case 'graph_color_0':
-    case 'graph_color_1':
-    case 'graph_color_2':
-    case 'graph_color_3':
-    case 'graph_line':
-    case 'graph_text':
-        update_chart_options(null, 3);
-        break;
     case 'hide':
         hide_element(context_target);
+        break;
+    case 'join_next':
+        tab_element(context_target);
         break;
     case 'live_log':
         if (Visible('#table-log'))
@@ -248,9 +251,6 @@ function change_setting_special(name, value, no_close) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
-        break;
-    case 'tabbed':
-        tab_element(context_target);
         break;
     case 'theme':
         change_theme(value);
