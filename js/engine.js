@@ -224,10 +224,13 @@ function remove_storage(name) {
 /**
  * Save a Y value + to Local Storage
  * @param {string} name
- * @param {*} value value for the name
+ * @param {*} value value for the name, undefined to save Y[name]
  */
 function save_option(name, value) {
-    Y[name] = value;
+    if (value === undefined)
+        value = Y[name];
+    else
+        Y[name] = value;
     save_storage(name, value);
 }
 

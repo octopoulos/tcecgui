@@ -13,8 +13,8 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, Exp,
-fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
+context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E,
+Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object, HasClass, Hide,
 HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
@@ -3086,20 +3086,36 @@ function open_table(sel) {
     let parent = Parent(tab, {class_: 'tabs'}),
         target = tab.dataset.x;
 
-    Class('.tab', '-active', true, parent);
-    Class(tab, 'active');
+    // table?
+    if (parent.id == 'table-tabs') {
+        Y.table_tab[Y.x] = target;
+        save_option('table_tab');
+    }
 
+    // deactivate other tabs
     E('.tab', node => {
+        let context_area = context_areas[node.dataset.x];
+        if (context_area)
+            context_area[2] &= ~2;
+        Class(node, '-active');
         Hide(Id(node.dataset.x));
     }, parent);
 
+    // activate 1 tab
+    Class(tab, 'active');
+    let context_area = context_areas[target];
+    if (context_area)
+        context_area[2] |= 2;
+
+    save_option('areas');
+
     let key = target,
         node = Id(target);
+    Show(node);
 
+    // further processing
     if (key.slice(0, 6) == 'table-')
         key = key.slice(6);
-
-    Show(node);
     opened_table(node, key, tab);
 }
 

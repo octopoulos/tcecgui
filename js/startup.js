@@ -732,7 +732,7 @@ function populate_areas() {
         open_table(actives.length? actives[0]: tabs[0]);
     });
 
-    save_option('areas', Y.areas);
+    save_option('areas');
     translate_node('body');
     set_draggable();
 
@@ -1439,6 +1439,10 @@ function startup() {
         round: '',                          // live round
         season: '',
         stream: 0,
+        table_tab: {
+            archive: 'season',
+            live: 'stand',
+        },
         three: 0,                           // 3d scene
         twitch_chat: 1,
         twitch_dark: 0,
