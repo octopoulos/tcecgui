@@ -366,16 +366,17 @@ function reset_charts()
  * @param {number} to
  */
 function slice_charts(from, to) {
-    Keys(charts).forEach(key => {
-        let chart = charts[key],
-            data_c = chart_data[key];
+    if (DEV.chart)
+        Keys(charts).forEach(key => {
+            let chart = charts[key],
+                data_c = chart_data[key];
 
-        data_c.labels = data_c.labels.slice(from, to);
-        for (let dataset of data_c.datasets)
-            dataset.data = dataset.data.slice(from, to);
+            data_c.labels = data_c.labels.slice(from, to);
+            for (let dataset of data_c.datasets)
+                dataset.data = dataset.data.slice(from, to);
 
-        chart.update();
-    });
+            chart.update();
+        });
 }
 
 /**
