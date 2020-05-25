@@ -19,8 +19,8 @@ document, download_live, download_tables, DownloadObject, E, Events, Floor, From
 game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
 Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
-reset_old_settings, resize_game, Round,
+merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
+reset_old_settings, resize_game, Resource, Round,
 S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, SetDefault, setInterval, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
@@ -159,12 +159,6 @@ function change_setting_special(name, value, no_close) {
     case 'audio_set':
         audio_set(value);
         break;
-    case 'board_kibitz':
-        break;
-    case 'board_pv':
-        break;
-    case 'board_pva':
-        break;
     case 'chat_height':
     case 'column_bottom':
     case 'column_top':
@@ -176,12 +170,7 @@ function change_setting_special(name, value, no_close) {
         resize();
         break;
     case 'click_here_to_RESET_everything':
-        localStorage.clear();
-        Assign(Y, DEFAULTS);
-        load_settings();
-        init_globals();
-        resize(true);
-        close_popups();
+        reset_settings(true);
         break;
     case 'custom_black':
     case 'custom_black_pv':
@@ -200,8 +189,6 @@ function change_setting_special(name, value, no_close) {
     case 'drag_and_drop':
         set_draggable();
         break;
-    case 'engine':
-        break;
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
         break;
@@ -212,14 +199,6 @@ function change_setting_special(name, value, no_close) {
     case 'graph_line':
     case 'graph_text':
         update_chart_options(null, 3);
-        break;
-    case 'graph_depth':
-    case 'graph_eval':
-    case 'graph_mobile':
-    case 'graph_node':
-    case 'graph_speed':
-    case 'graph_tb':
-    case 'graph_time':
         break;
     case 'hide_eval_0':
     case 'hide_eval_1':
@@ -237,6 +216,15 @@ function change_setting_special(name, value, no_close) {
     case 'hide':
         hide_element(context_target);
         break;
+    case 'import_settings':
+        try {
+            let data = JSON.parse(value);
+            import_settings(data);
+            reset_settings();
+        }
+        catch (err) {
+        }
+        break;
     case 'join_next':
         tab_element(context_target);
         break;
@@ -252,9 +240,19 @@ function change_setting_special(name, value, no_close) {
     case 'move_height_pv':
         resize_move_lists();
         break;
-    case 'moves_kibitz':
-        break;
-    case 'moves_pv':
+    case 'preset':
+        if (value == 'custom')
+            LS('custom');
+        else if (value == 'default settings')
+            reset_settings(true);
+        else {
+            Resource(`preset/${value}.json`, (code, data) => {
+                if (code != 200)
+                    return;
+                import_settings(data);
+                reset_settings();
+            });
+        }
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -530,6 +528,32 @@ function hide_element(target) {
 }
 
 /**
+ * Import settings from an object
+ * @param {Object} data
+ */
+function import_settings(data) {
+    Keys(data).forEach(key => {
+        if (!NO_IMPORTS[key])
+            save_option(key, data[key]);
+    });
+}
+
+/**
+ * Init custom settings
+ * @param {boolean} initial
+ */
+function init_customs(initial) {
+    change_theme();
+    move_pane();
+    resize_move_lists();
+    show_live_engines();
+    set_draggable();
+    populate_areas();
+
+    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
+}
+
+/**
  * Ran once at the last initialisation step
  */
 function init_globals() {
@@ -542,7 +566,6 @@ function init_globals() {
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    add_timeout('twitch', update_twitch, TIMEOUTS.twitch);
     add_timeout('graph', () => {
         init_graph(() => {
             download_live();
@@ -561,12 +584,6 @@ function init_globals() {
     if (!Y.no_ad && !DEV.ad && location.port != 8080)
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     load_google_analytics();
-
-    resize_move_lists();
-    show_live_engines();
-
-    set_draggable();
-    populate_areas();
 
     if (Visible('#table-log'))
         listen_log();
@@ -753,6 +770,23 @@ function populate_areas() {
 
     update_shortcuts();
     resize();
+}
+
+/**
+ * Reset to the default/other settings
+ * @param {boolean} is_default
+ */
+function reset_settings(is_default) {
+    if (is_default) {
+        localStorage.clear();
+        Assign(Y, DEFAULTS);
+        load_settings();
+        init_globals();
+    }
+
+    init_customs();
+    close_popups();
+    resize(true);
 }
 
 /**
@@ -1367,7 +1401,6 @@ function load_settings() {
 
     check_hash();
     parse_dev();
-    change_theme();
     api_translate_get();
 }
 
@@ -1489,6 +1522,9 @@ function startup() {
     merge_settings({
         // new column after 9 items
         _split: 9,
+        general: {
+            preset: [['custom', 'default settings', 'kanchess', 'octo'], 'custom'],
+        },
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
             audio_moves: [['none', 'all', 'last'], 'last'],
@@ -1653,10 +1689,10 @@ function startup() {
     load_settings();
 
     // start
-    move_pane();
     start_game();
 
     init_sockets();
     init_globals();
+    init_customs(true);
     resize(true);
 }
