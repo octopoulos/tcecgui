@@ -206,10 +206,13 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
+    virtual_import_settings,
     virtual_opened_table_special,
     xboards = {},
     WHITE_BLACK = ['white', 'black', 'live'],
-    WB_TITLES = ['White', 'Black'];
+    WB_TITLES = ['White', 'Black'],
+    y_index = -1,
+    y_states = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2799,6 +2802,20 @@ function action_key_no_input(code, active) {
 }
 
 /**
+ * Remember the setting state
+ */
+function add_history() {
+    let text = JSON.stringify(Y);
+    if (text == y_states[y_index])
+        return;
+    y_index ++;
+    y_states[y_index] = text;
+    y_states.length = y_index + 1;
+    if (y_states.length > 10)
+        y_states.shift();
+}
+
+/**
  * Handle keys, when input is not active
  * @param {number} code hardware keycode
  */
@@ -2897,7 +2914,15 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
+        // y, z
+        case 89:
+        case 90:
+            if (KEYS[17])
+                restore_history(code == 89? 1: -1);
+            break;
         }
+
+        HTML('#keycode', code);
     }
 }
 
@@ -2921,6 +2946,21 @@ function game_action_keyup(code) {
         Keys(xboards).forEach(key => {
             xboards[key].hold = null;
         });
+}
+
+/**
+ * Restore history
+ * @param {number} dir -1 (undo), 0, 1 (redo)
+ */
+function restore_history(dir) {
+    let y_copy = y_states[y_index + dir];
+    if (!y_copy)
+        return;
+    y_index += dir;
+    let data = JSON.parse(y_copy);
+
+    if (virtual_import_settings)
+        virtual_import_settings(data, true);
 }
 
 // 3D SCENE

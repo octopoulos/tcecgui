@@ -3,9 +3,11 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 ~          : 2020-04-29 : add SVG connectors to the bracket
+2020-05-26 : 2020-05-25 : CTRL+Z / CTRL+Y
 2020-05-26 : 2020-05-26 : improved status=auto
 2020-05-25 : 2020-05-25 : start timer directly + use pgns.elapsed
 2020-05-25 : 2020-05-25 : import settings + presets, note: should remember user settings under custom to undo?
+2020-05-25 : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
 2020-05-25 : 2020-05-25 : RESET everything option
 2020-05-24 : 2020-05-24 : remember opened tabs
 2020-05-24 : 2020-05-24 : drag and drop in tabs
@@ -254,8 +256,6 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 medium:
--          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
--          : 2020-05-25 : CTRL+Z
 -          : 2020-05-23 : dynamic pagination and search nodes
 low:
 ~          : 2020-04-13 : add 3d board

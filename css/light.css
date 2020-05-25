@@ -1134,6 +1134,7 @@ grid {
 #desc {
     max-width: 666px;
 }
+#keycode,
 #version {
     font-size: small;
 }
