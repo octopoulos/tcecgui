@@ -2440,7 +2440,7 @@ function update_pgn(section, pgn) {
     // 3) check for a new game
     // TODO: bug at this point
     let main = xboards[section];
-    if (main.round != headers.Round) {
+    if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
             LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move}`);
             LS(pgn);
@@ -2450,6 +2450,7 @@ function update_pgn(section, pgn) {
             reset_sub_boards(7);
             reset_charts();
         }
+        main.event = headers.Event;
         main.round = headers.Round;
         new_game = true;
         update_move_info(0, {});
@@ -2611,13 +2612,16 @@ function update_live_eval(section, data, id, force_ply) {
         return;
     }
 
+    // update engine name if it has changed
     engine = engine || data.engine;
     let short = get_short_name(engine);
     if (short)
         for (let child of [box_node, node]) {
             let node = _('[data-x="name"]', child);
-            HTML(node, short);
-            Attrs(node, {title: engine});
+            if (node.title != engine) {
+                HTML(node, short);
+                Attrs(node, {title: engine});
+            }
         }
 
     // invert eval for black?

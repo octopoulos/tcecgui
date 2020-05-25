@@ -90,6 +90,11 @@ let audiobox = {
     modal_name,
     models = {},
     next_paused,
+    NO_IMPORTS = {
+        import_settings: 2,
+        language: 1,
+        preset: 1,
+    },
     now,
     now2,
     Object3D,
@@ -986,11 +991,6 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
     if (audio && frame && audio.frame == frame)
         return;
 
-    if (voice)
-        volume *= Y.voice_volume / 10;
-    else
-        volume *= Y.sfx_volume / 10;
-
     // play sounds weaker depending on the distance
     // - distance between 2 segments is ~1500 units
     // http://fooplot.com/#W3sidHlwZSI6MCwiZXEiOiJleHAoLXgqMC4xOCkqMC42IiwiY29sb3IiOiIjMDAwMDAwIn0seyJ0eXBlIjoxMDAwLCJ3aW5kb3ciOlsiMCIsIjMwIiwiMCIsIjEiXSwiZ3JpZCI6WyIxIiwiMC4xIl19XQ--
@@ -1047,7 +1047,8 @@ function change_setting(name, value, no_close) {
         // TODO: clamp the value if min/max are defined
         if (!isNaN(value))
             value *= 1;
-        save_option(name, value);
+        if (NO_IMPORTS[name] != 2)
+            save_option(name, value);
     }
 
     if (virtual_change_setting_special && virtual_change_setting_special(name, value, no_close))
@@ -1252,23 +1253,30 @@ function show_settings(name, xy) {
             );
         }
         else if (data) {
-            if (data.type)
+            let type = data.type;
+            lines.push('<vert class="fcenter">');
+
+            if (type == 'number')
+                lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`);
+            else if (type == 'text')
                 lines.push(
-                    '<vert class="fcenter">'
-                    + `<input name="${key}" type="${data.type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`
-                    + '</vert>'
+                    `<input name="${key}" type="text" class="setting" value="">`
+                    // + '<input id="file" type="file" class="dn">'
+                    // + '<label for="file" data-t="Choose file"></label>'
                 );
+            else if (type)
+                lines.push(`<input name="${key}" type="${type}" class="setting" value="${Y[key]}">`);
             else
                 lines.push(
-                    '<vert class="fcenter">'
-                    + `<select name="${key}">`
+                    `<select name="${key}">`
                         + Keys(data).map(value => {
                             let option = data[value];
                             return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
-                    + '</vert>'
                 );
+
+            lines.push('</vert>');
         }
     });
 
@@ -1460,12 +1468,11 @@ function startup_3d() {
     merge_settings({
         general: {
             export_settings: '1',
+            import_settings: [{type: 'text'}, ''],
             language: [LANGUAGES, 'eng'],
             theme: [THEMES, THEMES[0]],
         },
         audio: {
-            sfx_volume: [{min: 0, max: 10, type: 'number'}, 5],
-            voice_volume: [{min: 0, max: 10, type: 'number'}, 5],
             volume: [{min: 0, max: 10, type: 'number'}, 5],
         },
         video: {
