@@ -2328,6 +2328,7 @@ function update_overview_basic(section, headers) {
  * @param {Object} headers
  * @param {Move[]} moves
  * @param {boolean=} is_new have we received new moves (from update_pgn)?
+ * @returns {boolean} finished
  */
 function update_overview_moves(section, headers, moves, is_new) {
     if (!headers)
@@ -2347,7 +2348,6 @@ function update_overview_moves(section, headers, moves, is_new) {
     // num_ply % 2 tells us who plays next
     if (is_live) {
         let who = num_ply % 2;
-        start_clock(who, finished);
 
         // time control could be different for white and black
         let tc = headers[`${WB_TITLES[who]}TimeControl`];
@@ -2401,6 +2401,8 @@ function update_overview_moves(section, headers, moves, is_new) {
         }
         update_materials(move);
     }
+
+    return finished;
 }
 
 /**
@@ -2417,7 +2419,8 @@ function update_pgn(section, pgn) {
     pgns[section] = pgn;
     window.pgns = pgns;
 
-    let headers = pgn.Headers,
+    let finished,
+        headers = pgn.Headers,
         is_same = (section == Y.x),
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
@@ -2450,9 +2453,9 @@ function update_pgn(section, pgn) {
             reset_sub_boards(7);
             reset_charts();
         }
+        new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
         main.round = headers.Round;
-        new_game = true;
         update_move_info(0, {});
         update_move_info(1, {});
     }
@@ -2463,15 +2466,13 @@ function update_pgn(section, pgn) {
     // 4) add the moves
     main.add_moves(moves);
     if (is_same)
-        update_overview_moves(section, headers, moves, true, true);
+        finished = update_overview_moves(section, headers, moves, true, true);
 
     // remove moves that are after the last move
     // - could have been sent by error just after a new game started
-    if (is_same) {
-        let last_move = main.moves[main.moves.length - 1];
-        if (last_move)
-            slice_charts(last_move.ply);
-    }
+    let last_move = main.moves[main.moves.length - 1];
+    if (is_same && last_move)
+        slice_charts(last_move.ply);
 
     update_mobility();
     add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
@@ -2479,13 +2480,33 @@ function update_pgn(section, pgn) {
     // got player info => can do h2h
     check_queued_tables();
 
-    if (new_game) {
+    // 2: a new game was started and we already had a game before
+    if (new_game == 2) {
         for (let player of players)
             Assign(player, {
                 elapsed: 0,
-                left: player.tc,
+                left: player.tc * 1000,
+                time: 0,
             });
         add_queue(section, 'table');
+    }
+    else if (new_game) {
+        for (let player of players) {
+            if (!player.elapsed)
+                player.elapsed = 0;
+            if (!player.left)
+                player.left = player.tc * 1000;
+            if (!player.time)
+                player.time = 0;
+        }
+    }
+
+    // clock
+    if (section == 'live' && last_move) {
+        let who = 1 - last_move.ply % 2;
+        if (!new_game)
+            players[who].time = 0;
+        start_clock(who, finished, pgns[section].elapsed || 0);
     }
 }
 
@@ -2535,25 +2556,27 @@ function set_viewers(count) {
 /**
  * Start the clock for one player, and stop it for the other
  * @param {number} id
- * @param {boolean=} finished if true, then both clocks are stopped
+ * @param {boolean} finished if true, then both clocks are stopped
+ * @param {number} delta elapsed time since pgn creation
  */
-function start_clock(id, finished) {
+function start_clock(id, finished, delta) {
     if (Y.x != 'live')
         return;
 
     S(`#cog${id}`, !finished);
     Hide(`#cog${1 - id}`);
 
-    let node = xboards.live.node;
+    let node = xboards.live.node,
+        player = players[id];
     S(`.xcolor${id} .xcog`, !finished, node);
     Hide(`.xcolor${1 - id} .xcog`, node);
 
     stop_clock([0, 1]);
 
     if (!finished) {
-        Assign(players[id], {
+        Assign(player, {
             elapsed: 0.000001,
-            start: Now(true),
+            start: Now(true) - player.time / 1000 - delta,
         });
         clock_tick(id);
     }
