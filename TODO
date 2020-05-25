@@ -3,7 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 ~          : 2020-04-29 : add SVG connectors to the bracket
--          : 2020-05-25 : start timer directly + use pgns.elapsed
+2020-05-25 : 2020-05-25 : start timer directly + use pgns.elapsed
 2020-05-25 : 2020-05-25 : import settings + presets, note: should remember user settings under custom to undo?
 2020-05-25 : 2020-05-25 : RESET everything option
 2020-05-24 : 2020-05-24 : remember opened tabs
