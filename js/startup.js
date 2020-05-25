@@ -13,11 +13,11 @@
 globals
 _, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
 api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, charts,
-check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS,
-detect_device, DEV, document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll,
-game_action_key, game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
-ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
+Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, detect_device, DEV,
+document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
+game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
+Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
 reset_old_settings, resize_game, Round,
@@ -769,11 +769,11 @@ function resize(force) {
     resize_panels(force);
 
     // resize charts
-    Keys(charts).forEach(key => {
-        let node = Id(`table-${key}`),
-            width = node.clientWidth - 2,
+    E('.chart', node => {
+        let parent = node.parentNode,
+            width = parent.clientWidth - 2,
             height = width / Max(0.5, Y.graph_aspect_ratio);
-        Style('.chart', `height:${height}px;width:${width}px`, true, node);
+        Style(node, `height:${height}px;width:${width}px`);
     });
 
     adjust_popups();
@@ -827,12 +827,6 @@ function resize_panels(force) {
     Class('.xmoves', 'column', !is_hori, center);
     Class('.xboard', 'fcol', is_hori, center);
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
-
-    // resize all charts
-    E('canvas.graphs', node => {
-        let parent = node.parentNode;
-        Style(parent, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
-    });
     old_center = width;
 }
 

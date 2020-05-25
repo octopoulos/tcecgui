@@ -1167,6 +1167,9 @@ grid {
     width: 300px;
     height: 230px;
 }
+.label {
+    font-size: 0.9em;
+}
 
 /* extras */
 #ad0,

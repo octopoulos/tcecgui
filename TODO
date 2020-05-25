@@ -1,9 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
--          : 2020-05-23 : dynamic pagination and search nodes
+~          : 2020-04-29 : add SVG connectors to the bracket
 2020-05-25 : 2020-05-25 : RESET everything option
 2020-05-24 : 2020-05-24 : remember opened tabs
 2020-05-24 : 2020-05-24 : drag and drop in tabs
@@ -253,12 +252,14 @@ DONE         CREATED      DESCRIPTION
 high:
 medium:
 -          : 2020-05-16 : presets => some user profiles can be integrated as presets, save options as arrays
+-          : 2020-05-25 : CTRL+Z
+-          : 2020-05-23 : dynamic pagination and search nodes
 low:
--          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 ~          : 2020-04-13 : add 3d board
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
+-          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
