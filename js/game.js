@@ -594,13 +594,17 @@ function show_board_info(show) {
         status = Y.status;
 
     if (show == undefined) {
+        // auto => if board is visible and engine is not => show the status
         if (status == 'auto') {
             let engine = Id('engine'),
-                rect = engine.getBoundingClientRect();
+                rect_b = main.node.getBoundingClientRect(),
+                rect_e = engine.getBoundingClientRect();
 
-            if (!Visible(engine) || rect.top < 0 || rect.top + rect.height > window.height
-                    || rect.left < 0 || rect.left + rect.width > window.innerWidth)
-                show = true;
+            if (Visible(main.node) && rect_b.top >= 0 && rect_b.top + rect_b.height <= window.innerHeight
+                    && rect_b.left >= 0 && rect_b.left + rect_b.width <= window.innerWidth)
+                if (!Visible(engine) || rect_e.top > window.innerHeight || rect_e.top + rect_e.height < 0
+                        || rect_e.left > window.innerWidth || rect_e.left + rect_e.width < 0)
+                    show = true;
         }
         else
             show = (status != 0);
@@ -1139,8 +1143,9 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
 
         let now = Now(true);
         if (data && add_delta) {
-            let last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            data.delta = now - last_mod.getTime();
+            let curr_time = new Date(xhr.getResponseHeader('date')),
+                last_mod = new Date(xhr.getResponseHeader('last-modified'));
+            data.delta = curr_time.getTime() - last_mod.getTime();
         }
 
         if (key) {

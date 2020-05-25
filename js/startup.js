@@ -1496,7 +1496,7 @@ function startup() {
         div: '',
         game: 0,
         link: '',                           // live link
-        live_log: 0,
+        live_log: 'all',
         order: 'left|center|right',         // main panes order
         round: '',                          // live round
         season: '',

@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 ~          : 2020-04-29 : add SVG connectors to the bracket
+2020-05-26 : 2020-05-26 : improved status=auto
 2020-05-25 : 2020-05-25 : start timer directly + use pgns.elapsed
 2020-05-25 : 2020-05-25 : import settings + presets, note: should remember user settings under custom to undo?
 2020-05-25 : 2020-05-25 : RESET everything option
@@ -261,6 +262,7 @@ low:
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
+-          : 2020-05-26 : live_log option to run in the background
 -          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)

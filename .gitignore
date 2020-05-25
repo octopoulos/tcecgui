@@ -37,6 +37,7 @@ schedule.json
 sound/*.js
 stream.html
 svg/
+tcec.js
 tempCodeRunnerFile.py
 test?.html
 tournament.json
