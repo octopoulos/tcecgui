@@ -2468,9 +2468,11 @@ function update_pgn(section, pgn) {
 
     // remove moves that are after the last move
     // - could have been sent by error just after a new game started
-    let last_move = main.moves[num_ply - 1];
-    if (last_move)
-        slice_charts(last_move.ply);
+    if (is_same) {
+        let last_move = main.moves[num_ply - 1];
+        if (last_move)
+            slice_charts(last_move.ply);
+    }
 
     update_mobility();
     add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
