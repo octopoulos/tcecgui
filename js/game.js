@@ -2439,12 +2439,10 @@ function update_pgn(section, pgn) {
 
     // 3) check for a new game
     // TODO: bug at this point
-    let main = xboards[section],
-        num_ply = main.moves.length;
-
+    let main = xboards[section];
     if (main.round != headers.Round) {
         if (DEV.new) {
-            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${num_ply} : num_move=${num_move}`);
+            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move}`);
             LS(pgn);
         }
         main.reset(1);
@@ -2469,7 +2467,7 @@ function update_pgn(section, pgn) {
     // remove moves that are after the last move
     // - could have been sent by error just after a new game started
     if (is_same) {
-        let last_move = main.moves[num_ply - 1];
+        let last_move = main.moves[main.moves.length - 1];
         if (last_move)
             slice_charts(last_move.ply);
     }
@@ -2582,6 +2580,7 @@ function update_live_eval(section, data, id, force_ply) {
         return;
 
     let board = xboards[`live${id}`],
+        engine = data.engine,
         main = xboards[section],
         moves = data.moves;
     // moves => maybe old data?
@@ -2601,7 +2600,6 @@ function update_live_eval(section, data, id, force_ply) {
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
         eval_ = data.eval,
-        short = get_short_name(data.engine),
         node = Id(`table-live${id}`),
         [ply] = split_move_string(data.pv);
 
@@ -2613,9 +2611,14 @@ function update_live_eval(section, data, id, force_ply) {
         return;
     }
 
+    engine = engine || data.engine;
+    let short = get_short_name(engine);
     if (short)
-        for (let child of [box_node, node])
-            HTML(`[data-x="name"]`, short, child);
+        for (let child of [box_node, node]) {
+            let node = _('[data-x="name"]', child);
+            HTML(node, short);
+            Attrs(node, {title: engine});
+        }
 
     // invert eval for black?
     if ((moves || force_ply) && data.ply % 2 == 0)

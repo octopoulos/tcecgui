@@ -48,7 +48,8 @@ let all_evals = [],
     },
     charts = {},
     first_num = -1,
-    MAX_EVAL = 10;
+    MAX_EVAL = 10,
+    queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -456,9 +457,12 @@ function update_chart_options(name, mode) {
  * @param {boolean=} invert_black invert black evals
  */
 function update_live_chart(moves, id, invert_black) {
+    // library hasn't loaded yet => queue
     let data_c = chart_data.eval;
-    if (!data_c)
+    if (!data_c) {
+        queued_charts.push([moves, id, invert_black]);
         return;
+    }
 
     let dataset = data_c.datasets[id],
         data = dataset.data,
@@ -601,6 +605,11 @@ function init_graph(callback) {
         create_chart_data();
         create_charts();
         update_player_charts(null, xboards[Y.x].moves);
+
+        for (let [moves, id, invert_black] of queued_charts)
+            update_live_chart(moves, id, invert_black);
+        queued_charts = [];
+
         callback();
     }
 
