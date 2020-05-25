@@ -14,8 +14,6 @@ define, exports
 'use strict';
 
 var Chess = function(fen) {
-    let current_fen = '';
-
     var BLACK = 'b';
     var WHITE = 'w';
 
@@ -231,8 +229,7 @@ var Chess = function(fen) {
         cflags = cflags || '-';
         var epflags = (ep_square === EMPTY) ? '-' : algebraic(ep_square);
 
-        current_fen = [fen, turn, cflags, epflags, half_moves, move_number].join(' ');
-        return current_fen;
+        return [fen, turn, cflags, epflags, half_moves, move_number].join(' ');
     }
 
     function put(piece, square) {
@@ -790,17 +787,12 @@ var Chess = function(fen) {
             return clear();
         },
 
-        curr_fen: () => {
-            return current_fen;
-        },
-
         fen: () => {
             return generate_fen();
         },
 
         load: fen => {
-            if (fen != current_fen)
-                return load(fen);
+            return load(fen);
         },
 
         /**
@@ -832,7 +824,6 @@ var Chess = function(fen) {
                 return null;
 
             make_move(move_obj);
-            current_fen = '';
             return move_obj;
         },
 
