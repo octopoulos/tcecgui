@@ -827,6 +827,11 @@ function resize_panels(force) {
     Class('.xmoves', 'column', !is_hori, center);
     Class('.xboard', 'fcol', is_hori, center);
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
+
+    // resize all charts
+    E('.chart', node => {
+        Style(node, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
+    });
     old_center = width;
 }
 
