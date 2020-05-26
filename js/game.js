@@ -1390,6 +1390,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 td_class = 'fen';
                 break;
             case 'game':
+                if (is_sched && section == 'archive')
+                    value = row_id + 1;
                 if (row.moves)
                     value = create_game_link(section, value);
                 break;
