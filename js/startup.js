@@ -1555,6 +1555,7 @@ function startup() {
         round: 1,
         season: 1,
         stream: 1,
+        twitch_video: 1,
         version: 1,
         x: 1,
     });
