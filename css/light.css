@@ -818,6 +818,7 @@ grid {
 #engine0,
 #engine1 {
     font-size: 0.8em;
+    height: 3em;
 }
 #eval0,
 #eval1 {
@@ -1094,8 +1095,11 @@ grid {
     pointer-events: all;
 }
 #banners,
-#main {
+#bottom {
     margin-bottom: 1em;
+}
+#banners,
+#main {
     max-width: 1500px;
     width: 95%;
 }
