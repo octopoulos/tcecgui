@@ -11,8 +11,8 @@
 // included after: common, engine, global, 3d, xboard, game, network
 /*
 globals
-_, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_timeout, api_times:true,
-api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+_, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
+api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, detect_device, DEV,
 document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
@@ -25,8 +25,8 @@ S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, SetDe
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
 update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
-VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_opened_table_special:true,
-virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
+VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
+virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -137,7 +137,8 @@ function change_setting_special(name, value, no_close) {
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
 
-    let field;
+    if (name != 'preset')
+        Y.preset = 'custom';
 
     switch (name) {
     case 'animate':
@@ -170,19 +171,21 @@ function change_setting_special(name, value, no_close) {
         resize();
         break;
     case 'click_here_to_RESET_everything':
+        add_history();
         reset_settings(true);
         break;
     case 'custom_black':
     case 'custom_black_pv':
     case 'custom_white':
     case 'custom_white_pv':
-        let is_pv = (name.slice(-2) == 'pv');
-        field = `board_theme${is_pv? '_pv': ''}`;
+        let is_pv = (name.slice(-2) == 'pv'),
+            field = `board_theme${is_pv? '_pv': ''}`;
         save_option(field, 'custom');
         (_(`select[name="${field}"]`) || {}).value = Y[field];
         update_board_theme(is_pv? 2: 1);
         break;
     case 'default_positions':
+        add_history();
         Y.areas = Assign({}, DEFAULTS.areas);
         populate_areas();
         break;
@@ -191,6 +194,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
+        break;
+    case 'graph_clamp':
+        update_player_charts('eval', xboards[Y.x].moves);
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -214,7 +220,17 @@ function change_setting_special(name, value, no_close) {
         resize_panels(true);
         break;
     case 'hide':
+        add_history();
         hide_element(context_target);
+        add_history();
+        break;
+    case 'import_settings':
+        add_history();
+        try {
+            import_settings(JSON.parse(value), true);
+        }
+        catch (err) {
+        }
         break;
     case 'import_settings':
         try {
@@ -226,7 +242,9 @@ function change_setting_special(name, value, no_close) {
         }
         break;
     case 'join_next':
+        add_history();
         tab_element(context_target);
+        add_history();
         break;
     case 'live_log':
         if (Visible('#table-log'))
@@ -241,6 +259,7 @@ function change_setting_special(name, value, no_close) {
         resize_move_lists();
         break;
     case 'preset':
+        add_history();
         if (value == 'custom')
             LS('custom');
         else if (value == 'default settings')
@@ -249,8 +268,7 @@ function change_setting_special(name, value, no_close) {
             Resource(`preset/${value}.json`, (code, data) => {
                 if (code != 200)
                     return;
-                import_settings(data);
-                reset_settings();
+                import_settings(data, true);
             });
         }
         break;
@@ -427,6 +445,8 @@ function draw_rectangle(node) {
  * @param {Event} e
  */
 function handle_drop(e) {
+    add_history();
+
     let [child] = get_drop_id(e.target),
         in_tab = 0,
         parent = Parent(e.target, {class_: 'area', self: true}),
@@ -503,6 +523,7 @@ function handle_drop(e) {
 
     e.stopPropagation();
     e.preventDefault();
+    add_history();
 }
 
 /**
@@ -530,12 +551,16 @@ function hide_element(target) {
 /**
  * Import settings from an object
  * @param {Object} data
+ * @param {boolean=} reset
  */
-function import_settings(data) {
+function import_settings(data, reset) {
     Keys(data).forEach(key => {
         if (!NO_IMPORTS[key])
             save_option(key, data[key]);
     });
+
+    if (reset)
+        reset_settings();
 }
 
 /**
@@ -543,14 +568,14 @@ function import_settings(data) {
  * @param {boolean} initial
  */
 function init_customs(initial) {
+    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
     change_theme();
     move_pane();
     resize_move_lists();
     show_live_engines();
     set_draggable();
     populate_areas();
-
-    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
+    update_board_theme(3);
 }
 
 /**
@@ -787,6 +812,7 @@ function reset_settings(is_default) {
     init_customs();
     close_popups();
     resize(true);
+    add_history();
 }
 
 /**
@@ -1181,6 +1207,7 @@ function set_global_events() {
 
     // keys
     Events(window, 'keydown keyup', e => {
+        // LS(`key=${e.key} : code=${e.code} : keycode=${e.keyCode}`);
         let active = document.activeElement,
             code = e.keyCode,
             is_game = true,
@@ -1452,6 +1479,7 @@ function startup() {
 
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
+    virtual_import_settings = import_settings;
     virtual_opened_table_special = opened_table_special;
     virtual_resize = resize;
 
@@ -1496,7 +1524,7 @@ function startup() {
         div: '',
         game: 0,
         link: '',                           // live link
-        live_log: 0,
+        live_log: 'all',
         order: 'left|center|right',         // main panes order
         round: '',                          // live round
         season: '',
@@ -1523,7 +1551,7 @@ function startup() {
         // new column after 9 items
         _split: 9,
         general: {
-            preset: [['custom', 'default settings', 'kanchess', 'octo'], 'custom'],
+            preset: [['custom', 'default settings', 'kanchess', 'octopoulo'], 'custom'],
         },
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
@@ -1617,6 +1645,7 @@ function startup() {
         },
         graph: {
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
+            graph_clamp: [{max: 100, min: 1, type: 'number'}, 10],
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
@@ -1687,6 +1716,7 @@ function startup() {
     set_game_events();
     startup_graph();
     load_settings();
+    add_history();
 
     // start
     start_game();

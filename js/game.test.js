@@ -22,11 +22,55 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'Assign players tour_info Y');
 
 let {
-        Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
-        create_game_link, format_eval, format_hhmmss, format_percent, get_short_name, players, tour_info, Y,
+        allie_cp_to_score, Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score,
+        create_field_value, create_game_link, format_eval, format_hhmmss, format_percent, get_short_name,
+        leela_cp_to_score, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// allie_cp_to_score
+// https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/tests/testbasics.cpp#L120
+[
+    [0, 0],
+    [100, 0.42144403114],
+    [-100, -0.42144403114],
+    [400, 0.747188146311],
+    [-400, -0.747188146311],
+    [1000, 0.8392234846],
+    [-1000, -0.8392234846],
+    [10000, 0.898044],
+    [-10000, -0.898044],
+    [12800, 0.9163436966936154],
+    [-12800, -0.9163436966936154],
+    [25600, 1.0],
+    [-25600, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`allie_cp_to_score:${id}`, () => {
+        expect(allie_cp_to_score(cp)).toBeCloseTo(answer, 5);
+    });
+});
+
+// leela_cp_to_score
+[
+    [0, 0],
+    [100, 0.5358778448223716],
+    [-100, -0.5358778448223716],
+    [400, 0.8629757114869812],
+    [-400, -0.8629757114869812],
+    [1000, 0.94710419473861],
+    [-1000, -0.94710419473861],
+    [10000, 0.9987481281074694],
+    [-10000, -0.9987481281074694],
+    [12800, 1.0],
+    [-12800, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`leela_cp_to_score:${id}`, () => {
+        expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
+    });
+});
 
 // calculate_h2h
 [
@@ -62,9 +106,8 @@ let {
 // calculate_probability
 [
     ['Stockfish', 0.27, '7.8% W | 92.2% D'],
-    ['LCZero', 0.27, '9.2% W | 90.8% D'],
-    // ['LCZeroCPU', 0.27, '9.2% W | 90.8% D'],
-    ['AllieStein', 0.27, '6.0% W | 94.0% D'],
+    ['LCZero', 0.27, '18.6% W | 81.4% D'],
+    ['AllieStein', 0.27, '13.7% W | 86.3% D'],
 ]
  .forEach(([short_engine, eval_, answer], id) => {
     test(`calculate_probability:${id}`, () => {

@@ -25,7 +25,7 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200522';
+    VERSION = '20200525';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -128,16 +128,18 @@ function reset_old_settings() {
     if (Y.version == VERSION)
         return;
 
-    let updates = ['audio'];
-    for (let update of updates) {
-        LS(`reset ${update} settings ...`);
-        let settings = X_SETTINGS[update];
+    if (!Y.version) {
+        let updates = ['audio'];
+        for (let update of updates) {
+            LS(`reset ${update} settings ...`);
+            let settings = X_SETTINGS[update];
 
-        Keys(settings).forEach(key => {
-            let value = settings[key];
-            if (IsArray(value))
-                save_option(key, value[1]);
-        });
+            Keys(settings).forEach(key => {
+                let value = settings[key];
+                if (IsArray(value))
+                    save_option(key, value[1]);
+            });
+        }
     }
 
     save_option('version', VERSION);

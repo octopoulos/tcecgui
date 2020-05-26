@@ -1260,9 +1260,9 @@ function show_settings(name, xy) {
                 lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`);
             else if (type == 'text')
                 lines.push(
-                    `<input name="${key}" type="text" class="setting" value="">`
-                    // + '<input id="file" type="file" class="dn">'
-                    // + '<label for="file" data-t="Choose file"></label>'
+                    `<input name="${key}" type="text" class="setting" data-t="Enter JSON data" data-t2="placeholder" value="">`
+                    + '<input id="file" type="file" class="dn">'
+                    + '<label for="file" data-t="Choose file"></label>'
                 );
             else if (type)
                 lines.push(`<input name="${key}" type="${type}" class="setting" value="${Y[key]}">`);
@@ -1444,6 +1444,15 @@ function set_modal_events(parent) {
     C('div[name]', function() {
         change_setting(this.getAttribute('name'));
     }, parent);
+
+    // file
+    Events('#file', 'change', function() {
+        let file = this.files[0];
+        if (file)
+            file.text().then(data => {
+                change_setting('import_settings', data);
+            });
+    });
 
     if (virtual_set_modal_events_special)
         virtual_set_modal_events_special();

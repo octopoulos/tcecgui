@@ -150,6 +150,9 @@ i {
     font-style: normal;
     line-height: 0;
 }
+label {
+    cursor: pointer;
+}
 table {
     border-spacing: 0;
     font-size: 0.9em;
@@ -1134,6 +1137,7 @@ grid {
 #desc {
     max-width: 666px;
 }
+#keycode,
 #version {
     font-size: small;
 }
