@@ -216,6 +216,10 @@ grid {
 .nav:hover {
     color: #ddd;
 }
+#nav-archive,
+#nav-live {
+    font-weight: 700;
+}
 #icons {
     flex: 1;
 }
