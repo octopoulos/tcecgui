@@ -556,14 +556,14 @@ function import_settings(data, reset) {
  * @param {boolean} initial
  */
 function init_customs(initial) {
+    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
     change_theme();
     move_pane();
     resize_move_lists();
     show_live_engines();
     set_draggable();
     populate_areas();
-
-    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
+    update_board_theme(3);
 }
 
 /**
