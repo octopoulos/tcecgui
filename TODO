@@ -3,7 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 ~          : 2020-04-29 : add SVG connectors to the bracket
-2020-05-26 : 2020-05-26 : updated AllieStein evals
+2020-05-26 : 2020-05-26 : updated leela_cp_to_score + tests
+2020-05-26 : 2020-05-26 : new allie_cp_to_score
 2020-05-26 : 2020-05-26 : custom graph clamp
 2020-05-26 : 2020-05-25 : CTRL+Z / CTRL+Y
 2020-05-26 : 2020-05-26 : improved status=auto

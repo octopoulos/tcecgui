@@ -18,10 +18,10 @@ create_module(IMPORT_PATH, [
     'engine',
     //
     'graph',
-], OUTPUT_MODULE, 'Assign chart_data Keys');
+], OUTPUT_MODULE, 'Assign chart_data Keys Y');
 
 let {
-    Assign, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys,
+    Assign, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, Y,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +108,7 @@ let {
     ['#-18', -10],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
+        Y.graph_clamp = 10;
         expect(clamp_eval(eval_)).toEqual(answer);
     });
 });

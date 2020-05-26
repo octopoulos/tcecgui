@@ -220,49 +220,26 @@ let ANALYSIS_URLS = {
 //////////
 
 /**
- * The function was posted by "ya" in the Leela Chess Zero Discord channel
- * https://discordapp.com/channels/425419482568196106/430695662108278784/618146099269730342
- * - made it more readable
- * @param {number} cp
- * @returns {number}
- */
-function _leelaCpToQ(cp) {
-    if (cp < 234.18)
-        return 0.0033898305085 * cp
-            - (8.76079436769e-38 * Pow(cp, 15)) / (3.618208073857e-34 * Pow(cp, 14) + 1.0)
-            + (cp * (-3.4456396e-5 * cp + 0.007076010851)) / (cp * cp - 487.329812319 * cp + 59486.9337812);
-
-    if (cp < 381.73)
-        return (-17.03267913 * cp + 3342.55947265) / (cp * cp - 360.8419732 * cp + 32568.5395889)
-            + 0.995103;
-
-    return (35073.0 * cp) / (755200.0 + 35014.0 * cp)
-        + ((0.4182050082072 * cp - 2942.6269998574) / (cp * cp - 128.710949474 * cp - 6632.9691544526)) * Exp(-Pow((cp - 400.0) / 7000.0, 3))
-        - 5.727639074137869e-8;
-}
-
-/**
- * Convert eval to win %
- * @param {number} eval_
- * @returns {number}
- */
-function _leelaEvalToWinPct(eval_) {
-    let q = Sign(eval_) * _leelaCpToQ(Abs(eval_) * 100);
-    return Round(100 * 100 * q) / 200;
-}
-
-/**
- * Convert centipawns to score %
+ * Convert centipawn to score % for AS
  * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
  * @param {number} cp
  * @returns {number}
  */
-function allie_cp_to_score(eval_) {
-    let cp = eval_ * 100;
+function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
-        return (cp + (cp > 0 ? 127407 : -127407)) / 153007 * 50;
+        return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
     else
-        return Math.atan(cp / 111) / 1.74 * 50;
+        return Math.atan(cp / 111) / 1.74;
+}
+
+/**
+ * Convert centipawn to score % for Leela 2019+
+ * https://github.com/LeelaChessZero/lc0/pull/1193/files
+ * @param {number} cp
+ * @returns {number}
+ */
+function leela_cp_to_score(cp) {
+    return Math.atan(cp / 90) / 1.5637541897;
 }
 
 /**
@@ -282,12 +259,16 @@ function calculate_probability(short_engine, eval_)
 
     // adjust the score
     if (feature & 1) {
+        let cp = eval_ * 100;
         if (feature & 2)
-            white_win = _leelaEvalToWinPct(eval_);
+            white_win = leela_cp_to_score(cp);
         else if (feature & 4)
-            white_win = allie_cp_to_score(eval_);
+            white_win = allie_cp_to_score(cp);
         else
-            white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 - 50;
+            white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
+
+        // this is the HALF white win %
+        white_win *= 50;
     }
     else
         white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
