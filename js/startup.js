@@ -1673,7 +1673,7 @@ function startup() {
             graph_line: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_radius: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
-            graph_tension: [{min: 0, max: 1, step: 0.05, type: 'number'}, 0.4],
+            graph_tension: [{min: 0, max: 1, step: 0.05, type: 'number'}, 0.1],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
             use_for_arrow: '1',
         },
