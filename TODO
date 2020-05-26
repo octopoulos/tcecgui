@@ -267,6 +267,7 @@ low:
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 lowest:
+-          : 2020-05-26 : reenable twitch_video after a few days
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 -          : 2020-04-24 : add 3d dark room
