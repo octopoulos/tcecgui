@@ -640,6 +640,7 @@ class XBoard {
         }
 
         let path,
+            name = this.name,
             x1 = dico.from % 16,
             x2 = dico.to % 16,
             y1 = dico.from >> 4,
@@ -703,7 +704,7 @@ class XBoard {
                 if (other_id < 2)
                     Hide(other.svg);
                 else {
-                    AttrsNS(`#mk${other_id}_1`, {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
+                    AttrsNS(`#mk${name}_${other_id}_1`, {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
                     Hide(this.svgs[id].svg);
                     return;
                 }
@@ -725,8 +726,8 @@ class XBoard {
         let body = this.create_svg(id),
             color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
             color_head = shead || mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
-            marker0 = Id(`mk${id}_0`),
-            marker1 = Id(`mk${id}_1`),
+            marker0 = Id(`mk${name}_${id}_0`),
+            marker1 = Id(`mk${name}_${id}_1`),
             paths = A('svg > path', body),
             svg = this.svgs[id];
 
@@ -985,6 +986,7 @@ class XBoard {
         let color = Y[`arrow_color_${id}`],
             marker_circle = CreateSVG('circle', {cx: 5, cy: 5, r: 3}),
             marker_path = CreateSVG('path', {d: `M0 0l5 5l-5 5z`}),
+            name = this.name,
             options = {
                 markerUnits: 'strokeWidth',
                 orient: 'auto',
@@ -995,12 +997,12 @@ class XBoard {
             markers = [
                 CreateSVG('marker', Assign(options, {
                     fill: color,
-                    id: `mk${id}_0`,
+                    id: `mk${name}_${id}_0`,
                     markerHeight: Y.arrow_base_size,
                 }), [marker_circle]),
                 CreateSVG('marker', Assign(options, {
                     fill: color,
-                    id: `mk${id}_1`,
+                    id: `mk${name}_${id}_1`,
                     markerHeight: Y.arrow_head_size,
                     refX: 1,
                 }), [marker_path]),
@@ -1009,7 +1011,7 @@ class XBoard {
             path = CreateSVG('path'),
             svg = CreateSVG('svg', {viewBox: '0 0 80 80'}, [defs, path]);
 
-        AttrsNS(path, {'marker-end': `url(#mk${id}_1)`, 'marker-start': `url(#mk${id}_0)`});
+        AttrsNS(path, {'marker-end': `url(#mk${name}_${id}_1)`, 'marker-start': `url(#mk${name}_${id}_0)`});
 
         arrow = CreateNode('div', null, {class: 'arrow', id: `ar${id}`}, [svg]);
 
