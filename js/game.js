@@ -233,16 +233,6 @@ function allie_cp_to_score(cp) {
 }
 
 /**
- * Convert centipawn to score % for Leela 2019+
- * https://github.com/LeelaChessZero/lc0/pull/1193/files
- * @param {number} cp
- * @returns {number}
- */
-function leela_cp_to_score(cp) {
-    return Math.atan(cp / 90) / 1.5637541897;
-}
-
-/**
  * Calculate the probability to draw or win
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
@@ -406,6 +396,16 @@ function get_short_name(engine)
     if (!engine)
         return '';
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
+}
+
+/**
+ * Convert centipawn to score % for Leela 2019+
+ * https://github.com/LeelaChessZero/lc0/pull/1193/files
+ * @param {number} cp
+ * @returns {number}
+ */
+function leela_cp_to_score(cp) {
+    return Math.atan(cp / 90) / 1.5637541897;
 }
 
 /**
