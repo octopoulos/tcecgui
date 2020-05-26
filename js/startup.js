@@ -192,11 +192,14 @@ function change_setting_special(name, value, no_close) {
     case 'drag_and_drop':
         set_draggable();
         break;
-    case 'export_settings':
-        DownloadObject(Y, 'tcec-settings.json');
-        break;
-    case 'graph_clamp':
+    case 'eval_clamp':
         update_player_charts('eval', xboards[Y.x].moves);
+        break;
+    case 'export_settings':
+        let object = Assign(
+            {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
+        );
+        DownloadObject(object, 'tcec-settings.json', false, '  ');
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -1539,7 +1542,21 @@ function startup() {
         twitch_video: 1,
         version: VERSION,
         x: 'live',
+    });
 
+    Assign(NO_IMPORTS, {
+        dev: 1,
+        div: 1,
+        game: 1,
+        import_settings: 2,
+        language: 1,
+        link: 1,
+        preset: 1,
+        round: 1,
+        season: 1,
+        stream: 1,
+        version: 1,
+        x: 1,
     });
 
     let bamboo = 'grand bamboo',
@@ -1644,8 +1661,8 @@ function startup() {
             wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
+            eval_clamp: [{max: 100, min: 1, type: 'number'}, 10],
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
-            graph_clamp: [{max: 100, min: 1, type: 'number'}, 10],
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],

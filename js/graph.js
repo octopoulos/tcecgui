@@ -88,14 +88,14 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
-    let max_eval = Y.graph_clamp;
+    let eval_clamp = Y.eval_clamp;
     if (!isNaN(eval_))
-        return Clamp(eval_ * 1, -max_eval, max_eval);
+        return Clamp(eval_ * 1, -eval_clamp, eval_clamp);
 
     if (eval_ && eval_.includes('-'))
-        eval_ = -max_eval;
+        eval_ = -eval_clamp;
     else if (eval_ != undefined)
-        eval_ = max_eval;
+        eval_ = eval_clamp;
     else
         eval_ = 0;
 
