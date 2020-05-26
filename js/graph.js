@@ -25,7 +25,6 @@ let all_evals = [],
         },
     },
     CHART_OPTIONS = {
-        bezierCurve: false,
         hoverMode: 'index',
         legend: {
             display: false
@@ -299,7 +298,8 @@ function new_dataset(label, color, yaxis, dico) {
         data: [],
         fill: false,
         label: label,
-        lineTension: 0,
+        lineTension: Y.graph_tension,
+        pointHitRadius: 4,
         yAxisID: yaxis,
     };
 
@@ -427,12 +427,15 @@ function update_chart_options(name, mode) {
                 options = chart.options,
                 ratio = chart.canvas.parentNode.clientWidth / 300,
                 line_width = Y.graph_line * ratio,
+                point_radius = Y.graph_radius * ratio,
                 text_size = Y.graph_text * ratio;
 
             for (let dataset of datasets)
                 Assign(dataset, {
                     borderWidth: line_width,
-                    pointRadius: line_width,
+                    lineTension: Y.graph_tension,
+                    pointRadius: point_radius,
+                    showLine: line_width > 0,
                 });
 
             // axes
