@@ -206,6 +206,8 @@ function change_setting_special(name, value, no_close) {
     case 'graph_color_2':
     case 'graph_color_3':
     case 'graph_line':
+    case 'graph_radius':
+    case 'graph_tension':
     case 'graph_text':
         update_chart_options(null, 3);
         break;
@@ -1668,8 +1670,10 @@ function startup() {
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
-            graph_line: [{min: 1, max: 10, step: 0.1, type: 'number'}, 2.2],
+            graph_line: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
+            graph_radius: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
+            graph_tension: [{min: 0, max: 1, step: 0.05, type: 'number'}, 0.4],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
             use_for_arrow: '1',
         },
