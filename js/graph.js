@@ -48,7 +48,6 @@ let all_evals = [],
     },
     charts = {},
     first_num = -1,
-    MAX_EVAL = 10,
     queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,13 +88,14 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
+    let max_eval = Y.graph_clamp;
     if (!isNaN(eval_))
-        return Clamp(eval_ * 1, -MAX_EVAL, MAX_EVAL);
+        return Clamp(eval_ * 1, -max_eval, max_eval);
 
     if (eval_ && eval_.includes('-'))
-        eval_ = -MAX_EVAL;
+        eval_ = -max_eval;
     else if (eval_ != undefined)
-        eval_ = MAX_EVAL;
+        eval_ = max_eval;
     else
         eval_ = 0;
 

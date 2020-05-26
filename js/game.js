@@ -121,7 +121,7 @@ let ANALYSIS_URLS = {
         live: 'stand',
     },
     ENGINE_FEATURES = {
-        AllieStein: 1,                  // & 1 => NN engine
+        AllieStein: 5,                  // & 1 => NN engine
         LCZero: 3,                      // & 2 => Leela variations
     },
     event_stats = {
@@ -252,6 +252,20 @@ function _leelaEvalToWinPct(eval_) {
 }
 
 /**
+ * Convert centipawns to score %
+ * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
+ * @param {number} cp
+ * @returns {number}
+ */
+function allie_cp_to_score(eval_) {
+    let cp = eval_ * 100;
+    if (Abs(cp) > 1000)
+        return (cp + (cp > 0 ? 127407 : -127407)) / 153007 * 50;
+    else
+        return Math.atan(cp / 111) / 1.74 * 50;
+}
+
+/**
  * Calculate the probability to draw or win
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
@@ -270,6 +284,8 @@ function calculate_probability(short_engine, eval_)
     if (feature & 1) {
         if (feature & 2)
             white_win = _leelaEvalToWinPct(eval_);
+        else if (feature & 4)
+            white_win = allie_cp_to_score(eval_);
         else
             white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 100 - 50;
     }
@@ -3286,6 +3302,9 @@ function opened_table(node, name, tab) {
  * @param {string} scolor white, black
  */
 function popup_custom(id, name, e, scolor) {
+    if (e.buttons)
+        return;
+
     let show,
         popup = Id(id),
         type = e.type;

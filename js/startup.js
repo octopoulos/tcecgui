@@ -195,6 +195,9 @@ function change_setting_special(name, value, no_close) {
     case 'export_settings':
         DownloadObject(Y, 'tcec-settings.json');
         break;
+    case 'graph_clamp':
+        update_player_charts('eval', xboards[Y.x].moves);
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -1642,6 +1645,7 @@ function startup() {
         },
         graph: {
             graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
+            graph_clamp: [{max: 100, min: 1, type: 'number'}, 10],
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
