@@ -775,18 +775,26 @@ class XBoard {
      */
     chess_backtrack(ply) {
         if (DEV.ply)
-            LS(`no fen available for ply ${ply}`);
+            LS(`${this.id}: no fen available for ply ${ply}`);
 
-        let moves = this.moves;
-        if (this.real)
-            Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
+        let moves = this.moves,
+            real_moves = this.real.moves;
 
         for (let curr = ply - 1; curr >= 0; curr --) {
             let move = moves[curr];
             if (!move) {
                 if (DEV.ply)
-                    LS(`no move at ply ${curr}`);
-                return false;
+                    LS(`${this.id}: no move at ply ${curr}`);
+
+                let real_move = real_moves[curr];
+                if (!real_move)
+                    return false;
+
+                moves[curr] = {
+                    fen: real_move.fen,
+                    ply: curr,
+                };
+                move = moves[curr];
             }
 
             if (move.fen) {
@@ -796,21 +804,13 @@ class XBoard {
                         result = this.chess_move(move_next.m);
                     if (!result) {
                         if (DEV.ply)
-                            LS(`invalid move at ply ${next}: ${move_next.m}`);
+                            LS(`${this.id}: invalid move at ply ${next}: ${move_next.m}`);
                         return false;
                     }
                     Assign(move_next, result);
                     move_next.fen = this.chess_fen();
-                    // LS(`next=${next} : ${get_move_ply(move_next)}`);
                     move_next.ply = next;
-                }
-
-                if (DEV.fen) {
-                    let ply = get_move_ply(move);
-                    if (ply != curr) {
-                        LS(`chess_backtrack: ${ply} != ${curr}`);
-                        LS(moves);
-                    }
+                    // LS(`next=${next} : ${get_move_ply(move_next)}`);
                 }
                 return true;
             }
@@ -1421,7 +1421,7 @@ class XBoard {
      * 3d rendering
      */
     render_3d() {
-        LS(`render_3d: ${T}`);
+        // LS(`render_3d: ${T}`);
         if (!T)
             return;
     }
