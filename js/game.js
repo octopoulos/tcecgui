@@ -2615,7 +2615,8 @@ function update_live_eval(section, data, id, force_ply) {
     // moves => maybe old data?
     if (moves) {
         if (data.round != main.round) {
-            LS(`maybe old data => SKIP: ${data.round} vs ${main.round}`);
+            if (DEV.new)
+                LS(`maybe old data => SKIP: ${data.round} vs ${main.round}`);
             return;
         }
         // ply is offset by 1
