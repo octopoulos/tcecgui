@@ -971,9 +971,10 @@ function DefaultFloat(value, def) {
  * @param {Object} object
  * @param {string} name output filename
  * @param {boolean=} is_raw save raw object instead of converting it to JSON
+ * @param {string=} space JSON space for pretty output
  */
-function DownloadObject(object, name, is_raw) {
-    let text = is_raw? object: `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(object))}`,
+function DownloadObject(object, name, is_raw, space) {
+    let text = is_raw? object: `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(object, null, space))}`,
         node = document.createElement('a');
     node.setAttribute('href', text);
     node.setAttribute('download', name);
