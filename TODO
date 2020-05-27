@@ -3,7 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
-~          : 2020-05-26 : eval win% option between -100 and 100 => no need to clamp anything!
+~          : 2020-05-27 : optimised wheel scroll
+2020-05-28 : 2020-05-27 : improved copy FEN from the table
 2020-05-26 : 2020-05-26 : graph radius + graph tension
 2020-05-26 : 2020-05-26 : don't import undesired values like season or game#
 2020-05-26 : 2020-05-26 : constant engine info height
@@ -265,11 +266,13 @@ high:
 medium:
 -          : 2020-05-23 : dynamic pagination and search nodes
 low:
+~          : 2020-05-26 : eval win% option between -100 and 100 => no need to clamp anything!
 ~          : 2020-04-13 : add 3d board
+lowest:
+-          : 2020-05-27 : minimise chat reload when populating areas
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
-lowest:
--          : 2020-05-26 : reenable twitch_video after a few days
+-          : 2020-05-26 : update overview for past moves?
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 -          : 2020-04-24 : add 3d dark room

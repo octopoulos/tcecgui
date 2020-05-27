@@ -18,11 +18,11 @@ document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, From
 HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
-S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
-Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style,
-TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
-update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
+S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
+SetDefault, Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d,
+STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression,
+translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
@@ -135,6 +135,7 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
+    MAX_HISTORY = 20,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -975,7 +976,7 @@ function create_live_table(is_live, id) {
         '<vert class="live fastart">'
             + '<div class="live-basic">'
                 + '<i class="engine" data-x="name"></i>'
-                + ' <i class="eval" data-x="eval"></i> <i class="live-score eval">[<i data-x="score"></i>]</i>'
+                + ` <i class="eval" data-x="eval"></i> <i class="percent">[<i data-x="score"></i>]</i>`
             + '</div>';
 
     if (is_live)
@@ -1050,7 +1051,7 @@ function create_tables() {
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
         touch_handle(e);
-    }, {passive: false});
+    }, {passive: true});
 }
 
 /**
@@ -1476,7 +1477,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         set_season_events();
 
     // open game
-    C('[data-g]', function() {
+    C('[data-g]', function(e) {
+        if (HasClass(e.target, 'fen'))
+            return;
         if (cannot_click())
             return;
 
@@ -1487,7 +1490,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         let game = this.dataset.g * 1;
         if (section == 'archive') {
             save_option('game', game);
-            open_game();
+            open_game(true);
         }
         // make sure the game is over
         else if (_('a.game[href]', this))
@@ -1496,9 +1499,18 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // fen preview
     Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
-        if (e.type == 'click')
+        if (e.type == 'click') {
             CopyClipboard(TEXT(this));
-        popup_custom('popup-fen', 'fen', e);
+            let overlay = xboards.xfen.overlay;
+            HTML(overlay,
+                '<vert class="fcenter facenter h100">'
+                    + `<div class="copy">${translate_default('COPIED')}</div>`
+                + '</vert>'
+            );
+            Style(overlay, 'opacity:1;transition:opacity 0s');
+        }
+        else
+            popup_custom('popup-fen', 'fen', e);
     });
 
     // 6) update shortcuts
@@ -1632,8 +1644,9 @@ function open_event() {
 
 /**
  * Open an archived game
+ * @param {boolean=} direct clicked on the game => scroll when loaded
  */
-function open_game() {
+function open_game(direct) {
     let info = tour_info.archive,
         event = info.url;
     if (!event)
@@ -1643,7 +1656,7 @@ function open_game() {
         push_state();
         check_hash();
     }
-    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`);
+    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`, direct);
 }
 
 /**
@@ -2056,8 +2069,9 @@ function download_live_evals(round) {
  * Download the PGN
  * @param {string} section archive, live
  * @param {string} url
+ * @param {boolean=} direct scroll up when loaded
  */
-function download_pgn(section, url) {
+function download_pgn(section, url, direct) {
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
@@ -2075,8 +2089,8 @@ function download_pgn(section, url) {
         pgns[section] = null;
         update_pgn(section, data);
 
-        if (section == 'archive')
-            ScrollDocument('#table-view');
+        if (section == 'archive' && direct)
+            scroll_adjust('#table-view', true);
     });
 }
 
@@ -2239,7 +2253,7 @@ function update_move_pv(section, ply, move) {
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
-    if (!Y[`hide_eval_${id}`]) {
+    if (Y.info_eval) {
         for (let child of [box_node, node]) {
             HTML(`[data-x="eval"]`, status_eval, child);
             HTML(`[data-x="score"]`, status_score, child);
@@ -2660,7 +2674,7 @@ function update_live_eval(section, data, id, force_ply) {
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
-        let is_hide = Y[`hide_eval_${id + 2}`],
+        let is_hide = !Y.info_eval,
             dico = {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
@@ -2811,7 +2825,7 @@ function add_history() {
     y_index ++;
     y_states[y_index] = text;
     y_states.length = y_index + 1;
-    if (y_states.length > 10)
+    if (y_states.length > MAX_HISTORY)
         y_states.shift();
 }
 
@@ -3316,10 +3330,12 @@ function popup_custom(id, name, e, scolor) {
             HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
         }
         else if (name == 'fen') {
-            let fen = TEXT(e.target);
-            xboards.xfen.instant();
-            if (!xboards.xfen.set_fen(fen, true))
+            let fen = TEXT(e.target),
+                xfen = xboards.xfen;
+            xfen.instant();
+            if (!xfen.set_fen(fen, true))
                 return;
+            Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
         }
 
         // place the popup in a visible area on the screen

@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-05-27
 //
 // global variables/functions shared across multiple js files
 //
@@ -25,7 +25,7 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200525';
+    VERSION = '20200527';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

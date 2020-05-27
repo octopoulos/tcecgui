@@ -1228,7 +1228,7 @@ function show_settings(name, xy) {
         // TODO: improve that part, it can be customised better
         if (is_string && data == '2')
             color = '#f00';
-        let style = color? ` style="color:${color}"`: '';
+        let style = color? `${(Y.theme == 'dark')? ' class="shadow"': ''} style="color:${color}"`: '';
 
         lines.push(
             `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
