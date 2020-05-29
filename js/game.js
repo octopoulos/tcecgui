@@ -564,6 +564,19 @@ function create_boards() {
 }
 
 /**
+ * PV board order
+ */
+function order_boards() {
+    if (HasClass('#table-pv', 'frow'))
+        Style('#box-pv0, #box-pv1', 'order:unset');
+    else {
+        let rotate = xboards[Y.x].rotate;
+        Style('#box-pv0', `order:${1 - rotate}`);
+        Style('#box-pv1', `order:${rotate}`);
+    }
+}
+
+/**
  * Redraw the arrows
  */
 function redraw_arrows() {
@@ -3197,6 +3210,7 @@ function handle_board_events(board, type, value) {
         else if (value == 'rotate') {
             show_board_info();
             redraw_arrows();
+            order_boards();
         }
         break;
     // move list => ply selected

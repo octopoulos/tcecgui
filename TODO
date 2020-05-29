@@ -4,6 +4,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
 ~          : 2020-05-27 : optimised wheel scroll
+2020-05-29 : 2020-05-29 : PV order when aligned vertically, follows board.reverse too
 2020-05-29 : 2020-05-27 : detect standby/resume + skipped moves => download JSON again
 2020-05-28 : 2020-05-27 : improved copy FEN from the table
 2020-05-26 : 2020-05-26 : graph radius + graph tension

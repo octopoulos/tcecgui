@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-23
+// @version 2020-05-27
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -12,21 +12,22 @@
 /*
 globals
 _, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
-api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, detect_device, DEV,
 document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
 game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
 Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, Parent, parse_dev, PIECE_THEMES, popup_custom,
-reset_old_settings, resize_game, Resource, Round,
-S, save_option, screen, ScrollDocument, set_game_events, set_modal_events, SetDefault, setInterval, Show, show_banner,
-show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
-TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
-update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch,
-VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
-virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
+merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, order_boards, Parent, parse_dev, PIECE_THEMES,
+popup_custom, reset_old_settings, resize_game, Resource, resume_game, Round,
+S, save_option, screen, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show,
+show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
+startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node,
+translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
+X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -37,8 +38,8 @@ let AD_STYLES = {
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
-        '#moves-pv0, #moves-pv1, #table-live0, #table-live1': 'live',
         '.pagin, #table-tabs': 'extra',
+        '.status': 'hide',
         '#table-chat': 'quick',
         '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
         '.swaps': 'panel',
@@ -55,6 +56,7 @@ let AD_STYLES = {
         left: [281, 1200],
         right: [281, 720],
     },
+    resume_time = Now(),
     STREAM_SETTINGS = {},
     TAB_NAMES = {
         depth: 'D/SD',
@@ -69,6 +71,7 @@ let AD_STYLES = {
     TIMEOUT_font = 200,
     TIMEOUT_graph = 500,
     TIMEOUT_popup = 600,
+    TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
 
 /**
@@ -140,6 +143,10 @@ function change_setting_special(name, value, no_close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
+    let result = true;
+
+    add_history();
+
     switch (name) {
     case 'animate':
     case 'board_theme':
@@ -171,7 +178,6 @@ function change_setting_special(name, value, no_close) {
         resize();
         break;
     case 'click_here_to_RESET_everything':
-        add_history();
         reset_settings(true);
         break;
     case 'custom_black':
@@ -185,7 +191,6 @@ function change_setting_special(name, value, no_close) {
         update_board_theme(is_pv? 2: 1);
         break;
     case 'default_positions':
-        add_history();
         Y.areas = Assign({}, DEFAULTS.areas);
         populate_areas();
         break;
@@ -211,26 +216,10 @@ function change_setting_special(name, value, no_close) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
-    case 'hide_eval_0':
-    case 'hide_eval_1':
-    case 'hide_eval_2':
-    case 'hide_eval_3':
-    case 'hide_moves_0':
-    case 'hide_moves_1':
-    case 'hide_moves_2':
-    case 'hide_moves_3':
-    case 'graph_aspect_ratio':
-    case 'panel_adjust':
-    case 'status_pv':
-        resize_panels(true);
-        break;
     case 'hide':
-        add_history();
         hide_element(context_target);
-        add_history();
         break;
     case 'import_settings':
-        add_history();
         try {
             import_settings(JSON.parse(value), true);
         }
@@ -246,10 +235,18 @@ function change_setting_special(name, value, no_close) {
         catch (err) {
         }
         break;
+    case 'info_eval':
+    case 'info_moves':
+    case 'info_moves_live':
+    case 'info_moves_pv':
+    case 'info_percent':
+    case 'graph_aspect_ratio':
+    case 'panel_adjust':
+    case 'status_pv':
+        resize_panels(true);
+        break;
     case 'join_next':
-        add_history();
         tab_element(context_target);
-        add_history();
         break;
     case 'live_log':
         if (Visible('#table-log'))
@@ -264,7 +261,6 @@ function change_setting_special(name, value, no_close) {
         resize_move_lists();
         break;
     case 'preset':
-        add_history();
         if (value == 'custom')
             LS('custom');
         else if (value == 'default settings')
@@ -295,10 +291,11 @@ function change_setting_special(name, value, no_close) {
             save_option(`arrow_color_${id}`, Y[`graph_color_${id}`]);
         break;
     default:
-        return change_setting_game(name, value);
+        result = change_setting_game(name, value);
     }
 
-    return true;
+    add_history();
+    return result;
 }
 
 /**
@@ -383,7 +380,7 @@ function check_stream() {
     resize(true);
 
     if (stream)
-        ScrollDocument('#table-view');
+        scroll_adjust('#overview');
 
     // maybe the board has not been loaded yet
     if (!xboards.live)
@@ -619,7 +616,7 @@ function init_globals() {
         listen_log();
 
     // font size detector
-    setInterval(() => {
+    add_timeout('font', () => {
         let font_height = Id('text').offsetHeight;
         if (font_height != old_font_height || window.innerHeight != old_window_height) {
             resize();
@@ -628,8 +625,17 @@ function init_globals() {
         }
 
         if (Y.stream)
-            ScrollDocument('#table-view');
-    }, TIMEOUT_font);
+            ScrollDocument('#overview');
+    }, TIMEOUT_font, true);
+
+    // suspend/resume
+    add_timeout('resume', () => {
+        let now = Now(),
+            diff = now - resume_time;
+        if (diff * 1000 > TIMEOUT_resume * 3)
+            resume_game();
+        resume_time = now;
+    }, TIMEOUT_resume, true);
 }
 
 /**
@@ -817,7 +823,6 @@ function reset_settings(is_default) {
     init_customs();
     close_popups();
     resize(true);
-    add_history();
 }
 
 /**
@@ -891,7 +896,9 @@ function resize_panels(force) {
     Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
     Class('.xmoves', 'column', !is_hori, center);
     Class('.xboard', 'fcol', is_hori, center);
+
     Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
+    order_boards();
 
     // resize all charts
     E('.chart', node => {
@@ -990,6 +997,8 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             HTML(name == 'about'? '#popup-desc': '#modal', html);
         else
             name = node.dataset.id;
+
+        Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
         translate_node(node);
 
         // align the popup with the target, if any
@@ -1106,14 +1115,11 @@ function update_shortcuts() {
  */
 function update_visible() {
     S('.status', Y.status_pv);
-    S('#box-pv0 .eval, #moves-pv0 .eval', !Y.hide_eval_0);
-    S('#box-pv1 .eval, #moves-pv1 .eval', !Y.hide_eval_1);
-    S('#box-live0 .eval, #table-live0 .eval', !Y.hide_eval_2);
-    S('#box-live1 .eval, #table-live1 .eval', !Y.hide_eval_3);
-    S('#pv0 .xmoves, #moves-pv0 .live-pv', !Y.hide_moves_0);
-    S('#pv1 .xmoves, #moves-pv1 .live-pv', !Y.hide_moves_1);
-    S('#live0 .xmoves, #table-live0 .live-pv', !Y.hide_moves_2);
-    S('#live1 .xmoves, #table-live1 .live-pv', !Y.hide_moves_3);
+    S('.eval', Y.info_eval);
+    S('.percent', Y.info_percent);
+    S('#archive .xmoves, #live .xmoves', Y.info_moves);
+    S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
+    S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
 }
 
@@ -1149,10 +1155,8 @@ function window_click(e) {
                 return;
             }
         }
-        if (HasClass(target, 'nav')) {
-            in_modal = true;
+        if (HasClasses(target, 'fen|nav'))
             return;
-        }
         if (HasClass(target, 'page')) {
             let parent = Parent(target, {class_: 'pagin'});
             change_page(parent.id.split('-')[0], target.dataset.p);
@@ -1325,7 +1329,7 @@ function set_global_events() {
     C('#nav-archive', () => {
         // TODO: should scroll if there's no archive game loaded only??
         if (Y.archive_scroll) {
-            ScrollDocument('#tables');
+            scroll_adjust('#tables');
             if (!['cross', 'h2h', 'sched', 'season'].includes(get_active_tab('table')[0]))
                 open_table('season');
         }
@@ -1347,7 +1351,7 @@ function set_global_events() {
             e.preventDefault();
         });
     });
-    Events('#archive, #live, #live0, #live1, #pv0, #pv1, #pva', 'contextmenu', function(e) {
+    Events('#archive, #live, #live0, #live1, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva, #table-live0, #table-live1', 'contextmenu', function(e) {
         let is_pv = '01'.includes(this.id.slice(-1)),
             target = e.target;
 
@@ -1356,6 +1360,10 @@ function set_global_events() {
                 name;
             if (dataset && ['next', 'prev'].includes(dataset.x))
                 return;
+            else if (HasClass(target, 'live-basic'))
+                name = 'hide';
+            else if (HasClass(target, 'live-pv'))
+                name = 'live';
             else if (HasClass(target, 'xbottom'))
                 return;
             else if (HasClass(target, 'xcontain'))
@@ -1392,10 +1400,15 @@ function set_global_events() {
         touch_handle(e, true);
     });
     Events(window, 'wheel', e => {
-        if (!is_fullscreen())
+        if (!is_fullscreen()) {
+            if (Y.wheel_adjust)
+                add_timeout('wheel', () => {
+                    scroll_adjust();
+                }, 200);
             return;
+        }
         wheel_event(e, true);
-    });
+    }, {passive: true});
 
     // drag and drop
     Events(window, 'dragstart', e => {
@@ -1442,6 +1455,21 @@ function load_settings() {
 function startup() {
     // engine overrides
     __PREFIX = 'tc_';
+
+    // 1:align_top, 2:align_bottom, + gap, priority
+    ANCHORS = {
+        '#center0': [1, 4, 1],
+        '#header': [1, 0, 1],
+        '#left0': [1, 4, 1],
+        '#main': [2, 0, 3],
+        '#overview tbody': [1, 0, 1],
+        '#overview': [1, 0, 2],
+        '#right0': [1, 4, 1],
+        '#table-pagin': [1, 2, 1],
+        '#tables .scroller': [1, 2, 1],
+        '#tables': [1, 2, 1],
+    };
+
     // VB=viewBox=; PFC=path fill="currentColor"
     ICONS = {
         calendar: 'VB="0 0 448 512"><PFC d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-196c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM192 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM64 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z"/>',
@@ -1571,7 +1599,7 @@ function startup() {
         // new column after 9 items
         _split: 9,
         general: {
-            preset: [['custom', 'default settings', 'kanchess', 'octopoulo'], 'custom'],
+            preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
         },
         audio: {
             audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
@@ -1657,6 +1685,7 @@ function startup() {
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
             tab_background: [['none', 'gradient'], 'gradient'],
+            wheel_adjust: [ON_OFF, 1],
             wrap: [ON_OFF, 1],
             wrap_cross: [AUTO_ON_OFF, 'auto'],
             wrap_h2h: [AUTO_ON_OFF, 'auto'],
@@ -1665,7 +1694,7 @@ function startup() {
         },
         graph: {
             eval_clamp: [{max: 100, min: 1, type: 'number'}, 10],
-            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.01, type: 'number'}, 1.5],
+            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.005, type: 'number'}, 1.5],
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
@@ -1673,22 +1702,20 @@ function startup() {
             graph_line: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
             graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
             graph_radius: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
-            graph_tension: [{min: 0, max: 1, step: 0.05, type: 'number'}, 0.1],
+            graph_tension: [{min: 0, max: 0.5, step: 0.01, type: 'number'}, 0.1],
             graph_text: [{min: 1, max: 30, type: 'number'}, 10],
             use_for_arrow: '1',
         },
-        hide: {
-            hide_eval_0: [ON_OFF, 0],
-            hide_eval_1: [ON_OFF, 0],
-            hide_eval_2: [ON_OFF, 0],
-            hide_eval_3: [ON_OFF, 0],
-            hide_moves_0: [ON_OFF, 0],
-            hide_moves_1: [ON_OFF, 0],
-            hide_moves_2: [ON_OFF, 0],
-            hide_moves_3: [ON_OFF, 0],
+        info: {
+            info_eval: [ON_OFF, 1],
+            info_moves: [ON_OFF, 1],
+            info_moves_live: [ON_OFF, 1],
+            info_moves_pv: [ON_OFF, 1],
+            info_percent: [ON_OFF, 1],
         },
         live: {
             copy_moves: '1',
+            info_moves_live: [ON_OFF, 1],
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
@@ -1725,11 +1752,13 @@ function startup() {
         copy: {
             _pop: true,
             copy_moves: '1',
+            info_moves: [ON_OFF, 1],
             move_height: [{max: 30, min: 5, type: 'number'}, 5],
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
+            info_moves_pv: [ON_OFF, 1],
             move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
         },
     });
