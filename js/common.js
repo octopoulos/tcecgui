@@ -7,7 +7,7 @@
 //
 /*
 globals
-console, document, FormData, location, Node, Window, XMLHttpRequest
+console, document, FormData, location, Node, window, Window, XMLHttpRequest
 */
 'use strict';
 
@@ -671,9 +671,10 @@ function S(sel, show, parent, mode='') {
 /**
  * Scroll the document to the top
  * @param {string|number=} top if undefined then returns the scrollTop value
+ * @param {boolean=} smooth
  * @returns {number}
  */
-function ScrollDocument(top) {
+function ScrollDocument(top, smooth) {
     let scroll = document.scrollingElement;
     if (top != undefined) {
         // top can be a selector too
@@ -682,6 +683,10 @@ function ScrollDocument(top) {
             if (!top)
                 return;
             top = top.offsetTop;
+        }
+        if (smooth) {
+            window.scrollTo({top: top, behavior: 'smooth'});
+            return top;
         }
         scroll.scrollTop = top;
     }

@@ -622,7 +622,7 @@ grid {
 #xfen .xmoves {
     display: none;
 }
-.copy {
+.xcopy {
     color: rgba(255, 0, 0, 0.7);
     font-size: 1.5em;
     font-weight: 500;
@@ -802,18 +802,18 @@ grid {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
-#table-view {
+#overview {
     font-size: 1em;
     margin-bottom: 0;
 }
-#table-view td {
+#overview td {
     padding: 0.3em;
     white-space: nowrap;
 }
-#table-view th {
+#overview th {
     padding: 0.2em 0.5em;
 }
-#table-view td[data-x="event"] {
+#overview td[data-x="event"] {
     font-weight: 700;
 }
 #info0,

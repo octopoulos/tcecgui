@@ -195,12 +195,14 @@ let ANALYSIS_URLS = {
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
+        overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
         stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
-        view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
+    TIMEOUT_live_delay = 1,
+    TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
     tour_info = {
@@ -397,6 +399,17 @@ function get_short_name(engine)
     if (!engine)
         return '';
     return engine.includes('Baron')? 'Baron': Split(engine)[0];
+}
+
+/**
+ * Get XHR elapsed time
+ * @param {Object} xhr
+ * @returns {number}
+ */
+function get_xhr_elapsed(xhr) {
+    let curr_time = new Date(xhr.getResponseHeader('date')),
+        last_mod = new Date(xhr.getResponseHeader('last-modified'));
+    return curr_time.getTime() - last_mod.getTime();
 }
 
 /**
@@ -995,7 +1008,7 @@ function create_live_table(is_live, id) {
 /**
  * Create a table
  * @param {string[]} columns
- * @param {boolean=} add_empty add an empty row (good for table-view)
+ * @param {boolean=} add_empty add an empty row (good for overview)
  * @returns {string}
  */
 function create_table(columns, add_empty) {
@@ -1034,9 +1047,10 @@ function create_table_columns(columns, widths, no_translates=[]) {
 function create_tables() {
     // 1) normal tables
     Keys(TABLES).forEach(name => {
-        let table = TABLES[name],
-            html = create_table(Split(table), name == 'view');
-        HTML(`#table-${name}`, html);
+        let is_overview = (name == 'overview'),
+            table = TABLES[name],
+            html = create_table(Split(table), is_overview);
+        HTML(`#${is_overview? '': 'table-'}${name}`, html);
     });
     translate_node('body');
 
@@ -1143,11 +1157,8 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
             return;
 
         let now = Now(true);
-        if (data && add_delta) {
-            let curr_time = new Date(xhr.getResponseHeader('date')),
-                last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            data.delta = curr_time.getTime() - last_mod.getTime();
-        }
+        if (data && add_delta)
+            data.delta = get_xhr_elapsed(xhr);
 
         if (key) {
             save_storage(key, {data: data, time: Floor(now)});
@@ -1504,7 +1515,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             let overlay = xboards.xfen.overlay;
             HTML(overlay,
                 '<vert class="fcenter facenter h100">'
-                    + `<div class="copy">${translate_default('COPIED')}</div>`
+                    + `<div class="xcopy">${translate_default('COPIED')}</div>`
                 + '</vert>'
             );
             Style(overlay, 'opacity:1;transition:opacity 0s');
@@ -2044,6 +2055,44 @@ function check_adjudication(dico, total_moves) {
 }
 
 /**
+ * Check if some moves are missing => reload live.json
+ * @param {number=} ply
+ */
+function check_missing_moves(ply) {
+    let section = Y.x;
+    if (section != 'live')
+        return;
+
+    let main = xboards.live,
+        now = Now(true),
+        delta = now - main.time;
+    if (delta < TIMEOUT_live_reload)
+        return;
+
+    let empty = -1,
+        moves = main.moves,
+        num_move = moves.length;
+
+    if (ply && !moves[ply - 1])
+        empty = ply - 1;
+    else
+        for (let i = num_move - 1; i >= 0; i --)
+            if (!moves[i]) {
+                empty = i;
+                break;
+            }
+
+    if (DEV.new)
+        LS(`empty=${empty} : delta=${delta}`);
+    if (empty < 0)
+        return;
+
+    add_timeout(section, () => {
+        download_pgn(section, 'live.json', false, true);
+    }, TIMEOUT_live_delay * 1000);
+}
+
+/**
  * Download live evals for the current even + a given round
  * @param {number} round
  */
@@ -2070,16 +2119,22 @@ function download_live_evals(round) {
  * @param {string} section archive, live
  * @param {string} url
  * @param {boolean=} direct scroll up when loaded
+ * @param {boolean=} reset_moves
  */
-function download_pgn(section, url, direct) {
+function download_pgn(section, url, direct, reset_moves) {
+    if (DEV.new)
+        LS(`download_pgn: ${section} : ${url} : ${direct} : ${reset_moves}`);
+    xboards[section].time = Now(true);
+
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
 
         if (data) {
-            let last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            data.elapsed = Now(true) - last_mod.getTime() / 1000;
-            data.gameChanged = 1;
+            Assign(data, {
+                elapsed: get_xhr_elapsed(xhr) / 1000,
+                gameChanged: 1,
+            });
 
             // FUTURE: use ?? operator
             if (section == 'archive' && data.Headers)
@@ -2087,10 +2142,10 @@ function download_pgn(section, url, direct) {
         }
 
         pgns[section] = null;
-        update_pgn(section, data);
+        update_pgn(section, data, reset_moves);
 
         if (section == 'archive' && direct)
-            scroll_adjust('#table-view', true);
+            scroll_adjust('#overview', true);
     });
 }
 
@@ -2290,7 +2345,7 @@ function update_overview_basic(section, headers) {
     if (section != Y.x)
         return;
 
-    let overview = Id('table-view');
+    let overview = Id('overview');
 
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
@@ -2356,7 +2411,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         return;
 
     let finished,
-        overview = Id('table-view'),
+        overview = Id('overview'),
         is_live = (section == 'live'),
         main = xboards[section],
         cur_ply = main.ply,
@@ -2431,8 +2486,9 @@ function update_overview_moves(section, headers, moves, is_new) {
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
  * @param {Object} pgn
+ * @param {boolean=} reset_moves
  */
-function update_pgn(section, pgn) {
+function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
         return;
 
@@ -2446,7 +2502,7 @@ function update_pgn(section, pgn) {
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
-        overview = Id('table-view');
+        overview = Id('overview');
 
     // 2) update overview
     if (pgn.Users)
@@ -2462,7 +2518,6 @@ function update_pgn(section, pgn) {
     }
 
     // 3) check for a new game
-    // TODO: bug at this point
     let main = xboards[section];
     if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
@@ -2480,12 +2535,20 @@ function update_pgn(section, pgn) {
         update_move_info(0, {});
         update_move_info(1, {});
     }
+    // can happen after resume
+    else if (reset_moves) {
+        HTML(main.xmoves, '');
+        HTML(main.pv_node, '');
+    }
 
     if (!num_move)
         return;
 
     // 4) add the moves
     main.add_moves(moves);
+    check_missing_moves();
+    main.time = Now(true);
+
     if (is_same)
         finished = update_overview_moves(section, headers, moves, true, true);
 
@@ -2522,7 +2585,7 @@ function update_pgn(section, pgn) {
         }
     }
 
-    // clock
+    // 5) clock
     if (section == 'live' && last_move) {
         let who = 1 - last_move.ply % 2;
         if (!new_game)
@@ -2571,7 +2634,7 @@ function clock_tick(id) {
  * @param {number} count
  */
 function set_viewers(count) {
-    HTML('#table-view td[data-x="viewers"]', count);
+    HTML('#overview td[data-x="viewers"]', count);
 }
 
 /**
@@ -2699,6 +2762,7 @@ function update_live_eval(section, data, id, force_ply) {
     board.add_moves_string(data.pv, force_ply);
 
     update_live_chart(moves || [data], id + 2, !!moves || force_ply);
+    check_missing_moves(ply);
 }
 
 /**
@@ -2762,6 +2826,7 @@ function update_player_eval(section, data) {
     }
 
     update_live_chart([data], id);
+    check_missing_moves(data.ply);
 }
 
 /**
@@ -3023,8 +3088,14 @@ function change_setting_game(name, value) {
         break;
     case 'copy_moves':
         let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-        if (target)
-            CopyClipboard(target.innerText.replace(/\s/g, ' '));
+        if (target) {
+            let text = target.innerText.replace(/\s/g, ' ');
+            if (text.slice(0, 3) == '0. ')
+                text = text.slice(3);
+            if (text.slice(-2) == ' *')
+                text = text.slice(0, -2);
+            CopyClipboard(text);
+        }
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
@@ -3365,6 +3436,14 @@ function popup_custom(id, name, e, scolor) {
     }
     else
         add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 500);
+}
+
+/**
+ * Compute woke up
+ */
+function resume_game() {
+    check_missing_moves();
+    show_board_info();
 }
 
 /**

@@ -1193,11 +1193,10 @@ function show_settings(name, xy) {
         keys = new_keys;
     }
 
-    if (name)
-        lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
-
     if (parent_id)
         lines.push(`<div class="item2 span">${parent_id}</div>`);
+    else if (name)
+        lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
     keys.forEach(key => {
         // separator
@@ -1478,7 +1477,7 @@ function startup_3d() {
         general: {
             export_settings: '1',
             import_settings: [{type: 'text'}, ''],
-            language: [LANGUAGES, 'eng'],
+            language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],
         },
         audio: {

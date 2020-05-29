@@ -225,7 +225,8 @@ class XBoard {
         if (this.check_locked(['move', moves, cur_ply]))
             return;
 
-        let is_ply = (cur_ply != undefined),
+        let is_empty = !HTML(this.xmoves),
+            is_ply = (cur_ply != undefined),
             lines = [],
             num_book = 0,
             num_new = moves.length,
@@ -258,8 +259,8 @@ class XBoard {
                 num_book += move.book;
             }
 
-            // TODO: remove this ... sometimes we need to add missing nodes
-            if (i >= 0 && ply < num_move)
+            // adding an old move?
+            if (!is_empty && i >= 0 && ply < num_move)
                 continue;
 
             // indicate current ply
