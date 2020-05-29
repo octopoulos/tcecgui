@@ -181,8 +181,6 @@
   "key_repeat": 70,
   "key_repeat_initial": 500,
   "lighting": "high",
-  "live_engine_1": 1,
-  "live_engine_2": 1,
   "live_log": "all",
   "live_pv": 1,
   "max_center": 410,

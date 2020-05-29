@@ -272,9 +272,16 @@ class XBoard {
             if (ply % 2 == 0) {
                 if (is_ply)
                     lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
+                else if (i < 0)
+                    for (let [parent, last] of parent_lasts) {
+                        let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
+                        parent.insertBefore(node, last);
+                        for (let j = 0; j < 2; j ++)
+                            parent.insertBefore(CreateNode('i'), last);
+                    }
                 else
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode(i < 0? 'a': 'i', `${1 + ply / 2}.`, (i < 0)? {class: 'turn', 'data-i': -1}: {class: 'turn'});
+                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
                         parent.insertBefore(node, last);
                     }
             }
@@ -1270,7 +1277,7 @@ class XBoard {
         this.analyse_fen();
         update_svg();
 
-        this.markers = [CreateNode('i', '@'), CreateNode('i', '@')];
+        this.markers = [CreateNode('i', '@', {class: 'marker'}), CreateNode('i', '@', {class: 'marker'})];
 
         if (this.hook)
             this.event_hook(this.hook);

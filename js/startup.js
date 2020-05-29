@@ -38,6 +38,7 @@ let AD_STYLES = {
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
+        '.moves': 'copy_copy',
         '.pagin, #table-tabs': 'extra',
         '.status': 'hide',
         '#table-chat': 'quick',
@@ -216,6 +217,16 @@ function change_setting_special(name, value, no_close) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
+    case 'grid':
+    case 'grid_copy':
+    case 'grid_live':
+    case 'grid_pv':
+    case 'move_height':
+    case 'move_height_copy':
+    case 'move_height_live':
+    case 'move_height_pv':
+        resize_move_lists();
+        break;
     case 'hide':
         hide_element(context_target);
         break;
@@ -237,6 +248,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'info_eval':
     case 'info_moves':
+    case 'info_moves_copy':
     case 'info_moves_live':
     case 'info_moves_pv':
     case 'info_percent':
@@ -254,11 +266,6 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'mobility':
         update_visible();
-        break;
-    case 'move_height':
-    case 'move_height_live':
-    case 'move_height_pv':
-        resize_move_lists();
         break;
     case 'preset':
         if (value == 'custom')
@@ -800,9 +807,12 @@ function populate_areas() {
     translate_node('body');
     set_draggable();
 
-    let is_live = (Y.x == 'live');
+    let info_moves_copy = Y.info_moves_copy,
+        is_live = (Y.x == 'live');
     S('#archive', !is_live);
     S('#live', is_live);
+    S('#moves-archive', !is_live && info_moves_copy);
+    S('#moves-live', is_live && info_moves_copy);
 
     update_shortcuts();
     resize();
@@ -856,9 +866,18 @@ function resize(force) {
  * Resize the move lists
  */
 function resize_move_lists() {
-    Style('#archive .xmoves, #live .xmoves', `min-height:${Y.move_height}em`);
-    Style('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', `min-height:${Y.move_height_pv}em`);
-    Style('.live-pv', `min-height:${Y.move_height_live}em`);
+    let styles = [
+        ['#archive .xmoves, #live .xmoves', Y.move_height, Y.grid],
+        ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
+        ['.live-pv', Y.move_height_live, Y.grid_live],
+        ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
+    ];
+
+    for (let [sel, height, grid] of styles) {
+        let extra = grid? `grid-template-columns: repeat(${grid}, 2em 1fr 1fr)`: '';
+        Style(sel, `min-height:${height}em;${extra}`);
+        Class(sel, 'grid', grid);
+    }
 }
 
 /**
@@ -882,7 +901,7 @@ function resize_panels(force) {
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
-    // special case for center panel
+    // special case for center panel - TODO: CHANGE THIS
     let center = Id('center'),
         width = center.clientWidth;
     if (!force && width == old_center)
@@ -1114,10 +1133,12 @@ function update_shortcuts() {
  * Show/hide stuff
  */
 function update_visible() {
+    let section = Y.x;
     S('.status', Y.status_pv);
     S('.eval', Y.info_eval);
     S('.percent', Y.info_percent);
     S('#archive .xmoves, #live .xmoves', Y.info_moves);
+    S(`#moves-${section}`, Y.info_moves_copy);
     S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
     S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
@@ -1351,7 +1372,9 @@ function set_global_events() {
             e.preventDefault();
         });
     });
-    Events('#archive, #live, #live0, #live1, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva, #table-live0, #table-live1', 'contextmenu', function(e) {
+    Events(
+        '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
+        + '#table-live0, #table-live1', 'contextmenu', function(e) {
         let is_pv = '01'.includes(this.id.slice(-1)),
             target = e.target;
 
@@ -1709,22 +1732,27 @@ function startup() {
         info: {
             info_eval: [ON_OFF, 1],
             info_moves: [ON_OFF, 1],
+            info_moves_copy: [ON_OFF, 0],
             info_moves_live: [ON_OFF, 1],
             info_moves_pv: [ON_OFF, 1],
             info_percent: [ON_OFF, 1],
         },
         live: {
             copy_moves: '1',
+            grid_live: [{max: 10, min: 0, type: 'number'}, 0],
             info_moves_live: [ON_OFF, 1],
-            live_engine_1: [ON_OFF, 1],
-            live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
+            move_height_live: [{max: 100, min: 3, type: 'number'}, 3],
         },
         moves: {
-            move_height: [{max: 30, min: 5, type: 'number'}, 5],
-            move_height_live: [{max: 30, min: 3, type: 'number'}, 3],
-            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
+            grid: [{max: 10, min: 0, type: 'number'}, 0],
+            grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
+            grid_live: [{max: 10, min: 0, type: 'number'}, 0],
+            grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
+            move_height: [{max: 100, min: 3, type: 'number'}, 5],
+            move_height_copy: [{max: 100, min: 3, type: 'number'}, 20],
+            move_height_live: [{max: 100, min: 3, type: 'number'}, 3],
+            move_height_pv: [{max: 100, min: 5, type: 'number'}, 5],
         },
         panel: {
             column_bottom: [{max: 8, min: 1, type: 'number'}, 4],
@@ -1752,14 +1780,23 @@ function startup() {
         copy: {
             _pop: true,
             copy_moves: '1',
+            grid: [{max: 10, min: 0, type: 'number'}, 0],
             info_moves: [ON_OFF, 1],
-            move_height: [{max: 30, min: 5, type: 'number'}, 5],
+            move_height: [{max: 100, min: 3, type: 'number'}, 5],
+        },
+        copy_copy: {
+            _pop: true,
+            copy_moves: '1',
+            grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
+            info_moves_copy: [ON_OFF, 1],
+            move_height_copy: [{max: 100, min: 3, type: 'number'}, 20],
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
+            grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
             info_moves_pv: [ON_OFF, 1],
-            move_height_pv: [{max: 30, min: 5, type: 'number'}, 5],
+            move_height_pv: [{max: 100, min: 3, type: 'number'}, 5],
         },
     });
 

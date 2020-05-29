@@ -9,7 +9,8 @@ html {
 
 /* board */
 #archive .xmoves,
-#live .xmoves {
+#live .xmoves,
+.moves {
     background: rgba(255, 255, 255, 0.5);
 }
 .live-pv,

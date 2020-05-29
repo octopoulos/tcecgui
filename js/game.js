@@ -51,12 +51,14 @@ let ANALYSIS_URLS = {
         archive: {
             last: '*',
             main: true,
+            pv_id: '#moves-archive',
             vis: 'archive',
         },
         live: {
             count: 'end',
             last: '*',
             main: true,
+            pv_id: '#moves-live',
             vis: 'live',
         },
         live0: {
@@ -2177,6 +2179,7 @@ function resize_game() {
     }
 
     // sub boards
+    // TODO: CHANGE THIS
     let center = Id('center'),
         width = center.clientWidth;
     Keys(xboards).forEach(key => {
@@ -2726,12 +2729,6 @@ function update_live_eval(section, data, id, force_ply) {
         [ply] = split_move_string(data.pv);
 
     board.evals[ply] = data;
-
-    // live engine is not desired?
-    if (!Y[`live_engine_${id + 1}`]) {
-        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
-        return;
-    }
 
     // update engine name if it has changed
     engine = engine || data.engine;

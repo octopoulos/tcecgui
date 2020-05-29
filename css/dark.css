@@ -31,10 +31,10 @@ html {
     background: rgba(255, 255, 255, 0.08);
 }
 #archive .xmoves,
-#live .xmoves {
+#live .xmoves,
+.moves {
     color: #dcdcdc;
 }
-.live-pv,
 .xmoves {
     background: rgba(255, 255, 255, 0.85);
 }

@@ -189,6 +189,16 @@ grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+.grid {
+    display: grid;
+    overflow-x: hidden;
+}
+.grid > * {
+    white-space: nowrap;
+}
+.grid > .marker {
+    display: none;
+}
 .grid2 {
     grid-template-columns: 0.5fr 1fr;
 }
@@ -513,6 +523,7 @@ grid {
     z-index: 1;
 }
 .live-pv,
+.moves,
 .xmoves {
     align-content: flex-start;
     background: rgba(230, 240, 255, 0.3);
@@ -529,8 +540,9 @@ grid {
 .xmoves.column {
     font-size: 12px;
     height: 192px;
+    margin-left: -1px;
     overflow-y: scroll;
-    width: 8em;
+    width: 10.5em;
 }
 #moves-pv1 .live-pv,
 #pv1 .xmoves {
@@ -551,6 +563,7 @@ grid {
     text-decoration: underline;
 }
 .live-pv > *,
+.moves > *,
 .xmoves > * {
     line-height: initial;
     margin: 0 0.15em;
@@ -559,7 +572,8 @@ grid {
     font-size: 12px;
 }
 #archive .xmoves,
-#live .xmoves {
+#live .xmoves,
+.moves {
     background: transparent;
     border: none;
     font-size: 15px;
@@ -1262,6 +1276,8 @@ pre,
 #live-log,
 .live-pv,
 .live-pv > a,
+.moves,
+.moves > a,
 .scroller,
 .stats,
 .xbottom,
