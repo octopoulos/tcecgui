@@ -206,6 +206,16 @@ grid {
     grid-template-columns: 1fr 0.5fr 1fr;
 }
 
+/* drag & drop */
+.drag {
+    margin: 2px 2px 6px 2px;
+    width: 100%;
+}
+.dragging {
+    background: rgba(192, 64, 64, 0.08);
+    min-height: 4em;
+}
+
 /* header */
 #header {
     background: #343a40;
@@ -387,7 +397,7 @@ grid {
 /* board */
 .xboard {
     line-height: 1em;
-    margin-left: 4px;
+    margin: 0 0 0 4px;
 }
 .xcontain {
     position: relative;
@@ -555,10 +565,12 @@ grid {
 #live1 .xmoves {
     background: rgba(255, 235, 235, 0.9);
 }
+.moves,
 .xmoves {
     height: 5em;
     overflow-y: auto;
 }
+.moves a:hover,
 .xmoves a:hover {
     text-decoration: underline;
 }
@@ -1094,16 +1106,10 @@ grid {
 /* container */
 .area {
     flex: 1;
-    /* min-height: 1em; */
     width: 100%;
 }
-.drag {
-    margin: 2px 2px 6px 2px;
-    width: 100%;
-}
-.dragging {
-    background: rgba(192, 64, 64, 0.08);
-    min-height: 4em;
+#bottom {
+    margin-bottom: 1em;
 }
 #bottom > vert {
     margin: 2px;
@@ -1124,35 +1130,23 @@ grid {
 #canvas {
     pointer-events: all;
 }
-#banners,
-#bottom {
-    margin-bottom: 1em;
+#banners {
+    margin: 0.1em 0 2em 0;
 }
 #banners,
 #main {
     max-width: 1500px;
     width: 95%;
 }
-#left {
-    flex: 2;
+.panel {
+    flex: 1;
     margin: 4px;
-    max-width: calc(100vh - 400px);
-    min-height: 350px;
-    min-width: 281px;
-}
-#center {
-    flex: 2;
-    max-width: 390px;
-    margin: 4px;
+    max-width: 450x;
     min-height: 350px;
     min-width: 300px;
 }
-#right {
-    flex: 2;
-    margin: 4px;
-    max-width: 395px;
-    min-height: 350px;
-    min-width: 281px;
+.panel.full {
+    max-width: unset !important;
 }
 #right.narrow {
     flex: 1;
@@ -1202,8 +1196,9 @@ grid {
     position: relative;
 }
 .graphs {
-    width: 300px;
+    background: rgba(47, 152, 208, 0.1);
     height: 230px;
+    width: 300px;
 }
 .label {
     font-size: 0.9em;
@@ -1247,9 +1242,6 @@ grid {
 }
 #three {
     color: #555;
-}
-.graphs {
-    background-color: rgba(47, 152, 208, 0.1);
 }
 #hide-chat,
 #hide-video {
@@ -1334,13 +1326,5 @@ svg.down {
     #main {
         flex-wrap: wrap;
         width: 100%;
-    }
-    #right {
-        max-width: unset !important;
-    }
-}
-@media (min-width: 930px) {
-    #center {
-        margin: 4px 1.5%;
     }
 }

@@ -189,6 +189,7 @@ class XBoard {
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
         this.ply = 0;                                   // current ply
+        this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
         this.seen = 0;                                  // last seen move -> used to show the counter
@@ -406,7 +407,7 @@ class XBoard {
             }
         });
 
-        this.moves = moves;
+        this.ply_moves[new_ply] = moves;
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
@@ -417,6 +418,8 @@ class XBoard {
         }
 
         if (is_current) {
+            this.moves = moves;
+
             let html = lines.join('');
             for (let parent of [this.xmoves, this.pv_node])
                 HTML(parent, html);
@@ -799,6 +802,7 @@ class XBoard {
                 if (!real_move)
                     return false;
 
+                // TODO: add tests to make sure this is 100% allowed
                 moves[curr] = {
                     fen: real_move.fen,
                     ply: curr,

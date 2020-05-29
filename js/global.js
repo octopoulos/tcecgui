@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-DEV:true, IsArray, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
+DEV:true, IsArray, Keys, LS, Pad, Parent, Round, save_option, X_SETTINGS, Y
 */
 'use strict';
 
@@ -28,6 +28,15 @@ let HOST = 'https://tcec-chess.com',
     VERSION = '20200529';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Get the parent area of a node
+ * @param {Node} node
+ * @returns {Node}
+ */
+function get_area(node) {
+    return Parent(node, {class_: 'area'});
+}
 
 /**
  * Get the move ply, either directly or by looking at the FEN

@@ -16,16 +16,16 @@ ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOA
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, detect_device, DEV,
 document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
-game_action_keyup, get_active_tab, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
-Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+game_action_keyup, get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
+ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, order_boards, Parent, parse_dev, PIECE_THEMES,
 popup_custom, reset_old_settings, resize_game, Resource, resume_game, Round,
 S, save_option, screen, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
-startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node,
-translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle,
+translate_node, translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts,
+update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -46,7 +46,6 @@ let AD_STYLES = {
         '.swaps': 'panel',
     },
     drag_source,
-    old_center,
     old_font_height,
     old_stream = 0,
     old_window_height,
@@ -176,6 +175,7 @@ function change_setting_special(name, value, no_close) {
     case 'max_left':
     case 'max_right':
     case 'max_window':
+    case 'panel_gap':
         resize();
         break;
     case 'click_here_to_RESET_everything':
@@ -248,14 +248,16 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'info_eval':
     case 'info_moves':
-    case 'info_moves_copy':
     case 'info_moves_live':
     case 'info_moves_pv':
     case 'info_percent':
     case 'graph_aspect_ratio':
     case 'panel_adjust':
     case 'status_pv':
-        resize_panels(true);
+        resize_panels();
+        break;
+    case 'info_moves_copy':
+        populate_areas();
         break;
     case 'join_next':
         tab_element(context_target);
@@ -343,8 +345,7 @@ function check_hash_special() {
     Class('#nav-live', 'red', is_live);
     change_theme();
 
-    S('#archive', !is_live);
-    S('#live', is_live);
+    populate_areas();
     S('[data-x="season"]', !is_live, parent);
     S('[data-x="log"]', is_live, parent);
 
@@ -384,7 +385,7 @@ function check_stream() {
     }
 
     change_theme(Y.theme);
-    resize(true);
+    resize();
 
     if (stream)
         scroll_adjust('#overview');
@@ -474,7 +475,7 @@ function handle_drop(e) {
     if (parent && drag_source != child) {
         let next,
             parent_areas = new Set([
-                Parent(drag_source, {class_: 'area'}).id,
+                get_area(drag_source).id,
                 parent.id,
             ]),
             prev_source = drag_source.previousElementSibling,
@@ -732,13 +733,27 @@ function opened_table_special(node, name, tab) {
  */
 function populate_areas() {
     let tabs,
-        areas = Y.areas;
+        areas = Y.areas,
+        default_areas = DEFAULTS.areas;
 
-    // 1) process all areas
+    // 1) count existing
+    Keys(areas).forEach(key => {
+        for (let vector of areas[key])
+            context_areas[vector[0]] = vector;
+    });
+
+    // 2) process all areas
     Keys(areas).forEach(key => {
         let parent = Id(key);
         if (!parent)
             return;
+
+        // add missing defaults
+        for (let vector of default_areas[key]) {
+            if (!context_areas[vector[0]]) {
+                areas[key].push(vector);
+            }
+        }
 
         // remove tabs
         E('.tabs', node => {
@@ -788,7 +803,7 @@ function populate_areas() {
         }
     });
 
-    // 2) activate tabs
+    // 3) activate tabs
     E('.tabs', node => {
         let tabs = From(A('.tab', node)),
             actives = tabs.filter(node => HasClass(node, 'active'));
@@ -806,14 +821,7 @@ function populate_areas() {
     save_option('areas');
     translate_node('body');
     set_draggable();
-
-    let info_moves_copy = Y.info_moves_copy,
-        is_live = (Y.x == 'live');
-    S('#archive', !is_live);
-    S('#live', is_live);
-    S('#moves-archive', !is_live && info_moves_copy);
-    S('#moves-live', is_live && info_moves_copy);
-
+    show_archive_live();
     update_shortcuts();
     resize();
 }
@@ -832,21 +840,20 @@ function reset_settings(is_default) {
 
     init_customs();
     close_popups();
-    resize(true);
+    resize();
 }
 
 /**
  * Resize the window => resize some other elements
- * @param {boolean=} force
  */
-function resize(force) {
+function resize() {
     Style(
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status, #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
     Style('#chat', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
-    resize_panels(force);
+    resize_panels();
 
     // resize charts
     E('.chart', node => {
@@ -884,46 +891,73 @@ function resize_move_lists() {
  * Resize the left & right panels
  * @param {boolean=} force
  */
-function resize_panels(force) {
+function resize_panels() {
     update_visible();
+
+    // panel full + width
+    let panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
+        window_width = window.innerWidth;
+    for (let panel of panels) {
+        let name = panel.id,
+            value = Y[`max_${name}`];
+
+        Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
+        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
+    }
+
+    // panel gap
+    let num_panel = panels.length,
+        panel_gap = Y.panel_gap;
+    panel_gap = `${panel_gap / 2}${isNaN(panel_gap)? '': 'px'}`;
+    for (let i = 0; i < num_panel; i ++) {
+        let panel = panels[i],
+            full = HasClass(panel, 'full'),
+            left = (full || i == 0)? 0: panel_gap,
+            right = (full || i == num_panel - 1 || HasClass(panels[i + 1], 'full'))? 0: panel_gap;
+        Style(panel, `margin:0 ${right} 0 ${left}`);
+    }
 
     // swaps
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
 
-    // widths
-    for (let name of ['center', 'left', 'right']) {
-        let value = Y[`max_${name}`];
-        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
-    }
-
     Style('.area > *', 'max-width:100%');
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
-    // special case for center panel - TODO: CHANGE THIS
-    let center = Id('center'),
-        width = center.clientWidth;
-    if (!force && width == old_center)
-        return;
-
-    Attrs('#eval', {'data-t': (width > 330)? 'Evaluation': 'Eval'});
+    // special cases
+    Attrs('#eval', {'data-t': (Id('engine').clientWidth > 330)? 'Evaluation': 'Eval'});
     translate_node('#engine');
 
     // column/row mode
-    let is_hori = (width >= 390);
-    Style('.status', `margin-bottom:1em; margin-top: -0.5em;`, !is_hori);
-    Class('.xmoves', 'column', !is_hori, center);
-    Class('.xboard', 'fcol', is_hori, center);
+    E('.status', node => {
+        let area = get_area(node);
+        Style(node, `margin-bottom:1em;margin-top:-0.5em`, area.clientWidth < 390);
+    });
+    Keys(xboards).forEach(key => {
+        let board = xboards[key];
+        if (!board.sub)
+            return;
+        let node = board.node,
+            area_width = get_area(node).clientWidth;
+        Class(board.xmoves, 'column', area_width < 390);
+        Class(node, 'fcol', area_width >= 390);
+    });
+    E('#table-kibitz, #table-pv', node => {
+        let area = get_area(node);
+        Class(node, 'frow fastart', area.clientWidth >= 390);
+    });
 
-    Class('#table-kibitz, #table-pv', 'frow fastart', is_hori);
     order_boards();
 
     // resize all charts
     E('.chart', node => {
-        Style(node, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
+        let area = get_area(node);
+        if (area && !['bottom', 'top'].includes(area.id)) {
+            let width = area.clientWidth;
+            Style(node, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
+        }
     });
-    old_center = width;
 }
 
 /**
@@ -948,6 +982,19 @@ function set_3d_scene(three) {
 function set_draggable() {
     let drag = !!Y.drag_and_drop;
     Attrs('.drag, .drop', {draggable: drag});
+}
+
+/**
+ * Show / hide the archive/live boards
+ */
+function show_archive_live() {
+    let section = Y.x,
+        is_live = (section == 'live');
+
+    Hide(is_live? '#archive': '#live');
+    Hide(`#moves-${is_live? 'archive': 'live'}`);
+    if (!Y.info_moves_copy)
+        Hide(`#moves-${section}`);
 }
 
 /**
@@ -1065,7 +1112,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
         node.dataset.xy = xy || '';
         x += full_scroll.x;
         y += full_scroll.y;
-        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px);`);
+        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
     }
 
     if (!adjust) {
@@ -1133,12 +1180,10 @@ function update_shortcuts() {
  * Show/hide stuff
  */
 function update_visible() {
-    let section = Y.x;
     S('.status', Y.status_pv);
     S('.eval', Y.info_eval);
     S('.percent', Y.info_percent);
     S('#archive .xmoves, #live .xmoves', Y.info_moves);
-    S(`#moves-${section}`, Y.info_moves_copy);
     S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
     S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
@@ -1425,9 +1470,7 @@ function set_global_events() {
     Events(window, 'wheel', e => {
         if (!is_fullscreen()) {
             if (Y.wheel_adjust)
-                add_timeout('wheel', () => {
-                    scroll_adjust();
-                }, 200);
+                add_timeout('adjust', scroll_adjust, TIMEOUT_adjust);
             return;
         }
         wheel_event(e, true);
@@ -1481,14 +1524,16 @@ function startup() {
 
     // 1:align_top, 2:align_bottom, + gap, priority
     ANCHORS = {
+        '#bottom': [2, 0, 4],
         '#center0': [1, 4, 1],
         '#header': [1, 0, 1],
         '#left0': [1, 4, 1],
-        '#main': [2, 0, 3],
+        '#main': [2, 4, 3],
         '#overview tbody': [1, 0, 1],
         '#overview': [1, 0, 2],
         '#right0': [1, 4, 1],
         '#table-pagin': [1, 2, 1],
+        '#table-search': [2, 0, 1],
         '#tables .scroller': [1, 2, 1],
         '#tables': [1, 2, 1],
     };
@@ -1546,7 +1591,10 @@ function startup() {
 
     Assign(DEFAULTS, {
         areas: {
+            bottom: [],
             center0: [
+                ['moves-archive', 0, 1],
+                ['moves-live', 0, 1],
                 ['engine', 1, 3],
                 ['table-pv', 1, 1],
                 ['table-pva', 0, 1],
@@ -1576,6 +1624,7 @@ function startup() {
                 ['shortcut_2', 0, 1],
                 ['quick-search', 0, 1],
             ],
+            top: [],
         },
         div: '',
         game: 0,
@@ -1705,9 +1754,9 @@ function startup() {
         extra: {
             archive_scroll: [ON_OFF, 0],
             drag_and_drop: [ON_OFF, 1],
+            reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
-            tab_background: [['none', 'gradient'], 'gradient'],
             wheel_adjust: [ON_OFF, 1],
             wrap: [ON_OFF, 1],
             wrap_cross: [AUTO_ON_OFF, 'auto'],
@@ -1742,28 +1791,28 @@ function startup() {
             grid_live: [{max: 10, min: 0, type: 'number'}, 0],
             info_moves_live: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: [{max: 100, min: 3, type: 'number'}, 3],
+            move_height_live: [{max: 100, min: 3, step: 0.5, type: 'number'}, 3],
         },
         moves: {
             grid: [{max: 10, min: 0, type: 'number'}, 0],
             grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
             grid_live: [{max: 10, min: 0, type: 'number'}, 0],
             grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
-            move_height: [{max: 100, min: 3, type: 'number'}, 5],
-            move_height_copy: [{max: 100, min: 3, type: 'number'}, 20],
-            move_height_live: [{max: 100, min: 3, type: 'number'}, 3],
-            move_height_pv: [{max: 100, min: 5, type: 'number'}, 5],
+            move_height: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
+            move_height_copy: [{max: 100, min: 3, step: 0.5, type: 'number'}, 20],
+            move_height_live: [{max: 100, min: 3, step: 0.5, type: 'number'}, 3],
+            move_height_pv: [{max: 100, min: 5, step: 0.5, type: 'number'}, 5],
         },
         panel: {
             column_bottom: [{max: 8, min: 1, type: 'number'}, 4],
             column_top: [{max: 8, min: 1, type: 'number'}, 2],
             default_positions: '1',
             max_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
-            max_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 450],
+            max_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 500],
             max_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
             max_window: [{max: 32000, min: 256, type: 'number'}, 1920],
             panel_adjust: [ON_OFF, 1],
-            panel_background: [['none', 'gradient'], 'gradient'],
+            panel_gap: [{max: 100, min: 0, type: 'number'}, 16],
             unhide: '1',
         },
         quick: {
@@ -1782,21 +1831,23 @@ function startup() {
             copy_moves: '1',
             grid: [{max: 10, min: 0, type: 'number'}, 0],
             info_moves: [ON_OFF, 1],
-            move_height: [{max: 100, min: 3, type: 'number'}, 5],
+            info_moves_copy: [ON_OFF, 1],
+            move_height: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
         },
         copy_copy: {
             _pop: true,
             copy_moves: '1',
             grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
+            info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 1],
-            move_height_copy: [{max: 100, min: 3, type: 'number'}, 20],
+            move_height_copy: [{max: 100, min: 3, step: 0.5, type: 'number'}, 20],
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
             grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
             info_moves_pv: [ON_OFF, 1],
-            move_height_pv: [{max: 100, min: 3, type: 'number'}, 5],
+            move_height_pv: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
         },
     });
 

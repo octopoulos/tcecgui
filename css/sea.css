@@ -47,6 +47,9 @@ html {
 #engine > * {
     background: rgba(255, 255, 255, 0.2);
 }
+.graphs {
+    background: rgba(235, 235, 238, 0.2);
+}
 
 /* extras */
 #show-chat,

@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object,
-HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
+get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
@@ -572,9 +572,12 @@ function order_boards() {
     if (HasClass('#table-pv', 'frow'))
         Style('#box-pv0, #box-pv1', 'order:unset');
     else {
-        let rotate = xboards[Y.x].rotate;
-        Style('#box-pv0', `order:${1 - rotate}`);
-        Style('#box-pv1', `order:${rotate}`);
+        let main = xboards[Y.x];
+        if (main) {
+            let rotate = main.rotate;
+            Style('#box-pv0', `order:${1 - rotate}`);
+            Style('#box-pv1', `order:${rotate}`);
+        }
     }
 }
 
@@ -1187,16 +1190,14 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
 /**
  * Download static JSON files at startup
  * @param {boolean=} only_cache
+ * @param {boolean=} no_live
  */
-function download_tables(only_cache) {
+function download_tables(only_cache, no_live) {
     if (!only_cache)
         download_gamelist();
 
     let section = 'live';
-    // if (section != Y.x)
-    //     return;
-
-    if (!only_cache) {
+    if (!only_cache && !no_live) {
         download_pgn(section, 'live.json');
         download_live();
     }
@@ -2074,6 +2075,8 @@ function check_adjudication(dico, total_moves) {
  * @param {number=} ply
  */
 function check_missing_moves(ply) {
+    if (!Y.reload_missing)
+        return;
     let section = Y.x;
     if (section != 'live')
         return;
@@ -2179,15 +2182,13 @@ function resize_game() {
     }
 
     // sub boards
-    // TODO: CHANGE THIS
-    let center = Id('center'),
-        width = center.clientWidth;
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (!board.sub)
             return;
 
-        let size = Clamp(width / board.sub - 4, 196, 320);
+        let area = get_area(board.node),
+            size = Clamp(area.clientWidth / board.sub - 4, 196, 320);
         board.instant();
         board.resize(size);
     });
@@ -2550,6 +2551,9 @@ function update_pgn(section, pgn, reset_moves) {
         main.round = headers.Round;
         update_move_info(0, {});
         update_move_info(1, {});
+
+        if (reset_moves)
+            add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
     }
     // can happen after resume
     else if (reset_moves) {
@@ -2810,9 +2814,9 @@ function update_player_eval(section, data) {
 
     // 2) add moves
     let board = xboards[`pv${id}`];
+    data.ply = split_move_string(data.pv)[0];
     board.add_moves_string(data.pv);
 
-    data.ply = split_move_string(data.pv)[0];
     if (DEV.eval) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
         LS(data);
