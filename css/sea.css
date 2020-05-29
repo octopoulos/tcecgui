@@ -11,11 +11,11 @@ html {
 #archive .xmoves,
 #live .xmoves,
 .moves {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(235, 235, 238, 0.4);
 }
 .live-pv,
 .xmoves {
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.5);
 }
 .xcontrol {
     color: #06d;
@@ -48,7 +48,7 @@ html {
     background: rgba(255, 255, 255, 0.2);
 }
 .graphs {
-    background: rgba(235, 235, 238, 0.2);
+    background: rgba(235, 235, 238, 0.3);
 }
 
 /* extras */
