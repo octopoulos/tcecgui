@@ -400,10 +400,10 @@ grid {
     position: relative;
 }
 .xbottom {
-    margin: 2px 0 0 -6px;
+    margin: 2px 0 0 -2px;
 }
 .xtop {
-    margin: 0 0 2px -6px;
+    margin: 0 0 2px -2px;
 }
 .status {
     font-size: 14px;
