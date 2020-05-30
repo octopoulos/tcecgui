@@ -3352,11 +3352,13 @@ function opened_table(node, name, tab) {
         break;
     case 'pva':
         let board = board_target;
-        if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
-            board = xboards.pv0;
-        Class('.color', '-active');
-        Class(`.color[data-id="${board.name}"]`, 'active');
-        xboards.pva.set_fen(board.fen, true);
+        if (board) {
+            if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
+                board = xboards.pv0;
+            Class('.color', '-active');
+            Class(`.color[data-id="${board.name}"]`, 'active');
+            xboards.pva.set_fen(board.fen, true);
+        }
         break;
     case 'season':
         download_gamelist();
