@@ -20,7 +20,7 @@ game_action_keyup, get_active_tab, get_area, get_drop_id, get_object, HasClass, 
 ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, order_boards, Parent, parse_dev, PIECE_THEMES,
-popup_custom, reset_old_settings, resize_game, Resource, resume_game, Round,
+popup_custom, reset_old_settings, resize_game, Resource, resume_sleep, Round,
 S, save_option, screen, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle,
@@ -641,7 +641,7 @@ function init_globals() {
         let now = Now(),
             diff = now - resume_time;
         if (diff * 1000 > TIMEOUT_resume * 3)
-            resume_game();
+            resume_sleep();
         resume_time = now;
     }, TIMEOUT_resume, true);
 }

@@ -17,7 +17,7 @@ context_areas, context_target, controls, CopyClipboard, create_page_array, Creat
 document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
 get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
-reset_charts, resize_3d, Resource, resume_game, Round,
+reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
 SetDefault, Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d,
 STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression,
@@ -2931,7 +2931,7 @@ function game_action_key(code) {
             if (Visible('#modal2'))
                 show_modal(true);
             else
-                resume_game();
+                resume_sleep();
             break;
         // enter, space, x
         case 13:
@@ -3456,7 +3456,7 @@ function popup_custom(id, name, e, scolor) {
 /**
  * Compute woke up
  */
-function resume_game() {
+function resume_sleep() {
     check_missing_moves();
     show_board_info();
 }
