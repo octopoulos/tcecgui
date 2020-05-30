@@ -961,7 +961,7 @@ function scroll_adjust(target, max_delta, depth=0) {
     if (!target && depth < 1) {
         let new_delta = max_delta - Abs(y - y_old);
         if (new_delta > 0)
-            add_timeout('adjust', () => {scroll_adjust(target, depth + 1, new_delta);}, TIMEOUT_adjust);
+            add_timeout('adjust', () => {scroll_adjust(target, new_delta, depth + 1);}, TIMEOUT_adjust);
     }
 }
 
