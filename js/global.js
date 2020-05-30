@@ -104,8 +104,10 @@ function parse_dev() {
             j: 'json',                  // static json files
             l: 'load',
             m: 'mobil',
+            o: 'open',
             n: 'new',                   // new game debugging
             p: 'pv',
+            q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',
             T: 'translate',             // gather translations

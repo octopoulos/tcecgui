@@ -864,12 +864,13 @@ function render_scroll() {
  * - can be used after mouse wheel
  * @param {string} target
  * @param {number=} depth
+ * @param {number=} max_delta
  */
-function scroll_adjust(target, depth=0) {
+function scroll_adjust(target, depth=0, max_delta=95) {
     let keys = target? [target]: Keys(ANCHORS),
-        max_delta = depth? 80: 100,
         window_height = window.innerHeight,
-        y = ScrollDocument();
+        y = ScrollDocument(),
+        y_old = y;
 
     if (!y && !target)
         return;
@@ -954,7 +955,7 @@ function scroll_adjust(target, depth=0) {
     ScrollDocument(y, true);
 
     if (!target && depth < 1)
-        add_timeout('adjust', () => {scroll_adjust(target, depth + 1);}, TIMEOUT_adjust);}
+        add_timeout('adjust', () => {scroll_adjust(target, depth + 1, 95 - Abs(y - y_old));}, TIMEOUT_adjust);}
 
 /**
  * Set the scroll

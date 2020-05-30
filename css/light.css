@@ -1219,6 +1219,9 @@ grid {
     max-height: 10vw;
     min-height: 30px;
 }
+#twitch {
+    margin-right: 4px;
+}
 .google-ad {
     cursor: pointer;
     width: 100%;

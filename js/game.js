@@ -889,7 +889,7 @@ function check_pagination(parent) {
     if (!PAGINATIONS[name])
         return 0;
 
-    if (DEV.ui)
+    if (DEV.queue)
         LS(`check_pagination: ${parent}/${name}`);
 
     // check if there's enough data
@@ -951,7 +951,7 @@ function check_queued_tables() {
     let removes = [];
 
     for (let queued of queued_tables) {
-        if (DEV.ui)
+        if (DEV.queue)
             LS(`queued: ${queued}`);
 
         let [section, parent, table] = queued.split('/');
@@ -3327,7 +3327,7 @@ function opened_table(node, name, tab) {
         is_chart = _('canvas', node),
         section = Y.x,
         main = xboards[section];
-    if (DEV.ui)
+    if (DEV.open)
         LS(`opened_table: ${parent}/${name}`);
 
     // 2) special cases

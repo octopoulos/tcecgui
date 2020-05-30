@@ -729,11 +729,9 @@ function opened_table_special(node, name, tab) {
 
 /**
  * Populate areas
- * - TODO: only modify if there's a change => chat won't reload
  */
 function populate_areas() {
-    let tabs,
-        areas = Y.areas,
+    let areas = Y.areas,
         default_areas = DEFAULTS.areas;
 
     // 1) count existing
@@ -748,21 +746,84 @@ function populate_areas() {
         if (!parent)
             return;
 
-        // add missing defaults
+        // a) add missing defaults
         for (let vector of default_areas[key]) {
             if (!context_areas[vector[0]]) {
                 areas[key].push(vector);
             }
         }
 
+        // b) check if we already have the correct order, if yes then skip
+        let prev_tab, tabs,
+            children = parent.children,
+            child = children[0],
+            child_id = 0,
+            error = '';
+
+        for (let [id, tab, show] of areas[key]) {
+            let node = Id(id);
+            if (!node)
+                continue;
+
+            let is_tab;
+            if (tab || prev_tab) {
+                if (!prev_tab) {
+                    tabs = child;
+                    if (!HasClass(child, 'tabs')) {
+                        error = 'tabs';
+                        break;
+                    }
+
+                    child_id ++;
+                    child = children[child_id];
+                }
+
+                if (show & 1)
+                    is_tab = true;
+                show = show & 2;
+            }
+            else
+                tabs = null;
+
+            if (!child || child.id != id) {
+                error = `id=${id}`;
+                break;
+            }
+            else if (!is_tab) {
+                let is_show = (show & 1)? true: false,
+                    visible = Visible(child);
+                if (is_show != visible && !['archive', 'live', 'moves-archive', 'moves-live'].includes(id)) {
+                    error = `vis=${id}`;
+                    break;
+                }
+            }
+
+            prev_tab = tab;
+            child_id ++;
+            child = children[child_id];
+        }
+
+        if (!error) {
+            if (child)
+                error = `last=${child.id}`;
+            else
+                return;
+        }
+        if (DEV.ui) {
+            LS(`populate ${key} : ${error}`);
+            LS(child);
+        }
+
+        // c) restructure the panel => this will cause the chat to reload too
         // remove tabs
         E('.tabs', node => {
             node.remove();
         }, parent);
 
         // add children + create tabs
-        let prev_tab,
-            exist = 0;
+        let exist = 0;
+        prev_tab = null;
+        tabs = null;
         for (let vector of areas[key]) {
             let [id, tab, show] = vector,
                 node = Id(id);
@@ -1533,7 +1594,7 @@ function startup() {
         '#overview': [1, 0, 2],
         '#right0': [1, 4, 1],
         '#table-pagin': [1, 2, 1],
-        '#table-search': [2, 0, 1],
+        '#table-search': [2, -2, 1],
         '#tables .scroller': [1, 2, 1],
         '#tables': [1, 2, 1],
     };
