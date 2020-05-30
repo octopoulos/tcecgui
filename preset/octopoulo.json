@@ -1,7 +1,7 @@
 {
   "animate": 1,
   "animate_pv": 1,
-  "archive_scroll": 0,
+  "archive_scroll": 1,
   "areas": {
     "center0": [
       [
@@ -206,6 +206,8 @@
   "key_repeat": 70,
   "key_repeat_initial": 500,
   "lighting": "high",
+  "live_engine_0": 1,
+  "live_engine_1": 1,
   "live_log": "all",
   "live_pv": 1,
   "max_center": 410,
@@ -253,8 +255,8 @@
   "three": 0,
   "twitch_chat": 1,
   "twitch_dark": 1,
-  "volume": 5,
-  "wheel_adjust": 1,
+  "volume": 7,
+  "wheel_adjust": 63,
   "wrap": 1,
   "wrap_cross": "auto",
   "wrap_h2h": "auto",

@@ -1208,11 +1208,14 @@ grid {
 #ad0,
 #ad1 {
     margin: 0 0.5em;
-    max-width: 550px;
-    width: 90%;
 }
-#ad0 {
-    flex: 1;
+#ad0,
+#ad0 > * {
+    width: 390px;
+}
+#ad1,
+#ad1 > * {
+    width: 550px;
 }
 .banner {
     height: 60px;
@@ -1224,7 +1227,6 @@ grid {
 }
 .google-ad {
     cursor: pointer;
-    width: 100%;
 }
 #full0,
 #full1,
@@ -1265,7 +1267,7 @@ grid {
 }
 
 /* allow text selection */
-pre,
+.adblock,
 #engine,
 #footer,
 #live-log,
@@ -1273,6 +1275,7 @@ pre,
 .live-pv > a,
 .moves,
 .moves > a,
+pre,
 .scroller,
 .stats,
 .xbottom,
@@ -1313,10 +1316,13 @@ svg.down {
 }
 
 /* media */
-@media (max-width: 640px) {
-    .google-ad {
+@media (max-width: 560px) {
+    #ad0,
+    #ad1 {
         display: none;
     }
+}
+@media (max-width: 640px) {
     #header {
         padding: 0;
     }
@@ -1326,6 +1332,10 @@ svg.down {
     }
 }
 @media (max-width: 866px) {
+    #ad0 {
+        order: 2;
+        width: 100%;
+    }
     #main {
         flex-wrap: wrap;
         width: 100%;

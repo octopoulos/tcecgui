@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-05-30
 //
 // general 3d rendering code
 //
@@ -1112,6 +1112,18 @@ function get_drop_id(target) {
 }
 
 /**
+ * Utility for creating settings
+ * @param {number} def
+ * @param {number} min
+ * @param {number} max
+ * @param {number=} step
+ * @returns {[Object, number]}
+ */
+function option_number(def, min, max, step=1) {
+    return [{max: max, min: min, step: step, type: 'number'}, def];
+}
+
+/**
  * Close the modal and resume the game
  */
 function resume_game() {
@@ -1481,12 +1493,12 @@ function startup_3d() {
             theme: [THEMES, THEMES[0]],
         },
         audio: {
-            volume: [{min: 0, max: 10, type: 'number'}, 5],
+            volume: option_number(7, 0, 15),
         },
         video: {
             encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
-            exposure: [{min: 0.1, max: 10, step: 0.1, type: 'number'}, 1],
-            gamma: [{min: 0, max: 10, step: 0.1, type: 'number'}, 1.5],
+            exposure: option_number(1, 0.1, 10, 0.1),
+            gamma: option_number(1.5, 0, 10, 0.1),
             lighting: [['low', 'medium', 'high'], 'high'],
             resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
             shadow: [Keys(SHADOW_QUALITIES), 'high'],

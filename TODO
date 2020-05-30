@@ -3,6 +3,10 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-05-30 : 2020-05-30 : re-add live_engine toggles
+2020-05-30 : 2020-05-30 : wheel adjust becomes a number
+2020-05-30 : 2020-05-30 : simplify the numbers in settings => option_number()
+2020-05-30 : 2020-05-30 : ad + adblock fix
 2020-05-30 : 2020-05-30 : stoof_cp_to_score
 2020-05-29 : 2020-05-27 : minimise chat reload when populating areas
 2020-05-29 : 2020-05-29 : improved archive scroll + ON by default
@@ -270,6 +274,7 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-05-30 : hold left/right with touch => moves don't stop
 medium:
 -          : 2020-05-23 : dynamic pagination and search nodes
 low:
