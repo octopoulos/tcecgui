@@ -792,10 +792,12 @@ function populate_areas() {
             else if (!is_tab) {
                 let is_show = (show & 1)? true: false,
                     visible = Visible(child);
-                if (is_show != visible) {   // && !['archive', 'live', 'moves-archive', 'moves-live'].includes(id)) {
-                    error = `vis=${id}`;
-                    break;
-                }
+
+                if (is_show != visible)
+                    if (!['archive', 'live', 'moves-archive', 'moves-live'].includes(id) || !visible) {
+                        error = `vis=${id}`;
+                        break;
+                    }
             }
 
             prev_tab = tab;
