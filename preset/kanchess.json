@@ -1,7 +1,7 @@
 {
   "animate": 1,
   "animate_pv": 1,
-  "archive_scroll": 0,
+  "archive_scroll": 1,
   "areas": {
     "center0": [
       [
@@ -256,7 +256,7 @@
   "twitch_chat": 1,
   "twitch_dark": 0,
   "volume": 10,
-  "wheel_adjust": 1,
+  "wheel_adjust": 92,
   "wrap": 1,
   "wrap_cross": "auto",
   "wrap_h2h": "auto",

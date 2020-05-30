@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-DEV:true, IsArray, Keys, LS, Pad, Parent, Round, save_option, X_SETTINGS, Y
+DEV:true, IsArray, Keys, LS, Pad, Parent, Round, save_option, Undefined, X_SETTINGS, Y
 */
 'use strict';
 
@@ -25,7 +25,7 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200529';
+    VERSION = '20200530';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -136,7 +136,7 @@ function parse_dev() {
  * Reset some settings if the version is too old
  */
 function reset_old_settings() {
-    let version = Y.version;
+    let version = Undefined(Y.version, '');
     if (version == VERSION)
         return;
 
@@ -154,9 +154,11 @@ function reset_old_settings() {
         }
     }
 
-    if (version < '20200529')
+    if (version < '20200530') {
+        LS(`reset 2 settings: ${version} => ${VERSION}`);
         save_option('archive_scroll', 1);
-
+        save_option('wheel_adjust', 92);
+    }
     save_option('version', VERSION);
 }
 
