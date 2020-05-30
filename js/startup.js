@@ -668,9 +668,7 @@ function insert_google_ad(id) {
         data-ad-slot="4926769371"
         data-ad-format="auto"
         data-full-width-responsive="true">
-    </ins>
-    <div class="adblock dn">
-    </div>`;
+    </ins>`;
 
     HTML(`#ad${id} > hori`, html);
     (window.adsbygoogle = window.adsbygoogle || []).push({});
