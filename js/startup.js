@@ -1752,7 +1752,7 @@ function startup() {
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
         },
         extra: {
-            archive_scroll: [ON_OFF, 0],
+            archive_scroll: [ON_OFF, 1],
             drag_and_drop: [ON_OFF, 1],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
