@@ -189,6 +189,7 @@ class XBoard {
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
         this.ply = 0;                                   // current ply
+        this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
         this.seen = 0;                                  // last seen move -> used to show the counter
@@ -225,7 +226,8 @@ class XBoard {
         if (this.check_locked(['move', moves, cur_ply]))
             return;
 
-        let is_ply = (cur_ply != undefined),
+        let is_empty = !HTML(this.xmoves),
+            is_ply = (cur_ply != undefined),
             lines = [],
             num_book = 0,
             num_new = moves.length,
@@ -258,8 +260,8 @@ class XBoard {
                 num_book += move.book;
             }
 
-            // TODO: remove this ... sometimes we need to add missing nodes
-            if (i >= 0 && ply < num_move)
+            // adding an old move?
+            if (!is_empty && i >= 0 && ply < num_move)
                 continue;
 
             // indicate current ply
@@ -271,9 +273,16 @@ class XBoard {
             if (ply % 2 == 0) {
                 if (is_ply)
                     lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
+                else if (i < 0)
+                    for (let [parent, last] of parent_lasts) {
+                        let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
+                        parent.insertBefore(node, last);
+                        for (let j = 0; j < 2; j ++)
+                            parent.insertBefore(CreateNode('i'), last);
+                    }
                 else
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode(i < 0? 'a': 'i', `${1 + ply / 2}.`, (i < 0)? {class: 'turn', 'data-i': -1}: {class: 'turn'});
+                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
                         parent.insertBefore(node, last);
                     }
             }
@@ -398,7 +407,7 @@ class XBoard {
             }
         });
 
-        this.moves = moves;
+        this.ply_moves[new_ply] = moves;
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
@@ -409,6 +418,8 @@ class XBoard {
         }
 
         if (is_current) {
+            this.moves = moves;
+
             let html = lines.join('');
             for (let parent of [this.xmoves, this.pv_node])
                 HTML(parent, html);
@@ -791,6 +802,7 @@ class XBoard {
                 if (!real_move)
                     return false;
 
+                // TODO: add tests to make sure this is 100% allowed
                 moves[curr] = {
                     fen: real_move.fen,
                     ply: curr,
@@ -912,8 +924,10 @@ class XBoard {
             return;
 
         let dual = this.dual,
-            real = this.real,
-            show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
+            real = this.real;
+        if (!real)
+            return;
+        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
             show_ply = Y.show_ply;
 
         // last
@@ -1269,7 +1283,7 @@ class XBoard {
         this.analyse_fen();
         update_svg();
 
-        this.markers = [CreateNode('i', '@'), CreateNode('i', '@')];
+        this.markers = [CreateNode('i', '@', {class: 'marker'}), CreateNode('i', '@', {class: 'marker'})];
 
         if (this.hook)
             this.event_hook(this.hook);
@@ -1641,7 +1655,7 @@ class XBoard {
         Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, node);
         Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, node);
         Style('.xmoves', `max-width:${frame_size2}px`, true, node);
-        Style('.xcontain', `width:${frame_size}px`, true, node);
+        Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
 
         this.size = size;
         if (render)

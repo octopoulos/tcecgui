@@ -118,6 +118,9 @@ img,
 .pr {
     position: relative;
 }
+.shadow {
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
 .smaller {
     font-size: 0.75em;
 }
@@ -186,11 +189,31 @@ grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+.grid {
+    display: grid;
+    overflow-x: hidden;
+}
+.grid > * {
+    white-space: nowrap;
+}
+.grid > .marker {
+    display: none;
+}
 .grid2 {
     grid-template-columns: 0.5fr 1fr;
 }
 .grid3 {
     grid-template-columns: 1fr 0.5fr 1fr;
+}
+
+/* drag & drop */
+.drag {
+    margin: 2px 2px 6px 2px;
+    width: 100%;
+}
+.dragging {
+    background: rgba(192, 64, 64, 0.08);
+    min-height: 4em;
 }
 
 /* header */
@@ -219,7 +242,6 @@ grid {
 #nav-archive,
 #nav-live {
     font-weight: 500;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 #icons {
     flex: 1;
@@ -308,12 +330,15 @@ grid {
 #popup-about {
     background: #f5f5f5;
     color: #000;
-    max-height: 85vh;
-    max-width: 85vw;
-    min-width: 240px;
+    max-height: 90vh;
+    max-width: 90vw;
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0;
+}
+#popup-about,
+.settings {
+    min-width: 240px;
 }
 #modal a {
     color: #000;
@@ -372,7 +397,7 @@ grid {
 /* board */
 .xboard {
     line-height: 1em;
-    margin-left: 4px;
+    margin: 0 0 0 4px;
 }
 .xcontain {
     position: relative;
@@ -388,17 +413,17 @@ grid {
 }
 .xbottom,
 .xtop {
-    font-size: 16px;
+    font-size: 15px;
     height: 1.54em;
     line-height: 1;
     padding: 0.15em 0.1em 0.2em 1.3em;
     position: relative;
 }
 .xbottom {
-    margin: 2px 0 0 -6px;
+    margin: 2px 0 0 -2px;
 }
 .xtop {
-    margin: 0 0 2px -6px;
+    margin: 0 0 2px -2px;
 }
 .status {
     font-size: 14px;
@@ -508,6 +533,7 @@ grid {
     z-index: 1;
 }
 .live-pv,
+.moves,
 .xmoves {
     align-content: flex-start;
     background: rgba(230, 240, 255, 0.3);
@@ -524,8 +550,9 @@ grid {
 .xmoves.column {
     font-size: 12px;
     height: 192px;
+    margin-left: -1px;
     overflow-y: scroll;
-    width: 8em;
+    width: 10.5em;
 }
 #moves-pv1 .live-pv,
 #pv1 .xmoves {
@@ -538,14 +565,17 @@ grid {
 #live1 .xmoves {
     background: rgba(255, 235, 235, 0.9);
 }
+.moves,
 .xmoves {
     height: 5em;
     overflow-y: auto;
 }
+.moves a:hover,
 .xmoves a:hover {
     text-decoration: underline;
 }
 .live-pv > *,
+.moves > *,
 .xmoves > * {
     line-height: initial;
     margin: 0 0.15em;
@@ -554,7 +584,8 @@ grid {
     font-size: 12px;
 }
 #archive .xmoves,
-#live .xmoves {
+#live .xmoves,
+.moves {
     background: transparent;
     border: none;
     font-size: 15px;
@@ -616,6 +647,12 @@ grid {
 #xfen .xcontrol,
 #xfen .xmoves {
     display: none;
+}
+.xcopy {
+    color: rgba(255, 0, 0, 0.7);
+    font-size: 1.5em;
+    font-weight: 500;
+    transform: rotate(-30deg);
 }
 #pva .xpiece {
     cursor: pointer;
@@ -791,18 +828,18 @@ grid {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
-#table-view {
+#overview {
     font-size: 1em;
     margin-bottom: 0;
 }
-#table-view td {
+#overview td {
     padding: 0.3em;
     white-space: nowrap;
 }
-#table-view th {
+#overview th {
     padding: 0.2em 0.5em;
 }
-#table-view td[data-x="event"] {
+#overview td[data-x="event"] {
     font-weight: 700;
 }
 #info0,
@@ -1041,7 +1078,7 @@ grid {
 .live-pv {
     height: 3em;
 }
-.live-score {
+.percent {
     color: #444;
     font-size: 0.85em;
 }
@@ -1069,16 +1106,10 @@ grid {
 /* container */
 .area {
     flex: 1;
-    /* min-height: 1em; */
     width: 100%;
 }
-.drag {
-    margin: 2px 2px 6px 2px;
-    width: 100%;
-}
-.dragging {
-    background: rgba(192, 64, 64, 0.08);
-    min-height: 4em;
+#bottom {
+    margin-bottom: 1em;
 }
 #bottom > vert {
     margin: 2px;
@@ -1099,35 +1130,23 @@ grid {
 #canvas {
     pointer-events: all;
 }
-#banners,
-#bottom {
-    margin-bottom: 1em;
+#banners {
+    margin: 0.1em 0 2em 0;
 }
 #banners,
 #main {
     max-width: 1500px;
     width: 95%;
 }
-#left {
-    flex: 2;
+.panel {
+    flex: 1;
     margin: 4px;
-    max-width: calc(100vh - 400px);
-    min-height: 350px;
-    min-width: 281px;
-}
-#center {
-    flex: 2;
-    max-width: 390px;
-    margin: 4px;
+    max-width: 450x;
     min-height: 350px;
     min-width: 300px;
 }
-#right {
-    flex: 2;
-    margin: 4px;
-    max-width: 395px;
-    min-height: 350px;
-    min-width: 281px;
+.panel.full {
+    max-width: unset !important;
 }
 #right.narrow {
     flex: 1;
@@ -1177,8 +1196,9 @@ grid {
     position: relative;
 }
 .graphs {
-    width: 300px;
+    background: rgba(47, 152, 208, 0.1);
     height: 230px;
+    width: 300px;
 }
 .label {
     font-size: 0.9em;
@@ -1198,6 +1218,9 @@ grid {
     height: 60px;
     max-height: 10vw;
     min-height: 30px;
+}
+#twitch {
+    margin-right: 4px;
 }
 .google-ad {
     cursor: pointer;
@@ -1222,9 +1245,6 @@ grid {
 }
 #three {
     color: #555;
-}
-.graphs {
-    background-color: rgba(47, 152, 208, 0.1);
 }
 #hide-chat,
 #hide-video {
@@ -1251,6 +1271,8 @@ pre,
 #live-log,
 .live-pv,
 .live-pv > a,
+.moves,
+.moves > a,
 .scroller,
 .stats,
 .xbottom,
@@ -1298,22 +1320,14 @@ svg.down {
     #header {
         padding: 0;
     }
-    #modal,
-    #popup-about {
-        font-size: 13px;
+    #popup-about,
+    .settings {
+        font-size: 14px;
     }
 }
 @media (max-width: 866px) {
     #main {
         flex-wrap: wrap;
         width: 100%;
-    }
-    #right {
-        max-width: unset !important;
-    }
-}
-@media (min-width: 930px) {
-    #center {
-        margin: 4px 1.5%;
     }
 }

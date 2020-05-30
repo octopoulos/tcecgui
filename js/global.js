@@ -1,13 +1,13 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-05-27
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-DEV:true, IsArray, Keys, LS, Pad, Round, save_option, X_SETTINGS, Y
+DEV:true, IsArray, Keys, LS, Pad, Parent, Round, save_option, X_SETTINGS, Y
 */
 'use strict';
 
@@ -25,9 +25,18 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200525';
+    VERSION = '20200529';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Get the parent area of a node
+ * @param {Node} node
+ * @returns {Node}
+ */
+function get_area(node) {
+    return Parent(node, {class_: 'area'});
+}
 
 /**
  * Get the move ply, either directly or by looking at the FEN
@@ -95,8 +104,10 @@ function parse_dev() {
             j: 'json',                  // static json files
             l: 'load',
             m: 'mobil',
+            o: 'open',
             n: 'new',                   // new game debugging
             p: 'pv',
+            q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',
             T: 'translate',             // gather translations
@@ -125,10 +136,11 @@ function parse_dev() {
  * Reset some settings if the version is too old
  */
 function reset_old_settings() {
-    if (Y.version == VERSION)
+    let version = Y.version;
+    if (version == VERSION)
         return;
 
-    if (!Y.version) {
+    if (!version) {
         let updates = ['audio'];
         for (let update of updates) {
             LS(`reset ${update} settings ...`);
@@ -141,6 +153,9 @@ function reset_old_settings() {
             });
         }
     }
+
+    if (version < '20200529')
+        save_option('archive_scroll', 1);
 
     save_option('version', VERSION);
 }

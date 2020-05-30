@@ -36,19 +36,22 @@ live.dual = archive;
 [
     [
         '1. d4 Nf6 2. c4 c5 3. d5',
+        0,
         [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}],
     ],
     [
         '38...Qg7 39. Rf2 Qh6 40. Nxg6',
+        75,
         [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}],
     ],
     [
         '41...Kxg8 42. a8=Q+ Kg7',
+        81,
         [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}],
     ],
-].forEach(([text, answer], id) => {
+].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
-        live.add_moves_string(text);
+        live.add_moves_string(text, cur_ply);
 
         let offset = answer[0],
             array = new Array(offset);

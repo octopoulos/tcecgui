@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-05-28
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,13 +9,15 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, Clamp, clearTimeout, CreateNode, DefaultFloat, document, E, HasClass, history, HTML, Id,
-InsertNodes, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString,
-requestAnimationFrame, Resource, ScrollDocument, SetDefault, setTimeout, Style, TEXT, Title, Undefined, window
+_, A, Abs, Assign, Attrs, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document, E, From, HasClass,
+history, HTML, Id, InsertNodes, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now,
+Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT,
+Title, Undefined, Visible, window
 */
 'use strict';
 
 let __PREFIX = '_',
+    ANCHORS = {},
     api = {},
     api_times = {},
     DEFAULTS = {
@@ -51,6 +53,7 @@ let __PREFIX = '_',
     scroll_target,
     STATE_KEYS = {},
     THEMES = [''],
+    TIMEOUT_adjust = 250,
     TIMEOUT_touch = 0.5,
     TIMEOUT_translate = 3600 * 24,
     timers = {},
@@ -70,6 +73,7 @@ let __PREFIX = '_',
     // virtual functions, can be assigned
     virtual_check_hash_special,
     virtual_rename_option,
+    virtual_sanitise_data_special,
     virtual_set_combo_special,
     X_SETTINGS = {},
     Y = {};                                             // params
@@ -80,37 +84,47 @@ let __PREFIX = '_',
 //////////
 
 /**
- * Add a timeout
+ * Add a timeout / interval
  * @param {string} name
  * @param {function} func function to be called after the timer
  * @param {number} timer milliseconds <0: does nothing, =0: executes directly, >0: timer
+ * @param {boolean=} is_interval
  */
-function add_timeout(name, func, timer) {
+function add_timeout(name, func, timer, is_interval) {
     clear_timeout(name);
     if (timer < 0)
         return;
 
     if (timer)
-        timers[name] = setTimeout(func, timer);
+        timers[name] = [
+            is_interval? setInterval(func, timer): setTimeout(func, timer),
+            is_interval? 1: 0,
+        ];
     else
         func();
     if (DEV.frame) {
-        LS(`add_timeout: ${name} : ${timer}`);
+        LS(`add_timeout: ${name} : ${timer} : ${is_interval}`);
         LS(timers);
     }
 }
 
 /**
- * Clear a timeout
+ * Clear a timeout / interval
  * @param {string} name
  */
 function clear_timeout(name) {
-    if (!timers[name])
+    let timer = timers[name];
+    if (!timer)
         return;
-    clearTimeout(timers[name]);
+
+    if (timer[1])
+        clearInterval(timer[0]);
+    else
+        clearTimeout(timer[0]);
+
     delete timers[name];
     if (DEV.frame)
-        LS(`clear_timeout: ${name}`);
+        LS(`clear_timeout: ${name} : ${timer}`);
 }
 
 /**
@@ -732,6 +746,9 @@ function sanitise_data() {
         else if (Number.isFinite(def) && !Number.isFinite(value))
             Y[key] = parseFloat(value) || def;
     });
+
+    if (virtual_sanitise_data_special)
+        virtual_sanitise_data_special();
 }
 
 /**
@@ -840,6 +857,105 @@ function render_scroll() {
     }
     touch_now = now;
 }
+
+/**
+ * Adjust the scrolling to the nearest anchor (if near enough)
+ * - can be used to scroll to a specific target
+ * - can be used after mouse wheel
+ * @param {string} target
+ * @param {number=} depth
+ * @param {number=} max_delta
+ */
+function scroll_adjust(target, depth=0, max_delta=95) {
+    let keys = target? [target]: Keys(ANCHORS),
+        window_height = window.innerHeight,
+        y = ScrollDocument(),
+        y_old = y;
+
+    if (!y && !target)
+        return;
+
+    // 1) gather anchor data
+    let deltas = keys.map(key => {
+        let [flag, gap, priority] = ANCHORS[key] || [0, 0, 0],
+            nodes = From(A(key)).filter(child => Visible(child));
+        if (!nodes.length)
+            return;
+
+        let delta1, delta2,
+            rect = nodes[0].getBoundingClientRect(),
+            bottom = rect.bottom + y - gap - window_height,
+            top = rect.top + y - gap;
+
+        if (flag & 1) {
+            delta1 = top - y;
+            if (Abs(delta1) > max_delta)
+                return;
+        }
+        if (flag & 2) {
+            delta2 = bottom - y;
+            if (Abs(delta2) > max_delta)
+                return;
+        }
+
+        return [priority, key, delta1, delta2, top, bottom, gap];
+    }).filter(vector => vector).sort((a, b) => {
+        if (a[0] != b[0])
+            return b[0] - a[0];
+        return (b[2] || b[3]) - (a[2] || a[3]);
+    });
+
+    // 2) no anchors found => scroll to the target if any
+    if (!deltas.length) {
+        if (target) {
+            y = _(target).getBoundingClientRect().top + y;
+            ScrollDocument(y, true);
+        }
+        return;
+    }
+
+    // 3) get the closest matches
+    let offset, y1, y2, y3,
+        diff = max_delta,
+        diff3 = diff;
+    for (let [priority, key, delta1, delta2, top, bottom] of deltas) {
+        if (DEV.ui)
+            LS(`${priority} : ${key} : ${delta1} : ${delta2} : ${top} : ${bottom}`);
+        if (delta2 != undefined) {
+            y2 = bottom;
+            offset = -delta2;
+        }
+        if (delta1 != undefined) {
+            if (offset) {
+                delta1 += offset;
+                if (delta1 < 0) {
+                    if (delta1 > -max_delta && Abs(delta1) < Abs(diff3)) {
+                        diff3 = delta1;
+                        y3 = top;
+                    }
+                    continue;
+                }
+            }
+            if (Abs(delta1) < Abs(diff)) {
+                diff = delta1;
+                y1 = top;
+            }
+        }
+    }
+
+    // 4) combine the best matches
+    if (y1 == undefined && y3 != undefined)
+        y = y3;
+    else {
+        let ys = [y1, y2].filter(value => value != undefined);
+        if (!ys.length)
+            return;
+        y = ys.reduce((a, b) => a + b) / ys.length;
+    }
+    ScrollDocument(y, true);
+
+    if (!target && depth < 1)
+        add_timeout('adjust', () => {scroll_adjust(target, depth + 1, 95 - Abs(y - y_old));}, TIMEOUT_adjust);}
 
 /**
  * Set the scroll
@@ -1051,13 +1167,20 @@ function touch_handle(e, full) {
 /**
  * Handle a wheel event
  * @param {Event} e
+ * @param {boolean=} full full screen scrolling
  */
-function wheel_event(e) {
+function wheel_event(e, full) {
     if (full_target) {
-        full_scroll.x -= e.wheelDeltaX / 6;
-        full_scroll.y -= e.wheelDeltaY / 6;
+        full_scroll.x -= e.wheelDeltaX / 3;
+        full_scroll.y -= e.wheelDeltaY / 3;
     }
+    if (!full) {
+        scroll_target = window;
+        touch_scroll.y -= e.wheelDeltaY / 3;
+    }
+
     set_scroll();
+    e.preventDefault();
 }
 
 // UI

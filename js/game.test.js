@@ -24,7 +24,7 @@ create_module(IMPORT_PATH, [
 let {
         allie_cp_to_score, Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score,
         create_field_value, create_game_link, format_eval, format_hhmmss, format_percent, get_short_name,
-        leela_cp_to_score, players, tour_info, Y,
+        leela_cp_to_score, players, stoof_cp_to_score, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,26 +49,6 @@ let {
  .forEach(([cp, answer], id) => {
     test(`allie_cp_to_score:${id}`, () => {
         expect(allie_cp_to_score(cp)).toBeCloseTo(answer, 5);
-    });
-});
-
-// leela_cp_to_score
-[
-    [0, 0],
-    [100, 0.5358778448223716],
-    [-100, -0.5358778448223716],
-    [400, 0.8629757114869812],
-    [-400, -0.8629757114869812],
-    [1000, 0.94710419473861],
-    [-1000, -0.94710419473861],
-    [10000, 0.9987481281074694],
-    [-10000, -0.9987481281074694],
-    [12800, 1.0],
-    [-12800, -1.0],
-]
- .forEach(([cp, answer], id) => {
-    test(`leela_cp_to_score:${id}`, () => {
-        expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });
 });
 
@@ -105,9 +85,17 @@ let {
 
 // calculate_probability
 [
-    ['Stockfish', 0.27, '7.8% W | 92.2% D'],
-    ['LCZero', 0.27, '18.6% W | 81.4% D'],
     ['AllieStein', 0.27, '13.7% W | 86.3% D'],
+    ['AllieStein', 128, '91.6% W | 8.4% D'],
+    ['AllieStein', 256, '100.0% W | 0.0% D'],
+    ['LCZero', 0.27, '18.6% W | 81.4% D'],
+    ['LCZero', 128, '100.0% W | 0.0% D'],
+    ['ScorpioNN', 0.27, '6.0% W | 94.0% D'],
+    ['ScorpioNN', 128, '100.0% W | 0.0% D'],
+    ['Stockfish', 0.27, '7.8% W | 92.2% D'],
+    ['Stockfish', 128, '100.0% W | 0.0% D'],
+    ['Stoofvlees', 0.27, '8.9% W | 91.1% D'],
+    ['Stoofvlees', 128, '100.0% W | 0.0% D'],
 ]
  .forEach(([short_engine, eval_, answer], id) => {
     test(`calculate_probability:${id}`, () => {
@@ -257,5 +245,45 @@ let {
 ].forEach(([text, answer], id) => {
     test(`get_short_name:${id}`, () => {
         expect(get_short_name(text)).toEqual(answer);
+    });
+});
+
+// leela_cp_to_score
+[
+    [0, 0],
+    [100, 0.5358778448223716],
+    [-100, -0.5358778448223716],
+    [400, 0.8629757114869812],
+    [-400, -0.8629757114869812],
+    [1000, 0.94710419473861],
+    [-1000, -0.94710419473861],
+    [10000, 0.9987481281074694],
+    [-10000, -0.9987481281074694],
+    [12800, 1.0],
+    [-12800, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`leela_cp_to_score:${id}`, () => {
+        expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
+    });
+});
+
+// stoof_cp_to_score
+[
+    [0, 0],
+    [100, 0.30594615173109363],
+    [-100, -0.30594615173109363],
+    [400, 0.7194598788661556],
+    [-400, -0.7194598788661556],
+    [1000, 0.8865653994370497],
+    [-1000, -0.8865653994370497],
+    [10000, 0.9972736365998054],
+    [-10000, -0.9972736365998054],
+    [12800, 1.0],
+    [-12800, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`stoof_cp_to_score:${id}`, () => {
+        expect(stoof_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });
 });

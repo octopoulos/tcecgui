@@ -11,18 +11,18 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+_, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_move_ply, get_object,
-HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
+get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
-reset_charts, resize_3d, Resource, resume_game, Round,
-S, save_option, save_storage, scene, ScrollDocument, set_3d_events, set_camera_control, set_camera_id, SetDefault,
-Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d, STATE_KEYS, Style,
-TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression, translate_node, Undefined,
-update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
+reset_charts, resize_3d, Resource, resume_sleep, Round,
+S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
+SetDefault, Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d,
+STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression,
+translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
 */
 'use strict';
 
@@ -51,12 +51,14 @@ let ANALYSIS_URLS = {
         archive: {
             last: '*',
             main: true,
+            pv_id: '#moves-archive',
             vis: 'archive',
         },
         live: {
             count: 'end',
             last: '*',
             main: true,
+            pv_id: '#moves-live',
             vis: 'live',
         },
         live0: {
@@ -121,8 +123,10 @@ let ANALYSIS_URLS = {
         live: 'stand',
     },
     ENGINE_FEATURES = {
-        AllieStein: 5,                  // & 1 => NN engine
-        LCZero: 3,                      // & 2 => Leela variations
+        AllieStein: 1 + 4,              // & 1 => NN engine
+        LCZero: 1 + 2,                  // & 2 => Leela variations
+        ScorpioNN: 1,
+        Stoofvlees: 1 + 8,
     },
     event_stats = {
         archive: {},
@@ -135,6 +139,7 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
+    MAX_HISTORY = 20,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -194,12 +199,14 @@ let ANALYSIS_URLS = {
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN',
+        overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
-        view: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
+        stand: 'Rank|Engine|Games|Points|{Wins} [W/B]|{Losses} [W/B]|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
+    TIMEOUT_live_delay = 1,
+    TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
     tour_info = {
@@ -229,7 +236,7 @@ function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
         return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
     else
-        return Math.atan(cp / 111) / 1.74;
+        return Atan(cp / 111) / 1.74;
 }
 
 /**
@@ -254,8 +261,10 @@ function calculate_probability(short_engine, eval_)
             white_win = leela_cp_to_score(cp);
         else if (feature & 4)
             white_win = allie_cp_to_score(cp);
+        else if (feature & 8)
+            white_win = stoof_cp_to_score(cp);
         else
-            white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
+            white_win = (Atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
 
         // this is the HALF white win %
         white_win *= 50;
@@ -399,13 +408,24 @@ function get_short_name(engine)
 }
 
 /**
+ * Get XHR elapsed time
+ * @param {Object} xhr
+ * @returns {number}
+ */
+function get_xhr_elapsed(xhr) {
+    let curr_time = new Date(xhr.getResponseHeader('date')),
+        last_mod = new Date(xhr.getResponseHeader('last-modified'));
+    return curr_time.getTime() - last_mod.getTime();
+}
+
+/**
  * Convert centipawn to score % for Leela 2019+
  * https://github.com/LeelaChessZero/lc0/pull/1193/files
  * @param {number} cp
  * @returns {number}
  */
 function leela_cp_to_score(cp) {
-    return Math.atan(cp / 90) / 1.5637541897;
+    return Atan(cp / 90) / 1.5637541897;
 }
 
 /**
@@ -417,6 +437,15 @@ function parse_date_time(text) {
     let items = text.split(' on '),
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
     return seconds;
+}
+
+/**
+ * Convert centipawn to score % for Stoofvlees II
+ * @param {number} cp
+ * @returns {number}
+ */
+function stoof_cp_to_score(cp) {
+    return Atan(cp / 194) / 1.55564;
 }
 
 // BOARD
@@ -547,6 +576,22 @@ function create_boards() {
         Class('.color', '-active');
         Class(this, 'active');
     });
+}
+
+/**
+ * PV board order
+ */
+function order_boards() {
+    if (HasClass('#table-pv', 'frow'))
+        Style('#box-pv0, #box-pv1', 'order:unset');
+    else {
+        let main = xboards[Y.x];
+        if (main) {
+            let rotate = main.rotate;
+            Style('#box-pv0', `order:${1 - rotate}`);
+            Style('#box-pv1', `order:${rotate}`);
+        }
+    }
 }
 
 /**
@@ -857,7 +902,7 @@ function check_pagination(parent) {
     if (!PAGINATIONS[name])
         return 0;
 
-    if (DEV.ui)
+    if (DEV.queue)
         LS(`check_pagination: ${parent}/${name}`);
 
     // check if there's enough data
@@ -919,7 +964,7 @@ function check_queued_tables() {
     let removes = [];
 
     for (let queued of queued_tables) {
-        if (DEV.ui)
+        if (DEV.queue)
             LS(`queued: ${queued}`);
 
         let [section, parent, table] = queued.split('/');
@@ -975,7 +1020,7 @@ function create_live_table(is_live, id) {
         '<vert class="live fastart">'
             + '<div class="live-basic">'
                 + '<i class="engine" data-x="name"></i>'
-                + ' <i class="eval" data-x="eval"></i> <i class="live-score eval">[<i data-x="score"></i>]</i>'
+                + ` <i class="eval" data-x="eval"></i> <i class="percent">[<i data-x="score"></i>]</i>`
             + '</div>';
 
     if (is_live)
@@ -994,7 +1039,7 @@ function create_live_table(is_live, id) {
 /**
  * Create a table
  * @param {string[]} columns
- * @param {boolean=} add_empty add an empty row (good for table-view)
+ * @param {boolean=} add_empty add an empty row (good for overview)
  * @returns {string}
  */
 function create_table(columns, add_empty) {
@@ -1033,9 +1078,10 @@ function create_table_columns(columns, widths, no_translates=[]) {
 function create_tables() {
     // 1) normal tables
     Keys(TABLES).forEach(name => {
-        let table = TABLES[name],
-            html = create_table(Split(table), name == 'view');
-        HTML(`#table-${name}`, html);
+        let is_overview = (name == 'overview'),
+            table = TABLES[name],
+            html = create_table(Split(table), is_overview);
+        HTML(`#${is_overview? '': 'table-'}${name}`, html);
     });
     translate_node('body');
 
@@ -1050,7 +1096,7 @@ function create_tables() {
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
         touch_handle(e);
-    }, {passive: false});
+    }, {passive: true});
 }
 
 /**
@@ -1142,11 +1188,8 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
             return;
 
         let now = Now(true);
-        if (data && add_delta) {
-            let curr_time = new Date(xhr.getResponseHeader('date')),
-                last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            data.delta = curr_time.getTime() - last_mod.getTime();
-        }
+        if (data && add_delta)
+            data.delta = get_xhr_elapsed(xhr);
 
         if (key) {
             save_storage(key, {data: data, time: Floor(now)});
@@ -1160,16 +1203,14 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
 /**
  * Download static JSON files at startup
  * @param {boolean=} only_cache
+ * @param {boolean=} no_live
  */
-function download_tables(only_cache) {
+function download_tables(only_cache, no_live) {
     if (!only_cache)
         download_gamelist();
 
     let section = 'live';
-    // if (section != Y.x)
-    //     return;
-
-    if (!only_cache) {
+    if (!only_cache && !no_live) {
         download_pgn(section, 'live.json');
         download_live();
     }
@@ -1476,7 +1517,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         set_season_events();
 
     // open game
-    C('[data-g]', function() {
+    C('[data-g]', function(e) {
+        if (HasClass(e.target, 'fen'))
+            return;
         if (cannot_click())
             return;
 
@@ -1487,7 +1530,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         let game = this.dataset.g * 1;
         if (section == 'archive') {
             save_option('game', game);
-            open_game();
+            open_game(true);
         }
         // make sure the game is over
         else if (_('a.game[href]', this))
@@ -1496,9 +1539,18 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // fen preview
     Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
-        if (e.type == 'click')
+        if (e.type == 'click') {
             CopyClipboard(TEXT(this));
-        popup_custom('popup-fen', 'fen', e);
+            let overlay = xboards.xfen.overlay;
+            HTML(overlay,
+                '<vert class="fcenter facenter h100">'
+                    + `<div class="xcopy">${translate_default('COPIED')}</div>`
+                + '</vert>'
+            );
+            Style(overlay, 'opacity:1;transition:opacity 0s');
+        }
+        else
+            popup_custom('popup-fen', 'fen', e);
     });
 
     // 6) update shortcuts
@@ -1632,8 +1684,9 @@ function open_event() {
 
 /**
  * Open an archived game
+ * @param {boolean=} direct clicked on the game => scroll when loaded
  */
-function open_game() {
+function open_game(direct) {
     let info = tour_info.archive,
         event = info.url;
     if (!event)
@@ -1643,7 +1696,7 @@ function open_game() {
         push_state();
         check_hash();
     }
-    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`);
+    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`, direct);
 }
 
 /**
@@ -2031,6 +2084,46 @@ function check_adjudication(dico, total_moves) {
 }
 
 /**
+ * Check if some moves are missing => reload live.json
+ * @param {number=} ply
+ */
+function check_missing_moves(ply) {
+    if (!Y.reload_missing)
+        return;
+    let section = Y.x;
+    if (section != 'live')
+        return;
+
+    let main = xboards.live,
+        now = Now(true),
+        delta = now - main.time;
+    if (delta < TIMEOUT_live_reload)
+        return;
+
+    let empty = -1,
+        moves = main.moves,
+        num_move = moves.length;
+
+    if (ply && !moves[ply - 1])
+        empty = ply - 1;
+    else
+        for (let i = num_move - 1; i >= 0; i --)
+            if (!moves[i]) {
+                empty = i;
+                break;
+            }
+
+    if (DEV.new)
+        LS(`empty=${empty} : delta=${delta}`);
+    if (empty < 0)
+        return;
+
+    add_timeout(section, () => {
+        download_pgn(section, 'live.json', false, true);
+    }, TIMEOUT_live_delay * 1000);
+}
+
+/**
  * Download live evals for the current even + a given round
  * @param {number} round
  */
@@ -2056,16 +2149,23 @@ function download_live_evals(round) {
  * Download the PGN
  * @param {string} section archive, live
  * @param {string} url
+ * @param {boolean=} direct scroll up when loaded
+ * @param {boolean=} reset_moves
  */
-function download_pgn(section, url) {
+function download_pgn(section, url, direct, reset_moves) {
+    if (DEV.new)
+        LS(`download_pgn: ${section} : ${url} : ${direct} : ${reset_moves}`);
+    xboards[section].time = Now(true);
+
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
 
         if (data) {
-            let last_mod = new Date(xhr.getResponseHeader('last-modified'));
-            data.elapsed = Now(true) - last_mod.getTime() / 1000;
-            data.gameChanged = 1;
+            Assign(data, {
+                elapsed: get_xhr_elapsed(xhr) / 1000,
+                gameChanged: 1,
+            });
 
             // FUTURE: use ?? operator
             if (section == 'archive' && data.Headers)
@@ -2073,10 +2173,10 @@ function download_pgn(section, url) {
         }
 
         pgns[section] = null;
-        update_pgn(section, data);
+        update_pgn(section, data, reset_moves);
 
-        if (section == 'archive')
-            ScrollDocument('#table-view');
+        if (section == 'archive' && direct)
+            scroll_adjust('#overview', true);
     });
 }
 
@@ -2095,14 +2195,13 @@ function resize_game() {
     }
 
     // sub boards
-    let center = Id('center'),
-        width = center.clientWidth;
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (!board.sub)
             return;
 
-        let size = Clamp(width / board.sub - 4, 196, 320);
+        let area = get_area(board.node),
+            size = Clamp(area.clientWidth / board.sub - 4, 196, 320);
         board.instant();
         board.resize(size);
     });
@@ -2239,7 +2338,7 @@ function update_move_pv(section, ply, move) {
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
-    if (!Y[`hide_eval_${id}`]) {
+    if (Y.info_eval) {
         for (let child of [box_node, node]) {
             HTML(`[data-x="eval"]`, status_eval, child);
             HTML(`[data-x="score"]`, status_score, child);
@@ -2276,7 +2375,7 @@ function update_overview_basic(section, headers) {
     if (section != Y.x)
         return;
 
-    let overview = Id('table-view');
+    let overview = Id('overview');
 
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
@@ -2342,7 +2441,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         return;
 
     let finished,
-        overview = Id('table-view'),
+        overview = Id('overview'),
         is_live = (section == 'live'),
         main = xboards[section],
         cur_ply = main.ply,
@@ -2417,8 +2516,9 @@ function update_overview_moves(section, headers, moves, is_new) {
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
  * @param {Object} pgn
+ * @param {boolean=} reset_moves
  */
-function update_pgn(section, pgn) {
+function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
         return;
 
@@ -2432,7 +2532,7 @@ function update_pgn(section, pgn) {
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
-        overview = Id('table-view');
+        overview = Id('overview');
 
     // 2) update overview
     if (pgn.Users)
@@ -2448,7 +2548,6 @@ function update_pgn(section, pgn) {
     }
 
     // 3) check for a new game
-    // TODO: bug at this point
     let main = xboards[section];
     if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
@@ -2465,6 +2564,14 @@ function update_pgn(section, pgn) {
         main.round = headers.Round;
         update_move_info(0, {});
         update_move_info(1, {});
+
+        if (reset_moves)
+            add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
+    }
+    // can happen after resume
+    else if (reset_moves) {
+        HTML(main.xmoves, '');
+        HTML(main.pv_node, '');
     }
 
     if (!num_move)
@@ -2472,6 +2579,9 @@ function update_pgn(section, pgn) {
 
     // 4) add the moves
     main.add_moves(moves);
+    check_missing_moves();
+    main.time = Now(true);
+
     if (is_same)
         finished = update_overview_moves(section, headers, moves, true, true);
 
@@ -2508,7 +2618,7 @@ function update_pgn(section, pgn) {
         }
     }
 
-    // clock
+    // 5) clock
     if (section == 'live' && last_move) {
         let who = 1 - last_move.ply % 2;
         if (!new_game)
@@ -2557,7 +2667,7 @@ function clock_tick(id) {
  * @param {number} count
  */
 function set_viewers(count) {
-    HTML('#table-view td[data-x="viewers"]', count);
+    HTML('#overview td[data-x="viewers"]', count);
 }
 
 /**
@@ -2637,12 +2747,6 @@ function update_live_eval(section, data, id, force_ply) {
 
     board.evals[ply] = data;
 
-    // live engine is not desired?
-    if (!Y[`live_engine_${id + 1}`]) {
-        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
-        return;
-    }
-
     // update engine name if it has changed
     engine = engine || data.engine;
     let short = get_short_name(engine);
@@ -2660,7 +2764,7 @@ function update_live_eval(section, data, id, force_ply) {
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
-        let is_hide = Y[`hide_eval_${id + 2}`],
+        let is_hide = !Y.info_eval,
             dico = {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
@@ -2685,6 +2789,7 @@ function update_live_eval(section, data, id, force_ply) {
     board.add_moves_string(data.pv, force_ply);
 
     update_live_chart(moves || [data], id + 2, !!moves || force_ply);
+    check_missing_moves(ply);
 }
 
 /**
@@ -2722,9 +2827,9 @@ function update_player_eval(section, data) {
 
     // 2) add moves
     let board = xboards[`pv${id}`];
+    data.ply = split_move_string(data.pv)[0];
     board.add_moves_string(data.pv);
 
-    data.ply = split_move_string(data.pv)[0];
     if (DEV.eval) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
         LS(data);
@@ -2748,6 +2853,7 @@ function update_player_eval(section, data) {
     }
 
     update_live_chart([data], id);
+    check_missing_moves(data.ply);
 }
 
 /**
@@ -2811,7 +2917,7 @@ function add_history() {
     y_index ++;
     y_states[y_index] = text;
     y_states.length = y_index + 1;
-    if (y_states.length > 10)
+    if (y_states.length > MAX_HISTORY)
         y_states.shift();
 }
 
@@ -2838,7 +2944,7 @@ function game_action_key(code) {
             if (Visible('#modal2'))
                 show_modal(true);
             else
-                resume_game();
+                resume_sleep();
             break;
         // enter, space, x
         case 13:
@@ -3009,8 +3115,14 @@ function change_setting_game(name, value) {
         break;
     case 'copy_moves':
         let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-        if (target)
-            CopyClipboard(target.innerText.replace(/\s/g, ' '));
+        if (target) {
+            let text = target.innerText.replace(/\s/g, ' ');
+            if (text.slice(0, 3) == '0. ')
+                text = text.slice(3);
+            if (text.slice(-2) == ' *')
+                text = text.slice(0, -2);
+            CopyClipboard(text);
+        }
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
@@ -3112,6 +3224,7 @@ function handle_board_events(board, type, value) {
         else if (value == 'rotate') {
             show_board_info();
             redraw_arrows();
+            order_boards();
         }
         break;
     // move list => ply selected
@@ -3227,7 +3340,7 @@ function opened_table(node, name, tab) {
         is_chart = _('canvas', node),
         section = Y.x,
         main = xboards[section];
-    if (DEV.ui)
+    if (DEV.open)
         LS(`opened_table: ${parent}/${name}`);
 
     // 2) special cases
@@ -3252,11 +3365,13 @@ function opened_table(node, name, tab) {
         break;
     case 'pva':
         let board = board_target;
-        if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
-            board = xboards.pv0;
-        Class('.color', '-active');
-        Class(`.color[data-id="${board.name}"]`, 'active');
-        xboards.pva.set_fen(board.fen, true);
+        if (board) {
+            if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
+                board = xboards.pv0;
+            Class('.color', '-active');
+            Class(`.color[data-id="${board.name}"]`, 'active');
+            xboards.pva.set_fen(board.fen, true);
+        }
         break;
     case 'season':
         download_gamelist();
@@ -3316,10 +3431,12 @@ function popup_custom(id, name, e, scolor) {
             HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
         }
         else if (name == 'fen') {
-            let fen = TEXT(e.target);
-            xboards.xfen.instant();
-            if (!xboards.xfen.set_fen(fen, true))
+            let fen = TEXT(e.target),
+                xfen = xboards.xfen;
+            xfen.instant();
+            if (!xfen.set_fen(fen, true))
                 return;
+            Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
         }
 
         // place the popup in a visible area on the screen
@@ -3349,6 +3466,14 @@ function popup_custom(id, name, e, scolor) {
     }
     else
         add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 500);
+}
+
+/**
+ * Compute woke up
+ */
+function resume_sleep() {
+    check_missing_moves();
+    show_board_info();
 }
 
 /**

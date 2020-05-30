@@ -31,14 +31,15 @@ html {
     background: rgba(255, 255, 255, 0.08);
 }
 #archive .xmoves,
-#live .xmoves {
+#live .xmoves,
+.moves {
     color: #dcdcdc;
 }
 .live-pv,
 .xmoves {
     background: rgba(255, 255, 255, 0.85);
 }
-.live-score {
+.percent {
     color: #bbb;
 }
 .book {
@@ -48,14 +49,16 @@ html {
     color: #f5f5f5;
 }
 #archive .real,
-#live .real {
+#live .real,
+.moves .real {
     color: #ddd;
 }
 .turn {
     color: #222;
 }
 #archive .turn,
-#live .turn {
+#live .turn,
+.moves .turn {
     color: #bbb;
 }
 
@@ -93,7 +96,7 @@ html {
     color: #dfdfdf;
 }
 .graphs {
-    background-color: #c6c6c6;
+    background: rgba(235, 235, 238, 0.8);
 }
 .stats {
     background: rgba(1, 9, 26, 0.28);

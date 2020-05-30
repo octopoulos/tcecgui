@@ -51,8 +51,8 @@
     <hori id="sub-header" class="fbetween">
         <horis class="faround fabase">
             <div id="section">
-                <a id="nav-live" class="nav" href="#x=live" data-t="Live~2"></a>
-                <a id="nav-archive" class="nav" href="#x=archive" data-t="Archive"></a>
+                <a id="nav-live" class="nav shadow" href="#x=live" data-t="Live~2"></a>
+                <a id="nav-archive" class="nav shadow" href="#x=archive" data-t="Archive"></a>
             </div>
             <hori id="info" class="nav">
                 <i data-t="Info"></i>
@@ -88,24 +88,33 @@
     <!-- banners -->
     <horis id="banners" class="fbetween fastart">
         <div>
-            <img src="image/tcec2.jpg" class="banner" alt="TCEC">
-            <img src="image/cd.jpg" class="banner" alt="Chessdom">
+            <a href="liveold.html" target="_blank">
+                <img src="image/tcec2.jpg" class="banner" alt="TCEC">
+            </a>
+            <a href="http://www.chessdom.com" target="_blank">
+                <img src="image/cd.jpg" class="banner" alt="Chessdom">
+            </a>
         </div>
         <!-- ad0 -->
         <div id="ad0">
             <hori class="google-ad fcenter"></hori>
         </div>
-        <form id="paypal" target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
-            <input type="hidden" name="cmd" value="_s-xclick">
-            <input type="hidden" name="hosted_button_id" value="L84QRRQJ88CYQ">
-            <input type="image" class="banner" src="image/paypal3.jpg" name="submit" alt="PayPal - The safer, easier way to pay online!">
-        </form>
+        <div>
+            <a id="twitch" href="https://www.twitch.tv/TCEC_Chess_TV" target="_blank">
+                <img src="image/twitch.svg" class="banner" alt="Twitch stream">
+            </a>
+            <form id="paypal" target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="float: right;">
+                <input type="hidden" name="cmd" value="_s-xclick">
+                <input type="hidden" name="hosted_button_id" value="L84QRRQJ88CYQ">
+                <input type="image" class="banner" src="image/paypal3.jpg" name="submit" alt="PayPal - The safer, easier way to pay online!">
+            </form>
+        </div>
     </horis>
-    <div id="table-view" class="scroller"></div>
+    <div id="overview" class="scroller"></div>
     <horis id="top" class="area fcenter fastart"></horis>
     <hori id="main" class="fcenter fastretch">
         <!-- left -->
-        <vert id="left">
+        <vert id="left" class="panel">
             <hori class="swaps">
                 <div class="swap mirror">
                     <i data-svg="next"></i>
@@ -125,6 +134,8 @@
             <vert id="left0" class="area">
                 <div id="archive" class="xboard drag dn"></div>
                 <div id="live" class="xboard drag"></div>
+                <horis id="moves-archive" class="moves drag"></horis>
+                <horis id="moves-live" class="moves drag"></horis>
                 <div id="moves-pv0" class="drag"></div>
                 <div id="moves-pv1" class="drag"></div>
                 <div id="table-live0" class="drag"></div>
@@ -132,7 +143,7 @@
             </vert>
         </vert>
         <!-- center -->
-        <vert id="center">
+        <vert id="center" class="panel">
             <hori class="swaps">
                 <div class="swap mirror">
                     <i data-svg="next"></i>
@@ -289,7 +300,7 @@
             </vert>
         </vert>
         <!-- right -->
-        <vert id="right" >
+        <vert id="right" class="panel">
             <hori class="swaps">
                 <div class="swap mirror">
                     <i data-svg="next"></i>
