@@ -134,10 +134,11 @@ function parse_dev() {
  * Reset some settings if the version is too old
  */
 function reset_old_settings() {
-    if (Y.version == VERSION)
+    let version = Y.version;
+    if (version == VERSION)
         return;
 
-    if (!Y.version) {
+    if (!version) {
         let updates = ['audio'];
         for (let update of updates) {
             LS(`reset ${update} settings ...`);
@@ -150,6 +151,9 @@ function reset_old_settings() {
             });
         }
     }
+
+    if (version < '20200529')
+        save_option('archive_scroll', 1);
 
     save_option('version', VERSION);
 }
