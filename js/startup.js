@@ -1831,7 +1831,7 @@ function startup() {
             copy_moves: '1',
             grid: [{max: 10, min: 0, type: 'number'}, 0],
             info_moves: [ON_OFF, 1],
-            info_moves_copy: [ON_OFF, 1],
+            info_moves_copy: [ON_OFF, 0],
             move_height: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
         },
         copy_copy: {
@@ -1839,7 +1839,7 @@ function startup() {
             copy_moves: '1',
             grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
             info_moves: [ON_OFF, 1],
-            info_moves_copy: [ON_OFF, 1],
+            info_moves_copy: [ON_OFF, 0],
             move_height_copy: [{max: 100, min: 3, step: 0.5, type: 'number'}, 20],
         },
         copy_pv: {
