@@ -200,7 +200,7 @@ let ANALYSIS_URLS = {
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|Crashes|{Wins} [W/B]|{Losses} [W/B]|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|{Wins} [W/B]|{Losses} [W/B]|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TIMEOUT_live_delay = 1,
