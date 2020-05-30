@@ -1493,7 +1493,7 @@ function startup_3d() {
             theme: [THEMES, THEMES[0]],
         },
         audio: {
-            volume: option_number(5, 0, 10),
+            volume: option_number(7, 0, 15),
         },
         video: {
             encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],

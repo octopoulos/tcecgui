@@ -155,9 +155,9 @@ function reset_old_settings() {
     }
 
     if (version < '20200530') {
-        LS(`reset 2 settings: ${version} => ${VERSION}`);
+        LS(`version: ${version} => ${VERSION}`);
         save_option('archive_scroll', 1);
-        save_option('wheel_adjust', 92);
+        save_option('wheel_adjust', 63);
     }
     save_option('version', VERSION);
 }
