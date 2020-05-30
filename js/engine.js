@@ -866,15 +866,16 @@ function render_scroll() {
  * @param {number=} depth
  */
 function scroll_adjust(target, depth=0) {
-    let keys = target? [target]: ANCHORS,
+    let keys = target? [target]: Keys(ANCHORS),
         max_delta = depth? 80: 100,
         window_height = window.innerHeight,
         y = ScrollDocument();
 
-    if (!y)
+    if (!y && !target)
         return;
 
-    let deltas = Keys(keys).map(key => {
+    // 1) gather anchor data
+    let deltas = keys.map(key => {
         let [flag, gap, priority] = ANCHORS[key] || [0, 0, 0],
             nodes = From(A(key)).filter(child => Visible(child));
         if (!nodes.length)
@@ -903,9 +904,16 @@ function scroll_adjust(target, depth=0) {
         return (b[2] || b[3]) - (a[2] || a[3]);
     });
 
-    if (!deltas.length)
+    // 2) no anchors found => scroll to the target if any
+    if (!deltas.length) {
+        if (target) {
+            y = _(target).getBoundingClientRect().top + y;
+            ScrollDocument(y, true);
+        }
         return;
+    }
 
+    // 3) get the closest matches
     let offset, y1, y2, y3,
         diff = max_delta,
         diff3 = diff;
@@ -934,6 +942,7 @@ function scroll_adjust(target, depth=0) {
         }
     }
 
+    // 4) combine the best matches
     if (y1 == undefined && y3 != undefined)
         y = y3;
     else {
