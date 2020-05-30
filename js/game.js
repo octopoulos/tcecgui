@@ -11,7 +11,7 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+_, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
 C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
 document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
@@ -123,8 +123,10 @@ let ANALYSIS_URLS = {
         live: 'stand',
     },
     ENGINE_FEATURES = {
-        AllieStein: 5,                  // & 1 => NN engine
-        LCZero: 3,                      // & 2 => Leela variations
+        AllieStein: 1 + 4,              // & 1 => NN engine
+        LCZero: 1 + 2,                  // & 2 => Leela variations
+        ScorpioNN: 1,
+        Stoofvlees: 1 + 8,
     },
     event_stats = {
         archive: {},
@@ -234,7 +236,7 @@ function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
         return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
     else
-        return Math.atan(cp / 111) / 1.74;
+        return Atan(cp / 111) / 1.74;
 }
 
 /**
@@ -259,8 +261,10 @@ function calculate_probability(short_engine, eval_)
             white_win = leela_cp_to_score(cp);
         else if (feature & 4)
             white_win = allie_cp_to_score(cp);
+        else if (feature & 8)
+            white_win = stoof_cp_to_score(cp);
         else
-            white_win = (Math.atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
+            white_win = (Atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
 
         // this is the HALF white win %
         white_win *= 50;
@@ -421,7 +425,7 @@ function get_xhr_elapsed(xhr) {
  * @returns {number}
  */
 function leela_cp_to_score(cp) {
-    return Math.atan(cp / 90) / 1.5637541897;
+    return Atan(cp / 90) / 1.5637541897;
 }
 
 /**
@@ -433,6 +437,15 @@ function parse_date_time(text) {
     let items = text.split(' on '),
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
     return seconds;
+}
+
+/**
+ * Convert centipawn to score % for Stoofvlees II
+ * @param {number} cp
+ * @returns {number}
+ */
+function stoof_cp_to_score(cp) {
+    return Atan(cp / 194) / 1.55564;
 }
 
 // BOARD

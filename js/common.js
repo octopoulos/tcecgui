@@ -16,6 +16,7 @@ console, document, FormData, location, Node, window, Window, XMLHttpRequest
 
 let Abs = Math.abs,
     Assign = Object.assign,
+    Atan = Math.atan,
     Ceil = Math.ceil,
     Exp = Math.exp,
     Floor = Math.floor,

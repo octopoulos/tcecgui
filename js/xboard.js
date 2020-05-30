@@ -924,8 +924,10 @@ class XBoard {
             return;
 
         let dual = this.dual,
-            real = this.real,
-            show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
+            real = this.real;
+        if (!real)
+            return;
+        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
             show_ply = Y.show_ply;
 
         // last

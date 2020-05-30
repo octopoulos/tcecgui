@@ -3,6 +3,9 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-05-30 : 2020-05-30 : stoof_cp_to_score
+2020-05-29 : 2020-05-27 : minimise chat reload when populating areas
+2020-05-29 : 2020-05-29 : improved archive scroll + ON by default
 2020-05-29 : 2020-05-27 : auto adjust wheel scroll
 2020-05-29 : 2020-05-29 : grid option for the moves
 2020-05-29 : 2020-05-29 : pixel aligned status with the board
@@ -273,7 +276,6 @@ low:
 ~          : 2020-05-26 : eval win% option between -100 and 100 => no need to clamp anything!
 ~          : 2020-04-13 : add 3d board
 lowest:
--          : 2020-05-27 : minimise chat reload when populating areas
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-26 : update overview for past moves?
