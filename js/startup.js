@@ -46,6 +46,16 @@ let AD_STYLES = {
         '.swaps': 'panel',
     },
     drag_source,
+    HIDES = {
+        archive: {
+            live: 1,
+            'moves-live': 1,
+        },
+        live: {
+            archive: 1,
+            'moves-archive': 1,
+        },
+    },
     old_font_height,
     old_stream = 0,
     old_window_height,
@@ -732,7 +742,12 @@ function opened_table_special(node, name, tab) {
  */
 function populate_areas() {
     let areas = Y.areas,
-        default_areas = DEFAULTS.areas;
+        default_areas = DEFAULTS.areas,
+        section = Y.x,
+        hides = Assign({}, HIDES[section]);
+
+    if (!Y.info_moves_copy)
+        hides[`moves-${section}`] = 1;
 
     // 1) count existing
     Keys(areas).forEach(key => {
@@ -790,14 +805,13 @@ function populate_areas() {
                 break;
             }
             else if (!is_tab) {
-                let is_show = (show & 1)? true: false,
+                let is_show = ((show & 1) && !hides[id])? true: false,
                     visible = Visible(child);
 
-                if (is_show != visible)
-                    if (!['archive', 'live', 'moves-archive', 'moves-live'].includes(id) || !visible) {
-                        error = `vis=${id}`;
-                        break;
-                    }
+                if (is_show != visible) {
+                    error = `vis=${id}`;
+                    break;
+                }
             }
 
             prev_tab = tab;
