@@ -2747,6 +2747,12 @@ function update_live_eval(section, data, id, force_ply) {
 
     board.evals[ply] = data;
 
+    // live engine is not desired?
+    if (!Y[`live_engine_${id}`]) {
+        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
+        return;
+    }
+
     // update engine name if it has changed
     engine = engine || data.engine;
     let short = get_short_name(engine);
