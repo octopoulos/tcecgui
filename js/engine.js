@@ -871,6 +871,7 @@ function scroll_adjust(target, max_delta, depth=0) {
         max_delta = Y.wheel_adjust;
 
     let keys = target? [target]: Keys(ANCHORS),
+        max_allowed = 100,
         window_height = window.innerHeight,
         y = ScrollDocument(),
         y_old = y;
@@ -892,12 +893,12 @@ function scroll_adjust(target, max_delta, depth=0) {
 
         if (flag & 1) {
             delta1 = top - y;
-            if (Abs(delta1) > max_delta)
+            if (Abs(delta1) > max_allowed)
                 return;
         }
         if (flag & 2) {
             delta2 = bottom - y;
-            if (Abs(delta2) > max_delta)
+            if (Abs(delta2) > max_allowed)
                 return;
         }
 
@@ -924,7 +925,7 @@ function scroll_adjust(target, max_delta, depth=0) {
     for (let [priority, key, delta1, delta2, top, bottom] of deltas) {
         if (DEV.ui)
             LS(`${priority} : ${key} : ${delta1} : ${delta2} : ${top} : ${bottom}`);
-        if (delta2 != undefined) {
+        if (delta2 != undefined && Abs(delta2) < max_delta) {
             y2 = bottom;
             offset = -delta2;
         }
@@ -947,18 +948,20 @@ function scroll_adjust(target, max_delta, depth=0) {
     }
 
     // 4) combine the best matches
+    let combined = 0;
     if (y1 == undefined && y3 != undefined)
         y = y3;
     else {
         let ys = [y1, y2].filter(value => value != undefined);
-        if (!ys.length)
+        combined = ys.length;
+        if (!combined)
             return;
         y = ys.reduce((a, b) => a + b) / ys.length;
     }
     ScrollDocument(y, true);
 
     // 5) adjust again?
-    if (!target && depth < 1) {
+    if (!target && depth < 1 && combined < 2) {
         let new_delta = max_delta - Abs(y - y_old);
         if (new_delta > 0)
             add_timeout('adjust', () => {scroll_adjust(target, new_delta, depth + 1);}, TIMEOUT_adjust);
