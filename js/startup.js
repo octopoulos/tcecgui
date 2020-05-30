@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-27
+// @version 2020-05-30
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -19,8 +19,8 @@ document, download_live, download_tables, DownloadObject, E, Events, Floor, From
 game_action_keyup, get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
 ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, order_boards, Parent, parse_dev, PIECE_THEMES,
-popup_custom, reset_old_settings, resize_game, Resource, resume_sleep, Round,
+merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent,
+parse_dev, PIECE_THEMES, popup_custom, reset_old_settings, resize_game, Resource, resume_sleep, Round,
 S, save_option, screen, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle,
@@ -61,11 +61,7 @@ let AD_STYLES = {
     old_window_height,
     old_x,
     // min & max allowed widths, when the value is <= min => automatic
-    PANEL_WIDTHS = {
-        center: [300, 720],
-        left: [281, 1200],
-        right: [281, 720],
-    },
+    PANEL_WIDTHS = [281, 1200],
     resume_time = Now(),
     STREAM_SETTINGS = {},
     TAB_NAMES = {
@@ -977,7 +973,7 @@ function resize_panels() {
             value = Y[`max_${name}`];
 
         Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
-        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[name][0]);
+        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[0]);
     }
 
     // panel gap
@@ -1434,9 +1430,8 @@ function set_global_events() {
         // 3, 4 => - +
         else if (index <= 4) {
             let name = `max_${node.id}`,
-                sizer = _('.size', node),
-                width = PANEL_WIDTHS[node.id];
-            save_option(name, Clamp(Y[name] + (index * 2 - 7) * 10, width[0], width[1]));
+                sizer = _('.size', node);
+            save_option(name, Clamp(Y[name] + (index * 2 - 7) * 10, PANEL_WIDTHS[0], PANEL_WIDTHS[1]));
             HTML(sizer, Y[name]);
             Show(sizer);
             add_timeout('size', () => {Hide('.size');}, TIMEOUT_size);
@@ -1749,11 +1744,11 @@ function startup() {
             preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
         },
         audio: {
-            audio_delay: [{max: 2000, min: 0, type: 'number'}, 150],
+            audio_delay: option_number(150, 0, 2000),
             audio_moves: [['none', 'all', 'last'], 'last'],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             book_sound: [ON_OFF, 1],
-            capture_delay: [{max: 1000, min: -1000, type: 'number'}, -200],
+            capture_delay: option_number(-200, -1000, 1000),
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
@@ -1765,24 +1760,24 @@ function startup() {
         // separator
         _1: {},
         arrow: {
-            arrow_base_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0],
+            arrow_base_border: option_number(0, 0, 5, 0.01),
             arrow_base_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_base_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_base_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
+            arrow_base_mix: option_number(0.7, 0, 1, 0.01),
+            arrow_base_size: option_number(2.05, 0, 5, 0.05),
             arrow_color_0: [{type: 'color'}, '#cdcdbe'],
             arrow_color_1: [{type: 'color'}, '#666666'],
             arrow_color_2: [{type: 'color'}, '#236ad6'],
             arrow_color_3: [{type: 'color'}, '#eb282d'],
             arrow_combine_23: [{type: 'color'}, '#007700'],
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
-            arrow_head_border: [{max: 5, min: 0, step: 0.01, type: 'number'}, 0.5],
+            arrow_head_border: option_number(0.5, 0, 5, 0.01),
             arrow_head_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_head_mix: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_head_size: [{max: 5, min: 0, step: 0.05, type: 'number'}, 2.05],
-            arrow_history_lag: [{max: 5000, min: 0, type: 'number'}, 1300],
+            arrow_head_mix: option_number(0.7, 0, 1, 0.01),
+            arrow_head_size: option_number(2.05, 0, 5, 0.05),
+            arrow_history_lag: option_number(1300, 0, 5000),
             arrow_moves: [['all', 'last'], 'all'],
-            arrow_opacity: [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7],
-            arrow_width: [{max: 5, min: 0, step: 0.01, type: 'number'}, 1.6],
+            arrow_opacity: option_number(0.7, 0, 1, 0.01),
+            arrow_width: option_number(1.6, 0, 5, 0.01),
         },
         board: {
             analysis_chessdb: '1',
@@ -1794,8 +1789,8 @@ function startup() {
             custom_white: [{type: 'color'}, '#ffffff'],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
-            highlight_delay: [{max: 1500, min: -100, step: 100, type: 'number'}, 0],
-            highlight_size: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055],
+            highlight_delay: option_number(0, -100, 1500, 100),
+            highlight_size: option_number(0.055, 0, 0.4, 0.001),
             notation: [ON_OFF, 1],
             piece_theme: [Keys(PIECE_THEMES), 'chess24'],
             status: [AUTO_ON_OFF, 'auto'],
@@ -1808,19 +1803,19 @@ function startup() {
             custom_black_pv: [{type: 'color'}, '#000000'],
             custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
-            highlight_size_pv: [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.088],
+            highlight_size_pv: option_number(0.088, 0, 0.4, 0.001),
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: [{max: 2000, min: 0, step: 10, type: 'number'}, 500],
+            show_delay: option_number(500, 0, 2000, 10),
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
         // separator
         control: {
-            book_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 600],
-            key_repeat: [{max: 2000, min: 10, step: 10, type: 'number'}, 70],
-            key_repeat_initial: [{max: 2000, min: 10, step: 10, type: 'number'}, 500],
-            play_every: [{max: 5000, min: 100, step: 100, type: 'number'}, 1200],
+            book_every: option_number(600, 100, 5000, 100),
+            key_repeat: option_number(70, 10, 2000, 10),
+            key_repeat_initial: option_number(500, 10, 2000, 10),
+            play_every: option_number(1200, 100, 5000, 100),
         },
         engine: {
             mobility: [ON_OFF, 1],
@@ -1831,8 +1826,8 @@ function startup() {
             drag_and_drop: [ON_OFF, 1],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
-            scroll_inertia: [{max: 0.99, min: 0, step: 0.01, type: 'number'}, 0.85],
-            wheel_adjust: [ON_OFF, 1],
+            scroll_inertia: option_number(0.85, 0, 0.99, 0.01),
+            wheel_adjust: option_number(95, 0, 200),
             wrap: [ON_OFF, 1],
             wrap_cross: [AUTO_ON_OFF, 'auto'],
             wrap_h2h: [AUTO_ON_OFF, 'auto'],
@@ -1840,17 +1835,17 @@ function startup() {
             wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
-            eval_clamp: [{max: 100, min: 1, type: 'number'}, 10],
-            graph_aspect_ratio: [{max: 5, min: 0.5, step: 0.005, type: 'number'}, 1.5],
+            eval_clamp: option_number(10, 1, 100),
+            graph_aspect_ratio: option_number(1.5, 0.5, 5, 0.005),
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
-            graph_line: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
-            graph_min_width: [{max: 640, min: 40, type: 'number'}, 240],
-            graph_radius: [{min: 0, max: 10, step: 0.1, type: 'number'}, 2.2],
-            graph_tension: [{min: 0, max: 0.5, step: 0.01, type: 'number'}, 0.1],
-            graph_text: [{min: 1, max: 30, type: 'number'}, 10],
+            graph_line: option_number(2.2, 0, 10, 0.1),
+            graph_min_width: option_number(240, 40, 640),
+            graph_radius: option_number(2.2, 0, 10, 0.1),
+            graph_tension: option_number(0.1, 0, 0.5, 0.01),
+            graph_text: option_number(10, 1, 30),
             use_for_arrow: '1',
         },
         info: {
@@ -1863,35 +1858,35 @@ function startup() {
         },
         live: {
             copy_moves: '1',
-            grid_live: [{max: 10, min: 0, type: 'number'}, 0],
+            grid_live: option_number(0, 0, 10),
             info_moves_live: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: [{max: 100, min: 3, step: 0.5, type: 'number'}, 3],
+            move_height_live: option_number(3, 3, 100, 0.5),
         },
         moves: {
-            grid: [{max: 10, min: 0, type: 'number'}, 0],
-            grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
-            grid_live: [{max: 10, min: 0, type: 'number'}, 0],
-            grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
-            move_height: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
-            move_height_copy: [{max: 100, min: 3, step: 0.5, type: 'number'}, 20],
-            move_height_live: [{max: 100, min: 3, step: 0.5, type: 'number'}, 3],
-            move_height_pv: [{max: 100, min: 5, step: 0.5, type: 'number'}, 5],
+            grid: option_number(0, 0, 10),
+            grid_copy: option_number(2, 0, 10),
+            grid_live: option_number(0, 0, 10),
+            grid_pv: option_number(1, 0, 10),
+            move_height: option_number(5, 3, 100, 0.5),
+            move_height_copy: option_number(20, 3, 100, 0.5),
+            move_height_live: option_number(3, 3, 100, 0.5),
+            move_height_pv: option_number(5, 5, 100, 0.5),
         },
         panel: {
-            column_bottom: [{max: 8, min: 1, type: 'number'}, 4],
-            column_top: [{max: 8, min: 1, type: 'number'}, 2],
+            column_bottom: option_number(4, 1, 8),
+            column_top: option_number(2, 1, 8),
             default_positions: '1',
-            max_center: [{max: PANEL_WIDTHS.center[1], min: PANEL_WIDTHS.center[0], type: 'number'}, 500],
-            max_left: [{max: PANEL_WIDTHS.left[1], min: PANEL_WIDTHS.left[0], type: 'number'}, 500],
-            max_right: [{max: PANEL_WIDTHS.right[1], min: PANEL_WIDTHS.right[0], type: 'number'}, 500],
-            max_window: [{max: 32000, min: 256, type: 'number'}, 1920],
+            max_center: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
+            max_left: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
+            max_right: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
+            max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 1],
-            panel_gap: [{max: 100, min: 0, type: 'number'}, 16],
+            panel_gap: option_number(16, 0, 100),
             unhide: '1',
         },
         quick: {
-            chat_height: [{max: 1600, min: 100, type: 'number'}, 600],
+            chat_height: option_number(600, 100, 1600),
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'sched'],
         },
@@ -1904,25 +1899,25 @@ function startup() {
         copy: {
             _pop: true,
             copy_moves: '1',
-            grid: [{max: 10, min: 0, type: 'number'}, 0],
+            grid: option_number(0, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
+            move_height: option_number(5, 3, 100, 0.5),
         },
         copy_copy: {
             _pop: true,
             copy_moves: '1',
-            grid_copy: [{max: 10, min: 0, type: 'number'}, 2],
+            grid_copy: option_number(2, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height_copy: [{max: 100, min: 3, step: 0.5, type: 'number'}, 20],
+            move_height_copy: option_number(20, 3, 100, 0.5),
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
-            grid_pv: [{max: 10, min: 0, type: 'number'}, 1],
+            grid_pv: option_number(1, 0, 10),
             info_moves_pv: [ON_OFF, 1],
-            move_height_pv: [{max: 100, min: 3, step: 0.5, type: 'number'}, 5],
+            move_height_pv: option_number(5, 3, 100, 0.5)
         },
     });
 
