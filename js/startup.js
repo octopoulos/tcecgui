@@ -1827,7 +1827,7 @@ function startup() {
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: option_number(0.85, 0, 0.99, 0.01),
-            wheel_adjust: option_number(95, 0, 200),
+            wheel_adjust: option_number(92, 0, 200),
             wrap: [ON_OFF, 1],
             wrap_cross: [AUTO_ON_OFF, 'auto'],
             wrap_h2h: [AUTO_ON_OFF, 'auto'],
