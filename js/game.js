@@ -234,8 +234,7 @@ let ANALYSIS_URLS = {
 function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
         return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
-    else
-        return Atan(cp / 111) / 1.74;
+    return Atan(cp / 111) / 1.74;
 }
 
 /**
@@ -431,6 +430,7 @@ function leela_cp_to_score(cp) {
  * Get the timestamp in seconds from a date time
  * - assume it's UTC
  * @param {string} text
+ * @returns {number}
  */
 function parse_date_time(text) {
     let items = text.split(' on '),
@@ -893,6 +893,7 @@ function change_page(parent, value) {
 
 /**
  * Create pagination if required
+ * @param {string} parent
  * @returns {number} number of pages (negative if virtual)
  */
 function check_pagination(parent) {
@@ -1013,6 +1014,7 @@ function create_field_value(text) {
  * - we don't want to recreate the table each time, that's why this creation will give a boost
  * @param {boolean} is_live live => has more info
  * @param {number} id 0, 1
+ * @returns {string}
  */
 function create_live_table(is_live, id) {
     let html =
@@ -3089,6 +3091,7 @@ function init_3d_special() {
 
 /**
  * Random position for looking at the chessboard
+ * @returns {Object}
  */
 function random_position() {
     return {x: -1.34, y: -1.98, z: 0.97};
@@ -3100,6 +3103,8 @@ function random_position() {
 /**
  * Changed a game setting
  * - called by change_setting_special
+ * @param {string} name
+ * @param {*} value
  */
 function change_setting_game(name, value) {
     let prefix = name.split('_')[0],

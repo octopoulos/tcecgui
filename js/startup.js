@@ -419,6 +419,7 @@ function close_popups() {
  * @param {Object} dico {key:value, ...}
  * - value is string => URL is created unless empty string
  * - otherwise insert separator
+ * @returns {string}
  */
 function create_url_list(dico) {
     if (!dico)
@@ -959,7 +960,6 @@ function resize_move_lists() {
 
 /**
  * Resize the left & right panels
- * @param {boolean=} force
  */
 function resize_panels() {
     update_visible();
@@ -1086,6 +1086,8 @@ function show_live_engines() {
  * @param {boolean=} adjust only change its position
  * @param {boolean=} instant popup appears instantly
  * @param {boolean=} overlay dark overlay is used behind the popup
+ * @param {string=} setting
+ * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
     S('#overlay', show && overlay);

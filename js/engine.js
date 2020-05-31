@@ -159,15 +159,17 @@ function get_int(name, def) {
  * @returns {Object}
  */
 function get_object(name, def) {
-    let text = get_string(name);
+    let result,
+        text = get_string(name);
     if (!text)
         return def;
     try {
-        return JSON.parse(text);
+        result = JSON.parse(text);
     }
     catch(error) {
-        return def;
+        result = def;
     }
+    return result;
 }
 
 /**
