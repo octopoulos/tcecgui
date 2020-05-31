@@ -5,9 +5,9 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, add_timeout, analyse_crosstable, analyse_tournament, Class, create_bracket, CreateNode, DEV, get_string, HasClass,
-Hide, HOST, HTML, Id, InsertNodes, io, LS, Prop, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval,
-update_pgn, update_player_eval, update_table, update_twitch, Y
+_, add_timeout, analyse_crosstable, analyse_tournament, Class, create_bracket, CreateNode, DEV, HasClass, Hide, HOST,
+HTML, Id, InsertNodes, io, LS, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval, update_pgn,
+update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
 

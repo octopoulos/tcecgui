@@ -4,8 +4,8 @@
 //
 /*
 globals
-_, $, Abs, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
-Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, Visible, xboards, window, Y
+_, Abs, Assign, C, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Keys, load_library, LS, Pad, Round,
+Visible, window, xboards, Y
 */
 'use strict';
 

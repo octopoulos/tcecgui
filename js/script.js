@@ -1,6 +1,6 @@
 // script.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-21
+// @version 2020-05-31
 /*
 globals
 startup, window
@@ -16,7 +16,6 @@ window.onload = function() {
     // @import {xboard.js}
     // @import {graph.js}
     // @import {game.js}
-    // @import {temp.js}
     // @import {network.js}
     // @import {startup.js}
     // @import {config.js}

@@ -9,10 +9,10 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document, E, From, HasClass,
-history, HTML, Id, InsertNodes, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT,
-Title, Undefined, Visible, window
+_, A, Abs, Assign, Attrs, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document, E, From, history,
+HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString,
+requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT, Title, Undefined,
+Visible, window
 */
 'use strict';
 
@@ -815,6 +815,15 @@ function cannot_click() {
  */
 function done_touch() {
     touch_done = Now(true);
+}
+
+/**
+ * Get the parent area of a node
+ * @param {Node} node
+ * @returns {Node}
+ */
+function get_area(node) {
+    return Parent(node, {class_: 'area'});
 }
 
 /**

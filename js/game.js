@@ -12,17 +12,16 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
-C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
-get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target,
+controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, fill_combo, Floor,
+FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE, HTML,
+Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_sleep, Round,
-S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
-SetDefault, Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d,
-STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression,
-translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
+S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
+split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
+translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
+update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 

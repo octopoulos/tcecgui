@@ -23,10 +23,9 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard,
-CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, From, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes,
-Keys, Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
-split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
+DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, LS, Min, mix_hex_colors, Now, Parent,
+play_sound, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper, Visible, Y
 */
 'use strict';
 
