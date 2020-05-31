@@ -2748,7 +2748,7 @@ function update_live_eval(section, data, id, force_ply) {
     board.evals[ply] = data;
 
     // live engine is not desired?
-    if (!Y[`live_engine_${id}`]) {
+    if (!Y[`live_engine_${id + 1}`]) {
         HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
         return;
     }
