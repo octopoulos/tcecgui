@@ -67,6 +67,7 @@ let __PREFIX = '_',
     touch_speed = {x: 0, y: 0},
     touch_start,
     TOUCH_STARTS = {mousedown: 1, mouseenter: 1, touchstart: 2},
+    TRANSLATE_SPECIALS = {},
     translates = {},
     TRANSLATES = {},
     Upper = (text) => (text.toUpperCase()),
@@ -360,12 +361,14 @@ function translate_expression(text) {
     // 1) try a direct translation
     let result = translate(text);
     if (result)
-        return result;
-
-    // 2) translate the {...} parts of the text
-    // + return text if no translation found
-    if (text.includes('{'))
+        text = result;
+    // 2) translate {...}
+    else if (text.includes('{'))
         text = text.replace(/{(.*?)}/g, (_match, p1) => translate_default(p1));
+
+    // 3) translate [...]
+    if (text.includes('['))
+        text = text.replace(/\[(.*?)\]/g, (_match, p1) => TRANSLATE_SPECIALS[p1] || p1);
     return text;
 }
 
@@ -887,7 +890,7 @@ function scroll_adjust(target, max_delta, depth=0) {
         y = ScrollDocument(),
         y_old = y;
 
-    if (!y && !target)
+    if ((!y || y >= document.scrollingElement.offsetHeight - window_height) && !target)
         return;
 
     // 1) gather anchor data

@@ -23,47 +23,54 @@ class Inspect:
     """Inspect
     """
     def __init__(self):
-        pass
+        self.re_args = re.compile(r'(\w+)(?:=(?:\w+|\[.*?\]|{.*?}|\'.*?\'))?(?:[,}]|$)', re.S)
+        self.re_function = re.compile(r'/\*\*(.*?)\*/\r?\nfunction\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
+        self.re_globals = re.compile(r'/\*\s*globals\s*(.*?)\*/', re.S)
+        self.re_split = re.compile(r'[,\s]')
 
     def analyse_file(self, filename: str):
         """Analyse a file
         """
         text = read_text_safe(filename)
-        rematch = re.search(r'/\*\s*globals\s*(.*?)\*/', text, re.S)
+        rematch = self.re_globals.search(text)
         if not rematch:
             return
         globs = rematch.group(1).strip()
         if not globs:
             return
 
-        globs = [item for item in re.split(r'[,\s]', globs) if item]
+        globs = [item for item in self.re_split.split(globs) if item]
 
         # 1) check globals alphabetical order
-        alphas = sorted(globs, key=lambda x: x.lower())
+        alphas = sorted(globs, key=lambda x: x.split(':')[0].lower())
         if globs != alphas:
-            print(f'{filename}\n{globs}\n{alphas}')
+            for glob, alpha in zip(globs, alphas):
+                if glob != alpha:
+                    print(f'{filename}: order: {glob} vs {alpha}')
+                    break
 
         # 2) detect unused globals
+        unused = []
         data = text[rematch.end():]
         for glob in globs:
             glob = glob.split(':')[0]
             rematch = re.findall(rf'\b{glob}\b', data)
             if not rematch:
-                print(filename, glob)
+                unused.append(glob)
+
+        if unused:
+            print(f"{filename}: unused: {', '.join(unused)}")
 
         # 3) check function doc
-        funcs = re.findall(r'/\*\*(.*?)\*/\r?\nfunction\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', data, re.S)
-        for [doc, name, args, content] in funcs:
+        funcs = self.re_function.findall(data)
+        for doc, name, args, content in funcs:
             has_return = bool(re.search(r'\n    return ', content))
-            # if not has_return:
-            #     has_return = bool(re.search(r'\n        return ', content))
-
             doc_return = '@returns' in doc
             if has_return is not doc_return:
                 print(f'{filename}: return: {name}')
 
             doc_param = len(re.findall('@param', doc))
-            num_param = len([item for item in re.split(r', ', args) if item])
+            num_param = len(self.re_args.findall(args))
             if doc_param != num_param:
                 print(f'{filename}: args: {name}: {doc_param} vs {num_param}')
 

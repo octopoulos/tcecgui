@@ -23,10 +23,11 @@ merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_b
 popup_custom, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
-TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, translates:true,
-update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
-virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
+TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
+translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
+X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -1597,7 +1598,6 @@ function startup() {
     ANCHORS = {
         '#bottom': [2, 0, 4],
         '#center0': [1, 4, 1],
-        '#header': [1, 0, 1],
         '#left0': [1, 4, 1],
         '#main': [2, 4, 3],
         '#overview tbody': [1, 0, 1],
@@ -1922,6 +1922,11 @@ function startup() {
             info_moves_pv: [ON_OFF, 1],
             move_height_pv: option_number(5, 3, 100, 0.5)
         },
+    });
+
+    Assign(TRANSLATE_SPECIALS, {
+        'TCEC': '<b>TCEC</b> (Top Chess Engine Championship)',
+        'TCEC_URL': '<i class="nowrap">https://tcec-chess.com</i>',
     });
 
     set_global_events();
