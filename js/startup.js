@@ -11,21 +11,21 @@
 // included after: common, engine, global, 3d, xboard, game, network
 /*
 globals
-_, __PREFIX:true, $, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
+_, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
-Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, detect_device, DEV,
-document, download_live, download_tables, DownloadObject, E, Events, Floor, From, full_scroll, game_action_key,
-game_action_keyup, get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
-ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, DEV, document,
+download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
+get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id, Index,
+init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, mix_hex_colors, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent,
-parse_dev, PIECE_THEMES, popup_custom, reset_old_settings, resize_game, Resource, resume_sleep, Round,
-S, save_option, screen, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show,
-show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
-startup_graph, Style, TABLES, tcecHandleKey, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle,
-translate_node, translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts,
-update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES,
+popup_custom, reset_old_settings, resize_game, Resource, resume_sleep,
+S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
+show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
+TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
+translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -35,6 +35,7 @@ let AD_STYLES = {
         0: 'width:100%;max-height:210px',
         1: 'width:100%;max-height:280px',
     },
+    CHAMPIONS = [],
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
@@ -420,6 +421,7 @@ function close_popups() {
  * @param {Object} dico {key:value, ...}
  * - value is string => URL is created unless empty string
  * - otherwise insert separator
+ * @returns {string}
  */
 function create_url_list(dico) {
     if (!dico)
@@ -599,6 +601,10 @@ function init_customs(initial) {
  */
 function init_globals() {
     HTML('#version', VERSION);
+    HTML('#champions', CHAMPIONS.map(text => {
+        let [season, winner] = text.split('|');
+        return `<i data-t="Season"></i> ${season}: ${winner}`;
+    }).join(' | '));
 
     // load local data directly, and later online data
     download_tables(true);
@@ -960,7 +966,6 @@ function resize_move_lists() {
 
 /**
  * Resize the left & right panels
- * @param {boolean=} force
  */
 function resize_panels() {
     update_visible();
@@ -1087,16 +1092,14 @@ function show_live_engines() {
  * @param {boolean=} adjust only change its position
  * @param {boolean=} instant popup appears instantly
  * @param {boolean=} overlay dark overlay is used behind the popup
+ * @param {string=} setting
+ * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
     S('#overlay', show && overlay);
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
     if (!node)
-        return;
-
-    // don't adjust contextual popups
-    if (adjust && node.dataset.xy)
         return;
 
     if (show || adjust) {
@@ -1139,6 +1142,11 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
         translate_node(node);
 
         // align the popup with the target, if any
+        if (adjust && !xy) {
+            let item = node.dataset.xy;
+            if (item)
+                xy = item.split(',').map(item => item * 1);
+        }
         if (xy) {
             x = xy[0];
             y = xy[1];
@@ -1596,7 +1604,6 @@ function startup() {
     ANCHORS = {
         '#bottom': [2, 0, 4],
         '#center0': [1, 4, 1],
-        '#header': [1, 0, 1],
         '#left0': [1, 4, 1],
         '#main': [2, 4, 3],
         '#overview tbody': [1, 0, 1],
@@ -1752,10 +1759,10 @@ function startup() {
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
-            sound_draw: [['off', 'draw'], 'draw'],
+            sound_draw: [['off', 'draw', 'win'], 'draw'],
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
-            sound_win: [['off', 'win'], 'win'],
+            sound_win: [['off', 'draw', 'win'], 'win'],
         },
         // separator
         _1: {},
@@ -1860,8 +1867,8 @@ function startup() {
             copy_moves: '1',
             grid_live: option_number(0, 0, 10),
             info_moves_live: [ON_OFF, 1],
-            live_engine_0: [ON_OFF, 1],
             live_engine_1: [ON_OFF, 1],
+            live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
             move_height_live: option_number(3, 3, 100, 0.5),
         },
@@ -1921,6 +1928,14 @@ function startup() {
             info_moves_pv: [ON_OFF, 1],
             move_height_pv: option_number(5, 3, 100, 0.5)
         },
+    });
+
+    Assign(TRANSLATE_SPECIALS, {
+        'CODER': 'octopoulo',
+        'SPONSOR': 'Noobpwnftw',
+        'TCEC': '<b>TCEC</b> (Top Chess Engine Championship)',
+        'TCEC_URL': '<i class="nowrap">https://tcec-chess.com</i>',
+        'UI': '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
     });
 
     set_global_events();

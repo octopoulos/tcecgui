@@ -67,10 +67,10 @@ let {
 
 // Format
 [
-    [[-1, 1, Math.PI], undefined, undefined, '-1, 1, 3.142'],
+    [[-1, 1, Math.PI], undefined, undefined, '-1 1 3.142'],
     [[-1, 1, Math.PI], ' : ', undefined, '-1 : 1 : 3.142'],
     [Math.PI, undefined, undefined, '3.142'],
-    [{x: 1, y: 9, z: 2, w: -0.0004}, undefined, undefined, '1, 9, 2, 0'],
+    [{x: 1, y: 9, z: 2, w: -0.0004}, undefined, undefined, '1 9 2 0'],
 ].forEach(([vector, sep, align, answer], id) => {
     test(`Format:${id}`, () => {
         expect(Format(vector, sep, align)).toEqual(answer);

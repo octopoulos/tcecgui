@@ -4,8 +4,8 @@
 //
 /*
 globals
-_, $, Abs, add_timeout, Assign, C, Chart, Clamp, console, DEV, document, Floor, FormatUnit, FromSeconds, get_move_ply,
-Keys, load_library, LS, Max, Min, Pad, prevPgnData, Round, TIMEOUTS, Visible, xboards, window, Y
+_, Abs, Assign, C, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Keys, load_library, LS, Pad, Round,
+Visible, window, xboards, Y
 */
 'use strict';
 
@@ -54,6 +54,7 @@ let all_evals = [],
 /**
  * Check if the first_num should be modified
  * - unshift the dataset & labels if needed
+ * @param {number} num
  */
 function check_first_num(num) {
     if (first_num >= 0 && first_num <= num)
@@ -231,6 +232,7 @@ function fix_labels(labels) {
  * - 9 => -9
  * - #M33 => -M#33, and -#M40 => #M40
  * @param {string|number} eval_
+ * @returns {string|number}
  */
 function invert_eval(eval_) {
     if (!isNaN(eval_))
@@ -455,7 +457,6 @@ function update_chart_options(name, mode) {
 /**
  * Update the eval chart from a Live source
  * @param {Move[]} moves
- * @param {number} start
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  * @param {boolean=} invert_black invert black evals
  */

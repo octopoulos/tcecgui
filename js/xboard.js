@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-10
+// @version 2020-06-02
 //
 // game board:
 // - 4 rendering modes:
@@ -23,10 +23,9 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox, C, Chess, Clamp, Class, clear_timeout, CopyClipboard,
-CreateNode, CreateSVG, DEV, Events, extract_fen_ply, Floor, From, get_move_ply, HasClass, Hide, HTML, Id, InsertNodes,
-Keys, Lower, LS, merge_settings, Min, mix_hex_colors, Now, ON_OFF, Parent, play_sound, S, SetDefault, Show, Sign, Split,
-split_move_string, Style, T, timers, update_svg, Upper, Visible, window, Y
+_, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
+DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, LS, Min, mix_hex_colors, Now, Parent,
+play_sound, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper, Visible, Y
 */
 'use strict';
 
@@ -1800,7 +1799,7 @@ class XBoard {
             is_last = (ply == this.moves.length - 1),
             can_audio = (audio_moves == 'all' || (is_last && audio_moves == 'last'));
 
-        if (this.name == 'live' && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
+        if (this.main && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
                 text = move.m,

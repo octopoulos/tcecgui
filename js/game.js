@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-23
+// @version 2020-06-02
 //
 // Game specific code:
 // - control the board, moves
@@ -12,17 +12,16 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
-C, camera_look, camera_pos, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, Exp, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
-get_object, HasClass, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target,
+controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, fill_combo, Floor,
+FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE, HTML,
+Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
 reset_charts, resize_3d, Resource, resume_sleep, Round,
-S, save_option, save_storage, scene, scroll_adjust, ScrollDocument, set_3d_events, set_camera_control, set_camera_id,
-SetDefault, Show, show_menu, show_modal, Sign, slice_charts, Split, split_move_string, SPRITE_OFFSETS, start_3d,
-STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_expression,
-translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper, VERSION,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, X_SETTINGS, XBoard, Y
+S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
+split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
+translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
+update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -235,8 +234,7 @@ let ANALYSIS_URLS = {
 function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
         return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
-    else
-        return Atan(cp / 111) / 1.74;
+    return Atan(cp / 111) / 1.74;
 }
 
 /**
@@ -432,6 +430,7 @@ function leela_cp_to_score(cp) {
  * Get the timestamp in seconds from a date time
  * - assume it's UTC
  * @param {string} text
+ * @returns {number}
  */
 function parse_date_time(text) {
     let items = text.split(' on '),
@@ -894,6 +893,7 @@ function change_page(parent, value) {
 
 /**
  * Create pagination if required
+ * @param {string} parent
  * @returns {number} number of pages (negative if virtual)
  */
 function check_pagination(parent) {
@@ -1014,6 +1014,7 @@ function create_field_value(text) {
  * - we don't want to recreate the table each time, that's why this creation will give a boost
  * @param {boolean} is_live live => has more info
  * @param {number} id 0, 1
+ * @returns {string}
  */
 function create_live_table(is_live, id) {
     let html =
@@ -2148,13 +2149,13 @@ function download_live_evals(round) {
 /**
  * Download the PGN
  * @param {string} section archive, live
- * @param {string} url
- * @param {boolean=} direct scroll up when loaded
- * @param {boolean=} reset_moves
+ * @param {string} url live.json
+ * @param {boolean=} scroll_up scroll up when loaded
+ * @param {boolean=} reset_moves triggered by check_missing_moves
  */
-function download_pgn(section, url, direct, reset_moves) {
+function download_pgn(section, url, scroll_up, reset_moves) {
     if (DEV.new)
-        LS(`download_pgn: ${section} : ${url} : ${direct} : ${reset_moves}`);
+        LS(`download_pgn: ${section} : ${url} : ${scroll_up} : ${reset_moves}`);
     xboards[section].time = Now(true);
 
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
@@ -2175,7 +2176,7 @@ function download_pgn(section, url, direct, reset_moves) {
         pgns[section] = null;
         update_pgn(section, data, reset_moves);
 
-        if (section == 'archive' && direct)
+        if (section == 'archive' && scroll_up)
             scroll_adjust('#overview', true);
     });
 }
@@ -2516,7 +2517,7 @@ function update_overview_moves(section, headers, moves, is_new) {
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
  * @param {Object} pgn
- * @param {boolean=} reset_moves
+ * @param {boolean=} reset_moves triggered by check_missing_moves
  */
 function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
@@ -2551,7 +2552,7 @@ function update_pgn(section, pgn, reset_moves) {
     let main = xboards[section];
     if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
-            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move}`);
+            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move} : reset_moves=${reset_moves}`);
             LS(pgn);
         }
         main.reset(1);
@@ -2748,7 +2749,7 @@ function update_live_eval(section, data, id, force_ply) {
     board.evals[ply] = data;
 
     // live engine is not desired?
-    if (!Y[`live_engine_${id}`]) {
+    if (!Y[`live_engine_${id + 1}`]) {
         HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
         return;
     }
@@ -3090,6 +3091,7 @@ function init_3d_special() {
 
 /**
  * Random position for looking at the chessboard
+ * @returns {Object}
  */
 function random_position() {
     return {x: -1.34, y: -1.98, z: 0.97};
@@ -3101,6 +3103,8 @@ function random_position() {
 /**
  * Changed a game setting
  * - called by change_setting_special
+ * @param {string} name
+ * @param {*} value
  */
 function change_setting_game(name, value) {
     let prefix = name.split('_')[0],

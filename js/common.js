@@ -250,6 +250,8 @@ function Class(sel, class_, add=true, parent=null) {
 
 /**
  * Check if a list contains a pattern, using ^, $, *
+ * @param {string[]} list
+ * @param {string} pattern
  * @returns {boolean}
  */
 function Contain(list, pattern) {
@@ -617,8 +619,10 @@ function Parent(node, {tag, class_, attrs, self}={}) {
             }
         }
         if (ok)
-            return parent;
+            break;
     }
+
+    return parent;
 }
 
 /**
@@ -907,8 +911,7 @@ function Visible(sel, parent) {
  * Choose a random element in an array
  * @param {*[]} array
  * @param {number} length
- * @example
- * Choice([1, 2, 10])
+ * @returns {*[]}
  */
 function Choice(array, length) {
     return array[Floor(Random() * (length || array.length))];
@@ -997,7 +1000,7 @@ function DownloadObject(object, name, is_raw, space) {
  * @param {number=} align
  * @returns {string}
  */
-function Format(vector, sep=', ', align=null) {
+function Format(vector, sep=' ', align=null) {
     // null, undefined
     if (vector == null)
         return vector;
@@ -1017,9 +1020,9 @@ function Format(vector, sep=', ', align=null) {
         });
         return items.join(sep);
     }
+
     // float, int, text ...
-    else
-        return FormatFloat(vector, align);
+    return FormatFloat(vector, align);
 }
 
 /**
@@ -1185,6 +1188,7 @@ function Now(as_float) {
  * @param {string|number} value
  * @param {number=} size
  * @param {string=} pad
+ * @returns {string}
  */
 function Pad(value, size=2, pad='00') {
     return (pad + value).slice(-size);
