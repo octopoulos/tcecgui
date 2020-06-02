@@ -208,6 +208,12 @@ let ANALYSIS_URLS = {
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
+    TITLES = {
+        50: 'Fifty-move rule',
+        ECO: 'Encyclopaedia of Chess Openings',
+        TB: 'Tablebase',
+        TC: 'Time control',
+    },
     tour_info = {
         archive: {},
         live: {},
@@ -1067,9 +1073,11 @@ function create_table_columns(columns, widths, no_translates=[]) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
             style = widths? ` style="width:${widths[id]}"`: '',
+            title = TITLES[value],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}">${translate? '': value}</th>`;
+        title = title? ` title="${title}"`: '';
+        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}">${translate? '': value}</th>`;
     }).join('');
 }
 
