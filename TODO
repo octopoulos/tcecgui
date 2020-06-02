@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-10 : highlight selected piece + possible moves in PVA
+2020-06-02 : 2020-06-02 : all UI is translatable
 2020-05-31 : 2020-05-31 : inspect.py for code cleanup
 2020-05-30 : 2020-05-30 : re-add live_engine toggles
 2020-05-30 : 2020-05-30 : wheel adjust becomes a number

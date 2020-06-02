@@ -35,6 +35,7 @@ let AD_STYLES = {
         0: 'width:100%;max-height:210px',
         1: 'width:100%;max-height:280px',
     },
+    CHAMPIONS = [],
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
@@ -600,6 +601,10 @@ function init_customs(initial) {
  */
 function init_globals() {
     HTML('#version', VERSION);
+    HTML('#champions', CHAMPIONS.map(text => {
+        let [season, winner] = text.split('|');
+        return `<i data-t="Season"></i> ${season}: ${winner}`;
+    }).join(' | '));
 
     // load local data directly, and later online data
     download_tables(true);
@@ -1097,10 +1102,6 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
     if (!node)
         return;
 
-    // don't adjust contextual popups
-    if (adjust && node.dataset.xy)
-        return;
-
     if (show || adjust) {
         let html = '',
             px = 0,
@@ -1141,6 +1142,11 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
         translate_node(node);
 
         // align the popup with the target, if any
+        if (adjust && !xy) {
+            let item = node.dataset.xy;
+            if (item)
+                xy = item.split(',').map(item => item * 1);
+        }
         if (xy) {
             x = xy[0];
             y = xy[1];
@@ -1753,10 +1759,10 @@ function startup() {
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
-            sound_draw: [['off', 'draw'], 'draw'],
+            sound_draw: [['off', 'draw', 'win'], 'draw'],
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
-            sound_win: [['off', 'win'], 'win'],
+            sound_win: [['off', 'draw', 'win'], 'win'],
         },
         // separator
         _1: {},
@@ -1925,8 +1931,11 @@ function startup() {
     });
 
     Assign(TRANSLATE_SPECIALS, {
+        'CODER': 'octopoulo',
+        'SPONSOR': 'Noobpwnftw',
         'TCEC': '<b>TCEC</b> (Top Chess Engine Championship)',
         'TCEC_URL': '<i class="nowrap">https://tcec-chess.com</i>',
+        'UI': '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
     });
 
     set_global_events();

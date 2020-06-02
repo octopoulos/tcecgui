@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-10
+// @version 2020-06-02
 //
 // game board:
 // - 4 rendering modes:
@@ -1799,7 +1799,7 @@ class XBoard {
             is_last = (ply == this.moves.length - 1),
             can_audio = (audio_moves == 'all' || (is_last && audio_moves == 'last'));
 
-        if (this.name == 'live' && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
+        if (this.main && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
                 text = move.m,

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-23
+// @version 2020-06-02
 //
 // Game specific code:
 // - control the board, moves
@@ -2149,13 +2149,13 @@ function download_live_evals(round) {
 /**
  * Download the PGN
  * @param {string} section archive, live
- * @param {string} url
- * @param {boolean=} direct scroll up when loaded
- * @param {boolean=} reset_moves
+ * @param {string} url live.json
+ * @param {boolean=} scroll_up scroll up when loaded
+ * @param {boolean=} reset_moves triggered by check_missing_moves
  */
-function download_pgn(section, url, direct, reset_moves) {
+function download_pgn(section, url, scroll_up, reset_moves) {
     if (DEV.new)
-        LS(`download_pgn: ${section} : ${url} : ${direct} : ${reset_moves}`);
+        LS(`download_pgn: ${section} : ${url} : ${scroll_up} : ${reset_moves}`);
     xboards[section].time = Now(true);
 
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
@@ -2176,7 +2176,7 @@ function download_pgn(section, url, direct, reset_moves) {
         pgns[section] = null;
         update_pgn(section, data, reset_moves);
 
-        if (section == 'archive' && direct)
+        if (section == 'archive' && scroll_up)
             scroll_adjust('#overview', true);
     });
 }
@@ -2517,7 +2517,7 @@ function update_overview_moves(section, headers, moves, is_new) {
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
  * @param {Object} pgn
- * @param {boolean=} reset_moves
+ * @param {boolean=} reset_moves triggered by check_missing_moves
  */
 function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
@@ -2552,7 +2552,7 @@ function update_pgn(section, pgn, reset_moves) {
     let main = xboards[section];
     if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
-            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move}`);
+            LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move} : reset_moves=${reset_moves}`);
             LS(pgn);
         }
         main.reset(1);

@@ -30,7 +30,7 @@
     <!-- {SCRIPT} -->
     <!-- {STYLE} -->
 </head>
-<body class="noselect">
+<body class="noselect notranslate">
 <div id="body">
 <vert id="meta-canvas">
     <canvas id="canvas"></canvas>
@@ -45,8 +45,6 @@
 <span id="text">&nbsp;</span>
 <vert id="modal" class="popup"></vert>
 <div id="rect"></div>
-<!-- everything from here cannot be translated -->
-<div class="notranslate">
 <horis id="header" class="fcenter">
     <hori id="sub-header" class="fbetween">
         <horis class="faround fabase">
@@ -58,10 +56,6 @@
                 <i data-t="Info"></i>
                 <i data-svg="down"></i>
             </hori>
-            <!-- <hori id="navigate" class="nav">
-                <i data-t="Navigate"></i>
-                <i data-svg="down"></i>
-            </hori> -->
             <hori id="download" class="nav">
                 <i data-t="Download"></i>
                 <i data-svg="down"></i>
@@ -434,8 +428,6 @@
     </vert>
     <i id="hide-video" data-svg="x" class="dn"></i>
 </hori>
-</div>
-<!-- now everything can be translated again -->
 <div id="adblock" class="dn">
     <i data-t="TCEC is based on voluntary work."></i><br>
     <i data-t="Please consider whitelisting [TCEC_URL] in your ad blocker - or send a donation."></i>
@@ -456,20 +448,21 @@
     <br>
     <div>&copy;TCEC Chessdom &copy;Chess Arena 2010-2020</div>
     <div>
-        TCEC is powered by ...
-        <a href="https://github.com/TCEC-Chess/tceccutechess/" target="_blank">cutechess-cli</a> and
+        <i data-t="TCEC is powered by ..."></i>
+        <a href="https://github.com/TCEC-Chess/tceccutechess/" target="_blank">cutechess-cli</a>
+        <i data-t="and"></i>
         <a href="https://fontawesome.com/license" target="_blank">fontawesome</a>
     </div>
     <div>
-        <a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a> coded by octopoulo,
-        version <i id="version"></i>.<i id="keycode">00</i>
+        <i data-t="[UI] coded by [CODER]"></i>,
+        <i data-t="version"></i> <i id="version"></i>.<i id="keycode">00</i>
     </div>
-    <div>TCEC is sponsored by Noobpwnftw</div>
+    <div data-t="TCEC is sponsored by [SPONSOR]"></div>
 </vert>
 <!-- popup -->
 <vert id="popup-about" class="popup dn">
     <hori class="fbetween">
-        <h5>About TCEC</h5>
+        <h5 data-t="About TCEC"></h5>
         <i class="popup-close" data-svg="x"></i>
     </hori>
     <hr>
@@ -477,28 +470,24 @@
         <div id="popup-desc"></div>
     </vert>
     <vert>
-        <h4>The TCEC Grand Champions:</h4>
-        <div>
-            Season 17: LCZero | Season 16: Stockfish | Season 15: LCZero |
-            Season 14: Stockfish | Season 13: Stockfish | Season 12: Stockfish | Season 11: Stockfish |
-            Season 10: Houdini | Season 9: Stockfish | Season 8: Komodo | Season 7: Komodo | Season 6: Stockfish |
-            Season 5: Komodo | Season 4: Houdini | Season 3: N/A | Season 2: Houdini | Season 1: Houdini
-        </div>
+        <h4 data-t="{The TCEC Grand Champions}:"></h4>
+        <div id="champions"></div>
     </vert>
     <vert>
-        <h4>Special thanks:</h4>
+        <h4 data-t="{Special thanks}:"></h4>
         <div>
             Martin Thoresen,
             Anton Mihailov,
             <a href="http://pgn4web.casaschi.net/home.html" target="_blank">Paolo Casaschi</a>,
             <a href="https://github.com/cutechess/cutechess" target="_blank">Ilari Pihlajisto</a>,
             <a href="https://github.com/cutechess/cutechess" target="_blank">Arto Jonsson</a>,
-            <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>, and
+            <a href="http://biglion.bplaced.net/" target="_blank">Matthias Gemuh</a>,
+            <i data-t="and"></i>
             <a href="http://open-chess.org/index.php" target="_blank">Jeremy Bernstein</a>.
         </div>
     </vert>
     <vert>
-        <h5><i data-t="Copyright"></i> © 2010-2020</h5>
+        <h5>&copy; TCEC 2010-2020</h5>
     </vert>
 </vert>
 </div>

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-24
+// @version 2020-06-02
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -9,8 +9,9 @@
 // (after everything except script.js)
 /*
 globals
-AD_STYLES, Assign, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true, HOST_ARCHIVE:true,
-LINKS:true, LIVE_ENGINES:true, STREAM_SETTINGS, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
+AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
+HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, STREAM_SETTINGS, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true,
+TWITCH_CHAT:true
 */
 'use strict';
 
@@ -102,12 +103,32 @@ function startup_config() {
             About: '',
             Rules: 'https://wiki.chessdom.org/Rules',
             'Book FAQ': 'articles/TCEC_Openings_FAQ.html',
-        },
-        navigate: {
-            'Main live': 'live.html',
-            'Twitch Stream': 'https://www.twitch.tv/tcec_chess_tv',
+            'a': 0,
+            Coverage: 'https://wiki.chessdom.org/Category:Coverage',
+            'Notable games': 'https://wiki.chessdom.org/Category:Notable_game',
         },
     };
+
+    // season champions
+    CHAMPIONS = [
+        '17|LCZero',
+        '16|Stockfish',
+        '15|LCZero',
+        '14|Stockfish',
+        '13|Stockfish',
+        '12|Stockfish',
+        '11|Stockfish',
+        '10|Houdini',
+        '9|Stockfish',
+        '8|Komodo',
+        '7|Komodo',
+        '6|Stockfish',
+        '5|Komodo',
+        '4|Houdini',
+        '3|-',
+        '2|Houdini',
+        '1|Houdini',
+    ];
 
     // override style for the ads
     // - the top ad=0, middle ad=1
