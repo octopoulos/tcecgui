@@ -14,8 +14,8 @@ globals
 _, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
 C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas,
 context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events,
-fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass,
-HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
+HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, Pow, push_state,
 QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
@@ -566,7 +566,7 @@ function create_boards() {
     assign_boards();
 
     // 3) update themes: this will render the boards too
-    update_board_theme(3);
+    update_board_theme(7);
 
     // 4) pva colors
     let lines = [0, 1, 2, 3].map(id => {
@@ -679,23 +679,32 @@ function show_board_info(show) {
  * @param {number} mode update mode:
  * - &1: board
  * - &2: pv (all other boards)
- * - &4: just re-render all but don't update settings
+ * - &4: pva
+ * - &8: just re-render all but don't update settings
  */
 function update_board_theme(mode) {
     Keys(xboards).forEach(key => {
         // 1) skip?
         let board = xboards[key],
-            is_main = board.main;
-        if (is_main) {
-            if (!(mode & 5))
+            is_main = board.main,
+            is_manual = board.manual;
+
+        if (!(mode & 8)) {
+            if (is_main) {
+                if (!(mode & 1))
+                    return;
+            }
+            else if (is_manual) {
+                if (!(mode & 4))
+                    return;
+            }
+            else if (!(mode & 2))
                 return;
         }
-        else if (!(mode & 6))
-            return;
 
         // 2) update board
-        if (mode & 3) {
-            let suffix = is_main? '': '_pv',
+        if (mode & 7) {
+            let suffix = is_manual? '_pva': (is_main? '': '_pv'),
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
@@ -714,9 +723,8 @@ function update_board_theme(mode) {
             });
         }
 
+        // 3) render
         board.instant();
-        if (board.manual)
-            LS('render theme');
         board.render(7);
     });
 
@@ -3035,15 +3043,24 @@ function game_action_key(code) {
         case 90:
             if (KEYS[17])
                 if (code == 67) {
+                    // selected text => skip
+                    let select = getSelection();
+                    if (select && select.toString())
+                        break;
+
                     if (!copy_moves())
                         CopyClipboard(board_target.fen);
                 }
+                // paste => try to add the FEN, if fails then moves string
                 else if (code == 86) {
                     if (board_target.manual)
                         navigator.clipboard.readText().then(text => {
-                            board_target.set_fen(text, true);
+                            text = text.replace(/\s+/g, ' ');
+                            if (!board_target.set_fen(text, true))
+                                board_target.add_moves_string(text);
                         });
                 }
+                // redo/undo
                 else
                     restore_history(code == 89? 1: -1);
             break;
@@ -3398,16 +3415,6 @@ function opened_table(node, name, tab) {
     case 'log':
         fill_combo('#nlog', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
-        break;
-    case 'pva':
-        let board = board_target;
-        if (board) {
-            if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
-                board = xboards.pv0;
-            Class('.color', '-active');
-            Class(`.color[data-id="${board.name}"]`, 'active');
-            xboards.pva.set_fen(board.fen, true);
-        }
         break;
     case 'season':
         download_gamelist();

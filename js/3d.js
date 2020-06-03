@@ -1294,6 +1294,16 @@ function show_settings(name, xy) {
                 );
             else if (type)
                 lines.push(`<input name="${key}" type="${type}" class="setting" value="${y_key}">`);
+            // dictionary
+            else
+                lines.push(
+                    `<select name="${key}">`
+                        + Keys(data).map(value => {
+                            let option = data[value];
+                            return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
+                        }).join('')
+                    + '</select>'
+                );
 
             lines.push('</vert>');
         }

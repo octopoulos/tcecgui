@@ -171,6 +171,14 @@ function change_setting_special(name, value, no_close) {
     case 'piece_theme_pv':
         update_board_theme(2);
         break;
+    case 'animate_pva':
+    case 'board_theme_pva':
+    case 'highlight_color_pva':
+    case 'highlight_size_pva':
+    case 'notation_pva':
+    case 'piece_theme_pva':
+        update_board_theme(4);
+        break;
     case 'audio_set':
         audio_set(value);
         break;
@@ -190,13 +198,16 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'custom_black':
     case 'custom_black_pv':
+    case 'custom_black_pva':
     case 'custom_white':
     case 'custom_white_pv':
+    case 'custom_white_pva':
         let is_pv = (name.slice(-2) == 'pv'),
-            field = `board_theme${is_pv? '_pv': ''}`;
+            is_pva = (name.slice(-3) == 'pva'),
+            field = `board_theme${is_pva? '_pva': (is_pv? '_pv': '')}`;
         save_option(field, 'custom');
         (_(`select[name="${field}"]`) || {}).value = Y[field];
-        update_board_theme(is_pv? 2: 1);
+        update_board_theme(is_pva? 4: (is_pv? 2: 1));
         break;
     case 'default_positions':
         Y.areas = Assign({}, DEFAULTS.areas);
@@ -228,10 +239,12 @@ function change_setting_special(name, value, no_close) {
     case 'grid_copy':
     case 'grid_live':
     case 'grid_pv':
+    case 'grid_pva':
     case 'move_height':
     case 'move_height_copy':
     case 'move_height_live':
     case 'move_height_pv':
+    case 'move_height_pva':
         resize_move_lists();
         break;
     case 'hide':
@@ -257,6 +270,7 @@ function change_setting_special(name, value, no_close) {
     case 'info_moves':
     case 'info_moves_live':
     case 'info_moves_pv':
+    case 'info_moves_pva':
     case 'info_percent':
     case 'graph_aspect_ratio':
     case 'panel_adjust':
@@ -278,7 +292,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'preset':
         if (value == 'custom')
-            LS('custom');
+            break;
         else if (value == 'default settings')
             reset_settings(true);
         else {
@@ -400,7 +414,7 @@ function check_stream() {
     // maybe the board has not been loaded yet
     if (!xboards.live)
         return;
-    update_board_theme(3);
+    update_board_theme(7);
     old_stream = stream;
 }
 
@@ -595,7 +609,7 @@ function init_customs(initial) {
     show_live_engines();
     set_draggable();
     populate_areas();
-    update_board_theme(3);
+    update_board_theme(7);
 }
 
 /**
@@ -957,6 +971,7 @@ function resize_move_lists() {
     let styles = [
         ['#archive .xmoves, #live .xmoves', Y.move_height, Y.grid],
         ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
+        ['#pva .xmoves', Y.move_height_pva, Y.grid_pva],
         ['.live-pv', Y.move_height_live, Y.grid_live],
         ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
     ];
@@ -1268,6 +1283,7 @@ function update_visible() {
     S('.percent', Y.info_percent);
     S('#archive .xmoves, #live .xmoves', Y.info_moves);
     S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
+    S('#pva .xmoves', Y.info_moves_pva);
     S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
 }
@@ -1506,6 +1522,7 @@ function set_global_events() {
             '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
             + '#table-live0, #table-live1', 'contextmenu', function(e) {
             let is_pv = '01'.includes(this.id.slice(-1)),
+                is_pva = (this.id == 'pva'),
                 target = e.target;
 
             while (target) {
@@ -1520,11 +1537,11 @@ function set_global_events() {
                 else if (HasClass(target, 'xbottom'))
                     return;
                 else if (HasClass(target, 'xcontain'))
-                    name = is_pv? 'board_pv': 'board';
+                    name = is_pva? 'board_pva': (is_pv? 'board_pv': 'board');
                 else if (HasClass(target, 'xcontrol'))
                     name = 'control';
                 else if (HasClass(target, 'xmoves'))
-                    name = `copy${is_pv? '_pv': ''}`;
+                    name = `copy${is_pva? '_pva': (is_pv? '_pv': '')}`;
 
                 if (name) {
                     context_target = target;
@@ -1833,6 +1850,23 @@ function startup() {
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
+        board_pva: {
+            _suffix: '_pva',
+            analysis_chessdb: '1',
+            analysis_lichess: '1',
+            animate_pva: [ON_OFF, 1],
+            board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pva: [{type: 'color'}, '#000000'],
+            custom_white_pva: [{type: 'color'}, '#ffffff'],
+            notation_pva: [ON_OFF, 1],
+            piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
+            source_color: [{type: 'color'}, '#ffb400'],
+            source_opacity: option_number(0.7, 0, 1, 0.01),
+            target_color: [{type: 'color'}, '#ff5a00'],
+            target_opacity: option_number(0.7, 0, 1, 0.01),
+            turn_color: [{type: 'color'}, '#ff5a00'],
+            turn_opacity: option_number(0.25, 0, 1, 0.01),
+        },
         control: {
             book_every: option_number(600, 100, 5000, 100),
             key_repeat: option_number(70, 10, 2000, 10),
@@ -1878,6 +1912,7 @@ function startup() {
             info_moves_copy: [ON_OFF, 0],
             info_moves_live: [ON_OFF, 1],
             info_moves_pv: [ON_OFF, 1],
+            info_moves_pva: [ON_OFF, 1],
             info_percent: [ON_OFF, 1],
         },
         live: {
@@ -1894,10 +1929,12 @@ function startup() {
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
+            grid_pva: option_number(1, 0, 10),
             move_height: option_number(5, 3, 100, 0.5),
             move_height_copy: option_number(20, 3, 100, 0.5),
             move_height_live: option_number(3, 3, 100, 0.5),
             move_height_pv: option_number(5, 5, 100, 0.5),
+            move_height_pva: option_number(5, 5, 100, 0.5),
         },
         panel: {
             column_bottom: option_number(4, 1, 8),
@@ -1944,6 +1981,13 @@ function startup() {
             grid_pv: option_number(1, 0, 10),
             info_moves_pv: [ON_OFF, 1],
             move_height_pv: option_number(5, 3, 100, 0.5)
+        },
+        copy_pva: {
+            _pop: true,
+            copy_moves: '1',
+            grid_pva: option_number(1, 0, 10),
+            info_moves_pva: [ON_OFF, 1],
+            move_height_pva: option_number(5, 3, 100, 0.5)
         },
     });
 

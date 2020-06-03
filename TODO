@@ -3,7 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-26 : eval win% option between -100 and 100 => no need to clamp anything!
-~          : 2020-06-03 : PVA options
+-          : 2020-05-30 : hold left/right with touch => moves don't stop
+2020-06-03 : 2020-06-03 : PVA options
 2020-06-03 : 2020-06-03 : improved options: checkbox + prefix/suffix
 2020-06-03 : 2020-05-10 : highlight selected piece + possible moves in PVA
 2020-06-03 : 2020-06-03 : CTRL+C and CTRL+V
@@ -281,12 +282,12 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
--          : 2020-05-30 : hold left/right with touch => moves don't stop
 medium:
 -          : 2020-05-23 : dynamic pagination and search nodes
 low:
 ~          : 2020-04-13 : add 3d board
 lowest:
+-          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
 -          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-06-03 : chess.wasm

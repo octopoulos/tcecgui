@@ -66,10 +66,11 @@ live.dual = archive;
 [
     ['invalid fen', false],
     [START_FEN, true],
+    ['1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 Nc6', false],
+    ['1. e4 c5 2. Nf3 d6', false],
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
-        live.set_fen(fen);
-        expect(live.analyse_fen()).toEqual(answer);
+        expect(live.analyse_fen(fen)).toEqual(answer);
     });
 });
 
@@ -155,18 +156,19 @@ live.dual = archive;
 ].forEach(([fen, options, answer], id) => {
     test(`render_text:${id}`, () => {
         Assign(live, options);
-        live.set_fen(fen);
         expect(live.render_text()).toEqual(answer);
     });
 });
 
 // set_fen
 [
-    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1',
-    '6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4',
-].forEach((fen, id) => {
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1', null],
+    ['4rrk1/1pq1bppp/p1np1n2/P4R2/4P3/2N1B3/1PPQB1PP/R6K w - - 3 21', null],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', null],
+    ['6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'],
+].forEach(([fen, answer], id) => {
     test(`set_fen:${id}`, () => {
         live.set_fen(fen);
-        expect(live.fen).toEqual(fen);
+        expect(live.fen).toEqual(answer || fen);
     });
 });

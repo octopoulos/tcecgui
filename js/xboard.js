@@ -56,12 +56,6 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
-    HIGH_COLORS = [
-        'transparent',
-        'rgba(255, 180, 0, 0.7)',
-        'rgba(255, 90, 0, 0.7)',
-        'rgba(255, 180, 0, 0.25)',
-    ],
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     // piece moves based on the SQUARES
     // - p2 = there must be an piece of the opposite color
@@ -218,14 +212,17 @@ class XBoard {
     /**
      * Add a highlight square
      * @param {number} coord
-     * @param {number} type 1:source, 2:target, 3:sources
+     * @param {string} type source, target, turn
      */
     add_high(coord, type) {
-        let node = _(`[data-c="${coord}"] > .xhigh`, this.xsquares);
-        Style(node, `background:${HIGH_COLORS[type]}`);
-        Class(node, (type == 2)? 'target -source': 'source -target');
+        let color = Y[`${type}_color`],
+            node = _(`[data-c="${coord}"] > .xhigh`, this.xsquares),
+            opacity = Y[`${type}_opacity`];
 
-        if (type == 3)
+        Style(node, `background:${color};opacity:${opacity}`);
+        Class(node, (type == 'target')? 'target -source': 'source -target');
+
+        if (type == 'turn')
             Class(`[data-c="${coord}"]`, 'source', true, this.xpieces);
     }
 
@@ -344,7 +341,7 @@ class XBoard {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {
                 if (!timers.click_play) {
-                    this.set_fen(START_FEN, true);
+                    this.set_fen(null, true);
                     this.ply = -1;
                     this.play_mode = 'book';
                     this.play();
@@ -387,7 +384,7 @@ class XBoard {
             return;
 
         // 1) no change or older => skip
-        if (this.text == text || this.text.includes(text))
+        if (this.text == text || (!this.manual && this.text.includes(text)))
             return;
         if (this.check_locked(['text', text, cur_ply]))
             return;
@@ -422,7 +419,7 @@ class XBoard {
             else if ('0123456789'.includes(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
-                lines.push(`<i class="turn">${turn}.</i>`);
+                lines.push(`<i class="turn" data-j="${turn}">${turn}.</i>`);
                 return;
             }
             // normal move
@@ -439,7 +436,7 @@ class XBoard {
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
-        let is_current = (new_ply == cur_ply);
+        let is_current = (new_ply == cur_ply || this.manual);
         if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
@@ -470,19 +467,20 @@ class XBoard {
     /**
      * Analyse the FEN and extract piece coordinates from it
      * - ideally do this only when starting a new game
+     * @param {string} fen
      * @returns {boolean}
      */
-    analyse_fen() {
+    analyse_fen(fen) {
         // 1) create the grid + count the pieces
         let chars = [],
             counts = {},
             grid = this.grid,
-            items = this.fen.split(' '),
+            items = fen.split(' '),
             off = 0,
             lines = items[0].split('/'),
             pieces = this.pieces;
 
-        if (items.length < 6)
+        if (items.length != 6)
             return false;
 
         grid.fill('');
@@ -496,6 +494,9 @@ class XBoard {
                     chars.push([char, off + col]);
                     let count = (counts[char] || 0) + 1,
                         items = pieces[char];
+
+                    if (!items)
+                        return false;
 
                     counts[char] = count;
                     if (count > items.length)
@@ -556,6 +557,7 @@ class XBoard {
                     piece[1] = -num_row;
         });
 
+        this.fen = fen;
         this.grid = grid;
         this.valid = true;
         return true;
@@ -828,26 +830,31 @@ class XBoard {
         let moves = this.moves,
             real_moves = this.real.moves;
 
-        for (let curr = ply - 1; curr >= 0; curr --) {
-            let move = moves[curr];
+        for (let curr = ply - 1; curr >= -1; curr --) {
+            let fen,
+                move = moves[curr];
             if (!move) {
                 if (DEV.ply)
                     LS(`${this.id}: no move at ply ${curr}`);
 
-                let real_move = real_moves[curr];
-                if (!real_move)
-                    return false;
+                if (curr == -1)
+                    fen = START_FEN;
+                else {
+                    let real_move = real_moves[curr];
+                    if (!real_move)
+                        return false;
+                    fen = real_move.fen;
 
-                // TODO: add tests to make sure this is 100% allowed
-                moves[curr] = {
-                    fen: real_move.fen,
-                    ply: curr,
-                };
-                move = moves[curr];
+                    moves[curr] = {
+                        fen: fen,
+                        ply: curr,
+                    };
+                    move = moves[curr];
+                }
             }
 
-            if (move.fen) {
-                this.chess_load(move.fen);
+            if (fen) {
+                this.chess_load(fen);
                 for (let next = curr + 1; next <= ply; next ++) {
                     let move_next = moves[next],
                         result = this.chess_move(move_next.m);
@@ -936,15 +943,16 @@ class XBoard {
 
     /**
      * Clear highlight squares
-     * @param {number} type &1:source, &2:target, &4:restore picks
+     * @param {string} type source, target, turn, restore
+     * @param {boolean=} restore
      */
-    clear_high(type) {
+    clear_high(type, restore) {
         Style('.xhigh', 'background:transparent', true, this.xsquares);
-        Class('.xhigh', `${type & 1? 'source': ''} ${type & 2? 'target': ''}`, false, this.xsquares);
-        if (type == 3)
+        Class('.xhigh', type, false, this.xsquares);
+        if (type == 'source target')
             Class('.source', '-source', true, this.xpieces);
-        if (type & 4)
-            Style('.source', `background:${HIGH_COLORS[3]}`, true, this.xsquares);
+        if (restore)
+            Style('.source', `background:${Y.turn_color};opacity:${Y.turn_opacity}`, true, this.xsquares);
     }
 
     /**
@@ -1186,16 +1194,16 @@ class XBoard {
                 if (this.place(e) || !this.pick(e))
                     return;
 
-                this.clear_high(this.picked? 2: 6);
+                this.clear_high('target', !this.picked);
                 if (!this.picked)
                     return;
 
                 this.chess_load(this.fen);
                 let moves = this.chess.moves({legal: true, single_square: this.picked});
                 for (let move of moves)
-                    this.add_high(move.to, 2);
+                    this.add_high(move.to, 'target');
                 if (moves[0])
-                    this.add_high(moves[0].from, 1);
+                    this.add_high(moves[0].from, 'source');
             }, this.node);
         }
     }
@@ -1267,7 +1275,7 @@ class XBoard {
      */
     initialise() {
         let controls2 = Assign({}, CONTROLS);
-        if (this.main) {
+        if (this.main || this.manual) {
             delete controls2.lock;
             controls2.cube = 'Change view';
         }
@@ -1336,7 +1344,7 @@ class XBoard {
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
 
-        this.analyse_fen();
+        this.analyse_fen(this.fen);
         update_svg();
 
         this.markers = [CreateNode('i', '@', {class: 'marker'}), CreateNode('i', '@', {class: 'marker'})];
@@ -1458,7 +1466,7 @@ class XBoard {
             return false;
 
         // 2) try to move, it might be invalid
-        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found]});
+        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promotion: 'q'});
         if (!move)
             return false;
 
@@ -1469,7 +1477,7 @@ class XBoard {
         let ply = get_move_ply(move);
 
         this.set_fen(fen, true);
-        this.clear_high(3);
+        this.clear_high('source target');
         this.picked = null;
 
         // delete some moves?
@@ -1608,8 +1616,6 @@ class XBoard {
             Class(this.xpieces, 'smooth', this.smooth);
 
             // create pieces / adjust their position
-            if (this.manual)
-                LS('render');
             Keys(this.pieces).forEach(char => {
                 let items = this.pieces[char],
                     offset = -SPRITE_OFFSETS[char] * piece_size;
@@ -1757,11 +1763,8 @@ class XBoard {
         Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
 
         this.size = size;
-        if (render) {
-            if (this.manual)
-                LS('render resize');
+        if (render)
             this.render(2);
-        }
     }
 
     /**
@@ -1782,7 +1785,7 @@ class XBoard {
 
     /**
      * Set a new FEN
-     * @param {string} fen
+     * @param {string} fen null for START_FEN
      * @param {boolean=} render
      * @returns {boolean}
      */
@@ -1792,15 +1795,14 @@ class XBoard {
         if (fen == null)
             fen = START_FEN;
 
-        this.fen = fen;
-        if (!this.analyse_fen())
+        if (this.fen == fen)
+            return true;
+
+        if (!this.analyse_fen(fen))
             return false;
 
-        if (render) {
-            if (this.manual)
-                LS('render fen');
+        if (render)
             this.render(2);
-        }
         return true;
     }
 
@@ -1869,7 +1871,7 @@ class XBoard {
         // special case: initial board
         if (ply == -1 && (this.main || this.manual)) {
             this.ply = -1;
-            this.set_fen(START_FEN, true);
+            this.set_fen(null, true);
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
@@ -1955,9 +1957,9 @@ class XBoard {
         let moves = this.chess.moves({legal: true}),
             froms = new Set(moves.map(move => move.from));
 
-        this.clear_high(3);
+        this.clear_high('source target');
         for (let from of froms)
-            this.add_high(from, 3);
+            this.add_high(from, 'turn');
     }
 
     /**
