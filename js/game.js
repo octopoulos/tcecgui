@@ -622,7 +622,7 @@ function redraw_arrows() {
 function reset_sub_boards(mode) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (board.main || board.manual)
+        if (board.main_manual)
             return;
 
         if (mode & 1)
