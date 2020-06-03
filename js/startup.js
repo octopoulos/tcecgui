@@ -990,26 +990,15 @@ function resize_panels() {
     update_visible();
 
     // panel full + width
-    let panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
+    let panel_gap = Y.panel_gap,
+        panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
         window_width = window.innerWidth;
     for (let panel of panels) {
         let name = panel.id,
             value = Y[`max_${name}`];
 
         Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
-        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[0]);
-    }
-
-    // panel gap
-    let num_panel = panels.length,
-        panel_gap = Y.panel_gap;
-    panel_gap = `${panel_gap / 2}${isNaN(panel_gap)? '': 'px'}`;
-    for (let i = 0; i < num_panel; i ++) {
-        let panel = panels[i],
-            full = HasClass(panel, 'full'),
-            left = (full || i == 0)? 0: panel_gap,
-            right = (full || i == num_panel - 1 || HasClass(panels[i + 1], 'full'))? 0: panel_gap;
-        Style(panel, `margin:0 ${right} 0 ${left}`);
+        Style(`#${name}`, `margin:0 ${panel_gap}px;max-width:${value}px`, value > PANEL_WIDTHS[0]);
     }
 
     // swaps
@@ -1782,10 +1771,12 @@ function startup() {
             preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
         },
         audio: {
+            audio_book: [ON_OFF, 1],
             audio_delay: option_number(150, 0, 2000),
+            audio_live_archive: [ON_OFF, 1],
             audio_moves: [['none', 'all', 'last'], 'last'],
+            audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
-            book_sound: [ON_OFF, 1],
             capture_delay: option_number(-200, -1000, 1000),
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],

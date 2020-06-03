@@ -25,7 +25,7 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200602';
+    VERSION = '20200603';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -147,10 +147,13 @@ function reset_old_settings() {
     }
 
     if (version < '20200530') {
-        LS(`version: ${version} => ${VERSION}`);
         save_option('archive_scroll', 1);
         save_option('wheel_adjust', 63);
     }
+    if (version < '20200603')
+        save_option('panel_gap', 8);
+
+    LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
 }
 

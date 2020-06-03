@@ -1922,9 +1922,10 @@ class XBoard {
         // - multiple sounds can be played with different delays
         let audio_moves = Y.audio_moves,
             is_last = (ply == this.moves.length - 1),
-            can_audio = (audio_moves == 'all' || (is_last && audio_moves == 'last'));
+            can_moves = (audio_moves == 'all' || (is_last && audio_moves == 'last') || (this.play_mode == 'book' && Y.audio_book)),
+            can_source = (this.name == Y.x || (this.main && Y.audio_live_archive) || (this.manual && Y.audio_pva));
 
-        if (this.main_manual && (can_audio || (this.play_mode == 'book' && Y.book_sound))) {
+        if (can_source && can_moves) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
                 text = move.m,

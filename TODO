@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
 ~          : 2020-05-26 : eval win% option between -100 and 100 => no need to clamp anything!
+2020-06-03 : 2020-06-03 : simple panel gap code, works better on mobile
 2020-06-03 : 2020-05-30 : hold left/right with touch => moves don't stop
 2020-06-03 : 2020-06-03 : PVA options
 2020-06-03 : 2020-06-03 : improved options: checkbox + prefix/suffix
