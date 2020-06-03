@@ -463,6 +463,8 @@ function draw_rectangle(node) {
  * @param {Event} e
  */
 function handle_drop(e) {
+    if (!Y.drag_and_drop)
+        return;
     add_history();
 
     let [child] = get_drop_id(e.target),
@@ -1012,7 +1014,7 @@ function resize_panels() {
     });
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.sub)
+        if (!board.sub || board.manual)
             return;
         let node = board.node,
             area_width = get_area(node).clientWidth;
@@ -1560,11 +1562,15 @@ function set_global_events() {
 
     // drag and drop
     Events(window, 'dragstart', e => {
+        if (!Y.drag_and_drop)
+            return;
         let parent = Parent(e.target, {attrs: 'draggable=true', self: true});
         if (parent)
             drag_source = parent;
     });
     Events(window, 'dragenter dragover', e => {
+        if (!Y.drag_and_drop)
+            return;
         let [child] = get_drop_id(e.target),
             parent = Parent(e.target, {class_: 'area', self: true});
 
@@ -1574,6 +1580,8 @@ function set_global_events() {
         e.preventDefault();
     });
     Events(window, 'dragexit dragleave', e => {
+        if (!Y.drag_and_drop)
+            return;
         if (e.target.tagName == 'HTML') {
             Class('.area', '-dragging');
             Hide('#rect');

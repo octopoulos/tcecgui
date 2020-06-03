@@ -25,7 +25,8 @@
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
 DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, LS, Min, mix_hex_colors, Now, Parent,
-play_sound, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper, Visible, Y
+play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper,
+Visible, Y
 */
 'use strict';
 
@@ -55,6 +56,12 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
+    HIGH_COLORS = [
+        'transparent',
+        'rgba(255, 180, 0, 0.7)',
+        'rgba(255, 90, 0, 0.7)',
+        'rgba(255, 180, 0, 0.25)',
+    ],
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     // piece moves based on the SQUARES
     // - p2 = there must be an piece of the opposite color
@@ -84,7 +91,8 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    TIMEOUT_click = 200;
+    TIMEOUT_click = 200,
+    TIMEOUT_pick = 500;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -168,6 +176,7 @@ class XBoard {
         this.dual = null;
         this.evals = [];                                // eval history
         this.fen = START_FEN;                           // current fen
+        this.fen2 = '';
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
         this.high_color = '';                           // highlight color
@@ -202,6 +211,22 @@ class XBoard {
         this.text = '';                                 // current text from add_moves_string
         this.valid = true;
         this.xmoves = null;
+        this.xpieces = null;
+        this.xsquares = null;
+    }
+
+    /**
+     * Add a highlight square
+     * @param {number} coord
+     * @param {number} type 1:source, 2:target, 3:sources
+     */
+    add_high(coord, type) {
+        let node = _(`[data-c="${coord}"] > .xhigh`, this.xsquares);
+        Style(node, `background:${HIGH_COLORS[type]}`);
+        Class(node, (type == 2)? 'target -source': 'source -target');
+
+        if (type == 3)
+            Class(`[data-c="${coord}"]`, 'source', true, this.xpieces);
     }
 
     /**
@@ -228,6 +253,7 @@ class XBoard {
         let is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
             lines = [],
+            manual = this.manual,
             num_book = 0,
             num_new = moves.length,
             num_move = this.moves.length,
@@ -244,7 +270,7 @@ class XBoard {
             start = 0;
 
         // add the initial position
-        if (!num_move && this.main)
+        if (!num_move && (this.main || manual))
             start = -1;
 
         // proper moves
@@ -269,24 +295,27 @@ class XBoard {
                 extra = ' current';
             }
 
+            let move_num = 1 + ply / 2;
             if (ply % 2 == 0) {
                 if (is_ply)
-                    lines.push(`<i class="turn">${1 + ply / 2}.</i>`);
-                else if (i < 0)
+                    lines.push(`<i class="turn">${move_num}.</i>`);
+                else if (i < 0) {
+                    if (!manual || !_('[data-i="-1"]', this.xmoves))
+                        for (let [parent, last] of parent_lasts) {
+                            let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
+                            parent.insertBefore(node, last);
+                            for (let j = 0; j < 2; j ++)
+                                parent.insertBefore(CreateNode('b'), last);
+                        }
+                }
+                else if (!manual || !_(`[data-j="${move_num}"]`, this.xmoves))
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
-                        parent.insertBefore(node, last);
-                        for (let j = 0; j < 2; j ++)
-                            parent.insertBefore(CreateNode('i'), last);
-                    }
-                else
-                    for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${1 + ply / 2}.`, {class: 'turn'});
+                        let node = CreateNode('i', `${move_num}.`, {class: 'turn', 'data-j': move_num});
                         parent.insertBefore(node, last);
                     }
             }
             else if (!i && is_ply)
-                lines.push(`<i class="turn">${Floor(1 + ply / 2)}</i> ..`);
+                lines.push(`<i class="turn">${Floor(move_num)}</i> ..`);
 
             if (move && move.m) {
                 let class_ = `${move.book? 'book': 'real'}${extra}`;
@@ -541,15 +570,23 @@ class XBoard {
      * @param {boolean} animate
      */
     animate(move, animate) {
+        if (this.manual)
+            requestAnimationFrame(() => {
+                add_timeout('pick', () => {this.show_picks();}, move? TIMEOUT_pick: 0);
+            });
+
         if (!move)
             return;
+
         let func = `animate_${this.mode}`;
-        if (this[func]) {
-            let delay = Y.highlight_delay;
-            this[func](move, animate || !delay);
-            if (!animate && delay > 0)
-                add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, delay);
-        }
+        if (!this[func])
+            return;
+
+        let delay = Y.highlight_delay;
+        this[func](move, animate || !delay);
+
+        if (!animate && delay > 0)
+            add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, delay);
     }
 
     /**
@@ -898,6 +935,19 @@ class XBoard {
     }
 
     /**
+     * Clear highlight squares
+     * @param {number} type &1:source, &2:target, &4:restore picks
+     */
+    clear_high(type) {
+        Style('.xhigh', 'background:transparent', true, this.xsquares);
+        Class('.xhigh', `${type & 1? 'source': ''} ${type & 2? 'target': ''}`, false, this.xsquares);
+        if (type == 3)
+            Class('.source', '-source', true, this.xpieces);
+        if (type & 4)
+            Style('.source', `background:${HIGH_COLORS[3]}`, true, this.xsquares);
+    }
+
+    /**
      * Clicked on a move list => maybe selected a new ply
      * @param {Event} e
      * @param {function} callback
@@ -1040,8 +1090,8 @@ class XBoard {
     event_hook(callback) {
         let that = this;
 
-        C(this.node, () => {
-            callback(that, 'activate');
+        C(this.node, e => {
+            callback(that, 'activate', e.target);
         });
 
         // disable right click
@@ -1054,9 +1104,10 @@ class XBoard {
             let name = this.dataset.x;
             switch (name) {
             case 'copy':
-                CopyClipboard(that.fen);
-                Class(this, 'copied');
-                add_timeout('fen', () => {Class(this, '-copied');}, 1000);
+                CopyClipboard(that.fen).then(() => {
+                    Class(this, 'copied');
+                    add_timeout('fen', () => {Class(this, '-copied');}, 1000);
+                });
                 break;
             case 'end':
                 that.go_end();
@@ -1123,25 +1174,29 @@ class XBoard {
                 this.clicked_move_list(e, callback);
             });
 
-        // place a picked piece
-        C('.xsquares', e => {
-            this.place(e);
-        }, this.node);
-
-        // pick a piece
-        C('.xpieces', e => {
-            this.pick(e);
-        }, this.node);
-
         // PVA => extra events
         if (this.manual) {
-            Events('.xsquares', 'mousemove', function(e) {
-                let target = Parent(e.target, {class_: 'xsquare'});
-                if (target) {
-                    Style('.xhigh', 'background:transparent', true, this);
-                    Style('.xhigh', 'background:rgba(255, 180, 0, 0.7)', true, target);
-                }
-            }, {}, this.node);
+            // place a picked piece
+            C(this.xsquares, e => {
+                this.place(e);
+            });
+
+            // pick a piece
+            C('.xpieces', e => {
+                if (this.place(e) || !this.pick(e))
+                    return;
+
+                this.clear_high(this.picked? 2: 6);
+                if (!this.picked)
+                    return;
+
+                this.chess_load(this.fen);
+                let moves = this.chess.moves({legal: true, single_square: this.picked});
+                for (let move of moves)
+                    this.add_high(move.to, 2);
+                if (moves[0])
+                    this.add_high(moves[0].from, 1);
+            }, this.node);
         }
     }
 
@@ -1275,6 +1330,8 @@ class XBoard {
 
         this.overlay = _('.xoverlay', this.node);
         this.xmoves = _('.xmoves', this.node);
+        this.xpieces = _('.xpieces', this.node);
+        this.xsquares = _('.xsquares', this.node);
 
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
@@ -1314,7 +1371,7 @@ class XBoard {
      */
     go_prev() {
         let ply = this.ply - 1,
-            start = this.main? -1: 0;
+            start = (this.main || this.manual)? -1: 0;
         while (ply > start && !this.moves[ply])
             ply --;
         return this.set_ply(ply, {animate: true, manual: true});
@@ -1331,7 +1388,7 @@ class XBoard {
             ply ++;
 
         // initial board
-        if (!ply && this.main)
+        if (!ply && (this.main || this.manual))
             ply = -1;
 
         return this.set_ply(ply, {manual: true});
@@ -1356,7 +1413,7 @@ class XBoard {
         case 'null':
             break;
         default:
-            HTML('.xsquares', text, this.node);
+            HTML(this.xsquares, text);
         }
     }
 
@@ -1364,34 +1421,75 @@ class XBoard {
      * Pick / release a piece
      * - only HTML for now
      * @param {Event} e
+     * @returns {boolean}
      */
     pick(e) {
-        if (!this.manual)
-            return;
-
         let node = Parent(e.target, {class_: 'xpiece'});
-        if (node) {
-            let coord = node.dataset.c;
-            this.picked = (this.picked == coord)? null: coord;
-        }
+        if (!node)
+            return false;
+
+        // not highlighted => cannot pick this
+        let coord = node.dataset.c * 1;
+        if (!_(`[data-c="${coord}"] .source`, this.xsquares))
+            return false;
+
+        this.picked = (this.picked == coord)? null: coord;
+        return true;
     }
 
     /**
      * Place a picked piece
      * - only HTML for now
      * @param {Event} e
+     * @returns {boolean}
      */
     place(e) {
-        if (!this.manual || !this.picked)
-            return;
+        if (!this.picked)
+            return false;
 
-        let found = Parent(e.target, {class_: 'xsquare'});
-        if (found) {
-            this.chess_load(this.fen);
-            this.chess_move({from: SQUARES_INV[this.picked], to: found});
-            this.set_fen(this.chess_fen(), true);
-        }
+        // 1) find from and to
+        let found = Parent(e.target, {class_: 'xpiece|xsquare'});
+        if (!found)
+            return false;
+
+        found = found.dataset.c;
+        let square = _(`[data-c="${found}"] > .xhigh`, this.xsquares);
+        if (square.style.background == 'transparent')
+            return false;
+
+        // 2) try to move, it might be invalid
+        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found]});
+        if (!move)
+            return false;
+
+        // 3) update
+        // fen/ply
+        let fen = this.chess_fen();
+        move.fen = fen;
+        let ply = get_move_ply(move);
+
+        this.set_fen(fen, true);
+        this.clear_high(3);
         this.picked = null;
+
+        // delete some moves?
+        if (ply < this.moves.length) {
+            this.moves = this.moves.slice(0, ply);
+            let node = _(`[data-i="${ply}"]`, this.xmoves);
+            while (node) {
+                let next = node.nextElementSibling;
+                node.remove();
+                node = next;
+            }
+        }
+
+        // add moves
+        this.add_moves([{
+            fen: fen,
+            m: move.san,
+            ply: ply,
+        }]);
+        return true;
     }
 
     /**
@@ -1505,12 +1603,13 @@ class XBoard {
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
             let nodes = [],
-                [piece_size, style, transform] = this.get_piece_background(this.size),
-                xpieces = _('.xpieces', this.node);
+                [piece_size, style, transform] = this.get_piece_background(this.size);
 
-            Class(xpieces, 'smooth', this.smooth);
+            Class(this.xpieces, 'smooth', this.smooth);
 
             // create pieces / adjust their position
+            if (this.manual)
+                LS('render');
             Keys(this.pieces).forEach(char => {
                 let items = this.pieces[char],
                     offset = -SPRITE_OFFSETS[char] * piece_size;
@@ -1548,10 +1647,10 @@ class XBoard {
             });
 
             if (DEV.board)
-                LS(xpieces);
+                LS(this.xpieces);
 
             // insert pieces
-            InsertNodes(xpieces, nodes);
+            InsertNodes(this.xpieces, nodes);
         }
 
         this.dirty = 0;
@@ -1629,6 +1728,7 @@ class XBoard {
             this.evals.length = 0;
 
         this.set_last(this.last);
+        this.show_picks();
     }
 
     /**
@@ -1657,8 +1757,11 @@ class XBoard {
         Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
 
         this.size = size;
-        if (render)
+        if (render) {
+            if (this.manual)
+                LS('render resize');
             this.render(2);
+        }
     }
 
     /**
@@ -1685,7 +1788,7 @@ class XBoard {
      */
     set_fen(fen, render) {
         if (DEV.board)
-            LS(`set_fen: ${fen}`);
+            LS(`${this.id} set_fen: ${fen}`);
         if (fen == null)
             fen = START_FEN;
 
@@ -1693,8 +1796,11 @@ class XBoard {
         if (!this.analyse_fen())
             return false;
 
-        if (render)
+        if (render) {
+            if (this.manual)
+                LS('render fen');
             this.render(2);
+        }
         return true;
     }
 
@@ -1761,7 +1867,7 @@ class XBoard {
             this.instant();
 
         // special case: initial board
-        if (ply == -1 && this.main) {
+        if (ply == -1 && (this.main || this.manual)) {
             this.ply = -1;
             this.set_fen(START_FEN, true);
             this.hide_arrows();
@@ -1832,6 +1938,26 @@ class XBoard {
             animate = true;
         this.animate(move, animate);
         return move;
+    }
+
+    /**
+     * Show which pieces can be picked
+     */
+    show_picks() {
+        if (!this.manual)
+            return;
+        if (this.fen == this.fen2)
+            return;
+
+        this.chess_load(this.fen);
+        this.fen2 = this.fen;
+
+        let moves = this.chess.moves({legal: true}),
+            froms = new Set(moves.map(move => move.from));
+
+        this.clear_high(3);
+        for (let from of froms)
+            this.add_high(from, 3);
     }
 
     /**

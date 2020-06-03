@@ -715,6 +715,8 @@ function update_board_theme(mode) {
         }
 
         board.instant();
+        if (board.manual)
+            LS('render theme');
         board.render(7);
     });
 

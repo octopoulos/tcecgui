@@ -10,6 +10,7 @@ html {
 /* board */
 #archive .xmoves,
 #live .xmoves,
+#pva .xmoves,
 .moves {
     background: rgba(235, 235, 238, 0.4);
 }
