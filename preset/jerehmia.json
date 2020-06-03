@@ -181,7 +181,6 @@
   "custom_white_pva": "#ffffff",
   "drag_and_drop": 0,
   "encoding": "sRGB",
-  "eval_clamp": 10,
   "exposure": 1,
   "gamma": 1.5,
   "graph_aspect_ratio": 1.425,
