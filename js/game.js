@@ -2196,24 +2196,14 @@ function download_pgn(section, url, scroll_up, reset_moves) {
  * Resize game elements
  */
 function resize_game() {
-    // main boards
-    for (let [parent, key] of [['left', 'archive'], ['left', 'live']]) {
-        let width = Id(parent).clientWidth,
-            board = xboards[key];
-        if (board) {
-            board.instant();
-            board.resize(width);
-        }
-    }
-
-    // sub boards
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.sub)
+        if (!board.main && !board.sub)
             return;
 
         let area = get_area(board.node),
-            size = Clamp(area.clientWidth / board.sub - 4, 196, 320);
+            width = area.clientWidth,
+            size = Clamp(width / Max(board.sub, 1) - 4, 196);
         board.instant();
         board.resize(size);
     });

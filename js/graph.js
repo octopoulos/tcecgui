@@ -88,7 +88,7 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
-    let eval_clamp = Y.eval_clamp;
+    let eval_clamp = Y.graph_eval_clamp;
     if (!isNaN(eval_))
         return Clamp(eval_ * 1, -eval_clamp, eval_clamp);
 

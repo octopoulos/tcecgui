@@ -623,15 +623,17 @@ function init_globals() {
     }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
-    add_timeout('adblock', () => {
-        if (_('.google-ad').clientHeight <= 0) {
-            HTML('.adblock', HTML('#adblock'));
-            Show('.adblock');
-        }
-    }, TIMEOUTS.adblock);
+    // google ads
+    if (!Y.no_ad && !DEV.ad && location.port != 8080) {
+        add_timeout('adblock', () => {
+            if (_('.google-ad').clientHeight <= 0) {
+                HTML('.adblock', HTML('#adblock'));
+                Show('.adblock');
+            }
+        }, TIMEOUTS.adblock);
 
-    if (!Y.no_ad && !DEV.ad && location.port != 8080)
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+    }
     load_google_analytics();
 
     if (Visible('#table-log'))
@@ -1757,8 +1759,8 @@ function startup() {
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
-        // new column after 9 items
-        _split: 9,
+        // new column after 10 items
+        _split: 10,
         general: {
             preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
         },
@@ -1779,6 +1781,7 @@ function startup() {
         // separator
         _1: {},
         arrow: {
+            _prefix: 'arrow_',
             arrow_base_border: option_number(0, 0, 5, 0.01),
             arrow_base_color: [{type: 'color'}, '#a5a5a5'],
             arrow_base_mix: option_number(0.7, 0, 1, 0.01),
@@ -1815,6 +1818,7 @@ function startup() {
             status: [AUTO_ON_OFF, 'auto'],
         },
         board_pv: {
+            _suffix: '_pv',
             analysis_chessdb: '1',
             analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
@@ -1829,7 +1833,6 @@ function startup() {
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
-        // separator
         control: {
             book_every: option_number(600, 100, 5000, 100),
             key_repeat: option_number(70, 10, 2000, 10),
@@ -1854,12 +1857,14 @@ function startup() {
             wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
-            eval_clamp: option_number(10, 1, 100),
+            _prefix: 'graph_',
             graph_aspect_ratio: option_number(1.5, 0.5, 5, 0.005),
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
+            graph_eval_clamp: option_number(10, 1, 100),
+            graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(2.2, 0, 10, 0.1),
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(2.2, 0, 10, 0.1),

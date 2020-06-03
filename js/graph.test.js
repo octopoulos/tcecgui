@@ -108,7 +108,7 @@ let {
     ['#-18', -10],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
-        Y.eval_clamp = 10;
+        Y.graph_eval_clamp = 10;
         expect(clamp_eval(eval_)).toEqual(answer);
     });
 });
