@@ -98,6 +98,7 @@ function parse_dev() {
             o: 'open',
             n: 'new',                   // new game debugging
             p: 'pv',
+            P: 'popup',                 // disable popups
             q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',

@@ -1302,6 +1302,8 @@ function window_click(e) {
         }
         if (HasClasses(target, 'fen|nav'))
             return;
+        if (HasClasses(target, 'live-pv|xmoves'))
+            context_target = target;
         if (HasClass(target, 'page')) {
             let parent = Parent(target, {class_: 'pagin'});
             change_page(parent.id.split('-')[0], target.dataset.p);
@@ -1480,64 +1482,66 @@ function set_global_events() {
     });
 
     // context menus
-    Keys(CONTEXT_MENUS).forEach(key => {
-        Events(key, 'contextmenu', function(e) {
-            context_target = e.target;
+    if (!DEV.popup) {
+        Keys(CONTEXT_MENUS).forEach(key => {
+            Events(key, 'contextmenu', function(e) {
+                context_target = e.target;
 
-            // skip some elements
-            let tag = context_target.tagName;
-            if (['INPUT', 'SELECT'].includes(tag))
-                return;
-            if (tag == 'A' && context_target.href)
-                return;
+                // skip some elements
+                let tag = context_target.tagName;
+                if (['INPUT', 'SELECT'].includes(tag))
+                    return;
+                if (tag == 'A' && context_target.href)
+                    return;
 
-            show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
-            e.preventDefault();
+                show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
+                e.preventDefault();
+            });
         });
-    });
-    Events(
-        '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
-        + '#table-live0, #table-live1', 'contextmenu', function(e) {
-        let is_pv = '01'.includes(this.id.slice(-1)),
-            target = e.target;
+        Events(
+            '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
+            + '#table-live0, #table-live1', 'contextmenu', function(e) {
+            let is_pv = '01'.includes(this.id.slice(-1)),
+                target = e.target;
 
-        while (target) {
-            let dataset = target.dataset,
-                name;
-            if (dataset && ['next', 'prev'].includes(dataset.x))
-                return;
-            else if (HasClass(target, 'live-basic'))
-                name = 'hide';
-            else if (HasClass(target, 'live-pv'))
-                name = 'live';
-            else if (HasClass(target, 'xbottom'))
-                return;
-            else if (HasClass(target, 'xcontain'))
-                name = is_pv? 'board_pv': 'board';
-            else if (HasClass(target, 'xcontrol'))
-                name = 'control';
-            else if (HasClass(target, 'xmoves'))
-                name = `copy${is_pv? '_pv': ''}`;
+            while (target) {
+                let dataset = target.dataset,
+                    name;
+                if (dataset && ['next', 'prev'].includes(dataset.x))
+                    return;
+                else if (HasClass(target, 'live-basic'))
+                    name = 'hide';
+                else if (HasClass(target, 'live-pv'))
+                    name = 'live';
+                else if (HasClass(target, 'xbottom'))
+                    return;
+                else if (HasClass(target, 'xcontain'))
+                    name = is_pv? 'board_pv': 'board';
+                else if (HasClass(target, 'xcontrol'))
+                    name = 'control';
+                else if (HasClass(target, 'xmoves'))
+                    name = `copy${is_pv? '_pv': ''}`;
 
-            if (name) {
+                if (name) {
+                    context_target = target;
+                    show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
+                    e.preventDefault();
+                    return;
+                }
+                target = target.parentNode;
+            }
+        });
+        Events(window, 'contextmenu', e => {
+            let target = e.target;
+            if (HasClasses(target, 'tab drop')) {
+                let id = target.dataset.x,
+                    name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
                 context_target = target;
                 show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
                 e.preventDefault();
-                return;
             }
-            target = target.parentNode;
-        }
-    });
-    Events(window, 'contextmenu', e => {
-        let target = e.target;
-        if (HasClasses(target, 'tab drop')) {
-            let id = target.dataset.x,
-                name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
-            context_target = target;
-            show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
-            e.preventDefault();
-        }
-    });
+        });
+    }
 
     // fullscreen scrolling
     Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
@@ -1938,10 +1942,10 @@ function startup() {
         'UI': '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
     });
 
+    load_settings();
     set_global_events();
     set_game_events();
     startup_graph();
-    load_settings();
     add_history();
 
     // start

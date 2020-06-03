@@ -12,12 +12,12 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
-C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target,
-controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, fill_combo, Floor,
-FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE, HTML,
-Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
-reset_charts, resize_3d, Resource, resume_sleep, Round,
+C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas,
+context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events,
+fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass,
+HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, Pow, push_state,
+QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
@@ -622,12 +622,13 @@ function redraw_arrows() {
 function reset_sub_boards(mode) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.main) {
-            if (mode & 1)
-                board.valid = false;
-            if (mode & 2)
-                board.reset(mode & 4);
-        }
+        if (board.main || board.manual)
+            return;
+
+        if (mode & 1)
+            board.valid = false;
+        if (mode & 2)
+            board.reset(mode & 4);
     });
 }
 
@@ -3035,11 +3036,24 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
-        // y, z
+        // c, v, y, z
+        case 67:
+        case 86:
         case 89:
         case 90:
             if (KEYS[17])
-                restore_history(code == 89? 1: -1);
+                if (code == 67) {
+                    if (!copy_moves())
+                        CopyClipboard(board_target.fen);
+                }
+                else if (code == 86) {
+                    if (board_target.manual)
+                        navigator.clipboard.readText().then(text => {
+                            board_target.set_fen(text, true);
+                        });
+                }
+                else
+                    restore_history(code == 89? 1: -1);
             break;
         }
 
@@ -3132,15 +3146,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'copy_moves':
-        let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-        if (target) {
-            let text = target.innerText.replace(/\s/g, ' ');
-            if (text.slice(0, 3) == '0. ')
-                text = text.slice(3);
-            if (text.slice(-2) == ' *')
-                text = text.slice(0, -2);
-            CopyClipboard(text);
-        }
+        copy_moves();
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
@@ -3220,6 +3226,24 @@ function changed_section() {
 }
 
 /**
+ * Copy moves list to the clipboard
+ * @returns {string}
+ */
+function copy_moves() {
+    let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
+    if (!target)
+        return '';
+
+    let text = target.innerText.replace(/\s/g, ' ');
+    if (text.slice(0, 3) == '0. ')
+        text = text.slice(3);
+    if (text.slice(-2) == ' *')
+        text = text.slice(0, -2);
+    CopyClipboard(text);
+    return text;
+}
+
+/**
  * Handle xboard events
  * @param {XBoard} board
  * @param {string} type
@@ -3231,6 +3255,8 @@ function handle_board_events(board, type, value) {
     switch (type) {
     case 'activate':
         board_target = board;
+        // used for CTRL+C
+        context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
         break;
     // controls: play, next, ...
     case 'control':
