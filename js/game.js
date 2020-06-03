@@ -27,6 +27,7 @@ update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, V
 
 let ANALYSIS_URLS = {
         chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
+        evalguide: 'https://hxim.github.io/Stockfish-Evaluation-Guide/index.html?p={FEN}',
         lichess: 'https://lichess.org/analysis/standard/{FEN}',
     },
     BOARD_THEMES = {
@@ -3111,6 +3112,7 @@ function change_setting_game(name, value) {
     // using exact name
     switch (name) {
     case 'analysis_chessdb':
+    case 'analysis_evalguide':
     case 'analysis_lichess':
         let parent = Parent(context_target, {class_: 'xboard'});
         if (parent) {

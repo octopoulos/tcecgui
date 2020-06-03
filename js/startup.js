@@ -1814,6 +1814,7 @@ function startup() {
         },
         board: {
             analysis_chessdb: '1',
+            analysis_evalguide: '1',
             analysis_lichess: '1',
             animate: [ON_OFF, 1],
             arrow: '',
@@ -1831,6 +1832,7 @@ function startup() {
         board_pv: {
             _suffix: '_pv',
             analysis_chessdb: '1',
+            analysis_evalguide: '1',
             analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
@@ -1847,6 +1849,7 @@ function startup() {
         board_pva: {
             _suffix: '_pva',
             analysis_chessdb: '1',
+            analysis_evalguide: '1',
             analysis_lichess: '1',
             animate_pva: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
