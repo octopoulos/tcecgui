@@ -169,10 +169,11 @@ class XBoard {
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
         this.evals = [];                                // eval history
-        this.fen = START_FEN;                           // current fen
+        this.fen = '';                                  // current fen
         this.fen2 = '';
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
+        this.grid2 = new Array(128);
         this.high_color = '';                           // highlight color
         this.high_size = 0.06;                          // highlight size
         this.hold = null;                               // mouse/touch hold target
@@ -478,7 +479,7 @@ class XBoard {
         // 1) create the grid + count the pieces
         let chars = [],
             counts = {},
-            grid = this.grid,
+            grid = this.grid2,
             items = fen.split(' '),
             off = 0,
             lines = items[0].split('/'),
@@ -553,7 +554,7 @@ class XBoard {
             win[1] = index;
         }
 
-        // move non found pieces off the board
+        // 3) move non found pieces off the board
         let [num_row] = this.dims;
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
@@ -561,8 +562,12 @@ class XBoard {
                     piece[1] = -num_row;
         });
 
-        this.fen = fen;
+        // 4) update variables
+        let temp = this.grid;
         this.grid = grid;
+        this.grid2 = temp;
+
+        this.fen = fen;
         this.valid = true;
         return true;
     }
@@ -1350,7 +1355,7 @@ class XBoard {
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
 
-        this.analyse_fen(this.fen);
+        this.set_fen(null);
         update_svg();
 
         this.markers = [CreateNode('i', '@', {class: 'marker'}), CreateNode('i', '@', {class: 'marker'})];
@@ -1736,6 +1741,7 @@ class XBoard {
         if (this.check_locked())
             return;
 
+        this.fen = '';
         this.goal = [-20.5, -1];
         this.grid.fill('');
         this.moves.length = 0;
@@ -1750,6 +1756,7 @@ class XBoard {
         if (reset_evals)
             this.evals.length = 0;
 
+        this.set_fen(null);
         this.set_last(this.last);
         this.show_picks();
     }

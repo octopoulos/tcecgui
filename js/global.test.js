@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-08
+// @version 2020-06-03
 //
 /*
 globals
@@ -19,9 +19,56 @@ create_module(IMPORT_PATH, [
     'global',
 ], OUTPUT_MODULE);
 
-let {get_move_ply, mix_hex_colors, split_move_string} = require(OUTPUT_MODULE);
+let {
+    allie_cp_to_score, calculate_feature_q, get_move_ply, leela_cp_to_score, mix_hex_colors, split_move_string,
+    stoof_cp_to_score,
+} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// allie_cp_to_score
+// https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/tests/testbasics.cpp#L120
+[
+    [0, 0],
+    [100, 0.42144403114],
+    [-100, -0.42144403114],
+    [400, 0.747188146311],
+    [-400, -0.747188146311],
+    [1000, 0.8392234846],
+    [-1000, -0.8392234846],
+    [10000, 0.898044],
+    [-10000, -0.898044],
+    [12800, 0.9163436966936154],
+    [-12800, -0.9163436966936154],
+    [25600, 1.0],
+    [-25600, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`allie_cp_to_score:${id}`, () => {
+        expect(allie_cp_to_score(cp)).toBeCloseTo(answer, 5);
+    });
+});
+
+// calculate_feature_q
+[
+    [0, 0.27, 3.877809205717149],
+    [0, 0.27, 3.877809205717149],
+    [0, 128, 50],
+    [0, 128, 50],
+    [1, 0.27, 2.9914166820729227],
+    [1, 128, 50],
+    [3, 0.27, 9.319137125182761],
+    [3, 128, 50],
+    [5, 0.27, 6.8565897272471545],
+    [5, 128, 45.817184834680766],
+    [5, 256, 50],
+    [9, 0.27, 4.4446967802372015],
+]
+ .forEach(([short_engine, eval_, answer], id) => {
+    test(`calculate_feature_q:${id}`, () => {
+        expect(calculate_feature_q(short_engine, eval_)).toBeCloseTo(answer, 3);
+    });
+});
 
 // get_move_ply
 [
@@ -42,6 +89,27 @@ let {get_move_ply, mix_hex_colors, split_move_string} = require(OUTPUT_MODULE);
         expect(get_move_ply(move)).toEqual(answer);
         if (answer >= -1)
             expect(move.ply).toEqual(answer);
+    });
+});
+
+
+// leela_cp_to_score
+[
+    [0, 0],
+    [100, 0.5358778448223716],
+    [-100, -0.5358778448223716],
+    [400, 0.8629757114869812],
+    [-400, -0.8629757114869812],
+    [1000, 0.94710419473861],
+    [-1000, -0.94710419473861],
+    [10000, 0.9987481281074694],
+    [-10000, -0.9987481281074694],
+    [12800, 1.0],
+    [-12800, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`leela_cp_to_score:${id}`, () => {
+        expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });
 });
 
@@ -70,5 +138,25 @@ let {get_move_ply, mix_hex_colors, split_move_string} = require(OUTPUT_MODULE);
 ].forEach(([text, answer], id) => {
     test(`split_move_string:${id}`, () => {
         expect(split_move_string(text)).toEqual(answer);
+    });
+});
+
+// stoof_cp_to_score
+[
+    [0, 0],
+    [100, 0.30594615173109363],
+    [-100, -0.30594615173109363],
+    [400, 0.7194598788661556],
+    [-400, -0.7194598788661556],
+    [1000, 0.8865653994370497],
+    [-1000, -0.8865653994370497],
+    [10000, 0.9972736365998054],
+    [-10000, -0.9972736365998054],
+    [12800, 1.0],
+    [-12800, -1.0],
+]
+ .forEach(([cp, answer], id) => {
+    test(`stoof_cp_to_score:${id}`, () => {
+        expect(stoof_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });
 });

@@ -16,15 +16,45 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 create_module(IMPORT_PATH, [
     'common',
     'engine',
+    'global',
     //
     'graph',
-], OUTPUT_MODULE, 'Assign chart_data Keys Y');
+], OUTPUT_MODULE, 'Assign chart_data Keys players Y');
 
 let {
-    Assign, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, Y,
+    Assign, calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, players, Y,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// calculate_win
+[
+    [0, '', 0],
+    [0, NaN, 100],
+    [0, Infinity, 100],
+    [0, -5.2, -90.5],
+    [0, -19, -100],
+    [0, 3.14, 71.8],
+    [0, 0.27, 7.8],
+    [1, 0.27, 6],
+    [3, 0.27, 18.6],
+    [5, 0.27, 13.7],
+    [9, 0.27, 8.9],
+    [0, 10.05, 99.4],
+    [0, '3.14', 71.8],
+    [0, '-3.14', -71.8],
+    [0, '-something', -100],
+    [0, 'something', 100],
+    [0, 'M#33', 100],
+    [0, '-M#33', -100],
+    [0, '#18', 100],
+    [0, '#-18', -100],
+].forEach(([feature, eval_, answer], id) => {
+    test(`calculate_win:${id}`, () => {
+        players[0].feature = feature;
+        expect(calculate_win(0, eval_)).toEqual(answer);
+    });
+});
 
 // check_first_num
 [

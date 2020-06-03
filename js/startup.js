@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-30
+// @version 2020-06-03
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -24,8 +24,8 @@ popup_custom, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+translates:true, update_board_theme, update_chart_options, update_debug, update_live_chart, update_player_charts,
+update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -216,9 +216,6 @@ function change_setting_special(name, value, no_close) {
     case 'drag_and_drop':
         set_draggable();
         break;
-    case 'eval_clamp':
-        update_player_charts('eval', xboards[Y.x].moves);
-        break;
     case 'export_settings':
         let object = Assign(
             {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
@@ -234,6 +231,12 @@ function change_setting_special(name, value, no_close) {
     case 'graph_tension':
     case 'graph_text':
         update_chart_options(null, 3);
+        break;
+    case 'graph_eval_clamp':
+    case 'graph_eval_mode':
+        update_player_charts('eval', xboards[Y.x].moves);
+        update_live_chart(xboards.live0.evals, 2);
+        update_live_chart(xboards.live1.evals, 3);
         break;
     case 'grid':
     case 'grid_copy':

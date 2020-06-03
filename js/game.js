@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-02
+// @version 2020-06-03
 //
 // Game specific code:
 // - control the board, moves
@@ -11,13 +11,13 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
-C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas,
-context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events,
-fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
-HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, Pow, push_state,
-QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
+context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
+E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object,
+getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
+push_state, QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
@@ -170,7 +170,6 @@ let ANALYSIS_URLS = {
         uscf: {},
         wikipedia: {},
     },
-    players = [{}, {}],                 // current 2 players
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     QUEUES = ['h2h', 'stats'],
     RESULTS = {
@@ -232,18 +231,6 @@ let ANALYSIS_URLS = {
 //////////
 
 /**
- * Convert centipawn to score % for AS
- * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
- * @param {number} cp
- * @returns {number}
- */
-function allie_cp_to_score(cp) {
-    if (Abs(cp) > 1000)
-        return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
-    return Atan(cp / 111) / 1.74;
-}
-
-/**
  * Calculate the probability to draw or win
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
@@ -255,26 +242,8 @@ function calculate_probability(short_engine, eval_)
     if (isNaN(eval_))
         return eval_;
 
-    let white_win,
-        feature = ENGINE_FEATURES[short_engine];
-
-    // adjust the score
-    if (feature & 1) {
-        let cp = eval_ * 100;
-        if (feature & 2)
-            white_win = leela_cp_to_score(cp);
-        else if (feature & 4)
-            white_win = allie_cp_to_score(cp);
-        else if (feature & 8)
-            white_win = stoof_cp_to_score(cp);
-        else
-            white_win = (Atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
-
-        // this is the HALF white win %
-        white_win *= 50;
-    }
-    else
-        white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
+    let feature = ENGINE_FEATURES[short_engine],
+        white_win = calculate_feature_q(feature, eval_);
 
     // final output
     let reverse = 0;
@@ -423,16 +392,6 @@ function get_xhr_elapsed(xhr) {
 }
 
 /**
- * Convert centipawn to score % for Leela 2019+
- * https://github.com/LeelaChessZero/lc0/pull/1193/files
- * @param {number} cp
- * @returns {number}
- */
-function leela_cp_to_score(cp) {
-    return Atan(cp / 90) / 1.5637541897;
-}
-
-/**
  * Get the timestamp in seconds from a date time
  * - assume it's UTC
  * @param {string} text
@@ -442,15 +401,6 @@ function parse_date_time(text) {
     let items = text.split(' on '),
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
     return seconds;
-}
-
-/**
- * Convert centipawn to score % for Stoofvlees II
- * @param {number} cp
- * @returns {number}
- */
-function stoof_cp_to_score(cp) {
-    return Atan(cp / 194) / 1.55564;
 }
 
 // BOARD
@@ -665,13 +615,14 @@ function show_board_info(show) {
     Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
     Class('.xtop', 'xcolor0 -xcolor1', main.rotate);
 
-    players.forEach((player, id) => {
-        let mini = _(`.xcolor${id}`, node);
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id],
+            mini = _(`.xcolor${id}`, node);
         HTML('.xeval', format_eval(player.eval, true), mini);
         HTML(`.xleft`, player.sleft, mini);
         HTML('.xshort', player.short, mini);
         HTML(`.xtime`, player.stime, mini);
-    });
+    }
 }
 
 /**
@@ -869,8 +820,10 @@ function calculate_h2h(rows) {
     }
 
     // update players + UI info
-    for (let player of players)
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id];
         player.score = (names[player.name] - 1).toFixed(1);
+    }
     update_scores();
 
     return new_rows;
@@ -2415,6 +2368,7 @@ function update_overview_basic(section, headers) {
 
         Assign(player, {
             elo: headers[`${title}Elo`],
+            feature: Undefined(ENGINE_FEATURES[short], 0),
             name: name,
             short: short,
         });
@@ -2609,16 +2563,19 @@ function update_pgn(section, pgn, reset_moves) {
 
     // 2: a new game was started and we already had a game before
     if (new_game == 2) {
-        for (let player of players)
+        for (let id = 0; id < 2; id ++) {
+            let player = players[id];
             Assign(player, {
                 elapsed: 0,
                 left: player.tc * 1000,
                 time: 0,
             });
+        }
         add_queue(section, 'table');
     }
     else if (new_game) {
-        for (let player of players) {
+        for (let id = 0; id < 2; id ++) {
+            let player = players[id];
             if (!player.elapsed)
                 player.elapsed = 0;
             if (!player.left)
@@ -2641,9 +2598,10 @@ function update_pgn(section, pgn, reset_moves) {
  * Update players' score in the UI
  */
 function update_scores() {
-    players.forEach((player, id) => {
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id];
         HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
-    });
+    }
 }
 
 // LIVE ACTION / DATA
@@ -2745,9 +2703,12 @@ function update_live_eval(section, data, id, force_ply) {
         for (let move of moves) {
             // LS(`move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
             board.evals[move.ply - 1] = move;
+            move.invert = true;
         }
         data = moves[moves.length - 1];
     }
+    else if (data)
+        data.invert = force_ply;
 
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
@@ -2772,11 +2733,16 @@ function update_live_eval(section, data, id, force_ply) {
             if (node.title != engine) {
                 HTML(node, short);
                 Attrs(node, {title: engine});
+                Assign(players[id + 2], {
+                    feature: Undefined(ENGINE_FEATURES[short], 0),
+                    name: engine,
+                    short: short,
+                });
             }
         }
 
     // invert eval for black?
-    if ((moves || force_ply) && data.ply % 2 == 0)
+    if (data.invert && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
@@ -2804,7 +2770,7 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    update_live_chart(moves || [data], id + 2, !!moves || force_ply);
+    update_live_chart(moves || [data], id + 2);
     check_missing_moves(ply);
 }
 

@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-06
+// @version 2020-06-03
 //
 /*
 globals
@@ -156,6 +156,7 @@ live.dual = archive;
 ].forEach(([fen, options, answer], id) => {
     test(`render_text:${id}`, () => {
         Assign(live, options);
+        live.set_fen(fen);
         expect(live.render_text()).toEqual(answer);
     });
 });
