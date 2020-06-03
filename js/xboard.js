@@ -998,23 +998,13 @@ class XBoard {
         let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
             show_ply = Y.show_ply;
 
-        // last
-        if (show_ply == 'last') {
-            let ply = this.moves.length - 1;
-            this.set_ply(show_delay? num_ply: ply, {hold: true});
-
-            if (show_delay && ply > num_ply)
-                this.set_delayed_ply(ply);
-            return;
-        }
-
         // first, or if no dual
         if (show_ply == 'first' || !dual || !dual.valid || dual.locked) {
             this.set_ply(num_ply, {hold: true});
             return;
         }
 
-        // diverging => compare the moves
+        // diverging + last  => compare the moves
         let duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
@@ -1040,6 +1030,9 @@ class XBoard {
 
         // render: jump directly to the position
         for (let board of [this, dual]) {
+            if (show_ply == 'last')
+                ply = board.moves.length - 1;
+
             if (ply == num_ply)
                 board.set_ply(ply, {hold: true});
             // try to get to the ply without compute, if fails, then render the next ply + compute later

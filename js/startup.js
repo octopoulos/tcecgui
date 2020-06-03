@@ -1916,7 +1916,7 @@ function startup() {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: option_number(3, 3, 100, 0.5),
+            move_height_live: option_number(3, 3, 100, 0.1),
         },
         moves: {
             grid: option_number(0, 0, 10),
@@ -1924,11 +1924,11 @@ function startup() {
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
             grid_pva: option_number(1, 0, 10),
-            move_height: option_number(5, 3, 100, 0.5),
-            move_height_copy: option_number(20, 3, 100, 0.5),
-            move_height_live: option_number(3, 3, 100, 0.5),
-            move_height_pv: option_number(5, 5, 100, 0.5),
-            move_height_pva: option_number(5, 5, 100, 0.5),
+            move_height: option_number(5, 3, 100, 0.1),
+            move_height_copy: option_number(20, 3, 100, 0.1),
+            move_height_live: option_number(3, 3, 100, 0.1),
+            move_height_pv: option_number(5, 5, 100, 0.1),
+            move_height_pva: option_number(5, 5, 100, 0.1),
         },
         panel: {
             column_bottom: option_number(4, 1, 8),
@@ -1959,7 +1959,7 @@ function startup() {
             grid: option_number(0, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height: option_number(5, 3, 100, 0.5),
+            move_height: option_number(5, 3, 100, 0.1),
         },
         copy_copy: {
             _pop: true,
@@ -1967,21 +1967,21 @@ function startup() {
             grid_copy: option_number(2, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height_copy: option_number(20, 3, 100, 0.5),
+            move_height_copy: option_number(20, 3, 100, 0.1),
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
             grid_pv: option_number(1, 0, 10),
             info_moves_pv: [ON_OFF, 1],
-            move_height_pv: option_number(5, 3, 100, 0.5)
+            move_height_pv: option_number(5, 3, 100, 0.1)
         },
         copy_pva: {
             _pop: true,
             copy_moves: '1',
             grid_pva: option_number(1, 0, 10),
             info_moves_pva: [ON_OFF, 1],
-            move_height_pva: option_number(5, 3, 100, 0.5)
+            move_height_pva: option_number(5, 3, 100, 0.1)
         },
     });
 
