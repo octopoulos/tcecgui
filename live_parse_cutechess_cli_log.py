@@ -132,6 +132,7 @@ if __name__=="__main__":
                                    color = 1
                                 nodes_int = 0
                                 depth_int = 0
+                                wdl = ""
                                 for i, token in enumerate(l):
                                     if b.turn==chess.BLACK:
                                         color = 1
@@ -156,6 +157,8 @@ if __name__=="__main__":
                                         tbhits = str_SI(int(l[i+1]))
                                     elif token=="nps":
                                         speed = str_SI(int(l[i+1]), postfix="nps")
+                                    elif token=="wdl":
+                                        wdl = " ".join(l[i+1:i+4])
                                 if seldepth:
                                     depth += "/" + seldepth
                                 else:
@@ -168,7 +171,9 @@ if __name__=="__main__":
                                         load = os.getloadavg()[0]
                                         with open("load.json", "w") as fp_out: fp_out.write(str(load))
                                         if load < 10:
-                                            json_str = json.dumps({"color": color, "engine": name, "eval": score, "pv": pv_str, "depth": depth, "speed": speed, "tbhits": tbhits, "time": time_s, "nodes": nodes, "plynum": plynum})
+                                            data = {"color": color, "engine": name, "eval": score, "pv": pv_str, "depth": depth, "speed": speed, "tbhits": tbhits, "time": time_s, "nodes": nodes, "plynum": plynum}
+                                            if wdl: data["wdl"] = wdl
+                                            json_str = json.dumps(data)
                                             with open("liveengineeval.json", "w") as fp_out: fp_out.write(json_str + "\n")
                                         previous_update = time.time()
                             if current_size >= size:
