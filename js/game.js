@@ -17,7 +17,7 @@ context_areas, context_target:true, controls, CopyClipboard, create_page_array, 
 E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object,
 getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
-push_state, QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
+push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
@@ -1079,26 +1079,38 @@ function create_tables() {
 
 /**
  * Download live data when the graph is ready
+ * @param {function} callback called when all data has been loaded
  */
-function download_live() {
-    let section = 'live';
+function download_live(callback) {
+    let left = 4,
+        section = 'live';
     if (section != Y.x)
         return;
+
+    function _done() {
+        left --;
+        if (!left && callback)
+            callback();
+    }
 
     // evals
     download_table(section, `data.json?no-cache${Now()}`, null, data => {
         update_live_eval(section, data, 0);
+        _done();
     });
     download_table(section, `data1.json?no-cache${Now()}`, null, data => {
         update_live_eval(section, data, 1);
+        _done();
     });
 
     // live engines
     download_table(section, 'liveeval.json', null, data => {
         update_live_eval(section, data, 0);
+        _done();
     });
     download_table(section, 'liveeval1.json', null, data => {
         update_live_eval(section, data, 1);
+        _done();
     });
 }
 
@@ -3201,6 +3213,9 @@ function changed_section() {
     // reset some stuff
     reset_sub_boards(3);
     reset_charts();
+
+    if (section == 'live')
+        download_live(redraw_eval_charts);
 
     // update overview
     update_overview_basic(section, headers);
