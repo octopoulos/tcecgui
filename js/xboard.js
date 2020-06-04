@@ -409,7 +409,7 @@ class XBoard {
             ply = new_ply;
 
         if (this.manual)
-            lines.push('<i class="turn" data-i="-1">0.</i>');
+            lines.push('<i class="turn" data-i="-1">0.</i><b></b><b></b>');
 
         new_items.forEach(item => {
             if (first_ply < 0 && ply >= 0)
