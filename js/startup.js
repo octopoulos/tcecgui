@@ -20,12 +20,12 @@ get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, H
 init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES,
-popup_custom, reset_old_settings, resize_game, Resource, resume_sleep,
+popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
-TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, update_board_theme, update_chart_options, update_debug, update_live_chart, update_player_charts,
-update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node,
+TRANSLATE_SPECIALS, translates:true, update_board_theme, update_chart_options, update_debug, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -234,9 +234,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'graph_eval_clamp':
     case 'graph_eval_mode':
-        update_player_charts('eval', xboards[Y.x].moves);
-        update_live_chart(xboards.live0.evals, 2);
-        update_live_chart(xboards.live1.evals, 3);
+        redraw_eval_charts();
         break;
     case 'grid':
     case 'grid_copy':
@@ -874,17 +872,25 @@ function populate_areas() {
                 }
 
                 if (show & 1) {
-                    let title = id.split('-');
-                    title = title.slice(-title.length + 1).join('-');
-                    title = TAB_NAMES[title] || Title(title);
+                    let text = id.split('-');
+                    text = text.slice(-text.length + 1).join('-');
+                    text = TAB_NAMES[text] || Title(text);
 
-                    tabs.appendChild(CreateNode('div', '', {
-                        class: `tab drop${(show & 2)? ' active': ''}`,
-                        'data-abbr': title,
-                        'data-label': HTML('.label', undefined, node) || '',
-                        'data-t': title,
-                        'data-x': id,
-                    }));
+                    let dico = {
+                            class: `tab drop${(show & 2)? ' active': ''}`,
+                            'data-abbr': text,
+                            'data-label': HTML('.label', undefined, node) || '',
+                            'data-x': id,
+                        },
+                        title = TITLES[text];
+
+                    if (title)
+                        Assign(dico, {
+                            'data-t': title,
+                            'data-t2': 'title',
+                        });
+
+                    tabs.appendChild(CreateNode('div', `<i data-t="${text}"></i>`, dico));
                 }
                 show = show & 2;
             }
@@ -1760,6 +1766,13 @@ function startup() {
         twitch_video: 1,
         version: 1,
         x: 1,
+    });
+
+    Assign(TITLES, {
+        'D/SD': '{Depth} / {Selective depth}',
+        'Mob': 'Mobility',
+        'PV': 'Principal variation',
+        'PV(A)': '{PV}: {analysis}',
     });
 
     let bamboo = 'grand bamboo',
