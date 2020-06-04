@@ -25,7 +25,7 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200603';
+    VERSION = '20200604';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
@@ -209,6 +209,7 @@ function reset_old_settings() {
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
+    Y.new_version = true;
 }
 
 /**
