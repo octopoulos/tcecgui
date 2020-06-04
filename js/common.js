@@ -7,7 +7,7 @@
 //
 /*
 globals
-console, document, FormData, location, Node, window, Window, XMLHttpRequest
+console, document, FormData, location, navigator, Node, window, Window, XMLHttpRequest
 */
 'use strict';
 
@@ -197,6 +197,9 @@ function Class(sel, class_, add=true, parent=null) {
     if (typeof(sel) == 'object') {
         let list = sel.classList;
         class_.split(' ').forEach(item => {
+            if (!item)
+                return;
+
             let first = item.substr(0, 1),
                 right = item.substr(1);
             if (first == '-') {
@@ -224,6 +227,9 @@ function Class(sel, class_, add=true, parent=null) {
     E(sel, node => {
         let list = node.classList;
         class_.split(' ').forEach(item => {
+            if (!item)
+                return;
+
             let first = item.substr(0, 1),
                 right = item.substr(1);
             if (first == '-') {
@@ -934,17 +940,11 @@ function Clamp(number, min, max, min_set) {
 
 /**
  * Copy text to the clipboard
- * - ideally should be called from an event callback
+ * - must be called from an event callback
  * @param {string} text
  */
-function CopyClipboard(text) {
-    let node = CreateNode('textarea', null, {readonly: ''});
-    node.value = text;
-    Style(node, `left:-9999px;position:absolute`);
-    document.body.appendChild(node);
-    node.select();
-    document.execCommand('copy');
-    document.body.removeChild(node);
+async function CopyClipboard(text) {
+    await navigator.clipboard.writeText(text);
 }
 
 /**

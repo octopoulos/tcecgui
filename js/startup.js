@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-30
+// @version 2020-06-03
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -24,8 +24,8 @@ popup_custom, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
 show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
 TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, update_board_theme, update_chart_options, update_debug, update_player_charts, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+translates:true, update_board_theme, update_chart_options, update_debug, update_live_chart, update_player_charts,
+update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -171,6 +171,14 @@ function change_setting_special(name, value, no_close) {
     case 'piece_theme_pv':
         update_board_theme(2);
         break;
+    case 'animate_pva':
+    case 'board_theme_pva':
+    case 'highlight_color_pva':
+    case 'highlight_size_pva':
+    case 'notation_pva':
+    case 'piece_theme_pva':
+        update_board_theme(4);
+        break;
     case 'audio_set':
         audio_set(value);
         break;
@@ -190,13 +198,16 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'custom_black':
     case 'custom_black_pv':
+    case 'custom_black_pva':
     case 'custom_white':
     case 'custom_white_pv':
+    case 'custom_white_pva':
         let is_pv = (name.slice(-2) == 'pv'),
-            field = `board_theme${is_pv? '_pv': ''}`;
+            is_pva = (name.slice(-3) == 'pva'),
+            field = `board_theme${is_pva? '_pva': (is_pv? '_pv': '')}`;
         save_option(field, 'custom');
         (_(`select[name="${field}"]`) || {}).value = Y[field];
-        update_board_theme(is_pv? 2: 1);
+        update_board_theme(is_pva? 4: (is_pv? 2: 1));
         break;
     case 'default_positions':
         Y.areas = Assign({}, DEFAULTS.areas);
@@ -204,9 +215,6 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'drag_and_drop':
         set_draggable();
-        break;
-    case 'eval_clamp':
-        update_player_charts('eval', xboards[Y.x].moves);
         break;
     case 'export_settings':
         let object = Assign(
@@ -224,14 +232,22 @@ function change_setting_special(name, value, no_close) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
+    case 'graph_eval_clamp':
+    case 'graph_eval_mode':
+        update_player_charts('eval', xboards[Y.x].moves);
+        update_live_chart(xboards.live0.evals, 2);
+        update_live_chart(xboards.live1.evals, 3);
+        break;
     case 'grid':
     case 'grid_copy':
     case 'grid_live':
     case 'grid_pv':
+    case 'grid_pva':
     case 'move_height':
     case 'move_height_copy':
     case 'move_height_live':
     case 'move_height_pv':
+    case 'move_height_pva':
         resize_move_lists();
         break;
     case 'hide':
@@ -257,6 +273,7 @@ function change_setting_special(name, value, no_close) {
     case 'info_moves':
     case 'info_moves_live':
     case 'info_moves_pv':
+    case 'info_moves_pva':
     case 'info_percent':
     case 'graph_aspect_ratio':
     case 'panel_adjust':
@@ -278,7 +295,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'preset':
         if (value == 'custom')
-            LS('custom');
+            break;
         else if (value == 'default settings')
             reset_settings(true);
         else {
@@ -400,7 +417,7 @@ function check_stream() {
     // maybe the board has not been loaded yet
     if (!xboards.live)
         return;
-    update_board_theme(3);
+    update_board_theme(7);
     old_stream = stream;
 }
 
@@ -463,6 +480,8 @@ function draw_rectangle(node) {
  * @param {Event} e
  */
 function handle_drop(e) {
+    if (!Y.drag_and_drop)
+        return;
     add_history();
 
     let [child] = get_drop_id(e.target),
@@ -593,7 +612,7 @@ function init_customs(initial) {
     show_live_engines();
     set_draggable();
     populate_areas();
-    update_board_theme(3);
+    update_board_theme(7);
 }
 
 /**
@@ -621,15 +640,17 @@ function init_globals() {
     }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
-    add_timeout('adblock', () => {
-        if (_('.google-ad').clientHeight <= 0) {
-            HTML('.adblock', HTML('#adblock'));
-            Show('.adblock');
-        }
-    }, TIMEOUTS.adblock);
+    // google ads
+    if (!Y.no_ad && !DEV.ad && location.port != 8080) {
+        add_timeout('adblock', () => {
+            if (_('.google-ad').clientHeight <= 0) {
+                HTML('.adblock', HTML('#adblock'));
+                Show('.adblock');
+            }
+        }, TIMEOUTS.adblock);
 
-    if (!Y.no_ad && !DEV.ad && location.port != 8080)
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+    }
     load_google_analytics();
 
     if (Visible('#table-log'))
@@ -953,6 +974,7 @@ function resize_move_lists() {
     let styles = [
         ['#archive .xmoves, #live .xmoves', Y.move_height, Y.grid],
         ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
+        ['#pva .xmoves', Y.move_height_pva, Y.grid_pva],
         ['.live-pv', Y.move_height_live, Y.grid_live],
         ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
     ];
@@ -971,26 +993,15 @@ function resize_panels() {
     update_visible();
 
     // panel full + width
-    let panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
+    let panel_gap = Y.panel_gap,
+        panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
         window_width = window.innerWidth;
     for (let panel of panels) {
         let name = panel.id,
             value = Y[`max_${name}`];
 
         Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
-        Style(`#${name}`, `max-width:${value}px`, value > PANEL_WIDTHS[0]);
-    }
-
-    // panel gap
-    let num_panel = panels.length,
-        panel_gap = Y.panel_gap;
-    panel_gap = `${panel_gap / 2}${isNaN(panel_gap)? '': 'px'}`;
-    for (let i = 0; i < num_panel; i ++) {
-        let panel = panels[i],
-            full = HasClass(panel, 'full'),
-            left = (full || i == 0)? 0: panel_gap,
-            right = (full || i == num_panel - 1 || HasClass(panels[i + 1], 'full'))? 0: panel_gap;
-        Style(panel, `margin:0 ${right} 0 ${left}`);
+        Style(`#${name}`, `margin:0 ${panel_gap}px;max-width:${value}px`, value > PANEL_WIDTHS[0]);
     }
 
     // swaps
@@ -1012,7 +1023,7 @@ function resize_panels() {
     });
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.sub)
+        if (!board.sub || board.manual)
             return;
         let node = board.node,
             area_width = get_area(node).clientWidth;
@@ -1264,6 +1275,7 @@ function update_visible() {
     S('.percent', Y.info_percent);
     S('#archive .xmoves, #live .xmoves', Y.info_moves);
     S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
+    S('#pva .xmoves', Y.info_moves_pva);
     S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
 }
@@ -1302,6 +1314,8 @@ function window_click(e) {
         }
         if (HasClasses(target, 'fen|nav'))
             return;
+        if (HasClasses(target, 'live-pv|xmoves'))
+            context_target = target;
         if (HasClass(target, 'page')) {
             let parent = Parent(target, {class_: 'pagin'});
             change_page(parent.id.split('-')[0], target.dataset.p);
@@ -1480,64 +1494,67 @@ function set_global_events() {
     });
 
     // context menus
-    Keys(CONTEXT_MENUS).forEach(key => {
-        Events(key, 'contextmenu', function(e) {
-            context_target = e.target;
+    if (!DEV.popup) {
+        Keys(CONTEXT_MENUS).forEach(key => {
+            Events(key, 'contextmenu', function(e) {
+                context_target = e.target;
 
-            // skip some elements
-            let tag = context_target.tagName;
-            if (['INPUT', 'SELECT'].includes(tag))
-                return;
-            if (tag == 'A' && context_target.href)
-                return;
+                // skip some elements
+                let tag = context_target.tagName;
+                if (['INPUT', 'SELECT'].includes(tag))
+                    return;
+                if (tag == 'A' && context_target.href)
+                    return;
 
-            show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
-            e.preventDefault();
+                show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
+                e.preventDefault();
+            });
         });
-    });
-    Events(
-        '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
-        + '#table-live0, #table-live1', 'contextmenu', function(e) {
-        let is_pv = '01'.includes(this.id.slice(-1)),
-            target = e.target;
+        Events(
+            '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
+            + '#table-live0, #table-live1', 'contextmenu', function(e) {
+            let is_pv = '01'.includes(this.id.slice(-1)),
+                is_pva = (this.id == 'pva'),
+                target = e.target;
 
-        while (target) {
-            let dataset = target.dataset,
-                name;
-            if (dataset && ['next', 'prev'].includes(dataset.x))
-                return;
-            else if (HasClass(target, 'live-basic'))
-                name = 'hide';
-            else if (HasClass(target, 'live-pv'))
-                name = 'live';
-            else if (HasClass(target, 'xbottom'))
-                return;
-            else if (HasClass(target, 'xcontain'))
-                name = is_pv? 'board_pv': 'board';
-            else if (HasClass(target, 'xcontrol'))
-                name = 'control';
-            else if (HasClass(target, 'xmoves'))
-                name = `copy${is_pv? '_pv': ''}`;
+            while (target) {
+                let dataset = target.dataset,
+                    name;
+                if (dataset && ['next', 'prev'].includes(dataset.x))
+                    return;
+                else if (HasClass(target, 'live-basic'))
+                    name = 'hide';
+                else if (HasClass(target, 'live-pv'))
+                    name = 'live';
+                else if (HasClass(target, 'xbottom'))
+                    return;
+                else if (HasClass(target, 'xcontain'))
+                    name = is_pva? 'board_pva': (is_pv? 'board_pv': 'board');
+                else if (HasClass(target, 'xcontrol'))
+                    name = 'control';
+                else if (HasClass(target, 'xmoves'))
+                    name = `copy${is_pva? '_pva': (is_pv? '_pv': '')}`;
 
-            if (name) {
+                if (name) {
+                    context_target = target;
+                    show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
+                    e.preventDefault();
+                    return;
+                }
+                target = target.parentNode;
+            }
+        });
+        Events(window, 'contextmenu', e => {
+            let target = e.target;
+            if (HasClasses(target, 'tab drop')) {
+                let id = target.dataset.x,
+                    name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
                 context_target = target;
                 show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
                 e.preventDefault();
-                return;
             }
-            target = target.parentNode;
-        }
-    });
-    Events(window, 'contextmenu', e => {
-        let target = e.target;
-        if (HasClasses(target, 'tab drop')) {
-            let id = target.dataset.x,
-                name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
-            context_target = target;
-            show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
-            e.preventDefault();
-        }
-    });
+        });
+    }
 
     // fullscreen scrolling
     Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
@@ -1556,11 +1573,15 @@ function set_global_events() {
 
     // drag and drop
     Events(window, 'dragstart', e => {
+        if (!Y.drag_and_drop)
+            return;
         let parent = Parent(e.target, {attrs: 'draggable=true', self: true});
         if (parent)
             drag_source = parent;
     });
     Events(window, 'dragenter dragover', e => {
+        if (!Y.drag_and_drop)
+            return;
         let [child] = get_drop_id(e.target),
             parent = Parent(e.target, {class_: 'area', self: true});
 
@@ -1570,6 +1591,8 @@ function set_global_events() {
         e.preventDefault();
     });
     Events(window, 'dragexit dragleave', e => {
+        if (!Y.drag_and_drop)
+            return;
         if (e.target.tagName == 'HTML') {
             Class('.area', '-dragging');
             Hide('#rect');
@@ -1745,16 +1768,18 @@ function startup() {
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
-        // new column after 9 items
-        _split: 9,
+        // new column after 10 items
+        _split: 10,
         general: {
             preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
         },
         audio: {
+            audio_book: [ON_OFF, 1],
             audio_delay: option_number(150, 0, 2000),
+            audio_live_archive: [ON_OFF, 1],
             audio_moves: [['none', 'all', 'last'], 'last'],
+            audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
-            book_sound: [ON_OFF, 1],
             capture_delay: option_number(-200, -1000, 1000),
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
@@ -1767,6 +1792,7 @@ function startup() {
         // separator
         _1: {},
         arrow: {
+            _prefix: 'arrow_',
             arrow_base_border: option_number(0, 0, 5, 0.01),
             arrow_base_color: [{type: 'color'}, '#a5a5a5'],
             arrow_base_mix: option_number(0.7, 0, 1, 0.01),
@@ -1788,6 +1814,7 @@ function startup() {
         },
         board: {
             analysis_chessdb: '1',
+            analysis_evalguide: '1',
             analysis_lichess: '1',
             animate: [ON_OFF, 1],
             arrow: '',
@@ -1803,7 +1830,9 @@ function startup() {
             status: [AUTO_ON_OFF, 'auto'],
         },
         board_pv: {
+            _suffix: '_pv',
             analysis_chessdb: '1',
+            analysis_evalguide: '1',
             analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
@@ -1817,7 +1846,24 @@ function startup() {
             show_ply: [['first', 'diverging', 'last'], 'diverging'],
             status_pv: [ON_OFF, 1],
         },
-        // separator
+        board_pva: {
+            _suffix: '_pva',
+            analysis_chessdb: '1',
+            analysis_evalguide: '1',
+            analysis_lichess: '1',
+            animate_pva: [ON_OFF, 1],
+            board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pva: [{type: 'color'}, '#000000'],
+            custom_white_pva: [{type: 'color'}, '#ffffff'],
+            notation_pva: [ON_OFF, 1],
+            piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
+            source_color: [{type: 'color'}, '#ffb400'],
+            source_opacity: option_number(0.7, 0, 1, 0.01),
+            target_color: [{type: 'color'}, '#ff5a00'],
+            target_opacity: option_number(0.7, 0, 1, 0.01),
+            turn_color: [{type: 'color'}, '#ff5a00'],
+            turn_opacity: option_number(0.25, 0, 1, 0.01),
+        },
         control: {
             book_every: option_number(600, 100, 5000, 100),
             key_repeat: option_number(70, 10, 2000, 10),
@@ -1842,12 +1888,14 @@ function startup() {
             wrap_stand: [AUTO_ON_OFF, 'auto'],
         },
         graph: {
-            eval_clamp: option_number(10, 1, 100),
+            _prefix: 'graph_',
             graph_aspect_ratio: option_number(1.5, 0.5, 5, 0.005),
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
+            graph_eval_clamp: option_number(10, 1, 100),
+            graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(2.2, 0, 10, 0.1),
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(2.2, 0, 10, 0.1),
@@ -1861,6 +1909,7 @@ function startup() {
             info_moves_copy: [ON_OFF, 0],
             info_moves_live: [ON_OFF, 1],
             info_moves_pv: [ON_OFF, 1],
+            info_moves_pva: [ON_OFF, 1],
             info_percent: [ON_OFF, 1],
         },
         live: {
@@ -1870,17 +1919,19 @@ function startup() {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: option_number(3, 3, 100, 0.5),
+            move_height_live: option_number(3, 3, 100, 0.1),
         },
         moves: {
             grid: option_number(0, 0, 10),
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
-            move_height: option_number(5, 3, 100, 0.5),
-            move_height_copy: option_number(20, 3, 100, 0.5),
-            move_height_live: option_number(3, 3, 100, 0.5),
-            move_height_pv: option_number(5, 5, 100, 0.5),
+            grid_pva: option_number(1, 0, 10),
+            move_height: option_number(5, 3, 100, 0.1),
+            move_height_copy: option_number(20, 3, 100, 0.1),
+            move_height_live: option_number(3, 3, 100, 0.1),
+            move_height_pv: option_number(5, 5, 100, 0.1),
+            move_height_pva: option_number(5, 5, 100, 0.1),
         },
         panel: {
             column_bottom: option_number(4, 1, 8),
@@ -1911,7 +1962,7 @@ function startup() {
             grid: option_number(0, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height: option_number(5, 3, 100, 0.5),
+            move_height: option_number(5, 3, 100, 0.1),
         },
         copy_copy: {
             _pop: true,
@@ -1919,14 +1970,21 @@ function startup() {
             grid_copy: option_number(2, 0, 10),
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
-            move_height_copy: option_number(20, 3, 100, 0.5),
+            move_height_copy: option_number(20, 3, 100, 0.1),
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
             grid_pv: option_number(1, 0, 10),
             info_moves_pv: [ON_OFF, 1],
-            move_height_pv: option_number(5, 3, 100, 0.5)
+            move_height_pv: option_number(5, 3, 100, 0.1)
+        },
+        copy_pva: {
+            _pop: true,
+            copy_moves: '1',
+            grid_pva: option_number(1, 0, 10),
+            info_moves_pva: [ON_OFF, 1],
+            move_height_pva: option_number(5, 3, 100, 0.1)
         },
     });
 
@@ -1938,10 +1996,10 @@ function startup() {
         'UI': '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
     });
 
+    load_settings();
     set_global_events();
     set_game_events();
     startup_graph();
-    load_settings();
     add_history();
 
     // start

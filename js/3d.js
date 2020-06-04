@@ -1185,7 +1185,9 @@ function show_settings(name, xy) {
         parent_id = get_drop_id(context_target)[1],
         settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
         keys = Keys(settings),
-        split = settings._split;
+        prefix = settings._prefix,
+        split = settings._split,
+        suffix = settings._suffix;
 
     // set multiple columns
     if (split) {
@@ -1206,7 +1208,7 @@ function show_settings(name, xy) {
     }
 
     if (parent_id)
-        lines.push(`<div class="item2 span">${parent_id}</div>`);
+        lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
     else if (name)
         lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
 
@@ -1229,12 +1231,20 @@ function show_settings(name, xy) {
             return;
 
         // link or list
-        let color = setting._color,
+        let clean = key,
+            color = setting._color,
             data = setting[0],
             is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${key}"`,
-            title = settings[key][2];
+            title = settings[key][2],
+            y_key = Y[key];
+
+        // remove prefix and suffix
+        if (suffix && clean.slice(-suffix.length) == suffix)
+            clean = clean.slice(0, -suffix.length);
+        if (prefix && clean.slice(0, prefix.length) == prefix)
+            clean = clean.slice(prefix.length);
 
         // TODO: improve that part, it can be customised better
         if (is_string && data == '2')
@@ -1243,7 +1253,7 @@ function show_settings(name, xy) {
 
         lines.push(
             `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
-                + `<i data-t="${Title(key).replace(/_/g, ' ')}"${style}></i>`
+                + `<i data-t="${Title(clean).replace(/_/g, ' ')}"${style}></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'
         );
@@ -1252,23 +1262,30 @@ function show_settings(name, xy) {
             return;
 
         if (IsArray(data)) {
-            lines.push(
-                '<vert class="fcenter">'
-                + `<select name="${key}">`
-                    + data.map(option => {
-                        let value = Undefined({off: 0, on: 1}[option], option);
-                        return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
-                    }).join('')
-                + '</select>'
-                + '</vert>'
-            );
+            if (data == ON_OFF)
+                lines.push(
+                    '<vert class="fcenter fastart">'
+                        + `<input name="${key}" type="checkbox" ${y_key? 'checked': ''}>`
+                    + '</vert>'
+                );
+            else
+                lines.push(
+                    '<vert class="fcenter">'
+                    + `<select name="${key}">`
+                        + data.map(option => {
+                            let value = Undefined({off: 0, on: 1}[option], option);
+                            return `<option value="${value}"${y_key == value? ' selected': ''} data-t="${option}"></option>`;
+                        }).join('')
+                    + '</select>'
+                    + '</vert>'
+                );
         }
         else if (data) {
             let type = data.type;
             lines.push('<vert class="fcenter">');
 
             if (type == 'number')
-                lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${Y[key]}">`);
+                lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
             else if (type == 'text')
                 lines.push(
                     `<input name="${key}" type="text" class="setting" data-t="Enter JSON data" data-t2="placeholder" value="">`
@@ -1276,7 +1293,8 @@ function show_settings(name, xy) {
                     + '<label for="file" data-t="Choose file"></label>'
                 );
             else if (type)
-                lines.push(`<input name="${key}" type="${type}" class="setting" value="${Y[key]}">`);
+                lines.push(`<input name="${key}" type="${type}" class="setting" value="${y_key}">`);
+            // dictionary
             else
                 lines.push(
                     `<select name="${key}">`
@@ -1404,17 +1422,30 @@ function set_modal_events(parent) {
             change_setting(name);
         else {
             let next = this.nextElementSibling;
-            if (next) {
-                next = _('select', next);
-                if (next && next.options.length == 2) {
+            if (!next)
+                return;
+            next = _('input, select', next);
+            if (!next)
+                return;
+            switch (next.tagName) {
+            case 'INPUT':
+                if (next.type == 'checkbox') {
+                    next.checked = !next.checked;
+                    change_setting(next.name, next.checked * 1);
+                }
+                break;
+            case 'SELECT':
+                if (next.options.length == 2) {
                     next.selectedIndex ^= 1;
                     change_setting(next.name, next.value);
                 }
+                break;
             }
         }
     }, parent);
     C('.item2', function() {
-        change_setting(this.dataset.t.replace(/ /g, '_'));
+        let name = this.dataset.t;
+        change_setting(name? name.replace(/ /g, '_'): name);
     });
 
     // right click on item => reset to default
@@ -1426,7 +1457,10 @@ function set_modal_events(parent) {
                 let name = next.name,
                     def = DEFAULTS[name];
                 if (def != undefined) {
-                    next.value = def;
+                    if (next.type == 'checkbox')
+                        next.checked = def? true: false;
+                    else
+                        next.value = def;
                     save_option(name, def);
                     change_setting(name, def, true);
                 }
@@ -1438,7 +1472,7 @@ function set_modal_events(parent) {
     // inputs
     Events('input, select', 'change', function() {
         done_touch();
-        change_setting(this.name, this.value, this.tagName == 'INPUT');
+        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, this.tagName == 'INPUT');
     }, {}, parent);
     //
     Input('input, select', function() {

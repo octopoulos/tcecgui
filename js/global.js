@@ -1,13 +1,13 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-27
+// @version 2020-06-03
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-DEV:true, IsArray, Keys, LS, Pad, Round, save_option, Undefined, X_SETTINGS, Y
+Abs, Atan, DEV:true, IsArray, Keys, LS, Pad, Pow, Round, save_option, Undefined, X_SETTINGS, Y
 */
 'use strict';
 
@@ -25,9 +25,53 @@ let HOST = 'https://tcec-chess.com',
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200602';
+    VERSION = '20200603';
+
+let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Convert centipawn to score % for AS
+ * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
+ * @param {number} cp
+ * @returns {number}
+ */
+function allie_cp_to_score(cp) {
+    if (Abs(cp) > 1000)
+        return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
+    return Atan(cp / 111) / 1.74;
+}
+
+/**
+ * Calculate the probability to draw or win
+ * - works for AA and NN engines
+ * @param {string} short_engine short engine name
+ * @param {number} eval_
+ * @returns {number} q %
+ */
+function calculate_feature_q(feature, eval_) {
+    let white_win;
+
+    if (feature & 1) {
+        let cp = eval_ * 100;
+        if (feature & 2)
+            white_win = leela_cp_to_score(cp);
+        else if (feature & 4)
+            white_win = allie_cp_to_score(cp);
+        else if (feature & 8)
+            white_win = stoof_cp_to_score(cp);
+        else
+            white_win = (Atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
+
+        // this is the HALF white win %
+        white_win *= 50;
+    }
+    else
+        white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
+
+    return white_win;
+}
 
 /**
  * Get the move ply, either directly or by looking at the FEN
@@ -50,6 +94,16 @@ function get_move_ply(move) {
         return ply;
     }
     return -2;
+}
+
+/**
+ * Convert centipawn to score % for Leela 2019+
+ * https://github.com/LeelaChessZero/lc0/pull/1193/files
+ * @param {number} cp
+ * @returns {number}
+ */
+function leela_cp_to_score(cp) {
+    return Atan(cp / 90) / 1.5637541897;
 }
 
 /**
@@ -98,6 +152,7 @@ function parse_dev() {
             o: 'open',
             n: 'new',                   // new game debugging
             p: 'pv',
+            P: 'popup',                 // disable popups
             q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',
@@ -146,10 +201,13 @@ function reset_old_settings() {
     }
 
     if (version < '20200530') {
-        LS(`version: ${version} => ${VERSION}`);
         save_option('archive_scroll', 1);
         save_option('wheel_adjust', 63);
     }
+    if (version < '20200603')
+        save_option('panel_gap', 8);
+
+    LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
 }
 
@@ -165,4 +223,13 @@ function split_move_string(text) {
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
         ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
     return [ply, items];
+}
+
+/**
+ * Convert centipawn to score % for Stoofvlees II
+ * @param {number} cp
+ * @returns {number}
+ */
+function stoof_cp_to_score(cp) {
+    return Atan(cp / 194) / 1.55564;
 }

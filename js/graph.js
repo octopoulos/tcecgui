@@ -1,11 +1,11 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-24
+// @version 2020-06-03
 //
 /*
 globals
-_, Abs, Assign, C, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Keys, load_library, LS, Pad, Round,
-Visible, window, xboards, Y
+_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Keys,
+load_library, LS, Pad, players, Round, SetDefault, Sign, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -14,7 +14,7 @@ let CHART_JS = 'js/libs/chart-quick.js',
     ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'],
     LIVE_ENGINES = [];
 
-let all_evals = [],
+let cached_percents = {},
     chart_data = {},
     CHART_LEGEND = {
         display: true,
@@ -50,6 +50,39 @@ let all_evals = [],
     queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Calculate white win %
+ * @param {number} id 0, 1, 2, 3
+ * @param {string|number} eval_
+ * @returns {number}
+ */
+function calculate_win(id, eval_) {
+    if (eval_ == undefined)
+        return eval_;
+
+    let feature = players[id].feature,
+        cache_features = SetDefault(cached_percents, feature, {}),
+        cache = cache_features[eval_];
+
+    if (cache != undefined)
+        return cache;
+
+    let score;
+    if (!isNaN(eval_)) {
+        score = calculate_feature_q(feature, eval_) * 2;
+        score = Sign(score) * Round(Abs(score) * 10) / 10;
+    }
+    else if (eval_ && eval_.includes('-'))
+        score = -100;
+    else if (eval_ != undefined)
+        score = 100;
+    else
+        score = 0;
+
+    cache_features[eval_] = score;
+    return score;
+}
 
 /**
  * Check if the first_num should be modified
@@ -88,7 +121,7 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
-    let eval_clamp = Y.eval_clamp;
+    let eval_clamp = Y.graph_eval_clamp;
     if (!isNaN(eval_))
         return Clamp(eval_ * 1, -eval_clamp, eval_clamp);
 
@@ -458,21 +491,24 @@ function update_chart_options(name, mode) {
  * Update the eval chart from a Live source
  * @param {Move[]} moves
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
- * @param {boolean=} invert_black invert black evals
  */
-function update_live_chart(moves, id, invert_black) {
+function update_live_chart(moves, id) {
     // library hasn't loaded yet => queue
     let data_c = chart_data.eval;
     if (!data_c) {
-        queued_charts.push([moves, id, invert_black]);
+        queued_charts.push([moves, id]);
         return;
     }
 
     let dataset = data_c.datasets[id],
         data = dataset.data,
+        is_percent = (Y.graph_eval_mode == 'percent'),
         labels = data_c.labels;
 
     for (let move of moves) {
+        if (!move)
+            continue;
+
         let eval_ = move.eval,
             ply = get_move_ply(move),
             num = ply;
@@ -483,7 +519,7 @@ function update_live_chart(moves, id, invert_black) {
         let num2 = num - first_num;
         labels[num2] = num / 2 + 1;
 
-        if (invert_black && ply % 2 == 0) {
+        if (move.invert && ply % 2 == 0) {
             eval_ = invert_eval(eval_);
             if (DEV.eval2)
                 LS(`inverting black @${ply}: ${move.eval} => ${eval_}`);
@@ -494,7 +530,7 @@ function update_live_chart(moves, id, invert_black) {
             eval: eval_,
             ply: ply,
             x: num / 2 + 1,
-            y: clamp_eval(eval_),
+            y: is_percent? calculate_win(id, eval_): clamp_eval(eval_),
         };
     }
 
@@ -518,6 +554,7 @@ function update_player_chart(name, moves) {
 
     let datasets = data.datasets,
         invert_wb = (name == 'mobil') * 1,
+        is_percent = (Y.graph_eval_mode == 'percent'),
         labels = data.labels,
         num_move = moves.length,
         offset = 0;
@@ -539,9 +576,10 @@ function update_player_chart(name, moves) {
         labels[num2] = num / 2 + 1;
 
         let dico = {
-            x: num / 2 + 1,     // move number
-            ply: ply,           // used for jumping to the position
-        };
+                x: num / 2 + 1,     // move number
+                ply: ply,           // used for jumping to the position
+            },
+            id = (ply + invert_wb) % 2;
 
         switch (name) {
         case 'depth':
@@ -550,7 +588,7 @@ function update_player_chart(name, moves) {
             break;
         case 'eval':
             dico.eval = move.wv;
-            dico.y = clamp_eval(move.wv);
+            dico.y = is_percent? calculate_win(id, move.wv): clamp_eval(move.wv);
             break;
         case 'mobil':
             datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move.goal[0])});
@@ -573,7 +611,7 @@ function update_player_chart(name, moves) {
             break;
         }
 
-        datasets[(ply + invert_wb) % 2].data[num2] = dico;
+        datasets[id].data[num2] = dico;
     }
 
     fix_labels(labels);
@@ -610,8 +648,8 @@ function init_graph(callback) {
         create_charts();
         update_player_charts(null, xboards[Y.x].moves);
 
-        for (let [moves, id, invert_black] of queued_charts)
-            update_live_chart(moves, id, invert_black);
+        for (let [moves, id] of queued_charts)
+            update_live_chart(moves, id);
         queued_charts = [];
 
         callback();

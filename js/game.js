@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-02
+// @version 2020-06-03
 //
 // Game specific code:
 // - control the board, moves
@@ -11,13 +11,13 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Atan, Attrs, audiobox,
-C, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target,
-controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document, E, Events, fill_combo, Floor,
-FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, HasClass, Hide, HOST_ARCHIVE, HTML,
-Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, Now, Pad, Parent, play_sound, Pow, push_state, QueryString,
-reset_charts, resize_3d, Resource, resume_sleep, Round,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
+context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
+E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object,
+getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
+push_state, QueryString, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
@@ -27,6 +27,7 @@ update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, V
 
 let ANALYSIS_URLS = {
         chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
+        evalguide: 'https://hxim.github.io/Stockfish-Evaluation-Guide/index.html?p={FEN}',
         lichess: 'https://lichess.org/analysis/standard/{FEN}',
     },
     BOARD_THEMES = {
@@ -170,7 +171,6 @@ let ANALYSIS_URLS = {
         uscf: {},
         wikipedia: {},
     },
-    players = [{}, {}],                 // current 2 players
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     QUEUES = ['h2h', 'stats'],
     RESULTS = {
@@ -208,6 +208,12 @@ let ANALYSIS_URLS = {
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
+    TITLES = {
+        50: 'Fifty-move rule',
+        ECO: 'Encyclopaedia of Chess Openings',
+        TB: 'Tablebase',
+        TC: 'Time control',
+    },
     tour_info = {
         archive: {},
         live: {},
@@ -226,18 +232,6 @@ let ANALYSIS_URLS = {
 //////////
 
 /**
- * Convert centipawn to score % for AS
- * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
- * @param {number} cp
- * @returns {number}
- */
-function allie_cp_to_score(cp) {
-    if (Abs(cp) > 1000)
-        return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
-    return Atan(cp / 111) / 1.74;
-}
-
-/**
  * Calculate the probability to draw or win
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
@@ -249,26 +243,8 @@ function calculate_probability(short_engine, eval_)
     if (isNaN(eval_))
         return eval_;
 
-    let white_win,
-        feature = ENGINE_FEATURES[short_engine];
-
-    // adjust the score
-    if (feature & 1) {
-        let cp = eval_ * 100;
-        if (feature & 2)
-            white_win = leela_cp_to_score(cp);
-        else if (feature & 4)
-            white_win = allie_cp_to_score(cp);
-        else if (feature & 8)
-            white_win = stoof_cp_to_score(cp);
-        else
-            white_win = (Atan((eval_ * 100) / 290.680623072) / 3.096181612 + 0.5) * 2 - 1;
-
-        // this is the HALF white win %
-        white_win *= 50;
-    }
-    else
-        white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
+    let feature = ENGINE_FEATURES[short_engine],
+        white_win = calculate_feature_q(feature, eval_);
 
     // final output
     let reverse = 0;
@@ -417,16 +393,6 @@ function get_xhr_elapsed(xhr) {
 }
 
 /**
- * Convert centipawn to score % for Leela 2019+
- * https://github.com/LeelaChessZero/lc0/pull/1193/files
- * @param {number} cp
- * @returns {number}
- */
-function leela_cp_to_score(cp) {
-    return Atan(cp / 90) / 1.5637541897;
-}
-
-/**
  * Get the timestamp in seconds from a date time
  * - assume it's UTC
  * @param {string} text
@@ -436,15 +402,6 @@ function parse_date_time(text) {
     let items = text.split(' on '),
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
     return seconds;
-}
-
-/**
- * Convert centipawn to score % for Stoofvlees II
- * @param {number} cp
- * @returns {number}
- */
-function stoof_cp_to_score(cp) {
-    return Atan(cp / 194) / 1.55564;
 }
 
 // BOARD
@@ -560,7 +517,7 @@ function create_boards() {
     assign_boards();
 
     // 3) update themes: this will render the boards too
-    update_board_theme(3);
+    update_board_theme(7);
 
     // 4) pva colors
     let lines = [0, 1, 2, 3].map(id => {
@@ -616,12 +573,13 @@ function redraw_arrows() {
 function reset_sub_boards(mode) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.main) {
-            if (mode & 1)
-                board.valid = false;
-            if (mode & 2)
-                board.reset(mode & 4);
-        }
+        if (board.main_manual)
+            return;
+
+        if (mode & 1)
+            board.valid = false;
+        if (mode & 2)
+            board.reset(mode & 4);
     });
 }
 
@@ -658,13 +616,14 @@ function show_board_info(show) {
     Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
     Class('.xtop', 'xcolor0 -xcolor1', main.rotate);
 
-    players.forEach((player, id) => {
-        let mini = _(`.xcolor${id}`, node);
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id],
+            mini = _(`.xcolor${id}`, node);
         HTML('.xeval', format_eval(player.eval, true), mini);
         HTML(`.xleft`, player.sleft, mini);
         HTML('.xshort', player.short, mini);
         HTML(`.xtime`, player.stime, mini);
-    });
+    }
 }
 
 /**
@@ -672,23 +631,32 @@ function show_board_info(show) {
  * @param {number} mode update mode:
  * - &1: board
  * - &2: pv (all other boards)
- * - &4: just re-render all but don't update settings
+ * - &4: pva
+ * - &8: just re-render all but don't update settings
  */
 function update_board_theme(mode) {
     Keys(xboards).forEach(key => {
         // 1) skip?
         let board = xboards[key],
-            is_main = board.main;
-        if (is_main) {
-            if (!(mode & 5))
+            is_main = board.main,
+            is_manual = board.manual;
+
+        if (!(mode & 8)) {
+            if (is_main) {
+                if (!(mode & 1))
+                    return;
+            }
+            else if (is_manual) {
+                if (!(mode & 4))
+                    return;
+            }
+            else if (!(mode & 2))
                 return;
         }
-        else if (!(mode & 6))
-            return;
 
         // 2) update board
-        if (mode & 3) {
-            let suffix = is_main? '': '_pv',
+        if (mode & 7) {
+            let suffix = is_manual? '_pva': (is_main? '': '_pv'),
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
@@ -707,6 +675,7 @@ function update_board_theme(mode) {
             });
         }
 
+        // 3) render
         board.instant();
         board.render(7);
     });
@@ -852,8 +821,10 @@ function calculate_h2h(rows) {
     }
 
     // update players + UI info
-    for (let player of players)
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id];
         player.score = (names[player.name] - 1).toFixed(1);
+    }
     update_scores();
 
     return new_rows;
@@ -1067,9 +1038,11 @@ function create_table_columns(columns, widths, no_translates=[]) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
             style = widths? ` style="width:${widths[id]}"`: '',
+            title = TITLES[value],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}">${translate? '': value}</th>`;
+        title = title? ` title="${title}"`: '';
+        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}">${translate? '': value}</th>`;
     }).join('');
 }
 
@@ -2185,24 +2158,14 @@ function download_pgn(section, url, scroll_up, reset_moves) {
  * Resize game elements
  */
 function resize_game() {
-    // main boards
-    for (let [parent, key] of [['left', 'archive'], ['left', 'live']]) {
-        let width = Id(parent).clientWidth,
-            board = xboards[key];
-        if (board) {
-            board.instant();
-            board.resize(width);
-        }
-    }
-
-    // sub boards
     Keys(xboards).forEach(key => {
         let board = xboards[key];
-        if (!board.sub)
+        if (!board.main && !board.sub)
             return;
 
         let area = get_area(board.node),
-            size = Clamp(area.clientWidth / board.sub - 4, 196, 320);
+            width = area.clientWidth,
+            size = Clamp(width / Max(board.sub, 1) - 4, 196);
         board.instant();
         board.resize(size);
     });
@@ -2406,6 +2369,7 @@ function update_overview_basic(section, headers) {
 
         Assign(player, {
             elo: headers[`${title}Elo`],
+            feature: Undefined(ENGINE_FEATURES[short], 0),
             name: name,
             short: short,
         });
@@ -2600,16 +2564,19 @@ function update_pgn(section, pgn, reset_moves) {
 
     // 2: a new game was started and we already had a game before
     if (new_game == 2) {
-        for (let player of players)
+        for (let id = 0; id < 2; id ++) {
+            let player = players[id];
             Assign(player, {
                 elapsed: 0,
                 left: player.tc * 1000,
                 time: 0,
             });
+        }
         add_queue(section, 'table');
     }
     else if (new_game) {
-        for (let player of players) {
+        for (let id = 0; id < 2; id ++) {
+            let player = players[id];
             if (!player.elapsed)
                 player.elapsed = 0;
             if (!player.left)
@@ -2632,9 +2599,10 @@ function update_pgn(section, pgn, reset_moves) {
  * Update players' score in the UI
  */
 function update_scores() {
-    players.forEach((player, id) => {
+    for (let id = 0; id < 2; id ++) {
+        let player = players[id];
         HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
-    });
+    }
 }
 
 // LIVE ACTION / DATA
@@ -2736,9 +2704,12 @@ function update_live_eval(section, data, id, force_ply) {
         for (let move of moves) {
             // LS(`move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
             board.evals[move.ply - 1] = move;
+            move.invert = true;
         }
         data = moves[moves.length - 1];
     }
+    else if (data)
+        data.invert = force_ply;
 
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
@@ -2763,11 +2734,16 @@ function update_live_eval(section, data, id, force_ply) {
             if (node.title != engine) {
                 HTML(node, short);
                 Attrs(node, {title: engine});
+                Assign(players[id + 2], {
+                    feature: Undefined(ENGINE_FEATURES[short], 0),
+                    name: engine,
+                    short: short,
+                });
             }
         }
 
     // invert eval for black?
-    if ((moves || force_ply) && data.ply % 2 == 0)
+    if (data.invert && data.ply % 2 == 0)
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
@@ -2795,7 +2771,7 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    update_live_chart(moves || [data], id + 2, !!moves || force_ply);
+    update_live_chart(moves || [data], id + 2);
     check_missing_moves(ply);
 }
 
@@ -3027,11 +3003,33 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
-        // y, z
+        // c, v, y, z
+        case 67:
+        case 86:
         case 89:
         case 90:
             if (KEYS[17])
-                restore_history(code == 89? 1: -1);
+                if (code == 67) {
+                    // selected text => skip
+                    let select = getSelection();
+                    if (select && select.toString())
+                        break;
+
+                    if (!copy_moves())
+                        CopyClipboard(board_target.fen);
+                }
+                // paste => try to add the FEN, if fails then moves string
+                else if (code == 86) {
+                    if (board_target.manual)
+                        navigator.clipboard.readText().then(text => {
+                            text = text.replace(/\s+/g, ' ');
+                            if (!board_target.set_fen(text, true))
+                                board_target.add_moves_string(text);
+                        });
+                }
+                // redo/undo
+                else
+                    restore_history(code == 89? 1: -1);
             break;
         }
 
@@ -3114,6 +3112,7 @@ function change_setting_game(name, value) {
     // using exact name
     switch (name) {
     case 'analysis_chessdb':
+    case 'analysis_evalguide':
     case 'analysis_lichess':
         let parent = Parent(context_target, {class_: 'xboard'});
         if (parent) {
@@ -3124,15 +3123,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'copy_moves':
-        let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-        if (target) {
-            let text = target.innerText.replace(/\s/g, ' ');
-            if (text.slice(0, 3) == '0. ')
-                text = text.slice(3);
-            if (text.slice(-2) == ' *')
-                text = text.slice(0, -2);
-            CopyClipboard(text);
-        }
+        copy_moves();
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
@@ -3212,6 +3203,24 @@ function changed_section() {
 }
 
 /**
+ * Copy moves list to the clipboard
+ * @returns {string}
+ */
+function copy_moves() {
+    let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
+    if (!target)
+        return '';
+
+    let text = target.innerText.replace(/\s/g, ' ');
+    if (text.slice(0, 3) == '0. ')
+        text = text.slice(3);
+    if (text.slice(-2) == ' *')
+        text = text.slice(0, -2);
+    CopyClipboard(text);
+    return text;
+}
+
+/**
  * Handle xboard events
  * @param {XBoard} board
  * @param {string} type
@@ -3223,6 +3232,8 @@ function handle_board_events(board, type, value) {
     switch (type) {
     case 'activate':
         board_target = board;
+        // used for CTRL+C
+        context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
         break;
     // controls: play, next, ...
     case 'control':
@@ -3372,16 +3383,6 @@ function opened_table(node, name, tab) {
     case 'log':
         fill_combo('#nlog', [0, 5, 10, 'all'], Y.live_log);
         listen_log();
-        break;
-    case 'pva':
-        let board = board_target;
-        if (board) {
-            if (!['pv0', 'pv1', 'live0', 'live1'].includes(board.name))
-                board = xboards.pv0;
-            Class('.color', '-active');
-            Class(`.color[data-id="${board.name}"]`, 'active');
-            xboards.pva.set_fen(board.fen, true);
-        }
         break;
     case 'season':
         download_gamelist();

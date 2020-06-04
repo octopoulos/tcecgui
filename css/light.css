@@ -338,7 +338,7 @@ grid {
 }
 #popup-about,
 .settings {
-    min-width: 240px;
+    min-width: 270px;
 }
 #modal a {
     color: #000;
@@ -350,6 +350,11 @@ grid {
 #modal select {
     padding: 0.2em;
     width: calc(100% - 0.5em);
+}
+#modal input[type="checkbox"] {
+    margin: 0.5em;
+    transform: scale(1.35);
+    width: auto;
 }
 #popup-about {
     min-height: 50vh;
@@ -580,16 +585,23 @@ grid {
     line-height: initial;
     margin: 0 0.15em;
 }
+.live-pv > b,
+.moves > b,
+.xmoves > b {
+    margin: 0;
+}
 .move {
     font-size: 12px;
 }
 #archive .xmoves,
 #live .xmoves,
+#pva .xmoves,
 .moves {
     background: transparent;
     border: none;
     font-size: 15px;
     line-height: 1.5;
+    margin-bottom: 0.5em;
 }
 .book {
     color:#080;
@@ -643,7 +655,6 @@ grid {
 #xfen .xsquare {
     pointer-events: none;
 }
-#pva .xmoves,
 #xfen .xcontrol,
 #xfen .xmoves {
     display: none;
@@ -654,7 +665,8 @@ grid {
     font-weight: 500;
     transform: rotate(-30deg);
 }
-#pva .xpiece {
+#pva .source,
+#pva .target {
     cursor: pointer;
 }
 .color {

@@ -24,7 +24,7 @@ class Inspect:
     """
     def __init__(self):
         self.re_args = re.compile(r'(\w+)(?:=(?:\w+|\[.*?\]|{.*?}|\'.*?\'))?(?:[,}]|$)', re.S)
-        self.re_function = re.compile(r'/\*\*(.*?)\*/\r?\nfunction\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
+        self.re_function = re.compile(r'/\*\*(.*?)\*/\r?\n(?:async )?function\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
         self.re_globals = re.compile(r'/\*\s*globals\s*(.*?)\*/', re.S)
         self.re_split = re.compile(r'[,\s]')
 

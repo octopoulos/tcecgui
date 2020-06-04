@@ -295,12 +295,14 @@ var Chess = function(fen) {
         var them = swap_color(us);
         var second_rank = {b: RANK_7, w: RANK_2};
 
-        var first_sq = SQUARES.a8;
-        var last_sq = SQUARES.h1;
+        let first_sq = SQUARES.a8,
+            last_sq = SQUARES.h1;
 
         // are we generating moves for a single square?
-        if (single_square)
-            first_sq = last_sq = SQUARES[single_square];
+        if (single_square) {
+            first_sq = SQUARES[single_square] || single_square;
+            last_sq = first_sq;
+        }
 
         for (let i = first_sq; i <= last_sq; i ++) {
             // did we run off the end of the board
@@ -800,12 +802,12 @@ var Chess = function(fen) {
          * @param {string|Object} move ex: Nxb7, {from: 'h7', to: 'h8', promotion: 'q'}
          */
         move: move => {
-            var move_obj = null;
+            let move_obj = null;
 
             if (typeof move === 'string')
                 move_obj = move_from_san(move);
             else if (typeof move === 'object') {
-                var moves = generate_moves();
+                let moves = generate_moves();
 
                 // convert the pretty move object to an ugly move object
                 for (let i = 0, len = moves.length; i < len; i ++) {
@@ -814,6 +816,7 @@ var Chess = function(fen) {
                             (!('promotion' in moves[i]) ||
                             move.promotion === moves[i].promotion)) {
                         move_obj = moves[i];
+                        move_obj.san = move_to_san(move_obj);
                         break;
                     }
                 }
