@@ -373,9 +373,20 @@ function new_y_axis(id, callback, dico) {
  * Redraw eval charts when eval mode has changed
  */
 function redraw_eval_charts() {
-    update_player_charts('eval', xboards[Y.x].moves);
+    let moves = xboards[Y.x].moves,
+        num_move = moves.length;
+
+    // update existing moves + kibitzer evals (including next move)
+    update_player_charts('eval', moves);
     update_live_chart(xboards.live0.evals, 2);
     update_live_chart(xboards.live1.evals, 3);
+
+    // update last received player eval, for the next move
+    for (let id = 0; id < 2; id ++) {
+        let move = xboards[`pv${id}`].evals[num_move];
+        if (move)
+            update_live_chart([move], id);
+    }
 }
 
 /**
