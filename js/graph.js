@@ -414,6 +414,9 @@ function reset_charts()
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
+
+    for (let key of ['live0', 'live1', 'pv0', 'pv1'])
+        xboards[key].evals = [];
 }
 
 /**
