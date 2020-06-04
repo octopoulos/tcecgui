@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
+2020-06-04 : 2020-06-04 : almost complete Russian
 2020-06-04 : 2020-06-04 : switching eval modes updates next move
 2020-06-04 : 2020-06-04 : some extra tooltips
 2020-06-04 : 2020-06-04 : show ply: last should still show @
@@ -292,12 +293,10 @@ low:
 ~          : 2020-04-13 : add 3d board
 lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
--          : 2020-05-14 : show both Live and Archive at the same time + red disc near the Live board
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-06-03 : chess.wasm
 -          : 2020-05-26 : update overview for past moves?
 -          : 2020-05-26 : live_log option to run in the background
--          : 2020-05-18 : click on mobility => cannot move forward, must go back first
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard
@@ -305,4 +304,3 @@ lowest:
 -          : 2020-04-13 : add 3d crowd based on the number of viewers
 -          : 2020-04-13 : add 3d tables + room
 -          : 2020-04-13 : VR support
--          : 2020-04-23 : add tests for check_adjudication

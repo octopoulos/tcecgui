@@ -1257,13 +1257,15 @@ function create_page_array(num_page, page, extra) {
 
 /**
  * Get translations
+ * @param {boolean=} force
  */
-function api_translate_get() {
+function api_translate_get(force) {
     // 1) cached?
-    if (Y.language == 'eng' || (translates._lan == Y.language && Now() < (api_times.translate || 0) + TIMEOUT_translate)) {
-        translate_node('body');
-        return;
-    }
+    if (!force)
+        if (Y.language == 'eng' || (translates._lan == Y.language && Now() < (api_times.translate || 0) + TIMEOUT_translate)) {
+            translate_node('body');
+            return;
+        }
 
     // 2) call the API
     Resource(`translate/${Y.language}.json`, (code, data) => {

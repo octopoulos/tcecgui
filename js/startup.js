@@ -1619,7 +1619,7 @@ function load_settings() {
 
     check_hash();
     parse_dev();
-    api_translate_get();
+    api_translate_get(Y.new_version);
 }
 
 /**

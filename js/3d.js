@@ -1181,7 +1181,7 @@ function show_modal(show, text, title, name) {
  * @returns {string} html
  */
 function show_settings(name, xy) {
-    let lines = ['<grid class="w100 noselect">'],
+    let lines = ['<grid class="options">'],
         parent_id = get_drop_id(context_target)[1],
         settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
         keys = Keys(settings),
