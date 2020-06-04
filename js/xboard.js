@@ -1192,7 +1192,7 @@ class XBoard {
                     return;
 
                 this.clear_high('target', !this.picked);
-                if (!this.picked)
+                if (this.picked == null)
                     return;
 
                 this.chess_load(this.fen);
@@ -1456,7 +1456,7 @@ class XBoard {
      * @returns {boolean}
      */
     place(e) {
-        if (!this.picked)
+        if (this.picked == null)
             return false;
 
         // 1) find from and to

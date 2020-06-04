@@ -211,6 +211,8 @@ let ANALYSIS_URLS = {
     TITLES = {
         50: 'Fifty-move rule',
         ECO: 'Encyclopaedia of Chess Openings',
+        H2H: 'Head to head',
+        SB: 'Sonneborn–Berger',
         TB: 'Tablebase',
         TC: 'Time control',
     },
@@ -727,7 +729,8 @@ function analyse_crosstable(section, data) {
         dicos = data.Table,
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
-        stand_rows = [];
+        stand_rows = [],
+        titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)})));
 
     // 1) analyse all data => create rows for both tables
     for (let name of orders) {
@@ -786,7 +789,7 @@ function analyse_crosstable(section, data) {
         let extras = new_columns.slice(3),
             width = `${Floor(71 / (extras.length + 0.001))}%`,
             widths = [...['4%', '18%', '7%'], ...extras.map(() => width)],
-            head = create_table_columns(new_columns, widths, abbrevs);
+            head = create_table_columns(new_columns, widths, abbrevs, titles);
         HTML('thead', head, node);
         translate_node(node);
     }
@@ -1032,17 +1035,18 @@ function create_table(columns, add_empty) {
  * @param {string[]} columns
  * @param {number[]=} widths optional width for each column
  * @param {string[]=} no_translates don't translate those terms
+ * @param {Object=} titles
  * @returns {string}
  */
-function create_table_columns(columns, widths, no_translates=[]) {
+function create_table_columns(columns, widths, no_translates=[], titles={}) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
             style = widths? ` style="width:${widths[id]}"`: '',
-            title = TITLES[value],
+            title = titles[value] || TITLES[value],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
         title = title? ` title="${title}"`: '';
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}">${translate? '': value}</th>`;
+        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}>${translate? '': value}</th>`;
     }).join('');
 }
 
@@ -1813,8 +1817,8 @@ function calculate_event_stats(section, rows) {
         start_time: `${start_time} on 20${start_date}`,
         end_time: `${end_time} on 20${end_date}`,
         duration: format_hhmmss(stats._duration),
-        avg_moves: Round(moves / games),
-        avg_time: format_hhmmss(seconds / games),
+        average_moves: Round(moves / games),
+        average_time: format_hhmmss(seconds / games),
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draw_rate: format_percent(results['1/2-1/2'] / games),
@@ -2835,6 +2839,7 @@ function update_player_eval(section, data) {
         });
     }
 
+    board.evals[data.ply] = data;
     update_live_chart([data], id);
     check_missing_moves(data.ply);
 }

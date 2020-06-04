@@ -370,6 +370,15 @@ function new_y_axis(id, callback, dico) {
 }
 
 /**
+ * Redraw eval charts when eval mode has changed
+ */
+function redraw_eval_charts() {
+    update_player_charts('eval', xboards[Y.x].moves);
+    update_live_chart(xboards.live0.evals, 2);
+    update_live_chart(xboards.live1.evals, 3);
+}
+
+/**
  * Reset a chart
  * @param {Object} chart
  */
