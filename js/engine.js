@@ -10,9 +10,9 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
-E, From, history, HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent,
-QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT, Title,
-Undefined, Visible, window
+E, Events, From, history, HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now,
+Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT,
+Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -1278,5 +1278,14 @@ function api_translate_get(force) {
         save_storage('trans', translates);
         save_storage('times', api_times);
         translate_node('body');
+    });
+}
+
+// EVENTS
+/////////
+
+function set_engine_events() {
+    Events(window, 'mousedown touchstart', () => {
+        cancelAnimationFrame(animation);
     });
 }
