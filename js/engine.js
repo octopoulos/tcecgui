@@ -9,15 +9,16 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document, E, From, history,
-HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, QueryString,
-requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT, Title, Undefined,
-Visible, window
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
+E, From, history, HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent,
+QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT, Title,
+Undefined, Visible, window
 */
 'use strict';
 
 let __PREFIX = '_',
     ANCHORS = {},
+    animation,
     api = {},
     api_times = {},
     DEFAULTS = {
@@ -867,7 +868,7 @@ function render_scroll() {
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
-        requestAnimationFrame(render_scroll);
+        animation = requestAnimationFrame(render_scroll);
     }
     touch_now = now;
 }
@@ -1174,7 +1175,8 @@ function touch_handle(e, full) {
         if (absx > 1 || absy > 1) {
             scroll_target = drag_target;
             touch_speed = {x: sumx / time, y: sumy / time};
-            requestAnimationFrame(render_scroll);
+            cancelAnimationFrame(animation);
+            animation = requestAnimationFrame(render_scroll);
         }
         // big movement or average duration => prevent click
         if (type != 'mouseleave') {

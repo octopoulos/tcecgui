@@ -12,12 +12,12 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
-ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
-Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, DEV, document,
-download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
-get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+ANCHORS:true, animation, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+C, cancelAnimationFrame, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section,
+check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS,
+DEV, document, download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key,
+game_action_keyup, get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML,
+ICONS:true, Id, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES,
 popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
@@ -1443,6 +1443,9 @@ function set_global_events() {
 
     // click somewhere => close the popups
     Events(window, 'click', window_click);
+    Events(window, 'mousedown touchstart', () => {
+        cancelAnimationFrame(animation);
+    });
 
     // swap panes
     Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
