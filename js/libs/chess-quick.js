@@ -299,7 +299,7 @@ var Chess = function(fen) {
             last_sq = SQUARES.h1;
 
         // are we generating moves for a single square?
-        if (single_square) {
+        if (single_square != null) {
             first_sq = SQUARES[single_square] || single_square;
             last_sq = first_sq;
         }

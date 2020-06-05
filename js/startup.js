@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-06-05
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -21,11 +21,11 @@ init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES,
 popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
-S, save_option, scroll_adjust, ScrollDocument, set_game_events, set_modal_events, SetDefault, Show, show_banner,
-show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style,
-TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node,
-TRANSLATE_SPECIALS, translates:true, update_board_theme, update_chart_options, update_debug, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
+show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
+startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
+translate_node, TRANSLATE_SPECIALS, translates:true, update_board_theme, update_chart_options, update_debug,
+update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
 */
@@ -2011,6 +2011,7 @@ function startup() {
 
     load_settings();
     set_global_events();
+    set_engine_events();
     set_game_events();
     startup_graph();
     add_history();

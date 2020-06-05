@@ -1191,7 +1191,7 @@ class XBoard {
                 if (this.place(e) || !this.pick(e))
                     return;
 
-                this.clear_high('target', !this.picked);
+                this.clear_high('target', this.picked == null);
                 if (this.picked == null)
                     return;
 
