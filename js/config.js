@@ -78,6 +78,7 @@ function startup_config() {
             'Super Final 14 by GM Sadler.pdf': 'articles/Sufi_14_-_Sadler.pdf',
             // separator
             'a': 0,
+            'TCEC_17.pdf': 'articles/TCEC_17.pdf',
             'TCEC_16.pdf': 'articles/TCEC_16.pdf',
             'TCEC_15.pdf': 'articles/TCEC_15.pdf',
             'TCEC_14.pdf': 'articles/TCEC_14.pdf',
