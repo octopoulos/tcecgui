@@ -842,8 +842,8 @@ class XBoard {
             real_moves = this.real.moves;
 
         for (let curr = ply - 1; curr >= -1; curr --) {
-            let fen,
-                move = moves[curr];
+            let move = moves[curr],
+                fen = move? move.fen: null;
             if (!move) {
                 if (DEV.ply)
                     LS(`${this.id}: no move at ply ${curr}`);
