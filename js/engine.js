@@ -11,8 +11,8 @@
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
 E, Events, From, history, HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Style, TEXT,
-Title, Undefined, Visible, window
+Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, Style,
+TEXT, Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -1287,5 +1287,19 @@ function api_translate_get(force) {
 function set_engine_events() {
     Events(window, 'mousedown touchstart', () => {
         cancelAnimationFrame(animation);
+    });
+
+    // iframe support: scroll going to opposite expected way => stop the animation
+    Events(window, 'scroll', () => {
+        if (animation == null)
+            return;
+        if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
+            let y = ScrollDocument(),
+                sign = Sign(y - touch_scroll.y);
+            if (sign && sign != -Sign(touch_speed.y)) {
+                cancelAnimationFrame(animation);
+                animation = null;
+            }
+        }
     });
 }

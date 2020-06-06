@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
+2020-06-06 : 2020-06-06 : improved manual scrolling detection
 2020-06-06 : 2020-06-06 : show kibitzer engine info in tooltip
 2020-06-06 : 2020-06-06 : left eval option + toggle hardware
 2020-06-06 : 2020-06-06 : hide analysis from main options, should be only visible in popup
