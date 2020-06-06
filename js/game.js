@@ -3032,16 +3032,18 @@ function game_action_key(code) {
                     if (select && select.toString())
                         break;
 
-                    if (!copy_moves())
-                        CopyClipboard(board_target.fen);
+                    if (!copy_moves()) {
+                        let text = board_target.fen;
+                        CopyClipboard(text);
+                        if (Y.auto_paste)
+                            paste_text(text);
+                    }
                 }
                 // paste => try to add the FEN, if fails then moves string
                 else if (code == 86) {
                     if (board_target.manual)
                         navigator.clipboard.readText().then(text => {
-                            text = text.replace(/\s+/g, ' ');
-                            if (!board_target.set_fen(text, true))
-                                board_target.add_moves_string(text);
+                            paste_text(text);
                         });
                 }
                 // redo/undo
@@ -3074,6 +3076,18 @@ function game_action_keyup(code) {
         Keys(xboards).forEach(key => {
             xboards[key].hold = null;
         });
+}
+
+/**
+ * Paste text to PVA
+ * @param {string} text
+ */
+function paste_text(text) {
+    text = text.replace(/\s+/g, ' ');
+
+    let board = board_target.manual? board_target: xboards.pva;
+    if (!board.set_fen(text, true))
+        board.add_moves_string(text);
 }
 
 /**
@@ -3237,6 +3251,8 @@ function copy_moves() {
     if (text.slice(-2) == ' *')
         text = text.slice(0, -2);
     CopyClipboard(text);
+    if (Y.auto_paste)
+        paste_text(text);
     return text;
 }
 

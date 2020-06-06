@@ -19,8 +19,8 @@ download_live, download_tables, DownloadObject, E, Events, From, full_scroll, ga
 get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id, Index,
 init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
-merge_settings, Min, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES,
-popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
+merge_settings, Min, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev,
+PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -1528,8 +1528,8 @@ function set_global_events() {
                     name;
                 if (dataset && ['next', 'prev'].includes(dataset.x))
                     return;
-                else if (HasClass(target, 'live-basic'))
-                    name = 'hide';
+                else if (HasClasses(target, 'live-basic|live-more'))
+                    name = 'eval';
                 else if (HasClass(target, 'live-pv'))
                     name = 'live';
                 else if (HasClass(target, 'xbottom'))
@@ -1768,6 +1768,12 @@ function startup() {
         x: 1,
     });
 
+    Assign(ONLY_POPUPS, {
+        analysis_chessdb: 1,
+        analysis_evalguide: 1,
+        analysis_lichess: 1,
+    });
+
     Assign(TITLES, {
         'D/SD': '{Depth} / {Selective depth}',
         'Mob': 'Mobility',
@@ -1865,6 +1871,7 @@ function startup() {
             analysis_evalguide: '1',
             analysis_lichess: '1',
             animate_pva: [ON_OFF, 1],
+            auto_paste: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
@@ -1889,7 +1896,7 @@ function startup() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
-            drag_and_drop: [ON_OFF, 1],
+            drag_and_drop: [ON_OFF, 0],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: option_number(0.85, 0, 0.99, 0.01),
@@ -1918,6 +1925,7 @@ function startup() {
         },
         info: {
             info_eval: [ON_OFF, 1],
+            info_more: [ON_OFF, 1],
             info_moves: [ON_OFF, 1],
             info_moves_copy: [ON_OFF, 0],
             info_moves_live: [ON_OFF, 1],
@@ -1942,7 +1950,7 @@ function startup() {
             grid_pva: option_number(1, 0, 10),
             move_height: option_number(5, 3, 100, 0.1),
             move_height_copy: option_number(20, 3, 100, 0.1),
-            move_height_live: option_number(3, 3, 100, 0.1),
+            move_height_live: option_number(3.6, 3, 100, 0.1),
             move_height_pv: option_number(5, 5, 100, 0.1),
             move_height_pva: option_number(5, 5, 100, 0.1),
         },

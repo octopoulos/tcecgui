@@ -2,6 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
+~          : 2020-06-06 : left eval option
+2020-06-06 : 2020-06-06 : hide analysis from main options, should be only visible in popup
 2020-06-05 : 2020-06-05 : cancellable scrolling, hopefully means it's smoother too
 2020-06-04 : 2020-06-04 : archive => live chart redrawn
 2020-06-04 : 2020-06-04 : almost complete Russian
@@ -295,8 +297,8 @@ low:
 ~          : 2020-04-13 : add 3d board
 lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-06-03 : chess.wasm
+-          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-26 : update overview for past moves?
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
