@@ -1955,8 +1955,7 @@ function startup() {
             moves_pv: [ON_OFF, 1],
             moves_pva: [ON_OFF, 1],
             percent: [ON_OFF, 1],
-            single_line: [ON_OFF, 1],
-
+            single_line: [ON_OFF, 0],
         },
         live: {
             copy_moves: '1',
@@ -2039,7 +2038,7 @@ function startup() {
             hardware: [ON_OFF, 1],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
-            single_line: [ON_OFF, 1],
+            single_line: [ON_OFF, 0],
         },
     });
 
