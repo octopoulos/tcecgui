@@ -16,7 +16,7 @@ C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, 
 context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
 E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object,
 getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
+listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
 push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
@@ -2391,8 +2391,11 @@ function update_overview_basic(section, headers) {
             short: short,
         });
 
-        for (let child of [box_node, node])
-            HTML(`[data-x="name"]`, short, child);
+        for (let child of [box_node, node]) {
+            let engine_node = _('[data-x="name"]', child);
+            HTML(engine_node, short);
+            Attrs(engine_node, {title: name});
+        }
 
         HTML(`#engine${id}`, name);
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
@@ -2695,6 +2698,46 @@ function stop_clock(ids) {
 }
 
 /**
+ * Update the left + time UI info
+ * @param {number} id
+ * @param {Move} move move from the past
+ */
+function update_clock(id, move) {
+    let elapsed, left, time,
+        main = xboards[Y.x],
+        player = players[id];
+
+    if (move) {
+        elapsed = 0;
+        left = move.tl;
+        time = move.mt / 1000;
+    }
+    else {
+        // looking at the past => don't update anything
+        if (main && main.ply < main.moves.length - 1)
+            return;
+
+        elapsed = player.elapsed;
+        left = player.left;
+        time = Round((elapsed > 0? elapsed: player.time) / 1000);
+    }
+
+    left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
+    time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
+
+    HTML(`#remain${id}`, left);
+    HTML(`#time${id}`, time);
+    player.sleft = left;
+    player.stime = time;
+
+    if (main) {
+        let mini = _(`.xcolor${id}`, main.node);
+        HTML(`.xleft`, left, mini);
+        HTML(`.xtime`, time, mini);
+    }
+}
+
+/**
  * Update data from one of the Live engines
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
@@ -2744,13 +2787,14 @@ function update_live_eval(section, data, id, force_ply) {
 
     // update engine name if it has changed
     engine = engine || data.engine;
-    let short = get_short_name(engine);
+    let full_engine = `${engine}\n${LIVE_ENGINES[id]}`,
+        short = get_short_name(engine);
     if (short)
         for (let child of [box_node, node]) {
             let node = _('[data-x="name"]', child);
-            if (node.title != engine) {
+            if (node.title != full_engine) {
                 HTML(node, short);
-                Attrs(node, {title: engine});
+                Attrs(node, {title: full_engine});
                 Assign(players[id + 2], {
                     feature: Undefined(ENGINE_FEATURES[short], 0),
                     name: engine,
@@ -2809,15 +2853,24 @@ function update_player_eval(section, data) {
         eval_ = data.eval,
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
+        name = data.engine,
         node = Id(`moves-pv${id}`),
-        short = get_short_name(data.engine);
+        short = get_short_name(name);
 
     // 1) update the live part on the left
     let dico = {
-        eval: format_eval(eval_),
-        name: short,
-        score: calculate_probability(short, eval_),
-    };
+            eval: format_eval(eval_),
+            name: short,
+            score: calculate_probability(short, eval_),
+        },
+        engine_node = _('[data-x="name"]', node);
+
+    // update engine name if it has changed
+    if (engine_node.title != name)
+        Attrs(engine_node, {title: name});
+    else
+        delete dico.name;
+
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
     });
@@ -2855,46 +2908,6 @@ function update_player_eval(section, data) {
     board.evals[data.ply] = data;
     update_live_chart([data], id);
     check_missing_moves(data.ply);
-}
-
-/**
- * Update the left + time UI info
- * @param {number} id
- * @param {Move} move move from the past
- */
-function update_clock(id, move) {
-    let elapsed, left, time,
-        main = xboards[Y.x],
-        player = players[id];
-
-    if (move) {
-        elapsed = 0;
-        left = move.tl;
-        time = move.mt / 1000;
-    }
-    else {
-        // looking at the past => don't update anything
-        if (main && main.ply < main.moves.length - 1)
-            return;
-
-        elapsed = player.elapsed;
-        left = player.left;
-        time = Round((elapsed > 0? elapsed: player.time) / 1000);
-    }
-
-    left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
-    time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
-
-    HTML(`#remain${id}`, left);
-    HTML(`#time${id}`, time);
-    player.sleft = left;
-    player.stime = time;
-
-    if (main) {
-        let mini = _(`.xcolor${id}`, main.node);
-        HTML(`.xleft`, left, mini);
-        HTML(`.xtime`, time, mini);
-    }
 }
 
 // INPUT / OUTPUT
