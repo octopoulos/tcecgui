@@ -101,6 +101,7 @@ let audiobox = {
     old_pos,
     old_rot,
     ON_OFF = ['on', 'off'],
+    ONLY_POPUPS = {},
     PARENT_3D = 'body',
     PARTS = [],
     Quaternion,
@@ -1177,7 +1178,7 @@ function show_modal(show, text, title, name) {
 /**
  * Show a settings page
  * @param {string} name
- * @param {boolean} xy
+ * @param {boolean} xy true if the dialog comes from a contextual popup, otherwise from main options
  * @returns {string} html
  */
 function show_settings(name, xy) {
@@ -1228,6 +1229,9 @@ function show_settings(name, xy) {
         // only in popup
         let setting = settings[key];
         if (setting._pop)
+            return;
+
+        if (!xy && ONLY_POPUPS[key])
             return;
 
         // link or list

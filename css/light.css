@@ -743,6 +743,9 @@ grid {
     background: #07f;
     color: #fff;
 }
+.tab > i {
+    pointer-events: none;
+}
 .subscribe {
     margin-right: 0.2em;
 }
