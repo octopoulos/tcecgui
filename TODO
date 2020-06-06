@@ -2,7 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
-~          : 2020-06-06 : left eval option
+2020-06-06 : 2020-06-06 : left eval option + toggle hardware
 2020-06-06 : 2020-06-06 : hide analysis from main options, should be only visible in popup
 2020-06-05 : 2020-06-05 : cancellable scrolling, hopefully means it's smoother too
 2020-06-04 : 2020-06-04 : archive => live chart redrawn

@@ -163,14 +163,14 @@ function create_chart_data() {
         },
         node: {
             datasets: [
-                new_dataset('White Speeds', Y.graph_color_0, 'y-axis-1'),
+                new_dataset('White Speed', Y.graph_color_0, 'y-axis-1'),
                 new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],
         },
         speed: {
             datasets: [
-                new_dataset('White Speeds',Y.graph_color_0, 'y-axis-1'),
+                new_dataset('White Speed',Y.graph_color_0, 'y-axis-1'),
                 new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],

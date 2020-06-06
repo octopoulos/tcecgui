@@ -216,6 +216,20 @@ function change_setting_special(name, value, no_close) {
     case 'drag_and_drop':
         set_draggable();
         break;
+    case 'eval':
+    case 'eval_left':
+    case 'graph_aspect_ratio':
+    case 'hardware':
+    case 'moves':
+    case 'moves_live':
+    case 'moves_pv':
+    case 'moves_pva':
+    case 'panel_adjust':
+    case 'percent':
+    case 'single_line':
+    case 'status_pv':
+        resize_panels();
+        break;
     case 'export_settings':
         let object = Assign(
             {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
@@ -267,20 +281,6 @@ function change_setting_special(name, value, no_close) {
         catch (err) {
         }
         break;
-    case 'info_eval':
-    case 'info_moves':
-    case 'info_moves_live':
-    case 'info_moves_pv':
-    case 'info_moves_pva':
-    case 'info_percent':
-    case 'graph_aspect_ratio':
-    case 'panel_adjust':
-    case 'status_pv':
-        resize_panels();
-        break;
-    case 'info_moves_copy':
-        populate_areas();
-        break;
     case 'join_next':
         tab_element(context_target);
         break;
@@ -290,6 +290,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'mobility':
         update_visible();
+        break;
+    case 'moves_copy':
+        populate_areas();
         break;
     case 'preset':
         if (value == 'custom')
@@ -765,7 +768,7 @@ function populate_areas() {
         section = Y.x,
         hides = Assign({}, HIDES[section]);
 
-    if (!Y.info_moves_copy)
+    if (!Y.moves_copy)
         hides[`moves-${section}`] = 1;
 
     // 1) count existing
@@ -1086,7 +1089,7 @@ function show_archive_live() {
 
     Hide(is_live? '#archive': '#live');
     Hide(`#moves-${is_live? 'archive': 'live'}`);
-    if (!Y.info_moves_copy)
+    if (!Y.moves_copy)
         Hide(`#moves-${section}`);
 }
 
@@ -1094,11 +1097,17 @@ function show_archive_live() {
  * Show live engines
  */
 function show_live_engines() {
+    let single_line = Y.single_line;
+
     LIVE_ENGINES.forEach((live, id) => {
         HTML(`[data-x="live${id}"]`, live);
-        let items = live.split(/ (?=\dMen)/);
-        live = items.join('<br>');
-        HTML(`[data-x="live+${id}"]`, live);
+        if (!single_line) {
+            let items = live.split(/ (?=\dMen)/);
+            live = items.join('<br>');
+        }
+        let sel = `[data-x="live+${id}"]`;
+        HTML(sel, live);
+        Style(sel, `top:${single_line? 0.35: 0.6}em`);
     });
 }
 
@@ -1276,14 +1285,26 @@ function update_shortcuts() {
  * Show/hide stuff
  */
 function update_visible() {
+    let eval_left = Y.eval_left,
+        hardware = Y.hardware,
+        templates = [eval_left? '3em': 'auto', 'auto', hardware? 'auto': '1fr'];
+
     S('.status', Y.status_pv);
-    S('.eval', Y.info_eval);
-    S('.percent', Y.info_percent);
-    S('#archive .xmoves, #live .xmoves', Y.info_moves);
-    S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.info_moves_pv);
-    S('#pva .xmoves', Y.info_moves_pva);
-    S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.info_moves_live);
+    S('.eval', Y.eval);
+    Class('.eval', 'eval-left', eval_left);
+    S('.hardware', hardware);
+    Class('.live-basic', 'w100', !hardware);
+    Style('.live-basic', `grid-template-columns:${templates.join(' ')}`);
+    S('.live-more', !Y.single_line);
+    S('.percent', Y.percent);
+    Class('.percent', 'tar', !hardware);
+    S('#archive .xmoves, #live .xmoves', Y.moves);
+    S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.moves_pv);
+    S('#pva .xmoves', Y.moves_pva);
+    S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
+
+    show_live_engines();
 }
 
 /**
@@ -1528,7 +1549,7 @@ function set_global_events() {
                     name;
                 if (dataset && ['next', 'prev'].includes(dataset.x))
                     return;
-                else if (HasClasses(target, 'live-basic|live-more'))
+                else if (HasClasses(target, 'hardware|live-basic|live-more'))
                     name = 'eval';
                 else if (HasClass(target, 'live-pv'))
                     name = 'live';
@@ -1924,23 +1945,27 @@ function startup() {
             use_for_arrow: '1',
         },
         info: {
-            info_eval: [ON_OFF, 1],
-            info_more: [ON_OFF, 1],
-            info_moves: [ON_OFF, 1],
-            info_moves_copy: [ON_OFF, 0],
-            info_moves_live: [ON_OFF, 1],
-            info_moves_pv: [ON_OFF, 1],
-            info_moves_pva: [ON_OFF, 1],
-            info_percent: [ON_OFF, 1],
+            eval: [ON_OFF, 1],
+            eval_left: [ON_OFF, 0],
+            hardware: [ON_OFF, 1],
+            more: [ON_OFF, 1],
+            moves: [ON_OFF, 1],
+            moves_copy: [ON_OFF, 0],
+            moves_live: [ON_OFF, 1],
+            moves_pv: [ON_OFF, 1],
+            moves_pva: [ON_OFF, 1],
+            percent: [ON_OFF, 1],
+            single_line: [ON_OFF, 1],
+
         },
         live: {
             copy_moves: '1',
             grid_live: option_number(0, 0, 10),
-            info_moves_live: [ON_OFF, 1],
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
             move_height_live: option_number(3, 3, 100, 0.1),
+            moves_live: [ON_OFF, 1],
         },
         moves: {
             grid: option_number(0, 0, 10),
@@ -1981,31 +2006,40 @@ function startup() {
             _pop: true,
             copy_moves: '1',
             grid: option_number(0, 0, 10),
-            info_moves: [ON_OFF, 1],
-            info_moves_copy: [ON_OFF, 0],
             move_height: option_number(5, 3, 100, 0.1),
+            moves: [ON_OFF, 1],
+            moves_copy: [ON_OFF, 0],
         },
         copy_copy: {
             _pop: true,
             copy_moves: '1',
             grid_copy: option_number(2, 0, 10),
-            info_moves: [ON_OFF, 1],
-            info_moves_copy: [ON_OFF, 0],
             move_height_copy: option_number(20, 3, 100, 0.1),
+            moves: [ON_OFF, 1],
+            moves_copy: [ON_OFF, 0],
         },
         copy_pv: {
             _pop: true,
             copy_moves: '1',
             grid_pv: option_number(1, 0, 10),
-            info_moves_pv: [ON_OFF, 1],
-            move_height_pv: option_number(5, 3, 100, 0.1)
+            move_height_pv: option_number(5, 3, 100, 0.1),
+            moves_pv: [ON_OFF, 1],
         },
         copy_pva: {
             _pop: true,
             copy_moves: '1',
             grid_pva: option_number(1, 0, 10),
-            info_moves_pva: [ON_OFF, 1],
-            move_height_pva: option_number(5, 3, 100, 0.1)
+            move_height_pva: option_number(5, 3, 100, 0.1),
+            moves_pva: [ON_OFF, 1],
+        },
+        eval: {
+            _pop: true,
+            eval: [ON_OFF, 1],
+            eval_left: [ON_OFF, 0],
+            hardware: [ON_OFF, 1],
+            moves_live: [ON_OFF, 1],
+            percent: [ON_OFF, 1],
+            single_line: [ON_OFF, 1],
         },
     });
 

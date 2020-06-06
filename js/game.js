@@ -993,17 +993,18 @@ function create_field_value(text) {
 function create_live_table(is_live, id) {
     let html =
         '<vert class="live fastart">'
-            + '<div class="live-basic">'
-                + '<i class="engine" data-x="name"></i>'
-                + ` <i class="eval" data-x="eval"></i> <i class="percent">[<i data-x="score"></i>]</i>`
-            + '</div>';
+            + '<grid class="live-basic">'
+                + '<div class="engine" data-x="name"></div>'
+                + '<div class="eval" data-x="eval"></div>'
+                + '<div class="percent">[<i data-x="score"></i>]</div>'
+            + '</grid>';
 
     if (is_live)
         html +=
-            '<div class="live-more eval">'
+            '<div class="live-more">'
                 + '[D: <i data-x="depth"></i> | TB: <i data-x="tb"></i> | Sp: <i data-x="speed"></i> | N: <i data-x="node"></i>]'
             + '</div>'
-            + `<div class="live-engine engine" data-x="live+${id}"></div>`;
+            + `<div class="hardware engine" data-x="live+${id}"></div>`;
 
     html +=
             '{TEMP}'
@@ -2318,7 +2319,7 @@ function update_move_pv(section, ply, move) {
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
 
-    if (Y.info_eval) {
+    if (Y.eval) {
         for (let child of [box_node, node]) {
             HTML(`[data-x="eval"]`, status_eval, child);
             HTML(`[data-x="score"]`, status_score, child);
@@ -2763,7 +2764,7 @@ function update_live_eval(section, data, id, force_ply) {
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
-        let is_hide = !Y.info_eval,
+        let is_hide = !Y.eval,
             dico = {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
