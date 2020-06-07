@@ -20,8 +20,8 @@ listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, 
 push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
-translate_expression, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts,
-update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -669,17 +669,21 @@ function show_board_info(show) {
         status = Y.status;
 
     if (show == undefined) {
-        // auto => if board is visible and engine is not => show the status
+        // auto => if engine is not visible => show the status
         if (status == 'auto') {
-            let engine = Id('engine'),
-                rect_b = main.node.getBoundingClientRect(),
-                rect_e = engine.getBoundingClientRect();
+            let window_height = window.innerHeight,
+                window_width = window.innerWidth;
 
-            if (Visible(main.node) && rect_b.top >= 0 && rect_b.top + rect_b.height <= window.innerHeight
-                    && rect_b.left >= 0 && rect_b.left + rect_b.width <= window.innerWidth)
-                if (!Visible(engine) || rect_e.top > window.innerHeight || rect_e.top + rect_e.height < 0
-                        || rect_e.left > window.innerWidth || rect_e.left + rect_e.width < 0)
+            if (window_width <= 568)
+                show = true;
+            else {
+                let engine = Id('engine'),
+                    rect_e = engine.getBoundingClientRect();
+
+                if (!Visible(engine) || rect_e.top > window_height || rect_e.top + rect_e.height < 0
+                        || rect_e.left > window_width || rect_e.left + rect_e.width < 0)
                     show = true;
+            }
         }
         else
             show = (status != 0);
@@ -1544,7 +1548,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'start':
                 let [date, time] = FromTimestamp(value);
-                value = `${row.started? '': translate_expression('{Estd}: ')}${time} <i class="year">20${date}</i>`;
+                value = `${row.started? '': '<i data-t="{Estd}: "></i>'}${time} <i class="year">20${date}</i>`;
                 break;
             case 'termination':
                 value = `<i data-t="${value}"></i>`;
