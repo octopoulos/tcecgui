@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-06-07
 //
 // Game specific code:
 // - control the board, moves
@@ -301,6 +301,20 @@ function create_game_link(section, game, text, only_link) {
 }
 
 /**
+ * Format a full engine name
+ * @param {string} engine
+ * @returns {string}
+ */
+function format_engine(engine) {
+    if (!engine)
+        return '';
+    let pos = engine.indexOf(' ');
+    if (pos < 0)
+        return engine;
+    return `${engine.slice(0, pos)} <i class="version">${engine.slice(pos + 1)}</i>`;
+}
+
+/**
  * Format the eval to make the 2 decimals smaller if the eval is high
  * @param {number} value
  * @param {boolean=} process can make decimals smaller
@@ -330,6 +344,21 @@ function format_eval(value, process) {
 }
 
 /**
+ * Format a FEN
+ * @param {string} fen
+ * @returns {string}
+ */
+function format_fen(fen) {
+    if (!fen)
+        return '';
+    let pos = fen.indexOf(' ');
+    if (pos < 0)
+        return fen;
+    let left = fen.slice(0, pos).split('/').map(item => `<i class="nowrap">${item}</i>`).join('/');
+    return `${left} <i class="nowrap">${fen.slice(pos + 1)}</i>`;
+}
+
+/**
  * Format seconds to hh:mm:ss + handle days
  * @param {number} seconds
  * @returns {string}
@@ -341,6 +370,46 @@ function format_hhmmss(seconds) {
     if (days)
         text = `${days}d, ${text}`;
     return text;
+}
+
+/**
+ * Format an opening
+ * @param {string} opening
+ * @returns {string}
+ */
+function format_opening(opening) {
+    if (!opening)
+        return '';
+    let pos = opening.indexOf(', ');
+    if (pos < 0)
+        return opening;
+
+    let left = opening.slice(0, pos),
+        replaces = [],
+        right = opening.slice(pos) + ',';
+
+    // (with ...g6, without ...d6) => {{1}}
+    right = right.replace(/ \((.*?)\)/g, (_match, p1) => {
+        p1 = p1.replace(/ /g, '&nbsp;');
+        if (p1.indexOf(',') >= 0)
+            p1 = `,${p1}`;
+        replaces.push(p1);
+        return `{{${replaces.length}}}`;
+    });
+
+    // , modern, Larsen variation, => , modern, Larsen&nbsp;variation,
+    right = right.replace(/, (.*?)(?=,)/g, (_match, p1) => `, ${p1.replace(/ /g, '&nbsp;')}`);
+
+    // restore replaces
+    if (replaces.length)
+        right = right.replace(/\{\{(\d+)\}\}/g, (_match, p1) => {
+            let replace = replaces[p1 * 1 - 1];
+            if (replace[0] == ',')
+                replace = replace.slice(1);
+            return ` (${replace})`;
+        });
+
+    return `<i class="nowrap">${left}</i><i class="small">${right.slice(0, -1)}</i>`;
 }
 
 /**
@@ -1042,7 +1111,7 @@ function create_table(columns, add_empty) {
 function create_table_columns(columns, widths, no_translates=[], titles={}) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
-            style = widths? ` style="width:${widths[id]}"`: '',
+            style = widths? ` style="${no_translates.length? 'min-width:4.5em;': ''}width:${widths[id]}"`: '',
             title = titles[value] || TITLES[value],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
@@ -1405,6 +1474,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'win';
                 else if (row.result == '1-0')
                     class_ = 'loss';
+                value = format_engine(value);
                 break;
             case 'download':
             case 'pgn':
@@ -1415,11 +1485,13 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'winner':
                 if (!is_winner) {
                     td_class = 'tal';
-                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${value}</div></hori>`;
+                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${format_engine(value)}</div></hori>`;
                 }
                 break;
             case 'final_fen':
-                td_class = 'fen';
+                if (value.length > 1)
+                    td_class = 'fen';
+                value = format_fen(value);
                 break;
             case 'game':
                 if (is_sched && section == 'archive')
@@ -1432,6 +1504,14 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     let query = QueryString({query: row.link.split('?').slice(-1)[0], replace: {x: 'archive'}, string: true});
                     value = `<a class="loss" href="#${query}">${value}</a>`;
                 }
+                break;
+            case 'opening':
+                td_class = 'opening';
+                value = format_opening(value);
+                break;
+            case 'result':
+                td_class = 'nowrap';
+                value = value.replace(/1\/2/g, '½');
                 break;
             case 'score':
                 if (is_winner)
@@ -1462,13 +1542,14 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'start':
                 let [date, time] = FromTimestamp(value);
-                value = `${row.started? '': translate_expression('{Estd}: ')}${time} on 20${date}`;
+                value = `${row.started? '': translate_expression('{Estd}: ')}${time} <i class="year">20${date}</i>`;
                 break;
             case 'white':
                 if (row.result == '1-0')
                     class_ = 'win';
                 else if (row.result == '0-1')
                     class_ = 'loss';
+                value = format_engine(value);
                 break;
             default:
                 if (typeof(value) == 'string') {
@@ -2397,7 +2478,7 @@ function update_overview_basic(section, headers) {
             Attrs(engine_node, {title: name});
         }
 
-        HTML(`#engine${id}`, name);
+        HTML(`#engine${id}`, `<div>${format_engine(name)}</div>`);
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
