@@ -8,57 +8,57 @@
       [
         "engine",
         1,
-        3
+        2
       ],
       [
         "table-pv",
         1,
-        1
+        2
       ],
       [
         "table-pva",
         1,
-        1
+        2
       ],
       [
         "table-tb",
         1,
-        1
+        2
       ],
       [
         "table-mobil",
         0,
-        1
+        2
       ],
       [
         "table-eval",
         1,
-        3
+        2
       ],
       [
         "table-kibitz",
         1,
-        1
+        2
       ],
       [
         "table-depth",
         1,
-        1
+        2
       ],
       [
         "table-speed",
         1,
-        1
+        2
       ],
       [
         "table-node",
         1,
-        1
+        2
       ],
       [
         "table-time",
         0,
-        1
+        2
       ],
       [
         "moves-archive",
@@ -78,22 +78,22 @@
         1
       ],
       [
-        "live",
-        0,
-        1
-      ],
-      [
         "moves-pv0",
         0,
-        1
+        0
       ],
       [
         "moves-pv1",
         0,
-        1
+        0
       ],
       [
         "table-live0",
+        0,
+        0
+      ],
+      [
+        "live",
         0,
         1
       ]
@@ -101,8 +101,8 @@
     "right0": [
       [
         "table-chat",
-        0,
-        3
+        1,
+        2
       ],
       [
         "table-winner",
@@ -127,7 +127,7 @@
       [
         "table-live1",
         0,
-        1
+        0
       ],
       [
         "quick-pagin",
@@ -171,7 +171,7 @@
   "board_theme_pva": "blue",
   "book_every": 600,
   "capture_delay": -200,
-  "chat_height": 682,
+  "chat_height": 654,
   "column_bottom": 4,
   "column_top": 2,
   "custom_black": "#000000",
@@ -216,29 +216,29 @@
   "live_engine_2": 1,
   "live_log": "all",
   "live_pv": 1,
-  "max_center": 500,
-  "max_left": 500,
-  "max_right": 500,
+  "max_center": 451,
+  "max_left": 580,
+  "max_right": 0,
   "max_window": 1920,
   "min_center": 300,
   "min_left": 300,
-  "min_right": 300,
+  "min_right": 0,
   "mobility": 1,
   "more": 1,
-  "move_height": 7.1,
-  "move_height_copy": 21,
+  "move_height": 7,
+  "move_height_copy": 33,
   "move_height_live": 3.6,
   "move_height_pv": 7,
   "move_height_pva": 6,
-  "moves": 1,
-  "moves_copy": 0,
+  "moves": 0,
+  "moves_copy": 1,
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
   "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
-  "order": "center|left|right",
+  "order": "left|center|right",
   "panel_adjust": 0,
   "panel_gap": 8,
   "percent": 1,
@@ -266,20 +266,20 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": "0",
+  "status": "1",
   "status_pv": 1,
   "table_tab": {
     "archive": "sched",
-    "live": "brak"
+    "live": "stand"
   },
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",
-  "theme": "dark",
+  "theme": "light",
   "three": 0,
   "turn_color": "#ff5a00",
   "turn_opacity": 0.25,
-  "twitch_chat": 1,
+  "twitch_chat": 0,
   "twitch_dark": 1,
   "volume": 7,
   "wheel_adjust": 63,
