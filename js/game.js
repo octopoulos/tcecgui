@@ -1546,6 +1546,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 let [date, time] = FromTimestamp(value);
                 value = `${row.started? '': translate_expression('{Estd}: ')}${time} <i class="year">20${date}</i>`;
                 break;
+            case 'termination':
+                value = `<i data-t="${value}"></i>`;
+                break;
             case 'white':
                 if (row.result == '1-0')
                     class_ = 'win';
