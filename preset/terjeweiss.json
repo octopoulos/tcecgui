@@ -249,7 +249,7 @@
   "reload_missing": 1,
   "resolution": "1:2",
   "rows_per_page": 20,
-  "scroll_inertia": 0.85,
+  "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "0",
   "shortcut_2": "0",
