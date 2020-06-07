@@ -1148,9 +1148,6 @@ grid {
     flex: 1;
     width: 100%;
 }
-#bottom {
-    margin-bottom: 1em;
-}
 #bottom > vert {
     margin: 2px;
 }
@@ -1181,7 +1178,7 @@ grid {
 .panel {
     flex: 1;
     margin: 4px;
-    max-width: 450x;
+    max-width: 450px;
     min-height: 350px;
     min-width: 300px;
 }
@@ -1248,9 +1245,11 @@ grid {
 }
 
 /* extras */
-#ad0,
-#ad1 {
+#ad0 {
     margin: 0 0.5em;
+}
+#ad1 {
+    margin: 1em 0.5em 0 0.5em;
 }
 #ad0,
 #ad0 > * {

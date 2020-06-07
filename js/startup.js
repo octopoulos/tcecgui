@@ -58,8 +58,15 @@ let AD_STYLES = {},
     old_stream = 0,
     old_window_height,
     old_x,
-    // min & max allowed widths, when the value is <= min => automatic
-    PANEL_WIDTHS = [281, 1200],
+    PRESETS = [
+        'custom',
+        'default settings',
+        'jerehmia',
+        'kanchess',
+        'minimal',
+        'octopoulo',
+        'terjeweiss',
+    ],
     resume_time = Now(),
     STREAM_SETTINGS = {},
     TAB_NAMES = {
@@ -186,6 +193,9 @@ function change_setting_special(name, value, no_close) {
     case 'max_center':
     case 'max_left':
     case 'max_right':
+    case 'min_center':
+    case 'min_left':
+    case 'min_right':
     case 'max_window':
     case 'panel_gap':
         resize();
@@ -866,12 +876,12 @@ function populate_areas() {
                 continue;
 
             if (tab || prev_tab) {
-                if (!prev_tab) {
-                    tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
-                    parent.appendChild(tabs);
-                }
-
                 if (show & 1) {
+                    if (!prev_tab) {
+                        tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
+                        parent.appendChild(tabs);
+                    }
+
                     let text = id.split('-');
                     text = text.slice(-text.length + 1).join('-');
                     text = TAB_NAMES[text] || Title(text);
@@ -1004,10 +1014,22 @@ function resize_panels() {
         window_width = window.innerWidth;
     for (let panel of panels) {
         let name = panel.id,
-            value = Y[`max_${name}`];
+            max_width = Y[`max_${name}`],
+            min_width = Y[`min_${name}`],
+            styles = [`margin:0 ${panel_gap}px`];
 
-        Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
-        Style(`#${name}`, `margin:0 ${panel_gap}px;max-width:${value}px`, value > PANEL_WIDTHS[0]);
+        if (max_width <= 0 && min_width <= 0)
+            Hide(panel);
+        else {
+            if (max_width > -1)
+                styles.push(`max-width:${max_width}`);
+            if (min_width > -1)
+                styles.push(`min-width:${min_width}`);
+
+            Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
+            Style(panel, styles.join(';'));
+            Show(panel);
+        }
     }
 
     // swaps
@@ -1475,9 +1497,19 @@ function set_global_events() {
             move_pane(node, index * 2 - 3);
         // 3, 4 => - +
         else if (index <= 4) {
-            let name = `max_${node.id}`,
-                sizer = _('.size', node);
-            save_option(name, Clamp(Y[name] + (index * 2 - 7) * 10, PANEL_WIDTHS[0], PANEL_WIDTHS[1]));
+            let add = index * 2 - 7,
+                name = `max_${node.id}`,
+                sizer = _('.size', node),
+                value = Y[name];
+
+            if (add > 0)
+                value += (value < 0)? 1: add * 10;
+            else if (value > 0 && value < 10)
+                value = 0;
+            else
+                value += add * 10;
+
+            save_option(name, Clamp(value, -1, 1200));
             HTML(sizer, Y[name]);
             Show(sizer);
             add_timeout('size', () => {Hide('.size');}, TIMEOUT_size);
@@ -1808,7 +1840,7 @@ function startup() {
         // new column after 10 items
         _split: 10,
         general: {
-            preset: [['custom', 'default settings', 'jerehmia', 'kanchess', 'octopoulo'], 'custom'],
+            preset: [PRESETS, 'custom'],
         },
         audio: {
             audio_book: [ON_OFF, 1],
@@ -1979,9 +2011,12 @@ function startup() {
             column_bottom: option_number(4, 1, 8),
             column_top: option_number(2, 1, 8),
             default_positions: '1',
-            max_center: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
-            max_left: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
-            max_right: option_number(500, PANEL_WIDTHS[0], PANEL_WIDTHS[1]),
+            max_center: option_number(500, -1, 1200),
+            max_left: option_number(500, -1, 1200),
+            max_right: option_number(500, -1, 1200),
+            min_center: option_number(300, -1, 1200),
+            min_left: option_number(300, -1, 1200),
+            min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 1],
             panel_gap: option_number(16, 0, 100),
