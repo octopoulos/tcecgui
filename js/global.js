@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Abs, Atan, DEV:true, IsArray, Keys, LS, Pad, Pow, Round, save_option, Undefined, X_SETTINGS, Y
+Abs, Atan, DEV:true, IsArray, Keys, LS, Pad, Pow, Round, save_option, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';
 

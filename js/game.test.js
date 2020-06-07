@@ -24,7 +24,8 @@ create_module(IMPORT_PATH, [
 
 let {
         Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
-        create_game_link, format_eval, format_hhmmss, format_percent, get_short_name, players, tour_info, Y,
+        create_game_link, format_engine, format_eval, format_hhmmss, format_opening, format_percent, get_short_name,
+        players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,6 +147,21 @@ let {
     });
 });
 
+// format_engine
+[
+    ['', ''],
+    [undefined, ''],
+    ['Fire 8_beta', 'Fire <i class="version">8_beta</i>'],
+    ['LCZero v0.24-sv-t60-3010', 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
+    ['Stockfish 20200407DC', 'Stockfish <i class="version">20200407DC</i>'],
+    ['Stoofvlees II a14', 'Stoofvlees <i class="version">II a14</i>'],
+    ['SuperBaronizer', 'SuperBaronizer'],
+].forEach(([text, answer], id) => {
+    test(`format_engine:${id}`, () => {
+        expect(format_engine(text)).toEqual(answer);
+    });
+});
+
 // format_eval
 [
     ['', null, undefined, null],
@@ -195,6 +211,28 @@ let {
     });
 });
 
+// format_opening
+[
+    ['', ''],
+    [undefined, ''],
+    [
+        "Alekhine's defence, modern, Larsen variation",
+        '<i class="nowrap">Alekhine\'s defence</i><i class="small">, modern, Larsen&nbsp;variation</i>',
+    ],
+    [
+        'English, Neo-Catalan accepted',
+        '<i class="nowrap">English</i><i class="small">, Neo-Catalan&nbsp;accepted</i>',
+    ],
+    [
+        'Sicilian, Nimzovich-Rossolimo attack (with ...g6, without ...d6)',
+        '<i class="nowrap">Sicilian</i><i class="small">, Nimzovich-Rossolimo&nbsp;attack (with&nbsp;...g6,&nbsp;without&nbsp;...d6)</i>',
+    ],
+].forEach(([text, answer], id) => {
+    test(`format_opening:${id}`, () => {
+        expect(format_opening(text)).toEqual(answer);
+    });
+});
+
 // format_percent
 [
     [null, '0%'],
@@ -216,8 +254,10 @@ let {
 [
     ['', ''],
     [undefined, ''],
+    ['Fire 8_beta', 'Fire'],
     ['LCZero v0.24-sv-t60-3010', 'LCZero'],
     ['Stockfish 20200407DC', 'Stockfish'],
+    ['Stoofvlees II a14', 'Stoofvlees'],
     ['SuperBaronizer', 'Baron'],
 ].forEach(([text, answer], id) => {
     test(`get_short_name:${id}`, () => {

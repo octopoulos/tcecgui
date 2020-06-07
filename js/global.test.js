@@ -92,7 +92,6 @@ let {
     });
 });
 
-
 // leela_cp_to_score
 [
     [0, 0],
