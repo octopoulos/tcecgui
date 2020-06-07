@@ -1022,9 +1022,9 @@ function resize_panels() {
             Hide(panel);
         else {
             if (max_width > -1)
-                styles.push(`max-width:${max_width}`);
+                styles.push(`max-width:${max_width}px`);
             if (min_width > -1)
-                styles.push(`min-width:${min_width}`);
+                styles.push(`min-width:${min_width}px`);
 
             Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
             Style(panel, styles.join(';'));

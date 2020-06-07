@@ -1143,9 +1143,6 @@ function touch_handle(e, full) {
         set_scroll();
 
         drag = [change, stamp];
-
-        if (e.cancelable || type5 != 'touch')
-            e.preventDefault();
     }
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
@@ -1188,6 +1185,7 @@ function touch_handle(e, full) {
         }
     }
 
+    e.preventDefault();
     e.stopPropagation();
 }
 
@@ -1291,15 +1289,16 @@ function set_engine_events() {
 
     // iframe support: scroll going to opposite expected way => stop the animation
     Events(window, 'scroll', () => {
-        if (animation == null)
+        if (Abs(touch_speed.x) <= 0.03 && Abs(touch_speed.y) <= 0.03)
             return;
-        if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
-            let y = ScrollDocument(),
-                sign = Sign(y - touch_scroll.y);
-            if (sign && sign != -Sign(touch_speed.y)) {
+        let y = ScrollDocument(),
+            sign = Sign(y - touch_scroll.y);
+        if (sign && sign != -Sign(touch_speed.y)) {
+            if (animation) {
                 cancelAnimationFrame(animation);
                 animation = null;
             }
+            stop_drag();
         }
     });
 }
