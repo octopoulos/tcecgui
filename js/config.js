@@ -135,8 +135,8 @@ function startup_config() {
     // - the top ad=0, middle ad=1
     // - the container has a 550px max width, so if you want more px, the width should be specified in px
     Assign(AD_STYLES, {
-        0: 'width:100%;max-height:210px',
-        1: 'width:100%;max-height:280px',
+        0: 'width:100%;height:250px',
+        1: 'width:100%;height:320px',
     });
 
     // startup timeouts in ms

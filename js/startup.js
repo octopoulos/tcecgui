@@ -31,10 +31,7 @@ X_SETTINGS, xboards, Y
 */
 'use strict';
 
-let AD_STYLES = {
-        0: 'width:100%;max-height:210px',
-        1: 'width:100%;max-height:280px',
-    },
+let AD_STYLES = {},
     CHAMPIONS = [],
     CONTEXT_MENUS = {
         '#engine': 'engine',
@@ -1920,7 +1917,7 @@ function startup() {
             drag_and_drop: [ON_OFF, 0],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
-            scroll_inertia: option_number(0.85, 0, 0.99, 0.01),
+            scroll_inertia: option_number(0.95, 0, 0.99, 0.01),
             wheel_adjust: option_number(63, 0, 240),
             wrap: [ON_OFF, 1],
             wrap_cross: [AUTO_ON_OFF, 'auto'],

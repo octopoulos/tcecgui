@@ -237,7 +237,7 @@ grid {
 .nav {
     color: #bbb;
     cursor: pointer;
-    padding: 0.7em;
+    padding: 0.65em;
     z-index: 1;
 }
 .nav:hover {
@@ -249,6 +249,7 @@ grid {
 }
 #icons {
     flex: 1;
+    padding-right: 0.2em;
 }
 .red {
     color: red !important;
@@ -1170,7 +1171,7 @@ grid {
     pointer-events: all;
 }
 #banners {
-    margin: 0.1em 0 2em 0;
+    margin: 0.15em 0 2em 0;
 }
 #banners,
 #main {
@@ -1196,6 +1197,7 @@ grid {
     min-width: 372px;
 }
 #footer {
+    font-size: 0.9em;
     padding: 1em;
 }
 #footer > * {
@@ -1204,9 +1206,11 @@ grid {
 #desc {
     max-width: 666px;
 }
-#keycode,
+#keycode {
+    font-size: 0.5em;
+}
 #version {
-    font-size: small;
+    font-size: 0.9em;
 }
 .tabs {
     justify-content: center;
@@ -1332,7 +1336,7 @@ pre,
 }
 svg.down {
     transition: transform 0.2s;
-    margin: -1px 0px 0 4px;
+    margin: -1px 0px 0 3px;
 }
 .markers {
     position: absolute;
@@ -1357,6 +1361,11 @@ svg.down {
 }
 
 /* media */
+@media (max-width: 330px) {
+    #header {
+        font-size: 0.9em;
+    }
+}
 @media (max-width: 560px) {
     #ad0,
     #ad1 {
