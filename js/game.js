@@ -303,15 +303,17 @@ function create_game_link(section, game, text, only_link) {
 /**
  * Format a full engine name
  * @param {string} engine
+ * @param {boolean=} multi_line engine + version on 2 different lines
  * @returns {string}
  */
-function format_engine(engine) {
+function format_engine(engine, multi_line) {
     if (!engine)
         return '';
     let pos = engine.indexOf(' ');
     if (pos < 0)
         return engine;
-    return `${engine.slice(0, pos)} <i class="version">${engine.slice(pos + 1)}</i>`;
+    let tag = multi_line? 'div': 'i';
+    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="version">${engine.slice(pos + 1)}</${tag}>`;
 }
 
 /**
@@ -994,8 +996,8 @@ function check_pagination(parent) {
 function check_paginations() {
     for (let parent of PAGINATION_PARENTS) {
         let num_page = check_pagination(parent);
-        S(`#${parent}-pagin`, num_page > 1);
-        S(`#${parent}-search`, Abs(num_page) >= 1);
+        S(Id(`${parent}-pagin`), num_page > 1);
+        S(Id(`${parent}-search`), Abs(num_page) >= 1);
     }
 }
 
@@ -1316,7 +1318,7 @@ function show_tables(type) {
     Class('div.tab', '-active', true, parent);
     Class(`[data-x="${target}"]`, 'active', true, parent);
     Hide('div.scroller', parent);
-    Show(`#table-${target}`);
+    Show(Id(`table-${target}`));
 }
 
 /**
@@ -1590,7 +1592,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // open game
     C('[data-g]', function(e) {
-        if (HasClass(e.target, 'fen'))
+        if (Parent(e.target, {class_: 'fen', self: true}))
             return;
         if (cannot_click())
             return;
@@ -2359,7 +2361,7 @@ function update_move_info(ply, move, fresh) {
         };
 
     Keys(stats).forEach(key => {
-        HTML(`#${key}${id}`, stats[key]);
+        HTML(Id(`${key}${id}`), stats[key]);
     });
 
     if (fresh || Y.x == 'archive')
@@ -2478,7 +2480,7 @@ function update_overview_basic(section, headers) {
             Attrs(engine_node, {title: name});
         }
 
-        HTML(`#engine${id}`, `<div>${format_engine(name)}</div>`);
+        HTML(Id(`engine${id}`), format_engine(name, true));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
@@ -2702,7 +2704,7 @@ function update_pgn(section, pgn, reset_moves) {
 function update_scores() {
     for (let id = 0; id < 2; id ++) {
         let player = players[id];
-        HTML(`#score${id}`, `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
+        HTML(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
     }
 }
 
@@ -2750,7 +2752,7 @@ function start_clock(id, finished, delta) {
     if (Y.x != 'live')
         return;
 
-    S(`#cog${id}`, !finished);
+    S(Id(`cog${id}`), !finished);
     Hide(`#cog${1 - id}`);
 
     let node = xboards.live.node,
@@ -2806,8 +2808,8 @@ function update_clock(id, move) {
     left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
-    HTML(`#remain${id}`, left);
-    HTML(`#time${id}`, time);
+    HTML(Id(`remain${id}`), left);
+    HTML(Id(`time${id}`), time);
     player.sleft = left;
     player.stime = time;
 
@@ -2974,7 +2976,7 @@ function update_player_eval(section, data) {
     if (data.ply == cur_ply + 1) {
         let stats = {
             depth: data.depth,
-            engine: data.engine,
+            engine: format_engine(data.engine, true),
             eval: format_eval(eval_, true),
             logo: short,
             node: FormatUnit(data.nodes),
@@ -2982,7 +2984,7 @@ function update_player_eval(section, data) {
             tb: FormatUnit(data.tbhits),
         };
         Keys(stats).forEach(key => {
-            HTML(`#${key}${id}`, stats[key]);
+            HTML(Id(`${key}${id}`), stats[key]);
         });
     }
 

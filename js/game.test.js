@@ -149,16 +149,17 @@ let {
 
 // format_engine
 [
-    ['', ''],
-    [undefined, ''],
-    ['Fire 8_beta', 'Fire <i class="version">8_beta</i>'],
-    ['LCZero v0.24-sv-t60-3010', 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
-    ['Stockfish 20200407DC', 'Stockfish <i class="version">20200407DC</i>'],
-    ['Stoofvlees II a14', 'Stoofvlees <i class="version">II a14</i>'],
-    ['SuperBaronizer', 'SuperBaronizer'],
-].forEach(([text, answer], id) => {
+    ['', undefined, ''],
+    [undefined, undefined, ''],
+    ['Fire 8_beta', undefined, 'Fire <i class="version">8_beta</i>'],
+    ['LCZero v0.24-sv-t60-3010', undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
+    ['Stockfish 20200407DC', undefined, 'Stockfish <i class="version">20200407DC</i>'],
+    ['Stoofvlees II a14', undefined, 'Stoofvlees <i class="version">II a14</i>'],
+    ['Stoofvlees II a14', true, 'Stoofvlees<div class="version">II a14</div>'],
+    ['SuperBaronizer', undefined, 'SuperBaronizer'],
+].forEach(([text, multi_line, answer], id) => {
     test(`format_engine:${id}`, () => {
-        expect(format_engine(text)).toEqual(answer);
+        expect(format_engine(text, multi_line)).toEqual(answer);
     });
 });
 
