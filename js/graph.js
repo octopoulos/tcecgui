@@ -4,7 +4,7 @@
 //
 /*
 globals
-_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Keys,
+_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
 load_library, LS, Pad, players, Round, SetDefault, Sign, Visible, window, xboards, Y
 */
 'use strict';
@@ -223,7 +223,7 @@ function create_charts()
 
     // 2) click events
     Keys(charts).forEach(name => {
-        C(`#chart-${name}`, e => {
+        C(Id(`chart-${name}`), e => {
             let chart = charts[name],
                 point = chart.getElementAtEvent(e)[0];
             if (!point)
@@ -568,7 +568,7 @@ function update_live_chart(moves, id) {
  * @param {Move[]} moves
  */
 function update_player_chart(name, moves) {
-    if (!Visible(`#table-${name}`))
+    if (!Visible(Id(`table-${name}`)))
         return;
 
     let data = chart_data[name];

@@ -764,7 +764,7 @@ class XBoard {
                 if (other_id < 2)
                     Hide(other.svg);
                 else {
-                    AttrsNS(`#mk${name}_${other_id}_1`, {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
+                    AttrsNS(Id(`mk${name}_${other_id}_1`), {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
                     Hide(this.svgs[id].svg);
                     return;
                 }

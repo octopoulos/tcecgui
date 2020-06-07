@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-04-29 : add SVG connectors to the bracket
+2020-06-07 : 2020-06-07 : multi line engine => can use a larger font too
 2020-06-07 : 2020-06-07 : format_engine, format_fen, format_opening
 2020-06-07 : 2020-06-07 : panels can be hidden
 2020-06-06 : 2020-06-06 : optimize UI for iPhone 4 and iPhone SE

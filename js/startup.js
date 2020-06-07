@@ -748,7 +748,7 @@ function move_pane(node, dir) {
     }
 
     names.forEach((name, id) => {
-        Style(`#${name}`, `order:${id}`);
+        Style(Id(name), `order:${id}`);
     });
 
     if (node)
@@ -1109,7 +1109,7 @@ function show_archive_live() {
     Hide(is_live? '#archive': '#live');
     Hide(`#moves-${is_live? 'archive': 'live'}`);
     if (!Y.moves_copy)
-        Hide(`#moves-${section}`);
+        Hide(Id(`moves-${section}`));
 }
 
 /**
@@ -1293,7 +1293,7 @@ function update_shortcuts() {
             if (target) {
                 tab.dataset.t = target.dataset.t;
                 translate_node(tab.parentNode);
-                HTML(`#shortcut_${id}`, HTML(`#table-${shortcut}`));
+                HTML(Id(`shortcut_${id}`), HTML(Id(`table-${shortcut}`)));
             }
         }
         S(tab, shortcut);

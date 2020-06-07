@@ -904,9 +904,7 @@ grid {
 .logo > img {
     height: 40px;
 }
-#engine0,
-#engine1 {
-    font-size: 0.8em;
+.engine-box {
     height: 3em;
 }
 #eval0,

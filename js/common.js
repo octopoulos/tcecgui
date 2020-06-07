@@ -470,14 +470,14 @@ function Hide(sel, parent) {
 function HTML(sel, html, parent) {
     if (!sel) return;
     if (typeof(sel) == 'object') {
-        if (html !== undefined)
+        if (html !== undefined && html != sel.innerHTML)
             sel.innerHTML = html;
         return sel.innerHTML;
     }
     //
     let result;
     E(sel, node => {
-        if (html !== undefined)
+        if (html !== undefined && html != node.innerHTML)
             node.innerHTML = html;
         // FUTURE: use ?? operator
         if (result == undefined)
