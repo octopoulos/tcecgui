@@ -905,6 +905,7 @@ grid {
     height: 40px;
 }
 .engine-box {
+    font-size: 0.9em;
     height: 3em;
 }
 #eval0,
