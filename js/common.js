@@ -983,8 +983,19 @@ function DefaultFloat(value, def) {
  * @param {string=} space JSON space for pretty output
  */
 function DownloadObject(object, name, is_raw, space) {
-    let text = is_raw? object: `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(object, null, space))}`,
+    let text,
         node = document.createElement('a');
+
+    if (is_raw)
+        text = object;
+    else {
+        let json = JSON.stringify(object, null, space);
+        // add a newline to formatted JSON
+        if (space && json.slice(-1) != '\n')
+            json += '\n';
+        text = `data:text/json;charset=utf-8,${encodeURIComponent(json)}`;
+    }
+
     node.setAttribute('href', text);
     node.setAttribute('download', name);
      // required for firefox
