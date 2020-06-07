@@ -741,6 +741,7 @@ grid {
     font-size: 0.9em;
     padding: 0.2em 1em;
     text-align: center;
+    white-space: nowrap;
     z-index: 1;
 }
 .tab:hover {
@@ -753,6 +754,9 @@ grid {
 }
 .tab > i {
     pointer-events: none;
+}
+#table-tabs > .tab {
+    white-space: normal;
 }
 .subscribe {
     margin-right: 0.2em;
@@ -1384,7 +1388,7 @@ svg.down {
         font-size: 0.9em;
     }
 }
-@media (max-width: 560px) {
+@media (max-width: 568px) {
     #ad0,
     #ad1 {
         display: none;
