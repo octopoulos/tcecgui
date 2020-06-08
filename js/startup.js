@@ -401,6 +401,7 @@ function check_stream() {
         load_preset('stream');
         Assign(Y, {
             language: 'eng',
+            twitch_chat: 0,
             twitch_video: 0,
         });
         scroll_adjust('#overview');
