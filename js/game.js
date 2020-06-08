@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-07
+// @version 2020-06-08
 //
 // Game specific code:
 // - control the board, moves
@@ -11,11 +11,12 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
+_, A, Abs, add_timeout, Assign, Attrs, AttrsNS, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, cube:true, DEV, document,
-E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object,
-getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray, Keys, KEYS,
+context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
+document, E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
+get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray,
+Keys, KEYS,
 listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
 push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
@@ -118,6 +119,15 @@ let ANALYSIS_URLS = {
         tour: 60,
         winner: 3600 * 24,
     },
+    CONNECTORS = [
+        [
+            [0, 'win', [1, 1]]
+        ],
+        [
+            [2, 'loss', [2, 1]],
+            [0, 'win', [1, 2]],
+        ],
+    ],
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -2010,15 +2020,14 @@ function create_bracket(section, data) {
     if (section != Y.x)
         return;
 
-    // 1)
+    // 1) create seeds
     window.event = data;
     let game = 1,
-        lines = ['<hori class="fastart noselect">'],
+        lines = ['<hori class="fastart noselect pr">'],
         teams = data.teams,
         num_team = teams.length,
-        number = num_team,
-        round_results = data.results[0] || [],
         round = 0,
+        round_results = data.results[0] || [],
         seeds = calculate_seeds(num_team * 2);
 
     // assign seeds
@@ -2028,16 +2037,16 @@ function create_bracket(section, data) {
     });
 
     // 2) create each round
-    while (number >= 1) {
+    for (let number = num_team; number >= 1; number /= 2) {
         let name = ROUND_NAMES[number] || `Round of ${number * 2}`,
             nexts = [],
             number2 = (number == 1)? 2: number,
             results = round_results[round] || [];
 
         lines.push(
-            '<vert class="rounds fstart h100">'
+            `<vert class="rounds fstart h100">`
             + `<div class="round" data-t="${name}"></div>`
-            + `<vert class="${number == 1? 'fcenter final': 'faround'} h100">`
+            + `<vert class="${number == 1? 'fcenter final': 'faround'} h100" data-r="${round}">`
         );
         for (let i = 0; i < number2; i ++) {
             let names = [0, 0],
@@ -2048,6 +2057,7 @@ function create_bracket(section, data) {
             if (team)
                 team.forEach((item, id) => {
                     let class_ = '',
+                        seed = item.seed,
                         short = get_short_name(item.name);
 
                     if (result[0] != result[1])
@@ -2055,11 +2065,14 @@ function create_bracket(section, data) {
 
                     names[id] = [
                         class_,
-                        `<hori title="${item.name}"><img class="match-logo" src="image/engine/${short}.jpg"><div>#${item.seed} ${short}</div></hori>`,
+                        `<hori title="${item.name}">`
+                            + `<img class="match-logo" src="image/engine/${short}.jpg"><div>#${seed} ${short}</div>`
+                        + '</hori>',
                     ];
                     scores[id] = [
                         class_,
                         result[id],
+                        seed,
                     ];
 
                     // propagate the winner to the next round
@@ -2071,7 +2084,7 @@ function create_bracket(section, data) {
                 });
 
             lines.push(
-                '<vert class="match fastart">'
+                `<vert class="match fastart">`
                     // final has 3rd place game too
                     + `<div class="match-title">#${game + (number == 1? 1 - i * 2: 0)}</div>`
                     + '<grid class="match-grid">'
@@ -2079,7 +2092,7 @@ function create_bracket(section, data) {
 
             for (let id = 0; id < 2; id ++) {
                 let [name_class, name] = names[id] || [],
-                    [score_class, score] = scores[id] || [];
+                    [score_class, score, seed] = scores[id] || [];
 
                 if (!name) {
                     name = 'TBD';
@@ -2091,8 +2104,8 @@ function create_bracket(section, data) {
                     name_class += ' fastart';
 
                 lines.push(
-                    `<vert class="name${name_class} fcenter">${name}</vert>`
-                    + `<vert class="score${score_class} fcenter">${score}</vert>`
+                    `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
+                    + `<vert class="score${score_class} fcenter" data-s="${seed}">${score}</vert>`
                 );
             }
 
@@ -2107,19 +2120,82 @@ function create_bracket(section, data) {
             + '</vert>'
         );
 
-        number /= 2;
         round ++;
         teams = nexts;
     }
 
     // 3) result
-    lines.push('</hori>');
+    lines.push('<div id="svgs"></div></hori>');
     let node = Id('table-brak');
     HTML(node, lines.join(''));
     translate_node(node);
 
     // necessary to correctly size each round
-    Style(node.firstChild, `height:${node.clientHeight}px`);
+    Style(node.firstChild, `height:${node.clientHeight}px;width:${261 * round}px`);
+    create_connectors();
+}
+
+/**
+ * Create a connector
+ * @param {Node} curr
+ * @param {number} id
+ * @param {Node[]} nexts
+ * @param {string} target
+ * @param {number[]} coeffs
+ * @param {string} viewbox
+ * @returns {Node}
+ */
+function create_connector(curr, id, nexts, target, coeffs, viewbox) {
+    // if there's a winner => connect the winner, otherwise the center
+    curr = _(`.score.${target}`, curr) || curr;
+    let seed = curr.dataset.s;
+
+    let next = nexts[Floor(id / 2)];
+    if (seed != undefined)
+        next = _(`[data-s="${seed}"]`, next) || next;
+
+    // create the SVG
+    let ax = curr.offsetLeft + curr.clientWidth,
+        ay = curr.offsetTop + curr.offsetHeight / 2,
+        bx = next.offsetLeft,
+        by = next.offsetTop + next.offsetHeight / 2,
+        mx = (ax * coeffs[0] + bx * coeffs[1]) / (coeffs[0] + coeffs[1]);
+
+        let path = CreateSVG('path', {
+            d: `M${ax} ${ay}L${mx} ${ay}L${mx} ${by}L${bx} ${by}`,
+            fill: 'none',
+        });
+
+    return CreateSVG('svg', {class: `connect ${target}`, viewBox: viewbox}, [path]);
+}
+
+/**
+ * Create bracket connectors
+ */
+function create_connectors() {
+    let node = Id('table-brak'),
+        svg_node = Id('svgs'),
+        svgs = [],
+        viewbox = `0 0 ${node.scrollWidth} ${node.scrollHeight}`;
+
+    for (let round = 0; ; round ++) {
+        let nexts = A(`[data-r="${round + 1}"] .match-grid`, node);
+        if (!nexts.length)
+            break;
+
+        let currs = A(`[data-r="${round}"] .match-grid`, node),
+            final = _(`[data-r="${round + 2}"]`, node)? 0: 1;
+
+        currs.forEach((curr, id) => {
+            for (let [offset, target, coeffs] of CONNECTORS[final]) {
+                let svg = create_connector(curr, id + offset, nexts, target, coeffs, viewbox);
+                svgs.push(svg);
+            }
+        });
+    }
+
+    HTML(svg_node, '');
+    InsertNodes(svg_node, svgs);
 }
 
 /**
@@ -2279,10 +2355,6 @@ function resize_game() {
 
     show_board_info();
     resize_3d();
-}
-
-function resize_sub_boards() {
-
 }
 
 /**
@@ -2451,18 +2523,26 @@ function update_overview_basic(section, headers) {
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
         let value = Undefined(headers[key], '');
+        key = Lower(key);
 
+        switch (key) {
         // TCEC Season 17 => S17
-        if (key == 'Event')
+        case 'event':
             value = value.replace('TCEC Season ', 'S');
-        else if (key == 'TimeControl') {
+            break;
+        case 'result':
+            value = value.replace(/1\/2/g, '½');
+            break;
+        case 'timecontrol':
             let items = value.split('+');
             key = 'tc';
             value = `${items[0]/60}'+${items[1]}"`;
             players[0].tc = items[0] * 1;
             players[1].tc = items[0] * 1;
+            break;
         }
-        HTML(`td[data-x="${Lower(key)}"]`, value, overview);
+
+        HTML(`td[data-x="${key}"]`, value, overview);
     });
 
     // 2) engines
