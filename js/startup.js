@@ -65,6 +65,7 @@ let AD_STYLES = {},
         'kanchess',
         'minimal',
         'octopoulo',
+        'stream',
         'terjeweiss',
     ],
     resume_time = Now(),
@@ -809,7 +810,7 @@ function populate_areas() {
             let is_tab;
             if (tab || prev_tab) {
                 if (show & 1) {
-                    if (!prev_tab) {
+                    if (!tabs) {
                         tabs = child;
                         if (!HasClass(child, 'tabs')) {
                             error = 'tabs';
@@ -875,7 +876,7 @@ function populate_areas() {
 
             if (tab || prev_tab) {
                 if (show & 1) {
-                    if (!prev_tab) {
+                    if (!tabs) {
                         tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
                         parent.appendChild(tabs);
                     }
