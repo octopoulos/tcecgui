@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-06-08 : 2020-06-08 : stream settings are now configurable as a preset
+2020-06-08 : 2020-06-08 : stream fix
 2020-06-08 : 2020-04-29 : add SVG connectors to the brackets
 2020-06-07 : 2020-06-07 : multi line engine => can use a larger font too
 2020-06-07 : 2020-06-07 : format_engine, format_fen, format_opening

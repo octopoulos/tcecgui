@@ -68,7 +68,6 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
-    STREAM_SETTINGS = {},
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -302,17 +301,7 @@ function change_setting_special(name, value, no_close) {
         populate_areas();
         break;
     case 'preset':
-        if (value == 'custom')
-            break;
-        else if (value == 'default settings')
-            reset_settings(true);
-        else {
-            Resource(`preset/${value}.json`, (code, data) => {
-                if (code != 200)
-                    return;
-                import_settings(data, true);
-            });
-        }
+        load_preset(value);
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -406,27 +395,17 @@ function check_stream() {
     let stream = Y.stream;
     if (stream == old_stream)
         return;
-
-    __PREFIX = stream? 'ts_': 'tc_';
-    load_defaults();
-    check_hash(true);
+    Y.stream = stream;
 
     if (stream) {
-        Assign(Y, STREAM_SETTINGS);
-        Y.stream = 1;
-    }
-
-    change_theme(Y.theme);
-    resize();
-
-    if (stream)
+        load_preset('stream');
+        Assign(Y, {
+            language: 'eng',
+            twitch_chat: 0,
+            twitch_video: 0,
+        });
         scroll_adjust('#overview');
-
-    // maybe the board has not been loaded yet
-    if (!xboards.live)
-        return;
-    update_board_theme(7);
-    old_stream = stream;
+    }
 }
 
 /**
@@ -731,6 +710,24 @@ function load_google_analytics() {
 }
 
 /**
+ * Load a preset
+ * @param {string} name
+ */
+function load_preset(name) {
+    if (name == 'custom')
+        return;
+    if (name == 'default settings')
+        reset_settings(true);
+    else {
+        Resource(`preset/${name}.json`, (code, data) => {
+            if (code != 200)
+                return;
+            import_settings(data, true);
+        });
+    }
+}
+
+/**
  * Move a pane left or right, swapping it with another
  * - call without arguments to initialise the panes at startup
  * @param {Node=} node
@@ -811,19 +808,21 @@ function populate_areas() {
 
             let is_tab;
             if (tab || prev_tab) {
-                if (!prev_tab) {
-                    tabs = child;
-                    if (!HasClass(child, 'tabs')) {
-                        error = 'tabs';
-                        break;
+                if (show & 1) {
+                    if (!prev_tab) {
+                        tabs = child;
+                        if (!HasClass(child, 'tabs')) {
+                            error = 'tabs';
+                            break;
+                        }
+
+                        child_id ++;
+                        child = children[child_id];
                     }
 
-                    child_id ++;
-                    child = children[child_id];
-                }
-
-                if (show & 1)
                     is_tab = true;
+                    prev_tab = tab;
+                }
                 show = show & 2;
             }
             else
@@ -843,7 +842,6 @@ function populate_areas() {
                 }
             }
 
-            prev_tab = tab;
             child_id ++;
             child = children[child_id];
         }
@@ -901,6 +899,7 @@ function populate_areas() {
                         });
 
                     tabs.appendChild(CreateNode('div', `<i data-t="${text}"></i>`, dico));
+                    prev_tab = tab;
                 }
                 show = show & 2;
             }
@@ -912,7 +911,6 @@ function populate_areas() {
             S('.label', !tab && !prev_tab, node);
 
             context_areas[id] = vector;
-            prev_tab = tab;
             exist ++;
         }
     });
@@ -2020,7 +2018,7 @@ function startup() {
             min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 1],
-            panel_gap: option_number(16, 0, 100),
+            panel_gap: option_number(10, 0, 100),
             unhide: '1',
         },
         quick: {

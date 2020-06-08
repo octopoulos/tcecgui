@@ -10,8 +10,7 @@
 /*
 globals
 AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
-HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, STREAM_SETTINGS, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true,
-TWITCH_CHAT:true
+HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -34,31 +33,6 @@ function startup_config() {
     Assign(ENGINE_FEATURES, {
         LCZeroCPU: 3,
         LCZeroCPU3pct: 3,
-    });
-
-    // stream settings
-    // - every option name is the same as what you see in the Options in English, but lowercase + underscores
-    // => 'Arrow opacity' becomes 'arrow_opacity'
-    Assign(STREAM_SETTINGS, {
-        areas: {
-            right0: [
-                ['quick-pagin', 0, 1],
-                ['table-chat', 1, 2],
-                ['table-winner', 1, 2],
-                ['table-info', 1, 2],
-                ['shortcut_1', 1, 3],
-                ['shortcut_2', 0, 0],
-                ['quick-search', 0, 1],
-            ],
-        },
-        max_center: 500,
-        max_left: 500,
-        max_right: 500,
-        no_ad: true,
-        shortcut_1: 'stand',
-        theme: 'dark',
-        twitch_chat: 0,
-        twitch_video: 0,
     });
 
     // first theme is always the default theme => don't change it
