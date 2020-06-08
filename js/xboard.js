@@ -779,11 +779,11 @@ class XBoard {
         }
 
         // other color might be green => should recolor it
-        if (id >= 2)
+        if (id >= 2 && dual.svg)
             AttrsNS('svg > path', {stroke: Y[`arrow_color_${dual_id}`]}, dual.svg);
 
         // 4) show the arrow
-        let body = this.create_svg(id),
+        let body = this.create_arrow(id),
             color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
             color_head = shead || mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
             marker0 = Id(`mk${name}_${id}_0`),
@@ -1053,7 +1053,7 @@ class XBoard {
      * @param {string} id
      * @returns {Node}
      */
-    create_svg(id) {
+    create_arrow(id) {
         let arrow = this.svgs[id].svg;
         if (arrow)
             return arrow;

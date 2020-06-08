@@ -1016,16 +1016,19 @@ grid {
 
 /* bracket */
 .rounds {
-    margin: 0 0.3em;
+    margin: 0 16px 0 0;
+    width: 245px;
 }
 .round {
     color: #888;
 }
 .match {
-    background: #808080;
+    background: rgba(128, 128, 128, 0.7);
+    border: 1px solid transparent;
     font-family: monospace;
     font-size: 13px;
     margin: 0.5em;
+    z-index: 3;
 }
 .final {
     margin-top: 33%;
@@ -1038,8 +1041,9 @@ grid {
     grid-template-columns: 1fr 35px;
 }
 .match-title {
+    background: #808080;
     color: #fff;
-    padding: 0.2em 0 0.2em 0.4em;
+    padding: 0.15em 0 0.2em 0.3em;
     width: 100%;
 }
 .match-logo {
@@ -1100,6 +1104,20 @@ grid {
 }
 .score.win {
     color: #060;
+}
+.connect {
+    left: 0;
+    position: absolute;
+    stroke-width: 3;
+    top: 0;
+}
+.connect.win {
+    opacity: 0.75;
+    stroke: #888888;
+}
+.connect.loss {
+    opacity: 0.15;
+    stroke: #888888;
 }
 
 /* live */

@@ -1688,6 +1688,7 @@ function startup() {
         '#overview tbody': [1, 0, 1],
         '#overview': [1, 0, 2],
         '#right0': [1, 4, 1],
+        '#table-brak': [1, 2, 1],
         '#table-pagin': [1, 2, 1],
         '#table-search': [2, -2, 1],
         '#tables .scroller': [1, 2, 1],
