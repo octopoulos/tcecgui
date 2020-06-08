@@ -901,6 +901,7 @@ function populate_areas() {
                         });
 
                     tabs.appendChild(CreateNode('div', `<i data-t="${text}"></i>`, dico));
+                    prev_tab = tab;
                 }
                 show = show & 2;
             }
@@ -912,7 +913,6 @@ function populate_areas() {
             S('.label', !tab && !prev_tab, node);
 
             context_areas[id] = vector;
-            prev_tab = tab;
             exist ++;
         }
     });
@@ -2020,7 +2020,7 @@ function startup() {
             min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 1],
-            panel_gap: option_number(16, 0, 100),
+            panel_gap: option_number(10, 0, 100),
             unhide: '1',
         },
         quick: {

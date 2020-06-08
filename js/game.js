@@ -1160,7 +1160,7 @@ function create_tables() {
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
         touch_handle(e);
-    });
+    }, {passive: false});
 }
 
 /**

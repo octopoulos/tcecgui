@@ -240,7 +240,7 @@
   "notation_pva": 1,
   "order": "left|center|right",
   "panel_adjust": 0,
-  "panel_gap": 16,
+  "panel_gap": 12,
   "percent": 0,
   "piece_theme": "chess24",
   "piece_theme_pv": "chess24",
