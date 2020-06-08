@@ -10,8 +10,7 @@
 /*
 globals
 AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
-HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, STREAM_SETTINGS, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true,
-TWITCH_CHAT:true
+HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -34,60 +33,6 @@ function startup_config() {
     Assign(ENGINE_FEATURES, {
         LCZeroCPU: 3,
         LCZeroCPU3pct: 3,
-    });
-
-    // stream settings
-    // - every option name is the same as what you see in the Options in English, but lowercase + underscores
-    // => 'Arrow opacity' becomes 'arrow_opacity'
-    Assign(STREAM_SETTINGS, {
-        areas: {
-            center0: [
-                ['engine', 0, 1],
-                ['table-eval', 0, 1],
-                ['table-mobil', 0, 0],
-                ['table-time', 0, 0],
-                ['table-depth', 0, 0],
-                ['table-speed', 0, 0],
-                ['table-node', 0, 0],
-                ['table-tb', 0, 0],
-                ['table-kibitz', 0, 0],
-                ['table-pv', 0, 0],
-                ['table-pva', 0, 0],
-                ['table-live1', 0, 1],
-            ],
-            left0: [
-                ['archive', 0, 1],
-                ['live', 0, 1],
-                ['moves-archive', 0, 1],
-                ['moves-live', 0, 1],
-                ['moves-pv0', 0, 1],
-                ['moves-pv1', 0, 1],
-                ['moves-live0', 0, 1],
-            ],
-            right0: [
-                ['quick-pagin', 0, 1],
-                ['table-chat', 1, 2],
-                ['table-winner', 1, 2],
-                ['table-info', 1, 2],
-                ['shortcut_1', 0, 3],
-                ['shortcut_2', 0, 0],
-                ['quick-search', 0, 1],
-            ],
-        },
-        drag_and_drop: 1,
-        graph_aspect_ratio: 1.48,
-        max_center: 450,
-        max_left: 450,
-        max_right: 450,
-        move_height: 8.6,
-        move_height_live: 4,
-        no_ad: true,
-        order: 'center|left|right',
-        panel_adjust: 0,
-        shortcut_1: 'stand',
-        theme: 'light',
-        twitch_chat: 0,
-        twitch_video: 0,
     });
 
     // first theme is always the default theme => don't change it

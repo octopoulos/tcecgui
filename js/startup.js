@@ -68,7 +68,6 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
-    STREAM_SETTINGS = {},
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -302,17 +301,7 @@ function change_setting_special(name, value, no_close) {
         populate_areas();
         break;
     case 'preset':
-        if (value == 'custom')
-            break;
-        else if (value == 'default settings')
-            reset_settings(true);
-        else {
-            Resource(`preset/${value}.json`, (code, data) => {
-                if (code != 200)
-                    return;
-                import_settings(data, true);
-            });
-        }
+        load_preset(value);
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -406,27 +395,16 @@ function check_stream() {
     let stream = Y.stream;
     if (stream == old_stream)
         return;
-
-    __PREFIX = stream? 'ts_': 'tc_';
-    load_defaults();
-    check_hash(true);
+    Y.stream = stream;
 
     if (stream) {
-        Assign(Y, STREAM_SETTINGS);
-        Y.stream = 1;
-    }
-
-    change_theme(Y.theme);
-    resize();
-
-    if (stream)
+        load_preset('stream');
+        Assign(Y, {
+            language: 'eng',
+            twitch_video: 0,
+        });
         scroll_adjust('#overview');
-
-    // maybe the board has not been loaded yet
-    if (!xboards.live)
-        return;
-    update_board_theme(7);
-    old_stream = stream;
+    }
 }
 
 /**
@@ -728,6 +706,24 @@ function load_google_analytics() {
     );
 
     load_library(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
+}
+
+/**
+ * Load a preset
+ * @param {string} name
+ */
+function load_preset(name) {
+    if (name == 'custom')
+        return;
+    if (name == 'default settings')
+        reset_settings(true);
+    else {
+        Resource(`preset/${name}.json`, (code, data) => {
+            if (code != 200)
+                return;
+            import_settings(data, true);
+        });
+    }
 }
 
 /**
