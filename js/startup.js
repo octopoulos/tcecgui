@@ -808,19 +808,21 @@ function populate_areas() {
 
             let is_tab;
             if (tab || prev_tab) {
-                if (!prev_tab) {
-                    tabs = child;
-                    if (!HasClass(child, 'tabs')) {
-                        error = 'tabs';
-                        break;
+                if (show & 1) {
+                    if (!prev_tab) {
+                        tabs = child;
+                        if (!HasClass(child, 'tabs')) {
+                            error = 'tabs';
+                            break;
+                        }
+
+                        child_id ++;
+                        child = children[child_id];
                     }
 
-                    child_id ++;
-                    child = children[child_id];
-                }
-
-                if (show & 1)
                     is_tab = true;
+                    prev_tab = tab;
+                }
                 show = show & 2;
             }
             else
@@ -840,7 +842,6 @@ function populate_areas() {
                 }
             }
 
-            prev_tab = tab;
             child_id ++;
             child = children[child_id];
         }
