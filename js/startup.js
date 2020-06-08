@@ -810,7 +810,7 @@ function populate_areas() {
             let is_tab;
             if (tab || prev_tab) {
                 if (show & 1) {
-                    if (!tabs) {
+                    if (!prev_tab || !tabs) {
                         tabs = child;
                         if (!HasClass(child, 'tabs')) {
                             error = 'tabs';
@@ -876,7 +876,7 @@ function populate_areas() {
 
             if (tab || prev_tab) {
                 if (show & 1) {
-                    if (!tabs) {
+                    if (!prev_tab || !tabs) {
                         tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
                         parent.appendChild(tabs);
                     }
