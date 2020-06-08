@@ -165,7 +165,7 @@ label {
 }
 table {
     border-spacing: 0;
-    font-size: 0.9em;
+    font-size: 0.93em;
     width: 100%;
 }
 td {
@@ -880,7 +880,7 @@ grid {
     white-space: nowrap;
 }
 #overview {
-    font-size: 1em;
+    font-size: 0.95em;
     margin-bottom: 0;
 }
 #overview td {
