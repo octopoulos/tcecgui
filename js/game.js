@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-08
+// @version 2020-06-09
 //
 // Game specific code:
 // - control the board, moves
@@ -14,11 +14,12 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
-get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray,
-Keys, KEYS,
-listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
-push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
+document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
+get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
+invert_eval, IsArray, Keys, KEYS,
+listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
+play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep,
+Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
@@ -1693,7 +1694,7 @@ function analyse_seasons(data) {
     if (Y.x != section)
         return;
 
-    let link = ARCHIVE_KEYS.slice(0, -1).filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&'),
+    let link = current_archive_link(),
         node = _(`[data-u="${link}"]`);
     if (!node)
         return;
@@ -1706,6 +1707,18 @@ function analyse_seasons(data) {
     expand_season(parent.previousElementSibling, true);
     tour_info[section].link = link;
     open_event();
+}
+
+/**
+ * Create an archive link with the default Y state
+ * @param {boolean=} is_game include the game= ...
+ * @returns {string}
+ */
+function current_archive_link(is_game) {
+    let keys = ARCHIVE_KEYS;
+    if (!is_game)
+        keys = keys.slice(0, -1);
+    return keys.filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
 }
 
 /**
@@ -1743,7 +1756,7 @@ function open_event() {
     let found,
         data = data_x.data,
         info = tour_info[section],
-        link = ARCHIVE_KEYS.slice(0, -1).filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
+        link = current_archive_link();
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1903,14 +1916,12 @@ function calculate_event_stats(section, rows) {
 
     for (let row of rows) {
         let game = row._id + 1,
-            move = row.moves,
-            time = row.duration;
+            move = row.moves;
         if (!move)
             continue;
 
         // 01:04:50 => seconds
-        let [hour, min, sec] = time.split(':');
-        time = hour * 3600 + min * 60 + sec * 1;
+        let time = parse_time(row.duration);
 
         games ++;
         moves += move;
@@ -2432,6 +2443,8 @@ function update_mobility() {
 function update_move_info(ply, move, fresh) {
     if (!move)
         return;
+
+    fix_move_format(move);
 
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
@@ -3657,7 +3670,7 @@ function popup_custom(id, name, e, scolor) {
 
             let title = Title(scolor),
                 engine = Split(headers[title]),
-                options = pgn[`${title}EngineOptions`],
+                options = pgn[`${title}EngineOptions`] || [],
                 lines = options.map(option => [option.Name, option.Value]);
 
             // add engine + version

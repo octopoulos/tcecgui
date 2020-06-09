@@ -1080,9 +1080,10 @@ function touch_handle(e, full) {
         [change, stamp] = touch_event(e),
         target = e.target,
         type = e.type,
-        type5 = type.slice(0, 5);
+        type5 = type.slice(0, 5),
+        is_start = TOUCH_STARTS[type];
 
-    if (TOUCH_STARTS[type]) {
+    if (is_start) {
         let old_target = drag_target;
         stop_drag();
         if (type5 == 'mouse' && buttons != 1)
@@ -1143,7 +1144,6 @@ function touch_handle(e, full) {
         set_scroll();
 
         drag = [change, stamp];
-        e.preventDefault();
     }
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
@@ -1184,10 +1184,10 @@ function touch_handle(e, full) {
             else
                 stop_drag();
         }
-
-        e.preventDefault();
     }
 
+    if (!is_start)
+        e.preventDefault();
     e.stopPropagation();
 }
 
