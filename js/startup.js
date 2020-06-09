@@ -1782,13 +1782,14 @@ function startup() {
             ],
             top: [],
         },
-        div: '',
+        div: '',                            // archive link
         game: 0,
         link: '',                           // live link
         live_log: 'all',
         order: 'left|center|right',         // main panes order
-        round: '',                          // live round
-        season: '',
+        round: '',                          // archive link + live round
+        season: '',                         // archive link
+        stage: '',                          // archive link
         stream: 0,
         table_tab: {
             archive: 'season',

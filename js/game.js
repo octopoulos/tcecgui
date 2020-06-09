@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-08
+// @version 2020-06-09
 //
 // Game specific code:
 // - control the board, moves
@@ -14,11 +14,12 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, fill_combo, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply,
-get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IsArray,
-Keys, KEYS,
-listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, play_sound, players,
-push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep, Round,
+document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
+get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
+invert_eval, IsArray, Keys, KEYS,
+listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
+play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep,
+Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
@@ -31,6 +32,7 @@ let ANALYSIS_URLS = {
         evalguide: 'https://hxim.github.io/Stockfish-Evaluation-Guide/index.html?p={FEN}',
         lichess: 'https://lichess.org/analysis/standard/{FEN}',
     },
+    ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
     BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
@@ -482,9 +484,13 @@ function get_xhr_elapsed(xhr) {
  * @returns {number}
  */
 function parse_date_time(text) {
-    let items = text.split(' on '),
+    let seconds,
+        items = text.split(' on ');
+    if (items.length < 2)
+        seconds = Date.parse(text.replace(/\./g, '-')) / 1000;
+    else
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
-    return seconds;
+    return seconds || text;
 }
 
 // BOARD
@@ -1688,18 +1694,31 @@ function analyse_seasons(data) {
     if (Y.x != section)
         return;
 
-    let link = `season=${Y.season}&div=${Y.div}`,
+    let link = current_archive_link(),
         node = _(`[data-u="${link}"]`);
-    if (node) {
-        let parent = Parent(node, {tag: 'grid'});
-        if (parent) {
-            Class(node, 'active');
-            Class(node.nextElementSibling, 'active');
-            expand_season(parent.previousElementSibling, true);
-            tour_info[section].link = link;
-            open_event();
-        }
-    }
+    if (!node)
+        return;
+
+    let parent = Parent(node, {tag: 'grid'});
+    if (!parent)
+        return;
+    Class(node, 'active');
+    Class(node.nextElementSibling, 'active');
+    expand_season(parent.previousElementSibling, true);
+    tour_info[section].link = link;
+    open_event();
+}
+
+/**
+ * Create an archive link with the default Y state
+ * @param {boolean=} is_game include the game= ...
+ * @returns {string}
+ */
+function current_archive_link(is_game) {
+    let keys = ARCHIVE_KEYS;
+    if (!is_game)
+        keys = keys.slice(0, -1);
+    return keys.filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
 }
 
 /**
@@ -1737,7 +1756,7 @@ function open_event() {
     let found,
         data = data_x.data,
         info = tour_info[section],
-        link = `season=${Y.season}&div=${Y.div}`;
+        link = current_archive_link();
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1783,7 +1802,7 @@ function open_game(direct) {
     if (!event)
         return;
 
-    if (Y.season && Y.div && Y.game) {
+    if (Y.season && (Y.div || Y.round || Y.stage) && Y.game) {
         push_state();
         check_hash();
     }
@@ -1808,8 +1827,8 @@ function set_season_events() {
         if (cannot_click())
             return;
 
-        // 'season=18&div=l3'
-        let dico = QueryString({query: this.dataset.u});
+        // 'season=18&div=l3' or 'season=cup5&round=round16'
+        let dico = Assign({div: '', round: '', stage: ''}, QueryString({query: this.dataset.u}));
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -1897,14 +1916,12 @@ function calculate_event_stats(section, rows) {
 
     for (let row of rows) {
         let game = row._id + 1,
-            move = row.moves,
-            time = row.duration;
+            move = row.moves;
         if (!move)
             continue;
 
         // 01:04:50 => seconds
-        let [hour, min, sec] = time.split(':');
-        time = hour * 3600 + min * 60 + sec * 1;
+        let time = parse_time(row.duration);
 
         games ++;
         moves += move;
@@ -2427,12 +2444,15 @@ function update_move_info(ply, move, fresh) {
     if (!move)
         return;
 
+    fix_move_format(move);
+
     let is_book = move.book,
+        depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         num_ply = xboards[Y.x].moves.length,
         stats = {
-            depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
+            depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
             eval: format_eval(eval_, true),
             node: is_book? '-': FormatUnit(move.n, '-'),
             speed: is_book? '-': `${FormatUnit(move.s, '0')}nps`,
@@ -2631,8 +2651,13 @@ function update_overview_moves(section, headers, moves, is_new) {
         tb = `<a href="https://syzygy-tables.info/?fen=${move.fen.replace(/ /g, '_')}" target="_blank">${tb}</a>`;
     HTML('td[data-x="tb"]', tb, overview);
 
-    let result = check_adjudication(move.adjudication, num_ply);
+    let result = check_adjudication(move.adjudication, num_ply),
+        status = headers.Termination;
     finished = headers.TerminationDetails;
+    // support for old seasons
+    if (!finished && status && status != 'unterminated')
+        finished = status;
+
     result.adj_rule = finished;
     Keys(result).forEach(key => {
         HTML(`td[data-x="${key}"]`, result[key], overview);
@@ -2676,6 +2701,15 @@ function update_overview_moves(section, headers, moves, is_new) {
 function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
         return;
+
+    // 0) trim keys, ex: " WhiteEngineOptions": ...
+    Keys(pgn).forEach(key => {
+        let trim = key.trim();
+        if (key != trim) {
+            pgn[trim] = pgn[key];
+            delete pgn[key];
+        }
+    });
 
     // 1) section check
     pgns[section] = pgn;
@@ -3367,9 +3401,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
-    let keys = ['season', 'div', 'game'],
-        missing = 0,
-        string = keys.map(key => {
+    let missing = 0,
+        string = ARCHIVE_KEYS.map(key => {
             let value = Y[key];
             if (value == undefined)
                 missing ++;
@@ -3652,7 +3685,7 @@ function popup_custom(id, name, e, scolor) {
 
             let title = Title(scolor),
                 engine = Split(headers[title]),
-                options = pgn[`${title}EngineOptions`],
+                options = pgn[`${title}EngineOptions`] || [],
                 lines = options.map(option => [option.Name, option.Value]);
 
             // add engine + version
@@ -3758,7 +3791,7 @@ function start_game() {
  */
 function startup_game() {
     Assign(STATE_KEYS, {
-        archive: ['x', 'season', 'div', 'game'],
+        archive: [...['x'], ...ARCHIVE_KEYS],
         live: ['x'],
     });
 

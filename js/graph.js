@@ -1,11 +1,11 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-06-09
 //
 /*
 globals
-_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
-load_library, LS, Pad, players, Round, SetDefault, Sign, Visible, window, xboards, Y
+_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, fix_move_format, Floor, FormatUnit, FromSeconds,
+get_move_ply, Id, Keys, load_library, LS, Pad, players, Round, SetDefault, Sign, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -593,6 +593,8 @@ function update_player_chart(name, moves) {
             num = ply;
         if (ply < -1)
             continue;
+
+        fix_move_format(move);
 
         check_first_num(num);
         let num2 = num - first_num;

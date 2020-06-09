@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-06-09
 //
 // global variables/functions shared across multiple js files
 //
@@ -71,6 +71,41 @@ function calculate_feature_q(feature, eval_) {
         white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
 
     return white_win;
+}
+
+/**
+ * Fix old move format from Season 1
+ * @param {Move} move
+ */
+function fix_move_format(move) {
+    if (move._fixed)
+        return;
+
+    // fix eval
+    if (move.wv == undefined)
+        move.wv = move.ev;
+
+    // fix move time
+    if (typeof(move.mt) == 'string')
+        move.mt = parse_time(move.mt) * 1000;
+
+    // fix time left
+    if (typeof(move.tl) == 'string')
+        move.tl = parse_time(move.tl) * 1000;
+
+    // fix speed
+    if (typeof(move.s) == 'string') {
+        let items = move.s.split(' ');
+        if (items.length >= 2)
+            move.s = parseFloat(items[0]) * ({k: 1000, M: 1e6}[items[1][0]] || 1);
+    }
+
+    // fix nodes
+    // note: it's an approximation, not reliable at low values => skipped there
+    if (move.n == undefined && move.mt >= 2000)
+        move.n = move.s / move.mt * 1000;
+
+    move._fixed = true;
 }
 
 /**
@@ -176,6 +211,18 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+}
+
+/**
+ * Get the seconds from a time text
+ * @param {string} text
+ * @returns {number}
+ */
+function parse_time(time) {
+    if (!time)
+        return 0;
+    let [hour, min, sec] = time.split(':');
+    return hour * 3600 + min * 60 + sec * 1;
 }
 
 /**
