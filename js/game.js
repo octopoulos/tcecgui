@@ -2447,11 +2447,12 @@ function update_move_info(ply, move, fresh) {
     fix_move_format(move);
 
     let is_book = move.book,
+        depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': move.wv,
         id = ply % 2,
         num_ply = xboards[Y.x].moves.length,
         stats = {
-            depth: is_book? '-': `${Undefined(move.d, '-')}/${Undefined(move.sd, '-')}`,
+            depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
             eval: format_eval(eval_, true),
             node: is_book? '-': FormatUnit(move.n, '-'),
             speed: is_book? '-': `${FormatUnit(move.s, '0')}nps`,
