@@ -1143,6 +1143,7 @@ function touch_handle(e, full) {
         set_scroll();
 
         drag = [change, stamp];
+        e.preventDefault();
     }
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
@@ -1183,9 +1184,10 @@ function touch_handle(e, full) {
             else
                 stop_drag();
         }
+
+        e.preventDefault();
     }
 
-    e.preventDefault();
     e.stopPropagation();
 }
 
