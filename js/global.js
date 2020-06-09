@@ -219,6 +219,8 @@ function parse_dev() {
  * @returns {number}
  */
 function parse_time(time) {
+    if (!time)
+        return 0;
     let [hour, min, sec] = time.split(':');
     return hour * 3600 + min * 60 + sec * 1;
 }

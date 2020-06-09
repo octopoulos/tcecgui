@@ -2697,6 +2697,15 @@ function update_pgn(section, pgn, reset_moves) {
     if (!xboards[section])
         return;
 
+    // 0) trim keys, ex: " WhiteEngineOptions": ...
+    Keys(pgn).forEach(key => {
+        let trim = key.trim();
+        if (key != trim) {
+            pgn[trim] = pgn[key];
+            delete pgn[key];
+        }
+    });
+
     // 1) section check
     pgns[section] = pgn;
     window.pgns = pgns;
