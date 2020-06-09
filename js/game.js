@@ -31,6 +31,7 @@ let ANALYSIS_URLS = {
         evalguide: 'https://hxim.github.io/Stockfish-Evaluation-Guide/index.html?p={FEN}',
         lichess: 'https://lichess.org/analysis/standard/{FEN}',
     },
+    ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
     BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
@@ -482,9 +483,13 @@ function get_xhr_elapsed(xhr) {
  * @returns {number}
  */
 function parse_date_time(text) {
-    let items = text.split(' on '),
+    let seconds,
+        items = text.split(' on ');
+    if (items.length < 2)
+        seconds = Date.parse(text.replace(/\./g, '-')) / 1000;
+    else
         seconds = Date.parse(`${items[1].replace(/\./g, '-')}T${items[0]}Z`) / 1000;
-    return seconds;
+    return seconds || text;
 }
 
 // BOARD
@@ -1688,18 +1693,19 @@ function analyse_seasons(data) {
     if (Y.x != section)
         return;
 
-    let link = `season=${Y.season}&div=${Y.div}`,
+    let link = ARCHIVE_KEYS.slice(0, -1).filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&'),
         node = _(`[data-u="${link}"]`);
-    if (node) {
-        let parent = Parent(node, {tag: 'grid'});
-        if (parent) {
-            Class(node, 'active');
-            Class(node.nextElementSibling, 'active');
-            expand_season(parent.previousElementSibling, true);
-            tour_info[section].link = link;
-            open_event();
-        }
-    }
+    if (!node)
+        return;
+
+    let parent = Parent(node, {tag: 'grid'});
+    if (!parent)
+        return;
+    Class(node, 'active');
+    Class(node.nextElementSibling, 'active');
+    expand_season(parent.previousElementSibling, true);
+    tour_info[section].link = link;
+    open_event();
 }
 
 /**
@@ -1737,7 +1743,7 @@ function open_event() {
     let found,
         data = data_x.data,
         info = tour_info[section],
-        link = ['season', 'div', 'round'].filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
+        link = ARCHIVE_KEYS.slice(0, -1).filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1783,7 +1789,7 @@ function open_game(direct) {
     if (!event)
         return;
 
-    if (Y.season && Y.div && Y.game) {
+    if (Y.season && (Y.div || Y.round || Y.stage) && Y.game) {
         push_state();
         check_hash();
     }
@@ -1809,7 +1815,7 @@ function set_season_events() {
             return;
 
         // 'season=18&div=l3' or 'season=cup5&round=round16'
-        let dico = Assign({div: '', round: ''}, QueryString({query: this.dataset.u}));
+        let dico = Assign({div: '', round: '', stage: ''}, QueryString({query: this.dataset.u}));
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -3367,9 +3373,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
-    let keys = ['season', 'div', 'round', 'game'],
-        missing = 0,
-        string = keys.map(key => {
+    let missing = 0,
+        string = ARCHIVE_KEYS.map(key => {
             let value = Y[key];
             if (value == undefined)
                 missing ++;
@@ -3758,7 +3763,7 @@ function start_game() {
  */
 function startup_game() {
     Assign(STATE_KEYS, {
-        archive: ['x', 'season', 'div', 'round', 'game'],
+        archive: [...['x'], ...ARCHIVE_KEYS],
         live: ['x'],
     });
 
