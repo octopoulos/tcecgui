@@ -236,7 +236,6 @@ let ANALYSIS_URLS = {
     virtual_import_settings,
     virtual_opened_table_special,
     xboards = {},
-    WHITE_BLACK = ['white', 'black', 'live'],
     WB_TITLES = ['White', 'Black'],
     y_index = -1,
     y_states = [];
@@ -2431,9 +2430,7 @@ function update_mobility() {
         return;
 
     let ply = main.ply,
-        move = main.moves[ply];
-    if (!move)
-        return;
+        move = main.moves[ply] || {};
 
     let mobility = main.chess_mobility(move),
         node = Id('mobil'),
@@ -2459,7 +2456,7 @@ function update_move_info(ply, move, fresh) {
     let is_book = move.book,
         depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': move.wv,
-        id = ply % 2,
+        id = (ply + 2) % 2,
         num_ply = xboards[Y.x].moves.length,
         stats = {
             depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
@@ -2473,13 +2470,17 @@ function update_move_info(ply, move, fresh) {
         HTML(Id(`${key}${id}`), stats[key]);
     });
 
-    if (fresh || Y.x == 'archive')
-        Assign(players[id], {
-            elapsed: 0,
-            eval: eval_,
-            left: move.tl * 1,
-            time: move.mt * 1,
-        });
+    if (fresh || Y.x == 'archive') {
+        let player = players[id];
+        player.eval = eval_;
+
+        if (!isNaN(move.tl))
+            Assign(player, {
+                elapsed: 0,
+                left: move.tl * 1,
+                time: move.mt * 1,
+            });
+    }
 
     // past move?
     if (ply < num_ply - 1)
@@ -2503,7 +2504,7 @@ function update_move_pv(section, ply, move) {
 
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
-        id = ply % 2,
+        id = (ply + 2) % 2,
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
@@ -2534,6 +2535,19 @@ function update_move_pv(section, ply, move) {
             board.moves[ply] = move;
             board.set_ply(ply);
         }
+    }
+}
+
+/**
+ * Update engine options
+ */
+function update_options(section, id) {
+    let options = SetDefault(players[id], 'options', {}),
+        pgn_options = pgns[section][`${WB_TITLES[id]}EngineOptions`];
+
+    if (pgn_options) {
+        pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
+        Assign(options, pgn_options);
     }
 }
 
@@ -2689,7 +2703,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     // 4) materials
     // - only update if the ply is the current one
     if (ply == cur_ply) {
-        for (let i = num_move - 1; i>=0 && i >= num_move - 2; i --) {
+        for (let i = num_move - 1; i >= 0 && i >= num_move - 2; i --) {
             let move = moves[i],
                 ply2 = get_move_ply(move);
             update_move_info(ply2, move, true);
@@ -2796,28 +2810,33 @@ function update_pgn(section, pgn, reset_moves) {
     // got player info => can do h2h
     check_queued_tables();
 
-    // 2: a new game was started and we already had a game before
-    if (new_game == 2) {
-        for (let id = 0; id < 2; id ++) {
-            let player = players[id];
-            Assign(player, {
-                elapsed: 0,
-                left: player.tc * 1000,
-                time: 0,
-            });
+    if (new_game) {
+        // 2: a new game was started and we already had a game before
+        if (new_game == 2) {
+            for (let id = 0; id < 2; id ++) {
+                let player = players[id];
+                Assign(player, {
+                    elapsed: 0,
+                    left: player.tc * 1000,
+                    time: 0,
+                });
+            }
+            add_queue(section, 'table');
         }
-        add_queue(section, 'table');
-    }
-    else if (new_game) {
-        for (let id = 0; id < 2; id ++) {
-            let player = players[id];
-            if (!player.elapsed)
-                player.elapsed = 0;
-            if (!player.left)
-                player.left = player.tc * 1000;
-            if (!player.time)
-                player.time = 0;
+        else {
+            for (let id = 0; id < 2; id ++) {
+                let player = players[id];
+                if (!player.elapsed)
+                    player.elapsed = 0;
+                if (!player.left)
+                    player.left = player.tc * 1000;
+                if (!player.time)
+                    player.time = 0;
+            }
         }
+
+        for (let id = 0; id < 2; id ++)
+            update_options(section, id);
     }
 
     // 5) clock
@@ -3672,7 +3691,7 @@ function opened_table(node, name, tab) {
  * @param {string} id popup id
  * @param {string} name timeout name
  * @param {Event} e
- * @param {string} scolor white, black
+ * @param {string|number} scolor 0, 1, popup
  */
 function popup_custom(id, name, e, scolor) {
     if (e.buttons)
@@ -3693,10 +3712,10 @@ function popup_custom(id, name, e, scolor) {
             if (!headers)
                 return;
 
-            let title = Title(scolor),
-                engine = Split(headers[title]),
-                options = pgn[`${title}EngineOptions`] || [],
-                lines = options.map(option => [option.Name, option.Value]);
+            let player = players[scolor],
+                engine = Split(player.name),
+                options = players[scolor].options || {},
+                lines = Keys(options).sort((a, b) => Lower(a).localeCompare(Lower(b))).map(key => [key, options[key]]);
 
             // add engine + version
             lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
@@ -3758,7 +3777,8 @@ function set_game_events() {
 
     // engine popup
     Events('#info0, #info1, #popup', 'click mouseenter mousemove mouseleave', function(e) {
-        popup_custom('popup', 'engine', e, WHITE_BLACK[this.id.slice(-1)] || this.id);
+        let id = this.id;
+        popup_custom('popup', 'engine', e, (id == 'popup')? id: id.slice(-1));
     });
     C('#mobil', function() {
         let ply = this.dataset.i;
