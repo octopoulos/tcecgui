@@ -1737,7 +1737,7 @@ function open_event() {
     let found,
         data = data_x.data,
         info = tour_info[section],
-        link = `season=${Y.season}&div=${Y.div}`;
+        link = ['season', 'div', 'round'].filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1808,8 +1808,8 @@ function set_season_events() {
         if (cannot_click())
             return;
 
-        // 'season=18&div=l3'
-        let dico = QueryString({query: this.dataset.u});
+        // 'season=18&div=l3' or 'season=cup5&round=round16'
+        let dico = Assign({div: '', round: ''}, QueryString({query: this.dataset.u}));
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -3367,7 +3367,7 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
-    let keys = ['season', 'div', 'game'],
+    let keys = ['season', 'div', 'round', 'game'],
         missing = 0,
         string = keys.map(key => {
             let value = Y[key];
@@ -3758,7 +3758,7 @@ function start_game() {
  */
 function startup_game() {
     Assign(STATE_KEYS, {
-        archive: ['x', 'season', 'div', 'game'],
+        archive: ['x', 'season', 'div', 'round', 'game'],
         live: ['x'],
     });
 
