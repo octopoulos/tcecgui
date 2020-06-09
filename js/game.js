@@ -216,6 +216,7 @@ let ANALYSIS_URLS = {
         stand: 'Rank|Engine|Games|Points|{Wins} [W/B]|{Losses} [W/B]|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
+    TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
     TIMEOUT_live_delay = 1,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -1364,6 +1365,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_sched = (name == 'sched'),
+        is_sched_archive = (is_sched && section == 'archive'),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
@@ -1469,7 +1471,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
         is_winner = (name == 'winner'),
-        nodes = [];
+        nodes = [],
+        tour_url = tour_info[section].url;
 
     for (let row of data) {
         let row_id = row._id;
@@ -1516,10 +1519,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 value = format_fen(value);
                 break;
             case 'game':
-                if (is_sched && section == 'archive')
-                    value = row_id + 1;
-                if (row.moves)
-                    value = create_game_link(section, value);
+                let game = is_sched_archive? row_id + 1: value;
+                if (row.moves) {
+                    value = create_game_link(section, game);
+                    if (is_sched && tour_url)
+                        value = `<hori><a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn"><i style="margin-right:1em" data-svg="download"></i></a>${value}</hori>`;
+                }
                 break;
             case 'name':
                 if (row.link) {
@@ -1613,6 +1618,11 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     if (name == 'season')
         set_season_events();
 
+    // download game
+    C('a[href]', function(e) {
+        if (!this.href.includes('#'))
+            e.stopPropagation();
+    });
     // open game
     C('[data-g]', function(e) {
         if (Parent(e.target, {class_: 'fen', self: true}))
@@ -2648,7 +2658,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     // 3) check adjudication
     let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
     if (tb <= 1)
-        tb = `<a href="https://syzygy-tables.info/?fen=${move.fen.replace(/ /g, '_')}" target="_blank">${tb}</a>`;
+        tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
     HTML('td[data-x="tb"]', tb, overview);
 
     let result = check_adjudication(move.adjudication, num_ply),

@@ -1,12 +1,8 @@
-/node_modules/
-*.swp
 *~
-*.tmp
-*.log
-/package-lock.json
-
 *.gz
 *_.css
+*.log
+*.pgn
 *.jar
 *_.js
 *-original.js
@@ -15,6 +11,9 @@
 *.pyc
 *.python
 *.rar
+*.swp
+*.tmp
+*.zip
 4d.js
 all.*
 archive/
@@ -25,6 +24,7 @@ crash.json
 create_list.js
 crosstable.json
 data*.json
+dist/
 doc/
 enginerating.json
 gamelist.json
@@ -33,6 +33,8 @@ json/
 live*.json
 model/
 new.json
+node_modules/
+package-lock.json
 schedule.json
 sound/*.js
 stream.html
