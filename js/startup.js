@@ -406,6 +406,7 @@ function check_stream() {
             twitch_video: 0,
         });
         scroll_adjust('#overview');
+        Hide('.adblock, .google-ad');
     }
 }
 

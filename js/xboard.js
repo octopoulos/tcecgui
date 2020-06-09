@@ -913,6 +913,12 @@ class XBoard {
 
         let fen = move.fen,
             ply = get_move_ply(move);
+
+        if (ply == -2) {
+            move.goal = [-20.5, -1];
+            move.mobil = 20.5;
+            return -20.5;
+        }
         this.chess.load(fen);
 
         // calculate
@@ -1877,7 +1883,7 @@ class XBoard {
      */
     set_ply(ply, {animate, hold, manual, no_compute, render=true}={}) {
         if (DEV.ply)
-            LS(`${this.id}: set_ply: ${ply} : ${animate}`);
+            LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
 
         clear_timeout(`dual${this.id}`);
         this.delayed_ply = -2;
@@ -1892,6 +1898,8 @@ class XBoard {
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
+            if (manual && this.hook)
+                this.hook(this, 'ply', {ply: -1});
             return {};
         }
 
