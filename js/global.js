@@ -86,15 +86,15 @@ function fix_move_format(move) {
         move.wv = move.ev;
 
     // fix move time
-    if (typeof(move.mt) == 'string')
+    if (isNaN(move.mt) && move.mt)
         move.mt = parse_time(move.mt) * 1000;
 
     // fix time left
-    if (typeof(move.tl) == 'string')
+    if (isNaN(move.tl) && move.tl)
         move.tl = parse_time(move.tl) * 1000;
 
     // fix speed
-    if (typeof(move.s) == 'string') {
+    if (isNaN(move.s) && move.s) {
         let items = move.s.split(' ');
         if (items.length >= 2)
             move.s = parseFloat(items[0]) * ({k: 1000, M: 1e6}[items[1][0]] || 1);
