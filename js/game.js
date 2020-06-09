@@ -2651,8 +2651,13 @@ function update_overview_moves(section, headers, moves, is_new) {
         tb = `<a href="https://syzygy-tables.info/?fen=${move.fen.replace(/ /g, '_')}" target="_blank">${tb}</a>`;
     HTML('td[data-x="tb"]', tb, overview);
 
-    let result = check_adjudication(move.adjudication, num_ply);
+    let result = check_adjudication(move.adjudication, num_ply),
+        status = headers.Termination;
     finished = headers.TerminationDetails;
+    // support for old seasons
+    if (!finished && status && status != 'unterminated')
+        finished = status;
+
     result.adj_rule = finished;
     Keys(result).forEach(key => {
         HTML(`td[data-x="${key}"]`, result[key], overview);
