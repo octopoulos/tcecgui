@@ -24,7 +24,7 @@ PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, resize_game,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
-translate_node, TRANSLATE_SPECIALS, translates:true, update_board_theme, update_chart_options, update_debug,
+translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_chart_options, update_debug,
 update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
 X_SETTINGS, xboards, Y
@@ -345,7 +345,11 @@ function change_theme(theme) {
     if (Y.x == 'archive')
         themes.push(`${theme}-archive`);
 
-    _('link[rel="shortcut icon"]').href = `image/favicon${theme.includes('dark')? 'b': ''}.ico`;
+    // update favicon only when needed
+    let icon = `image/favicon${theme.includes('dark')? 'b': ''}.ico`,
+        node = _('link[rel="shortcut icon"]');
+    if (node.href.slice(-icon.length) != icon)
+        node.href = icon;
 
     S('#theme0', theme != def);
     S('#theme1', theme == def);
@@ -538,7 +542,7 @@ function handle_drop(e) {
         for (let parent of parent_areas)
             Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => {
                 let context_area = context_areas[child.id] || [];
-                return [child.id, context_area[1] || 0, context_area[2] || 1];
+                return [child.id, context_area[1] || 0, Undefined(context_area[2], 1)];
             });
 
         populate_areas();
@@ -965,7 +969,7 @@ function resize() {
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status, #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
-    Style('#chat', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
+    Style('#chat, #shortcut_1, #shortcut_2', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
     resize_panels();
 
