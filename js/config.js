@@ -126,8 +126,8 @@ function startup_config() {
     // dynamically loaded libraries
     CHART_JS = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js';
 
-    TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV';
-    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat';
+    TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com';
+    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // POST PROCESS - don't modify
