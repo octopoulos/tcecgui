@@ -15,23 +15,23 @@ HOST = 'https://tcec-chess.com/'
 
 # files to get + how old can they be (in seconds) before a refresh
 SOURCE_TIMES = {
-    'crash': 3600,
-    'crosstable': 1800,
-    'data': 5 + 1800,
-    'data1': 4 + 1800,
-    'enginerating': 3600 * 6,
-    'gamelist': 3600 * 12,
-    'live': 1,
-    'liveeval': 2 + 1800,
-    'liveeval1': 3 + 1800,
-    'schedule': 1200,
-    'tournament': 3600 * 12,
-    'winners': 3600 * 24 * 7,
+    'crash.json': 3600,
+    'crosstable.json': 1800,
+    'data.json': 5 + 1800,
+    'data1.json': 4 + 1800,
+    'enginerating.json': 3600 * 6,
+    'gamelist.json': 3600 * 12,
+    'live.pgn': 1,
+    'liveeval.json': 2 + 1800,
+    'liveeval1.json': 3 + 1800,
+    'schedule.json': 1200,
+    'tournament.json': 3600 * 12,
+    'winners.json': 3600 * 24 * 7,
 }
 
 
 def download_json():
-    """Download all necessary JSON files
+    """Download all necessary JSON / PGN files
     """
     this_path = os.path.dirname(os.path.dirname(__file__))
 
@@ -39,7 +39,7 @@ def download_json():
     alphas = sorted(SOURCE_TIMES.items(), key=lambda x: x[1], reverse=True)
 
     for source, age in alphas:
-        output = os.path.join(this_path, f'{source}.json')
+        output = os.path.join(this_path, f'{source}')
         # file is recent => don't download
         if os.path.isfile(output):
             modified = os.stat(output).st_mtime
@@ -50,7 +50,7 @@ def download_json():
         # try to download the file
         session = requests.session()
         kwargs = {}
-        response = session.get(f'{HOST}{source}.json', **kwargs)
+        response = session.get(f'{HOST}{source}', **kwargs)
         session.close()
 
         status = response.status_code

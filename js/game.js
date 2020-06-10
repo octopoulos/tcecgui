@@ -18,8 +18,8 @@ document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromS
 get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
 invert_eval, IsArray, Keys, KEYS,
 listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
-play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, Resource, resume_sleep,
-Round,
+play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource,
+resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
@@ -186,6 +186,7 @@ let ANALYSIS_URLS = {
     queued_tables = new Set(),          // tables that cannot be created yet because of missing info
     QUEUES = ['h2h', 'stats'],
     RESULTS = {
+        '*': 0,
         '0-1': -1,
         '1-0': 1,
         '1/2-1/2': 0.5,
@@ -1293,7 +1294,7 @@ function download_tables(only_cache, no_live) {
 
     let section = 'live';
     if (!only_cache && !no_live) {
-        download_pgn(section, 'live.json');
+        download_pgn(section, 'live.pgn');
         download_live();
     }
 
@@ -1815,7 +1816,7 @@ function open_game(direct) {
         push_state();
         check_hash();
     }
-    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgjson`, direct);
+    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`, direct);
 }
 
 /**
@@ -2255,9 +2256,9 @@ function create_cup(section, data) {
 function check_adjudication(dico, total_moves) {
     if (!dico)
         return {};
-    let _50 = dico.FiftyMoves,
-        abs_draw = Abs(dico.Draw),
-        abs_win = Abs(dico.ResignOrWin);
+    let _50 = Undefined(dico.R50, dico.FiftyMoves),
+        abs_draw = Abs(Undefined(dico.Rd, dico.Draw)),
+        abs_win = Abs(Undefined(dico.Rr, dico.ResignOrWin));
 
     return {
         50: (_50 < 51)? _50: '-',
@@ -2267,7 +2268,7 @@ function check_adjudication(dico, total_moves) {
 }
 
 /**
- * Check if some moves are missing => reload live.json
+ * Check if some moves are missing => reload live.pgn
  * @param {number=} ply
  */
 function check_missing_moves(ply) {
@@ -2302,7 +2303,7 @@ function check_missing_moves(ply) {
         return;
 
     add_timeout(section, () => {
-        download_pgn(section, 'live.json', false, true);
+        download_pgn(section, 'live.pgn', false, true);
     }, TIMEOUT_live_delay * 1000);
 }
 
@@ -2331,7 +2332,7 @@ function download_live_evals(round) {
 /**
  * Download the PGN
  * @param {string} section archive, live
- * @param {string} url live.json
+ * @param {string} url live.pgn, live.json
  * @param {boolean=} scroll_up scroll up when loaded
  * @param {boolean=} reset_moves triggered by check_missing_moves
  */
@@ -2344,23 +2345,175 @@ function download_pgn(section, url, scroll_up, reset_moves) {
         if (code != 200)
             return;
 
+        let extra = {};
         if (data) {
-            Assign(data, {
+            Assign(extra, {
                 elapsed: get_xhr_elapsed(xhr) / 1000,
                 gameChanged: 1,
             });
-
-            // FUTURE: use ?? operator
-            if (section == 'archive' && data.Headers)
-                download_live_evals(data.Headers.Round);
         }
 
         pgns[section] = null;
-        update_pgn(section, data, reset_moves);
+        update_pgn(section, data, extra, reset_moves);
 
         if (section == 'archive' && scroll_up)
             scroll_adjust('#overview', true);
+    }, {type: 'text'});
+}
+
+/**
+ * Parse raw pgn data
+ * @param {string|Object} data
+ * @returns {Object}
+ */
+function parse_pgn(data) {
+    // A) maybe we have a JSON already?
+    if (typeof(data) == 'object')
+        return data;
+
+    try {
+        data = JSON.parse(data);
+        return data;
+    }
+    catch (e) {
+    }
+
+    // B) parse the raw PGN
+    let end, inside, start,
+        headers = {},
+        length = data.length,
+        pgn = {};
+
+    // 1) headers
+    for (let i = 0; i < length; i ++) {
+        if (inside) {
+            if (data[i] == ']') {
+                if (start) {
+                    // Date "2020.05.25"
+                    let text = data.slice(start, i),
+                        pos = text.indexOf('"'),
+                        pos2 = text.lastIndexOf('"');
+                    if (pos > 0 && pos2 > pos) {
+                        let left = text.slice(0, pos),
+                            right = text.slice(pos + 1, pos2);
+                        headers[left.trim()] = right.trim();
+                    }
+                    end = i + 1;
+                    start = 0;
+                }
+                inside = false;
+            }
+        }
+        else if (data[i] == '[') {
+            inside = true;
+            start = i + 1;
+        }
+    }
+    data = data.slice(end);
+
+    // 2) options
+    let pos = data.indexOf('{'),
+        pos2 = data.indexOf('}');
+    if (pos >= 0 && pos2 > pos) {
+        let engines = data.slice(pos + 1, pos2).split(';, ');
+        for (let engine of engines) {
+            let [name, options] = engine.split(':');
+            if (options) {
+                options = Assign({}, ...options.split(';').map(item => {
+                    let items = item.split('=');
+                    return {[items[0].trim()]: (items[1] || '').trim()};
+                }));
+                delete options[''];
+                pgn[name] = options;
+            }
+        }
+        data = data.slice(pos2 + 1);
+    }
+
+    // 3) moves
+    let has_text,
+        info = {},
+        moves = [],
+        ply = -1;
+    length = data.length;
+    start = 0;
+    for (let i = 0 ; i < length; i ++) {
+        let char = data[i];
+
+        if (char == '{') {
+            let pos = data.indexOf('}', i + 1);
+            if (pos) {
+                info = Assign({}, ...data.slice(i + 1, pos).split(',').map(text => {
+                    let [left, right] = text.split('=');
+                    if (right == undefined)
+                        right = true;
+                    else if (isNaN(right) || right.includes('.'))
+                        right = right.trim();
+                    else
+                        right = parseInt(right);
+                    return {[left.trim()]: right};
+                }));
+                delete info[''];
+
+                // pv: Be3 b5 dxc5 Nxc5
+                // => 16. Be3 b5 17. dxc5 Nxc5
+                let pv = info.pv;
+                if (pv && !pv.includes('.')) {
+                    pv = pv.split(' ').map((item, id) => {
+                        let curr = id + ply,
+                            is_white = (curr % 2 == 0),
+                            move_num = Floor(curr / 2) + 1;
+                        if (!id)
+                            return `${move_num}.${is_white? ' ': '..'}${item}`;
+                        return `${is_white? move_num: ''}${is_white? '. ': ''}${item}`;
+                    }).join(' ');
+                    info.pv = pv;
+                }
+                Assign(moves[ply], info);
+
+                i = pos;
+                start = i + 1;
+                has_text = false;
+            }
+        }
+        else if (char == '.') {
+            if (has_text) {
+                let number = parseInt(data.slice(start, i));
+                if (number != (ply + 1) / 2 + 1)
+                    LS(`ERROR: ${ply} : ${number}`);
+            }
+            start = i + 1;
+            has_text = false;
+        }
+        else if (' \t\r\n'.includes(char)) {
+            if (has_text) {
+                let move = data.slice(start, i);
+                if (RESULTS[move] != undefined)
+                    break;
+
+                ply ++;
+                moves[ply] = {
+                    m: move,
+                    ply: ply,
+                };
+                info = {};
+                if (DEV.fen)
+                    LS(`${ply} : ${move}`);
+            }
+            start = i + 1;
+            has_text = false;
+        }
+        else
+            has_text = true;
+    }
+
+    Assign(pgn, {
+        Headers: headers,
+        Moves: moves,
     });
+    if (DEV.fen)
+        LS(pgn);
+    return pgn;
 }
 
 /**
@@ -2524,8 +2677,12 @@ function update_move_pv(section, ply, move) {
     board.reset();
     board.instant();
 
-    if (move.pv)
-        board.add_moves(move.pv.Moves, main.ply);
+    if (move.pv) {
+        if (typeof(move.pv) == 'string')
+            board.add_moves_string(move.pv, main.ply, true);
+        else
+            board.add_moves(move.pv.Moves, main.ply);
+    }
     else {
         // no pv available =>
         // - delete it if the move is in the past (ex: "book")
@@ -2542,13 +2699,18 @@ function update_move_pv(section, ply, move) {
  * Update engine options
  */
 function update_options(section, id) {
-    let options = SetDefault(players[id], 'options', {}),
-        pgn_options = pgns[section][`${WB_TITLES[id]}EngineOptions`];
+    let key = `${WB_TITLES[id]}EngineOptions`,
+        options = SetDefault(players[id], 'options', {}),
+        pgn = pgns[section],
+        pgn_options = pgn[key];
 
-    if (pgn_options) {
+    if (IsArray(pgn_options)) {
         pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
-        Assign(options, pgn_options);
+        pgn[key] = pgn_options;
     }
+
+    if (pgn_options)
+        Assign(options, pgn_options);
 }
 
 /**
@@ -2622,9 +2784,11 @@ function update_overview_basic(section, headers) {
     });
     update_scores();
 
-    // 3) title
-    let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game';
-    document.title = `${players[0].name} vs ${players[1].name} - TCEC - ${subtitle}`;
+    // 3) update title if needed
+    let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game',
+        title = `${players[0].name} vs ${players[1].name} - TCEC - ${subtitle}`;
+    if (document.title != title)
+        document.title = title;
 }
 
 /**
@@ -2670,12 +2834,14 @@ function update_overview_moves(section, headers, moves, is_new) {
     update_player_charts(null, moves);
 
     // 3) check adjudication
-    let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
-    if (tb <= 1)
-        tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
-    HTML('td[data-x="tb"]', tb, overview);
+    if (move.fen) {
+        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+        if (tb <= 1)
+            tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
+        HTML('td[data-x="tb"]', tb, overview);
+    }
 
-    let result = check_adjudication(move.adjudication, num_ply),
+    let result = check_adjudication(move.adjudication || move, num_ply),
         status = headers.Termination;
     finished = headers.TerminationDetails;
     // support for old seasons
@@ -2719,12 +2885,16 @@ function update_overview_moves(section, headers, moves, is_new) {
  * Update the PGN
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
- * @param {Object} pgn
+ * @param {string|Object} pgn
+ * @param {Object} extras
  * @param {boolean=} reset_moves triggered by check_missing_moves
  */
-function update_pgn(section, pgn, reset_moves) {
+function update_pgn(section, pgn, extras, reset_moves) {
     if (!xboards[section])
         return;
+
+    pgn = parse_pgn(pgn);
+    Assign(pgn, extras);
 
     // 0) trim keys, ex: " WhiteEngineOptions": ...
     Keys(pgn).forEach(key => {
@@ -2746,6 +2916,10 @@ function update_pgn(section, pgn, reset_moves) {
         new_game = pgn.gameChanged,
         num_move = moves.length,
         overview = Id('overview');
+
+    // FUTURE: use ?? operator
+    if (section == 'archive' && headers)
+        download_live_evals(headers.Round);
 
     // 2) update overview
     if (pgn.Users)
@@ -3697,7 +3871,7 @@ function popup_custom(id, name, e, scolor) {
     if (e.buttons)
         return;
 
-    let show,
+    let num_col, show,
         popup = Id(id),
         type = e.type;
 
@@ -3719,9 +3893,12 @@ function popup_custom(id, name, e, scolor) {
 
             // add engine + version
             lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
-            lines = lines.flat().map(item => `<div>${item}</div>`);
+            lines = lines.map(([left, right]) => {
+                return `<div><div>${resize_text(left, 20)}</div><div class="indent">${resize_text(right, 20) || '&nbsp;'}</div></div>`;
+            });
 
-            HTML(popup, `<grid class="grid2">${lines.join('')}</grid>`);
+            num_col = lines.length / 10;
+            HTML(popup, `<verts class="list fastart">${lines.join('')}</verts>`);
         }
         else if (name == 'fen') {
             let fen = TEXT(e.target),
@@ -3751,6 +3928,8 @@ function popup_custom(id, name, e, scolor) {
     }
 
     Class(popup, 'popup-show', show);
+    Style(popup, `min-width:${Min(num_col * 160, window.innerWidth * 2/3)}px`, num_col);
+
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
         clear_timeout(`popup-${name}`);
