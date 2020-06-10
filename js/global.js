@@ -178,7 +178,7 @@ function parse_dev() {
             d: 'debug',
             D: 'div',
             e: 'eval',                  // live eval
-            f: 'fen',                   // sanity check: FEN vs ply
+            f: 'fen',                   // parse_fen
             g: 'graph',
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files

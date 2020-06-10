@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-06-10 : 2020-06-10 : drag and drop bugfix
+2020-06-10 : 2020-06-09 : load the PGN directly instead of pgjson
 2020-06-09 : 2020-06-09 : download link for each game
 2020-06-09 : 2020-06-09 : support old adjudication format
 2020-06-09 : 2020-06-09 : support season 1 move format

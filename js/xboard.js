@@ -24,7 +24,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
-DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, LS, Min, mix_hex_colors, Now, Parent,
+DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, Min, mix_hex_colors, Now, Parent,
 play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper,
 Visible, Y
 */
@@ -380,8 +380,9 @@ class XBoard {
      * - completely replaces the moves list with this one
      * @param {string} text
      * @param {number=} cur_ply if defined, then we want to go to this ply
+     * @param {boolean=} force force update
      */
-    add_moves_string(text, cur_ply) {
+    add_moves_string(text, cur_ply, force) {
         if (!text)
             return;
 
@@ -394,7 +395,7 @@ class XBoard {
         let [new_ply, new_items] = split_move_string(text),
             [old_ply] = split_move_string(this.text),
             want_ply = cur_ply? cur_ply: new_ply;
-        if (new_ply < old_ply) {
+        if (!force && new_ply < old_ply) {
             if (DEV.ply)
                 LS(`${this.id}: add_moves_string: ${new_ply} < ${old_ply}`);
             // return;
@@ -421,7 +422,7 @@ class XBoard {
                 return;
             }
             // turn? => use it
-            else if ('0123456789'.includes(item[0])) {
+            if ('0123456789'.includes(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
                 lines.push(`<i class="turn" data-j="${turn}">${turn}.</i>`);
@@ -441,7 +442,7 @@ class XBoard {
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
-        let is_current = (new_ply == cur_ply || this.manual);
+        let is_current = (new_ply == cur_ply || force || this.manual);
         if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
@@ -875,6 +876,9 @@ class XBoard {
                         return false;
                     }
                     Assign(move_next, result);
+                    if (result.san)
+                        move_next.m = result.san;
+
                     move_next.fen = this.chess_fen();
                     move_next.ply = next;
                     // LS(`next=${next} : ${get_move_ply(move_next)}`);
@@ -947,6 +951,15 @@ class XBoard {
      * @returns {Object}
      */
     chess_move(text) {
+        // handle UCI: e1g1 = O-O, e7e8q = promotion
+        if (text.length >= 4 && '0123456789'.includes(text[1]) && '0123456789'.includes(text[3])
+                && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
+            text = {
+                from: text.slice(0, 2),
+                promotion: text[4],
+                to: text.slice(2, 4),
+            };
+        }
         return this.chess.move(text);
     }
 
