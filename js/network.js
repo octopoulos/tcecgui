@@ -12,8 +12,8 @@ update_player_eval, update_table, update_twitch, Y
 'use strict';
 
 // modify those values in config.js
-let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV',
-    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat';
+let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com/',
+    TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
 let prev_room = 0,
     socket,
@@ -189,7 +189,7 @@ function update_twitch(dark, chat_url, only_resize) {
         return;
 
     let current = node.src,
-        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '?darkpopout': ''}`: '';
+        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '&darkpopout': ''}`: '';
 
     if (!only_resize && current != src)
         node.src = src;
