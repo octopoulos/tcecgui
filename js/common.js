@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-06-10
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -22,6 +22,8 @@ let Abs = Math.abs,
     Floor = Math.floor,
     From = Array.from,
     IsArray = Array.isArray,
+    IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
+    IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
     Max = Math.max,
     Min = Math.min,
@@ -390,7 +392,7 @@ function Events(sel, events, callback, options, parent) {
  * @returns {boolean}
  */
 function HasClass(node, class_) {
-    if (typeof(node) == 'string')
+    if (IsString(node))
         node = _(node);
     if (!node)
         return;
@@ -405,7 +407,7 @@ function HasClass(node, class_) {
  * @returns {boolean}
  */
 function HasClasses(node, classes) {
-    if (typeof(node) == 'string')
+    if (IsString(node))
         node = _(node);
     if (!node)
         return;
@@ -499,7 +501,7 @@ function HTML(sel, html, parent) {
  * Index('#second')     // 2
  */
 function Index(node) {
-    if (typeof(node) == 'string')
+    if (IsString(node))
         node = _(node);
     if (!node)
         return;
@@ -541,7 +543,7 @@ function Input(sel, callback, parent) {
  * InsertNodes('#chat', nodes, true)    // preprend
  */
 function InsertNodes(parent, nodes, preprend) {
-    if (typeof(parent) == 'string')
+    if (IsString(parent))
         parent = _(parent);
     if (!parent)
         return;
@@ -568,7 +570,7 @@ function InsertNodes(parent, nodes, preprend) {
  * Parent(node, {attrs: 'id=ok', tag: 'a div')      // find a parent with tag <a> or <div> and whose ID='ok'
  */
 function Parent(node, {tag, class_, attrs, self}={}) {
-    if (typeof(node) == 'string')
+    if (IsString(node))
         node = _(node);
     if (!node)
         return;
@@ -1043,7 +1045,7 @@ function Format(vector, sep=' ', align=null) {
  * @returns {string}
  */
 function FormatFloat(text, align) {
-    if (Number.isFinite(text) && !Number.isInteger(text))
+    if (IsFloat(text))
         text = text.toFixed(3);
     if (text === '-0.000' || text === '0.000')
         text = '0';

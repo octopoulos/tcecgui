@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-28
+// @version 2020-06-10
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -10,9 +10,9 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
-E, Events, From, history, HTML, Id, Keys, LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now,
-Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, Style,
-TEXT, Title, Undefined, Visible, window
+E, Events, From, history, HTML, Id, IsArray, IsFloat, IsString, Keys, LoadLibrary, localStorage, location, LS, Min,
+NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault,
+setInterval, setTimeout, Sign, Style, TEXT, Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -47,6 +47,7 @@ let __PREFIX = '_',
     },
     libraries = {},
     Lower = (text) => (text.toLowerCase()),
+    ON_OFF = ['on', 'off'],
     QUERY_KEYS = {
         '': '?',
         hash: '#',
@@ -71,6 +72,7 @@ let __PREFIX = '_',
     TRANSLATE_SPECIALS = {},
     translates = {},
     TRANSLATES = {},
+    TYPES = {},
     Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
     virtual_check_hash_special,
@@ -186,6 +188,69 @@ function get_string(name, def) {
 }
 
 /**
+ * Guess the types
+ * @param {Object} settings
+ * @param {string[]=} keys
+ */
+function guess_types(settings, keys) {
+    if (!keys)
+        keys = Keys(settings);
+
+    keys.forEach(key => {
+        let type,
+            def = DEFAULTS[key],
+            def_type = typeof(def);
+
+        if (def_type == 'boolean')
+            type = 'b';
+        else if (def_type == 'object')
+            type = 'o';
+        else if (def_type == 'string')
+            type = 's';
+        else if (IsFloat(def))
+            type = 'f';
+        // integer default could still be a float type
+        else {
+            let setting = settings[key][0];
+            if (typeof(setting) == 'string')
+                type = 's';
+            else if (!setting)
+                type = 'i';
+            else if (!IsArray(setting)) {
+                switch (setting.type) {
+                case 'number':
+                    type = Number.isInteger(setting.step || 1)? 'i': 'f';
+                    break;
+                case 'color':
+                case 'text':
+                    type = 's';
+                    break;
+                }
+            }
+            else if (setting.length == 2 && setting[0] == ON_OFF[0] && setting[1] == ON_OFF[1])
+                type = 'i';
+
+            if (!type) {
+                type = 'i';
+                for (let item of setting) {
+                    if (IsString(item)) {
+                        type = 's';
+                        break;
+                    }
+                    if (IsFloat(item)) {
+                        type = 'f';
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (type)
+            TYPES[key] = type;
+    });
+}
+
+/**
  * Load a library only once
  * @param {string} url
  * @param {function=} callback
@@ -206,6 +271,7 @@ function load_library(url, callback, extra) {
 
 /**
  * Merge settings
+ * + updates DEFAULTS and TYPES
  * @param {Object} x_settings
  */
 function merge_settings(x_settings) {
@@ -226,8 +292,13 @@ function merge_settings(x_settings) {
     // update defaults
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
-        if (typeof(settings) == 'object')
-            Assign(DEFAULTS, Assign({}, ...Keys(settings).map(key => ({[key]: settings[key][1]}))));
+        if (typeof(settings) == 'object') {
+            let keys = Keys(settings).filter(key => key[0] != '_' && typeof(settings[key]) == 'object');
+            Assign(DEFAULTS, Assign({}, ...keys.map(key => ({[key]: settings[key][1]}))));
+
+            // update types
+            guess_types(settings, keys);
+        }
     });
 }
 
@@ -683,15 +754,27 @@ function is_fullscreen() {
 function load_defaults() {
     Keys(DEFAULTS).forEach(key => {
         let value,
-            def = DEFAULTS[key];
-        if (Number.isInteger(def) || typeof(def) == 'boolean')
-            value = get_int(key, def);
-        else if (Number.isFinite(def))
+            def = DEFAULTS[key],
+            type = TYPES[key];
+
+        switch (type) {
+        case 'f':
             value = get_float(key, def);
-        else if (typeof(def) == 'object')
+            break;
+        case 'b':
+        case 'i':
+            value = get_int(key, def);
+            break;
+        case 'o':
             value = get_object(key, def);
-        else
+            break;
+        case 's':
             value = get_string(key, def);
+            break;
+        default:
+            LS(`unknown type: ${key} : ${def}`);
+        }
+
         Y[key] = value;
     });
 
@@ -746,11 +829,13 @@ function sanitise_data() {
     // convert string to number
     Keys(DEFAULTS).forEach(key => {
         let def = DEFAULTS[key],
+            type = TYPES[key],
             value = Y[key];
-        if (Number.isInteger(def) && !Number.isInteger(value))
-            Y[key] = parseInt(value) || def;
-        else if (Number.isFinite(def) && !Number.isFinite(value))
+
+        if (type == 'f')
             Y[key] = parseFloat(value) || def;
+        else if (type == 'i')
+            Y[key] = parseInt(value) || def;
     });
 
     if (virtual_sanitise_data_special)

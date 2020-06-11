@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-06-10
 //
 /*
 globals
@@ -24,8 +24,8 @@ create_module(IMPORT_PATH, [
 
 let {
         Assign, calculate_h2h, calculate_probability, calculate_seeds, calculate_score, create_field_value,
-        create_game_link, format_engine, format_eval, format_hhmmss, format_opening, format_percent, get_short_name,
-        players, tour_info, Y,
+        create_game_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening, format_percent,
+        get_short_name, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,6 +193,17 @@ let {
     });
 });
 
+// format_fen
+[
+    ['1r4k1/8/1P1p1pP1/p2P4/2P2P2/P4N2/5K2/4R3 w - - 0 48', '<i class="nowrap">1r4k1</i>/<i class="nowrap">8</i>/<i class="nowrap">1P1p1pP1</i>/<i class="nowrap">p2P4</i>/<i class="nowrap">2P2P2</i>/<i class="nowrap">P4N2</i>/<i class="nowrap">5K2</i>/<i class="nowrap">4R3</i> <i class="nowrap">w - - 0 48</i>'],
+    ['8/3R2r1/8/4p1k1/4P3/5K2/8/8 b - - 0 91', '<i class="nowrap">8</i>/<i class="nowrap">3R2r1</i>/<i class="nowrap">8</i>/<i class="nowrap">4p1k1</i>/<i class="nowrap">4P3</i>/<i class="nowrap">5K2</i>/<i class="nowrap">8</i>/<i class="nowrap">8</i> <i class="nowrap">b - - 0 91</i>'],
+]
+ .forEach(([fen, answer], id) => {
+    test(`format_fen:${id}`, () => {
+        expect(format_fen(fen)).toEqual(answer);
+    });
+});
+
 // format_hhmmss
 [
     [null, '00:00:00'],
@@ -263,5 +274,325 @@ let {
 ].forEach(([text, answer], id) => {
     test(`get_short_name:${id}`, () => {
         expect(get_short_name(text)).toEqual(answer);
+    });
+});
+
+// parse_date_time
+[
+    ['', 0],
+    [undefined, 0],
+    ['2020-06-11T01:43:15Z', 1591839795],
+    ['2020-06-11T01:43:15+00:00', 1591839795],
+    ['2020-06-11T01:43:15+01:00', 1591836195],
+    ['01:43:15 on 2020-06-11', 1591839795],
+    ['2020-06-11 01:43:15 UTC', 1591839795],
+    ['2020-06-11 01:43:15Z', 1591839795],
+].forEach(([text, answer], id) => {
+    test(`parse_date_time:${id}`, () => {
+        expect(parse_date_time(text)).toEqual(answer);
+    });
+});
+
+// parse_pgn
+[
+    [
+        `
+        [Event "F/S Return Match"]
+        [Site "Belgrade, Serbia JUG"]
+        [Date "1992.11.04"]
+        [Round "29"]
+        [White "Fischer, Robert J."]
+        [Black "Spassky, Boris V."]
+        [Result "1/2-1/2"]
+
+        1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 {This opening is called the Ruy Lopez.}
+        4. Ba4 Nf6 5. O-O 1/2-1/2
+        `,
+        {
+            Headers: {
+                Black: 'Spassky, Boris V.',
+                Date: '1992.11.04',
+                Event: 'F/S Return Match',
+                Result: '1/2-1/2',
+                Round: '29',
+                Site: 'Belgrade, Serbia JUG',
+                White: 'Fischer, Robert J.',
+            },
+            Moves: [
+                {m: 'e4', ply: 0},
+                {m: 'e5', ply: 1},
+                {m: 'Nf3', ply: 2},
+                {m: 'Nc6', ply: 3},
+                {m: 'Bb5', ply: 4},
+                {m: 'a6', ply: 5, 'This opening is called the Ruy Lopez.': true},
+                {m: 'Ba4', ply: 6},
+                {m: 'Nf6', ply: 7},
+                {m: 'O-O', ply: 8},
+            ]
+        },
+    ],
+    [
+        `
+        [Event "TCEC Season 18 - Division P"]
+        [Site "https://tcec-chess.com"]
+        [Date "2020.06.10"]
+        [Round "33.3"]
+        [White "Stoofvlees II a14"]
+        [Black "LCZero v0.25.1-sv-t60-3010"]
+        [Result "*"]
+        [BlackElo "3809"]
+        [ECO "A43"]
+        [GameStartTime "2020-06-10T16:54:26.260 UTC"]
+        [Opening "Old Benoni defence"]
+        [Termination "unterminated"]
+        [TimeControl "5400+10"]
+        [WhiteElo "3730"]
+
+        {WhiteEngineOptions: Protocol=uci; Hash=8192; CPUs=20; Threads per GPU=3; SyzygyPath=/home/syzygy; CommandLineOptions=;, BlackEngineOptions: Protocol=uci; MoveOverheadMs=1000; WeightsFile=384x30-t60-3010.pb.gz; Threads=2; Backend=demux; BackendOptions=backend=cudnn-fp16,custom_winograd=true,(gpu=0),(gpu=1),(gpu=2),(gpu=3); NNCacheSize=20000000; MinibatchSize=320; MaxPrefetch=160; MaxCollisionEvents=917; MaxOutOfOrderEvalsFactor=2.4; CPuct=2.147; CPuctAtRoot=2.147; CPuctBase=18368; FpuValue=0.443; CPuctFactor=2.815; PolicyTemperature=1.607; SmartPruningMinimumBatches=600; VerboseMoveStats=true; SyzygyPath=/home/syzygy; LogFile=lc0.log; Ponder=false; UCI_ShowWDL=true; StrictTiming=true; CommandLineOptions=--strict-uci-timing --show-wdl;}
+        1. d4 {book, mb=+0+0+0+0+0,} c5 {book, mb=+0+0+0+0+0,}
+        2. d5 {book, mb=+0+0+0+0+0,} d6 {book, mb=+0+0+0+0+0,}
+        3. c4 {book, mb=+0+0+0+0+0,} g6 {book, mb=+0+0+0+0+0,}
+        4. Nc3 {book, mb=+0+0+0+0+0,} Bg7 {book, mb=+0+0+0+0+0,}
+        5. g3 {book, mb=+0+0+0+0+0,} Nf6 {book, mb=+0+0+0+0+0,}
+        6. Bg2 {book, mb=+0+0+0+0+0,} O-O {book, mb=+0+0+0+0+0,}
+        7. Nf3 {book, mb=+0+0+0+0+0,} Na6 {book, mb=+0+0+0+0+0,}
+        8. O-O {book, mb=+0+0+0+0+0,} Nc7 {book, mb=+0+0+0+0+0,}
+        9. e4 {d=21, sd=57, mt=192630, tl=5217370, s=19738, n=3801954, pv=e4 b6 Bg5 Ba6 Qd3 e6 h3 Re8 Bh4 exd5 exd5 Qd7 a4 Qf5 Qxf5 gxf5 Nd2 Nd7 Rfe1 Ne5 Bf1 Ng6 Bg5 h6 Be3 Bc8 Nf3 Bd7 Kg2 Na6 Bd2 Nb4 Rxe8+ Rxe8 a5, tb=0, h=8.0, ph=0.0, wv=0.72, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        e5 {d=14, sd=63, mt=106883, tl=5303117, s=45929, n=4908274, pv=e5 Qe2 b6 a3 Ng4 Bd2 Bd7 a4 a6 Rfb1 a5 Bh3 Qe7 Nh4 Nh6 Bxd7 Qxd7 Rf1 Rae8 Rae1 f5 exf5 Nxf5, tb=0, h=0.0, ph=0.0, wv=0.46, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        10. Ne1 {d=21, sd=62, mt=178275, tl=5049095, s=19793, n=3528600, pv=Ne1 Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 b6 axb6 axb6 Ra3 Ra5 Qb3 Nh7 Nb5 Bxb5 cxb5 Qd7 Bxb4 cxb4 Qxb4 Qxb5 Qxb5 Rxb5 Nd3 Ra5 Rb3 Rb8 Nb4 Rba8 Nc6 R5a6 f3 h5 h4 Bh6 Bh3 Kg7 Kf2 Nf6 Ke2 Kf8 Kd3 Kg7 Ke2, tb=0, h=9.8, ph=0.0, wv=0.78, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        Bd7 {d=16, sd=62, pd=Qe2, mt=137082, tl=5176035, s=45633, n=6277978, pv=Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 Kh7 Nb5 Ne8 Qb3 a6 Nc3 b6 axb6 Qxb6 Qd1 Qd8 Ra3 Qe7 Qe2 f5 exf5 gxf5 g4 fxg4 Be4+ Kg8 Bb1 Nf6 Ng2 e4, tb=0, h=0.0, ph=0.0, wv=0.40, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        `,
+        {
+            BlackEngineOptions: {
+                Backend: 'demux',
+                BackendOptions: 'backend',
+                CPuct: '2.147',
+                CPuctAtRoot: '2.147',
+                CPuctBase: '18368',
+                CPuctFactor: '2.815',
+                CommandLineOptions: '--strict-uci-timing --show-wdl',
+                FpuValue: '0.443',
+                LogFile: 'lc0.log',
+                MaxCollisionEvents: '917',
+                MaxOutOfOrderEvalsFactor: '2.4',
+                MaxPrefetch: '160',
+                MinibatchSize: '320',
+                MoveOverheadMs: '1000',
+                NNCacheSize: '20000000',
+                PolicyTemperature: '1.607',
+                Ponder: 'false',
+                Protocol: 'uci',
+                SmartPruningMinimumBatches: '600',
+                StrictTiming: 'true',
+                SyzygyPath: '/home/syzygy',
+                Threads: '2',
+                UCI_ShowWDL: 'true',
+                VerboseMoveStats: 'true',
+                WeightsFile: '384x30-t60-3010.pb.gz',
+            },
+            Headers: {
+                Black: 'LCZero v0.25.1-sv-t60-3010',
+                BlackElo: '3809',
+                Date: '2020.06.10',
+                ECO: 'A43',
+                Event: 'TCEC Season 18 - Division P',
+                GameStartTime: '2020-06-10T16:54:26.260 UTC',
+                Opening: 'Old Benoni defence',
+                Result: '*',
+                Round: '33.3',
+                Site: 'https://tcec-chess.com',
+                Termination: 'unterminated',
+                TimeControl: '5400+10',
+                White: 'Stoofvlees II a14',
+                WhiteElo: '3730',
+            },
+            Moves: [
+                {
+                    book: true,
+                    m: "d4",
+                    mb: "+0+0+0+0+0",
+                    ply: 0,
+                },
+                {
+                    book: true,
+                    m: "c5",
+                    mb: "+0+0+0+0+0",
+                    ply: 1,
+                },
+                {
+                    book: true,
+                    m: "d5",
+                    mb: "+0+0+0+0+0",
+                    ply: 2,
+                },
+                {
+                    book: true,
+                    m: "d6",
+                    mb: "+0+0+0+0+0",
+                    ply: 3,
+                },
+                {
+                    book: true,
+                    m: "c4",
+                    mb: "+0+0+0+0+0",
+                    ply: 4,
+                },
+                {
+                    book: true,
+                    m: "g6",
+                    mb: "+0+0+0+0+0",
+                    ply: 5,
+                },
+                {
+                    book: true,
+                    m: "Nc3",
+                    mb: "+0+0+0+0+0",
+                    ply: 6,
+                },
+                {
+                    book: true,
+                    m: "Bg7",
+                    mb: "+0+0+0+0+0",
+                    ply: 7,
+                },
+                {
+                    book: true,
+                    m: "g3",
+                    mb: "+0+0+0+0+0",
+                    ply: 8,
+                },
+                {
+                    book: true,
+                    m: "Nf6",
+                    mb: "+0+0+0+0+0",
+                    ply: 9,
+                },
+                {
+                    book: true,
+                    m: "Bg2",
+                    mb: "+0+0+0+0+0",
+                    ply: 10,
+                },
+                {
+                    book: true,
+                    m: "O-O",
+                    mb: "+0+0+0+0+0",
+                    ply: 11,
+                },
+                {
+                    book: true,
+                    m: "Nf3",
+                    mb: "+0+0+0+0+0",
+                    ply: 12,
+                },
+                {
+                    book: true,
+                    m: "Na6",
+                    mb: "+0+0+0+0+0",
+                    ply: 13,
+                },
+                {
+                    book: true,
+                    m: "O-O",
+                    mb: "+0+0+0+0+0",
+                    ply: 14,
+                },
+                {
+                    book: true,
+                    m: "Nc7",
+                    mb: "+0+0+0+0+0",
+                    ply: 15,
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 21,
+                    h: "8.0",
+                    m: "e4",
+                    mb: "+0+0+0+0+0",
+                    mt: 192630,
+                    n: 3801954,
+                    ph: "0.0",
+                    ply: 16,
+                    pv: "9. e4 b6 10. Bg5 Ba6 11. Qd3 e6 12. h3 Re8 13. Bh4 exd5 14. exd5 Qd7 15. a4 Qf5 16. Qxf5 gxf5 17. Nd2 Nd7 18. Rfe1 Ne5 19. Bf1 Ng6 20. Bg5 h6 21. Be3 Bc8 22. Nf3 Bd7 23. Kg2 Na6 24. Bd2 Nb4 25. Rxe8+ Rxe8 26. a5",
+                    s: 19738,
+                    sd: 57,
+                    tb: 0,
+                    tl: 5217370,
+                    wv: "0.72",
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 14,
+                    h: "0.0",
+                    m: "e5",
+                    mb: "+0+0+0+0+0",
+                    mt: 106883,
+                    n: 4908274,
+                    ph: "0.0",
+                    ply: 17,
+                    pv: "9...e5 10. Qe2 b6 11. a3 Ng4 12. Bd2 Bd7 13. a4 a6 14. Rfb1 a5 15. Bh3 Qe7 16. Nh4 Nh6 17. Bxd7 Qxd7 18. Rf1 Rae8 19. Rae1 f5 20. exf5 Nxf5",
+                    s: 45929,
+                    sd: 63,
+                    tb: 0,
+                    tl: 5303117,
+                    wv: "0.46",
+                },
+                {
+                    R50: 49,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 21,
+                    h: "9.8",
+                    m: "Ne1",
+                    mb: "+0+0+0+0+0",
+                    mt: 178275,
+                    n: 3528600,
+                    ph: "0.0",
+                    ply: 18,
+                    pv: "10. Ne1 Bd7 11. a4 Na6 12. Bg5 h6 13. Bd2 Nb4 14. a5 b6 15. axb6 axb6 16. Ra3 Ra5 17. Qb3 Nh7 18. Nb5 Bxb5 19. cxb5 Qd7 20. Bxb4 cxb4 21. Qxb4 Qxb5 22. Qxb5 Rxb5 23. Nd3 Ra5 24. Rb3 Rb8 25. Nb4 Rba8 26. Nc6 R5a6 27. f3 h5 28. h4 Bh6 29. Bh3 Kg7 30. Kf2 Nf6 31. Ke2 Kf8 32. Kd3 Kg7 33. Ke2",
+                    s: 19793,
+                    sd: 62,
+                    tb: 0,
+                    tl: 5049095,
+                    wv: "0.78",
+                },
+                {
+                    R50: 49,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 16,
+                    h: "0.0",
+                    m: "Bd7",
+                    mb: "+0+0+0+0+0",
+                    mt: 137082,
+                    n: 6277978,
+                    pd: "Qe2",
+                    ph: "0.0",
+                    ply: 19,
+                    pv: "10...Bd7 11. a4 Na6 12. Bg5 h6 13. Bd2 Nb4 14. a5 Kh7 15. Nb5 Ne8 16. Qb3 a6 17. Nc3 b6 18. axb6 Qxb6 19. Qd1 Qd8 20. Ra3 Qe7 21. Qe2 f5 22. exf5 gxf5 23. g4 fxg4 24. Be4+ Kg8 25. Bb1 Nf6 26. Ng2 e4",
+                    s: 45633,
+                    sd: 62,
+                    tb: 0,
+                    tl: 5176035,
+                    wv: "0.40",
+                },
+            ],
+            WhiteEngineOptions: {
+                CPUs: '20',
+                CommandLineOptions: '',
+                Hash: '8192',
+                Protocol: 'uci',
+                SyzygyPath: '/home/syzygy',
+                'Threads per GPU': '3',
+            },
+        },
+    ]
+].forEach(([data, answer], id) => {
+    test(`parse_pgn:${id}`, () => {
+        expect(parse_pgn(data)).toEqual(answer);
     });
 });

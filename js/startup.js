@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-05
+// @version 2020-06-10
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -16,8 +16,8 @@ ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOA
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
-get_active_tab, get_area, get_drop_id, get_object, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_active_tab, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
+Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, LIVE_ENGINES, load_defaults, load_library, localStorage, location, LS, Max,
 merge_settings, Min, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev,
 PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
@@ -1666,6 +1666,7 @@ function set_global_events() {
  */
 function load_settings() {
     load_defaults();
+    Y.preset = 'custom';
     reset_old_settings();
 
     api_times = get_object('times') || {};
@@ -1807,6 +1808,7 @@ function startup() {
         version: VERSION,
         x: 'live',
     });
+    guess_types(DEFAULTS);
 
     Assign(NO_IMPORTS, {
         dev: 1,
@@ -1818,6 +1820,7 @@ function startup() {
         preset: 1,
         round: 1,
         season: 1,
+        stage: 1,
         stream: 1,
         twitch_video: 1,
         version: 1,
@@ -2007,7 +2010,7 @@ function startup() {
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
             grid_pva: option_number(1, 0, 10),
-            move_height: option_number(5, 3, 100, 0.1),
+            move_height: option_number(5, 3, 100, 0.05),
             move_height_copy: option_number(20, 3, 100, 0.1),
             move_height_live: option_number(3.6, 3, 100, 0.1),
             move_height_pv: option_number(5, 5, 100, 0.1),
@@ -2043,7 +2046,7 @@ function startup() {
             _pop: true,
             copy_moves: '1',
             grid: option_number(0, 0, 10),
-            move_height: option_number(5, 3, 100, 0.1),
+            move_height: option_number(5, 3, 100, 0.05),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
         },

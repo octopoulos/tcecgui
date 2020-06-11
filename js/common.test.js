@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-11
+// @version 2020-06-10
 //
 /*
 globals
@@ -15,11 +15,11 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
-], OUTPUT_MODULE);
+], OUTPUT_MODULE, 'IsFloat IsString');
 
 let {
         Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-        InvalidEmail, InvalidPhone, QueryString, Split, Stringify, Title, Undefined,
+        InvalidEmail, InvalidPhone, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title, Undefined,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,6 +175,55 @@ let {
     });
 });
 
+// IsFloat
+[
+    [undefined, false],
+    [0, false],
+    ['', false],
+    [NaN, false],
+    [{x: 5}, false],
+    [5.5, true],
+    ['5', false],
+    ['5.5', false],
+    [Infinity, false],
+    [Math.PI, true],
+].forEach(([text, answer], id) => {
+    test(`IsFloat:${id}`, () => {
+        expect(IsFloat(text)).toEqual(answer);
+    });
+});
+
+// IsString
+[
+    [undefined, false],
+    [0, false],
+    [NaN, false],
+    ['', true],
+    ['hello', true],
+    [{x: 5}, false],
+].forEach(([text, answer], id) => {
+    test(`IsString:${id}`, () => {
+        expect(IsString(text)).toEqual(answer);
+    });
+});
+
+// Pad
+[
+    [1, undefined, undefined, '01'],
+    [1, 3, undefined, '001'],
+    [1, 4, undefined, '001'],
+    [1, 4, '000', '0001'],
+    ['', undefined, undefined, '00'],
+    ['hello', undefined, undefined, 'lo'],
+    ['hello', 10, undefined, '00hello'],
+    ['hello', 10, '  ', '  hello'],
+    ['hello', 10, '               ', '     hello'],
+].forEach(([value, size, pad, answer], id) => {
+    test(`Pad:${id}`, () => {
+        expect(Pad(value, size, pad)).toEqual(answer);
+    });
+});
+
 // QueryString
 [
     [{query: 'q=query&lan=eng'}, {lan: 'eng', q: 'query'}],
@@ -190,6 +239,22 @@ let {
 ].forEach(([dico, answer], id) => {
     test(`QueryString:${id}`, () => {
         expect(QueryString(dico)).toEqual(answer);
+    });
+});
+
+// SetDefault
+[
+    [{}, 'new', ['a', 'b'], {new: ['a', 'b']}],
+    [{lan: 'fra'}, 'new', ['a', 'b'], {lan: 'fra', new: ['a', 'b']}],
+    [{}, 'areas', {}, {areas: {}}],
+    [{areas: [1, 2, 3]}, 'areas', {}, {areas: [1, 2, 3]}],
+    [[1, 2, 3], 3, 'FOUR', [1, 2, 3, 'FOUR']],
+    [[1, 2, 3], 3, [5, 6], [1, 2, 3, [5, 6]]],
+    [[1, 2, 3], 3, {lan: 'fra', options: {x: 1}}, [1, 2, 3, {lan: 'fra', options: {x: 1}}]],
+].forEach(([dico, key, def, answer], id) => {
+    test(`SetDefault:${id}`, () => {
+        SetDefault(dico, key, def);
+        expect(dico).toEqual(answer);
     });
 });
 

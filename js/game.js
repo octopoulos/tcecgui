@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-09
+// @version 2020-06-10
 //
 // Game specific code:
 // - control the board, moves
@@ -16,7 +16,7 @@ C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, 
 context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
 document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
 get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
-invert_eval, IsArray, Keys, KEYS,
+invert_eval, IsArray, IsString, Keys, KEYS,
 listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
 play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource,
 resume_sleep, Round,
@@ -485,6 +485,9 @@ function get_xhr_elapsed(xhr) {
  * @returns {number}
  */
 function parse_date_time(text) {
+    if (!text)
+        return 0;
+
     let seconds,
         items = text.split(' on ');
     if (items.length < 2)
@@ -1582,7 +1585,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 value = format_engine(value);
                 break;
             default:
-                if (typeof(value) == 'string') {
+                if (IsString(value)) {
                     if (is_cross && !td_class & key.length == 2)
                         td_class = 'mono';
                     else if (value.slice(0, 4) == 'http')
@@ -2379,6 +2382,8 @@ function parse_pgn(data) {
     }
 
     // B) parse the raw PGN
+    data = data.replace(/\r/g, '');
+
     let end, inside, start,
         headers = {},
         length = data.length,
@@ -2386,8 +2391,9 @@ function parse_pgn(data) {
 
     // 1) headers
     for (let i = 0; i < length; i ++) {
+        let char = data[i];
         if (inside) {
-            if (data[i] == ']') {
+            if (char == ']') {
                 if (start) {
                     // Date "2020.05.25"
                     let text = data.slice(start, i),
@@ -2402,12 +2408,18 @@ function parse_pgn(data) {
                     start = 0;
                 }
                 inside = false;
+
+                let pos = data.indexOf('[');
+                if (pos < 0 || pos > i + 2)
+                    break;
             }
         }
-        else if (data[i] == '[') {
+        else if (char == '[') {
             inside = true;
             start = i + 1;
         }
+        else if (char == '\n' && data[i + 1] == '\n')
+            break;
     }
     data = data.slice(end);
 
@@ -2415,19 +2427,22 @@ function parse_pgn(data) {
     let pos = data.indexOf('{'),
         pos2 = data.indexOf('}');
     if (pos >= 0 && pos2 > pos) {
-        let engines = data.slice(pos + 1, pos2).split(';, ');
-        for (let engine of engines) {
-            let [name, options] = engine.split(':');
-            if (options) {
-                options = Assign({}, ...options.split(';').map(item => {
-                    let items = item.split('=');
-                    return {[items[0].trim()]: (items[1] || '').trim()};
-                }));
-                delete options[''];
-                pgn[name] = options;
+        let left = data.slice(0, pos).replace(/\s+/g, '');
+        if (!left) {
+            let engines = data.slice(pos + 1, pos2).split(';, ');
+            for (let engine of engines) {
+                let [name, options] = engine.split(':');
+                if (options) {
+                    options = Assign({}, ...options.split(';').map(item => {
+                        let items = item.split('=');
+                        return {[items[0].trim()]: (items[1] || '').trim()};
+                    }));
+                    delete options[''];
+                    pgn[name] = options;
+                }
             }
+            data = data.slice(pos2 + 1);
         }
-        data = data.slice(pos2 + 1);
     }
 
     // 3) moves
@@ -2678,7 +2693,7 @@ function update_move_pv(section, ply, move) {
     board.instant();
 
     if (move.pv) {
-        if (typeof(move.pv) == 'string')
+        if (IsString(move.pv))
             board.add_moves_string(move.pv, main.ply, true);
         else
             board.add_moves(move.pv.Moves, main.ply);
@@ -3753,7 +3768,7 @@ function handle_board_events(board, type, value) {
 function open_table(sel) {
     let tab = sel;
 
-    if (typeof(tab) == 'string') {
+    if (IsString(tab)) {
         tab = _(`[data-x="${sel}"]`);
         if (!tab)
             tab = _(`[data-x="table-${sel}"]`);
