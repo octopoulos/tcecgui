@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-02
+// @version 2020-06-10
 //
 // game board:
 // - 4 rendering modes:
@@ -24,9 +24,9 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
-DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, Keys, Lower, LS, Min, mix_hex_colors, Now, Parent,
-play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T, timers, update_svg, Upper,
-Visible, Y
+DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, IsString, Keys, Lower, LS, Min, mix_hex_colors,
+Now, Parent, play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T, timers,
+update_svg, Upper, Visible, Y
 */
 'use strict';
 
@@ -695,7 +695,7 @@ class XBoard {
         }
 
         // 2) got a move => get coordinates
-        if (typeof(dico.from) == 'string') {
+        if (IsString(dico.from)) {
             dico.from = SQUARES[dico.from];
             dico.to = SQUARES[dico.to];
         }
@@ -1313,7 +1313,7 @@ class XBoard {
 
             if (class_)
                 class_ = ` ${class_}`;
-            if (typeof(value) == 'string')
+            if (IsString(value))
                 title = value;
             if (title)
                 title = ` data-t="${title}" data-t2="title"`;

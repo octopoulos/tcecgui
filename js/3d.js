@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-30
+// @version 2020-06-10
 //
 // general 3d rendering code
 //
@@ -9,8 +9,8 @@
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
-HasClass, HTML, Id, Input, IsArray, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, Now, Parent, requestAnimationFrame,
+HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
+LANGUAGES, load_library, LS, merge_settings, navigator, Now, ON_OFF, Parent, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
 */
@@ -100,7 +100,6 @@ let audiobox = {
     Object3D,
     old_pos,
     old_rot,
-    ON_OFF = ['on', 'off'],
     ONLY_POPUPS = {},
     PARENT_3D = 'body',
     PARTS = [],
@@ -1152,7 +1151,7 @@ function show_modal(show, text, title, name) {
     S('#overlay', show);
 
     let node = Id('modal');
-    if (typeof(text) == 'string') {
+    if (IsString(text)) {
         Attrs('#modal-title', {'data-t': title? title: ''});
         HTML(node, text);
         translate_node(node);
@@ -1238,7 +1237,7 @@ function show_settings(name, xy) {
         let clean = key,
             color = setting._color,
             data = setting[0],
-            is_string = (typeof(data) == 'string')? ` name="${key}"`: '',
+            is_string = IsString(data)? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${key}"`,
             title = settings[key][2],

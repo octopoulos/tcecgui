@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-12
+// @version 2020-06-10
 //
 /*
 globals
@@ -17,9 +17,9 @@ create_module(IMPORT_PATH, [
     'common',
     //
     'engine',
-], OUTPUT_MODULE, 'DEFAULTS Keys X_SETTINGS');
+], OUTPUT_MODULE, 'DEFAULTS Keys TYPES X_SETTINGS');
 
-let {create_page_array, DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OUTPUT_MODULE);
+let {create_page_array, DEFAULTS, guess_types, Keys, merge_settings, TYPES, X_SETTINGS} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,10 +49,42 @@ let {create_page_array, DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OU
     });
 });
 
+// guess_types
+[
+    [
+        {
+            div: '',
+            game: 0,
+            order: 'left|center|right',
+            table_tab: {
+                archive: 'season',
+                live: 'stand',
+            },
+            timeout: 0.1,
+            useful: true,
+        },
+        {
+            div: 's',
+            game: 'i',
+            order: 's',
+            table_tab: 'o',
+            timeout: 'f',
+            useful: 'b',
+        },
+    ],
+].forEach(([settings, answer], id) => {
+    test(`guess_types:${id}`, () => {
+        guess_types(settings);
+        Keys(answer).forEach(key => {
+            expect(TYPES).toHaveProperty(key, answer[key]);
+        });
+    });
+});
+
 // merge_settings
 [
-    [{}, {}, {}],
-    [{advanced: {debug: ''}}, {advanced: {debug: ''}}, {debug: undefined}],
+    [{}, {}, {}, {}],
+    [{advanced: {debug: ''}}, {advanced: {debug: ''}}, {debug: undefined}, {debug: undefined}],
     [
         {audio: {volume: [{min: 0, max: 10, type: 'number'}, 5]}},
         {
@@ -60,6 +92,7 @@ let {create_page_array, DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OU
             audio: {volume: [{min: 0, max: 10, type: 'number'}, 5]},
         },
         {debug: undefined, volume: 5},
+        {debug: undefined, volume: 'i'}
     ],
     [
         {
@@ -77,13 +110,17 @@ let {create_page_array, DEFAULTS, Keys, merge_settings, X_SETTINGS} = require(OU
             },
         },
         {debug: undefined, key_time: 0, music: 0, volume: 5},
+        {debug: undefined, key_time: 'i', music: 'i', volume: 'i'},
     ],
-].forEach(([x_settings, answer, answer_def], id) => {
+].forEach(([x_settings, answer, answer_def, answer_type], id) => {
     test(`merge_settings:${id}`, () => {
         merge_settings(x_settings);
         expect(X_SETTINGS).toEqual(answer);
         Keys(answer_def).forEach(key => {
             expect(DEFAULTS).toHaveProperty(key, answer_def[key]);
+        });
+        Keys(answer_type).forEach(key => {
+            expect(TYPES).toHaveProperty(key, answer_type[key]);
         });
     });
 });
