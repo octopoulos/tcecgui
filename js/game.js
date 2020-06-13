@@ -1497,6 +1497,11 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
             // special cases
             switch (key) {
+            case 'action':
+            case 'decision':
+            case 'reason':
+                td_class = 'opening';
+                break;
             case 'black':
                 if (row.result == '0-1')
                     class_ = 'win';
@@ -1522,8 +1527,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 value = format_fen(value);
                 break;
             case 'game':
+            case 'gameno':
                 let game = is_sched_archive? row_id + 1: value;
-                if (row.moves) {
+                if (row.moves || row.reason) {
                     value = create_game_link(section, game);
                     if (is_sched && tour_url)
                         value = `<hori><a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn"><i style="margin-right:1em" data-svg="download"></i></a>${value}</hori>`;

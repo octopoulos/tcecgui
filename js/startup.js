@@ -372,8 +372,8 @@ function check_hash_special() {
     change_theme();
 
     populate_areas();
-    S('[data-x="season"]', !is_live, parent);
-    S('[data-x="log"]', is_live, parent);
+    S('.tab[data-x="season"]', !is_live, parent);
+    S('.tab[data-x="log"]', is_live, parent);
 
     Attrs('[data-x="sched"] i[data-t]', {'data-t': is_live? 'Schedule': 'Games'});
     translate_node(Id('table-tabs'));

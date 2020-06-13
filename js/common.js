@@ -1396,5 +1396,5 @@ function Title(text) {
  * @returns {*}
  */
 function Undefined(value, def) {
-    return (value !== undefined)? value: def;
+    return (value === undefined || Number.isNaN(value))? def: value;
 }

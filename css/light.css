@@ -1231,11 +1231,14 @@ grid {
     flex: 1;
     margin: 4px;
     max-width: 450px;
-    min-height: 350px;
+    min-height: 300px;
     min-width: 300px;
 }
-.panel.full {
+.full {
     max-width: unset !important;
+}
+.full #chat2 {
+    height: auto !important;
 }
 #right.narrow {
     flex: 1;
