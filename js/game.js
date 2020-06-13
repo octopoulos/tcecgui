@@ -2765,8 +2765,10 @@ function update_options(section, id) {
                 info[0] = `${value}TH`;
             else if (IsString(value)) {
                 let pos = value.indexOf('/syzygy');
-                if (pos >= 0)
-                    info[1] = `${(value[pos + 7] == '7')? 7: 6}Men TB`;
+                if (pos >= 0) {
+                    let next = value[pos + 7];
+                    info[1] = `${'34567'.includes(next)? next: 6}Men TB`;
+                }
             }
         });
 
