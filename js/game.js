@@ -2546,6 +2546,10 @@ function parse_pgn(data) {
             has_text = true;
     }
 
+    // 4) result
+    if (!headers.Opening)
+        headers.Opening = headers.Variant;
+
     Assign(pgn, {
         Headers: headers,
         Moves: moves,
@@ -2741,6 +2745,8 @@ function update_move_pv(section, ply, move) {
 /**
  * Update engine options when a new game has started
  * + find hardware info
+ * @param {string} section
+ * @param {number} id
  */
 function update_options(section, id) {
     let key = `${WB_TITLES[id]}EngineOptions`,
@@ -2801,11 +2807,17 @@ function update_overview_basic(section, headers) {
             value = value.replace(/1\/2/g, '½');
             break;
         case 'timecontrol':
-            let items = value.split('+');
-            key = 'tc';
-            value = `${items[0]/60}'+${items[1]}"`;
-            players[0].tc = items[0] * 1;
-            players[1].tc = items[0] * 1;
+            if (value) {
+                let items = value.split('+');
+                key = 'tc';
+                value = `${items[0]/60}'+${items[1]}"`;
+                let dico = {
+                    tc: items[0] * 1,
+                    tc2: items[1] * 1,
+                };
+                Assign(players[0], dico);
+                Assign(players[1], dico);
+            }
             break;
         }
 
@@ -2867,21 +2879,22 @@ function update_overview_moves(section, headers, moves, is_new) {
         num_move = moves.length,
         num_ply = main.moves.length,
         move = moves[num_move - 1],
-        ply = get_move_ply(move);
+        ply = get_move_ply(move),
+        who = num_ply % 2;                      // num_ply % 2 tells us who plays next
 
     // 1) clock
-    // num_ply % 2 tells us who plays next
-    if (is_live) {
-        let who = num_ply % 2;
-
-        // time control could be different for white and black
-        let tc = headers[`${WB_TITLES[who]}TimeControl`];
+    // time control could be different for white and black
+    for (let id = 0; id < 2; id ++) {
+        let tc = headers[`${WB_TITLES[id]}TimeControl`];
         if (tc) {
             let items = tc.split('+');
-            HTML(`td[data-x="tc"]`, `${items[0]/60}'+${items[1]}"`, overview);
-            players[who].tc = items[0] * 1;
+            Assign(players[id], {
+                tc: items[0] * 1,
+                tc2: items[1] * 1,
+            });
         }
     }
+    update_time_control(who);
 
     if (section != Y.x)
         return;
@@ -2998,7 +3011,8 @@ function update_pgn(section, pgn, extras, reset_moves) {
             LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move} : reset_moves=${reset_moves}`);
             LS(pgn);
         }
-        main.reset(1);
+
+        main.reset(1, headers.SetUp? headers.FEN: null);
         if (is_same) {
             reset_sub_boards(7);
             reset_charts();
@@ -3087,6 +3101,15 @@ function update_scores() {
         let player = players[id];
         HTML(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
     }
+}
+
+/**
+ * Update time control, player-specific
+ * @param {number} id
+ */
+function update_time_control(id) {
+    let player = players[id];
+    HTML(`#overview td[data-x="tc"]`, `${player.tc / 60}'+${player.tc2}"`);
 }
 
 // LIVE ACTION / DATA
@@ -3817,6 +3840,8 @@ function handle_board_events(board, type, value) {
             update_mobility();
             if (Y.arrow_moves == 'all')
                 add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
+
+            update_time_control((cur_ply + 2) % 2);
         }
         break;
     }

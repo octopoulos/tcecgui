@@ -19,7 +19,8 @@ create_module(IMPORT_PATH, [
 
 let {
         Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-        InvalidEmail, InvalidPhone, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title, Undefined,
+        InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title,
+        Undefined,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,6 +173,22 @@ let {
 ].forEach(([phone, answer], id) => {
     test(`InvalidPhone:${id}`, () => {
         expect(InvalidPhone(phone)).toEqual(answer);
+    });
+});
+
+// IsDigit
+[
+    [undefined, false],
+    [0, true],
+    ['0', true],
+    ['', false],
+    [NaN, false],
+    [{x: 5}, false],
+    [5.5, false],
+    ['5', true],
+].forEach(([text, answer], id) => {
+    test(`IsDigit:${id}`, () => {
+        expect(IsDigit(text)).toEqual(answer);
     });
 });
 
