@@ -10,7 +10,7 @@
 /*
 globals
 AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
-HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
+HOST_ARCHIVE:true, LINKS:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -19,8 +19,6 @@ HOST_ARCHIVE:true, LINKS:true, LIVE_ENGINES:true, THEMES:true, TIMEOUTS, TWITCH_
  * - first features are the ones that are changed the most frequently
  */
 function startup_config() {
-    LIVE_ENGINES = ['1x2080 Ti 7Men TB', '16TH 7Men TB'];
-
     HOST = 'https://tcec-chess.com';
     HOST_ARCHIVE = 'archive/json';
 

@@ -17,9 +17,8 @@ context_areas, context_target:true, controls, CopyClipboard, create_page_array, 
 document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
 get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
 invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
-listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
-play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource,
-resume_sleep, Round,
+listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
+push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
 split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
 translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
@@ -218,7 +217,7 @@ let ANALYSIS_URLS = {
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
-    TIMEOUT_live_delay = 1,
+    TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_search = 100,               // filtering the table when input changes
@@ -2281,37 +2280,55 @@ function check_adjudication(dico, total_moves) {
 /**
  * Check if some moves are missing => reload live.pgn
  * @param {number=} ply
+ * @param {string=} round used by live_eval
+ * @param {number=} pos used by player_eval, last finished pos, if different then it's a new game
  */
-function check_missing_moves(ply) {
+function check_missing_moves(ply, round, pos) {
     if (!Y.reload_missing)
         return;
     let section = Y.x;
     if (section != 'live')
         return;
 
-    let main = xboards.live,
+    let new_game,
+        main = xboards.live,
         now = Now(true),
         delta = now - main.time;
+
+    // tricks to detect a new game during live eval
+    if (round)
+        main.round2 = round;
+    if (pos && main.pos && pos != main.pos) {
+        new_game = main.pos;
+        main.pos = pos;
+    }
+
     if (delta < TIMEOUT_live_reload)
         return;
 
-    let empty = -1,
-        moves = main.moves,
-        num_move = moves.length;
+    if (new_game || (main.round2 && main.round != main.round2)) {
+        if (DEV.new)
+            LS(`round=${main.round} => ${main.round2} : pos=${new_game} => ${main.pos}`);
+    }
+    else {
+        let empty = -1,
+            moves = main.moves,
+            num_move = moves.length;
 
-    if (ply && !moves[ply - 1])
-        empty = ply - 1;
-    else
-        for (let i = num_move - 1; i >= 0; i --)
-            if (!moves[i]) {
-                empty = i;
-                break;
-            }
+        if (ply && !moves[ply - 1])
+            empty = ply - 1;
+        else
+            for (let i = num_move - 1; i >= 0; i --)
+                if (!moves[i]) {
+                    empty = i;
+                    break;
+                }
 
-    if (DEV.new)
-        LS(`empty=${empty} : delta=${delta}`);
-    if (empty < 0)
-        return;
+        if (empty < 0)
+            return;
+        if (DEV.new)
+            LS(`empty=${empty} : delta=${delta}`);
+    }
 
     add_timeout(section, () => {
         download_pgn(section, 'live.pgn', false, true);
@@ -2351,6 +2368,7 @@ function download_pgn(section, url, scroll_up, reset_moves) {
     if (DEV.new)
         LS(`download_pgn: ${section} : ${url} : ${scroll_up} : ${reset_moves}`);
     xboards[section].time = Now(true);
+    clear_timeout(section);
 
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
@@ -2722,10 +2740,12 @@ function update_move_pv(section, ply, move) {
 
 /**
  * Update engine options
+ * + find hardware info
  */
 function update_options(section, id) {
     let key = `${WB_TITLES[id]}EngineOptions`,
-        options = SetDefault(players[id], 'options', {}),
+        player = players[id],
+        options = SetDefault(player, 'options', {}),
         pgn = pgns[section],
         pgn_options = pgn[key];
 
@@ -2734,8 +2754,21 @@ function update_options(section, id) {
         pgn[key] = pgn_options;
     }
 
-    if (pgn_options)
+    if (pgn_options) {
         Assign(options, pgn_options);
+
+        // find threads + tb
+        let info = ['', ''];
+        Keys(options).forEach(key => {
+            let value = options[key];
+            if (['thread', 'threads'].includes(Lower(key)))
+                info[0] = `${value}TH`;
+            else if (IsString(value) && value.includes('/syzygy'))
+                info[1] = '6Men TB';
+        });
+
+        update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
+    }
 }
 
 /**
@@ -3170,6 +3203,38 @@ function update_clock(id, move) {
 }
 
 /**
+ * Update hardware info
+ * @param {number} id
+ * @param {string} engine
+ * @param {string} short
+ * @param {string} hardware
+ * @param {Node[]} nodes
+ */
+function update_hardware(id, engine, short, hardware, nodes) {
+    let player = players[id];
+    engine = engine || player.name;
+    if (!engine)
+        return;
+
+    short = short || player.short || get_short_name(engine);
+    player.hardware = hardware;
+
+    let full_engine = `${engine}\n${hardware}`;
+    for (let child of nodes) {
+        let node = _('[data-x="name"]', child);
+        if (node.title != full_engine) {
+            HTML(node, short);
+            Attrs(node, {title: full_engine});
+            Assign(players[id], {
+                feature: Undefined(ENGINE_FEATURES[short], 0),
+                name: engine,
+                short: short,
+            });
+        }
+    }
+}
+
+/**
  * Update data from one of the Live engines
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
@@ -3182,9 +3247,11 @@ function update_live_eval(section, data, id, force_ply) {
         return;
 
     let board = xboards[`live${id}`],
+        desc = data.desc,
         engine = data.engine,
         main = xboards[section],
-        moves = data.moves;
+        moves = data.moves,
+        round = data.round;
     // moves => maybe old data?
     if (moves) {
         if (data.round != main.round) {
@@ -3219,21 +3286,8 @@ function update_live_eval(section, data, id, force_ply) {
 
     // update engine name if it has changed
     engine = engine || data.engine;
-    let full_engine = `${engine}\n${LIVE_ENGINES[id]}`,
-        short = get_short_name(engine);
-    if (short)
-        for (let child of [box_node, node]) {
-            let node = _('[data-x="name"]', child);
-            if (node.title != full_engine) {
-                HTML(node, short);
-                Attrs(node, {title: full_engine});
-                Assign(players[id + 2], {
-                    feature: Undefined(ENGINE_FEATURES[short], 0),
-                    name: engine,
-                    short: short,
-                });
-            }
-        }
+    let short = get_short_name(engine);
+    update_hardware(id + 2, engine, short, desc, [box_node, node]);
 
     // invert eval for black?
     if (data.invert && data.ply % 2 == 0)
@@ -3265,7 +3319,7 @@ function update_live_eval(section, data, id, force_ply) {
     board.add_moves_string(data.pv, force_ply);
 
     update_live_chart(moves || [data], id + 2);
-    check_missing_moves(ply);
+    check_missing_moves(ply, round);
 }
 
 /**
@@ -3282,26 +3336,21 @@ function update_player_eval(section, data) {
 
     let main = xboards[section],
         cur_ply = main.ply,
+        engine = data.engine,
         eval_ = data.eval,
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
-        name = data.engine,
         node = Id(`moves-pv${id}`),
-        short = get_short_name(name);
+        short = get_short_name(engine);
 
     // 1) update the live part on the left
     let dico = {
             eval: format_eval(eval_),
-            name: short,
             score: calculate_probability(short, eval_),
-        },
-        engine_node = _('[data-x="name"]', node);
+        };
 
     // update engine name if it has changed
-    if (engine_node.title != name)
-        Attrs(engine_node, {title: name});
-    else
-        delete dico.name;
+    update_hardware(id, engine, short, players[id].hardware, [node]);
 
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
@@ -3339,7 +3388,7 @@ function update_player_eval(section, data) {
 
     board.evals[data.ply] = data;
     update_live_chart([data], id);
-    check_missing_moves(data.ply);
+    check_missing_moves(data.ply, null, data.pos);
 }
 
 // INPUT / OUTPUT
