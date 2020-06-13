@@ -9,7 +9,7 @@
  */
 /*
 globals
-define, exports, IsDigit
+define, exports
 */
 'use strict';
 
@@ -157,7 +157,7 @@ var Chess = function(fen) {
 
             if (piece === '/') {
                 square += 8;
-            } else if (IsDigit(piece)) {
+            } else if ('0123456789'.includes(piece)) {
                 square += parseInt(piece, 10);
             } else {
                 var color = (piece < 'a') ? WHITE : BLACK;
