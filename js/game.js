@@ -2827,12 +2827,7 @@ function update_overview_basic(section, headers) {
             name: name,
             short: short,
         });
-
-        for (let child of [box_node, node]) {
-            let engine_node = _('[data-x="name"]', child);
-            HTML(engine_node, short);
-            Attrs(engine_node, {title: name});
-        }
+        update_hardware(id, name, short, null, [box_node, node]);
 
         HTML(Id(`engine${id}`), format_engine(name, true));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
@@ -3354,7 +3349,7 @@ function update_player_eval(section, data) {
         };
 
     // update engine name if it has changed
-    update_hardware(id, engine, short, players[id].hardware, [node]);
+    update_hardware(id, engine, short, null, [node]);
 
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
