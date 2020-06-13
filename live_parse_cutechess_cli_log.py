@@ -88,9 +88,9 @@ if __name__=="__main__":
                                 time.sleep(SLEEP_TIME)
                                 break
                             current_size += len(line_bin)
-                            if ":" not in line: continue
                             if line.startswith("Started game"):
                                 last_started_filepos = fp.tell()
+                            if ":" not in line: continue
                             cs, uci = line.split(":")[:2]
                             m = re.match(r".*[<>](.*?)\(", cs)
                             if not m: continue
