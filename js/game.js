@@ -16,7 +16,7 @@ C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, 
 context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
 document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
 get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
-invert_eval, IsArray, IsString, Keys, KEYS,
+invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, LIVE_ENGINES, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time,
 play_sound, players, push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource,
 resume_sleep, Round,
@@ -617,7 +617,7 @@ function create_boards() {
         let color = Y[`graph_color_${id}`];
         return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id % 2}" style="background:${color}"></div>`;
     });
-    HTML('#colors', lines.join(''));
+    HTML(Id('colors'), lines.join(''));
 
     C('.color', function() {
         let board = xboards[this.dataset.id];
@@ -631,14 +631,14 @@ function create_boards() {
  * PV board order
  */
 function order_boards() {
-    if (HasClass('#table-pv', 'frow'))
+    if (HasClass(Id('table-pv'), 'frow'))
         Style('#box-pv0, #box-pv1', 'order:unset');
     else {
         let main = xboards[Y.x];
         if (main) {
             let rotate = main.rotate;
-            Style('#box-pv0', `order:${1 - rotate}`);
-            Style('#box-pv1', `order:${rotate}`);
+            Style(Id('box-pv0'), `order:${1 - rotate}`);
+            Style(Id('box-pv1'), `order:${rotate}`);
         }
     }
 }
@@ -2257,6 +2257,8 @@ function create_cup(section, data) {
  * @returns {Object} 50, draw, win
  */
 function check_adjudication(dico, total_moves) {
+    if (dico)
+        dico = dico.adjudication || dico;
     if (!dico)
         return {};
     let _50 = Undefined(dico.R50, dico.FiftyMoves),
@@ -2382,10 +2384,9 @@ function parse_pgn(data) {
     }
 
     // B) parse the raw PGN
-    data = data.replace(/\r/g, '');
-
     let end, inside, start,
         headers = {},
+        num_header = 0,
         length = data.length,
         pgn = {};
 
@@ -2403,23 +2404,22 @@ function parse_pgn(data) {
                         let left = text.slice(0, pos),
                             right = text.slice(pos + 1, pos2);
                         headers[left.trim()] = right.trim();
+                        num_header ++;
                     }
                     end = i + 1;
                     start = 0;
                 }
                 inside = false;
-
-                let pos = data.indexOf('[');
-                if (pos < 0 || pos > i + 2)
-                    break;
             }
         }
         else if (char == '[') {
             inside = true;
             start = i + 1;
         }
-        else if (char == '\n' && data[i + 1] == '\n')
+        else if (num_header && !' \r\n'.includes(char)) {
+            end = i;
             break;
+        }
     }
     data = data.slice(end);
 
@@ -2553,30 +2553,34 @@ function resize_game() {
 
 /**
  * Update material info
+ * mb=+2+0+0+0+0, => +p+n+b+r+q
  * @param {Move} move
  */
 function update_materials(move) {
-    let material = move.material,
+    let material = move.material || move.mb,
         materials = [[], []];
     if (!material)
         return;
 
-    let size = 28,
+    let is_string = IsString(material),
+        size = 28,
         [piece_size, style] = xboards.live.get_piece_background(size),
         scale = size / piece_size;
 
-    'qrbnp'.split('').forEach(key => {
-        let value = material[key];
-        if (value) {
-            let id = (value > 0)? 0: 1;
-            for (let i = 0; i < Abs(value); i ++) {
-                let offset = -SPRITE_OFFSETS[id? key: Upper(key)] * piece_size;
-                materials[id].push(
-                    `<div style="height:${size}px;width:${size}px;transform:scale(${scale})">`
-                        + `<div style="${style};background-position-x:${offset}px"></div>`
-                    + '</div>'
-                );
-            }
+    'qrbnp'.split('').forEach((key, j) => {
+        let pos = (4 - j) * 2,
+            value = is_string? parseInt(material.slice(pos, pos + 2)): material[key];
+        if (!value)
+            return;
+
+        let id = (value > 0)? 0: 1;
+        for (let i = 0; i < Abs(value); i ++) {
+            let offset = -SPRITE_OFFSETS[id? Upper(key): key] * piece_size;
+            materials[id].push(
+                `<div style="height:${size}px;width:${size}px;transform:scale(${scale})">`
+                    + `<div style="${style};background-position-x:${offset}px"></div>`
+                + '</div>'
+            );
         }
     });
 
@@ -2856,7 +2860,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         HTML('td[data-x="tb"]', tb, overview);
     }
 
-    let result = check_adjudication(move.adjudication || move, num_ply),
+    let result = check_adjudication(move, num_ply),
         status = headers.Termination;
     finished = headers.TerminationDetails;
     // support for old seasons
@@ -3362,9 +3366,10 @@ function add_history() {
  * @param {number} code hardware keycode
  */
 function game_action_key(code) {
-    if (Visible('#overlay')) {
+    if (is_overlay_visible()) {
         let changes = 0,
-            parent = Visible('#modal')? Id('modal'): Id('modal2'),
+            modal_node = Id('modal'),
+            parent = Visible(modal_node)? modal_node: Id('modal2'),
             items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
@@ -3377,7 +3382,7 @@ function game_action_key(code) {
         // case 27:
         case 69:
             LS(`game_action_key: ${code}`);
-            if (Visible('#modal2'))
+            if (Visible(Id('modal2')))
                 show_modal(true);
             else
                 resume_sleep();
@@ -3488,7 +3493,7 @@ function game_action_key(code) {
             break;
         }
 
-        HTML('#keycode', code);
+        HTML(Id('keycode'), code);
     }
 }
 
@@ -3788,7 +3793,7 @@ function open_table(sel) {
         if (target.slice(0, 6) != 'table-')
             target = `table-${target}`;
 
-        for (let child of _('#tables').children)
+        for (let child of Id('tables').children)
             if (!HasClass(child, 'tabs') && child.id.slice(0, 6) == 'table-')
                 Hide(child);
     }
@@ -3849,7 +3854,7 @@ function opened_table(node, name, tab) {
         analyse_crosstable(section, table_data[section].crossx);
         break;
     case 'info':
-        HTML(node, HTML('#desc'));
+        HTML(node, HTML(Id('desc')));
         break;
     case 'log':
         fill_combo('#nlog', [0, 5, 10, 'all'], Y.live_log);
