@@ -11,8 +11,7 @@ get_move_ply, Id, Keys, load_library, LS, Pad, players, Round, SetDefault, Sign,
 
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
-    ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'],
-    LIVE_ENGINES = [];
+    ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'];
 
 let cached_percents = {},
     chart_data = {},
@@ -616,7 +615,7 @@ function update_player_chart(name, moves) {
             dico.y = is_percent? calculate_win(id, move.wv): clamp_eval(move.wv);
             break;
         case 'mobil':
-            datasets[2].data[num2] = Assign(Assign({}, dico), {y: Abs(move.goal[0])});
+            datasets[2].data[num2] = Assign(Assign({}, dico), {y: move.goal? Abs(move.goal[0]): -1});
             dico.mobil = move.mobil;
             dico.y = Abs(move.mobil);
             break;

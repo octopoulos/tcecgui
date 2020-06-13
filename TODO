@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-06-13 : 2020-06-13 : improved new game detection
+2020-06-13 : 2020-06-13 : improved hardware info
 2020-06-13 : 2020-06-13 : crash game links
 2020-06-13 : 2020-06-11 : tests: add_history, check_adjudication, current_archive_link, restore_history, sanitise_data
 2020-06-13 : 2020-06-11 : handle pgn material
