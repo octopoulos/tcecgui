@@ -417,6 +417,7 @@ grid {
 .xboard {
     line-height: 1em;
     margin: 0 0 0 4px;
+    overflow: hidden;
 }
 .xcontain {
     position: relative;
