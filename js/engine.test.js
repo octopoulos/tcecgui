@@ -17,9 +17,11 @@ create_module(IMPORT_PATH, [
     'common',
     //
     'engine',
-], OUTPUT_MODULE, 'DEFAULTS Keys TYPES X_SETTINGS');
+], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y');
 
-let {create_page_array, DEFAULTS, guess_types, Keys, merge_settings, TYPES, X_SETTINGS} = require(OUTPUT_MODULE);
+let {
+    Assign, create_page_array, DEFAULTS, guess_types, Keys, merge_settings, sanitise_data, TYPES, X_SETTINGS, Y,
+} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +74,32 @@ let {create_page_array, DEFAULTS, guess_types, Keys, merge_settings, TYPES, X_SE
             useful: 'b',
         },
     ],
+    [
+        {
+            color: [{type: 'color'}],
+            color2: '#ff0000',
+            coord: [{x: 5, y: 8}],
+            coord2: {x: 5, y: 8},
+            name: [{type: 'text'}],
+            name2: 'chess',
+            ratio: [{step: 0.1, type: 'number'}],
+            ratio2: 0.5,
+            width: [{type: 'number'}],
+            width2: 650,
+        },
+        {
+            color: 's',
+            color2: 's',
+            coord: 'o',
+            coord2: 'o',
+            name: 's',
+            name2: 's',
+            ratio: 'f',
+            ratio2: 'f',
+            width: 'i',
+            width2: 'i',
+        },
+    ],
 ].forEach(([settings, answer], id) => {
     test(`guess_types:${id}`, () => {
         guess_types(settings);
@@ -121,6 +149,24 @@ let {create_page_array, DEFAULTS, guess_types, Keys, merge_settings, TYPES, X_SE
         });
         Keys(answer_type).forEach(key => {
             expect(TYPES).toHaveProperty(key, answer_type[key]);
+        });
+    });
+});
+
+// sanitise_data
+[
+    [{chat_height: ''}, {chat_height: 600}, {chat_height: 'f'}, {chat_height: 600}],
+    [{chat_height: '700.5'}, {chat_height: 600}, {chat_height: 'f'}, {chat_height: 700.5}],
+    [{chat_height: '700.5'}, {chat_height: 600}, {chat_height: 'i'}, {chat_height: 700}],
+].forEach(([y, defaults, types, answer], id) => {
+    test(`sanitise_data:${id}`, () => {
+        Assign(Y, y);
+        Assign(DEFAULTS, defaults);
+        Assign(TYPES, types);
+
+        sanitise_data();
+        Keys(answer).forEach(key => {
+            expect(Y[key]).toEqual(answer[key]);
         });
     });
 });

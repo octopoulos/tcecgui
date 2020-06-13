@@ -540,7 +540,7 @@ function Input(sel, callback, parent) {
  * @param {Node[]} nodes
  * @param {boolean=} preprend should the nodes be preprended or appended?
  * @example
- * InsertNodes('#chat', nodes, true)    // preprend
+ * InsertNodes(#chat', nodes, true)     // preprend
  */
 function InsertNodes(parent, nodes, preprend) {
     if (IsString(parent))

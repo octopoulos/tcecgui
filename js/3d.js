@@ -344,6 +344,14 @@ function interpolate_store(part) {
 }
 
 /**
+ * Check if the overlay is visible
+ * @returns {boolean}
+ */
+function is_overlay_visible() {
+    return Visible(Id('overlay'));
+}
+
+/**
  * Load a model
  * @param {string} name key for model storage
  * @param {string} filename
@@ -472,7 +480,7 @@ function render() {
 
     // moved the camera with the mouse?
     if (controls) {
-        controls.enabled = (is_paused || camera_id == 'static') && !Visible('#overlay');
+        controls.enabled = (is_paused || camera_id == 'static') && !is_overlay_visible();
         if (controls.enabled) {
             has_controls = controls.update(delta);
             if (has_controls) {
@@ -1071,7 +1079,7 @@ function change_setting(name, value, no_close) {
  * Check gamepad inputs at regular intervals when the menu is visible
  */
 function gamepad_modal() {
-    if (!Visible('#overlay')) {
+    if (!is_overlay_visible()) {
         [37, 38, 39, 40].forEach(code => {
             KEYS[code] = 0;
         });
@@ -1128,7 +1136,7 @@ function option_number(def, min, max, step=1) {
  */
 function resume_game() {
     is_paused = false;
-    if (Visible('#overlay'))
+    if (is_overlay_visible())
         show_modal();
 }
 
@@ -1148,11 +1156,11 @@ function show_menu() {
  * @param {string=} name
  */
 function show_modal(show, text, title, name) {
-    S('#overlay', show);
+    S(Id('overlay'), show);
 
     let node = Id('modal');
     if (IsString(text)) {
-        Attrs('#modal-title', {'data-t': title? title: ''});
+        Attrs(Id('modal-title'), {'data-t': title? title: ''});
         HTML(node, text);
         translate_node(node);
     }
@@ -1363,7 +1371,7 @@ function update_debug() {
     if (virtual_update_debug_special)
         lines = [...lines, ...virtual_update_debug_special()];
 
-    HTML('#debug', `<div>${lines.join('</div><div>')}</div>`);
+    HTML(Id('debug'), `<div>${lines.join('</div><div>')}</div>`);
     // add_timeout('pad', gamepad_modal, 300);
 }
 
@@ -1389,7 +1397,7 @@ function set_3d_events() {
 
     // game menu
     C('#menu', () => {
-        if (Visible('#overlay'))
+        if (is_overlay_visible())
             resume_game();
         else
             show_menu();

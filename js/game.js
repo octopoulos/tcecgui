@@ -1731,7 +1731,7 @@ function current_archive_link(is_game) {
     let keys = ARCHIVE_KEYS;
     if (!is_game)
         keys = keys.slice(0, -1);
-    return keys.filter(key => Y[key] != '').map(key => `${key}=${Y[key]}`).join('&');
+    return keys.filter(key => Y[key]).map(key => `${key}=${Y[key]}`).join('&');
 }
 
 /**
@@ -3541,6 +3541,7 @@ function restore_history(dir) {
         return;
     y_index += dir;
     let data = JSON.parse(y_copy);
+    Assign(Y, data);
 
     if (virtual_import_settings)
         virtual_import_settings(data, true);

@@ -211,38 +211,51 @@ function guess_types(settings, keys) {
             type = 'f';
         // integer default could still be a float type
         else {
-            let setting = settings[key][0];
-            if (typeof(setting) == 'string')
-                type = 's';
-            else if (!setting)
-                type = 'i';
-            else if (!IsArray(setting)) {
-                switch (setting.type) {
-                case 'number':
-                    type = Number.isInteger(setting.step || 1)? 'i': 'f';
-                    break;
-                case 'color':
-                case 'text':
-                    type = 's';
-                    break;
-                }
-            }
-            else if (setting.length == 2 && setting[0] == ON_OFF[0] && setting[1] == ON_OFF[1])
-                type = 'i';
+            let setting = settings[key],
+                obj_type = typeof(setting);
 
-            if (!type) {
-                type = 'i';
-                for (let item of setting) {
-                    if (IsString(item)) {
+            if (IsArray(setting)) {
+                let first = setting[0],
+                    is_array = IsArray(first);
+
+                if (!is_array) {
+                    switch (first.type) {
+                    case 'number':
+                        type = IsFloat(first.step || 1)? 'f': 'i';
+                        break;
+                    case 'color':
+                    case 'text':
                         type = 's';
                         break;
+                    default:
+                        type = 'o';
                     }
-                    if (IsFloat(item)) {
-                        type = 'f';
-                        break;
+                }
+                else if (first.length == 2 && first[0] == ON_OFF[0] && first[1] == ON_OFF[1])
+                    type = 'i';
+
+                if (!type && is_array) {
+                    type = 'i';
+                    for (let item of first) {
+                        if (IsString(item)) {
+                            type = 's';
+                            break;
+                        }
+                        if (IsFloat(item)) {
+                            type = 'f';
+                            break;
+                        }
                     }
                 }
             }
+            else if (obj_type == 'boolean')
+                type = 'b';
+            else if (obj_type == 'object')
+                type = 'o';
+            else if (obj_type == 'string')
+                type = 's';
+            else if (obj_type == 'number')
+                type = IsFloat(setting)? 'f': 'i';
         }
 
         if (type)

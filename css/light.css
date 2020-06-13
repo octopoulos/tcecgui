@@ -1359,6 +1359,9 @@ grid {
     text-align: center;
     z-index: 1;
 }
+#chat2 {
+    margin-bottom: 32px;
+}
 
 /* allow text selection */
 .adblock,
