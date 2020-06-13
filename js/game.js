@@ -3217,9 +3217,10 @@ function update_hardware(id, engine, short, hardware, nodes) {
         return;
 
     short = short || player.short || get_short_name(engine);
-    player.hardware = hardware;
+    if (hardware)
+        player.hardware = hardware;
 
-    let full_engine = `${engine}\n${hardware}`;
+    let full_engine = `${engine}\n${player.hardware}`;
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
         if (node.title != full_engine) {
