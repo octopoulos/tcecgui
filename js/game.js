@@ -2739,41 +2739,39 @@ function update_move_pv(section, ply, move) {
 }
 
 /**
- * Update engine options
+ * Update engine options when a new game has started
  * + find hardware info
  */
 function update_options(section, id) {
     let key = `${WB_TITLES[id]}EngineOptions`,
         player = players[id],
-        options = SetDefault(player, 'options', {}),
         pgn = pgns[section],
         pgn_options = pgn[key];
 
+    if (!pgn_options)
+        return;
     if (IsArray(pgn_options)) {
         pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
         pgn[key] = pgn_options;
     }
 
-    if (pgn_options) {
-        Assign(options, pgn_options);
-
-        // find threads + tb
-        let info = ['', ''];
-        Keys(options).forEach(key => {
-            let value = options[key];
-            if (['thread', 'threads'].includes(Lower(key)))
-                info[0] = `${value}TH`;
-            else if (IsString(value)) {
-                let pos = value.indexOf('/syzygy');
-                if (pos >= 0) {
-                    let next = value[pos + 7];
-                    info[1] = `${'34567'.includes(next)? next: 6}Men TB`;
-                }
+    // find threads + tb
+    let info = ['', ''];
+    Keys(pgn_options).forEach(key => {
+        let value = pgn_options[key];
+        if (['thread', 'threads'].includes(Lower(key)))
+            info[0] = `${value}TH`;
+        else if (IsString(value)) {
+            let pos = value.indexOf('/syzygy');
+            if (pos >= 0) {
+                let next = value[pos + 7];
+                info[1] = `${'34567'.includes(next)? next: 6}Men TB`;
             }
-        });
+        }
+    });
 
-        update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
-    }
+    player.options = pgn_options;
+    update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
 }
 
 /**
@@ -2970,6 +2968,7 @@ function update_pgn(section, pgn, extras, reset_moves) {
     let finished,
         headers = pgn.Headers,
         is_same = (section == Y.x),
+        main = xboards[section],
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
@@ -2990,10 +2989,10 @@ function update_pgn(section, pgn, extras, reset_moves) {
         if (DEV.new)
             LS(`new pgn: ${headers.Round}`);
         pgn.gameChanged = 0;
+        new_game = 0;
     }
 
     // 3) check for a new game
-    let main = xboards[section];
     if (main.event != headers.Event || main.round != headers.Round) {
         if (DEV.new) {
             LS(`new game: ${main.round} => ${headers.Round} : num_ply=${main.moves.length} : num_move=${num_move} : reset_moves=${reset_moves}`);
