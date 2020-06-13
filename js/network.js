@@ -116,7 +116,7 @@ function init_sockets() {
  */
 function insert_log(html) {
     let node = CreateNode('div', html);
-    InsertNodes('#live-log', [node], true);
+    InsertNodes(Id('live-log'), [node], true);
 }
 
 /**
@@ -193,10 +193,10 @@ function update_twitch(dark, chat_url, only_resize) {
 
     if (!only_resize && current != src)
         node.src = src;
-    S('#hide-chat, #chat', src);
-    S('#show-chat', !src);
-    S('#twitch0', src && dark);
-    S('#twitch1', src && !dark);
+    S('#chat, #under-chat', src);
+    S('#chat2, #show-chat', !src);
+    S(Id('twitch0'), src && dark);
+    S(Id('twitch1'), src && !dark);
 
     let right = Id('right'),
         active = _('.active', right),
@@ -221,5 +221,5 @@ function update_twitch(dark, chat_url, only_resize) {
     if (!only_resize && current != src)
         node.src = src;
     S('#hide-video, #twitch-vid', src);
-    S('#show-video', !src);
+    S(Id('show-video'), !src);
 }

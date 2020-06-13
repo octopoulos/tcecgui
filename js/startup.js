@@ -146,7 +146,7 @@ function change_setting_special(name, value, no_close) {
 
     // close contextual popup if we used a SELECT
     if (!no_close) {
-        let modal = _('#modal');
+        let modal = Id('modal');
         if (modal && modal.dataset.xy)
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
@@ -292,7 +292,7 @@ function change_setting_special(name, value, no_close) {
         tab_element(context_target);
         break;
     case 'live_log':
-        if (Visible('#table-log'))
+        if (Visible(Id('table-log')))
             listen_log();
         break;
     case 'mobility':
@@ -351,8 +351,8 @@ function change_theme(theme) {
     if (node.href.slice(-icon.length) != icon)
         node.href = icon;
 
-    S('#theme0', theme != def);
-    S('#theme1', theme == def);
+    S(Id('theme0'), theme != def);
+    S(Id('theme1'), theme == def);
     update_theme(themes);
 }
 
@@ -367,8 +367,8 @@ function check_hash_special() {
 
     let is_live = (Y.x == 'live'),
         parent = Id('tables');
-    Class('#nav-archive', 'yellow', !is_live);
-    Class('#nav-live', 'red', is_live);
+    Class(Id('nav-archive'), 'yellow', !is_live);
+    Class(Id('nav-live'), 'red', is_live);
     change_theme();
 
     populate_areas();
@@ -376,7 +376,7 @@ function check_hash_special() {
     S('[data-x="log"]', is_live, parent);
 
     Attrs('[data-x="sched"] i[data-t]', {'data-t': is_live? 'Schedule': 'Games'});
-    translate_node('#table-tabs');
+    translate_node(Id('table-tabs'));
 
     // changed section
     if (Y.x != old_x) {
@@ -423,7 +423,7 @@ function close_popups() {
     popup_custom('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
-    HTML('#modal', '');
+    HTML(Id('modal'), '');
 }
 
 /**
@@ -461,11 +461,12 @@ function draw_rectangle(node) {
     if (!node)
         return;
     let rect = node.getBoundingClientRect(),
+        rect_node = Id('rect'),
         y1 = Max(rect.top, 0),
         y2 = Min(rect.top + rect.height, window.innerHeight);
 
-    Style('#rect', `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
-    Show('#rect');
+    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
+    Show(rect_node);
 }
 
 /**
@@ -548,7 +549,7 @@ function handle_drop(e) {
         populate_areas();
     }
 
-    Hide('#rect');
+    Hide(Id('rect'));
     Class('.area', '-dragging');
 
     e.stopPropagation();
@@ -612,8 +613,8 @@ function init_customs(initial) {
  * Ran once at the last initialisation step
  */
 function init_globals() {
-    HTML('#version', VERSION);
-    HTML('#champions', CHAMPIONS.map(text => {
+    HTML(Id('version'), VERSION);
+    HTML(Id('champions'), CHAMPIONS.map(text => {
         let [season, winner] = text.split('|');
         return `<i data-t="Season"></i> ${season}: ${winner}`;
     }).join(' | '));
@@ -637,7 +638,7 @@ function init_globals() {
     if (!Y.no_ad && !DEV.ad && location.port != 8080) {
         add_timeout('adblock', () => {
             if (_('.google-ad').clientHeight <= 0) {
-                HTML('.adblock', HTML('#adblock'));
+                HTML('.adblock', HTML(Id('adblock')));
                 Show('.adblock');
             }
         }, TIMEOUTS.adblock);
@@ -646,7 +647,7 @@ function init_globals() {
     }
     load_google_analytics();
 
-    if (Visible('#table-log'))
+    if (Visible(Id('table-log')))
         listen_log();
 
     // font size detector
@@ -659,7 +660,7 @@ function init_globals() {
         }
 
         if (Y.stream)
-            ScrollDocument('#overview');
+            ScrollDocument(Id('overview'));
     }, TIMEOUT_font, true);
 
     // suspend/resume
@@ -969,7 +970,7 @@ function resize() {
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status, #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
-    Style('#chat, #shortcut_1, #shortcut_2', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
+    Style('#chat, #chat2, #shortcut_1, #shortcut_2', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
 
     resize_panels();
 
@@ -1045,7 +1046,7 @@ function resize_panels() {
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
     // special cases
-    Attrs('#eval', {'data-t': (Id('engine').clientWidth > 330)? 'Evaluation': 'Eval'});
+    Attrs(Id('eval'), {'data-t': (Id('engine').clientWidth > 330)? 'Evaluation': 'Eval'});
     translate_node('#engine');
 
     // column/row mode
@@ -1089,8 +1090,8 @@ function set_3d_scene(three) {
         save_option('three', three);
     three = Y.three;
 
-    Style('#three', `color:${three? '#fff': '#555'}`);
-    S('#canvas', three);
+    Style(Id('three'), `color:${three? '#fff': '#555'}`);
+    S(Id('canvas'), three);
     if (three)
         start_3d();
 }
@@ -1145,7 +1146,7 @@ function show_live_engines() {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
-    S('#overlay', show && overlay);
+    S(Id('overlay'), show && overlay);
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
     if (!node)
@@ -1165,7 +1166,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
         // create the html
         switch (name) {
         case 'about':
-            html = HTML('#desc');
+            html = HTML(Id('desc'));
             px = -50;
             py = -50;
             x = win_x / 2;
@@ -1538,8 +1539,8 @@ function set_global_events() {
     });
     C('#full0, #full1', () => {
         toggle_fullscreen(full => {
-            S('#full0', full);
-            S('#full1', !full);
+            S(Id('full0'), full);
+            S(Id('full1'), !full);
             resize();
         });
     });
@@ -1655,7 +1656,7 @@ function set_global_events() {
             return;
         if (e.target.tagName == 'HTML') {
             Class('.area', '-dragging');
-            Hide('#rect');
+            Hide(Id('rect'));
         }
     });
     Events(window, 'drop', handle_drop);
