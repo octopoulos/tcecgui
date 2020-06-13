@@ -841,14 +841,17 @@ function push_state(query, replace, query_key='hash', go=null) {
 function sanitise_data() {
     // convert string to number
     Keys(DEFAULTS).forEach(key => {
+        let value = Y[key];
+        if (!IsString(value))
+            return;
+
         let def = DEFAULTS[key],
-            type = TYPES[key],
-            value = Y[key];
+            type = TYPES[key];
 
         if (type == 'f')
-            Y[key] = parseFloat(value) || def;
+            Y[key] = Undefined(parseFloat(value), def);
         else if (type == 'i')
-            Y[key] = parseInt(value) || def;
+            Y[key] = Undefined(parseInt(value), def);
     });
 
     if (virtual_sanitise_data_special)

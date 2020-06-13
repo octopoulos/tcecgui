@@ -155,9 +155,11 @@ let {
 
 // sanitise_data
 [
-    [{chat_height: ''}, {chat_height: 600}, {chat_height: 'f'}, {chat_height: 600}],
-    [{chat_height: '700.5'}, {chat_height: 600}, {chat_height: 'f'}, {chat_height: 700.5}],
-    [{chat_height: '700.5'}, {chat_height: 600}, {chat_height: 'i'}, {chat_height: 700}],
+    [{width: ''}, {width: 600}, {width: 'f'}, {width: 600}],
+    [{width: '700.5'}, {width: 600}, {width: 'f'}, {width: 700.5}],
+    [{width: '700.5'}, {width: 600}, {width: 'i'}, {width: 700}],
+    [{width: 700.5}, {width: 600}, {width: 'i'}, {width: 700.5}],
+    [{width: '700.5'}, {width: undefined}, {width: undefined}, {width: '700.5'}],
 ].forEach(([y, defaults, types, answer], id) => {
     test(`sanitise_data:${id}`, () => {
         Assign(Y, y);

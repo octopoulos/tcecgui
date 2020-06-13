@@ -302,6 +302,10 @@ let {
     [null, 'ok', null],
     ['', 'ok', ''],
     [0, 'ok', 0],
+    [NaN, undefined, undefined],
+    [NaN, 1, 1],
+    [NaN, 1.5, 1.5],
+    [NaN, 'ok', 'ok'],
 ].forEach(([value, def, answer], id) => {
     test(`Undefined:${id}`, () => {
         expect(Undefined(value, def)).toEqual(answer);
