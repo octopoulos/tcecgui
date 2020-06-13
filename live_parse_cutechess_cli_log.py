@@ -61,6 +61,7 @@ if __name__=="__main__":
         prev_fen = ""
         prev_move_lst = []
         previous_update = time.time()
+        last_started_filepos = 0
         while True:
             size = get_size(logfile)
             if size < current_size or start_kb != get_start(logfile): #New tournament started
@@ -88,6 +89,8 @@ if __name__=="__main__":
                                 break
                             current_size += len(line_bin)
                             if ":" not in line: continue
+                            if line.startswith("Started game"):
+                                last_started_filepos = fp.tell()
                             cs, uci = line.split(":")[:2]
                             m = re.match(r".*[<>](.*?)\(", cs)
                             if not m: continue
@@ -171,7 +174,7 @@ if __name__=="__main__":
                                         load = os.getloadavg()[0]
                                         with open("load.json", "w") as fp_out: fp_out.write(str(load))
                                         if load < 10:
-                                            data = {"color": color, "engine": name, "eval": score, "pv": pv_str, "depth": depth, "speed": speed, "tbhits": tbhits, "time": time_s, "nodes": nodes, "plynum": plynum}
+                                            data = {"color": color, "engine": name, "eval": score, "pv": pv_str, "depth": depth, "speed": speed, "tbhits": tbhits, "time": time_s, "nodes": nodes, "plynum": plynum, "pos": last_started_filepos}
                                             if wdl: data["wdl"] = wdl
                                             json_str = json.dumps(data)
                                             with open("liveengineeval.json", "w") as fp_out: fp_out.write(json_str + "\n")
