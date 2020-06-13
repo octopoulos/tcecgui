@@ -2763,8 +2763,11 @@ function update_options(section, id) {
             let value = options[key];
             if (['thread', 'threads'].includes(Lower(key)))
                 info[0] = `${value}TH`;
-            else if (IsString(value) && value.includes('/syzygy'))
-                info[1] = '6Men TB';
+            else if (IsString(value)) {
+                let pos = value.indexOf('/syzygy');
+                if (pos >= 0)
+                    info[1] = `${(value[pos + 7] == '7')? 7: 6}Men TB`;
+            }
         });
 
         update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
