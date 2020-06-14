@@ -1157,6 +1157,15 @@ function InvalidPhone(phone) {
 }
 
 /**
+ * Check if a character is a digit
+ * @param {string} char
+ * @returns {boolean}
+ */
+function IsDigit(char) {
+    return (char !== '' && '0123456789'.includes(char));
+}
+
+/**
  * Load a library
  * @param {string} url
  * @param {function=} callback

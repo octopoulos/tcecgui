@@ -279,15 +279,6 @@ function change_setting_special(name, value, no_close) {
         catch (err) {
         }
         break;
-    case 'import_settings':
-        try {
-            let data = JSON.parse(value);
-            import_settings(data);
-            reset_settings();
-        }
-        catch (err) {
-        }
-        break;
     case 'join_next':
         tab_element(context_target);
         break;

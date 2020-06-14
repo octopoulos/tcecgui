@@ -417,6 +417,7 @@ grid {
 .xboard {
     line-height: 1em;
     margin: 0 0 0 4px;
+    overflow: hidden;
 }
 .xcontain {
     position: relative;
@@ -890,6 +891,9 @@ grid {
 }
 #overview td[data-x="event"] {
     font-weight: 700;
+}
+#overview td[data-x="tc"] {
+    min-width: 6em;
 }
 #info0,
 #info1 {

@@ -24,9 +24,9 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
-DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, IsString, Keys, Lower, LS, Min, mix_hex_colors,
-Now, Parent, play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T, timers,
-update_svg, Upper, Visible, Y
+DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys, Lower, LS, Min,
+mix_hex_colors, Now, Parent, play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T,
+timers, update_svg, Upper, Visible, Y
 */
 'use strict';
 
@@ -198,6 +198,7 @@ class XBoard {
         this.real = null;                               // pointer to a board with the real moves
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.start_fen = START_FEN;
         this.svgs = [
             {id: 0},
             {id: 1},
@@ -366,10 +367,18 @@ class XBoard {
 
         // update mobility
         if (this.main) {
+            let fen = this.start_fen;
             for (let move of moves) {
-                if (!move.fen)
-                    continue;
-                this.chess_mobility(move);
+                let no_load;
+                if (!move.fen) {
+                    this.chess_load(fen);
+                    let result = this.chess_move(move.m);
+                    Assign(move, result);
+                    move.fen = this.chess_fen();
+                    no_load = true;
+                }
+                this.chess_mobility(move, no_load);
+                fen = move.fen;
             }
         }
     }
@@ -422,7 +431,7 @@ class XBoard {
                 return;
             }
             // turn? => use it
-            if ('0123456789'.includes(item[0])) {
+            if (IsDigit(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
                 lines.push(`<i class="turn" data-j="${turn}">${turn}.</i>`);
@@ -850,7 +859,7 @@ class XBoard {
                     LS(`${this.id}: no move at ply ${curr}`);
 
                 if (curr == -1)
-                    fen = START_FEN;
+                    fen = this.start_fen;
                 else {
                     let real_move = real_moves[curr];
                     if (!real_move)
@@ -909,9 +918,10 @@ class XBoard {
     /**
      * Calculate the mobility
      * @param {Move} move
+     * @param {boolean=} no_load don't load the FEN
      * @returns {string}
      */
-    chess_mobility(move) {
+    chess_mobility(move, no_load) {
         if (move.mobil != undefined)
             return move.mobil;
 
@@ -923,7 +933,8 @@ class XBoard {
             move.mobil = 20.5;
             return -20.5;
         }
-        this.chess.load(fen);
+        if (!no_load)
+            this.chess.load(fen);
 
         // calculate
         let checked = this.chess.checked(),
@@ -952,8 +963,7 @@ class XBoard {
      */
     chess_move(text) {
         // handle UCI: e1g1 = O-O, e7e8q = promotion
-        if (text.length >= 4 && '0123456789'.includes(text[1]) && '0123456789'.includes(text[3])
-                && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
+        if (text.length >= 4 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
             text = {
                 from: text.slice(0, 2),
                 promotion: text[4],
@@ -1748,10 +1758,13 @@ class XBoard {
     /**
      * Reset the moves
      * @param {boolean=} reset_evals
+     * @param {string=} start_fen
      */
-    reset(reset_evals) {
+    reset(reset_evals, start_fen) {
         if (this.check_locked())
             return;
+
+        this.start_fen = start_fen || START_FEN;
 
         this.fen = '';
         this.goal = [-20.5, -1];
@@ -1821,7 +1834,7 @@ class XBoard {
 
     /**
      * Set a new FEN
-     * @param {string} fen null for START_FEN
+     * @param {string} fen null for start_fen
      * @param {boolean=} render
      * @returns {boolean}
      */
@@ -1829,7 +1842,7 @@ class XBoard {
         if (DEV.board)
             LS(`${this.id} set_fen: ${fen}`);
         if (fen == null)
-            fen = START_FEN;
+            fen = this.start_fen;
 
         if (this.fen == fen)
             return true;
