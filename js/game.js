@@ -2749,41 +2749,44 @@ function update_move_pv(section, ply, move) {
 }
 
 /**
- * Update engine options when a new game has started
- * + find hardware info
+ * Update engine options
+ * - find hardware info
+ * - when a new game has started
+ * - when switching between archive & live
  * @param {string} section
- * @param {number} id
  */
-function update_options(section, id) {
-    let key = `${WB_TITLES[id]}EngineOptions`,
-        player = players[id],
-        pgn = pgns[section],
-        pgn_options = pgn[key];
+function update_options(section) {
+    for (let id = 0; id < 2; id ++) {
+        let key = `${WB_TITLES[id]}EngineOptions`,
+            player = players[id],
+            pgn = pgns[section],
+            pgn_options = pgn[key];
 
-    if (!pgn_options)
-        return;
-    if (IsArray(pgn_options)) {
-        pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
-        pgn[key] = pgn_options;
-    }
-
-    // find threads + tb
-    let info = ['', ''];
-    Keys(pgn_options).forEach(key => {
-        let value = pgn_options[key];
-        if (['thread', 'threads'].includes(Lower(key)))
-            info[0] = `${value}TH`;
-        else if (IsString(value)) {
-            let pos = value.indexOf('/syzygy');
-            if (pos >= 0) {
-                let next = value[pos + 7];
-                info[1] = `${'34567'.includes(next)? next: 6}Men TB`;
-            }
+        if (!pgn_options)
+            return;
+        if (IsArray(pgn_options)) {
+            pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
+            pgn[key] = pgn_options;
         }
-    });
 
-    player.options = pgn_options;
-    update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
+        // find threads + tb
+        let info = ['', ''];
+        Keys(pgn_options).forEach(key => {
+            let value = pgn_options[key];
+            if (['thread', 'threads'].includes(Lower(key)))
+                info[0] = `${value}TH`;
+            else if (IsString(value)) {
+                let pos = value.indexOf('/syzygy');
+                if (pos >= 0) {
+                    let next = value[pos + 7];
+                    info[1] = `${'34567'.includes(next)? next: 6}Men TB`;
+                }
+            }
+        });
+
+        player.options = pgn_options;
+        update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
+    }
 }
 
 /**
@@ -3086,8 +3089,7 @@ function update_pgn(section, pgn, extras, reset_moves) {
             }
         }
 
-        for (let id = 0; id < 2; id ++)
-            update_options(section, id);
+        update_options(section);
     }
 
     // 5) clock
@@ -3762,6 +3764,7 @@ function changed_section() {
     // update overview
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
+    update_options(section);
 }
 
 /**
