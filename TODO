@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-06-13 : 2020-06-13 : improved pgn options parsing
+2020-06-13 : 2020-05-26 : update overview for past moves?
 2020-06-13 : 2020-06-13 : fischer random
 2020-06-13 : 2020-06-13 : improved new game detection
 2020-06-13 : 2020-06-13 : improved hardware info
@@ -323,7 +325,6 @@ lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
 -          : 2020-06-03 : chess.wasm
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
--          : 2020-05-26 : update overview for past moves?
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)

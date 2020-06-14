@@ -2459,7 +2459,7 @@ function parse_pgn(data) {
                 if (options) {
                     options = Assign({}, ...options.split(';').map(item => {
                         let items = item.split('=');
-                        return {[items[0].trim()]: (items[1] || '').trim()};
+                        return {[items[0].trim()]: items.slice(1).join('').trim()};
                     }));
                     delete options[''];
                     pgn[name] = options;
@@ -3998,7 +3998,7 @@ function popup_custom(id, name, e, scolor) {
                 return `<div><div>${resize_text(left, 20)}</div><div class="indent">${resize_text(right, 20) || '&nbsp;'}</div></div>`;
             });
 
-            num_col = lines.length / 10;
+            num_col = Ceil(lines.length / 11);
             HTML(popup, `<verts class="list fastart">${lines.join('')}</verts>`);
         }
         else if (name == 'fen') {
@@ -4029,7 +4029,8 @@ function popup_custom(id, name, e, scolor) {
     }
 
     Class(popup, 'popup-show', show);
-    Style(popup, `min-width:${Min(num_col * 160, window.innerWidth * 2/3)}px`, num_col);
+    Style(popup, `min-width:${Min(num_col * 165 + 32, window.innerWidth * 2/3)}px`, num_col);
+    LS(`num_col=${num_col}`);
 
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
