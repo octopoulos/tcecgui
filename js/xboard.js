@@ -1200,6 +1200,7 @@ class XBoard {
                 else
                     that.hold = null;
             }
+            e.preventDefault();
         }, {}, this.node);
 
         // pv list

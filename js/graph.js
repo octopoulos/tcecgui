@@ -200,23 +200,27 @@ function create_charts()
 {
     // 1) create all charts
     new_chart('depth', true, [1]);
-    new_chart('eval', true, [1]);
+    new_chart('eval', true, [1], undefined, (item, data) => {
+        let eval_ = get_tooltip_data(item, data).eval;
+        return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_): eval_;
+    });
     new_chart('mobil', true, [1]);
-    new_chart('node', false, [1, 2], FormatUnit, (tooltipItem, data) => {
-        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes);
+    new_chart('node', false, [1, 2], FormatUnit, (item, data) => {
+        let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
-    new_chart('speed', false, [1, 2], FormatUnit, (tooltipItem, data) => {
-        let nodes = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].nodes),
-            speed = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+    new_chart('speed', false, [1, 2], FormatUnit, (item, data) => {
+        let point = get_tooltip_data(item, data),
+            nodes = FormatUnit(point.nodes),
+            speed = FormatUnit(point.y);
         return `${speed}nps (${nodes} nodes)`;
     });
-    new_chart('tb', false, [1, 2], FormatUnit, (tooltipItem, data) => {
-        let hits = FormatUnit(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+    new_chart('tb', false, [1, 2], FormatUnit, (item, data) => {
+        let hits = FormatUnit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', false, [1], undefined, (tooltipItem, data) => {
-        let [_, min, sec] = FromSeconds(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y);
+    new_chart('time', false, [1], undefined, (item, data) => {
+        let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
         return `${min}:${Pad(sec)}`;
     }, {backgroundColor: 'rgb(10, 10, 10)'});
 
@@ -257,6 +261,16 @@ function fix_labels(labels) {
     for (let i = 0; i < num_label; i ++)
         if (labels[i] == undefined)
             labels[i] = i + offset;
+}
+
+/**
+ * Get tooltip data
+ * @param {Object} item tooltip item
+ * @param {Object} data
+ * @returns {Object}
+ */
+function get_tooltip_data(item, data) {
+    return data.datasets[item.datasetIndex].data[item.index];
 }
 
 /**
