@@ -824,6 +824,7 @@ grid {
     min-width: 16em;
 }
 .sub {
+    font-size: 0.9em;
     font-style: italic;
     margin: 0.5em 0 0 2em;
 }
@@ -960,7 +961,9 @@ grid {
     max-height: 30em;
 }
 .list > div {
-    padding-right: 1em;
+    padding-right: 0.5em;
+    width: 165px;
+    word-break: break-all;
 }
 .indent {
     color: #bbb;

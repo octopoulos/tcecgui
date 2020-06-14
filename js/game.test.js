@@ -404,7 +404,7 @@ let {
         {
             BlackEngineOptions: {
                 Backend: 'demux',
-                BackendOptions: 'backend',
+                BackendOptions: 'backendcudnn-fp16,custom_winogradtrue,(gpu0),(gpu1),(gpu2),(gpu3)',
                 CPuct: '2.147',
                 CPuctAtRoot: '2.147',
                 CPuctBase: '18368',
