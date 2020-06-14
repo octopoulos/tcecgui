@@ -4030,7 +4030,6 @@ function popup_custom(id, name, e, scolor) {
 
     Class(popup, 'popup-show', show);
     Style(popup, `min-width:${Min(num_col * 165 + 32, window.innerWidth * 2/3)}px`, num_col);
-    LS(`num_col=${num_col}`);
 
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
