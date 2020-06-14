@@ -1944,6 +1944,7 @@ function startup() {
             play_every: option_number(1200, 100, 5000, 100),
         },
         engine: {
+            material_color: [['invert', 'normal'], 'normal'],
             mobility: [ON_OFF, 1],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
         },

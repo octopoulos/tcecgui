@@ -2585,12 +2585,16 @@ function resize_game() {
  * @param {Move} move
  */
 function update_materials(move) {
+    if (!move)
+        return;
+
     let material = move.material || move.mb,
         materials = [[], []];
     if (!material)
         return;
 
-    let is_string = IsString(material),
+    let invert = (Y.material_color == 'invert')? 1: 0,
+        is_string = IsString(material),
         size = 28,
         [piece_size, style] = xboards.live.get_piece_background(size),
         scale = size / piece_size;
@@ -2601,9 +2605,11 @@ function update_materials(move) {
         if (!value)
             return;
 
-        let id = (value > 0)? 0: 1;
+        let id = (value > 0)? 0: 1,
+            id2 = invert? 1 - id: id;
+
         for (let i = 0; i < Abs(value); i ++) {
-            let offset = -SPRITE_OFFSETS[id? Upper(key): key] * piece_size;
+            let offset = -SPRITE_OFFSETS[id2? Upper(key): key] * piece_size;
             materials[id].push(
                 `<div style="height:${size}px;width:${size}px;transform:scale(${scale})">`
                     + `<div style="${style};background-position-x:${offset}px"></div>`
@@ -3675,6 +3681,9 @@ function change_setting_game(name, value) {
         break;
     case 'copy_moves':
         copy_moves();
+        break;
+    case 'material_color':
+        update_materials(main.moves[main.ply]);
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
