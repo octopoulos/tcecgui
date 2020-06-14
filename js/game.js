@@ -3841,7 +3841,7 @@ function handle_board_events(board, type, value) {
             if (Y.arrow_moves == 'all')
                 add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
 
-            update_time_control((cur_ply + 2) % 2);
+            update_time_control((cur_ply + 3) % 2);
         }
         break;
     }
