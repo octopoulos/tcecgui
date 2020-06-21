@@ -10,13 +10,10 @@ html {
 /* board */
 #archive .xmoves,
 #live .xmoves,
+#moves-pv0 .live-pv,
 #pva .xmoves,
 .moves {
     background: rgba(235, 235, 238, 0.4);
-}
-.live-pv,
-.xmoves {
-    background: rgba(255, 255, 255, 0.5);
 }
 .xcontrol {
     color: #06d;
@@ -49,7 +46,21 @@ html {
     background: rgba(255, 255, 255, 0.2);
 }
 .graphs {
-    background: rgba(235, 235, 238, 0.3);
+    background: rgba(235, 235, 238, 0.15);
+}
+
+/* lives */
+#box-live0 .engine,
+#table-live0 .engine {
+    color: #001aff;
+}
+#box-live1 .engine,
+#table-live1 .engine {
+    color: #db2a0b;
+}
+#box-pv0 .engine,
+#moves-pv0 .engine {
+    color: #fff;
 }
 
 /* extras */
