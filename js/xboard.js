@@ -163,6 +163,7 @@ class XBoard {
 
         // initialisation
         this.chess = new Chess();
+        this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
         this.delayed_ply = -2;
@@ -1019,6 +1020,7 @@ class XBoard {
     compare_duals(num_ply) {
         if (this.locked)
             return;
+        this.clicked = false;
 
         let dual = this.dual,
             real = this.real;
@@ -1059,6 +1061,8 @@ class XBoard {
 
         // render: jump directly to the position
         for (let board of [this, dual]) {
+            if (board.clicked)
+                continue;
             if (show_ply == 'last')
                 ply = board.moves.length - 1;
 
@@ -1915,6 +1919,7 @@ class XBoard {
             LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
 
         clear_timeout(`dual${this.id}`);
+        this.clicked = manual;
         this.delayed_ply = -2;
 
         if (hold)

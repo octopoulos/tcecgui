@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-06-20 : add bracket to archive games
+2020-06-20 : 2020-06-20 : don't reset the dual PV cursor if the PV was interacted with + not updated
 2020-06-20 : 2020-06-20 : show/hide controls
 2020-06-20 : 2020-06-20 : fix instamove speed
 2020-06-14 : 2020-06-14 : fixed 3 reported issues
@@ -324,6 +326,7 @@ medium:
 -          : 2020-05-23 : dynamic pagination and search nodes
 low:
 ~          : 2020-04-13 : add 3d board
+-          : 2020-06-20 : parse live log
 lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
 -          : 2020-06-03 : chess.wasm
