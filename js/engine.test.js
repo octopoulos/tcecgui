@@ -20,10 +20,31 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y');
 
 let {
-    Assign, create_page_array, DEFAULTS, guess_types, Keys, merge_settings, sanitise_data, TYPES, X_SETTINGS, Y,
+    Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, Keys, merge_settings,
+    sanitise_data, save_option, TYPES, X_SETTINGS, Y,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// create_field_value
+[
+    ['G#', ['g', 'G#']],
+    ['wev=Ev', ['wev', 'Ev']],
+    ['White', ['white', 'White']],
+    ['Final decision', ['final_decision', 'Final decision']],
+    ['W.ev', ['w_ev', 'W.ev']],
+    ['Wins [W/B]', ['wins', 'Wins [W/B]']],
+    ['Diff [Live]', ['diff', 'Diff [Live]']],
+    ['a_b=A=B', ['a_b', 'A=B']],
+    ['startTime', ['start_time', 'startTime']],
+    ['BlackEv', ['black_ev', 'BlackEv']],
+    ['# Games', ['games', '# Games']],
+    ['{Game}#', ['game', '{Game}#']],
+].forEach(([text, answer], id) => {
+    test(`create_field_value:${id}`, () => {
+        expect(create_field_value(text)).toEqual(answer);
+    });
+});
 
 // create_page_array
 [
@@ -48,6 +69,17 @@ let {
 ].forEach(([num_page, page, extra, answer], id) => {
     test(`create_page_array:${id}`, () => {
         expect(create_page_array(num_page, page, extra)).toEqual(answer);
+    });
+});
+
+// create_url_list
+[
+    [null, ''],
+    [{}, '<vert class="fastart"></vert>'],
+    [{a: 1}, '<vert class="fastart"><hr></vert>'],
+].forEach(([dico, answer], id) => {
+    test(`create_url_list:${id}`, () => {
+        expect(create_url_list(dico)).toEqual(answer);
     });
 });
 
@@ -170,5 +202,15 @@ let {
         Keys(answer).forEach(key => {
             expect(Y[key]).toEqual(answer[key]);
         });
+    });
+});
+
+// save_option
+[
+    ['width', 100],
+].forEach(([name, value], id) => {
+    test(`save_option:${id}`, () => {
+        save_option(name, value);
+        expect(Y[name]).toEqual(value);
     });
 });
