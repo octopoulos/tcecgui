@@ -12,8 +12,7 @@ Abs, Atan, DEV:true, IsArray, Keys, LS, Pad, Pow, Round, save_option, Split, Und
 'use strict';
 
 // modify those values in config.js
-let HOST = 'https://tcec-chess.com',
-    HOST_ARCHIVE = `${HOST}/archive/json`,
+let HOST_ARCHIVE,
     LINKS = {},
     TIMEOUTS = {
         adblock: 15 * 1000,
@@ -104,6 +103,13 @@ function fix_move_format(move) {
     // note: it's an approximation, not reliable at low values => skipped there
     if (move.n == undefined && move.mt >= 2000)
         move.n = move.s / move.mt * 1000;
+
+    // fix insta-moves speed
+    if (move.mt && move.n && move.s && move.mt < 2000) {
+        let speed = move.n / (move.mt + 500) * 1000;
+        if (move.s > speed * 3)
+            move.s = '-';
+    }
 
     move._fixed = true;
 }
@@ -236,8 +242,10 @@ function reset_old_settings() {
     if (!version) {
         let updates = ['audio'];
         for (let update of updates) {
-            LS(`reset ${update} settings ...`);
             let settings = X_SETTINGS[update];
+            if (!settings)
+                continue;
+            LS(`reset ${update} settings ...`);
 
             Keys(settings).forEach(key => {
                 let value = settings[key];
