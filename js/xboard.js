@@ -1353,8 +1353,8 @@ class XBoard {
                 '<div class="xeval"></div>',
                 '<div class="xcog dn"><i data-svg="cog"></i></div>',
             '</hori>',
+            '<div class="xframe"></div>',
             '<div class="xcontain">',
-                '<div class="xframe"></div>',
                 '<grid class="xsquares"></grid>',
                 '<div class="xoverlay"></div>',
                 '<div class="xpieces"></div>',
@@ -1804,13 +1804,15 @@ class XBoard {
             num_col = this.dims[1],
             size = Floor((width - border * 2) * 2 / num_col) / 2,
             frame_size = size * num_col + border * 2,
-            frame_size2 = size * num_col;
+            frame_size2 = size * num_col,
+            min_height = frame_size + 10 + Visible('.xbottom', node) * 23;
 
         Style(node, `font-size:${size}px`);
-        Style('.xframe', `height:${frame_size}px;left:-${border}px;top:-${border}px;width:${frame_size}px`, true, node);
-        Style('.xoverlay', `height:${frame_size2}px;left:0;top:0;width:${frame_size2}px`, true, node);
-        Style('.xmoves', `max-width:${frame_size2}px`, true, node);
+        Style('.xframe', `height:${frame_size}px;width:${frame_size}px`, true, node);
+        Style('.xoverlay', `height:${frame_size2}px;width:${frame_size2}px`, true, node);
+        Style('.xmoves', `max-width:${frame_size}px`, true, node);
         Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
+        Style('.xcontain', `left:${border}px;min-height:${min_height}px;top:${border}px`, true, node);
 
         this.size = size;
         if (render)

@@ -14,10 +14,10 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
-Class, clear_timeout, context_areas, context_target:true, create_field_value, CreateNode, DEFAULTS, DEV, document,
+Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
-get_active_tab, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HOST, HTML, ICONS:true, Id,
-Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_active_tab, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id, Index,
+init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, localStorage, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES, players,
 popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
@@ -189,6 +189,7 @@ function change_setting_special(name, value, no_close) {
     case 'chat_height':
     case 'column_bottom':
     case 'column_top':
+    case 'controls':
     case 'graph_min_width':
     case 'max_center':
     case 'max_left':
@@ -330,7 +331,7 @@ function change_theme(theme) {
     if (theme != undefined)
         save_option('theme', theme || def);
 
-    theme = Y.theme;
+    theme = Y.theme || '';
     let themes = [theme];
     // TODO: make sure every theme is included in THEMES
     if (Y.x == 'archive')
@@ -339,7 +340,7 @@ function change_theme(theme) {
     // update favicon only when needed
     let icon = `image/favicon${theme.includes('dark')? 'b': ''}.ico`,
         node = _('link[rel="shortcut icon"]');
-    if (node.href.slice(-icon.length) != icon)
+    if (node && node.href.slice(-icon.length) != icon)
         node.href = icon;
 
     S(Id('theme0'), theme != def);
@@ -415,33 +416,6 @@ function close_popups() {
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(Id('modal'), '');
-}
-
-/**
- * Create an URL list
- * @param {Object} dico {key:value, ...}
- * - value is string => URL is created unless empty string
- * - otherwise insert separator
- * @returns {string}
- */
-function create_url_list(dico) {
-    if (!dico)
-        return '';
-
-    let html = Keys(dico).map(key => {
-        let value = dico[key];
-        if (typeof(value) != 'string')
-            return '<hr>';
-
-        if (!value)
-            return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
-
-        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
-            value = `${HOST}/${value}`;
-        return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
-    }).join('');
-
-    return `<vert class="fastart">${html}</vert>`;
 }
 
 /**
@@ -765,7 +739,7 @@ function opened_table_special(node, name, tab) {
  * Populate areas
  */
 function populate_areas() {
-    let areas = Y.areas,
+    let areas = Y.areas || {},
         default_areas = DEFAULTS.areas,
         section = Y.x,
         hides = Assign({}, HIDES[section]);
@@ -1037,8 +1011,11 @@ function resize_panels() {
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
     // special cases
-    Attrs(Id('eval'), {'data-t': (Id('engine').clientWidth > 330)? 'Evaluation': 'Eval'});
-    translate_node('#engine');
+    let node = Id('engine');
+    if (node) {
+        Attrs(Id('eval'), {'data-t': (node.clientWidth > 330)? 'Evaluation': 'Eval'});
+        translate_node(node);
+    }
 
     // column/row mode
     E('.status', node => {
@@ -1315,8 +1292,11 @@ function update_visible() {
     S('.live-more', !Y.single_line);
     S('.percent', Y.percent);
     Class('.percent', 'tar', !hardware);
+    S('#archive .xcontrol, #live .xcontrol', Y.controls);
     S('#archive .xmoves, #live .xmoves', Y.moves);
+    S('#live0 .xcontrol, #live1 .xcontrol, #pv0 .xcontrol, #pv1 .xcontrol', Y.controls_pv);
     S('#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.moves_pv);
+    S('#pva .xcontrol', Y.controls_pva);
     S('#pva .xmoves', Y.moves_pva);
     S('#moves-pv0 .live-pv, #moves-pv1 .live-pv, #table-live0 .live-pv, #table-live1 .live-pv', Y.moves_live);
     S('#mobil_, #mobil0, #mobil1', Y.mobility);
@@ -1891,6 +1871,7 @@ function startup() {
             animate: [ON_OFF, 1],
             arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            controls: [ON_OFF, 1],
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
             highlight_color: [{type: 'color'}, '#ffff00'],
@@ -1908,6 +1889,7 @@ function startup() {
             analysis_lichess: '1',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            controls_pv: [ON_OFF, 1],
             custom_black_pv: [{type: 'color'}, '#000000'],
             custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
@@ -1926,6 +1908,7 @@ function startup() {
             animate_pva: [ON_OFF, 1],
             auto_paste: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
+            controls_pva: [ON_OFF, 1],
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
             notation_pva: [ON_OFF, 1],
@@ -1996,7 +1979,7 @@ function startup() {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: option_number(3, 3, 100, 0.1),
+            move_height_live: option_number(3.6, 3, 100, 0.05),
             moves_live: [ON_OFF, 1],
         },
         moves: {
@@ -2005,11 +1988,11 @@ function startup() {
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
             grid_pva: option_number(1, 0, 10),
-            move_height: option_number(5, 3, 100, 0.05),
-            move_height_copy: option_number(20, 3, 100, 0.1),
-            move_height_live: option_number(3.6, 3, 100, 0.1),
-            move_height_pv: option_number(5, 5, 100, 0.1),
-            move_height_pva: option_number(5, 5, 100, 0.1),
+            move_height: option_number(5.2, 3, 100, 0.05),
+            move_height_copy: option_number(20, 3, 100, 0.05),
+            move_height_live: option_number(3.6, 3, 100, 0.05),
+            move_height_pv: option_number(5, 5, 100, 0.05),
+            move_height_pva: option_number(5, 5, 100, 0.05),
         },
         panel: {
             column_bottom: option_number(4, 1, 8),
@@ -2041,7 +2024,7 @@ function startup() {
             _pop: true,
             copy_moves: '1',
             grid: option_number(0, 0, 10),
-            move_height: option_number(5, 3, 100, 0.05),
+            move_height: option_number(5.2, 3, 100, 0.05),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
         },
@@ -2049,7 +2032,7 @@ function startup() {
             _pop: true,
             copy_moves: '1',
             grid_copy: option_number(2, 0, 10),
-            move_height_copy: option_number(20, 3, 100, 0.1),
+            move_height_copy: option_number(20, 3, 100, 0.05),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
         },
@@ -2057,14 +2040,14 @@ function startup() {
             _pop: true,
             copy_moves: '1',
             grid_pv: option_number(1, 0, 10),
-            move_height_pv: option_number(5, 3, 100, 0.1),
+            move_height_pv: option_number(5, 3, 100, 0.05),
             moves_pv: [ON_OFF, 1],
         },
         copy_pva: {
             _pop: true,
             copy_moves: '1',
             grid_pva: option_number(1, 0, 10),
-            move_height_pva: option_number(5, 3, 100, 0.1),
+            move_height_pva: option_number(5, 3, 100, 0.05),
             moves_pva: [ON_OFF, 1],
         },
         eval: {
