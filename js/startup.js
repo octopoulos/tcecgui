@@ -16,8 +16,8 @@ ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOA
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
-get_active_tab, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id, Index, init_graph,
+init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, localStorage, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES, players,
 popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
@@ -1516,15 +1516,6 @@ function set_global_events() {
             S(Id('full1'), !full);
             resize();
         });
-    });
-
-    C('#nav-archive', () => {
-        // TODO: should scroll if there's no archive game loaded only??
-        if (Y.archive_scroll) {
-            scroll_adjust('#tables');
-            if (!['cross', 'h2h', 'sched', 'season'].includes(get_active_tab('table')[0]))
-                open_table('season');
-        }
     });
 
     // context menus

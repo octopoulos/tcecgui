@@ -1766,7 +1766,7 @@ function open_event() {
             let sub = subs[sub_key];
             if (sub.url == link) {
                 found = sub.abb;
-                info.cup = data[key].cup;
+                Assign(info, data[key]);
                 return;
             }
         });
@@ -1784,10 +1784,17 @@ function open_event() {
     let dico = {no_cache: true},
         prefix = `${HOST_ARCHIVE}/${found}`;
 
+    // cup?
+    if (info.eventtag)
+        download_table(section, `${HOST_ARCHIVE}/${info.eventtag}_EventCrosstable.cjson`, 'cross', data => {
+            create_cup(section, data);
+        }, dico);
+    else
+        download_table(section, `${prefix}_Crosstable.cjson`, 'cross', data => {
+            analyse_crosstable(section, data);
+        }, dico);
+
     download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
-    download_table(section, `${prefix}_Crosstable.cjson`, 'cross', data => {
-        analyse_crosstable(section, data);
-    }, dico);
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
     download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: true}, dico));
 
@@ -3744,6 +3751,11 @@ function changed_section() {
 
     if (section == 'live')
         download_live(redraw_eval_charts);
+    else if (Y.archive_scroll) {
+        if (!['cross', 'h2h', 'sched', 'season'].includes(get_active_tab('table')[0]))
+            open_table('season');
+        scroll_adjust('#tables');
+    }
 
     // update overview
     update_overview_basic(section, headers);
