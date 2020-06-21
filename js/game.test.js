@@ -24,9 +24,9 @@ create_module(IMPORT_PATH, [
 
 let {
         add_history, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        create_field_value, create_game_link, current_archive_link, format_engine, format_eval, format_fen,
-        format_hhmmss, format_opening, format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players,
-        restore_history, tour_info, Y, y_states,
+        create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
+        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, restore_history, tour_info, Y,
+        y_states,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,26 +136,6 @@ let {
 ].forEach(([dico, total_moves, answer], id) => {
     test(`check_adjudication:${id}`, () => {
         expect(check_adjudication(dico, total_moves)).toEqual(answer);
-    });
-});
-
-// create_field_value
-[
-    ['G#', ['g', 'G#']],
-    ['wev=Ev', ['wev', 'Ev']],
-    ['White', ['white', 'White']],
-    ['Final decision', ['final_decision', 'Final decision']],
-    ['W.ev', ['w_ev', 'W.ev']],
-    ['Wins [W/B]', ['wins', 'Wins [W/B]']],
-    ['Diff [Live]', ['diff', 'Diff [Live]']],
-    ['a_b=A=B', ['a_b', 'A=B']],
-    ['startTime', ['start_time', 'startTime']],
-    ['BlackEv', ['black_ev', 'BlackEv']],
-    ['# Games', ['games', '# Games']],
-    ['{Game}#', ['game', '{Game}#']],
-].forEach(([text, answer], id) => {
-    test(`create_field_value:${id}`, () => {
-        expect(create_field_value(text)).toEqual(answer);
     });
 });
 

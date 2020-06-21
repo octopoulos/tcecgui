@@ -1013,7 +1013,7 @@ function DownloadObject(object, name, is_raw, space) {
  * @param {number=} align
  * @returns {string}
  */
-function Format(vector, sep=' ', align=null) {
+function Format(vector, sep=', ', align=null) {
     // null, undefined
     if (vector == null)
         return vector;
@@ -1353,6 +1353,8 @@ function SetDefault(dico, key, def) {
  * @returns {string[]}
  */
 function Split(text, char) {
+    if (!text)
+        return [];
     if (char != undefined)
         return text.split(char);
     let splits = text.split('|');

@@ -1,6 +1,6 @@
 // startup.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-05-10
+// @version 2020-06-20
 //
 /*
 globals
@@ -15,22 +15,44 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'engine',
+    'global',
+    '3d',
     'game',
+    'network',
     //
     'startup',
-], OUTPUT_MODULE);
+], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES Y');
 
-let {create_url_list} = require(OUTPUT_MODULE);
+let {Assign, DEFAULTS, guess_types, import_settings, reset_settings, Keys, Y} = require(OUTPUT_MODULE);
+
+guess_types(DEFAULTS);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// create_url_list
+// import_settings
 [
-    [null, ''],
-    [{}, '<vert class="fastart"></vert>'],
-    [{a: 1}, '<vert class="fastart"><hr></vert>'],
-].forEach(([dico, answer], id) => {
-    test(`create_url_list:${id}`, () => {
-        expect(create_url_list(dico)).toEqual(answer);
+    [{}, true, {}],
+    [{width: 100}, undefined, {width: 100}],
+    [{height: '500px'}, undefined, {height: '500px', width: 100}],
+].forEach(([data, reset, answer], id) => {
+    test(`import_settings:${id}`, () => {
+        import_settings(data, reset);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
+        });
+    });
+});
+
+// reset_settings
+[
+    [{'language': 'fra', 'theme': 'dark'}, true, {language: '', theme: ''}],
+].forEach(([data, reset, answer], id) => {
+    test(`reset_settings:${id}`, () => {
+        Assign(Y, data);
+        reset_settings(data, reset);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
+        });
     });
 });

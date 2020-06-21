@@ -34,6 +34,7 @@ let __PREFIX = '_',
     drag_type,
     full_scroll = {x: 0, y: 0},
     full_target,
+    HOST = '',
     ICONS = {},
     KEY_TIMES = {},
     KEYS = {},
@@ -62,8 +63,8 @@ let __PREFIX = '_',
     touch_done = 0,                                     // time when the touch was released
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
     touch_last = {x: 0, y: 0},
-    TOUCH_MOVES = {mousemove: 1, touchmove: 2},
     touch_moves = [],
+    TOUCH_MOVES = {mousemove: 1, touchmove: 2},
     touch_now,
     touch_scroll = {x: 0, y: 0},
     touch_speed = {x: 0, y: 0},
@@ -129,6 +130,25 @@ function clear_timeout(name) {
     delete timers[name];
     if (DEV.frame)
         LS(`clear_timeout: ${name} : ${timer}`);
+}
+
+/**
+ * Create a field for a table value
+ * @param {string} text
+ * @returns {string[]} field, value
+ */
+function create_field_value(text) {
+    let items = text.split('=');
+    if (items.length > 1)
+        return [items[0], items.slice(1).join('=')];
+
+    // startTime => start_time
+    let lower = Lower(text.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`)),
+        pos = lower.indexOf(' [');
+    if (pos > 0)
+        lower = lower.slice(0, pos);
+
+    return [lower.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
 }
 
 /**
@@ -626,23 +646,6 @@ function set_combo_value(letter, value, save=true) {
     }
 }
 
-/**
- * Resolve the SVG
- * @param {Node=} parent
- */
-function update_svg(parent) {
-    E('i[data-svg]', node => {
-        let name = node.dataset.svg,
-            image = ICONS[name.split(' ')[0]];
-        if (image) {
-            // VB=viewBox=; PFC=path fill="currentColor"
-            image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
-            image = `<svg class="svg ${name}" xmlns="${NAMESPACE_SVG}" ${image}</svg>`;
-            HTML(node, image);
-            delete node.dataset.svg;
-        }
-    }, parent);
-}
 
 /**
  * Update the theme
@@ -694,6 +697,24 @@ function update_theme(themes, callback, version=15) {
     update_svg();
     if (callback)
         callback();
+}
+
+/**
+ * Resolve the SVG
+ * @param {Node=} parent
+ */
+function update_svg(parent) {
+    E('i[data-svg]', node => {
+        let name = node.dataset.svg,
+            image = ICONS[name.split(' ')[0]];
+        if (image) {
+            // VB=viewBox=; PFC=path fill="currentColor"
+            image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
+            image = `<svg class="svg ${name}" xmlns="${NAMESPACE_SVG}" ${image}</svg>`;
+            HTML(node, image);
+            delete node.dataset.svg;
+        }
+    }, parent);
 }
 
 // BROWSER
@@ -1353,6 +1374,33 @@ function create_page_array(num_page, page, extra) {
     if (array[num_page - 3])
         array[num_page - 2] = 2;
     return array;
+}
+
+/**
+ * Create an URL list
+ * @param {Object} dico {key:value, ...}
+ * - value is string => URL is created unless empty string
+ * - otherwise insert separator
+ * @returns {string}
+ */
+function create_url_list(dico) {
+    if (!dico)
+        return '';
+
+    let html = Keys(dico).map(key => {
+        let value = dico[key];
+        if (typeof(value) != 'string')
+            return '<hr>';
+
+        if (!value)
+            return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
+
+        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
+            value = `${HOST}/${value}`;
+        return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
+    }).join('');
+
+    return `<vert class="fastart">${html}</vert>`;
 }
 
 // API

@@ -13,10 +13,10 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target:true, controls, CopyClipboard, create_page_array, CreateNode, CreateSVG, cube:true, DEV,
-document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area,
-get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
-invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
+context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
+CreateSVG, cube:true, DEV, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds,
+FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id,
+Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
@@ -783,7 +783,10 @@ function update_board_theme(mode) {
  * Update engine pieces using the main board theme
  */
 function update_engine_pieces() {
-    let [piece_size, style] = xboards.live.get_piece_background(20);
+    let main = xboards.live;
+    if (!main)
+        return;
+    let [piece_size, style] = main.get_piece_background(20);
 
     for (let i = 0; i < 2; i ++) {
         let node = Id(`king${i}`),
@@ -1056,25 +1059,6 @@ function check_queued_tables() {
 
     for (let remove of removes)
         queued_tables.delete(remove);
-}
-
-/**
- * Create a field for a table value
- * @param {string} text
- * @returns {string[]} field, value
- */
-function create_field_value(text) {
-    let items = text.split('=');
-    if (items.length > 1)
-        return [items[0], items.slice(1).join('=')];
-
-    // startTime => start_time
-    let lower = Lower(text.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`)),
-        pos = lower.indexOf(' [');
-    if (pos > 0)
-        lower = lower.slice(0, pos);
-
-    return [lower.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
 }
 
 /**

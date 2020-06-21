@@ -5,13 +5,14 @@
 /*
 globals
 _, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, fix_move_format, Floor, FormatUnit, FromSeconds,
-get_move_ply, Id, Keys, load_library, LS, Pad, players, Round, SetDefault, Sign, Visible, window, xboards, Y
+get_move_ply, Id, Keys, load_library, LS, Min, Pad, players, Round, SetDefault, Sign, translate_expression, Visible,
+window, xboards, Y
 */
 'use strict';
 
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
-    ENGINE_NAMES = ['White', 'Black', '7Blue', '7Red'];
+    ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'];
 
 let cached_percents = {},
     chart_data = {},
@@ -141,10 +142,10 @@ function create_chart_data() {
     Assign(chart_data, {
         depth: {
             datasets: [
-                new_dataset('W. Depth', Y.graph_color_0),
-                new_dataset('B. Depth', '#1a1a1a', '', {borderDash: [10, 5]}),
-                new_dataset('W. Sel depth', '#b1b1b1'),
-                new_dataset('B. Sel depth', '#7e7e7e', '', {borderDash: [10, 5]}),
+                new_dataset('depth', Y.graph_color_0),
+                new_dataset('depth', Y.graph_color_1),
+                new_dataset('selective', Y.graph_color_0, '', {borderDash: [5, 5]}),
+                new_dataset('selective', Y.graph_color_1, '', {borderDash: [5, 5]}),
             ],
             labels: [],
         },
@@ -154,37 +155,37 @@ function create_chart_data() {
         },
         mobil: {
             datasets: [
-                new_dataset('W. Mobility', Y.graph_color_0),
-                new_dataset('B. Mobility', Y.graph_color_1),
-                new_dataset('r-mobility', '#7e7eff', '', {borderDash: [10, 5]}),
+                new_dataset('mobility', Y.graph_color_0),
+                new_dataset('mobility', Y.graph_color_1),
+                new_dataset('r-mobility', '#007f7f', '', {borderDash: [10, 5]}),
             ],
             labels: [],
         },
         node: {
             datasets: [
-                new_dataset('White Speed', Y.graph_color_0, 'y-axis-1'),
-                new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w', Y.graph_color_0, 'y-axis-1'),
+                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],
         },
         speed: {
             datasets: [
-                new_dataset('White Speed',Y.graph_color_0, 'y-axis-1'),
-                new_dataset('Black Speed', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w',Y.graph_color_0, 'y-axis-1'),
+                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],
         },
         tb: {
             datasets: [
-                new_dataset('White TB Hits', Y.graph_color_0, 'y-axis-1'),
-                new_dataset('Black TB Hits', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w', Y.graph_color_0, 'y-axis-1'),
+                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
             ],
             labels: [],
         },
         time: {
             datasets: [
-                new_dataset('White Time', Y.graph_color_0),
-                new_dataset('Black Time', Y.graph_color_1),
+                new_dataset('w', Y.graph_color_0),
+                new_dataset('b', Y.graph_color_1),
             ],
             labels: [],
         },
@@ -345,7 +346,7 @@ function new_dataset(label, color, yaxis, dico) {
         borderColor: color,
         data: [],
         fill: false,
-        label: label,
+        label: translate_expression(label),
         lineTension: Y.graph_tension,
         pointHitRadius: 4,
         yAxisID: yaxis,
@@ -499,7 +500,7 @@ function update_chart_options(name, mode) {
                 ratio = chart.canvas.parentNode.clientWidth / 300,
                 line_width = Y.graph_line * ratio,
                 point_radius = Y.graph_radius * ratio,
-                text_size = Y.graph_text * ratio;
+                text_size = Min(Y.graph_text * ratio, 16);
 
             for (let dataset of datasets)
                 Assign(dataset, {
