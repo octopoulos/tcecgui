@@ -2765,14 +2765,15 @@ function update_move_pv(section, ply, move) {
  * @param {string} section
  */
 function update_options(section) {
+    let pgn = pgns[section];
+
     for (let id = 0; id < 2; id ++) {
         let key = `${WB_TITLES[id]}EngineOptions`,
             player = players[id],
-            pgn = pgns[section],
             pgn_options = pgn[key];
-
         if (!pgn_options)
-            return;
+            continue;
+
         if (IsArray(pgn_options)) {
             pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
             pgn[key] = pgn_options;
@@ -3097,9 +3098,8 @@ function update_pgn(section, pgn, extras, reset_moves) {
                     player.time = 0;
             }
         }
-
-        update_options(section);
     }
+    update_options(section);
 
     // 5) clock
     if (section == 'live' && last_move) {
