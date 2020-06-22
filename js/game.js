@@ -1319,11 +1319,10 @@ function filter_table_rows(parent, text) {
 
 /**
  * Show tables depending on the event type
- * @param {string} type
+ * @param {boolean=} is_cup
  */
-function show_tables(type) {
-    let is_cup = (type == 'cup'),
-        parent = Id('tables'),
+function show_tables(is_cup) {
+    let parent = Id('tables'),
         target = is_cup? 'brak': 'stand';
     S('[data-x="brak"], [data-x="event"]', is_cup, parent);
     S('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', !is_cup, parent);
@@ -1769,6 +1768,7 @@ function open_event(section) {
         data = data_x.data,
         info = tour_info[section],
         link = current_archive_link(section);
+    info.eventtag = '';
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1796,6 +1796,7 @@ function open_event(section) {
         prefix = `${HOST_ARCHIVE}/${found}`;
 
     // cup?
+    show_tables(event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
             download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'cross', data => {
@@ -1810,7 +1811,7 @@ function open_event(section) {
 
     download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: !event_tag}, dico));
+    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, {...{show: !event_tag}, ...dico});
 
     open_game();
 }
@@ -2245,7 +2246,7 @@ function create_connectors() {
  * @param {boolean} show
  */
 function create_cup(section, data, show) {
-    show_tables('cup');
+    show_tables(true);
 
     let event = data.EventTable;
     if (event) {
@@ -4123,7 +4124,7 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
-    show_tables('league');
+    show_tables();
 }
 
 /**
