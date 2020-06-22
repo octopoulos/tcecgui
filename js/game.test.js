@@ -153,16 +153,16 @@ let {
 
 // current_archive_link
 [
-    [{}, undefined, ''],
-    [{}, true, ''],
-    [{div: 'p', game: 126, round: '', season: 1, stage: ''}, false, 'season=1&div=p'],
-    [{div: 'p', game: 126, round: '', season: 1, stage: ''}, true, 'season=1&div=p&game=126'],
-    [{div: '', game: 1, round: 'fl', season: 'cup5', stage: ''}, undefined, 'season=cup5&round=fl'],
-    [{div: '', game: 7, round: '', season: '10', stage: '2'}, true, 'season=10&stage=2&game=7'],
-].forEach(([y, is_game, answer], id) => {
+    [{}, 'archive', undefined, ''],
+    [{}, 'archive', true, ''],
+    [{div: 'p', game: 126, round: '', season: 1, stage: ''}, 'archive', false, 'season=1&div=p'],
+    [{div: 'p', game: 126, round: '', season: 1, stage: ''}, 'archive', true, 'season=1&div=p&game=126'],
+    [{div: '', game: 1, round: 'fl', season: 'cup5', stage: ''}, 'archive', undefined, 'season=cup5&round=fl'],
+    [{div: '', game: 7, round: '', season: '10', stage: '2'}, 'archive', true, 'season=10&stage=2&game=7'],
+].forEach(([y, section, is_game, answer], id) => {
     test(`current_archive_link:${id}`, () => {
         Assign(Y, y);
-        expect(current_archive_link(is_game)).toEqual(answer);
+        expect(current_archive_link(section, is_game)).toEqual(answer);
     });
 });
 

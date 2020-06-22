@@ -1,6 +1,7 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+2020-06-21 : 2020-06-21 : download game link live
 2020-06-20 : 2020-06-20 : add bracket to archive games
 2020-06-20 : 2020-06-20 : don't reset the dual PV cursor if the PV was interacted with + not updated
 2020-06-20 : 2020-06-20 : show/hide controls

@@ -1695,34 +1695,38 @@ function analyse_seasons(data) {
     if (!seasons)
         return;
 
-    let rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
+    let link = current_archive_link(section),
+        rows = Keys(seasons).reverse().map(key => Assign({season: isNaN(key)? key: `Season ${key}`}, seasons[key]));
     update_table(section, 'season', rows);
 
     // don't load an archive game unless we're in the archive
-    if (Y.x != section)
-        return;
+    if (Y.x == section) {
+        let node = _(`[data-u="${link}"]`);
+        if (!node)
+            return;
 
-    let link = current_archive_link(),
-        node = _(`[data-u="${link}"]`);
-    if (!node)
-        return;
+        let parent = Parent(node, {tag: 'grid'});
+        if (!parent)
+            return;
+        Class(node, 'active');
+        Class(node.nextElementSibling, 'active');
+        expand_season(parent.previousElementSibling, true);
+        tour_info[section].link = link;
+    }
 
-    let parent = Parent(node, {tag: 'grid'});
-    if (!parent)
-        return;
-    Class(node, 'active');
-    Class(node.nextElementSibling, 'active');
-    expand_season(parent.previousElementSibling, true);
-    tour_info[section].link = link;
-    open_event();
+    open_event(Y.x);
 }
 
 /**
  * Create an archive link with the default Y state
+ * @param {string} section
  * @param {boolean=} is_game include the game= ...
  * @returns {string}
  */
-function current_archive_link(is_game) {
+function current_archive_link(section, is_game) {
+    if (section == 'live')
+        return tour_info[section].link;
+
     let keys = ARCHIVE_KEYS;
     if (!is_game)
         keys = keys.slice(0, -1);
@@ -1754,17 +1758,17 @@ function expand_season(node, show) {
  * Open an event
  * - show the event games
  * - open various tables
+ * @param {string} section
  */
-function open_event() {
-    let section = 'archive',
-        data_x = table_data[section].season;
+function open_event(section) {
+    let data_x = table_data.archive.season;
     if (!data_x)
         return;
 
     let found,
         data = data_x.data,
         info = tour_info[section],
-        link = current_archive_link();
+        link = current_archive_link(section);
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1784,7 +1788,7 @@ function open_event() {
         link: link,
         url: found,
     });
-    if (!found)
+    if (!found || section != 'archive')
         return;
 
     let dico = {no_cache: true},
@@ -1853,7 +1857,7 @@ function set_season_events() {
         });
         save_option('game', 1);
 
-        open_event();
+        open_event('archive');
         Class('a.active', '-active', true, table);
         Class(this, 'active');
         Class(this.nextElementSibling, 'active');
@@ -3738,7 +3742,7 @@ function changed_hash() {
     if (DEV.load)
         LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
     game_link = string;
-    open_event();
+    open_event(Y.x);
 }
 
 /**
