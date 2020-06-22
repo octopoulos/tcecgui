@@ -111,6 +111,7 @@ let ANALYSIS_URLS = {
             size: 24,
         }
     },
+    bracket_link,
     CACHE_TIMEOUTS = {
         brak: 60,
         crash: 600,
@@ -190,10 +191,15 @@ let ANALYSIS_URLS = {
         '1-0': 1,
         '1/2-1/2': 0.5,
     },
+    ROUND_LINKS = {
+        1: 'fl',
+        2: 'sf',
+        4: 'qf',
+    },
     ROUND_NAMES = {
         1: 'Final',
-        2: 'SemiFinal',
-        4: 'QuarterFinal',
+        2: 'Semi-finals',
+        4: 'Quarter-finals',
     },
     SCORE_NAMES = {
         0: 'loss',
@@ -1782,13 +1788,17 @@ function open_event() {
         return;
 
     let dico = {no_cache: true},
+        event_tag = info.eventtag,
         prefix = `${HOST_ARCHIVE}/${found}`;
 
     // cup?
-    if (info.eventtag)
-        download_table(section, `${HOST_ARCHIVE}/${info.eventtag}_EventCrosstable.cjson`, 'cross', data => {
-            create_cup(section, data);
-        }, dico);
+    if (event_tag) {
+        if (bracket_link != event_tag)
+            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'cross', data => {
+                create_cup(section, data, true);
+                bracket_link = event_tag;
+            }, dico);
+    }
     else
         download_table(section, `${prefix}_Crosstable.cjson`, 'cross', data => {
             analyse_crosstable(section, data);
@@ -1796,7 +1806,7 @@ function open_event() {
 
     download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: true}, dico));
+    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: !event_tag}, dico));
 
     open_game();
 }
@@ -2228,8 +2238,9 @@ function create_connectors() {
  * Create a cup
  * @param {string} section archive, live
  * @param {Object} data
+ * @param {boolean} show
  */
-function create_cup(section, data) {
+function create_cup(section, data, show) {
     show_tables('cup');
 
     let event = data.EventTable;
@@ -2241,6 +2252,13 @@ function create_cup(section, data) {
     }
 
     create_bracket(section, data);
+    if (show)
+        open_table('brak');
+
+    // cup events
+    C('.match', function() {
+        LS(this);
+    });
 }
 
 // PGN
@@ -3752,7 +3770,7 @@ function changed_section() {
     if (section == 'live')
         download_live(redraw_eval_charts);
     else if (Y.archive_scroll) {
-        if (!['cross', 'h2h', 'sched', 'season'].includes(get_active_tab('table')[0]))
+        if (!['sched', 'season'].includes(get_active_tab('table')[0]))
             open_table('season');
         scroll_adjust('#tables');
     }
