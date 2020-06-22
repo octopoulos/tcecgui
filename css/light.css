@@ -848,7 +848,7 @@ grid {
     color: #555;
     font-size: 0.95em;
     height: 5.5em;
-    margin: 0.3em;
+    margin: 0.2em;
     padding: 0.6em;
     text-align: center;
     width: 8em;
@@ -1433,6 +1433,9 @@ svg.down {
     #header,
     #table-tabs {
         font-size: 0.9em;
+    }
+    .stats {
+        width: 7em;
     }
 }
 @media (max-width: 568px) {
