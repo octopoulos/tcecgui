@@ -3747,7 +3747,9 @@ function changed_hash() {
     if (DEV.load)
         LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
     game_link = string;
-    open_event(Y.x);
+
+    if (Y.x == 'live')
+        open_event(Y.x);
 }
 
 /**
