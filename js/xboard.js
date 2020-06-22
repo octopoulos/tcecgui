@@ -1312,7 +1312,7 @@ class XBoard {
      * - must be run before doing anything with it
      */
     initialise() {
-        let controls2 = Assign({}, CONTROLS);
+        let controls2 = {...CONTROLS};
         if (this.main_manual) {
             delete controls2.lock;
             controls2.cube = 'Change view';
