@@ -1021,6 +1021,9 @@ grid {
     padding: 0.5em;
     z-index: 1;
 }
+.search {
+    width: 215px;
+}
 .search:focus {
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
@@ -1043,6 +1046,7 @@ grid {
 .match {
     background: rgba(128, 128, 128, 0.7);
     border: 1px solid transparent;
+    cursor: pointer;
     font-family: monospace;
     font-size: 13px;
     margin: 0.5em;
