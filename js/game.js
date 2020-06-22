@@ -1972,20 +1972,25 @@ function calculate_event_stats(section, rows) {
         [start_date, start_time] = FromTimestamp(start);
 
     Assign(stats, {
+        //
         start_time: `${start_time} on 20${start_date}`,
         end_time: `${end_time} on 20${end_date}`,
         duration: format_hhmmss(stats._duration),
-        average_moves: Round(moves / games),
-        average_time: format_hhmmss(seconds / games),
+        //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draw_rate: format_percent(results['1/2-1/2'] / games),
-        crashes: crashes,
-        games: games,
+        //
+        average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
         max_moves: `${max_moves[0]} [${create_game_link(section, max_moves[1])}]`,
+        //
+        average_time: format_hhmmss(seconds / games),
         min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
+        //
+        games: games,
+        crashes: crashes,
     });
 
     // create the table
