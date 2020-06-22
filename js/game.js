@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-06-21
 //
 // Game specific code:
 // - control the board, moves
@@ -594,7 +594,7 @@ function create_boards() {
     let keys = Keys(BOARDS);
 
     keys.forEach(key => {
-        let options = Assign({
+        let options = {...{
                 border: 2,
                 hook: handle_board_events,
                 id: `#${key}`,
@@ -602,7 +602,7 @@ function create_boards() {
                 name: key,
                 mode: 'html',
                 size: 24,
-            }, BOARDS[key]),
+            }, ...BOARDS[key]},
             xboard = new XBoard(options);
 
         xboard.initialise();
@@ -763,7 +763,7 @@ function update_board_theme(mode) {
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
                 smooth = Y[`animate${suffix}`],
-                theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
+                theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
 
             Assign(board, {
                 colors: colors,
@@ -1847,7 +1847,7 @@ function set_season_events() {
             return;
 
         // 'season=18&div=l3' or 'season=cup5&round=round16'
-        let dico = Assign({div: '', round: '', stage: ''}, QueryString({query: this.dataset.u}));
+        let dico = {...{div: '', round: '', stage: ''}, ...QueryString({query: this.dataset.u})};
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -2769,11 +2769,11 @@ function update_options(section) {
 
     for (let id = 0; id < 2; id ++) {
         let key = `${WB_TITLES[id]}EngineOptions`,
-            player = players[id],
             pgn_options = pgn[key];
         if (!pgn_options)
             continue;
 
+        // legacy support: pgjson
         if (IsArray(pgn_options)) {
             pgn_options = Assign({}, ...pgn_options.map(option => ({[option.Name]: option.Value})));
             pgn[key] = pgn_options;
@@ -2794,7 +2794,7 @@ function update_options(section) {
             }
         });
 
-        player.options = pgn_options;
+        players[id].options = {...pgn_options};
         update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
     }
 }
@@ -3098,8 +3098,8 @@ function update_pgn(section, pgn, extras, reset_moves) {
                     player.time = 0;
             }
         }
+        update_options(section);
     }
-    update_options(section);
 
     // 5) clock
     if (section == 'live' && last_move) {

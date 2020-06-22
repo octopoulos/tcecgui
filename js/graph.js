@@ -303,15 +303,15 @@ function invert_eval(eval_) {
  * @param {Object=} dico
  */
 function new_chart(name, has_legend, y_axes, scale_callback, tooltip_callback, dico) {
-    let options = Assign(Assign({}, CHART_OPTIONS), {
+    let options = {...CHART_OPTIONS, ...{
         scales: {
             xAxes: [CHART_X_AXES],
             yAxes: y_axes.map(id => new_y_axis(id, scale_callback)),
         },
-    });
+    }};
 
     if (has_legend)
-        options.legend = Assign({}, CHART_LEGEND);
+        options.legend = {...CHART_LEGEND};
 
     if (tooltip_callback)
         options.tooltips = {
@@ -622,7 +622,7 @@ function update_player_chart(name, moves) {
 
         switch (name) {
         case 'depth':
-            datasets[ply % 2 + 2].data[num2] = Assign(Assign({}, dico), {y: move.sd});
+            datasets[ply % 2 + 2].data[num2] = {...dico, ...{y: move.sd}};
             dico.y = move.d;
             break;
         case 'eval':
@@ -630,7 +630,7 @@ function update_player_chart(name, moves) {
             dico.y = is_percent? calculate_win(id, move.wv): clamp_eval(move.wv);
             break;
         case 'mobil':
-            datasets[2].data[num2] = Assign(Assign({}, dico), {y: move.goal? Abs(move.goal[0]): -1});
+            datasets[2].data[num2] = {...dico, ...{y: move.goal? Abs(move.goal[0]): -1}};
             dico.mobil = move.mobil;
             dico.y = Abs(move.mobil);
             break;
