@@ -1690,7 +1690,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
  */
 function analyse_seasons(data) {
     let seasons = (data || {}).Seasons,
-        section = 'archive';
+        section = 'archive',
+        is_archive = (Y.x == section);
     if (!seasons)
         return;
 
@@ -1699,7 +1700,7 @@ function analyse_seasons(data) {
     update_table(section, 'season', rows);
 
     // don't load an archive game unless we're in the archive
-    if (Y.x == section) {
+    if (is_archive) {
         let node = _(`[data-u="${link}"]`);
         if (!node)
             return;
@@ -1882,6 +1883,9 @@ function analyse_tournament(section, data) {
         download_table(section, 'bracket.json', 'brak', data => {
             create_cup(section, data);
         });
+
+    open_event(section);
+    update_table(section, 'sched', null);
 }
 
 /**
