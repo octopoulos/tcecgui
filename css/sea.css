@@ -49,6 +49,17 @@ html {
     background: rgba(235, 235, 238, 0.15);
 }
 
+/* bracket */
+.round {
+    color: rgba(255, 255, 255, 0.7);
+}
+.connect.loss {
+    stroke: rgba(40, 40, 40, 0.6);
+}
+.connect.win {
+    stroke: rgba(40, 40, 40, 0.3);
+}
+
 /* lives */
 #box-live0 .engine,
 #table-live0 .engine {
