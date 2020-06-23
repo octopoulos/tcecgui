@@ -1233,8 +1233,10 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
                 callback(data);
             else if (name) {
                 update_table(section, name, data);
-                if (show && section == Y.x)
+                if (show && section == Y.x) {
                     open_table(name);
+                    scroll_adjust(`#tables`);
+                }
             }
         }
     }
@@ -1321,12 +1323,20 @@ function filter_table_rows(parent, text, force) {
 }
 
 /**
+ * Set the games filter
+ * @param {string} text
+ */
+function set_games_filter(text) {
+    _('#table-search .search').value = text;
+    filter_table_rows('table', text, ['sched', 'sched']);
+}
+
+/**
  * Show filtered games
  * @param {string} text
  */
 function show_filtered_games(text) {
-    _('#table-search .search').value = text;
-    filter_table_rows('table', text, ['sched', 'sched']);
+    set_games_filter(text);
     add_timeout('table', () => {
         open_table('sched');
         scroll_adjust('#tables');
@@ -1888,8 +1898,7 @@ function set_season_events() {
         });
         save_option('game', 1);
 
-        _('#table-search .search').value = '';
-        filter_table_rows('table', '', ['sched', 'sched']);
+        set_games_filter('');
         open_event('archive');
 
         Class('a.active', '-active', true, table);
@@ -3851,10 +3860,13 @@ function changed_section() {
         if (Y.archive_scroll) {
             if (!['sched', 'season'].includes(get_active_tab('table')[0]))
                 open_table('season');
-            scroll_adjust('#tables');
+            if (!Y.game)
+                scroll_adjust('#tables');
         }
-        if (Y.game)
+        if (Y.game) {
+            set_games_filter('');
             open_event(section, true);
+        }
     }
 
     // update overview

@@ -1309,7 +1309,7 @@ function touch_handle(e, full) {
         }
     }
 
-    if (!is_start)
+    if (!is_start && e.cancelable != false)
         e.preventDefault();
     e.stopPropagation();
 }
