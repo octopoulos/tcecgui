@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-06-23
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -725,12 +725,13 @@ function update_svg(parent) {
  * @param {boolean=} no_special
  */
 function check_hash(no_special) {
-    let string = QueryString({key: 'hash'});
-    Assign(Y, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
+    let string = QueryString({key: 'hash'}),
+        dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
+    Assign(Y, dico);
     sanitise_data();
 
     if (!no_special && virtual_check_hash_special)
-        virtual_check_hash_special();
+        virtual_check_hash_special(dico);
 }
 
 /**
@@ -829,9 +830,9 @@ function push_state(query, replace, query_key='hash', go=null) {
     query = query || {};
     let changes = [],
         state_keys = STATE_KEYS[Y.x] || STATE_KEYS._ || [],
-        new_state = Assign({}, ...state_keys.map(x => ({[x]: Undefined(query[x], Y[x])}))),
+        new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x => ({[x]: Undefined(query[x], Y[x])}))),
         state = history.state,
-        url = QueryString({key: query_key, replace: new_state, string: true});
+        url = QueryString({key: null, replace: new_state, string: true});
 
     // state didn't change => return
     if (state) {

@@ -12,7 +12,7 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
-ANCHORS:true, api_times:true, api_translate_get, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, DEV, document,
 download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
@@ -350,9 +350,21 @@ function change_theme(theme) {
 
 /**
  * Called whenever the page loads and whenever the hash changes
+ * @param {Object} dico
  */
-function check_hash_special() {
+function check_hash_special(dico) {
     check_stream();
+
+    // handle a short url
+    let archive_keys = ARCHIVE_KEYS.filter(key => dico[key] != undefined);
+    if (archive_keys.length) {
+        for (let key of ARCHIVE_KEYS)
+            if (dico[key] == undefined)
+                Y[key] = undefined;
+        Y.x = 'archive';
+    }
+    else if (!dico.x)
+        Y.x = 'live';
 
     if (!['archive', 'live'].includes(Y.x))
         Y.x = 'live';

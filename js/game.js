@@ -314,7 +314,7 @@ function calculate_score(text) {
  * @returns {string}
  */
 function create_game_link(section, game, text, only_link) {
-    let link = '#' + QueryString({query: `x=archive&${tour_info[section].link}&game=${game}`, string: true});
+    let link = '#' + QueryString({query: `${tour_info[section].link}&game=${game}`, string: true});
     if (only_link)
         return link;
     return `<a class="game" href="${link}">${text || game}</a>`;
@@ -1181,11 +1181,11 @@ function download_live(callback) {
     }
 
     // evals
-    download_table(section, `data.json?no-cache${Now()}`, null, data => {
+    download_table(section, `data.json?ts=${Now()}`, null, data => {
         update_live_eval(section, data, 0);
         _done();
     });
-    download_table(section, `data1.json?no-cache${Now()}`, null, data => {
+    download_table(section, `data1.json?ts=${Now()}`, null, data => {
         update_live_eval(section, data, 1);
         _done();
     });
@@ -1546,7 +1546,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'name':
                 if (row.link) {
-                    let query = QueryString({query: row.link.split('?').slice(-1)[0], replace: {x: 'archive'}, string: true});
+                    let query = QueryString({query: row.link.split('?').slice(-1)[0], string: true});
                     value = `<a class="loss" href="#${query}">${value}</a>`;
                 }
                 break;
@@ -1889,6 +1889,7 @@ function set_season_events() {
         save_option('game', 1);
 
         _('#table-search .search').value = '';
+        filter_table_rows('table', '', ['sched', 'sched']);
         open_event('archive');
 
         Class('a.active', '-active', true, table);
@@ -2449,7 +2450,9 @@ function download_pgn(section, url, scroll_up, reset_moves) {
     clear_timeout(section);
 
     Y.scroll_up = scroll_up;
-    Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
+    let no_cache = (section == 'live')? `?ts=${Now()}`: '';
+
+    Resource(`${url}${no_cache}`, (code, data, xhr) => {
         if (code != 200)
             return;
 
@@ -4205,8 +4208,8 @@ function start_game() {
  */
 function startup_game() {
     Assign(STATE_KEYS, {
-        archive: [...['x'], ...ARCHIVE_KEYS],
-        live: ['x'],
+        archive: ARCHIVE_KEYS,
+        live: [],
     });
 
     virtual_init_3d_special = init_3d_special;
