@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-06-23
 //
 /*
 globals
@@ -252,7 +252,7 @@ let {
         {key: null, replace: {class: "phantom", mode: "speed lap", game: "wipeout x"}, string: true},
         'class=phantom&game=wipeout%20x&mode=speed%20lap',
     ],
-    [{query: 'x=archive&season=18&div=l3&game=1', string: true}, 'div=l3&game=1&season=18&x=archive'],
+    [{query: 'season=18&div=l3&game=1', string: true}, 'div=l3&game=1&season=18'],
 ].forEach(([dico, answer], id) => {
     test(`QueryString:${id}`, () => {
         expect(QueryString(dico)).toEqual(answer);

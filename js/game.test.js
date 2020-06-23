@@ -141,8 +141,8 @@ let {
 
 // create_game_link
 [
-    [{}, 'live', 1, '', '<a class="game" href="#game=1&x=archive">1</a>'],
-    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class="game" href="#div=l3&game=1&season=18&x=archive">1</a>'],
+    [{}, 'live', 1, '', '<a class="game" href="#game=1">1</a>'],
+    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class="game" href="#div=l3&game=1&season=18">1</a>'],
 ]
  .forEach(([info, section, game, text, answer], id) => {
     test(`create_game_link:${id}`, () => {
