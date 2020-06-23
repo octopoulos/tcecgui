@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-21
+// @version 2020-06-22
 //
 // Game specific code:
 // - control the board, moves
@@ -152,6 +152,7 @@ let ANALYSIS_URLS = {
         ['#moves-pv1', '#box-pv1 .status'],
     ],
     MAX_HISTORY = 20,
+    old_cup,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -192,9 +193,10 @@ let ANALYSIS_URLS = {
         '1/2-1/2': 0.5,
     },
     ROUND_LINKS = {
-        1: 'fl',
-        2: 'sf',
-        4: 'qf',
+        1: 'fl',                        // final
+        2: 'sf',                        // semifinal
+        3: 'bz',                        // bronze
+        4: 'qf',                        // quarterfinal
     },
     ROUND_NAMES = {
         1: 'Final',
@@ -1305,9 +1307,10 @@ function download_tables(only_cache, no_live) {
  * - only works if the table is active + paginated
  * @param {string} parent
  * @param {string} text
+ * @param {string[]=} force
  */
-function filter_table_rows(parent, text) {
-    let [active, output] = get_active_tab(parent),
+function filter_table_rows(parent, text, force) {
+    let [active, output] = force || get_active_tab(parent),
         section = Y.x,
         data_x = table_data[section][active];
 
@@ -1318,12 +1321,27 @@ function filter_table_rows(parent, text) {
 }
 
 /**
+ * Show filtered games
+ * @param {string} text
+ */
+function show_filtered_games(text) {
+    _('#table-search .search').value = text;
+    filter_table_rows('table', text, ['sched', 'sched']);
+    add_timeout('table', () => {open_table('sched');}, TIMEOUT_search);
+}
+
+/**
  * Show tables depending on the event type
  * @param {boolean=} is_cup
  */
 function show_tables(is_cup) {
-    let parent = Id('tables'),
-        target = is_cup? 'brak': 'stand';
+    if (is_cup == old_cup)
+        return;
+    old_cup = is_cup;
+
+    let active = get_active_tab('table')[0],
+        parent = Id('tables'),
+        target = (active == 'sched')? active: (is_cup? 'brak': 'stand');
     S('[data-x="brak"], [data-x="event"]', is_cup, parent);
     S('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', !is_cup, parent);
 
@@ -1759,17 +1777,22 @@ function expand_season(node, show) {
  * - show the event games
  * - open various tables
  * @param {string} section
+ * @param {boolean=} scroll_up scroll to board
+ * @param {function=} callback
  */
-function open_event(section) {
+function open_event(section, scroll_up, callback) {
     let data_x = table_data.archive.season;
     if (!data_x)
         return;
 
     let found,
         data = data_x.data,
-        info = tour_info[section],
+        info = Assign(tour_info[section], {
+            cup: 0,
+            eventtag: '',
+            frc: 0,
+        }),
         link = current_archive_link(section);
-    info.eventtag = '';
 
     Keys(data).forEach(key => {
         let subs = data[key].sub;
@@ -1797,7 +1820,7 @@ function open_event(section) {
         prefix = `${HOST_ARCHIVE}/${found}`;
 
     // cup?
-    show_tables(event_tag);
+    show_tables(!!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
             download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'cross', data => {
@@ -1814,14 +1837,16 @@ function open_event(section) {
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
     download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, {...{show: !event_tag}, ...dico});
 
-    open_game();
+    open_game(scroll_up);
+    if (callback)
+        callback();
 }
 
 /**
  * Open an archived game
- * @param {boolean=} direct clicked on the game => scroll when loaded
+ * @param {boolean=} scroll_up clicked on the game => scroll when loaded
  */
-function open_game(direct) {
+function open_game(scroll_up) {
     let info = tour_info.archive,
         event = info.url;
     if (!event)
@@ -1831,7 +1856,8 @@ function open_game(direct) {
         push_state();
         check_hash();
     }
-    download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`, direct);
+    if (Y.game)
+        download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`, scroll_up);
 }
 
 /**
@@ -1859,7 +1885,9 @@ function set_season_events() {
         });
         save_option('game', 1);
 
+        _('#table-search .search').value = '';
         open_event('archive');
+
         Class('a.active', '-active', true, table);
         Class(this, 'active');
         Class(this.nextElementSibling, 'active');
@@ -2099,7 +2127,8 @@ function create_bracket(section, data) {
             + `<vert class="${number == 1? 'fcenter final': 'faround'} h100" data-r="${round}">`
         );
         for (let i = 0; i < number2; i ++) {
-            let names = [0, 0],
+            let link = ROUND_LINKS[number] || `round${number * 2}`,
+                names = [0, 0],
                 result = results[i] || [],
                 scores = [0, 0],
                 team = teams[i];
@@ -2116,8 +2145,10 @@ function create_bracket(section, data) {
                     names[id] = [
                         class_,
                         `<hori title="${item.name}">`
-                            + `<img class="match-logo" src="image/engine/${short}.jpg"><div>#${seed} ${short}</div>`
+                            + `<img class="match-logo" src="image/engine/${short}.jpg">`
+                            + `<div class="seed">#${seed}</div><div>${resize_text(short, 17)}</div>`
                         + '</hori>',
+                        short,
                     ];
                     scores[id] = [
                         class_,
@@ -2131,10 +2162,13 @@ function create_bracket(section, data) {
                     // match for 3rd place
                     else if (class_ == ' loss' && number == 2)
                         SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+
+                    if (number == 1 && i == 1)
+                        link = ROUND_LINKS[3];
                 });
 
             lines.push(
-                `<vert class="match fastart">`
+                `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
                     // final has 3rd place game too
                     + `<div class="match-title">#${game + (number == 1? 1 - i * 2: 0)}</div>`
                     + '<grid class="match-grid">'
@@ -2181,7 +2215,7 @@ function create_bracket(section, data) {
     translate_node(node);
 
     // necessary to correctly size each round
-    Style(node.firstChild, `height:${node.clientHeight}px;width:${261 * round}px`);
+    Style(node.firstChild, `height:${node.clientHeight}px;width:${(232 + 16) * round}px`);
     create_connectors();
 }
 
@@ -2271,7 +2305,20 @@ function create_cup(section, data, show) {
 
     // cup events
     C('.match', function() {
-        LS(this);
+        let dataset = this.dataset,
+            names = Split(dataset.n),
+            round = dataset.r;
+        if (!names[0] || !names[1])
+            return;
+
+        let text = names.join(' ');
+        Y.game = 0;
+        if (Y.round != round) {
+            Y.round = round;
+            open_event(section, false, () => {show_filtered_games(text);});
+        }
+        else
+            show_filtered_games(text);
     });
 }
 
@@ -2393,6 +2440,7 @@ function download_pgn(section, url, scroll_up, reset_moves) {
     xboards[section].time = Now(true);
     clear_timeout(section);
 
+    Y.scroll_up = scroll_up;
     Resource(`${url}?no-cache${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
@@ -2408,7 +2456,7 @@ function download_pgn(section, url, scroll_up, reset_moves) {
         pgns[section] = null;
         update_pgn(section, data, extra, reset_moves);
 
-        if (section == 'archive' && scroll_up)
+        if (section == 'archive' && Y.scroll_up)
             scroll_adjust('#overview', true);
     }, {type: 'text'});
 }
@@ -3737,6 +3785,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    show_tables(tour_info[Y.x].cup);
+
     let missing = 0,
         string = ARCHIVE_KEYS.map(key => {
             let value = Y[key];
@@ -3762,6 +3812,7 @@ function changed_hash() {
  */
 function changed_section() {
     let section = Y.x;
+    old_cup = null;
     assign_boards();
 
     // click on the active tab, ex: schedule, stats
@@ -3785,10 +3836,14 @@ function changed_section() {
 
     if (section == 'live')
         download_live(redraw_eval_charts);
-    else if (Y.archive_scroll) {
-        if (!['sched', 'season'].includes(get_active_tab('table')[0]))
-            open_table('season');
-        scroll_adjust('#tables');
+    else {
+        if (Y.archive_scroll) {
+            if (!['sched', 'season'].includes(get_active_tab('table')[0]))
+                open_table('season');
+            scroll_adjust('#tables');
+        }
+        if (Y.game)
+            open_event(section, true);
     }
 
     // update overview
@@ -4080,7 +4135,7 @@ function popup_custom(id, name, e, scolor) {
         Show(popup);
     }
     else
-        add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 500);
+        add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 300);
 }
 
 /**
@@ -4135,7 +4190,6 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
-    show_tables();
 }
 
 /**

@@ -848,10 +848,10 @@ grid {
     color: #555;
     font-size: 0.95em;
     height: 5.5em;
-    margin: 0.2em;
-    padding: 0.6em;
+    margin: 2.5px;
+    padding: 8px;
     text-align: center;
-    width: 8em;
+    width: 109px;
 }
 .stats-title {
     color: #000;
@@ -1038,7 +1038,7 @@ grid {
 /* bracket */
 .rounds {
     margin: 0 16px 0 0;
-    width: 245px;
+    width: 232px;
 }
 .round {
     color: #888;
@@ -1047,7 +1047,6 @@ grid {
     background: rgba(128, 128, 128, 0.7);
     border: 1px solid transparent;
     cursor: pointer;
-    font-family: monospace;
     font-size: 13px;
     margin: 0.5em;
     z-index: 3;
@@ -1079,7 +1078,7 @@ grid {
     color: #000;
     min-height: 27px;
     padding: 4px;
-    width: 15em;
+    width: 182px;
 }
 .name.gold {
     background: #da0;
@@ -1099,6 +1098,9 @@ grid {
 }
 .name.silver {
     background: #ccc;
+}
+.seed {
+    width: 2em;
 }
 .score {
     background: #f3f3f3;
@@ -1435,7 +1437,7 @@ svg.down {
         font-size: 0.9em;
     }
     .stats {
-        width: 7em;
+        width: 95px;
     }
 }
 @media (max-width: 568px) {
