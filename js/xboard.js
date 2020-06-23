@@ -1204,7 +1204,9 @@ class XBoard {
                 else
                     that.hold = null;
             }
-            e.preventDefault();
+
+            if (e.cancelable != false)
+                e.preventDefault();
         }, {}, this.node);
 
         // pv list
