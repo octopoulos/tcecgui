@@ -1327,7 +1327,10 @@ function filter_table_rows(parent, text, force) {
 function show_filtered_games(text) {
     _('#table-search .search').value = text;
     filter_table_rows('table', text, ['sched', 'sched']);
-    add_timeout('table', () => {open_table('sched');}, TIMEOUT_search);
+    add_timeout('table', () => {
+        open_table('sched');
+        scroll_adjust('#tables');
+    }, TIMEOUT_search);
 }
 
 /**
@@ -2227,9 +2230,10 @@ function create_bracket(section, data) {
  * @param {string} target
  * @param {number[]} coeffs
  * @param {string} viewbox
+ * @param {string} style
  * @returns {Node}
  */
-function create_connector(curr, id, nexts, target, coeffs, viewbox) {
+function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
     // if there's a winner => connect the winner, otherwise the center
     curr = _(`.score.${target}`, curr) || curr;
     let seed = curr.dataset.s;
@@ -2250,7 +2254,7 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox) {
             fill: 'none',
         });
 
-    return CreateSVG('svg', {class: `connect ${target}`, viewBox: viewbox}, [path]);
+    return CreateSVG('svg', {class: `connect ${target}`, style: style, viewBox: viewbox}, [path]);
 }
 
 /**
@@ -2260,7 +2264,9 @@ function create_connectors() {
     let node = Id('table-brak'),
         svg_node = Id('svgs'),
         svgs = [],
-        viewbox = `0 0 ${node.scrollWidth} ${node.scrollHeight}`;
+        view_height = node.scrollHeight,
+        view_width = node.scrollWidth,
+        viewbox = `0 0 ${view_width} ${view_height}`;
 
     for (let round = 0; ; round ++) {
         let nexts = A(`[data-r="${round + 1}"] .match-grid`, node);
@@ -2272,7 +2278,7 @@ function create_connectors() {
 
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
-                let svg = create_connector(curr, id + offset, nexts, target, coeffs, viewbox);
+                let svg = create_connector(curr, id + offset, nexts, target, coeffs, viewbox, `height:${view_height}px;width:${view_width}px`);
                 svgs.push(svg);
             }
         });
