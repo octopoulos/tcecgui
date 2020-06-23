@@ -1412,7 +1412,7 @@ function set_global_events() {
         if (!state)
             return;
         Assign(Y, state);
-        check_hash_special();
+        check_hash_special(state);
     });
 
     // keys
