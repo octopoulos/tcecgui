@@ -2305,6 +2305,8 @@ function create_cup(section, data, show) {
 
     // cup events
     C('.match', function() {
+        if (cannot_click())
+            return;
         let dataset = this.dataset,
             names = Split(dataset.n),
             round = dataset.r;
