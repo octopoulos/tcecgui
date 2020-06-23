@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-06-22
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -372,8 +372,11 @@ function check_hash_special() {
 
     // changed section
     if (Y.x != old_x) {
-        changed_section();
         old_x = Y.x;
+        if (old_x == 'live')
+            Y.game = 0;
+
+        changed_section();
         close_popups();
     }
     changed_hash();
@@ -936,6 +939,9 @@ function resize() {
         `max-width:${Y.max_window}px`
     );
     Style('#chat, #chat2, #shortcut_1, #shortcut_2', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
+
+    let window_width = window.innerWidth;
+    Style(Id('table-stats'), `grid-template-columns:repeat(${window_width < 740? 3: 6}, ${window_width < 330? 102: 115}px)`);
 
     resize_panels();
 

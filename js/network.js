@@ -6,7 +6,7 @@
 /*
 globals
 _, add_timeout, analyse_crosstable, analyse_tournament, Class, create_bracket, CreateNode, DEV, HasClass, Hide, HOST,
-HTML, Id, InsertNodes, io, LS, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval, update_pgn,
+HTML, Id, InsertNodes, io, location, LS, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval, update_pgn,
 update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
@@ -187,6 +187,11 @@ function update_twitch(dark, chat_url, only_resize) {
     let node = Id('chat');
     if (!node)
         return;
+
+    if (location.port == 8080) {
+        Y.twitch_chat = 0;
+        Y.twitch_video = 0;
+    }
 
     let current = node.src,
         src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '&darkpopout': ''}`: '';
