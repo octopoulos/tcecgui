@@ -24,7 +24,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200622';
+    VERSION = '20200623';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 

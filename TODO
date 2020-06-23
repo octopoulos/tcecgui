@@ -1,6 +1,8 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
+-          : 2020-06-23 : shorter links: don't need x=archive if there's season= or game=
+2020-06-22 : 2020-06-23 : fix connectors' scale
 2020-06-22 : 2020-06-22 : click on cup match => it shows the matching games
 2020-06-21 : 2020-06-21 : download game link live
 2020-06-20 : 2020-06-20 : add bracket to archive games
