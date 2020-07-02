@@ -84,6 +84,7 @@ function startup_config() {
 
     // season champions
     CHAMPIONS = [
+        '18|Stockfish',
         '17|LCZero',
         '16|Stockfish',
         '15|LCZero',
