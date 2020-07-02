@@ -114,7 +114,7 @@ live.dual = archive;
 // chess_move
 [
     [START_FEN, 'd5', null],
-    [START_FEN, 'd4', {color: 'w', flags: 4, from: 99, piece: 'p', to: 67}],
+    [START_FEN, 'd4', {color: 0, flags: 4, from: 99, piece: 'p', to: 67}],
 ].forEach(([fen, move, answer], id) => {
     test(`chess_move:${id}`, () => {
         live.chess_load(fen);

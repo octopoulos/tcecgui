@@ -20,28 +20,15 @@ create_module(IMPORT_PATH, [
     'xboard',
     //
     'game',
-], OUTPUT_MODULE, 'Assign Keys players tour_info Y y_states');
+], OUTPUT_MODULE, 'Assign Keys players tour_info Y');
 
 let {
-        add_history, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
+        Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
-        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, restore_history, tour_info, Y,
-        y_states,
+        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// add_history
-[
-    {chat_height: 10, twitch_chat: 1},
-].forEach((y, id) => {
-    test(`add_history:${id}`, () => {
-        let length = y_states.length;
-        Assign(Y, y);
-        add_history();
-        expect(y_states.length).toBe(length + 1);
-    });
-});
 
 // calculate_h2h
 [
@@ -859,24 +846,5 @@ let {
 ].forEach(([data, answer], id) => {
     test(`parse_pgn:${id}`, () => {
         expect(parse_pgn(data)).toEqual(answer);
-    });
-});
-
-// restore_history
-[
-    [{theme: 'light', volume: 5}, {theme: 'dark', volume: 10}],
-].forEach(([y, y2], id) => {
-    test(`restore_history:${id}`, () => {
-        Assign(Y, y);
-        add_history();
-        Assign(Y, y2);
-        add_history();
-        Keys(y2).forEach(key => {
-            expect(Y).toHaveProperty(key, y2[key]);
-        });
-        restore_history(-1);
-        Keys(y).forEach(key => {
-            expect(Y).toHaveProperty(key, y[key]);
-        });
     });
 });

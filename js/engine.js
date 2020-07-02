@@ -48,6 +48,7 @@ let __PREFIX = '_',
     },
     libraries = {},
     Lower = (text) => (text.toLowerCase()),
+    MAX_HISTORY = 20,
     ON_OFF = ['on', 'off'],
     QUERY_KEYS = {
         '': '?',
@@ -77,16 +78,33 @@ let __PREFIX = '_',
     Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
     virtual_check_hash_special,
+    virtual_import_settings,
     virtual_rename_option,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
     X_SETTINGS = {},
-    Y = {};                                             // params
+    Y = {},                                             // params
+    y_index = -1,
+    y_states = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // HELPERS
 //////////
+
+/**
+ * Remember the setting state
+ */
+function add_history() {
+    let text = JSON.stringify(Y);
+    if (text == y_states[y_index])
+        return;
+    y_index ++;
+    y_states[y_index] = text;
+    y_states.length = y_index + 1;
+    if (y_states.length > MAX_HISTORY)
+        y_states.shift();
+}
 
 /**
  * Add a timeout / interval
@@ -341,6 +359,22 @@ function merge_settings(x_settings) {
  */
 function remove_storage(name) {
     localStorage.removeItem(`${__PREFIX}${name}`);
+}
+
+/**
+ * Restore history
+ * @param {number} dir -1 (undo), 0, 1 (redo)
+ */
+function restore_history(dir) {
+    let y_copy = y_states[y_index + dir];
+    if (!y_copy)
+        return;
+    y_index += dir;
+    let data = JSON.parse(y_copy);
+    Assign(Y, data);
+
+    if (virtual_import_settings)
+        virtual_import_settings(data, true);
 }
 
 /**
@@ -704,7 +738,7 @@ function update_theme(themes, callback, version=15) {
  * @param {Node=} parent
  */
 function update_svg(parent) {
-    E('i[data-svg]', node => {
+    E('[data-svg]', node => {
         let name = node.dataset.svg,
             image = ICONS[name.split(' ')[0]];
         if (image) {

@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
+2020-07-02 : 2020-07-02 : chess.js: white=0, black=1
 2020-07-02 : 2020-07-02 : improved cross scores formatting
 2020-06-23 : 2020-06-23 : improved scroll in archive + live
 2020-06-23 : 2020-06-23 : shorter links: don't need x=archive if there's season= or game=

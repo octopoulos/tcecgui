@@ -693,7 +693,7 @@ function load_google_analytics() {
         ['b._trackPageview'],
     );
 
-    load_library(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
+    load_library(('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
 }
 
 /**

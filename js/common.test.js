@@ -18,10 +18,10 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'IsFloat IsString');
 
 let {
-        Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-        InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title,
-        Undefined,
-    } = require(OUTPUT_MODULE);
+    Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
+    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title,
+    Undefined,
+} = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
