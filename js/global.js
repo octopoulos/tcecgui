@@ -259,7 +259,7 @@ function reset_old_settings() {
         save_option('archive_scroll', 1);
         save_option('wheel_adjust', 63);
     }
-    if (version < '20200603')
+    if (version < '20200603' && Y.panel_gap < 8)
         save_option('panel_gap', 8);
     if (version < '20200605')
         if (Y.scroll_inertia < 0.95)

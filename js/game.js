@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-22
+// @version 2020-07-02
 //
 // Game specific code:
 // - control the board, moves
@@ -14,16 +14,16 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
-CreateSVG, cube:true, DEV, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds,
-FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id,
-Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
+CreateSVG, cube:true, DEV, device, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From,
+FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE,
+HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
-S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
-split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
-translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
+Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
+translate_default, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg,
+Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -321,16 +321,19 @@ function create_game_link(section, game, text, only_link) {
  * Format a full engine name
  * @param {string} engine
  * @param {boolean=} multi_line engine + version on 2 different lines
+ * @param {number=} scale
  * @returns {string}
  */
-function format_engine(engine, multi_line) {
+function format_engine(engine, multi_line, scale) {
     if (!engine)
         return '';
     let pos = engine.indexOf(' ');
     if (pos < 0)
         return engine;
-    let tag = multi_line? 'div': 'i';
-    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="version">${engine.slice(pos + 1)}</${tag}>`;
+    let tag = multi_line? 'div': 'i',
+        version = engine.slice(pos + 1),
+        version_class = `version${(scale && version.length >= scale)? ' version-small': ''}`;
+    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
 }
 
 /**
@@ -1174,7 +1177,8 @@ function create_tables() {
     // 3) mouse/touch scroll
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
-        touch_handle(e);
+        if (!device.iphone)
+            touch_handle(e);
     }, {passive: false});
 }
 
@@ -1663,7 +1667,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // download game
     C('a[href]', function(e) {
         if (!this.href.includes('#'))
-            e.stopPropagation();
+            SP(e);
     });
     // open game
     C('[data-g]', function(e) {
@@ -2028,8 +2032,8 @@ function calculate_event_stats(section, rows) {
 
     Assign(stats, {
         //
-        start_time: `${start_time} on 20${start_date}`,
-        end_time: `${end_time} on 20${end_date}`,
+        start_time: `${start_time} <i class="year">20${start_date}</i>`,
+        end_time: `${end_time} <i class="year">20${end_date}</i>`,
         duration: format_hhmmss(stats._duration),
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
@@ -2956,7 +2960,7 @@ function update_overview_basic(section, headers) {
         });
         update_hardware(id, name, short, null, [box_node, node]);
 
-        HTML(Id(`engine${id}`), format_engine(name, true));
+        HTML(Id(`engine${id}`), format_engine(name, true, 23));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);

@@ -1,7 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
-//
+// @version 2020-07-02
 /*
 globals
 __dirname, expect, require, test
@@ -155,17 +154,20 @@ let {
 
 // format_engine
 [
-    ['', undefined, ''],
-    [undefined, undefined, ''],
-    ['Fire 8_beta', undefined, 'Fire <i class="version">8_beta</i>'],
-    ['LCZero v0.24-sv-t60-3010', undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
-    ['Stockfish 20200407DC', undefined, 'Stockfish <i class="version">20200407DC</i>'],
-    ['Stoofvlees II a14', undefined, 'Stoofvlees <i class="version">II a14</i>'],
-    ['Stoofvlees II a14', true, 'Stoofvlees<div class="version">II a14</div>'],
-    ['SuperBaronizer', undefined, 'SuperBaronizer'],
-].forEach(([text, multi_line, answer], id) => {
+    ['', undefined, undefined, ''],
+    [undefined, undefined, undefined, ''],
+    ['Fire 8_beta', undefined, undefined, 'Fire <i class="version">8_beta</i>'],
+    ['LCZero v0.24-sv-t60-3010', undefined, undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
+    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, undefined, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
+    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, 20, 'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>'],
+    ['Stockfish 20200407DC', undefined, undefined, 'Stockfish <i class="version">20200407DC</i>'],
+    ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
+    ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
+    ['Stoofvlees II a14', true, 1, 'Stoofvlees<div class="version version-small">II a14</div>'],
+    ['SuperBaronizer', undefined, undefined, 'SuperBaronizer'],
+].forEach(([text, multi_line, scale, answer], id) => {
     test(`format_engine:${id}`, () => {
-        expect(format_engine(text, multi_line)).toEqual(answer);
+        expect(format_engine(text, multi_line, scale)).toEqual(answer);
     });
 });
 

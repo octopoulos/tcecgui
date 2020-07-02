@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-07-02
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -27,10 +27,12 @@ let Abs = Math.abs,
     Keys = Object.keys,
     Max = Math.max,
     Min = Math.min,
+    PD = e => e.preventDefault(),
     Pow = Math.pow,
     Random = Math.random,
     Round = Math.round,
     Sign = Math.sign,
+    SP = e => e.stopPropagation(),
     Sqrt = Math.sqrt,
     Tanh = Math.tanh;
 
@@ -497,8 +499,8 @@ function HTML(sel, html, parent) {
  *     <td id="first"></td>
  *     <td id="second"></td>
  * </tr>
- * Index('#first')      // 1
- * Index('#second')     // 2
+ * Index(Id('first'))       // 1
+ * Index(Id('second'))      // 2
  */
 function Index(node) {
     if (IsString(node))

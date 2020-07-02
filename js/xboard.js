@@ -10,7 +10,7 @@
 //      + text
 // - games:
 //      + chess
-//      - chess960
+//      ~ chess960
 //      - go (future)
 //
 // included after: common, engine, global, 3d

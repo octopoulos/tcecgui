@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-23
+// @version 2020-07-02
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -11,8 +11,8 @@
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
 E, Events, From, history, HTML, Id, IsArray, IsFloat, IsString, Keys, LoadLibrary, localStorage, location, LS, Min,
-NAMESPACE_SVG, navigator, Now, Parent, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault,
-setInterval, setTimeout, Sign, Style, TEXT, Title, Undefined, Visible, window
+NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault,
+setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -786,6 +786,7 @@ function detect_device() {
     if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(agent))
         mobile = true;
 
+    device.iphone = mobile && (os == 'ios');
     device.os = os;
     device.mobile = mobile;
 }
@@ -1301,6 +1302,8 @@ function touch_handle(e, full) {
         set_scroll();
 
         drag = [change, stamp];
+        if (e.cancelable != false || type5 != 'touch')
+            PD(e);
     }
     else if (TOUCH_ENDS[type]) {
         if (!drag || !drag_moved)
@@ -1343,9 +1346,7 @@ function touch_handle(e, full) {
         }
     }
 
-    if (!is_start && e.cancelable != false)
-        e.preventDefault();
-    e.stopPropagation();
+    SP(e);
 }
 
 /**
@@ -1364,7 +1365,7 @@ function wheel_event(e, full) {
     }
 
     set_scroll();
-    e.preventDefault();
+    PD(e);
 }
 
 // UI
