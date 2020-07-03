@@ -31,6 +31,48 @@ let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Function from ply and centipawns to win percentage for Stockfish
+ * Serves as a helper function for sf_wdl_statistics.
+ * A near 1:1 port of https://github.com/official-stockfish/Stockfish/pull/2778
+ * @param {number} ply
+ * @param {number} cp
+ * @returns {Object.<string, number>}
+ */
+function sf_win_rate_model(ply, cp) {
+  // A (pretty much) 1:1 port of Joost VandeVondele's Stockfish WDL statistics
+  // See: https://github.com/official-stockfish/Stockfish/pull/2778
+
+  const median = (p, q, r) => ([p, q, r].sort((a,b) => a-b)[1])
+  const PawnValueEg = 206;
+  const as = [-8.24404295, 64.23892342, -95.73056462, 153.86478679];
+  const bs = [-3.37154371, 28.44489198, -56.67657741,  72.05858751];
+
+  const m = Math.min(240, ply) / 64;
+  const a = (((as[0] * m + as[1]) * m + as[2]) * m) + as[3];
+  const b = (((bs[0] * m + bs[1]) * m + bs[2]) * m) + bs[3];
+
+  const v = (cp * PawnValueEg) / 100;
+  const x = median(v * 100 / PawnValueEg, -1000, 1000);
+
+  return Math.round(0.5 + 1000 / (1 + Math.exp((a - x) / b)));
+}
+
+/**
+ * Function from ply and centipawns to vector of outcome ‰ for Stockfish
+ * https://github.com/official-stockfish/Stockfish/pull/2778
+ * @param {number} ply
+ * @param {number} cp
+ * @returns {Object.<string, number>}
+ */
+function sf_wdl_statistics(ply, cp) {
+  const w = sf_win_rate_model(1, 300);
+  const l = sf_win_rate_model(1, -300);
+  const d = 1000 - w - l;
+
+  return { w: w, l: l, d: d };
+}
+
+/**
  * Convert centipawn to score % for AS
  * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
  * @param {number} cp
