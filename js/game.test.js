@@ -1,7 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
-//
+// @version 2020-07-02
 /*
 globals
 __dirname, expect, require, test
@@ -20,28 +19,15 @@ create_module(IMPORT_PATH, [
     'xboard',
     //
     'game',
-], OUTPUT_MODULE, 'Assign Keys players tour_info Y y_states');
+], OUTPUT_MODULE, 'Assign Keys players tour_info Y');
 
 let {
-        add_history, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
+        Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
-        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, restore_history, tour_info, Y,
-        y_states,
+        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// add_history
-[
-    {chat_height: 10, twitch_chat: 1},
-].forEach((y, id) => {
-    test(`add_history:${id}`, () => {
-        let length = y_states.length;
-        Assign(Y, y);
-        add_history();
-        expect(y_states.length).toBe(length + 1);
-    });
-});
 
 // calculate_h2h
 [
@@ -168,17 +154,20 @@ let {
 
 // format_engine
 [
-    ['', undefined, ''],
-    [undefined, undefined, ''],
-    ['Fire 8_beta', undefined, 'Fire <i class="version">8_beta</i>'],
-    ['LCZero v0.24-sv-t60-3010', undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
-    ['Stockfish 20200407DC', undefined, 'Stockfish <i class="version">20200407DC</i>'],
-    ['Stoofvlees II a14', undefined, 'Stoofvlees <i class="version">II a14</i>'],
-    ['Stoofvlees II a14', true, 'Stoofvlees<div class="version">II a14</div>'],
-    ['SuperBaronizer', undefined, 'SuperBaronizer'],
-].forEach(([text, multi_line, answer], id) => {
+    ['', undefined, undefined, ''],
+    [undefined, undefined, undefined, ''],
+    ['Fire 8_beta', undefined, undefined, 'Fire <i class="version">8_beta</i>'],
+    ['LCZero v0.24-sv-t60-3010', undefined, undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
+    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, undefined, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
+    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, 20, 'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>'],
+    ['Stockfish 20200407DC', undefined, undefined, 'Stockfish <i class="version">20200407DC</i>'],
+    ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
+    ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
+    ['Stoofvlees II a14', true, 1, 'Stoofvlees<div class="version version-small">II a14</div>'],
+    ['SuperBaronizer', undefined, undefined, 'SuperBaronizer'],
+].forEach(([text, multi_line, scale, answer], id) => {
     test(`format_engine:${id}`, () => {
-        expect(format_engine(text, multi_line)).toEqual(answer);
+        expect(format_engine(text, multi_line, scale)).toEqual(answer);
     });
 });
 
@@ -859,24 +848,5 @@ let {
 ].forEach(([data, answer], id) => {
     test(`parse_pgn:${id}`, () => {
         expect(parse_pgn(data)).toEqual(answer);
-    });
-});
-
-// restore_history
-[
-    [{theme: 'light', volume: 5}, {theme: 'dark', volume: 10}],
-].forEach(([y, y2], id) => {
-    test(`restore_history:${id}`, () => {
-        Assign(Y, y);
-        add_history();
-        Assign(Y, y2);
-        add_history();
-        Keys(y2).forEach(key => {
-            expect(Y).toHaveProperty(key, y2[key]);
-        });
-        restore_history(-1);
-        Keys(y).forEach(key => {
-            expect(Y).toHaveProperty(key, y[key]);
-        });
     });
 });

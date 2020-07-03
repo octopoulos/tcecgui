@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-07-02
 //
 // general 3d rendering code
 //
@@ -10,7 +10,7 @@ globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
 HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, Now, ON_OFF, Parent, requestAnimationFrame,
+LANGUAGES, load_library, LS, merge_settings, navigator, Now, ON_OFF, Parent, PD, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
 */
@@ -1477,7 +1477,7 @@ function set_modal_events(parent) {
                 }
             }
         }
-        e.preventDefault();
+        PD(e);
     }, parent);
 
     // inputs
@@ -1502,7 +1502,7 @@ function set_modal_events(parent) {
     }, parent);
 
     // file
-    Events('#file', 'change', function() {
+    Events(Id('file'), 'change', function() {
         let file = this.files[0];
         if (file)
             file.text().then(data => {

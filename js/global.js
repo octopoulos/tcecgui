@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-09
+// @version 2020-07-02
 //
 // global variables/functions shared across multiple js files
 //
@@ -24,7 +24,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200623';
+    VERSION = '20200702';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
@@ -259,7 +259,7 @@ function reset_old_settings() {
         save_option('archive_scroll', 1);
         save_option('wheel_adjust', 63);
     }
-    if (version < '20200603')
+    if (version < '20200603' && Y.panel_gap < 8)
         save_option('panel_gap', 8);
     if (version < '20200605')
         if (Y.scroll_inertia < 0.95)

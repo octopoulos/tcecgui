@@ -207,7 +207,7 @@ grid {
     display: none;
 }
 .grid3 {
-    grid-template-columns: 1fr 0.5fr 1fr;
+    grid-template-columns: 40% 20% 40%;
 }
 
 /* drag & drop */
@@ -879,6 +879,9 @@ grid {
     font-size: 0.85em;
     white-space: nowrap;
 }
+.version-small {
+    font-size: 0.75em;
+}
 #overview {
     font-size: 0.95em;
     margin-bottom: 0;
@@ -1432,12 +1435,32 @@ svg.down {
 
 /* media */
 @media (max-width: 330px) {
+    #engine [data-t] {
+        font-size: 0.75em;
+    }
     #header,
     #table-tabs {
         font-size: 0.9em;
     }
     .stats {
         width: 95px;
+    }
+    #table-stats {
+        font-size: 0.85em;
+    }
+    .version-small {
+        font-size: 0.68em;
+    }
+    .xleft {
+        font-size: 0.9em;
+    }
+}
+@media (max-width: 360px) {
+    #engine [data-t] {
+        font-size: 0.8em;
+    }
+    .live-more {
+        font-size: 0.7em;
     }
 }
 @media (max-width: 568px) {

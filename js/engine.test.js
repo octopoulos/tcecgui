@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-06-23
 //
 /*
 globals
@@ -17,14 +17,26 @@ create_module(IMPORT_PATH, [
     'common',
     //
     'engine',
-], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y');
+], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y y_states');
 
 let {
-    Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, Keys, merge_settings,
-    sanitise_data, save_option, TYPES, X_SETTINGS, Y,
+    add_history, Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, Keys,
+    merge_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// add_history
+[
+    {chat_height: 10, twitch_chat: 1},
+].forEach((y, id) => {
+    test(`add_history:${id}`, () => {
+        let length = y_states.length;
+        Assign(Y, y);
+        add_history();
+        expect(y_states.length).toBe(length + 1);
+    });
+});
 
 // create_field_value
 [
@@ -181,6 +193,25 @@ let {
         });
         Keys(answer_type).forEach(key => {
             expect(TYPES).toHaveProperty(key, answer_type[key]);
+        });
+    });
+});
+
+// restore_history
+[
+    [{theme: 'light', volume: 5}, {theme: 'dark', volume: 10}],
+].forEach(([y, y2], id) => {
+    test(`restore_history:${id}`, () => {
+        Assign(Y, y);
+        add_history();
+        Assign(Y, y2);
+        add_history();
+        Keys(y2).forEach(key => {
+            expect(Y).toHaveProperty(key, y2[key]);
+        });
+        restore_history(-1);
+        Keys(y).forEach(key => {
+            expect(Y).toHaveProperty(key, y[key]);
         });
     });
 });

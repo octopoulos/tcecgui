@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-22
+// @version 2020-07-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -14,15 +14,15 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
-Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, DEV, document,
-download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key, game_action_keyup,
-get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id, Index, init_graph,
-init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, detect_device, DEV,
+device, document, download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key,
+game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id,
+Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, localStorage, location, LS, Max, merge_settings, Min,
-NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PIECE_THEMES, players,
-popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
+NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
+players, popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
-show_banner, show_popup, show_settings, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
+show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
 translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_chart_options, update_debug,
 update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
@@ -532,8 +532,8 @@ function handle_drop(e) {
     Hide(Id('rect'));
     Class('.area', '-dragging');
 
-    e.stopPropagation();
-    e.preventDefault();
+    SP(e);
+    PD(e);
     add_history();
 }
 
@@ -693,7 +693,7 @@ function load_google_analytics() {
         ['b._trackPageview'],
     );
 
-    load_library(('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
+    load_library(('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
 }
 
 /**
@@ -1134,6 +1134,8 @@ function show_live_engines() {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
+    if (adjust && device.iphone)
+        return;
     S(Id('overlay'), show && overlay);
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
@@ -1358,11 +1360,6 @@ function window_click(e) {
             return;
         if (HasClasses(target, 'live-pv|xmoves'))
             context_target = target;
-        if (HasClass(target, 'page')) {
-            let parent = Parent(target, {class_: 'pagin'});
-            change_page(parent.id.split('-')[0], target.dataset.p);
-            break;
-        }
         if (HasClass(target, 'tab')) {
             open_table(target);
             break;
@@ -1451,7 +1448,7 @@ function set_global_events() {
 
         // prevent some default actions
         if ([9, 112].includes(code))
-            e.preventDefault();
+            PD(e);
 
         update_debug();
     });
@@ -1480,12 +1477,21 @@ function set_global_events() {
     // click somewhere => close the popups
     Events(window, 'click', window_click);
 
+    C('.pages', e => {
+        let target = e.target;
+        if (HasClass(target, 'page')) {
+            let parent = Parent(target, {class_: 'pagin'});
+            change_page(parent.id.split('-')[0], target.dataset.p);
+        }
+        SP(e);
+    });
+
     // swap panes
     Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
         if (Y.panel_adjust)
             Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
-    C('.swap', function() {
+    C('.swap', function(e) {
         let index = Index(this),
             node = this.parentNode.parentNode;
         // 1, 2 => < >
@@ -1511,6 +1517,7 @@ function set_global_events() {
             add_timeout('size', () => {Hide('.size');}, TIMEOUT_size);
             resize();
         }
+        SP(e);
     });
 
     // theme + twitch
@@ -1550,7 +1557,7 @@ function set_global_events() {
                     return;
 
                 show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
-                e.preventDefault();
+                PD(e);
             });
         });
         Events(
@@ -1581,7 +1588,7 @@ function set_global_events() {
                 if (name) {
                     context_target = target;
                     show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
-                    e.preventDefault();
+                    PD(e);
                     return;
                 }
                 target = target.parentNode;
@@ -1594,7 +1601,7 @@ function set_global_events() {
                     name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
                 context_target = target;
                 show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
-                e.preventDefault();
+                PD(e);
             }
         });
     }
@@ -1630,8 +1637,8 @@ function set_global_events() {
 
         draw_rectangle(child || parent);
         Class('.area', 'dragging');
-        e.stopPropagation();
-        e.preventDefault();
+        SP(e);
+        PD(e);
     });
     Events(window, 'dragexit dragleave', e => {
         if (!Y.drag_and_drop)
@@ -1730,6 +1737,7 @@ function startup() {
     virtual_resize = resize;
 
     // pre-process
+    detect_device();
     startup_config();
     startup_3d();
     startup_game();
@@ -1971,7 +1979,7 @@ function startup() {
         },
         info: {
             eval: [ON_OFF, 1],
-            eval_left: [ON_OFF, 0],
+            eval_left: [ON_OFF, 1],
             hardware: [ON_OFF, 1],
             more: [ON_OFF, 1],
             moves: [ON_OFF, 1],
@@ -2015,7 +2023,7 @@ function startup() {
             min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 1],
-            panel_gap: option_number(10, 0, 100),
+            panel_gap: option_number(device.mobile? 5: 10, 0, 100),
             unhide: '1',
         },
         quick: {
@@ -2062,7 +2070,7 @@ function startup() {
         eval: {
             _pop: true,
             eval: [ON_OFF, 1],
-            eval_left: [ON_OFF, 0],
+            eval_left: [ON_OFF, 1],
             hardware: [ON_OFF, 1],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
@@ -2091,5 +2099,5 @@ function startup() {
     init_sockets();
     init_globals();
     init_customs(true);
-    resize(true);
+    resize();
 }

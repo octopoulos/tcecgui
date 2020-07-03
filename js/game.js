@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-22
+// @version 2020-07-02
 //
 // Game specific code:
 // - control the board, moves
@@ -14,15 +14,16 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
-CreateSVG, cube:true, DEV, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From, FromSeconds,
-FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id,
-Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
+CreateSVG, cube:true, DEV, device, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From,
+FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE,
+HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
-push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, resume_sleep, Round,
-S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, Split,
-split_move_string, SPRITE_OFFSETS, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default,
-translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg, Upper,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, restore_history,
+resume_sleep, Round,
+S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
+Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
+translate_default, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg,
+Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -151,7 +152,6 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
-    MAX_HISTORY = 20,
     old_cup,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -241,12 +241,9 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
-    virtual_import_settings,
     virtual_opened_table_special,
     xboards = {},
-    WB_TITLES = ['White', 'Black'],
-    y_index = -1,
-    y_states = [];
+    WB_TITLES = ['White', 'Black'];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -324,16 +321,19 @@ function create_game_link(section, game, text, only_link) {
  * Format a full engine name
  * @param {string} engine
  * @param {boolean=} multi_line engine + version on 2 different lines
+ * @param {number=} scale
  * @returns {string}
  */
-function format_engine(engine, multi_line) {
+function format_engine(engine, multi_line, scale) {
     if (!engine)
         return '';
     let pos = engine.indexOf(' ');
     if (pos < 0)
         return engine;
-    let tag = multi_line? 'div': 'i';
-    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="version">${engine.slice(pos + 1)}</${tag}>`;
+    let tag = multi_line? 'div': 'i',
+        version = engine.slice(pos + 1),
+        version_class = `version${(scale && version.length >= scale)? ' version-small': ''}`;
+    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
 }
 
 /**
@@ -832,12 +832,26 @@ function analyse_crosstable(section, data) {
 
     let cross_rows = [],
         dicos = data.Table,
+        max_game = 0,
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
         stand_rows = [],
         titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)})));
 
     // 1) analyse all data => create rows for both tables
+    for (let name of orders) {
+        let dico = dicos[name],
+            results = dico.Results;
+        for (let order of orders) {
+            let games = results[order];
+            if (games) {
+                let scores = games.Scores;
+                max_game = Max(max_game, scores.length);
+            }
+        }
+    }
+    let max_column = Max(2, Ceil(Sqrt(max_game)));
+
     for (let name of orders) {
         let dico = dicos[name],
             elo = dico.Rating,
@@ -848,17 +862,20 @@ function analyse_crosstable(section, data) {
         let cross_row = {
             abbrev: Lower(dico.Abbreviation),
             engine: name,
+            num_break: Floor(max_game / max_column),
             points: dico.Score,
             rank: dico.Rank,
         };
         abbrevs.forEach((abbrev, id) => {
             let games = results[orders[id]];
             if (games) {
-                cross_row[abbrev] = games.Scores.map(game => {
+                let scores = games.Scores.map((game, i) => {
                     let link = create_game_link(section, game.Game, '', true),
-                        score = game.Result;
-                    return ` <a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
-                }).join('').slice(1);
+                        score = game.Result,
+                        sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
+                    return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                }).join('');
+                cross_row[abbrev] = `<div class="nowrap">${scores}</div>`;
             }
         });
         cross_rows.push(cross_row);
@@ -1128,7 +1145,7 @@ function create_table(columns, add_empty) {
 function create_table_columns(columns, widths, no_translates=[], titles={}) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
-            style = widths? ` style="${no_translates.length? 'min-width:4.5em;': ''}width:${widths[id]}"`: '',
+            style = widths? ` style="width:${widths[id]}"`: '',
             title = titles[value] || TITLES[value],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
@@ -1160,7 +1177,8 @@ function create_tables() {
     // 3) mouse/touch scroll
     Events('.scroller', '!touchstart touchmove touchend', () => {});
     Events('.scroller', 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
-        touch_handle(e);
+        if (!device.iphone)
+            touch_handle(e);
     }, {passive: false});
 }
 
@@ -1537,7 +1555,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'winner':
                 if (!is_winner) {
                     td_class = 'tal';
-                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${format_engine(value)}</div></hori>`;
+                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${format_engine(value, row.num_break)}</div></hori>`;
                 }
                 break;
             case 'final_fen':
@@ -1649,7 +1667,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // download game
     C('a[href]', function(e) {
         if (!this.href.includes('#'))
-            e.stopPropagation();
+            SP(e);
     });
     // open game
     C('[data-g]', function(e) {
@@ -2014,8 +2032,8 @@ function calculate_event_stats(section, rows) {
 
     Assign(stats, {
         //
-        start_time: `${start_time} on 20${start_date}`,
-        end_time: `${end_time} on 20${end_date}`,
+        start_time: `${start_time} <i class="year">20${start_date}</i>`,
+        end_time: `${end_time} <i class="year">20${end_date}</i>`,
         duration: format_hhmmss(stats._duration),
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
@@ -2942,7 +2960,7 @@ function update_overview_basic(section, headers) {
         });
         update_hardware(id, name, short, null, [box_node, node]);
 
-        HTML(Id(`engine${id}`), format_engine(name, true));
+        HTML(Id(`engine${id}`), format_engine(name, true, 23));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
@@ -3525,20 +3543,6 @@ function action_key_no_input(code, active) {
 }
 
 /**
- * Remember the setting state
- */
-function add_history() {
-    let text = JSON.stringify(Y);
-    if (text == y_states[y_index])
-        return;
-    y_index ++;
-    y_states[y_index] = text;
-    y_states.length = y_index + 1;
-    if (y_states.length > MAX_HISTORY)
-        y_states.shift();
-}
-
-/**
  * Handle keys, when input is not active
  * @param {number} code hardware keycode
  */
@@ -3706,22 +3710,6 @@ function paste_text(text) {
     let board = board_target.manual? board_target: xboards.pva;
     if (!board.set_fen(text, true))
         board.add_moves_string(text);
-}
-
-/**
- * Restore history
- * @param {number} dir -1 (undo), 0, 1 (redo)
- */
-function restore_history(dir) {
-    let y_copy = y_states[y_index + dir];
-    if (!y_copy)
-        return;
-    y_index += dir;
-    let data = JSON.parse(y_copy);
-    Assign(Y, data);
-
-    if (virtual_import_settings)
-        virtual_import_settings(data, true);
 }
 
 // 3D SCENE
