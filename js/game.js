@@ -15,8 +15,8 @@ _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, console,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
 CreateSVG, cube:true, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit, From,
-FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE,
-HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
+FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
@@ -28,10 +28,15 @@ Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, wind
 'use strict';
 
 // <<
-if (typeof exports != 'undefined') {
-    /* jshint -W079 */
-    var {Assign, DEV, Floor, LS} = require('./common');
-    /* jshint +W079 */
+if (typeof global != 'undefined') {
+    let req = require,
+        {Assign, DEV, Floor, LS} = req('./common');
+    Assign(global, {
+        Assign: Assign,
+        DEV: DEV,
+        Floor: Floor,
+        LS: LS,
+    });
 }
 // >>
 
@@ -2290,7 +2295,7 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
             fill: 'none',
         });
 
-    return CreateSVG('svg', {class: `connect ${target}`, style: style, viewBox: viewbox}, [path]);
+    return CreateSVG('svg', {class: `connect ${target}`, 'data-sx': seed, style: style, viewBox: viewbox}, [path]);
 }
 
 /**
@@ -2363,6 +2368,11 @@ function create_cup(section, data, show) {
         }
         else
             show_filtered_games(text);
+    });
+
+    Events('[data-s]', 'mouseenter mouseleave', function(e) {
+        LS(e.type);
+        LS(this.dataset.s);
     });
 }
 
