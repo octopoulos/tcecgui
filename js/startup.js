@@ -1253,7 +1253,7 @@ function update_shortcuts() {
                 HTML(Id(`shortcut_${id}`), HTML(Id(`table-${shortcut}`)));
             }
         }
-        S(tab, shortcut);
+        S(tab, shortcut && shortcut != '0');
     }
 }
 
@@ -1934,9 +1934,9 @@ function startup() {
             graph_color_3: [{type: 'color'}, '#eb282d'],
             graph_eval_clamp: option_number(10, 1, 100),
             graph_eval_mode: [['percent', 'score'], 'score'],
-            graph_line: option_number(2.2, 0, 10, 0.1),
+            graph_line: option_number(1.5, 0, 10, 0.1),
             graph_min_width: option_number(240, 40, 640),
-            graph_radius: option_number(2.2, 0, 10, 0.1),
+            graph_radius: option_number(1.2, 0, 10, 0.1),
             graph_tension: option_number(0.1, 0, 0.5, 0.01),
             graph_text: option_number(10, 1, 30),
             use_for_arrow: '1',
