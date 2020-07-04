@@ -10,9 +10,9 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
-E, Events, From, history, HTML, Id, IsArray, IsFloat, IsString, Keys, LoadLibrary, localStorage, location, LS, Min,
-NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame, Resource, ScrollDocument, SetDefault,
-setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
+DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsString, Keys, LoadLibrary, localStorage,
+location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame, Resource,
+ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -49,6 +49,11 @@ let __PREFIX = '_',
     libraries = {},
     Lower = (text) => (text.toLowerCase()),
     MAX_HISTORY = 20,
+    NO_IMPORTS = {
+        import_settings: 2,
+        language: 1,
+        preset: 1,
+    },
     ON_OFF = ['on', 'off'],
     QUERY_KEYS = {
         '': '?',
@@ -80,6 +85,7 @@ let __PREFIX = '_',
     virtual_check_hash_special,
     virtual_import_settings,
     virtual_rename_option,
+    virtual_reset_settings_special,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
     X_SETTINGS = {},
@@ -91,20 +97,6 @@ let __PREFIX = '_',
 
 // HELPERS
 //////////
-
-/**
- * Remember the setting state
- */
-function add_history() {
-    let text = JSON.stringify(Y);
-    if (text == y_states[y_index])
-        return;
-    y_index ++;
-    y_states[y_index] = text;
-    y_states.length = y_index + 1;
-    if (y_states.length > MAX_HISTORY)
-        y_states.shift();
-}
 
 /**
  * Add a timeout / interval
@@ -167,6 +159,34 @@ function create_field_value(text) {
         lower = lower.slice(0, pos);
 
     return [lower.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
+}
+
+// SETTINGS
+///////////
+
+/**
+ * Remember the setting state
+ */
+function add_history() {
+    let text = JSON.stringify(Y);
+    if (text == y_states[y_index])
+        return;
+    y_index ++;
+    y_states[y_index] = text;
+    y_states.length = y_index + 1;
+    if (y_states.length > MAX_HISTORY)
+        y_states.shift();
+}
+
+/**
+ * Export settings
+ * @param {string} name
+ */
+function export_settings(name) {
+    let object = Assign(
+        {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
+    );
+    DownloadObject(object, `${name}.json`, false, '  ');
 }
 
 /**
@@ -302,22 +322,71 @@ function guess_types(settings, keys) {
 }
 
 /**
- * Load a library only once
- * @param {string} url
- * @param {function=} callback
- * @param {Object=} extra
+ * Import settings from an object
+ * @param {Object} data
+ * @param {boolean=} reset
  */
-function load_library(url, callback, extra) {
-    if (!libraries[url])
-        LoadLibrary(url, () => {
-            if (DEV.load)
-                LS(`loaded: ${url}`);
-            libraries[url] = Now();
-            if (callback)
-                callback();
-        }, extra);
-    else
-        LS(`already loaded: ${url}`);
+function import_settings(data, reset) {
+    Keys(data).forEach(key => {
+        if (!NO_IMPORTS[key])
+            save_option(key, data[key]);
+    });
+
+    if (reset)
+        reset_settings();
+}
+
+/**
+ * Load default settings
+ */
+function load_defaults() {
+    Keys(DEFAULTS).forEach(key => {
+        let value,
+            def = DEFAULTS[key],
+            type = TYPES[key];
+
+        switch (type) {
+        case 'f':
+            value = get_float(key, def);
+            break;
+        case 'b':
+        case 'i':
+            value = get_int(key, def);
+            break;
+        case 'o':
+            value = get_object(key, def);
+            break;
+        case 's':
+            value = get_string(key, def);
+            break;
+        default:
+            LS(`unknown type: ${key} : ${def}`);
+        }
+
+        Y[key] = value;
+    });
+
+    // use browser language
+    if (!Y.language)
+        guess_browser_language();
+}
+
+/**
+ * Load a preset
+ * @param {string} name
+ */
+function load_preset(name) {
+    if (name == 'custom')
+        return;
+    if (name == 'default settings')
+        reset_settings(true);
+    else {
+        Resource(`preset/${name}.json`, (code, data) => {
+            if (code != 200)
+                return;
+            import_settings(data, true);
+        });
+    }
 }
 
 /**
@@ -362,6 +431,20 @@ function remove_storage(name) {
 }
 
 /**
+ * Reset to the default/other settings
+ * @param {boolean} is_default
+ */
+function reset_settings(is_default) {
+    if (is_default) {
+        localStorage.clear();
+        Assign(Y, DEFAULTS);
+    }
+
+    if (virtual_reset_settings_special)
+        virtual_reset_settings_special(is_default);
+}
+
+/**
  * Restore history
  * @param {number} dir -1 (undo), 0, 1 (redo)
  */
@@ -375,6 +458,29 @@ function restore_history(dir) {
 
     if (virtual_import_settings)
         virtual_import_settings(data, true);
+}
+
+/**
+ * Make sure there is no garbage data
+ */
+function sanitise_data() {
+    // convert string to number
+    Keys(DEFAULTS).forEach(key => {
+        let value = Y[key];
+        if (!IsString(value))
+            return;
+
+        let def = DEFAULTS[key],
+            type = TYPES[key];
+
+        if (type == 'f')
+            Y[key] = Undefined(parseFloat(value), def);
+        else if (type == 'i')
+            Y[key] = Undefined(parseInt(value), def);
+    });
+
+    if (virtual_sanitise_data_special)
+        virtual_sanitise_data_special();
 }
 
 /**
@@ -680,7 +786,6 @@ function set_combo_value(letter, value, save=true) {
     }
 }
 
-
 /**
  * Update the theme
  * @param {string[]=} themes if null, will use Y.theme
@@ -819,38 +924,22 @@ function is_fullscreen() {
 }
 
 /**
- * Load default settings
+ * Load a library only once
+ * @param {string} url
+ * @param {function=} callback
+ * @param {Object=} extra
  */
-function load_defaults() {
-    Keys(DEFAULTS).forEach(key => {
-        let value,
-            def = DEFAULTS[key],
-            type = TYPES[key];
-
-        switch (type) {
-        case 'f':
-            value = get_float(key, def);
-            break;
-        case 'b':
-        case 'i':
-            value = get_int(key, def);
-            break;
-        case 'o':
-            value = get_object(key, def);
-            break;
-        case 's':
-            value = get_string(key, def);
-            break;
-        default:
-            LS(`unknown type: ${key} : ${def}`);
-        }
-
-        Y[key] = value;
-    });
-
-    // use browser language
-    if (!Y.language)
-        guess_browser_language();
+function load_library(url, callback, extra) {
+    if (!libraries[url])
+        LoadLibrary(url, () => {
+            if (DEV.load)
+                LS(`loaded: ${url}`);
+            libraries[url] = Now();
+            if (callback)
+                callback();
+        }, extra);
+    else
+        LS(`already loaded: ${url}`);
 }
 
 /**
@@ -890,29 +979,6 @@ function push_state(query, replace, query_key='hash', go=null) {
     }
 
     return Assign({}, ...changes.map(change => ({[change]: 1})));
-}
-
-/**
- * Make sure there is no garbage data
- */
-function sanitise_data() {
-    // convert string to number
-    Keys(DEFAULTS).forEach(key => {
-        let value = Y[key];
-        if (!IsString(value))
-            return;
-
-        let def = DEFAULTS[key],
-            type = TYPES[key];
-
-        if (type == 'f')
-            Y[key] = Undefined(parseFloat(value), def);
-        else if (type == 'i')
-            Y[key] = Undefined(parseInt(value), def);
-    });
-
-    if (virtual_sanitise_data_special)
-        virtual_sanitise_data_special();
 }
 
 /**

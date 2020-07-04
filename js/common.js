@@ -7,7 +7,7 @@
 //
 /*
 globals
-console, document, FormData, location, navigator, Node, window, Window, XMLHttpRequest
+console, document, exports, FormData, location, navigator, Node, window, Window, XMLHttpRequest
 */
 'use strict';
 
@@ -1335,9 +1335,6 @@ function Resource(url, callback, {content=null, form, method='GET', type='json'}
  * @param {string} key
  * @param {*} def
  * @returns {*} dico[key]
- * @example
- * dico = {}
- * SetDefault(dico, 'count', []).push(1)    // dico = {count: [1]}
  */
 function SetDefault(dico, key, def) {
     let child = dico[key];
@@ -1411,3 +1408,15 @@ function Title(text) {
 function Undefined(value, def) {
     return (value === undefined || Number.isNaN(value))? def: value;
 }
+
+// <<
+if (typeof exports != 'undefined') {
+    Object.assign(exports, {
+        Assign: Assign,
+        DEV: {},
+        Floor: Floor,
+        Keys: Keys,
+        LS: LS,
+    });
+}
+// >>

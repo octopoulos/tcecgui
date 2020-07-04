@@ -770,6 +770,12 @@ grid {
     max-width: 1500px;
     width: 95%;
 }
+#table-brak {
+    width: 100%;
+}
+#bracket {
+    margin-left: 0.8em;
+}
 #table-chat {
     max-width: 720px;
     width: 100%;
