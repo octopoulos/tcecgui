@@ -2885,9 +2885,10 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
+        player = players[id],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
-        status_score = is_book? 'book': calculate_probability(players[id].short, eval_, ply, move.wdl);
+        status_score = is_book? 'book': calculate_probability(player.short, eval_, ply, move.wdl || (player.info || {}).wdl);
 
     if (Y.eval) {
         for (let child of [box_node, node]) {
@@ -3201,6 +3202,8 @@ function update_pgn(section, pgn, extras, reset_moves) {
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
         main.round = headers.Round;
+        players[0].info = {};
+        players[1].info = {};
         update_move_info(0, {});
         update_move_info(1, {});
 
@@ -3626,13 +3629,14 @@ function update_player_eval(section, data) {
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
         node = Id(`moves-pv${id}`),
+        player = players[id],
         short = get_short_name(engine);
 
     // 1) update the live part on the left
     let dico = {
-            eval: format_eval(eval_),
-            score: calculate_probability(short, eval_, cur_ply, data.wdl),
-        };
+        eval: format_eval(eval_),
+        score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
+    };
 
     // update engine name if it has changed
     update_hardware(id, engine, short, null, [node]);
