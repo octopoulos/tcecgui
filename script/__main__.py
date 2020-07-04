@@ -25,9 +25,9 @@ def main():
     add('--clean', action='store_true', help='delete all .gz files')
     add('--console-debug', nargs='?', default='INFO', help='console debug level',
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
+    add('--debug', nargs='?', default=0, const=1, type=int, help="keep debug code from the javascript")
     add('--download', action='store_true', help='download JSON files')
     add('--host', nargs='?', default='/', help='host, ex: /seriv/')
-    add('--no-debug', nargs='?', default=0, const=1, type=int, help="remove debug code from the javascript")
     add('--no-process', nargs='?', default=0, const=1, type=int, help="don't process the images")
     add('--zip', action='store_true', help='create .gz files')
 

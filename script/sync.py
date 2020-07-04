@@ -110,9 +110,9 @@ class Sync:
         self.kwargs = kwargs
 
         self.clean = kwargs.get('clean')                                # type: bool
+        self.debug = kwargs.get('debug')                                # type: bool
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
-        self.no_debug = kwargs.get('no_debug')                          # type: bool
         self.no_process = kwargs.get('no_process')                      # type: bool
         self.zip = kwargs.get('zip')                                    # type: bool
 
@@ -306,7 +306,7 @@ class Sync:
                     script_data = re.sub('@import {(.*?)}', self.import_file, script_data);
                     script_data = re.sub('// BEGIN.*?// END', '', script_data, flags=re.S)
 
-                    if self.no_debug:
+                    if not self.debug:
                         script_data = re.sub('// <<.*?// >>', '', script_data, flags=re.S)
 
                     # use HOST

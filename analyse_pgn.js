@@ -8,16 +8,25 @@ console, process, require
 'use strict';
 
 let fs = require('fs'),
-    {LS} = require('./js/common'),
+    {Floor, LS} = require('./js/common'),
     {parse_pgn} = require('./js/game');
 
-for (let name of process.argv.slice(2)) {
+/**
+ * Get PGN stats
+ * @param {string} name
+ * @returns {[]*}
+ */
+function get_pgn_stats(name, callback) {
     fs.readFile(name, 'utf8', (err, data) => {
-        if (err)
+        if (err) {
+            callback(null);
             return;
+        }
         let dico = parse_pgn(data);
-        if (!dico)
+        if (!dico) {
+            callback(null);
             return;
+        }
 
         let sum_moves = [0, 0],
             sum_times = [0, 0];
@@ -27,7 +36,13 @@ for (let name of process.argv.slice(2)) {
             sum_moves[ply % 2] += move.n * 1.0;
             sum_times[ply % 2] += move.mt * 0.001;
         });
-        let nps = [sum_moves[0] / sum_times[0], sum_moves[1] / sum_times[1]];
-        LS(`${name} : ${nps[0]} : ${nps[1]}`);
+        let nps = [Floor(sum_moves[0] / sum_times[0]), Floor(sum_moves[1] / sum_times[1])];
+        callback(nps);
+    });
+}
+
+for (let name of process.argv.slice(2)) {
+    get_pgn_stats(name, stats => {
+        LS(`${name} : ${stats? stats.join(' '): stats}`);
     });
 }
