@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-23
+// @version 2020-07-03
 //
 /*
 globals
@@ -15,12 +15,12 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
-], OUTPUT_MODULE, 'IsFloat IsString');
+], OUTPUT_MODULE, 'IsFloat IsObject IsString');
 
 let {
     Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsString, Pad, QueryString, SetDefault, Split, Stringify, Title,
-    Undefined,
+    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, QueryString, SetDefault, Split, Stringify,
+    Title, Undefined,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,6 +207,19 @@ let {
 ].forEach(([text, answer], id) => {
     test(`IsFloat:${id}`, () => {
         expect(IsFloat(text)).toEqual(answer);
+    });
+});
+
+// IsObject
+[
+    [undefined, false],
+    [0, false],
+    ['', false],
+    [{}, true],
+    [[1, 2], true],
+].forEach(([text, answer], id) => {
+    test(`IsObject:${id}`, () => {
+        expect(IsObject(text)).toEqual(answer);
     });
 });
 
