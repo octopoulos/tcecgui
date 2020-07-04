@@ -1,19 +1,23 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-03
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-Abs, Atan, DEV:true, IsArray, Keys, LS, Pad, Pow, Round, save_option, Split, Undefined, X_SETTINGS, Y
+Abs, Atan, Clamp, DEV:true, Exp, Floor, IsArray, Keys, LS, Max, Min, Pad, Pow, Round, save_option, Split, Undefined,
+X_SETTINGS, Y
 */
 'use strict';
 
 // modify those values in config.js
 let HOST_ARCHIVE,
     LINKS = {},
+    SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
+    SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
+    SF_PAWN_VALUE = 2.06,
     TIMEOUTS = {
         adblock: 15 * 1000,
         banner: 30 * 1000,
@@ -31,50 +35,8 @@ let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Function from ply and centipawns to win percentage for Stockfish
- * Serves as a helper function for sf_wdl_statistics.
- * A near 1:1 port of https://github.com/official-stockfish/Stockfish/pull/2778
- * @param {number} ply
- * @param {number} cp
- * @returns {Object.<string, number>}
- */
-function sf_win_rate_model(ply, cp) {
-  // A (pretty much) 1:1 port of Joost VandeVondele's Stockfish WDL statistics
-  // See: https://github.com/official-stockfish/Stockfish/pull/2778
-
-  const median = (p, q, r) => ([p, q, r].sort((a,b) => a-b)[1])
-  const PawnValueEg = 206;
-  const as = [-8.24404295, 64.23892342, -95.73056462, 153.86478679];
-  const bs = [-3.37154371, 28.44489198, -56.67657741,  72.05858751];
-
-  const m = Math.min(240, ply) / 64;
-  const a = (((as[0] * m + as[1]) * m + as[2]) * m) + as[3];
-  const b = (((bs[0] * m + bs[1]) * m + bs[2]) * m) + bs[3];
-
-  const v = (cp * PawnValueEg) / 100;
-  const x = median(v * 100 / PawnValueEg, -1000, 1000);
-
-  return Math.round(0.5 + 1000 / (1 + Math.exp((a - x) / b)));
-}
-
-/**
- * Function from ply and centipawns to vector of outcome ‰ for Stockfish
- * https://github.com/official-stockfish/Stockfish/pull/2778
- * @param {number} ply
- * @param {number} cp
- * @returns {Object.<string, number>}
- */
-function sf_wdl_statistics(ply, cp) {
-  const w = sf_win_rate_model(1, 300);
-  const l = sf_win_rate_model(1, -300);
-  const d = 1000 - w - l;
-
-  return { w: w, l: l, d: d };
-}
-
-/**
  * Convert centipawn to score % for AS
- * https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
+ * @see https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/lib/node.cpp#L39
  * @param {number} cp
  * @returns {number}
  */
@@ -181,7 +143,7 @@ function get_move_ply(move) {
 
 /**
  * Convert centipawn to score % for Leela 2019+
- * https://github.com/LeelaChessZero/lc0/pull/1193/files
+ * @see https://github.com/LeelaChessZero/lc0/pull/1193/files
  * @param {number} cp
  * @returns {number}
  */
@@ -324,6 +286,42 @@ function split_move_string(text) {
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
         ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
     return [ply, items];
+}
+
+/**
+ * Function from ply and centipawns to vector of outcome ‰ for Stockfish
+ * @see https://github.com/official-stockfish/Stockfish/pull/2778
+ * @param {number} cp
+ * @param {number} ply
+ * @returns {number[]} w,d,l
+ */
+function stockfish_wdl(cp, ply) {
+    let win = stockfish_win_rate_model(cp, ply),
+        loss = stockfish_win_rate_model(-cp, ply),
+        draw = Max(0, 1000 - win - loss);
+
+  return [win, draw, loss];
+}
+
+/**
+ * Function from ply and centipawns to win percentage for Stockfish
+ * Serves as a helper function for sf_wdl_statistics.
+ * A near 1:1 port of Joost VandeVondele's Stockfish WDL statistics
+ * @see https://github.com/official-stockfish/Stockfish/pull/2778
+ * @param {number} cp
+ * @param {number} ply
+ * @returns {Object.<string, number>}
+ */
+function stockfish_win_rate_model(cp, ply) {
+    let as = SF_COEFF_AS,
+        bs = SF_COEFF_BS,
+        m = Min(240, ply) / 64,
+        a = (((as[0] * m + as[1]) * m + as[2]) * m) + as[3],
+        b = (((bs[0] * m + bs[1]) * m + bs[2]) * m) + bs[3],
+        v = cp * SF_PAWN_VALUE,
+        x = Clamp(v / SF_PAWN_VALUE, -1000, 1000);
+
+    return Floor(0.5 + 1000 / (1 + Exp((a - x) / b)));
 }
 
 /**

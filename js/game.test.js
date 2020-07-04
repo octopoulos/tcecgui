@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-03
 /*
 globals
 __dirname, expect, require, test
@@ -61,21 +61,22 @@ let {
 
 // calculate_probability
 [
-    ['AllieStein', 0.27, '13.7% W | 86.3% D'],
-    ['AllieStein', 128, '91.6% W | 8.4% D'],
-    ['AllieStein', 256, '100.0% W | 0.0% D'],
-    ['LCZero', 0.27, '18.6% W | 81.4% D'],
-    ['LCZero', 128, '100.0% W | 0.0% D'],
-    ['ScorpioNN', 0.27, '6.0% W | 94.0% D'],
-    ['ScorpioNN', 128, '100.0% W | 0.0% D'],
-    ['Stockfish', 0.27, '7.8% W | 92.2% D'],
-    ['Stockfish', 128, '100.0% W | 0.0% D'],
-    ['Stoofvlees', 0.27, '8.9% W | 91.1% D'],
-    ['Stoofvlees', 128, '100.0% W | 0.0% D'],
+    ['AllieStein', 0.27, 0, '13.7% W | 86.3% D | 0.0% B'],
+    ['AllieStein', 128, 0, '91.6% W | 8.4% D | 0.0% B'],
+    ['AllieStein', 256, 0, '100.0% W | 0.0% D | 0.0% B'],
+    ['LCZero', 0.27, 0, '18.6% W | 81.4% D | 0.0% B'],
+    ['LCZero', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
+    ['ScorpioNN', 0.27, 0, '6.0% W | 94.0% D | 0.0% B'],
+    ['ScorpioNN', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
+    ['Stockfish', 0.27, 30, '13.5% W | 81.3% D | 5.2% B'],
+    ['Stockfish', -0.27, 30, '5.2% W | 81.3% D | 13.5% B'],
+    ['Stockfish', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
+    ['Stoofvlees', 0.27, 0, '8.9% W | 91.1% D | 0.0% B'],
+    ['Stoofvlees', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
 ]
- .forEach(([short_engine, eval_, answer], id) => {
+ .forEach(([short_engine, eval_, ply, answer], id) => {
     test(`calculate_probability:${id}`, () => {
-        expect(calculate_probability(short_engine, eval_)).toEqual(answer);
+        expect(calculate_probability(short_engine, eval_, ply)).toEqual(answer);
     });
 });
 
