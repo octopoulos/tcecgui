@@ -46,14 +46,23 @@ function get_pgn_stats(name, callback) {
         all_values.forEach((values, id) => {
             let half = sum_moves[id] / 2,
                 num_value = values.length,
+                interval = Floor(num_value / 4) + 1,
                 number = 0;
 
             values.sort((a, b) => a[0] - b[0]);
-            for (let i = 1; i < num_value - 1; i ++) {
+            for (let i = 0; i < num_value; i ++) {
                 let value = values[i];
                 number += value[1];
                 if (number >= half) {
-                    median[id] = Floor((values[i - 1][0] + value[0] * 2 + values[i + 1][0]) / 4 + 0.5);
+                    let num = 0,
+                        sum = 0;
+                    for (let j = i - interval; j <= i + interval; j ++) {
+                        if (!values[j])
+                            continue;
+                        sum += values[j][0];
+                        num ++;
+                    }
+                    median[id] = Floor(sum / num + 0.5);
                     break;
                 }
             }

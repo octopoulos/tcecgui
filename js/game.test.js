@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 /*
 globals
 __dirname, expect, require, test
@@ -22,12 +22,73 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'Assign Keys players tour_info Y');
 
 let {
-        Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
+        analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
         format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// analyse_log
+[
+    [
+        ['Stockfish 20200701', 'Komodo 2566.00'],
+        '35714477 Komodo 2566.00(45): info depth 31 time 7058 nodes 798000183 score cp -90 lowerbound nps 113047203 hashfull 66 tbhits 75 pv b7b5 a2a3 c8b7',
+        1,
+        {
+            cp: -90,
+            depth: 31,
+            eval: 0.9,
+            nodes: 798000183,
+            nps: 113047203,
+            pv: 'b7b5 a2a3 c8b7',
+            tbhits: 75,
+            time: 7058,
+        },
+    ],
+    [
+        ['Stockfish 20200701', 'Komodo 2566.00'],
+        '33854431 Stockfish 20200701(40): info depth 32 seldepth 45 multipv 1 score cp 859 wdl 1000 0 0 upperbound nodes 1268292755 nps 187561779 hashfull 241 tbhits 106431 time 6762 pv b1g1 c8f5',
+        0,
+        {
+            cp: 859,
+            depth: 32,
+            eval: 8.59,
+            nodes: 1268292755,
+            nps: 187561779,
+            pv: 'b1g1 c8f5',
+            seldepth: 45,
+            tbhits: 106431,
+            time: 6762,
+            wdl: '1000 0 0',
+        },
+    ],
+    [
+        ['Stockfish 20200701', 'Komodo 2566.00'],
+        '35794491 Stockfish 20200701(44): info depth 31 seldepth 53 multipv 1 score cp 142 wdl 606 389 5 nodes 1052562509 nps 151186801 hashfull 237 tbhits 9667 time 6962 pv c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
+        0,
+        {
+            cp: 142,
+            depth: 31,
+            eval: 1.42,
+            nodes: 1052562509,
+            nps: 151186801,
+            pv: 'c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
+            seldepth: 53,
+            tbhits: 9667,
+            time: 6962,
+            wdl: '606 389 5',
+        },
+    ],
+].forEach(([names, line, player_id, answer], id) => {
+    test(`analyse_log:${id}`, () => {
+        names.forEach((name, id) => {
+            players[id].name = name;
+        });
+        analyse_log(line);
+        expect(players[player_id].info).toEqual(answer);
+    });
+});
 
 // calculate_h2h
 [
@@ -61,22 +122,26 @@ let {
 
 // calculate_probability
 [
-    ['AllieStein', 0.27, 0, '13.7% W | 86.3% D | 0.0% B'],
-    ['AllieStein', 128, 0, '91.6% W | 8.4% D | 0.0% B'],
-    ['AllieStein', 256, 0, '100.0% W | 0.0% D | 0.0% B'],
-    ['LCZero', 0.27, 0, '18.6% W | 81.4% D | 0.0% B'],
-    ['LCZero', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
-    ['ScorpioNN', 0.27, 0, '6.0% W | 94.0% D | 0.0% B'],
-    ['ScorpioNN', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
-    ['Stockfish', 0.27, 30, '13.5% W | 81.3% D | 5.2% B'],
-    ['Stockfish', -0.27, 30, '5.2% W | 81.3% D | 13.5% B'],
-    ['Stockfish', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
-    ['Stoofvlees', 0.27, 0, '8.9% W | 91.1% D | 0.0% B'],
-    ['Stoofvlees', 128, 0, '100.0% W | 0.0% D | 0.0% B'],
-]
- .forEach(([short_engine, eval_, ply, answer], id) => {
+    ['AllieStein', 0.27, 0, undefined, '13.7% W | 86.3% D | 0.0% B'],
+    ['AllieStein', 128, 0, undefined, '91.6% W | 8.4% D | 0.0% B'],
+    ['AllieStein', 256, 0, undefined, '100.0% W | 0.0% D | 0.0% B'],
+    ['AllieStein', 256, 0, '437 550 13', '43.7% W | 55.0% D | 1.3% B'],
+    ['LCZero', 0.27, 0, undefined, '18.6% W | 81.4% D | 0.0% B'],
+    ['LCZero', 128, 0, undefined, '100.0% W | 0.0% D | 0.0% B'],
+    ['LCZero', 128, 0, '437 550 13', '43.7% W | 55.0% D | 1.3% B'],
+    ['ScorpioNN', 0.27, 0, undefined, '6.0% W | 94.0% D | 0.0% B'],
+    ['ScorpioNN', 128, 0, undefined, '100.0% W | 0.0% D | 0.0% B'],
+    ['Stockfish', 0.27, -1, undefined, '7.8% W | 92.2% D | 0.0% B'],
+    ['Stockfish', 0.27, 0, undefined, '14.7% W | 77.8% D | 7.5% B'],
+    ['Stockfish', 0.27, 30, undefined, '13.5% W | 81.3% D | 5.2% B'],
+    ['Stockfish', -0.27, 30, undefined, '5.2% W | 81.3% D | 13.5% B'],
+    ['Stockfish', -0.27, 30, '437 550 13', '43.7% W | 55.0% D | 1.3% B'],
+    ['Stockfish', 128, 0, undefined, '100.0% W | 0.0% D | 0.0% B'],
+    ['Stoofvlees', 0.27, 0, undefined, '8.9% W | 91.1% D | 0.0% B'],
+    ['Stoofvlees', 128, 0, undefined, '100.0% W | 0.0% D | 0.0% B'],
+].forEach(([short_engine, eval_, ply, wdl, answer], id) => {
     test(`calculate_probability:${id}`, () => {
-        expect(calculate_probability(short_engine, eval_, ply)).toEqual(answer);
+        expect(calculate_probability(short_engine, eval_, ply, wdl)).toEqual(answer);
     });
 });
 

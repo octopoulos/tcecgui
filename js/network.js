@@ -1,13 +1,15 @@
 // network
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2020-07-04
 //
 // all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, add_timeout, analyse_crosstable, analyse_tournament, Class, create_bracket, CreateNode, DEV, HasClass, Hide, HOST,
-HTML, Id, InsertNodes, io, location, LS, S, save_option, set_viewers, Show, TIMEOUTS, update_live_eval, update_pgn,
-update_player_eval, update_table, update_twitch, Y
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_bracket, CreateNode, DEV, From,
+HasClass, Hide, HOST, HTML, Id, InsertNodes, io, location, LS, S, save_option, set_viewers, Show, TIMEOUTS,
+update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
 
@@ -39,8 +41,14 @@ function init_sockets() {
         log_socket('htmlread', data);
         let data_ = data.data,
             date = new Date().toLocaleTimeString(),
-            text = data_.split(/\n|\s\n/).join('<br>');
+            lines = data_.split('\n').reverse(),
+            text = lines.join('<br>');
         insert_log(`<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`);
+        for (let line of lines)
+            if (line.includes(' pv ')) {
+                analyse_log(line);
+                break;
+            }
     });
 
     socket.on('banner', data => {
@@ -115,8 +123,16 @@ function init_sockets() {
  * @param {string} html
  */
 function insert_log(html) {
-    let node = CreateNode('div', html);
-    InsertNodes(Id('live-log'), [node], true);
+    let live_log = Id('live-log'),
+        log_history = Y.log_history,
+        node = CreateNode('div', html);
+    InsertNodes(live_log, [node], true);
+
+    // limit log history
+    if (log_history > 0)
+        From(A('div', live_log)).slice(log_history).forEach(node => {
+            node.remove();
+        });
 }
 
 /**
@@ -126,6 +142,8 @@ function listen_log() {
     if (!socket)
         return;
     let new_room = Y.live_log;
+    if (Y.log_auto_start && new_room == 0)
+        new_room= 'all';
 
     // 1) leave the previous room
     if (prev_room && prev_room != new_room) {
