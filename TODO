@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
+2020-07-04 : 2020-07-04 : calculate median in analyse_pgn
 2020-07-04 : 2020-07-04 : stockfish WDL
 2020-07-04 : 2020-07-04 : improved brackets
 2020-07-04 : 2020-07-04 : eval graph always shows y=0
