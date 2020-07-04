@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-03
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -10,9 +10,9 @@
 /*
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
-DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsString, Keys, LoadLibrary, localStorage,
-location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame, Resource,
-ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
+DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys, LoadLibrary,
+localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame,
+Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
 */
 'use strict';
 
@@ -399,7 +399,7 @@ function merge_settings(x_settings) {
         let value = x_settings[name];
 
         // audio: { ... }
-        if (typeof(value) == 'object') {
+        if (IsObject(value)) {
             let exists = SetDefault(X_SETTINGS, name, {});
             Assign(exists, value);
             X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
@@ -412,8 +412,8 @@ function merge_settings(x_settings) {
     // update defaults
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
-        if (typeof(settings) == 'object') {
-            let keys = Keys(settings).filter(key => key[0] != '_' && typeof(settings[key]) == 'object');
+        if (IsObject(settings)) {
+            let keys = Keys(settings).filter(key => key[0] != '_' && IsObject(settings[key]));
             Assign(DEFAULTS, Assign({}, ...keys.map(key => ({[key]: settings[key][1]}))));
 
             // update types
@@ -504,7 +504,7 @@ function save_option(name, value) {
  * @param {*} value value for the name
  */
 function save_storage(name, value) {
-    if (typeof(value) == 'object')
+    if (IsObject(value))
         value = JSON.stringify(value);
     else if (value === true)
         value = 1;

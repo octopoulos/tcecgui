@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-03
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -23,6 +23,7 @@ let Abs = Math.abs,
     From = Array.from,
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
+    IsObject = value => (typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
     Max = Math.max,
@@ -51,7 +52,7 @@ let NAMESPACE_SVG = 'http://www.w3.org/2000/svg';
  */
 function _(sel, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object')
+    if (IsObject(sel))
         return sel;
     return (parent || document).querySelector(sel);
 }
@@ -67,7 +68,7 @@ function _(sel, parent) {
  */
 function A(sel, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object' && sel.length)
+    if (IsObject(sel) && sel.length)
         return sel;
     return (parent || document).querySelectorAll(sel);
 }
@@ -82,7 +83,7 @@ function A(sel, parent) {
  */
 function E(sel, callback, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object' && sel.length)
+    if (IsObject(sel) && sel.length)
         sel.forEach(callback);
     else
         A(sel, parent).forEach(callback);
@@ -96,7 +97,7 @@ function E(sel, callback, parent) {
  */
 function Id(id, parent) {
     if (!id) return;
-    if (typeof(id) == 'object')
+    if (IsObject(id))
         return id;
     return (parent || document).getElementById(id);
 }
@@ -111,7 +112,7 @@ function Id(id, parent) {
  */
 function Attrs(sel, attrs, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
             if (value == undefined)
@@ -141,7 +142,7 @@ function Attrs(sel, attrs, parent) {
  */
 function AttrsNS(sel, attrs, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
             if (value == undefined)
@@ -173,7 +174,7 @@ function AttrsNS(sel, attrs, parent) {
  */
 function C(sel, callback, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.onclick = callback;
         return;
     }
@@ -198,7 +199,7 @@ function C(sel, callback, parent) {
 function Class(sel, class_, add=true, parent=null) {
     if (!sel) return;
 
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         let list = sel.classList;
         class_.split(' ').forEach(item => {
             if (!item)
@@ -367,7 +368,7 @@ function Events(sel, events, callback, options, parent) {
     else
         direct = false;
 
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         events.split(' ').forEach(event => {
             if (direct)
                 sel[`on${event}`] = callback;
@@ -448,7 +449,7 @@ function HasClasses(node, classes) {
  */
 function Hide(sel, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = 'none';
         return;
@@ -473,7 +474,7 @@ function Hide(sel, parent) {
  */
 function HTML(sel, html, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         if (html !== undefined && html != sel.innerHTML)
             sel.innerHTML = html;
         return sel.innerHTML;
@@ -526,7 +527,7 @@ function Index(node) {
  */
 function Input(sel, callback, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.oninput = callback;
         return;
     }
@@ -646,7 +647,7 @@ function Parent(node, {tag, class_, attrs, self}={}) {
  */
 function Prop(sel, prop, value, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel[prop] = value;
         return;
     }
@@ -671,7 +672,7 @@ function Prop(sel, prop, value, parent) {
  */
 function S(sel, show, parent, mode='') {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = show? mode: 'none';
         return;
@@ -720,7 +721,7 @@ function ScrollDocument(top, smooth) {
  */
 function Show(sel, parent, mode='') {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = mode;
         return;
@@ -746,7 +747,7 @@ function Show(sel, parent, mode='') {
 function Style(sel, style, add=true, parent=null) {
     if (!sel) return;
 
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         let list = sel.style;
         style.split(/\s*;+\s*/).forEach(item => {
             let split,
@@ -826,7 +827,7 @@ function Style(sel, style, add=true, parent=null) {
  */
 function Submit(sel, callback, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         sel.onsubmit = callback;
         return;
     }
@@ -849,7 +850,7 @@ function Submit(sel, callback, parent) {
  */
 function TEXT(sel, text, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         if (text !== undefined)
             sel.innerHTML = text;
         return sel.textContent.trim();
@@ -876,7 +877,7 @@ function TEXT(sel, text, parent) {
  */
 function Toggle(sel, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         S(sel, !Visible(sel));
         return;
     }
@@ -897,7 +898,7 @@ function Toggle(sel, parent) {
  */
 function Visible(sel, parent) {
     if (!sel) return;
-    if (typeof(sel) == 'object') {
+    if (IsObject(sel)) {
         if (sel.classList.contains('dn'))
             return false;
         return sel.style.display != 'none' && sel.style.visibility != 'hidden';
@@ -1416,6 +1417,7 @@ if (typeof exports != 'undefined') {
         DEV: {},
         Floor: Floor,
         Keys: Keys,
+        IsObject: IsObject,
         LS: LS,
     });
 }

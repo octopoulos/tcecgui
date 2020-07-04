@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-09
+// @version 2020-07-03
 //
 /*
 globals
 _, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, fix_move_format, Floor, FormatUnit, FromSeconds,
-get_move_ply, Id, Keys, load_library, LS, Min, Pad, players, Round, SetDefault, Sign, translate_expression, Visible,
-window, xboards, Y
+get_move_ply, Id, IsObject, Keys, load_library, LS, Min, Pad, players, Round, SetDefault, Sign, translate_expression,
+Visible, window, xboards, Y
 */
 'use strict';
 
@@ -201,7 +201,7 @@ function create_charts()
 {
     // 1) create all charts
     new_chart('depth', true, [1]);
-    new_chart('eval', true, [1], undefined, (item, data) => {
+    new_chart('eval', true, [1], {beginAtZero: true}, (item, data) => {
         let eval_ = get_tooltip_data(item, data).eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_): eval_;
     });
@@ -298,15 +298,18 @@ function invert_eval(eval_) {
  * @param {string} name
  * @param {boolean} has_legend
  * @param {number[]} y_axes [1] or [1, 2]
- * @param {function=} scale_callback FormatUnit
+ * @param {function|Object=} y_ticks FormatUnit, {...}
  * @param {function=} tooltip_callback
  * @param {Object=} dico
  */
-function new_chart(name, has_legend, y_axes, scale_callback, tooltip_callback, dico) {
+function new_chart(name, has_legend, y_axes, y_ticks, tooltip_callback, dico) {
+    if (y_ticks && !IsObject(y_ticks))
+        y_ticks = {callback: y_ticks};
+
     let options = {...CHART_OPTIONS, ...{
         scales: {
             xAxes: [CHART_X_AXES],
-            yAxes: y_axes.map(id => new_y_axis(id, scale_callback)),
+            yAxes: y_axes.map(id => new_y_axis(id, y_ticks)),
         },
     }};
 
@@ -360,11 +363,11 @@ function new_dataset(label, color, yaxis, dico) {
 /**
  * Create a Y axis
  * @param {number} id 1 for left, 2 for right
- * @param {function=} callback
+ * @param {Object=} y_ticks
  * @param {Object=} dico
  * @returns {Object}
  */
-function new_y_axis(id, callback, dico) {
+function new_y_axis(id, y_ticks, dico) {
     let y_axis = {
         display: true,
         id: `y-axis-${id}`,
@@ -375,8 +378,8 @@ function new_y_axis(id, callback, dico) {
     if (id == 2)
         y_axis.gridLines = {drawOnChartArea: false};
 
-    if (callback)
-        y_axis.ticks = {callback: callback};
+    if (y_ticks)
+        y_axis.ticks = y_ticks;
 
     if (dico)
         Assign(y_axis, dico);
