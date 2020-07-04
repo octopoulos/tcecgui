@@ -771,6 +771,7 @@ grid {
     width: 95%;
 }
 #table-brak {
+    overflow-y: hidden;
     width: 100%;
 }
 #bracket {
@@ -1092,9 +1093,6 @@ grid {
 .name.gold {
     background: #da0;
 }
-.name.high {
-    background: #3c0;
-}
 .name.loss {
     background: #ddd;
     color: #999;
@@ -1108,6 +1106,9 @@ grid {
 .name.silver {
     background: #ccc;
 }
+.name.high {
+    background: #9df;
+}
 .seed {
     width: 2em;
 }
@@ -1120,9 +1121,6 @@ grid {
 }
 .score.gold {
     background: #e7c44d;
-}
-.score.high {
-    background: #71db4d;
 }
 .score.loss {
    background: #e7e7e7;
@@ -1138,6 +1136,9 @@ grid {
 .score.win {
     color: #060;
 }
+.score.high {
+    background: #a5e5ff;
+}
 .connect {
     left: 0;
     position: absolute;
@@ -1149,8 +1150,14 @@ grid {
     stroke: #888888;
 }
 .connect.loss {
-    opacity: 0.15;
+    opacity: 0.22;
     stroke: #888888;
+}
+.connect.high {
+    stroke: #69f;
+}
+.connect.loss.high {
+    opacity: 0.5;
 }
 
 /* live */

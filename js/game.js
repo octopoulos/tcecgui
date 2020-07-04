@@ -12,11 +12,11 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, console,
+C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
 CreateSVG, cube:true, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit, From,
 FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
@@ -30,11 +30,12 @@ Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, wind
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, DEV, Floor, LS} = req('./common');
+        {Assign, DEV, Floor, IsObject, LS} = req('./common');
     Assign(global, {
         Assign: Assign,
         DEV: DEV,
         Floor: Floor,
+        IsObject: IsObject,
         LS: LS,
     });
 }
@@ -2216,8 +2217,12 @@ function create_bracket(section, data) {
                     else if (class_ == ' loss' && number == 2)
                         SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
 
-                    if (number == 1 && i == 1)
-                        link = ROUND_LINKS[3];
+                    // last round
+                    if (number == 1) {
+                        LS(`i=${i} : id=${id} : class_=${class_} : short=${short}`);
+                        if (i == 1)
+                            link = ROUND_LINKS[3];
+                    }
                 });
 
             lines.push(
@@ -2304,7 +2309,7 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
             fill: 'none',
         });
 
-    return CreateSVG('svg', {class: `connect ${target}`, 'data-sx': seed, style: style, viewBox: viewbox}, [path]);
+    return CreateSVG('svg', {class: `connect ${target}`, 'data-s': seed, style: style, viewBox: viewbox}, [path]);
 }
 
 /**
@@ -2360,6 +2365,7 @@ function create_cup(section, data, show) {
         open_table('brak');
 
     // cup events
+    // click on a match => load its games
     C('.match', function() {
         if (cannot_click())
             return;
@@ -2379,10 +2385,13 @@ function create_cup(section, data, show) {
             show_filtered_games(text);
     });
 
+    // mouse hover
+    let parent = Id('bracket');
     Events('[data-s]', 'mouseenter mouseleave', function(e) {
-        LS(e.type);
-        LS(this.dataset.s);
-    });
+        Class('[data-s]', 'high', false, parent);
+        if (e.type == 'mouseenter')
+            Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
+    }, null, parent);
 }
 
 // PGN
@@ -2533,7 +2542,7 @@ function download_pgn(section, url, scroll_up, reset_moves) {
  */
 function parse_pgn(data) {
     // A) maybe we have a JSON already?
-    if (typeof(data) == 'object')
+    if (IsObject(data))
         return data;
 
     try {
