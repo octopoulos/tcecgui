@@ -3,6 +3,8 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
+2020-07-04 : 2020-07-04 : stockfish WDL
+2020-07-04 : 2020-07-04 : improved brackets
 2020-07-04 : 2020-07-04 : eval graph always shows y=0
 2020-07-03 : 2020-07-03 : analyse_pgn script
 2020-07-02 : 2020-07-02 : optimize for iPhone SE

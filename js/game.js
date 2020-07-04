@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-03
 //
 // Game specific code:
 // - control the board, moves
@@ -21,9 +21,10 @@ listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Pare
 push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
-Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
-translate_default, translate_node, Undefined, update_chart_options, update_live_chart, update_player_charts, update_svg,
-Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
+Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
+touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
+update_player_charts, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window,
+XBoard, Y
 */
 'use strict';
 
@@ -270,35 +271,40 @@ let ANALYSIS_URLS = {
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
  * @param {number} eval_
+ * @param {number} ply
  * @returns {string}
  */
-function calculate_probability(short_engine, eval_)
+function calculate_probability(short_engine, eval_, ply)
 {
     if (isNaN(eval_))
         return eval_;
 
-    let feature = ENGINE_FEATURES[short_engine],
-        white_win = calculate_feature_q(feature, eval_);
+    let draw = 0,
+        loss = 0,
+        win = 0;
 
-    // final output
-    let reverse = 0;
-    if (eval_ < 0)
-    {
-        reverse = 1;
-        white_win = -white_win;
+    if (short_engine.includes('Stockfish')) {
+        [win, draw, loss] = stockfish_wdl(eval_ * 100, ply);
+        win /= 10;
+        draw /= 10;
+        loss /= 10;
+    }
+    else {
+        let feature = ENGINE_FEATURES[short_engine],
+            white_win = calculate_feature_q(feature, eval_);
+
+        // final output
+        if (eval_ < 0)
+            loss = -white_win;
+        else
+            win = white_win;
+
+        loss = Max(0, loss * 2);
+        win = Max(0, win * 2);
+        draw = Max(0, 100 - loss - win);
     }
 
-
-    let win = parseFloat(Max(0, white_win * 2)).toFixed(1),
-        draw = parseFloat(100 - Max(win, 0)).toFixed(1);
-
-    // Stockfish is special. There's probably a cleaner way to do this.
-    if (feature & 16) {
-        const statistics = sf_win_rate_model(main.ply, cp);
-        ({['w']: win, ['d']: draw}  = statistics);
-    }
-
-    return !win? `${draw}% D`: `${win}% ${reverse? 'B': 'W'} | ${draw}% D`;
+    return `${win.toFixed(1)}% W | ${draw.toFixed(1)}% D | ${loss.toFixed(1)}% B`;
 }
 
 /**
@@ -2861,7 +2867,7 @@ function update_move_pv(section, ply, move) {
         main = xboards[section],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
-        status_score = is_book? 'book': calculate_probability(players[id].short, eval_);
+        status_score = is_book? 'book': calculate_probability(players[id].short, eval_, ply);
 
     if (Y.eval) {
         for (let child of [box_node, node]) {
@@ -3475,7 +3481,7 @@ function update_live_eval(section, data, id, force_ply) {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
                 node: FormatUnit(data.nodes),
-                score: is_hide? 'hide*': calculate_probability(short, eval_),
+                score: is_hide? 'hide*': calculate_probability(short, eval_, ply),
                 speed: data.speed,
                 tb: FormatUnit(data.tbhits),
             };
@@ -3522,7 +3528,7 @@ function update_player_eval(section, data) {
     // 1) update the live part on the left
     let dico = {
             eval: format_eval(eval_),
-            score: calculate_probability(short, eval_),
+            score: calculate_probability(short, eval_, cur_ply),
         };
 
     // update engine name if it has changed

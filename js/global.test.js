@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-07-03
 //
 /*
 globals
@@ -21,7 +21,7 @@ create_module(IMPORT_PATH, [
 
 let {
     allie_cp_to_score, calculate_feature_q, get_move_ply, leela_cp_to_score, mix_hex_colors, split_move_string,
-    stoof_cp_to_score,
+    stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,36 +112,6 @@ let {
     });
 });
 
-// sf_win_rate_model
-[
-    [239, 398, 839],
-    [178, 507, 992],
-    [25, 322, 974],
-    [102, 472, 1000],
-    [129, 137, 406],
-    [35, -891, 0],
-    [293, 411, 858],
-    [53, 950, 1000],
-    [84, -292, 0],
-    [142, 358, 979],
-    [173, 594, 999],
-    [136, -636, 0],
-    [198, -578, 0],
-    [180, -712, 0],
-    [249, 167, 235],
-    [8, 673, 1000],
-    [15, 659, 1000],
-    [188, 654, 999],
-    [55, -489, 0],
-    [277, -366, 0],
-]
- .forEach(([ply, cp, answer], id) => {
-    test(`leela_cp_to_score:${id}`, () => {
-        expect(sf_win_rate_model(ply, cp)).toBe(answer);
-    });
-});
-
-
 // mix_hex_colors
 [
     ['#ffffff', '#000000', 0.5, '#808080'],
@@ -167,6 +137,59 @@ let {
 ].forEach(([text, answer], id) => {
     test(`split_move_string:${id}`, () => {
         expect(split_move_string(text)).toEqual(answer);
+    });
+});
+
+// stockfish_wdl
+[
+    [0, 0, [106, 788, 106]],
+    [0, 90, [41, 918, 41]],
+    [0, 180, [34, 932, 34]],
+    [100, 0, [321, 650, 29]],
+    [100, 20, [372, 611, 17]],
+    [100, 40, [410, 580, 10]],
+    [100, 60, [417, 577, 6]],
+    [100, 90, [355, 642, 3]],
+    [100, 120, [259, 737, 4]],
+    [100, 180, [149, 844, 7]],
+    [-100, 90, [3, 642, 355]],
+    [1280, 90, [1000, 0, 0]],
+    [-1280, 90, [0, 0, 1000]],
+    [12800, 90, [1000, 0, 0]],
+    [-12800, 90, [0, 0, 1000]],
+]
+.forEach(([cp, ply, answer], id) => {
+    test(`stockfish_wdl:${id}`, () => {
+        expect(stockfish_wdl(cp, ply)).toEqual(answer);
+    });
+});
+
+// stockfish_win_rate_model
+[
+    [398, 239, 840],
+    [507, 178, 992],
+    [322, 25, 974],
+    [472, 102, 1000],
+    [137, 129, 406],
+    [-891, 35, 0],
+    [411, 293, 859],
+    [950, 53, 1000],
+    [-292, 84, 0],
+    [358, 142, 979],
+    [594, 173, 999],
+    [-636, 136, 0],
+    [-578, 198, 0],
+    [-712, 180, 0],
+    [167, 249, 235],
+    [673, 8, 1000],
+    [659, 15, 1000],
+    [654, 188, 999],
+    [-489, 55, 0],
+    [-366, 277, 0],
+]
+ .forEach(([cp, ply, answer], id) => {
+    test(`stockfish_win_rate_model:${id}`, () => {
+        expect(stockfish_win_rate_model(cp, ply)).toBe(answer);
     });
 });
 

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-10
+// @version 2020-07-03
 //
 // game board:
 // - 4 rendering modes:
@@ -1082,7 +1082,7 @@ class XBoard {
 
     /**
      * Create an svg arrow part
-     * https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/marker-end
+     * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/marker-end
      * @param {string} id
      * @returns {Node}
      */
