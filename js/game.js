@@ -154,6 +154,7 @@ let ANALYSIS_URLS = {
         LCZero: 1 + 2,                  // & 2 => Leela variations
         ScorpioNN: 1,
         Stoofvlees: 1 + 8,
+        Stockfish: 1 + 16,
     },
     event_stats = {
         archive: {},
@@ -286,8 +287,16 @@ function calculate_probability(short_engine, eval_)
         reverse = 1;
         white_win = -white_win;
     }
+
+
     let win = parseFloat(Max(0, white_win * 2)).toFixed(1),
         draw = parseFloat(100 - Max(win, 0)).toFixed(1);
+
+    // Stockfish is special. There's probably a cleaner way to do this.
+    if (feature & 16) {
+        const statistics = sf_win_rate_model(main.ply, cp);
+        ({['w']: win, ['d']: draw}  = statistics);
+    }
 
     return !win? `${draw}% D`: `${win}% ${reverse? 'B': 'W'} | ${draw}% D`;
 }
