@@ -1,6 +1,6 @@
 // create-module.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-04-13
+// @version 2020-07-03
 //
 // This module is useful for testing js files without them having any exports.
 // Look at common.test.js for an example.
@@ -59,6 +59,7 @@ function create_module(path, sources, output, extra_exports) {
         let js_file = fs.readFileSync(filename, 'utf-8');
         all += js_file;
     }
+    all = all.replace(/\/\/ <<.*?\/\/ >>/gs, '');
 
     // 3) find all functions
     let funcs = [];

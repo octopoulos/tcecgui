@@ -15,19 +15,19 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
 Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, detect_device, DEV,
-device, document, download_live, download_tables, DownloadObject, E, Events, From, full_scroll, game_action_key,
+device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll, game_action_key,
 game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id,
-Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, localStorage, location, LS, Max, merge_settings, Min,
+import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-players, popup_custom, redraw_eval_charts, reset_old_settings, resize_game, Resource, resume_sleep,
+players, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
 translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_chart_options, update_debug,
 update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
-virtual_import_settings:true, virtual_opened_table_special:true, virtual_resize:true, Visible, wheel_event, window,
-X_SETTINGS, xboards, Y
+virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
+virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -239,10 +239,7 @@ function change_setting_special(name, value, no_close) {
         resize_panels();
         break;
     case 'export_settings':
-        let object = Assign(
-            {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
-        );
-        DownloadObject(object, 'tcec-settings.json', false, '  ');
+        export_settings('tcec-settings');
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -560,21 +557,6 @@ function hide_element(target) {
 }
 
 /**
- * Import settings from an object
- * @param {Object} data
- * @param {boolean=} reset
- */
-function import_settings(data, reset) {
-    Keys(data).forEach(key => {
-        if (!NO_IMPORTS[key])
-            save_option(key, data[key]);
-    });
-
-    if (reset)
-        reset_settings();
-}
-
-/**
  * Init custom settings
  * @param {boolean} initial
  */
@@ -694,24 +676,6 @@ function load_google_analytics() {
     );
 
     load_library(('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
-}
-
-/**
- * Load a preset
- * @param {string} name
- */
-function load_preset(name) {
-    if (name == 'custom')
-        return;
-    if (name == 'default settings')
-        reset_settings(true);
-    else {
-        Resource(`preset/${name}.json`, (code, data) => {
-            if (code != 200)
-                return;
-            import_settings(data, true);
-        });
-    }
 }
 
 /**
@@ -929,10 +893,8 @@ function populate_areas() {
  * Reset to the default/other settings
  * @param {boolean} is_default
  */
-function reset_settings(is_default) {
+function reset_settings_special(is_default) {
     if (is_default) {
-        localStorage.clear();
-        Assign(Y, DEFAULTS);
         load_settings();
         init_globals();
     }
@@ -1730,10 +1692,12 @@ function startup() {
         ukr: 'українська',
     };
 
+    // assign virtual functions
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
     virtual_import_settings = import_settings;
     virtual_opened_table_special = opened_table_special;
+    virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;
 
     // pre-process

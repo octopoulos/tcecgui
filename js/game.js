@@ -12,13 +12,13 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
+C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout, console,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
-CreateSVG, cube:true, DEV, device, document, E, Events, fill_combo, fix_move_format, Floor, FormatUnit, From,
+CreateSVG, cube:true, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit, From,
 FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, HasClass, HasClasses, Hide, HOST_ARCHIVE,
 HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
-push_state, QueryString, redraw_eval_charts, reset_charts, resize_3d, resize_text, Resource, restore_history,
+push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, Style, TEXT, TIMEOUTS, Title, Toggle, touch_handle,
@@ -26,6 +26,14 @@ translate_default, translate_node, Undefined, update_chart_options, update_live_
 Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
+
+// <<
+if (typeof exports != 'undefined') {
+    /* jshint -W079 */
+    var {Assign, DEV, Floor, LS} = require('./common');
+    /* jshint +W079 */
+}
+// >>
 
 let ANALYSIS_URLS = {
         chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
@@ -2132,7 +2140,7 @@ function create_bracket(section, data) {
     // 1) create seeds
     window.event = data;
     let game = 1,
-        lines = ['<hori class="fastart noselect pr">'],
+        lines = ['<hori id="bracket" class="fastart noselect pr">'],
         teams = data.teams,
         num_team = teams.length,
         round = 0,
@@ -2289,20 +2297,20 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
  * Create bracket connectors
  */
 function create_connectors() {
-    let node = Id('table-brak'),
+    let parent = Id('bracket'),
         svg_node = Id('svgs'),
         svgs = [],
-        view_height = node.scrollHeight,
-        view_width = node.scrollWidth,
+        view_height = parent.clientHeight,
+        view_width = parent.clientWidth,
         viewbox = `0 0 ${view_width} ${view_height}`;
 
     for (let round = 0; ; round ++) {
-        let nexts = A(`[data-r="${round + 1}"] .match-grid`, node);
+        let nexts = A(`[data-r="${round + 1}"] .match-grid`, parent);
         if (!nexts.length)
             break;
 
-        let currs = A(`[data-r="${round}"] .match-grid`, node),
-            final = _(`[data-r="${round + 2}"]`, node)? 0: 1;
+        let currs = A(`[data-r="${round}"] .match-grid`, parent),
+            final = _(`[data-r="${round + 2}"]`, parent)? 0: 1;
 
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
@@ -4215,3 +4223,10 @@ function startup_game() {
     virtual_init_3d_special = init_3d_special;
     virtual_random_position = random_position;
 }
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        parse_pgn: parse_pgn,
+    });
+// >>

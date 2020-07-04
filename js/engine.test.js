@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-23
+// @version 2020-07-02
 //
 /*
 globals
@@ -20,8 +20,8 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y y_states');
 
 let {
-    add_history, Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, Keys,
-    merge_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
+    add_history, Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, import_settings,
+    Keys, merge_settings, reset_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,6 +153,20 @@ let {
     });
 });
 
+// import_settings
+[
+    [{}, true, {}],
+    [{width: 100}, undefined, {width: 100}],
+    [{height: '500px'}, undefined, {height: '500px', width: 100}],
+].forEach(([data, reset, answer], id) => {
+    test(`import_settings:${id}`, () => {
+        import_settings(data, reset);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
+        });
+    });
+});
+
 // merge_settings
 [
     [{}, {}, {}, {}],
@@ -193,6 +207,19 @@ let {
         });
         Keys(answer_type).forEach(key => {
             expect(TYPES).toHaveProperty(key, answer_type[key]);
+        });
+    });
+});
+
+// reset_settings
+[
+    [{'language': 'fra', 'theme': 'dark'}, true, {language: '', theme: ''}],
+].forEach(([data, reset, answer], id) => {
+    test(`reset_settings:${id}`, () => {
+        Assign(Y, data);
+        reset_settings(data, reset);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
         });
     });
 });

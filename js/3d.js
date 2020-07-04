@@ -10,7 +10,7 @@ globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
 C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
 HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, Now, ON_OFF, Parent, PD, requestAnimationFrame,
+LANGUAGES, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
 */
@@ -90,11 +90,6 @@ let audiobox = {
     modal_name,
     models = {},
     next_paused,
-    NO_IMPORTS = {
-        import_settings: 2,
-        language: 1,
-        preset: 1,
-    },
     now,
     now2,
     Object3D,
@@ -1372,7 +1367,6 @@ function update_debug() {
         lines = [...lines, ...virtual_update_debug_special()];
 
     HTML(Id('debug'), `<div>${lines.join('</div><div>')}</div>`);
-    // add_timeout('pad', gamepad_modal, 300);
 }
 
 // STARTUP
