@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 // global variables/functions shared across multiple js files
 //
@@ -28,7 +28,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200703';
+    VERSION = '20200704';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
@@ -51,9 +51,10 @@ function allie_cp_to_score(cp) {
  * - works for AA and NN engines
  * @param {string} short_engine short engine name
  * @param {number} eval_
+ * @param {number} ply
  * @returns {number} q %
  */
-function calculate_feature_q(feature, eval_) {
+function calculate_feature_q(feature, eval_, ply) {
     let white_win;
 
     if (feature & 1) {
@@ -69,6 +70,10 @@ function calculate_feature_q(feature, eval_) {
 
         // this is the HALF white win %
         white_win *= 50;
+    }
+    else if (ply >= 0) {
+        let [win, draw, loss] = stockfish_wdl(eval_ * 100, ply);
+        white_win = ((win > loss)? win: -loss) / 20;
     }
     else
         white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));

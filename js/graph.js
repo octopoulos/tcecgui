@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 /*
 globals
@@ -55,22 +55,24 @@ let cached_percents = {},
  * Calculate white win %
  * @param {number} id 0, 1, 2, 3
  * @param {string|number} eval_
+ * @param {number} ply
  * @returns {number}
  */
-function calculate_win(id, eval_) {
+function calculate_win(id, eval_, ply) {
     if (eval_ == undefined)
         return eval_;
 
     let feature = players[id].feature,
         cache_features = SetDefault(cached_percents, feature, {}),
-        cache = cache_features[eval_];
+        key = `${eval_}:${ply}`,
+        cache = cache_features[key];
 
     if (cache != undefined)
         return cache;
 
     let score;
     if (!isNaN(eval_)) {
-        score = calculate_feature_q(feature, eval_) * 2;
+        score = calculate_feature_q(feature, eval_, ply) * 2;
         score = Sign(score) * Round(Abs(score) * 10) / 10;
     }
     else if (eval_ && eval_.includes('-'))
@@ -80,7 +82,7 @@ function calculate_win(id, eval_) {
     else
         score = 0;
 
-    cache_features[eval_] = score;
+    cache_features[key] = score;
     return score;
 }
 
@@ -202,8 +204,9 @@ function create_charts()
     // 1) create all charts
     new_chart('depth', true, [1]);
     new_chart('eval', true, [1], {beginAtZero: true}, (item, data) => {
-        let eval_ = get_tooltip_data(item, data).eval;
-        return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_): eval_;
+        let dico = get_tooltip_data(item, data),
+            eval_ = dico.eval;
+        return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
     new_chart('mobil', true, [1]);
     new_chart('node', false, [1, 2], FormatUnit, (item, data) => {
@@ -570,7 +573,7 @@ function update_live_chart(moves, id) {
             eval: eval_,
             ply: ply,
             x: num / 2 + 1,
-            y: is_percent? calculate_win(id, eval_): clamp_eval(eval_),
+            y: is_percent? calculate_win(id, eval_, ply): clamp_eval(eval_),
         };
     }
 
@@ -630,7 +633,7 @@ function update_player_chart(name, moves) {
             break;
         case 'eval':
             dico.eval = move.wv;
-            dico.y = is_percent? calculate_win(id, move.wv): clamp_eval(move.wv);
+            dico.y = is_percent? calculate_win(id, move.wv, ply): clamp_eval(move.wv);
             break;
         case 'mobil':
             datasets[2].data[num2] = {...dico, ...{y: move.goal? Abs(move.goal[0]): -1}};

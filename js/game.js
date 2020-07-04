@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 // Game specific code:
 // - control the board, moves
@@ -155,7 +155,6 @@ let ANALYSIS_URLS = {
         LCZero: 1 + 2,                  // & 2 => Leela variations
         ScorpioNN: 1,
         Stoofvlees: 1 + 8,
-        Stockfish: 1 + 16,
     },
     event_stats = {
         archive: {},
@@ -168,6 +167,18 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
+    // number items, type (0:string, 1:int, 2:float)
+    LOG_KEYS = {
+        cp: [1, 2],
+        depth: [1, 1],
+        nodes: [1, 1],
+        nps: [1, 1],
+        pv: [-1, 0],
+        seldepth: [1, 1],
+        tbhits: [1, 1],
+        time: [1, 1],
+        wdl: [3, 1],
+    },
     old_cup,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
@@ -272,36 +283,45 @@ let ANALYSIS_URLS = {
  * @param {string} short_engine short engine name
  * @param {number} eval_
  * @param {number} ply
+ * @param {string=} wdl '437 550 13'
  * @returns {string}
  */
-function calculate_probability(short_engine, eval_, ply)
+function calculate_probability(short_engine, eval_, ply, wdl)
 {
     if (isNaN(eval_))
         return eval_;
 
-    let draw = 0,
-        loss = 0,
-        win = 0;
+    let draw, loss, win;
 
-    if (short_engine.includes('Stockfish')) {
-        [win, draw, loss] = stockfish_wdl(eval_ * 100, ply);
-        win /= 10;
-        draw /= 10;
-        loss /= 10;
+    if (wdl) {
+        [win, draw, loss] = wdl.split(' ');
+        win = (win || 0) / 10;
+        draw = (draw || 0) / 10;
+        loss = (loss || 0) / 10;
     }
     else {
-        let feature = ENGINE_FEATURES[short_engine],
-            white_win = calculate_feature_q(feature, eval_);
+        let feature = ENGINE_FEATURES[short_engine];
 
-        // final output
-        if (eval_ < 0)
-            loss = -white_win;
-        else
-            win = white_win;
-
-        loss = Max(0, loss * 2);
-        win = Max(0, win * 2);
-        draw = Max(0, 100 - loss - win);
+        // stockfish + AB engines
+        if (!feature && ply >= 0) {
+            [win, draw, loss] = stockfish_wdl(eval_ * 100, ply);
+            win /= 10;
+            draw /= 10;
+            loss /= 10;
+        }
+        // NN engines
+        else {
+            let white_win = calculate_feature_q(feature, eval_, ply);
+            if (eval_ < 0) {
+                loss = Max(0, -white_win * 2);
+                win = 0;
+            }
+            else {
+                win = Max(0, white_win * 2);
+                loss = 0;
+            }
+            draw = Max(0, 100 - loss - win);
+        }
     }
 
     return `${win.toFixed(1)}% W | ${draw.toFixed(1)}% D | ${loss.toFixed(1)}% B`;
@@ -2867,7 +2887,7 @@ function update_move_pv(section, ply, move) {
         main = xboards[section],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
-        status_score = is_book? 'book': calculate_probability(players[id].short, eval_, ply);
+        status_score = is_book? 'book': calculate_probability(players[id].short, eval_, ply, move.wdl);
 
     if (Y.eval) {
         for (let child of [box_node, node]) {
@@ -3275,6 +3295,88 @@ function update_time_control(id) {
 /////////////////////
 
 /**
+ * Analyse a log line that contains a PV
+ * @param {string} line
+ */
+function analyse_log(line) {
+    // 1) get engine name
+    let pos = line.indexOf(' '),
+        pos2 = line.indexOf(': ');
+    if (pos < 0 || pos2 <= pos)
+        return;
+
+    let left = line.slice(pos + 1, pos2),
+        pos3 = left.lastIndexOf('(');
+    if (pos3 <= 0)
+        return;
+
+    let id,
+        engine = left.slice(0, pos3);
+    if (engine == players[0].name)
+        id = 0;
+    else if (engine == players[1].name)
+        id = 1;
+    else
+        return;
+
+    // 2) analyse info
+    let info = {},
+        items = line.slice(pos2 + 2).split(' '),
+        num_item = items.length,
+        player = players[id];
+
+    for (let i = 0; i < num_item; i ++) {
+        let key = items[i],
+            log_key = LOG_KEYS[key];
+        if (log_key) {
+            let [number, type] = log_key,
+                value,
+                values = [];
+            i ++;
+            for (let j = 0; i < num_item && (number < 0 || j < number); j ++) {
+                values.push(items[i]);
+                i ++;
+            }
+            i --;
+            if (number == 1) {
+                value = values[0];
+                if (type == 1)
+                    value = parseInt(value);
+                else if (type == 2)
+                    value = parseFloat(value);
+            }
+            else
+                value = values.join(' ');
+            info[key] = value;
+
+            // special cases
+            if (key == 'cp')
+                info.eval = (value / 100) * (id == 1? -1: 1);
+        }
+    }
+
+    player.info = info;
+    if (Y.x != 'live')
+        return;
+
+    // 3) update eval + WDL
+    if (Y.eval) {
+        let box_node = _(`#box-pv${id} .status`),
+            main = xboards.live,
+            node = Id(`moves-pv${id}`),
+            status_eval = format_eval(info.eval),
+            status_score = calculate_probability(player.short, info.eval, main.ply, info.wdl);
+
+        for (let child of [box_node, node]) {
+            HTML(`[data-x="eval"]`, status_eval, child);
+            HTML(`[data-x="score"]`, status_score, child);
+        }
+    }
+
+    // 4) update PV (need chess.wasm)
+}
+
+/**
  * Clock countdown
  * @param {number} id
  */
@@ -3433,7 +3535,8 @@ function update_live_eval(section, data, id, force_ply) {
         engine = data.engine,
         main = xboards[section],
         moves = data.moves,
-        round = data.round;
+        round = data.round,
+        wdl = data.wdl;
     // moves => maybe old data?
     if (moves) {
         if (data.round != main.round) {
@@ -3481,7 +3584,7 @@ function update_live_eval(section, data, id, force_ply) {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
                 node: FormatUnit(data.nodes),
-                score: is_hide? 'hide*': calculate_probability(short, eval_, ply),
+                score: is_hide? 'hide*': calculate_probability(short, eval_, ply, wdl),
                 speed: data.speed,
                 tb: FormatUnit(data.tbhits),
             };
@@ -3528,7 +3631,7 @@ function update_player_eval(section, data) {
     // 1) update the live part on the left
     let dico = {
             eval: format_eval(eval_),
-            score: calculate_probability(short, eval_, cur_ply),
+            score: calculate_probability(short, eval_, cur_ply, data.wdl),
         };
 
     // update engine name if it has changed
@@ -4228,8 +4331,12 @@ function set_game_events() {
         }, TIMEOUT_search);
     });
 
+    // live_log
     C('#nlog', function() {
-        save_option('live_log', this.value);
+        let value = this.value;
+        save_option('live_log', value);
+        if (value == 0)
+            Y.log_auto_start = 0;
         listen_log();
     });
 }

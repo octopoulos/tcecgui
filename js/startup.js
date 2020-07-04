@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-04
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -609,7 +609,7 @@ function init_globals() {
     }
     load_google_analytics();
 
-    if (Visible(Id('table-log')))
+    if (Y.log_auto_start || Visible(Id('table-log')))
         listen_log();
 
     // font size detector
@@ -1075,13 +1075,10 @@ function show_live_engines() {
         let hardware = players[id + 2].hardware;
         if (!hardware)
             continue;
-        if (!single_line) {
-            let items = hardware.split(/ (?=\dMen)/);
-            hardware = items.join('<br>');
-        }
+        hardware = hardware.replace(/th/g, 'TH').replace(/ TB$/, '');
         let sel = `[data-x="live+${id}"]`;
         HTML(sel, hardware);
-        Style(sel, `top:${single_line? 0.35: 0.6}em`);
+        Style(sel, `top:${single_line? 0.35: 1.9}em`);
     }
 }
 
@@ -1263,17 +1260,18 @@ function update_shortcuts() {
 function update_visible() {
     let eval_left = Y.eval_left,
         hardware = Y.hardware,
+        single_line = Y.single_line,
         templates = [eval_left? '3em': 'auto', 'auto', hardware? 'auto': '1fr'];
 
     S('.status', Y.status_pv);
     S('.eval', Y.eval);
     Class('.eval', 'eval-left', eval_left);
     S('.hardware', hardware);
-    Class('.live-basic', 'w100', !hardware);
+    Class('.live-basic', 'w100', !single_line);
     Style('.live-basic', `grid-template-columns:${templates.join(' ')}`);
-    S('.live-more', !Y.single_line);
+    S('.live-more', !single_line);
     S('.percent', Y.percent);
-    Class('.percent', 'tar', !hardware);
+    Class('.percent', 'tar', !single_line);
     S('#archive .xcontrol, #live .xcontrol', Y.controls);
     S('#archive .xmoves, #live .xmoves', Y.moves);
     S('#live0 .xcontrol, #live1 .xcontrol, #pv0 .xcontrol, #pv1 .xcontrol', Y.controls_pv);
@@ -1915,6 +1913,8 @@ function startup() {
         extra: {
             archive_scroll: [ON_OFF, 1],
             drag_and_drop: [ON_OFF, 0],
+            log_auto_start: [ON_OFF, 1],
+            log_history: option_number(100, -1, 1000),
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100], 10],
             scroll_inertia: option_number(0.95, 0, 0.99, 0.01),
@@ -1986,7 +1986,7 @@ function startup() {
             min_left: option_number(300, -1, 1200),
             min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
-            panel_adjust: [ON_OFF, 1],
+            panel_adjust: [ON_OFF, device.mobile? 0: 1],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
             unhide: '1',
         },
