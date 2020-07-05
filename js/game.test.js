@@ -24,7 +24,7 @@ create_module(IMPORT_PATH, [
 let {
         analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
-        format_percent, get_short_name, Keys, parse_date_time, parse_pgn, players, tour_info, Y,
+        format_percent, get_short_name, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,6 +78,23 @@ let {
             tbhits: 9667,
             time: 6962,
             wdl: '606 389 5',
+        },
+    ],
+    [
+        ['Stockfish 20200701', 'LCZeroCPU v0.26.0-n703596'],
+        '6200503 LCZeroCPU v0.26.0-n703596(7): info depth 10 seldepth 26 time 7138 nodes 312494 score cp -38 wdl 240 263 497 movesleft 52 nps 25028 tbhits 0 pv f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
+        1,
+        {
+            cp: -38,
+            depth: 10,
+            eval: 0.38,
+            nodes: 312494,
+            nps: 25028,
+            pv: 'f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
+            seldepth: 26,
+            tbhits: 0,
+            time: 7138,
+            wdl: '497 263 240',
         },
     ],
 ].forEach(([names, line, player_id, answer], id) => {
