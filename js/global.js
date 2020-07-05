@@ -82,8 +82,8 @@ function calculate_feature_q(feature, eval_, ply) {
         white_win *= 50;
     }
     else if (ply >= 0) {
-        let [win, draw, loss] = stockfish_wdl(eval_ * 100, ply);
-        white_win = ((win > loss)? win: -loss) / 20;
+        let wdl = stockfish_wdl(eval_ * 100, ply);
+        white_win = (wdl[0] - wdl[2]) / 20;
     }
     else
         white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
