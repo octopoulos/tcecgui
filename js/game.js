@@ -3363,12 +3363,12 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (Y.eval) {
+    if (Y.eval && info.eval != undefined) {
         let box_node = _(`#box-pv${id} .status`),
             main = xboards.live,
             node = Id(`moves-pv${id}`),
             status_eval = format_eval(info.eval),
-            status_score = calculate_probability(player.short, info.eval, main.ply, info.wdl);
+            status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
 
         for (let child of [box_node, node]) {
             HTML(`[data-x="eval"]`, status_eval, child);
