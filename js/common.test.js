@@ -18,7 +18,7 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'IsFloat IsObject IsString');
 
 let {
-    Clamp, Contain, DefaultFloat, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
+    Clamp, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
     InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, QueryString, SetDefault, Split, Stringify,
     Title, Undefined,
 } = require(OUTPUT_MODULE);
@@ -63,6 +63,21 @@ let {
 ].forEach(([value, def, answer], id) => {
     test(`DefaultFloat:${id}`, () => {
         expect(DefaultFloat(value, def)).toEqual(answer);
+    });
+});
+
+// DefaultInt
+[
+    [undefined, undefined, undefined],
+    [undefined, 0, 0],
+    [0, 1, 0],
+    ['-0.5', 1, -0],
+    ['5 or 1', 1, 5],
+    ['5', 1, 5],
+    ['text 9', null, null],
+].forEach(([value, def, answer], id) => {
+    test(`DefaultInt:${id}`, () => {
+        expect(DefaultInt(value, def)).toEqual(answer);
     });
 });
 

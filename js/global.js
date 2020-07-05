@@ -325,7 +325,7 @@ function stockfish_wdl(cp, ply) {
  * @see https://github.com/official-stockfish/Stockfish/pull/2778
  * @param {number} cp
  * @param {number} ply
- * @returns {Object.<string, number>}
+ * @returns {number}
  */
 function stockfish_win_rate_model(cp, ply) {
     let as = SF_COEFF_AS,

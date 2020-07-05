@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-07-04
 //
 // general 3d rendering code
 //
@@ -8,8 +8,8 @@
 /*
 globals
 _, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, cannot_click, Class, clear_timeout, DEFAULTS, DEV, document, done_touch, Events, Exp, Format,
-HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
+C, CameraControls, cannot_click, Class, clear_timeout, DefaultInt, DEFAULTS, DEV, document, done_touch, Events, Exp,
+Format, HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
 LANGUAGES, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD, requestAnimationFrame,
 S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
 Visible, window, X_SETTINGS, Y
@@ -813,11 +813,9 @@ function update_light_settings() {
 function update_renderer() {
     if (renderer) {
         let ratio = 4;
-        if (Y.x == 'play') {
-            ratio = parseInt((Y.resolution || '').split(':').slice(-1)[0]);
-            if (isNaN(ratio))
-                ratio = 2;
-        }
+        if (Y.x == 'play')
+            ratio = DefaultInt((Y.resolution || '').split(':').slice(-1)[0], 2);
+
         if (three_loaded)
             renderer.outputEncoding = T[`${Y.encoding}Encoding`] || T.sRGBEncoding;
         renderer.toneMappingExposure = Y.exposure;
