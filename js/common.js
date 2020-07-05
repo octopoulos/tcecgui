@@ -1416,9 +1416,13 @@ if (typeof exports != 'undefined') {
         Assign: Assign,
         DEV: {},
         Floor: Floor,
+        FormatUnit: FormatUnit,
         Keys: Keys,
         IsObject: IsObject,
         LS: LS,
+        Max: Max,
+        Pad: Pad,
+        SetDefault: SetDefault,
     });
 }
 // >>

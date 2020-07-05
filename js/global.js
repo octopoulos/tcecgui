@@ -7,10 +7,20 @@
 // included after: common, engine
 /*
 globals
-Abs, Atan, Clamp, DEV:true, Exp, Floor, IsArray, Keys, LS, Max, Min, Pad, Pow, Round, save_option, Split, Undefined,
-X_SETTINGS, Y
+Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, IsArray, Keys, LS, Max, Min, Pad, Pow, require, Round,
+save_option, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {Assign} = req('./common');
+    Assign(global, {
+        Assign: Assign,
+    });
+}
+// >>
 
 // modify those values in config.js
 let HOST_ARCHIVE,
@@ -337,3 +347,10 @@ function stockfish_win_rate_model(cp, ply) {
 function stoof_cp_to_score(cp) {
     return Atan(cp / 194) / 1.55564;
 }
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        fix_move_format: fix_move_format,
+    });
+// >>
