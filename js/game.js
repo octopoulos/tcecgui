@@ -3352,9 +3352,11 @@ function analyse_log(line) {
                 value = values.join(' ');
             info[key] = value;
 
-            // special cases
+            // invert scores when black
             if (key == 'cp')
                 info.eval = (value / 100) * (id == 1? -1: 1);
+            else if (key == 'wdl' && id == 1)
+                info.wdl = value.split(' ').reverse().join(' ');
         }
     }
 
