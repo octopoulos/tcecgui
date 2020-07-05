@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1067,10 +1067,13 @@ function FormatFloat(text, align) {
  * - NaN => n/a
  * @param {number} number
  * @param {string=} def default value used when number is not a number
+ * @param {boolean=} keep_decimal keep 1 decimal even if it's .0
  * @returns {number}
  */
-function FormatUnit(number, def)
+function FormatUnit(number, def, keep_decimal)
 {
+    let unit = '';
+
     if (isNaN(number)) {
         if (def !== undefined)
             return def;
@@ -1083,16 +1086,28 @@ function FormatUnit(number, def)
     }
     else if (number == Infinity)
         return `${number}`;
-    else if (number >= 1e9)
-        number = `${Floor(number / 1e8) / 10}B`;
-    else if (number >= 1e6)
-        number = `${Floor(number / 1e5) / 10}M`;
-    else if (number > 1000)
-        number = `${Floor(number / 100) / 10}k`;
-    else
-        number = `${Floor(number)}`;
+    else {
+        if (number >= 1e9) {
+            number /= 1e8;
+            unit = 'B';
+        }
+        else if (number >= 1e6) {
+            number /= 1e5;
+            unit = 'M';
+        }
+        else if (number > 1000) {
+            number /= 100;
+            unit = 'k';
+        }
+        else
+            number *= 10;
 
-    return number;
+        number = Floor(number) / 10;
+        if (keep_decimal)
+            number = number.toFixed(1);
+    }
+
+    return `${number}${unit}`;
 }
 
 /**

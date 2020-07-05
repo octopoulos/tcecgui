@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 /*
 globals
@@ -90,35 +90,41 @@ let {
 
 // FormatUnit
 [
-    [1000000000, undefined, '1B'],
-    [1000000, undefined, '1M'],
-    [10000, undefined, '10k'],
-    [1000, undefined, '1000'],
-    [100, undefined, '100'],
-    [7841319402, undefined, '7.8B'],
-    [58335971.81109362, undefined, '58.3M'],
-    [58335971, undefined, '58.3M'],
-    ['58335971', undefined, '58.3M'],
-    [318315, undefined, '318.3k'],
-    [1259, undefined, '1.2k'],
-    [725.019, undefined, '725'],
-    [NaN, undefined, 'N/A'],
-    [Infinity, undefined, 'Infinity'],
-    [undefined, undefined, 'undefined'],
-    [undefined, '-', '-'],
+    [1000000000, undefined, undefined, '1B'],
+    [1000000000, undefined, true, '1.0B'],
+    [1000000, undefined, undefined, '1M'],
+    [10000, undefined, undefined, '10k'],
+    [1000, undefined, undefined, '1000'],
+    [100, undefined, undefined, '100'],
+    [100, undefined, true, '100.0'],
+    [7841319402, undefined, undefined, '7.8B'],
+    [58335971.81109362, undefined, undefined, '58.3M'],
+    [58335971, undefined, undefined, '58.3M'],
+    ['58335971', undefined, undefined, '58.3M'],
+    [318315, undefined, undefined, '318.3k'],
+    [1259, undefined, undefined, '1.2k'],
+    [1000, undefined, undefined, '1000'],
+    [1000, undefined, true, '1000.0'],
+    [725.019, undefined, undefined, '725'],
+    [NaN, undefined, undefined, 'N/A'],
+    [NaN, undefined, true, 'N/A'],
+    [Infinity, undefined, undefined, 'Infinity'],
+    [Infinity, undefined, true, 'Infinity'],
+    [undefined, undefined, undefined, 'undefined'],
+    [undefined, '-', undefined, '-'],
     // check if we can feed the result back => stability
-    ['7.8B', undefined, '7.8B'],
-    ['58.3M', undefined, '58.3M'],
-    ['725', undefined, '725'],
-    ['N/A', undefined, 'N/A'],
-    ['Infinity', undefined, 'Infinity'],
-    ['null', undefined, 'null'],
-    ['null', '-', '-'],
-    ['null', null, null],
-    ['-', undefined, '-'],
-].forEach(([nodes, def, answer], id) => {
+    ['7.8B', undefined, undefined, '7.8B'],
+    ['58.3M', undefined, undefined, '58.3M'],
+    ['725', undefined, undefined, '725'],
+    ['N/A', undefined, undefined, 'N/A'],
+    ['Infinity', undefined, undefined, 'Infinity'],
+    ['null', undefined, undefined, 'null'],
+    ['null', '-', undefined, '-'],
+    ['null', null, undefined, null],
+    ['-', undefined, undefined, '-'],
+].forEach(([nodes, def, keep_decimal, answer], id) => {
     test(`FormatUnit:${id}`, () => {
-        expect(FormatUnit(nodes, def)).toEqual(answer);
+        expect(FormatUnit(nodes, def, keep_decimal)).toEqual(answer);
     });
 });
 
