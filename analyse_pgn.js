@@ -64,7 +64,7 @@ function get_multi_pgn_stats(name, callback) {
         let space_name = create_spaces(max_name),
             space_speed = create_spaces(max_speed),
             space_unit = create_spaces(max_unit),
-            text = Keys(result).sort().map(key => {
+            text = Keys(result).sort((a, b) => a.localeCompare(b)).map(key => {
                 return [
                     (key + space_name).slice(0, max_name),
                     Pad(result[key], max_speed, space_speed),
