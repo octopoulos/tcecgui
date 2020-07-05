@@ -38,7 +38,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200704';
+    VERSION = '20200705';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
@@ -315,7 +315,7 @@ function stockfish_wdl(cp, ply) {
         loss = stockfish_win_rate_model(-cp, ply),
         draw = Max(0, 1000 - win - loss);
 
-  return [win, draw, loss];
+    return [win, draw, loss];
 }
 
 /**
