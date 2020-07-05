@@ -640,14 +640,15 @@ function init_globals() {
  * @param {number} id
  */
 function insert_google_ad(id) {
-    let html =
-    `<ins class="adsbygoogle"
-        style="display:block;${AD_STYLES[id] || ''}"
-        data-ad-client="ca-pub-6544406400639567"
-        data-ad-slot="4926769371"
-        data-ad-format="auto"
-        data-full-width-responsive="true">
-    </ins>`;
+    let html = [
+        '<ins class="adsbygoogle"',
+            `style="display:block;${AD_STYLES[id] || ''}"`,
+            'data-ad-client="ca-pub-6544406400639567"',
+            'data-ad-slot="4926769371"',
+            'data-ad-format="auto"',
+            'data-full-width-responsive="true">',
+        '</ins>',
+    ].join('');
 
     HTML(`#ad${id} > hori`, html);
     (window.adsbygoogle = window.adsbygoogle || []).push({});

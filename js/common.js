@@ -981,6 +981,19 @@ function DefaultFloat(value, def) {
 }
 
 /**
+ * Default int conversion
+ * @param {string|number} value
+ * @param {number} def default value when the value is not a valid number
+ * @returns {number}
+ */
+function DefaultInt(value, def) {
+    if (Number.isInteger(value))
+        return value;
+    value = parseInt(value);
+    return isNaN(value)? def: value;
+}
+
+/**
  * Download a JSON object
  * @param {Object} object
  * @param {string} name output filename

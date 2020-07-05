@@ -14,9 +14,10 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
 context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
-CreateSVG, cube:true, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit, From,
-FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
+CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format,
+Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
+HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
+IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
@@ -397,7 +398,7 @@ function format_eval(value, process) {
         return value;
 
     let small_decimal = Y.small_decimal,
-        text = parseFloat(float).toFixed(2);
+        text = float.toFixed(2);
 
     if (!process || small_decimal == 'never')
         return text;
@@ -3344,9 +3345,9 @@ function analyse_log(line) {
             if (number == 1) {
                 value = values[0];
                 if (type == 1)
-                    value = parseInt(value);
+                    value = DefaultInt(value, value);
                 else if (type == 2)
-                    value = parseFloat(value);
+                    value = DefaultFloat(value, value);
             }
             else
                 value = values.join(' ');

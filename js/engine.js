@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-04
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,10 +9,11 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat, document,
-DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys, LoadLibrary,
-localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString, requestAnimationFrame,
-Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Visible, window
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat,
+DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys,
+LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
+requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title,
+Undefined, Visible, window
 */
 'use strict';
 
@@ -206,9 +207,7 @@ function get_float(name, def) {
  * @returns {number|boolean}
  */
 function get_int(name, def) {
-    let value = parseInt(get_string(name));
-    if (isNaN(value))
-        value = def;
+    let value = DefaultInt(get_string(name), def);
     if (typeof(def) == 'boolean')
         value = !!value;
     return value;
@@ -474,9 +473,9 @@ function sanitise_data() {
             type = TYPES[key];
 
         if (type == 'f')
-            Y[key] = Undefined(parseFloat(value), def);
+            Y[key] = DefaultFloat(value, def);
         else if (type == 'i')
-            Y[key] = Undefined(parseInt(value), def);
+            Y[key] = DefaultInt(value, def);
     });
 
     if (virtual_sanitise_data_special)
