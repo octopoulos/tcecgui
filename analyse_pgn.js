@@ -68,7 +68,7 @@ function get_multi_pgn_stats(name, callback) {
                 return [
                     (key + space_name).slice(0, max_name),
                     Pad(result[key], max_speed, space_speed),
-                    Pad(FormatUnit(result[key]) + ' (nps)', max_unit, space_unit),
+                    Pad(FormatUnit(result[key], undefined, true) + ' (nps)', max_unit, space_unit),
                 ].join(' : ');
             }).join('\n');
         callback(text);
@@ -147,7 +147,9 @@ function get_pgn_stats(data) {
 // main
 for (let name of process.argv.slice(2)) {
     get_multi_pgn_stats(name, result => {
+        LS('```');
         LS(name);
         LS(result);
+        LS('```');
     });
 }
