@@ -3,6 +3,11 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
+2020-07-05 : 2020-07-05 : analyse_pgn can group by events
+2020-07-05 : 2020-07-05 : parse_pgn should be able to parse all PGNs in the archive
+2020-07-05 : 2020-07-05 : improved thread extraction
+2020-07-05 : 2020-07-05 : slight visual improvements
+2020-07-05 : 2020-07-05 : handle zip files in analyse_pgn
 2020-07-04 : 2020-07-04 : FormatUnit can force 1 decimal
 2020-07-04 : 2020-07-04 : multi pgn analysis + summary
 2020-07-04 : 2020-07-04 : parse live_log + update eval/WDL from it

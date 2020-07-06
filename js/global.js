@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 //
 // global variables/functions shared across multiple js files
 //
@@ -38,7 +38,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200704';
+    VERSION = '20200705';
 
 let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
@@ -121,7 +121,13 @@ function fix_move_format(move) {
     // fix nodes
     // note: it's an approximation, not reliable at low values => skipped there
     if (move.n == undefined && move.mt >= 2000)
-        move.n = move.s / move.mt * 1000;
+        move.n = Floor(move.s / move.mt * 1000 + 0.5);
+
+    // fix too fast speed: > 10Bnps
+    if (move.s > 1e10) {
+        move.n = '-';
+        move.s = '-';
+    }
 
     // fix insta-moves speed
     if (move.mt && move.n && move.s && move.mt < 2000) {
@@ -315,7 +321,7 @@ function stockfish_wdl(cp, ply) {
         loss = stockfish_win_rate_model(-cp, ply),
         draw = Max(0, 1000 - win - loss);
 
-  return [win, draw, loss];
+    return [win, draw, loss];
 }
 
 /**

@@ -1,90 +1,86 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 /*
 globals
-console, process, require
+Buffer, console, process, require
 */
 'use strict';
 
 let fs = require('fs'),
-    {Floor, FormatUnit, Keys, LS, Max, Pad, SetDefault} = require('./js/common'),
+    glob = require('glob'),
+    unzipper = require('unzipper'),
+    {DefaultInt, Floor, FormatUnit, Keys, LS, Max, Now, Pad, SetDefault} = require('./js/common'),
     {fix_move_format} = require('./js/global'),
-    {parse_pgn} = require('./js/game');
+    {extract_threads, parse_pgn} = require('./js/game');
+
+let DISCOVER = false,
+    REPLACES = {
+        bonus: 'Bonus',
+        cup: 'Cup ',
+        s: 'Season ',
+    },
+    skipped_keys = {},
+    synonyms = {};
+
+// ANALYSE STATS
+////////////////
 
 /**
  * Create spaces
  * @param {number} size
+ * @param {string} fill
  * @returns {string}
  */
-function create_spaces(size) {
-    return new Array(size).fill(' ').join('');
+function create_spaces(size, fill=' ') {
+    return new Array(size).fill(fill).join('');
 }
 
 /**
  * Get Multi PGN stats
- * @param {string} name
- * @param {function} callback
+ * - accumulate all individual speeds
+ * @param {string} data
+ * @param {Object} result
+ * @param {string=} origin
  */
-function get_multi_pgn_stats(name, callback) {
-    fs.readFile(name, 'utf8', (err, data) => {
-        if (err) {
-            callback(null);
-            return;
-        }
-
-        let result = {},
-            splits = data.split(/\r?\n\r?\n\[/);
-
-        // accumulate all individual speeds
-        for (let split of splits) {
-            let dico = get_pgn_stats(split);
-            Keys(dico).forEach(key => {
-                let entry = SetDefault(result, key, []),
-                    value = dico[key];
-                entry.push(value);
-            });
-        }
-
-        // merge
-        let max_name = 0,
-            max_speed = 0,
-            max_unit = 0;
-        Keys(result).forEach(key => {
-            let stats = result[key],
-                medians = stats.map(value => value[0]),
-                median = Floor(medians.reduce((a, b) => a + b) / medians.length + 0.5);
-
-            result[key] = median;
-            max_name = Max(max_name, key.length);
-            max_speed = Max(max_speed, `${median}`.length);
-            max_unit = Max(max_unit, FormatUnit(median).length + 6);
+function get_multi_pgn_stats(data, result, origin) {
+    data.split(/\r?\n\r?\n\[/).forEach((split, id) => {
+        let dico = get_pgn_stats(split, `${origin}:${id}`);
+        Keys(dico).forEach(key => {
+            let entry = SetDefault(result, key, []),
+                value = dico[key];
+            entry.push(value);
         });
-
-        let space_name = create_spaces(max_name),
-            space_speed = create_spaces(max_speed),
-            space_unit = create_spaces(max_unit),
-            text = Keys(result).sort((a, b) => a.localeCompare(b)).map(key => {
-                return [
-                    (key + space_name).slice(0, max_name),
-                    Pad(result[key], max_speed, space_speed),
-                    Pad(FormatUnit(result[key], undefined, true) + ' (nps)', max_unit, space_unit),
-                ].join(' : ');
-            }).join('\n');
-        callback(text);
     });
 }
 
 /**
  * Get PGN stats
  * @param {string} name
+ * @param {string=} origin
  * @returns {Object}
  */
-function get_pgn_stats(data) {
-    let dico = parse_pgn(data);
+function get_pgn_stats(data, origin) {
+    let dico = parse_pgn(data, origin);
     if (!dico || !dico.Headers || !dico.Moves)
         return {};
 
+    // s18, cup5, ...
+    let event = '',
+        left = origin.split(' / ')[0],
+        pos = left.indexOf('Season_'),
+        pos2 = left.indexOf('Cup_'),
+        pos3 = left.indexOf('Bonus_');
+    if (pos > 0)
+        event = `s${Pad(DefaultInt(left.slice(pos + 7), 0))}`;
+    else if (pos2 > 0)
+        event = `cup${DefaultInt(left.slice(pos2 + 4), 0)}`;
+    else if (pos3 > 0)
+        event = `bonus${DefaultInt(left.slice(pos3 + 6), '')}`;
+    else
+        LS(`unknown event: ${left}`);
+
+    // collect all speeds
     let all_values = [[], []],
         average = [0, 0],
         headers = dico.Headers,
@@ -97,7 +93,7 @@ function get_pgn_stats(data) {
 
     moves.slice(0, Floor(num_move * 0.8)).forEach((move, ply) => {
         fix_move_format(move);
-        if (!move || move.n < 2 || isNaN(move.s))
+        if (!move || isNaN(move.n) || move.n < 2 || isNaN(move.s))
             return;
         let time = move.n / move.s;
         sum_moves[ply % 2] += move.n * 1.0;
@@ -110,8 +106,9 @@ function get_pgn_stats(data) {
     ];
 
     all_values.forEach((values, id) => {
-        let half = sum_moves[id] / 2,
-            name = headers[['White', 'Black'][id]],
+        let color = ['White', 'Black'][id],
+            half = sum_moves[id] / 2,
+            name = headers[color],
             num_value = values.length,
             interval = Floor(num_value / 4) + 1,
             number = 0;
@@ -119,6 +116,23 @@ function get_pgn_stats(data) {
         if (!name)
             return;
 
+        // collect hardware info
+        let options = dico[`${color}EngineOptions`] || {},
+            gpus = options.GPUCores,
+            threads = extract_threads(options);
+
+        if (DISCOVER && !threads && !gpus) {
+            let keys = Keys(options).filter(key => !skipped_keys[key]);
+            if (keys.length) {
+                LS(name);
+                LS(keys.map(key => {
+                    skipped_keys[key] = 1;
+                    return `${key}=${options[key]}`;
+                }));
+            }
+        }
+
+        // interquartile range
         values.sort((a, b) => a[0] - b[0]);
         for (let i = 0; i < num_value; i ++) {
             let value = values[i];
@@ -138,18 +152,261 @@ function get_pgn_stats(data) {
             }
         }
 
-        result[name] = [median[id], average[id]];
+        // add synonym
+        let name2 = [name, event, threads, gpus].map(item => item || '').join('|');
+        if (threads)
+            synonyms[`${name}:${event}`] = name2;
+
+        result[name2] = [median[id], average[id]];
     });
 
     return result;
 }
 
-// main
-for (let name of process.argv.slice(2)) {
-    get_multi_pgn_stats(name, result => {
-        LS('```');
-        LS(name);
-        LS(result);
-        LS('```');
+/**
+ * Merge stats
+ * @param {Object} result
+ * @param {Object} options
+ * @returns {string}
+ */
+function merge_stats(result, options) {
+    let headers = 'Engine|Speed|nps|Event|Threads|GPUs'.split('|'),
+        maxs = headers.map(item => item.length);
+
+    Keys(result).forEach(key => {
+        let stats = result[key],
+            medians = stats.map(value => value[0]),
+            median = Floor(medians.reduce((a, b) => a + b) / medians.length + 0.5),
+            splits = key.split('|');
+
+        // no threads => resolve synonym
+        if (!splits[2]) {
+            let name_key = splits.slice(0, 2).join('|'),
+                synonym = synonyms[name_key];
+            if (synonym) {
+                LS(`no threads for ${splits} => ${synonym}`);
+                delete result[key];
+                key = synonym;
+                splits = key.split('|');
+            }
+        }
+
+        result[key] = median;
+        maxs[0] = Max(maxs[0], splits[0].length);
+        maxs[1] = Max(maxs[1], `${median}`.length);
+        maxs[2] = Max(maxs[2], FormatUnit(median).length);
+
+        for (let i = 3; i < 6; i ++)
+            maxs[i] = Max(maxs[i], (splits[i] || '').length);
+    });
+
+    // sort results
+    let keys = Keys(result),
+        sort_alpha = options.alpha,
+        sort_engine = options.engine,
+        sort_event = options.event,
+        spaces = maxs.map(max => create_spaces(max));
+
+    keys.sort((a, b) => {
+        let sa = a.split('|'),
+            sb = b.split('|');
+        if (sort_engine && sa[0] != sb[0])
+            return sa[0].localeCompare(sb[0]);
+        if (sort_event && sa[1] != sb[1])
+            return sb[1].localeCompare(sa[1]);
+        if (sort_alpha && sa[0] != sb[0])
+            return sa[0].localeCompare(sb[0]);
+        return result[b] - result[a];
+    });
+
+    // output
+    let prev_items,
+        header = headers.map((item, id) => (item + spaces[id]).slice(0, maxs[id])),
+        underline = headers.map((item, id) => create_spaces(maxs[id], '-')).join('-:-'),
+        text = keys.map(key => {
+            let prefix = '',
+                splits = key.split('|'),
+                value = result[key],
+                items = [
+                    (splits[0] + spaces[0]).slice(0, maxs[0]),
+                    Pad(value, maxs[1], spaces[1]),
+                    Pad(FormatUnit(value, undefined, true), maxs[2], spaces[2]),
+                ];
+
+            for (let i = 1; i < 4; i ++)
+                items.push(((splits[i] || '') + spaces[i + 2]).slice(0, maxs[i + 2]));
+
+            let line = items.join(' : ');
+            if (!prev_items || (sort_event && items[3] != prev_items[3])) {
+                if (sort_event)
+                    header[0] = (items[3].replace(/^(\D+)/, (_match, v1) => REPLACES[v1]) + spaces[0]).slice(0, maxs[0]);
+
+                prefix = [
+                    '',
+                    header.join(' : '),
+                    underline,
+                    '',
+                ].join('\n');
+            }
+
+            prev_items = [...items];
+            return prefix + line;
+        }).join('\n');
+
+    return text;
+}
+
+/**
+ * Open a file and process it
+ * @param {string} filename
+ * @param {Object} result
+ * @param {function} callback
+ */
+function open_file(filename, result, options, callback) {
+    let ext = filename.split('.').slice(-1)[0],
+        verbose = options.verbose;
+
+    // zip
+    if (ext == 'zip') {
+        let number = 0;
+
+        fs.createReadStream(filename)
+            .pipe(unzipper.Parse())
+            .on('entry', function (entry) {
+                // only process .pgn
+                let name = entry.path,
+                    ext2 = name.split('.').slice(-1)[0];
+                if (ext2 != 'pgn') {
+                    entry.autodrain();
+                    return;
+                }
+
+                if (verbose && !number)
+                    LS(filename);
+                number ++;
+                if (verbose)
+                    LS(`  ${number} : ${name}`);
+                entry.buffer().then(content => {
+                    let data = content.toString();
+                    get_multi_pgn_stats(data, result, `${filename} / ${name}`);
+                });
+            })
+            .on('error', () => {
+                callback(true);
+            })
+            .on('finish', () => {
+                callback();
+            });
+    }
+    // pgn
+    else if (ext == 'pgn') {
+        if (verbose)
+            LS(filename);
+        fs.readFile(filename, 'utf8', (err, data) => {
+            if (err || !data)
+                return;
+            get_multi_pgn_stats(data, result, filename);
+            callback();
+        });
+    }
+    else {
+        LS(`unknown file ext: ${ext} : ${filename}`);
+        callback();
+    }
+}
+
+// STARTUP
+//////////
+
+/**
+ * Show the results
+ * @param {Object} result
+ * @param {string[]} filenames
+ * @param {Object} options
+ */
+function done(result, filenames, options) {
+    let text = merge_stats(result, options),
+        lines = [
+            '```',
+            filenames.map(name => name.split(/[/\\]/).slice(-1)[0]).sort().join(', '),
+            text,
+            '```',
+        ].join('\n');
+
+    LS(lines);
+    fs.writeFile('analyse_pgn.txt', text, () => {
+        LS(`elapsed: ${(Now(true) - options.start).toFixed(3)} sec`);
     });
 }
+
+/**
+ * Main function
+ */
+function main() {
+    // extract args
+    let args = process.argv,
+        filenames = [],
+        num_arg = args.length,
+        options = {
+            start: Now(true),
+        };
+
+    for (let i = 2; i < num_arg; i ++) {
+        let arg = args[i];
+        if (arg.slice(0, 2) == '--')
+            options[arg.slice(2)] = true;
+        else
+            filenames.push(arg);
+    }
+
+    // show help?
+    if (options.help) {
+        LS([
+            `Usage: node ${args[1]} [options] [files]`,
+            '',
+            'Options:',
+            '  --alpha    sort results alphabetically',
+            '  --engine   group results by engine',
+            '  --event    group results by event',
+            '  --help     show this help',
+            '  --verbose  show all file names',
+        ].join('\n'));
+        return;
+    }
+
+    // open files
+    let left = filenames.length,
+        result = {};
+    for (let filename of filenames) {
+        if (filename.includes('*')) {
+            glob(filename, (err, files) => {
+                if (err)
+                    return;
+
+                let left2 = files.length;
+                for (let file of files) {
+                    open_file(file, result, options, () => {
+                        left2 --;
+                        LS(`${left2} : ${filename} / ${file}`);
+                        if (!left2) {
+                            left --;
+                            LS(`left=${left} : ${filename} / ${file}`);
+                            if (!left)
+                                done(result, filenames, options);
+                        }
+                    });
+                }
+            });
+        }
+        else {
+            open_file(filename, result, options, () => {
+                left --;
+                LS(`A:left=${left} : ${filename}`);
+                if (!left)
+                    done(result, filenames, options);
+            });
+        }
+    }
+}
+
+main();

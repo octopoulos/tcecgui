@@ -1262,17 +1262,17 @@ function update_visible() {
     let eval_left = Y.eval_left,
         hardware = Y.hardware,
         single_line = Y.single_line,
-        templates = [eval_left? '3em': 'auto', 'auto', hardware? 'auto': '1fr'];
+        templates = [eval_left? '3em': 'auto', 'auto', '1fr'];
 
     S('.status', Y.status_pv);
     S('.eval', Y.eval);
     Class('.eval', 'eval-left', eval_left);
     S('.hardware', hardware);
-    Class('.live-basic', 'w100', !single_line);
+    Class('.live-basic', 'w100', !hardware || !single_line);
     Style('.live-basic', `grid-template-columns:${templates.join(' ')}`);
     S('.live-more', !single_line);
     S('.percent', Y.percent);
-    Class('.percent', 'tar', !single_line);
+    Class('.percent', 'tar', !hardware || !single_line);
     S('#archive .xcontrol, #live .xcontrol', Y.controls);
     S('#archive .xmoves, #live .xmoves', Y.moves);
     S('#live0 .xcontrol, #live1 .xcontrol, #pv0 .xcontrol, #pv1 .xcontrol', Y.controls_pv);

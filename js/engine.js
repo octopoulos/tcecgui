@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -11,9 +11,9 @@
 globals
 _, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat,
 DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys,
-LoadLibrary, localStorage, location, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
+LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
 requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title,
-Undefined, Visible, window
+Undefined, Upper, Visible, window
 */
 'use strict';
 
@@ -48,7 +48,6 @@ let __PREFIX = '_',
         sv: 'swe',
     },
     libraries = {},
-    Lower = (text) => (text.toLowerCase()),
     MAX_HISTORY = 20,
     NO_IMPORTS = {
         import_settings: 2,
@@ -81,7 +80,6 @@ let __PREFIX = '_',
     translates = {},
     TRANSLATES = {},
     TYPES = {},
-    Upper = (text) => (text.toUpperCase()),
     // virtual functions, can be assigned
     virtual_check_hash_special,
     virtual_import_settings,

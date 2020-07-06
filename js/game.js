@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 //
 // Game specific code:
 // - control the board, moves
@@ -32,12 +32,14 @@ XBoard, Y
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, DEV, Floor, IsObject, LS} = req('./common');
+        {Assign, DEV, Floor, Keys, IsObject, Lower, LS} = req('./common');
     Assign(global, {
         Assign: Assign,
         DEV: DEV,
         Floor: Floor,
+        Keys: Keys,
         IsObject: IsObject,
+        Lower: Lower,
         LS: LS,
     });
 }
@@ -253,6 +255,17 @@ let ANALYSIS_URLS = {
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
+    THREAD_KEYS = {
+        cores: 4,
+        cpus: 3,
+        max_cpus: 1,
+        maxthreads: 2,
+        number_of_threads: 5,
+        numberofprocessors: 3,
+        'search_smp_[threads_count]': 5,
+        smp_threads: 5,
+        threads: 5,
+    },
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -2563,11 +2576,42 @@ function download_pgn(section, url, scroll_up, reset_moves) {
 }
 
 /**
+ * Extract thread count from the options
+ * @param {Object} options
+ * @returns {number|string}
+ */
+function extract_threads(options) {
+    // 1) quick way
+    let threads = options.Threads || options.CPUs;
+    if (threads) {
+        threads = parseInt(threads);
+        if (threads)
+            return threads;
+    }
+
+    // 2) slow way: check all keys
+    let find = [0, undefined];
+    Keys(options).forEach(key => {
+        let match = THREAD_KEYS[Lower(key).replace(/ /g, '_')];
+        if (match && match > find[0]) {
+            let value = parseInt(options[key]);
+            if (value) {
+                find[0] = match;
+                find[1] = value;
+            }
+        }
+    });
+
+    return find[0]? find[1]: '';
+}
+
+/**
  * Parse raw pgn data
  * @param {string|Object} data
+ * @param {string=} origin
  * @returns {Object}
  */
-function parse_pgn(data) {
+function parse_pgn(data, origin) {
     // A) maybe we have a JSON already?
     if (IsObject(data))
         return data;
@@ -2590,7 +2634,7 @@ function parse_pgn(data) {
     for (let i = 0; i < length; i ++) {
         let char = data[i];
         if (inside) {
-            if (char == ']') {
+            if (char == ']' && '\r\n '.includes(data[i + 1])) {
                 if (start) {
                     // Date "2020.05.25"
                     let text = data.slice(start, i),
@@ -2690,8 +2734,12 @@ function parse_pgn(data) {
         else if (char == '.') {
             if (has_text) {
                 let number = parseInt(data.slice(start, i));
-                if (number != (ply + 1) / 2 + 1)
-                    LS(`ERROR: ${ply} : ${number}`);
+                // error detected!!
+                if (number != (ply + 1) / 2 + 1) {
+                    LS(`ERROR: ${origin} : ${ply} : ${number}`);
+                    LS(headers);
+                    return {};
+                }
             }
             start = i + 1;
             has_text = false;
@@ -2944,12 +2992,11 @@ function update_options(section) {
         }
 
         // find threads + tb
-        let info = ['', ''];
+        let threads = extract_threads(pgn_options),
+            info = [threads? `${threads}TH`: '', ''];
         Keys(pgn_options).forEach(key => {
             let value = pgn_options[key];
-            if (['thread', 'threads'].includes(Lower(key)))
-                info[0] = `${value}TH`;
-            else if (IsString(value)) {
+            if (IsString(value)) {
                 let pos = value.indexOf('/syzygy');
                 if (pos >= 0) {
                     let next = value[pos + 7];
@@ -4375,6 +4422,7 @@ function startup_game() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        extract_threads: extract_threads,
         parse_pgn: parse_pgn,
     });
 // >>

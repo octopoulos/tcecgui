@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 /*
 globals
 __dirname, expect, require, test
@@ -23,8 +23,8 @@ create_module(IMPORT_PATH, [
 
 let {
         analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        create_game_link, current_archive_link, format_engine, format_eval, format_fen, format_hhmmss, format_opening,
-        format_percent, get_short_name, parse_date_time, parse_pgn, players, tour_info, Y,
+        create_game_link, current_archive_link, extract_threads, format_engine, format_eval, format_fen, format_hhmmss,
+        format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, players, tour_info, Y,
     } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,6 +232,80 @@ let {
     test(`current_archive_link:${id}`, () => {
         Assign(Y, y);
         expect(current_archive_link(section, is_game)).toEqual(answer);
+    });
+});
+
+// extract_threads
+[
+    [
+        {
+            Protocol: 'uci',
+            Threads: '176',
+            Hash: '65536',
+            SyzygyPath: '/home/syzygy/',
+            'Move Overhead': '1000',
+            OwnBook: 'false',
+            Ponder: 'false',
+        },
+        176,
+    ],
+    [
+        {
+            Threads: 'lol',
+        },
+        '',
+    ],
+    [
+        {
+            'Max CPUs': '43',
+            Threads: 'lol',
+        },
+        43,
+    ],
+    [
+        {
+            Protocol: 'UCI',
+            Hash: '16384',
+            'Max CPUs': '43',
+            'Use Large Pages': 'false',
+            OwnBook: 'false',
+            Ponder: 'false',
+        },
+        43,
+    ],
+    [
+        {
+            Protocol: 'UCI',
+            Hash: '32768',
+            'Number Of Threads': '20',
+            NalimovPath: 'C'
+        },
+        20,
+    ],
+    [
+        {
+            'Max CPUs': '43',
+            'Number Of Threads': '20',
+        },
+        20,
+    ],
+    [
+        {
+            Cores: 8,
+            MaxThreads: 88,
+        },
+        8,
+    ],
+    [
+        {
+            Cores: 'no idea',
+            MaxThreads: 88,
+        },
+        88,
+    ],
+].forEach(([options, answer], id) => {
+    test(`extract_threads:${id}`, () => {
+        expect(extract_threads(options)).toEqual(answer);
     });
 });
 
@@ -924,6 +998,171 @@ let {
                 SyzygyPath: '/home/syzygy/',
                 TryPlayoutLimit: '80',
                 UseCustomWinograd: 'true',
+                UseFP16: 'true',
+            },
+        },
+    ],
+    [
+        `
+        [Event "Div3 promo engines gauntlet"]
+        [Site "http://tcec.chessdom.com"]
+        [Date "2019.03.22"]
+        [Round "1.17"]
+        [White "AllieStein dev"]
+        [Black "Stockfish 210219[4cores]"]
+        [Result "0-1"]
+        [BlackElo "3521"]
+        [ECO "B00"]
+        [GameDuration "00:43:47"]
+        [GameEndTime "2019-03-22T01:36:21.872 UTC"]
+        [GameStartTime "2019-03-22T00:52:34.550 UTC"]
+        [Opening "KP"]
+        [PlyCount "408"]
+        [Termination "adjudication"]
+        [TerminationDetails "SyzygyTB"]
+        [TimeControl "300+5"]
+        [Variation "Nimzovich defence"]
+        [WhiteElo "3200"]
+
+        {WhiteEngineOptions: Protocol=uci; GPUCores=2; Hash=7168; MoveOverhead=2000; TreeSize=7168; MaxBatchSize=160; UseFP16=true; SyzygyPath=C:/Tb;, BlackEngineOptions: Protocol=uci; Hash=2048; Threads=4; SyzygyPath=/home/syzygy/; SyzygyProbeLimit=6; Move Overhead=1000; OwnBook=false; Ponder=false;}
+        1. e4 {book, mb=+0+0+0+0+0,} Nc6 {book, mb=+0+0+0+0+0,}
+        2. d4 {d=16, sd=33, mt=11501, tl=293499, s=50868, n=565352, pv=d4 d5 e5 Bf5 c3 e6 Nd2 Qd7 h4 h6 h5 f6 g4 Bh7 f4 O-O-O Ndf3 g6 hxg6 Bxg6 Nh3 h5 g5 fxg5 fxg5 Be4 Nf2 Nge7, tb=0, h=4.1, ph=0.0, wv=0.75, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        d5 {d=25, sd=41, mt=23927, tl=281073, s=3763108, n=90043659, pv=d5 e5 Bf5 c3 e6 Be2 f6 f4 Nh6 Nf3 Be7 O-O O-O exf6 Bxf6 Nbd2 Be7 Nb3 Qd7 Ne5 Nxe5 fxe5 Bg6 Bxh6 gxh6 Rf3 Rxf3, tb=0, h=31.0, ph=0.0, wv=0.23, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        3. e5 {d=21, sd=36, pd=d5, mt=11367, tl=287132, s=50349, n=478414, pv=e5 Bf5 c3 e6 Nd2 f6 f4 g5 Ndf3 gxf4 Bb5 fxe5 Nxe5 Qh4+ Kf1 Ne7 Ngf3 Qh5 Bxf4 Bg7 Kg1 O-O Nd7 Rf7 Ng5 Bg4 Qd2 Rxf4 Qxf4 e5, tb=0, h=7.6, ph=100.0, wv=0.62, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        Bf5 {d=23, sd=36, pd=e5, mt=3567, tl=282506, s=3912544, n=13959958, pv=Bf5 Bb5 e6 Ne2 Qd7 c3 a6 Ba4 f6 O-O O-O-O f4 Nge7 Be3 Kb8 Nd2 Bg4 h3 Nf5 Bf2 Bxe2 Qxe2 Ncxd4 cxd4 Qxa4, tb=0, h=6.9, ph=100.0, wv=0.11, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        `,
+        {
+            BlackEngineOptions: {
+                Hash: '2048',
+                'Move Overhead': '1000',
+                OwnBook: 'false',
+                Ponder: 'false',
+                Protocol: 'uci',
+                SyzygyPath: '/home/syzygy/',
+                SyzygyProbeLimit: '6',
+                Threads: '4',
+            },
+            Headers: {
+                Black: 'Stockfish 210219[4cores]',
+                BlackElo: '3521',
+                Date: '2019.03.22',
+                ECO: 'B00',
+                Event: 'Div3 promo engines gauntlet',
+                GameDuration: '00:43:47',
+                GameEndTime: '2019-03-22T01:36:21.872 UTC',
+                GameStartTime: '2019-03-22T00:52:34.550 UTC',
+                Opening: 'KP',
+                PlyCount: '408',
+                Result: '0-1',
+                Round: '1.17',
+                Site: 'http://tcec.chessdom.com',
+                Termination: 'adjudication',
+                TerminationDetails: 'SyzygyTB',
+                TimeControl: '300+5',
+                Variation: 'Nimzovich defence',
+                White: 'AllieStein dev',
+                WhiteElo: '3200',
+            },
+            Moves: [
+                {
+                    book: true,
+                    m: 'e4',
+                    mb: '+0+0+0+0+0',
+                    ply: 0,
+                },
+                {
+                    book: true,
+                    m: 'Nc6',
+                    mb: '+0+0+0+0+0',
+                    ply: 1,
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 16,
+                    h: '4.1',
+                    m: 'd4',
+                    mb: '+0+0+0+0+0',
+                    mt: 11501,
+                    n: 565352,
+                    ph: '0.0',
+                    ply: 2,
+                    pv: '2. d4 d5 3. e5 Bf5 4. c3 e6 5. Nd2 Qd7 6. h4 h6 7. h5 f6 8. g4 Bh7 9. f4 O-O-O 10. Ndf3 g6 11. hxg6 Bxg6 12. Nh3 h5 13. g5 fxg5 14. fxg5 Be4 15. Nf2 Nge7',
+                    s: 50868,
+                    sd: 33,
+                    tb: 0,
+                    tl: 293499,
+                    wv: '0.75',
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 25,
+                    h: '31.0',
+                    m: 'd5',
+                    mb: '+0+0+0+0+0',
+                    mt: 23927,
+                    n: 90043659,
+                    ph: '0.0',
+                    ply: 3,
+                    pv: '2...d5 3. e5 Bf5 4. c3 e6 5. Be2 f6 6. f4 Nh6 7. Nf3 Be7 8. O-O O-O 9. exf6 Bxf6 10. Nbd2 Be7 11. Nb3 Qd7 12. Ne5 Nxe5 13. fxe5 Bg6 14. Bxh6 gxh6 15. Rf3 Rxf3',
+                    s: 3763108,
+                    sd: 41,
+                    tb: 0,
+                    tl: 281073,
+                    wv: '0.23',
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 21,
+                    h: '7.6',
+                    m: 'e5',
+                    mb: '+0+0+0+0+0',
+                    mt: 11367,
+                    n: 478414,
+                    pd: 'd5',
+                    ph: '100.0',
+                    ply: 4,
+                    pv: '3. e5 Bf5 4. c3 e6 5. Nd2 f6 6. f4 g5 7. Ndf3 gxf4 8. Bb5 fxe5 9. Nxe5 Qh4+ 10. Kf1 Ne7 11. Ngf3 Qh5 12. Bxf4 Bg7 13. Kg1 O-O 14. Nd7 Rf7 15. Ng5 Bg4 16. Qd2 Rxf4 17. Qxf4 e5',
+                    s: 50349,
+                    sd: 36,
+                    tb: 0,
+                    tl: 287132,
+                    wv: '0.62',
+                },
+                {
+                    R50: 49,
+                    Rd: -11,
+                    Rr: -11,
+                    d: 23,
+                    h: '6.9',
+                    m: 'Bf5',
+                    mb: '+0+0+0+0+0',
+                    mt: 3567,
+                    n: 13959958,
+                    pd: 'e5',
+                    ph: '100.0',
+                    ply: 5,
+                    pv: '3...Bf5 4. Bb5 e6 5. Ne2 Qd7 6. c3 a6 7. Ba4 f6 8. O-O O-O-O 9. f4 Nge7 10. Be3 Kb8 11. Nd2 Bg4 12. h3 Nf5 13. Bf2 Bxe2 14. Qxe2 Ncxd4 15. cxd4 Qxa4',
+                    s: 3912544,
+                    sd: 36,
+                    tb: 0,
+                    tl: 282506,
+                    wv: '0.11',
+                },
+            ],
+            WhiteEngineOptions: {
+                GPUCores: '2',
+                Hash: '7168',
+                MaxBatchSize: '160',
+                MoveOverhead: '2000',
+                Protocol: 'uci',
+                SyzygyPath: 'C',
+                TreeSize: '7168',
                 UseFP16: 'true',
             },
         },
