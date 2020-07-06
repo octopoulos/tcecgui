@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 //
 // global variables/functions shared across multiple js files
 //
@@ -121,7 +121,13 @@ function fix_move_format(move) {
     // fix nodes
     // note: it's an approximation, not reliable at low values => skipped there
     if (move.n == undefined && move.mt >= 2000)
-        move.n = move.s / move.mt * 1000;
+        move.n = Floor(move.s / move.mt * 1000 + 0.5);
+
+    // fix too fast speed: > 10Bnps
+    if (move.s > 1e10) {
+        move.n = '-';
+        move.s = '-';
+    }
 
     // fix insta-moves speed
     if (move.mt && move.n && move.s && move.mt < 2000) {
