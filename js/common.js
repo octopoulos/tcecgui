@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-05
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -26,6 +26,7 @@ let Abs = Math.abs,
     IsObject = value => (typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
+    Lower = (text) => (text.toLowerCase()),
     Max = Math.max,
     Min = Math.min,
     PD = e => e.preventDefault(),
@@ -35,7 +36,8 @@ let Abs = Math.abs,
     Sign = Math.sign,
     SP = e => e.stopPropagation(),
     Sqrt = Math.sqrt,
-    Tanh = Math.tanh;
+    Tanh = Math.tanh,
+    Upper = (text) => (text.toUpperCase());
 
 let NAMESPACE_SVG = 'http://www.w3.org/2000/svg';
 
@@ -1442,13 +1444,16 @@ function Undefined(value, def) {
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
         Assign: Assign,
+        DefaultInt: DefaultInt,
         DEV: {},
         Floor: Floor,
         FormatUnit: FormatUnit,
         Keys: Keys,
         IsObject: IsObject,
+        Lower: Lower,
         LS: LS,
         Max: Max,
+        Now: Now,
         Pad: Pad,
         SetDefault: SetDefault,
     });
