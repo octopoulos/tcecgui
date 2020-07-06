@@ -15,6 +15,11 @@ let fs = require('fs'),
     {extract_threads, parse_pgn} = require('./js/game');
 
 let DISCOVER = false,
+    REPLACES = {
+        bonus: 'Bonus',
+        cup: 'Cup ',
+        s: 'Season ',
+    },
     skipped_keys = {},
     synonyms = {};
 
@@ -24,10 +29,11 @@ let DISCOVER = false,
 /**
  * Create spaces
  * @param {number} size
+ * @param {string} fill
  * @returns {string}
  */
-function create_spaces(size) {
-    return new Array(size).fill(' ').join('');
+function create_spaces(size, fill=' ') {
+    return new Array(size).fill(fill).join('');
 }
 
 /**
@@ -164,7 +170,7 @@ function get_pgn_stats(data, origin) {
  * @returns {string}
  */
 function merge_stats(result, options) {
-    let headers = 'engine|speed|nps|event|threads|gpus'.split('|'),
+    let headers = 'Engine|Speed|nps|Event|Threads|GPUs'.split('|'),
         maxs = headers.map(item => item.length);
 
     Keys(result).forEach(key => {
@@ -194,18 +200,32 @@ function merge_stats(result, options) {
             maxs[i] = Max(maxs[i], (splits[i] || '').length);
     });
 
+    // sort results
     let keys = Keys(result),
+        sort_alpha = options.alpha,
+        sort_engine = options.engine,
+        sort_event = options.event,
         spaces = maxs.map(max => create_spaces(max));
 
-    if (options.alpha)
-        keys.sort((a, b) => a.localeCompare(b));
-    else
-        keys.sort((a, b) => result[b] - result[a]);
+    keys.sort((a, b) => {
+        let sa = a.split('|'),
+            sb = b.split('|');
+        if (sort_engine && sa[0] != sb[0])
+            return sa[0].localeCompare(sb[0]);
+        if (sort_event && sa[1] != sb[1])
+            return sb[1].localeCompare(sa[1]);
+        if (sort_alpha && sa[0] != sb[0])
+            return sa[0].localeCompare(sb[0]);
+        return result[b] - result[a];
+    });
 
     // output
-    let header = headers.map((item, id) => (item + spaces[id]).slice(0, maxs[id])).join(' : '),
+    let prev_items,
+        header = headers.map((item, id) => (item + spaces[id]).slice(0, maxs[id])),
+        underline = headers.map((item, id) => create_spaces(maxs[id], '-')).join('-:-'),
         text = keys.map(key => {
-            let splits = key.split('|'),
+            let prefix = '',
+                splits = key.split('|'),
                 value = result[key],
                 items = [
                     (splits[0] + spaces[0]).slice(0, maxs[0]),
@@ -216,10 +236,24 @@ function merge_stats(result, options) {
             for (let i = 1; i < 4; i ++)
                 items.push(((splits[i] || '') + spaces[i + 2]).slice(0, maxs[i + 2]));
 
-            return items.join(' : ');
+            let line = items.join(' : ');
+            if (!prev_items || (sort_event && items[3] != prev_items[3])) {
+                if (sort_event)
+                    header[0] = (items[3].replace(/^(\D+)/, (_match, v1) => REPLACES[v1]) + spaces[0]).slice(0, maxs[0]);
+
+                prefix = [
+                    '',
+                    header.join(' : '),
+                    underline,
+                    '',
+                ].join('\n');
+            }
+
+            prev_items = [...items];
+            return prefix + line;
         }).join('\n');
 
-    return [header, text].join('\n');
+    return text;
 }
 
 /**
@@ -291,12 +325,18 @@ function open_file(filename, result, options, callback) {
  * @param {Object} options
  */
 function done(result, filenames, options) {
-    let text = merge_stats(result, options);
-    LS('```');
-    LS(filenames.map(name => name.split(/[/\\]/).slice(-1)[0]).sort().join(', '));
-    LS(text);
-    LS('```');
-    LS(`elapsed: ${(Now(true) - options.start).toFixed(3)} sec`);
+    let text = merge_stats(result, options),
+        lines = [
+            '```',
+            filenames.map(name => name.split(/[/\\]/).slice(-1)[0]).sort().join(', '),
+            text,
+            '```',
+        ].join('\n');
+
+    LS(lines);
+    fs.writeFile('analyse_pgn.txt', text, () => {
+        LS(`elapsed: ${(Now(true) - options.start).toFixed(3)} sec`);
+    });
 }
 
 /**
@@ -326,6 +366,8 @@ function main() {
             '',
             'Options:',
             '  --alpha    sort results alphabetically',
+            '  --engine   group results by engine',
+            '  --event    group results by event',
             '  --help     show this help',
             '  --verbose  show all file names',
         ].join('\n'));
