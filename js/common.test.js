@@ -157,10 +157,12 @@ let {
 
 // FromTimestamp
 [
-    [1576574884, ['19-12-17', '10:28:04']],
+    [1576574884, [['19-12-17'], ['09:28:04', '10:28:04']]],
 ].forEach(([stamp, answer], id) => {
     test(`FromTimestamp:${id}`, () => {
-        expect(FromTimestamp(stamp)).toEqual(answer);
+        let [date, time] = FromTimestamp(stamp);
+        expect(answer[0]).toContain(date);
+        expect(answer[1]).toContain(time);
     });
 });
 
