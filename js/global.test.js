@@ -198,6 +198,59 @@ let {
             wv: '-2.99',
         },
     ],
+    [
+        {
+            d: 14,
+            mt: '00:03:15',
+            n: 444481608,
+            pv: 'Re8',
+            R50: 49,
+            s: '0 kN/s',
+            tb: 0,
+            tl: '01:47:37',
+            wv: '0.36',
+        },
+        {
+            _fixed: true,
+            d: 14,
+            mt: 195000,
+            n: 444481608,
+            pv: 'Re8',
+            R50: 49,
+            s: 2279392,
+            tb: 0,
+            tl: 6457000,
+            wv: '0.36',
+        },
+    ],
+    [
+        {
+            mt: 1900,
+            n: 10000,
+            s: 0,
+        },
+        {
+            _fixed: true,
+            mt: 1900,
+            n: 10000,
+            s: '-',
+            wv: undefined,
+        },
+    ],
+    [
+        {
+            mt: 2000,
+            n: 10000,
+            s: 0,
+        },
+        {
+            _fixed: true,
+            mt: 2000,
+            n: 10000,
+            s: 5000,
+            wv: undefined,
+        },
+    ],
 ].forEach(([move, answer], id) => {
     test(`fix_move_format:${id}`, () => {
         fix_move_format(move);
