@@ -10,11 +10,11 @@ Buffer, console, process, require
 let fs = require('fs'),
     glob = require('glob'),
     unzipper = require('unzipper'),
-    {DefaultInt, Floor, FormatUnit, Keys, LS, Max, Now, Pad, SetDefault} = require('./js/common'),
+    {Assign, DefaultInt, Floor, FormatUnit, Keys, LS, Max, Now, Pad, SetDefault} = require('./js/common'),
     {fix_move_format} = require('./js/global'),
     {extract_threads, parse_pgn} = require('./js/game');
 
-let DISCOVER = false,
+let OPTIONS = {},
     REPLACES = {
         bonus: 'Bonus',
         cup: 'Cup ',
@@ -44,7 +44,7 @@ function create_spaces(size, fill=' ') {
  * @param {string=} origin
  */
 function get_multi_pgn_stats(data, result, origin) {
-    data.split(/\r?\n\r?\n\[/).forEach((split, id) => {
+    data.split(/\r?\n\r?\n(?=\[)/).forEach((split, id) => {
         let dico = get_pgn_stats(split, `${origin}:${id}`);
         Keys(dico).forEach(key => {
             let entry = SetDefault(result, key, []),
@@ -101,8 +101,8 @@ function get_pgn_stats(data, origin) {
         all_values[ply % 2].push([move.s, move.n, time]);
     });
     average = [
-        Floor(sum_moves[0] / sum_times[0]),
-        Floor(sum_moves[1] / sum_times[1]),
+        sum_times[0]? Floor(sum_moves[0] / sum_times[0]): 0,
+        sum_times[1]? Floor(sum_moves[1] / sum_times[1]): 0,
     ];
 
     all_values.forEach((values, id) => {
@@ -121,14 +121,16 @@ function get_pgn_stats(data, origin) {
             gpus = options.GPUCores,
             threads = extract_threads(options);
 
-        if (DISCOVER && !threads && !gpus) {
+        if (OPTIONS.discover && !threads && !gpus) {
             let keys = Keys(options).filter(key => !skipped_keys[key]);
             if (keys.length) {
-                LS(name);
-                LS(keys.map(key => {
-                    skipped_keys[key] = 1;
-                    return `${key}=${options[key]}`;
-                }));
+                LS([
+                    name,
+                    keys.map(key => {
+                        skipped_keys[key] = 1;
+                        return `${key}=${options[key]}`;
+                    }).join(', '),
+                ].join(' : '));
             }
         }
 
@@ -155,9 +157,16 @@ function get_pgn_stats(data, origin) {
         // add synonym
         let name2 = [name, event, threads, gpus].map(item => item || '').join('|');
         if (threads)
-            synonyms[`${name}:${event}`] = name2;
+            synonyms[`${name}|${event}`] = name2;
 
-        result[name2] = [median[id], average[id]];
+        if (OPTIONS.discover && !median[id]) {
+            LS(`${origin} : ${headers.Round} : ${headers.GameStartTime} : ${name2} : ${median[id]} : ${average[id]}`);
+            LS(headers);
+            LS(moves.slice(0, Floor(num_move * 0.8)).map(move => move.mt));
+            LS(sum_moves[0]);
+            LS(sum_times[0]);
+        }
+        result[name2] = [median[id], average[id], 1];
     });
 
     return result;
@@ -166,45 +175,57 @@ function get_pgn_stats(data, origin) {
 /**
  * Merge stats
  * @param {Object} result
- * @param {Object} options
  * @returns {string}
  */
-function merge_stats(result, options) {
-    let headers = 'Engine|Speed|nps|Event|Threads|GPUs'.split('|'),
-        maxs = headers.map(item => item.length);
+function merge_stats(result) {
+    let headers = 'Engine|Speed|nps|Event|Threads|GPUs|Games'.split('|'),
+        maxs = headers.map(item => item.length),
+        names = Keys(result);
 
-    Keys(result).forEach(key => {
-        let stats = result[key],
-            medians = stats.map(value => value[0]),
-            median = Floor(medians.reduce((a, b) => a + b) / medians.length + 0.5),
-            splits = key.split('|');
+    // 1) resolve synonyms
+    names.forEach(key => {
+        let splits = key.split('|'),
+            stats = result[key];
 
         // no threads => resolve synonym
         if (!splits[2]) {
             let name_key = splits.slice(0, 2).join('|'),
                 synonym = synonyms[name_key];
             if (synonym) {
-                LS(`no threads for ${splits} => ${synonym}`);
+                if (OPTIONS.verbose)
+                    LS(`no threads for ${splits} => ${synonym}`);
                 delete result[key];
-                key = synonym;
-                splits = key.split('|');
+                result[synonym] = [...result[synonym], ...stats];
             }
         }
+    });
 
-        result[key] = median;
+    // 2) merge data
+    names.forEach(key => {
+        let stats = result[key];
+        if (!stats)
+            return;
+
+        let reduce = stats.reduce((a, b) => [a[0] + b[0], 0, a[2] + b[2]]),
+            median = Floor(reduce[0] / stats.length + 0.5),
+            splits = key.split('|');
+
+        result[key] = [median, reduce[2]];
         maxs[0] = Max(maxs[0], splits[0].length);
         maxs[1] = Max(maxs[1], `${median}`.length);
         maxs[2] = Max(maxs[2], FormatUnit(median).length);
 
         for (let i = 3; i < 6; i ++)
             maxs[i] = Max(maxs[i], (splits[i] || '').length);
+
+        maxs[6] = Max(maxs[6], `${reduce[2]}`.length);
     });
 
-    // sort results
+    // 3) sort results
     let keys = Keys(result),
-        sort_alpha = options.alpha,
-        sort_engine = options.engine,
-        sort_event = options.event,
+        sort_alpha = OPTIONS.alpha,
+        sort_engine = OPTIONS.engine,
+        sort_event = OPTIONS.event,
         spaces = maxs.map(max => create_spaces(max));
 
     keys.sort((a, b) => {
@@ -216,25 +237,26 @@ function merge_stats(result, options) {
             return sb[1].localeCompare(sa[1]);
         if (sort_alpha && sa[0] != sb[0])
             return sa[0].localeCompare(sb[0]);
-        return result[b] - result[a];
+        return result[b][0] - result[a][0];
     });
 
-    // output
+    // 4) output
     let prev_items,
         header = headers.map((item, id) => (item + spaces[id]).slice(0, maxs[id])),
         underline = headers.map((item, id) => create_spaces(maxs[id], '-')).join('-:-'),
         text = keys.map(key => {
             let prefix = '',
                 splits = key.split('|'),
-                value = result[key],
+                [median, games] = result[key],
                 items = [
                     (splits[0] + spaces[0]).slice(0, maxs[0]),
-                    Pad(value, maxs[1], spaces[1]),
-                    Pad(FormatUnit(value, undefined, true), maxs[2], spaces[2]),
+                    Pad(median, maxs[1], spaces[1]),
+                    Pad(FormatUnit(median, undefined, true), maxs[2], spaces[2]),
                 ];
 
             for (let i = 1; i < 4; i ++)
                 items.push(((splits[i] || '') + spaces[i + 2]).slice(0, maxs[i + 2]));
+            items.push(games);
 
             let line = items.join(' : ');
             if (!prev_items || (sort_event && items[3] != prev_items[3])) {
@@ -262,9 +284,9 @@ function merge_stats(result, options) {
  * @param {Object} result
  * @param {function} callback
  */
-function open_file(filename, result, options, callback) {
+function open_file(filename, result, callback) {
     let ext = filename.split('.').slice(-1)[0],
-        verbose = options.verbose;
+        verbose = OPTIONS.verbose;
 
     // zip
     if (ext == 'zip') {
@@ -322,10 +344,9 @@ function open_file(filename, result, options, callback) {
  * Show the results
  * @param {Object} result
  * @param {string[]} filenames
- * @param {Object} options
  */
-function done(result, filenames, options) {
-    let text = merge_stats(result, options),
+function done(result, filenames) {
+    let text = merge_stats(result),
         lines = [
             '```',
             filenames.map(name => name.split(/[/\\]/).slice(-1)[0]).sort().join(', '),
@@ -335,7 +356,7 @@ function done(result, filenames, options) {
 
     LS(lines);
     fs.writeFile('analyse_pgn.txt', text, () => {
-        LS(`elapsed: ${(Now(true) - options.start).toFixed(3)} sec`);
+        LS(`elapsed: ${(Now(true) - OPTIONS.start).toFixed(3)} sec`);
     });
 }
 
@@ -358,18 +379,20 @@ function main() {
         else
             filenames.push(arg);
     }
+    Assign(OPTIONS, options);
 
     // show help?
-    if (options.help) {
+    if (OPTIONS.help) {
         LS([
             `Usage: node ${args[1]} [options] [files]`,
             '',
             'Options:',
-            '  --alpha    sort results alphabetically',
-            '  --engine   group results by engine',
-            '  --event    group results by event',
-            '  --help     show this help',
-            '  --verbose  show all file names',
+            '  --alpha     sort results alphabetically',
+            '  --discover  try to discover problems',
+            '  --engine    group results by engine',
+            '  --event     group results by event',
+            '  --help      show this help',
+            '  --verbose   show all file names',
         ].join('\n'));
         return;
     }
@@ -385,25 +408,25 @@ function main() {
 
                 let left2 = files.length;
                 for (let file of files) {
-                    open_file(file, result, options, () => {
+                    open_file(file, result, () => {
                         left2 --;
                         LS(`${left2} : ${filename} / ${file}`);
                         if (!left2) {
                             left --;
                             LS(`left=${left} : ${filename} / ${file}`);
                             if (!left)
-                                done(result, filenames, options);
+                                done(result, filenames);
                         }
                     });
                 }
             });
         }
         else {
-            open_file(filename, result, options, () => {
+            open_file(filename, result, () => {
                 left --;
                 LS(`A:left=${left} : ${filename}`);
                 if (!left)
-                    done(result, filenames, options);
+                    done(result, filenames);
             });
         }
     }

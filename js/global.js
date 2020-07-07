@@ -96,7 +96,7 @@ function calculate_feature_q(feature, eval_, ply) {
  * @param {Move} move
  */
 function fix_move_format(move) {
-    if (move._fixed)
+    if (move._fixed || move.book)
         return;
 
     // fix eval
@@ -128,12 +128,16 @@ function fix_move_format(move) {
         move.n = '-';
         move.s = '-';
     }
-
-    // fix insta-moves speed
-    if (move.mt && move.n && move.s && move.mt < 2000) {
-        let speed = move.n / (move.mt + 500) * 1000;
-        if (move.s > speed * 3)
-            move.s = '-';
+    else if (move.n) {
+        // fix missing speed
+        if (!move.s)
+            move.s = (move.mt >= 2000)? Floor(move.n / move.mt * 1000): '-';
+        // fix insta-moves speed
+        else if (move.mt && move.mt < 2000) {
+            let speed = move.n / (move.mt + 500) * 1000;
+            if (move.s > speed * 3)
+                move.s = '-';
+        }
     }
 
     move._fixed = true;

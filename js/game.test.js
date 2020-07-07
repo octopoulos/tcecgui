@@ -1167,6 +1167,109 @@ let {
             },
         },
     ],
+    [
+        `
+        [Event "TCEC Cup 2 - Round 4 - Match 30"]
+        [Site "http://tcec.chessdom.com"]
+        [Date "2019.02.02"]
+        [Round "8.1"]
+        [White "LCZero v20.1-32742"]
+        [Black "Komodo 2246.00"]
+        [Result "1/2-1/2"]
+        [BlackElo "3512"]
+        [PlyCount "284"]
+        [Termination "adjudication"]
+        [TerminationDetails "TCEC draw rule"]
+        [TimeControl "1800+5"]
+        [WhiteElo "3404"]
+
+        1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Bd7 6. a3 c4 7. Be2 Nge7 8. Nbd2 Na5
+        1/2-1/2
+        `,
+        {
+            Headers: {
+                Black: "Komodo 2246.00",
+                BlackElo: "3512",
+                Date: "2019.02.02",
+                Event: "TCEC Cup 2 - Round 4 - Match 30",
+                PlyCount: "284",
+                Result: "1/2-1/2",
+                Round: "8.1",
+                Site: "http://tcec.chessdom.com",
+                Termination: "adjudication",
+                TerminationDetails: "TCEC draw rule",
+                TimeControl: "1800+5",
+                White: "LCZero v20.1-32742",
+                WhiteElo: "3404",
+            },
+            Moves: [
+                {
+                    m: "e4",
+                    ply: 0,
+                },
+                {
+                    m: "e6",
+                    ply: 1,
+                },
+                {
+                    m: "d4",
+                    ply: 2,
+                },
+                {
+                    m: "d5",
+                    ply: 3,
+                },
+                {
+                    m: "e5",
+                    ply: 4,
+                },
+                {
+                    m: "c5",
+                    ply: 5,
+                },
+                {
+                    m: "c3",
+                    ply: 6,
+                },
+                {
+                    m: "Nc6",
+                    ply: 7,
+                },
+                {
+                    m: "Nf3",
+                    ply: 8,
+                },
+                {
+                    m: "Bd7",
+                    ply: 9,
+                },
+                {
+                    m: "a3",
+                    ply: 10,
+                },
+                {
+                    m: "c4",
+                    ply: 11,
+                },
+                {
+                    m: "Be2",
+                    ply: 12,
+                },
+                {
+                    m: "Nge7",
+                    ply: 13,
+                },
+                {
+                    m: "Nbd2",
+                    ply: 14,
+                },
+                {
+                    m: "Na5",
+                    ply: 15,
+                },
+            ],
+        },
+    ],
 ].forEach(([data, answer], id) => {
     test(`parse_pgn:${id}`, () => {
         expect(parse_pgn(data)).toEqual(answer);
