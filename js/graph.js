@@ -578,7 +578,8 @@ function update_live_chart(moves, id) {
     }
 
     fix_labels(labels);
-    charts.eval.update();
+    if (charts.eval)
+        charts.eval.update();
 }
 
 /**

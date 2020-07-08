@@ -42,8 +42,7 @@ let {
     [-12800, -0.9163436966936154],
     [25600, 1.0],
     [-25600, -1.0],
-]
- .forEach(([cp, answer], id) => {
+].forEach(([cp, answer], id) => {
     test(`allie_cp_to_score:${id}`, () => {
         expect(allie_cp_to_score(cp)).toBeCloseTo(answer, 5);
     });
@@ -69,8 +68,7 @@ let {
     [5, 128, -1, 45.817184834680766],
     [5, 256, -1, 50],
     [9, 0.27, -1, 4.4446967802372015],
-]
- .forEach(([feature, eval_, ply, answer], id) => {
+].forEach(([feature, eval_, ply, answer], id) => {
     test(`calculate_feature_q:${id}`, () => {
         expect(calculate_feature_q(feature, eval_, ply)).toBeCloseTo(answer, 3);
     });
@@ -293,8 +291,7 @@ let {
     [-10000, -0.9987481281074694],
     [12800, 1.0],
     [-12800, -1.0],
-]
- .forEach(([cp, answer], id) => {
+].forEach(([cp, answer], id) => {
     test(`leela_cp_to_score:${id}`, () => {
         expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });
@@ -345,8 +342,7 @@ let {
     [-1280, 90, [0, 0, 1000]],
     [12800, 90, [1000, 0, 0]],
     [-12800, 90, [0, 0, 1000]],
-]
-.forEach(([cp, ply, answer], id) => {
+].forEach(([cp, ply, answer], id) => {
     test(`stockfish_wdl:${id}`, () => {
         expect(stockfish_wdl(cp, ply)).toEqual(answer);
     });
@@ -374,8 +370,7 @@ let {
     [654, 188, 999],
     [-489, 55, 0],
     [-366, 277, 0],
-]
- .forEach(([cp, ply, answer], id) => {
+].forEach(([cp, ply, answer], id) => {
     test(`stockfish_win_rate_model:${id}`, () => {
         expect(stockfish_win_rate_model(cp, ply)).toBe(answer);
     });
@@ -394,8 +389,7 @@ let {
     [-10000, -0.9972736365998054],
     [12800, 1.0],
     [-12800, -1.0],
-]
- .forEach(([cp, answer], id) => {
+].forEach(([cp, answer], id) => {
     test(`stoof_cp_to_score:${id}`, () => {
         expect(stoof_cp_to_score(cp)).toBeCloseTo(answer, 4);
     });

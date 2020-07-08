@@ -1,9 +1,9 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2020-07-08
 /*
 globals
-__dirname, expect, require, test
+__dirname, expect, global, require, test
 */
 'use strict';
 
@@ -16,16 +16,31 @@ create_module(IMPORT_PATH, [
     'common',
     'engine',
     'global',
+    '3d',
+    'libs/chess-quick',
     'xboard',
+    'graph',
     //
     'game',
-], OUTPUT_MODULE, 'Assign Keys players tour_info Y');
+    'startup',
+], OUTPUT_MODULE, 'Assign Keys players tour_info xboards Y');
 
 let {
-        analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        create_game_link, current_archive_link, extract_threads, format_engine, format_eval, format_fen, format_hhmmss,
-        format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, players, tour_info, Y,
-    } = require(OUTPUT_MODULE);
+    analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
+    create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
+    format_eval, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
+    parse_date_time, parse_pgn, prepare_settings, players, tour_info, update_live_eval, update_pgn, update_player_eval,
+    xboards, Y,
+} = require(OUTPUT_MODULE);
+
+Assign(global, {
+    T: null,
+});
+
+prepare_settings();
+load_defaults();
+create_boards('text');
+create_chart_data();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -212,8 +227,7 @@ let {
 [
     [{}, 'live', 1, '', '<a class="game" href="#game=1">1</a>'],
     [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class="game" href="#div=l3&game=1&season=18">1</a>'],
-]
- .forEach(([info, section, game, text, answer], id) => {
+].forEach(([info, section, game, text, answer], id) => {
     test(`create_game_link:${id}`, () => {
         Assign(tour_info[section], info);
         expect(create_game_link(section, game, text)).toEqual(answer);
@@ -317,6 +331,7 @@ let {
     ['LCZero v0.24-sv-t60-3010', undefined, undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
     ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, undefined, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
     ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, 20, 'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>'],
+    ['LCZero v0.26.0-sv-t60-4229-mlh', undefined, 23, 'LCZero <i class="version version-small">v0.26.0-sv-t60-4229-mlh</i>'],
     ['Stockfish 20200407DC', undefined, undefined, 'Stockfish <i class="version">20200407DC</i>'],
     ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
     ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
@@ -350,8 +365,7 @@ let {
     ['always', '-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
     ['never', '-198.42', true, '-198.42'],
     ['always', 'M#43', true, 'M#43'],
-]
- .forEach(([small_decimal, value, process, answer], id) => {
+].forEach(([small_decimal, value, process, answer], id) => {
     test(`format_eval:${id}`, () => {
         Y.small_decimal = small_decimal;
         expect(format_eval(value, process)).toEqual(answer);
@@ -362,8 +376,7 @@ let {
 [
     ['1r4k1/8/1P1p1pP1/p2P4/2P2P2/P4N2/5K2/4R3 w - - 0 48', '<i class="nowrap">1r4k1</i>/<i class="nowrap">8</i>/<i class="nowrap">1P1p1pP1</i>/<i class="nowrap">p2P4</i>/<i class="nowrap">2P2P2</i>/<i class="nowrap">P4N2</i>/<i class="nowrap">5K2</i>/<i class="nowrap">4R3</i> <i class="nowrap">w - - 0 48</i>'],
     ['8/3R2r1/8/4p1k1/4P3/5K2/8/8 b - - 0 91', '<i class="nowrap">8</i>/<i class="nowrap">3R2r1</i>/<i class="nowrap">8</i>/<i class="nowrap">4p1k1</i>/<i class="nowrap">4P3</i>/<i class="nowrap">5K2</i>/<i class="nowrap">8</i>/<i class="nowrap">8</i> <i class="nowrap">b - - 0 91</i>'],
-]
- .forEach(([fen, answer], id) => {
+].forEach(([fen, answer], id) => {
     test(`format_fen:${id}`, () => {
         expect(format_fen(fen)).toEqual(answer);
     });
@@ -381,8 +394,7 @@ let {
     [3141, '00:52:21'],
     [31415, '08:43:35'],
     [314159, '3d, 15:15:59'],
-]
- .forEach(([seconds, answer], id) => {
+].forEach(([seconds, answer], id) => {
     test(`format_hhmmss:${id}`, () => {
         expect(format_hhmmss(seconds)).toEqual(answer);
     });
@@ -420,8 +432,7 @@ let {
     [0.98, '98%'],
     [0.987654321, '98.77%'],
     ['150', '15000%'],
-]
- .forEach(([value, answer], id) => {
+].forEach(([value, answer], id) => {
     test(`format_percent:${id}`, () => {
         expect(format_percent(value)).toEqual(answer);
     });
@@ -1203,75 +1214,253 @@ let {
                 WhiteElo: "3404",
             },
             Moves: [
-                {
-                    m: "e4",
-                    ply: 0,
-                },
-                {
-                    m: "e6",
-                    ply: 1,
-                },
-                {
-                    m: "d4",
-                    ply: 2,
-                },
-                {
-                    m: "d5",
-                    ply: 3,
-                },
-                {
-                    m: "e5",
-                    ply: 4,
-                },
-                {
-                    m: "c5",
-                    ply: 5,
-                },
-                {
-                    m: "c3",
-                    ply: 6,
-                },
-                {
-                    m: "Nc6",
-                    ply: 7,
-                },
-                {
-                    m: "Nf3",
-                    ply: 8,
-                },
-                {
-                    m: "Bd7",
-                    ply: 9,
-                },
-                {
-                    m: "a3",
-                    ply: 10,
-                },
-                {
-                    m: "c4",
-                    ply: 11,
-                },
-                {
-                    m: "Be2",
-                    ply: 12,
-                },
-                {
-                    m: "Nge7",
-                    ply: 13,
-                },
-                {
-                    m: "Nbd2",
-                    ply: 14,
-                },
-                {
-                    m: "Na5",
-                    ply: 15,
-                },
+                {m: "e4", ply: 0},
+                {m: "e6", ply: 1},
+                {m: "d4", ply: 2},
+                {m: "d5", ply: 3},
+                {m: "e5", ply: 4},
+                {m: "c5", ply: 5},
+                {m: "c3", ply: 6},
+                {m: "Nc6", ply: 7},
+                {m: "Nf3", ply: 8},
+                {m: "Bd7", ply: 9},
+                {m: "a3", ply: 10},
+                {m: "c4", ply: 11},
+                {m: "Be2", ply: 12},
+                {m: "Nge7", ply: 13},
+                {m: "Nbd2", ply: 14},
+                {m: "Na5", ply: 15, },
+            ],
+        },
+    ],
+    [
+        `
+        [Round "23.2"]
+        [White "LCZero v0.26.0-sv-t60-4229-mlh"]
+        [Black "Stockfish 202007032109"]
+        [Result "*"]
+        [Termination "unterminated"]
+        [TimeControl "3600+5"]
+
+        1. a3 e5 2. c4 d6 3. g3 g6 4. Nc3 Bg7 5. Bg2 Ne7 6. Nf3 f5 7. O-O O-O 8. b4 h6 9. Bb2 Be6 10. d3 c6
+        11. Nd2 Nd7 12. a4 g5 13. b5 Qc7 14. Qc2 Rad8 15. Ba3 Nf6 16. a5 c5 17. b6 axb6 18. Rfb1 Nc6 19. Rxb6 Nxa5 20. Rab1 Bc8
+        21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
+        *
+        `,
+        {
+            Headers: {
+                White: 'LCZero v0.26.0-sv-t60-4229-mlh',
+                Black: 'Stockfish 202007032109',
+                Result: '*',
+                Round: '23.2',
+                Termination: 'unterminated',
+                TimeControl: '3600+5',
+            },
+            Moves: [
+                {m: "a3", ply: 0},
+                {m: "e5", ply: 1},
+                {m: "c4", ply: 2},
+                {m: "d6", ply: 3},
+                {m: "g3", ply: 4},
+                {m: "g6", ply: 5},
+                {m: "Nc3", ply: 6},
+                {m: "Bg7", ply: 7},
+                {m: "Bg2", ply: 8},
+                {m: "Ne7", ply: 9},
+                {m: "Nf3", ply: 10},
+                {m: "f5", ply: 11},
+                {m: "O-O", ply: 12},
+                {m: "O-O", ply: 13},
+                {m: "b4", ply: 14},
+                {m: "h6", ply: 15},
+                {m: "Bb2", ply: 16},
+                {m: "Be6", ply: 17},
+                {m: "d3", ply: 18},
+                {m: "c6", ply: 19},
+                {m: "Nd2", ply: 20},
+                {m: "Nd7", ply: 21},
+                {m: "a4", ply: 22},
+                {m: "g5", ply: 23},
+                {m: "b5", ply: 24},
+                {m: "Qc7", ply: 25},
+                {m: "Qc2", ply: 26},
+                {m: "Rad8", ply: 27},
+                {m: "Ba3", ply: 28},
+                {m: "Nf6", ply: 29},
+                {m: "a5", ply: 30},
+                {m: "c5", ply: 31},
+                {m: "b6", ply: 32},
+                {m: "axb6", ply: 33},
+                {m: "Rfb1", ply: 34},
+                {m: "Nc6", ply: 35},
+                {m: "Rxb6", ply: 36},
+                {m: "Nxa5", ply: 37},
+                {m: "Rab1", ply: 38},
+                {m: "Bc8", ply: 39},
+                {m: "Nd5", ply: 40},
+                {m: "Qd7", ply: 41},
+                {m: "Bb2", ply: 42},
+                {m: "Kh8", ply: 43},
+                {m: "Bc3", ply: 44},
+                {m: "Nc6", ply: 45},
+                {m: "Qb2", ply: 46},
+                {m: "Qf7", ply: 47},
+                {m: "Nxf6", ply: 48},
+                {m: "Qxf6", ply: 49},
+                {m: "Bxc6", ply: 50},
+                {m: "bxc6", ply: 51},
+                {m: "Rxc6", ply: 52},
+                {m: "Rd7", ply: 53},
             ],
         },
     ],
 ].forEach(([data, answer], id) => {
     test(`parse_pgn:${id}`, () => {
         expect(parse_pgn(data)).toEqual(answer);
+    });
+});
+
+// update_live_eval
+[
+    [
+        `
+        [Round "23.2"]
+        [White "LCZero v0.26.0-sv-t60-4229-mlh"]
+        [Black "Stockfish 202007032109"]
+        [Result "*"]
+        [Termination "unterminated"]
+        [TimeControl "3600+5"]
+
+        1. a3 e5 2. c4 d6 3. g3 g6 4. Nc3 Bg7 5. Bg2 Ne7 6. Nf3 f5 7. O-O O-O 8. b4 h6 9. Bb2 Be6 10. d3 c6
+        11. Nd2 Nd7 12. a4 g5 13. b5 Qc7 14. Qc2 Rad8 15. Ba3 Nf6 16. a5 c5 17. b6 axb6 18. Rfb1 Nc6 19. Rxb6 Nxa5 20. Rab1 Bc8
+        21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
+        *
+        `,
+        'live',
+        {
+            depth: '16/45',
+            desc: '1x2080 Ti 7Men TB',
+            engine: 'LCZero v0.26_dev-MLH-63653',
+            eval: 0.14,
+            nodes: 8526571,
+            ply: 54,
+            pv: '28. Rb6 Kh7 29. Rb8 Qf7 30. Qb5 Rc7 31. Qb6 Qd7 32. Qb5 Qe7 33. Qb6 Rf7 34. Ra1 e4 35. Bxg7 e3 36. Bc3 exd2 37. Qb2 Qxe2 38. Qxd2 Qxd2 39. Bxd2 f4 40. gxf4 gxf4 41. f3 Rg7+ 42. Kf2 Bh3 43. Rg1 Rxg1 44. Kxg1 Rg7+ 45. Kf2 Rg2+ 46. Ke1 Rg1+ 47. Ke2 Rg2+ 48. Kd1 Rf2',
+            round: '23.2',
+            speed: '33kn/s',
+            tbhits: 0,
+        },
+        0,
+        undefined,
+        true,
+    ],
+    [
+        `
+        [Round "23.3"]
+        [White "LCZero v0.26.0-sv-t60-4229-mlh"]
+        [Black "Stockfish 202007032109"]
+        [Result "*"]
+        [Termination "unterminated"]
+        [TimeControl "3600+5"]
+
+        1. a3 e5 2. c4 d6 3. g3 g6 4. Nc3 Bg7 5. Bg2 Ne7 6. Nf3 f5 7. O-O O-O 8. b4 h6 9. Bb2 Be6 10. d3 c6
+        11. Nd2 Nd7 12. a4 g5 13. b5 Qc7 14. Qc2 Rad8 15. Ba3 Nf6 16. a5 c5 17. b6 axb6 18. Rfb1 Nc6 19. Rxb6 Nxa5 20. Rab1 Bc8
+        21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
+        *
+        `,
+        'live',
+        {
+            depth: '16/45',
+            desc: '1x2080 Ti 7Men TB',
+            engine: 'LCZero v0.26_dev-MLH-63653',
+            eval: 0.14,
+            nodes: 8526571,
+            ply: 54,
+            pv: '28. Rb6 Kh7 29. Rb8 Qf7 30. Qb5 Rc7 31. Qb6 Qd7 32. Qb5 Qe7 33. Qb6 Rf7 34. Ra1 e4 35. Bxg7 e3 36. Bc3 exd2 37. Qb2 Qxe2 38. Qxd2 Qxd2 39. Bxd2 f4 40. gxf4 gxf4 41. f3 Rg7+ 42. Kf2 Bh3 43. Rg1 Rxg1 44. Kxg1 Rg7+ 45. Kf2 Rg2+ 46. Ke1 Rg1+ 47. Ke2 Rg2+ 48. Kd1 Rf2',
+            round: '23.2',
+            speed: '33kn/s',
+            tbhits: 0,
+        },
+        0,
+        undefined,
+        false,
+    ],
+].forEach(([data, section, edata, eid, force_ply, answer], id) => {
+    test(`update_live_eval:${id}`, () => {
+        update_pgn(section, data);
+        expect(update_live_eval(section, edata, eid, force_ply)).toEqual(answer);
+    });
+});
+
+// update_pgn
+[
+    [
+        'live',
+        `
+        [Round "23.1"]
+        [White "LCZero v0.26.0-sv-t60-4229-mlh"]
+        [Black "Stockfish 202007032109"]
+        [Result "*"]
+        [Termination "unterminated"]
+        [TimeControl "3600+5"]
+
+        1. a3 e5 2. c4 d6 3. g3 g6 4. Nc3 Bg7 5. Bg2 Ne7 6. Nf3 f5 7. O-O O-O 8. b4 h6 9. Bb2 Be6 10. d3 c6
+        11. Nd2 Nd7 12. a4 g5 13. b5 Qc7 14. Qc2 Rad8 15. Ba3 Nf6 16. a5 c5 17. b6 axb6 18. Rfb1 Nc6 19. Rxb6 Nxa5 20. Rab1 Bc8
+        21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
+        *
+        `,
+        54,
+    ],
+].forEach(([section, data, answer], id) => {
+    test(`update_pgn:${id}`, () => {
+        update_pgn(section, data);
+        let main = xboards[section];
+        expect(main.moves.length).toBe(answer);
+    });
+});
+
+// update_player_eval
+[
+    [
+        {
+            x: 'archive',
+        },
+        'live',
+        {
+            color: 0,
+            depth: '10/41',
+            engine: 'Stoofvlees II a14',
+            eval: '0.41',
+            nodes: '1.06k',
+            plynum: 54,
+            pv: '28. Rh1 Kg8 29. Rag1 Qe7 30. Ra1 Ng5 31. Ke2 Kf8 32. Rag1 Ke8 33. Rg2 Kd7 34. Kd1 Kc7 35. Kc2 Kb7 36. Bf4 Rh8 37. Kb2 Rg8 38. Kc2 Rh8',
+            speed: '21.2 knps',
+            tbhits: '0',
+            time: 0.05,
+        },
+        false,
+    ],
+    [
+        {
+            x: 'live',
+        },
+        'live',
+        {
+            color: 0,
+            depth: '10/41',
+            engine: 'Stoofvlees II a14',
+            eval: '0.41',
+            nodes: '1.06k',
+            plynum: 54,
+            pv: '28. Rh1 Kg8 29. Rag1 Qe7 30. Ra1 Ng5 31. Ke2 Kf8 32. Rag1 Ke8 33. Rg2 Kd7 34. Kd1 Kc7 35. Kc2 Kb7 36. Bf4 Rh8 37. Kb2 Rg8 38. Kc2 Rh8',
+            speed: '21.2 knps',
+            tbhits: '0',
+            time: 0.05,
+        },
+        true,
+    ],
+].forEach(([states, section, data, answer], id) => {
+    test(`update_player_eval:${id}`, () => {
+        Assign(Y, states);
+        expect(update_player_eval(section, data)).toEqual(answer);
     });
 });
