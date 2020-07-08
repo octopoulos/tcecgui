@@ -1,8 +1,9 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
--          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
+~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
+2020-07-08 : 2020-07-08 : tests for update_live_eval + update_player_eval
 2020-07-05 : 2020-07-05 : analyse_pgn can group by events
 2020-07-05 : 2020-07-05 : parse_pgn should be able to parse all PGNs in the archive
 2020-07-05 : 2020-07-05 : improved thread extraction

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2020-07-08
 //
 // Game specific code:
 // - control the board, moves
@@ -653,8 +653,9 @@ function check_draw_arrow(board) {
 /**
  * Create 9 boards
  * - should be done at startup since we want to see the boards ASAP
+ * @param {string=} mode
  */
-function create_boards() {
+function create_boards(mode='html') {
     // 1) create all boards
     let keys = Keys(BOARDS);
 
@@ -665,7 +666,7 @@ function create_boards() {
                 id: `#${key}`,
                 list: true,
                 name: key,
-                mode: 'html',
+                mode: mode,
                 size: 24,
             }, ...BOARDS[key]},
             xboard = new XBoard(options);
@@ -938,7 +939,7 @@ function analyse_crosstable(section, data) {
                         sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
                     return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('');
-                cross_row[abbrev] = `<div class="nowrap">${scores}</div>`;
+                cross_row[abbrev] = `<div class="cross">${scores}</div>`;
             }
         });
         cross_rows.push(cross_row);
@@ -2862,8 +2863,10 @@ function update_mobility() {
         node = Id('mobil'),
         [goal, gply] = move.goal;
 
-    HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
-    node.dataset.i = gply;
+    if (node) {
+        HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
+        node.dataset.i = gply;
+    }
     HTML(`#mobil${1 - ply % 2}`, Abs(mobility));
 }
 
@@ -3075,7 +3078,7 @@ function update_overview_basic(section, headers) {
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
         let image = Id(`logo${id}`);
-        if (image.src != src) {
+        if (image && image.src != src) {
             image.setAttribute('alt', name);
             image.src = src;
         }
@@ -3559,7 +3562,7 @@ function update_hardware(id, engine, short, hardware, nodes) {
     let full_engine = `${engine}\n${player.hardware}`;
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
-        if (node.title != full_engine) {
+        if (node && node.title != full_engine) {
             HTML(node, short);
             Attrs(node, {title: full_engine});
             Assign(players[id], {
@@ -3578,10 +3581,11 @@ function update_hardware(id, engine, short, hardware, nodes) {
  * @param {Object} data
  * @param {number} id 0, 1
  * @param {number=} force_ply update with this data.pv even if there's more recent text + forces invert_black
+ * @returns {boolean}
  */
 function update_live_eval(section, data, id, force_ply) {
     if (section != Y.x || !data)
-        return;
+        return false;
 
     let board = xboards[`live${id}`],
         desc = data.desc,
@@ -3590,13 +3594,15 @@ function update_live_eval(section, data, id, force_ply) {
         moves = data.moves,
         round = data.round,
         wdl = data.wdl;
-    // moves => maybe old data?
+
+    // maybe old data?
+    if (round && round != main.round) {
+        if (DEV.new)
+            LS(`maybe old data => SKIP: ${round} vs ${main.round}`);
+        return false;
+    }
+
     if (moves) {
-        if (data.round != main.round) {
-            if (DEV.new)
-                LS(`maybe old data => SKIP: ${data.round} vs ${main.round}`);
-            return;
-        }
         // ply is offset by 1
         for (let move of moves) {
             // LS(`move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
@@ -3619,7 +3625,7 @@ function update_live_eval(section, data, id, force_ply) {
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
         HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
-        return;
+        return false;
     }
 
     // update engine name if it has changed
@@ -3658,6 +3664,7 @@ function update_live_eval(section, data, id, force_ply) {
 
     update_live_chart(moves || [data], id + 2);
     check_missing_moves(ply, round);
+    return true;
 }
 
 /**
@@ -3665,12 +3672,11 @@ function update_live_eval(section, data, id, force_ply) {
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
  * @param {Object} data
+ * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv)
-        return;
-    if (section != Y.x)
-        return;
+    if (!Y.live_pv || section != Y.x)
+        return false;
 
     let main = xboards[section],
         cur_ply = main.ply,
@@ -3713,7 +3719,7 @@ function update_player_eval(section, data) {
     if (data.ply == cur_ply + 1) {
         let stats = {
             depth: data.depth,
-            engine: format_engine(data.engine, true),
+            engine: format_engine(data.engine, true, 23),
             eval: format_eval(eval_, true),
             logo: short,
             node: FormatUnit(data.nodes),
@@ -3728,6 +3734,7 @@ function update_player_eval(section, data) {
     board.evals[data.ply] = data;
     update_live_chart([data], id);
     check_missing_moves(data.ply, null, data.pos);
+    return true;
 }
 
 // INPUT / OUTPUT
