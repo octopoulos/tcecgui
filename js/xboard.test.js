@@ -107,6 +107,7 @@ live.dual = archive;
     [{fen: '8/8/7k/5B2/6K1/8/8/8 b - - 0 1'}, 1.5],
     [{fen: '8/8/4k3/5q2/6K1/8/8/8 w - - 0 1'}, -2],
     [{fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, -20.5],
+    [{fen: 'b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', frc: true}, -37.5],
 ].forEach(([move, answer], id) => {
     test(`chess_mobility:${id}`, () => {
         expect(live.chess_mobility(move)).toEqual(answer);

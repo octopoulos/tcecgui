@@ -26,7 +26,7 @@ globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
 DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys, Lower, LS, Min,
 mix_hex_colors, Now, Parent, play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T,
-timers, update_svg, Upper, Visible, Y
+timers, Undefined, update_svg, Upper, Visible, Y
 */
 'use strict';
 
@@ -942,7 +942,7 @@ class XBoard {
 
         // calculate
         let checked = this.chess.checked(),
-            moves = this.chess.moves({frc: this.frc, legal: true}),
+            moves = this.chess.moves({frc: Undefined(move.frc, this.frc), legal: true}),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
