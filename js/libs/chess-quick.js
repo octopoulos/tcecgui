@@ -255,7 +255,7 @@ var Chess = function(fen) {
             move.flags |= BITS_PROMOTION;
             move.promotion = promotion;
         }
-        if (rook)
+        if (rook != undefined)
             move.rook = rook;
         else if (board[to])
             move.captured = board[to].type;

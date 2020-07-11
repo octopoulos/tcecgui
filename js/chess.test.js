@@ -158,6 +158,12 @@ let chess = new Chess(),
         {frc: true},
         {color: 0, flags: 32, frc: true, from: 116, piece: 'k', rook: 118, to: 118},
     ],
+    [
+        'rk2r3/1pp4p/p5bQ/P2q4/2R4P/1PB1p3/2P5/1K2R3 b q - 2 34',
+        'O-O-O',
+        {frc: true},
+        {color: 1, flags: 64, frc: true, from: 1, piece: 'k', rook: 0, to: 2},
+    ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`move:${id}`, () => {
         chess.load(fen);
