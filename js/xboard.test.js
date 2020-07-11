@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-03
+// @version 2020-07-11
 //
 /*
 globals
@@ -79,6 +79,8 @@ live.dual = archive;
     [START_FEN, ['d5'], START_FEN],
     [START_FEN, ['d4'], 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
     [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
+    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1'],
+    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1'],
 ].forEach(([fen, moves, answer], id) => {
     test(`chess_fen:${id}`, () => {
         live.chess_load(fen);
@@ -113,12 +115,49 @@ live.dual = archive;
 
 // chess_move
 [
-    [START_FEN, 'd5', null],
-    [START_FEN, 'd4', {color: 0, flags: 4, from: 99, piece: 'p', to: 67}],
-].forEach(([fen, move, answer], id) => {
+    [START_FEN, 'd5', undefined, null],
+    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 'p', to: 67}],
+    [
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
+        'O-O',
+        undefined,
+        {color: 0, flags: 32, frc: undefined, from: 116, piece: 'k', rook: 119, to: 118},
+    ],
+    [
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
+        'O-O-O',
+        undefined,
+        {color: 0, flags: 64, frc: undefined, from: 116, piece: 'k', rook: 112, to: 114},
+    ],
+    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, null],
+    [
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
+        'O-O',
+        {frc: true},
+        {color: 1, flags: 32, frc: true, from: 3, piece: 'k', rook: 7, to: 6},
+    ],
+    [
+        'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
+        'O-O',
+        {frc: true},
+        {color: 0, flags: 32, frc: true, from: 118, piece: 'k', rook: 119, to: 118},
+    ],
+    [
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
+        'O-O',
+        {frc: true},
+        {color: 0, flags: 32, frc: true, from: 115, piece: 'k', rook: 119, to: 118},
+    ],
+    [
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
+        'O-O-O',
+        {frc: true},
+        {color: 0, flags: 64, frc: true, from: 115, piece: 'k', rook: 113, to: 114},
+    ],
+].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {
         live.chess_load(fen);
-        expect(live.chess_move(move)).toEqual(answer);
+        expect(live.chess_move(move, options)).toEqual(answer);
     });
 });
 

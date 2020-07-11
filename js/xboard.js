@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-03
+// @version 2020-07-11
 //
 // game board:
 // - 4 rendering modes:
@@ -928,6 +928,9 @@ class XBoard {
 
         let fen = move.fen,
             ply = get_move_ply(move);
+        // CHECK THIS
+        if (!fen)
+            return -20.5;
 
         if (ply == -2) {
             move.goal = [-20.5, -1];
@@ -939,7 +942,7 @@ class XBoard {
 
         // calculate
         let checked = this.chess.checked(),
-            moves = this.chess.moves({legal: true}),
+            moves = this.chess.moves({frc: this.frc, legal: true}),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -960,9 +963,10 @@ class XBoard {
     /**
      * Temporary chess.js
      * @param {string|Object} text
+     * @param {Object=} options
      * @returns {Object}
      */
-    chess_move(text) {
+    chess_move(text, options={}) {
         // handle UCI: e1g1 = O-O, e7e8q = promotion
         if (text.length >= 4 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
             text = {
@@ -971,15 +975,18 @@ class XBoard {
                 to: text.slice(2, 4),
             };
         }
-        return this.chess.move(text);
+
+        options.frc = options.frc || this.frc;
+        return this.chess.move(text, options);
     }
 
     /**
      * Calculate all legal moves
+     * @param {Object=} options
      * @returns {Object[]}
      */
-    chess_moves() {
-        return this.chess.moves({legal: true});
+    chess_moves(options={legal: true}) {
+        return this.chess.moves(options);
     }
 
     /**
@@ -1232,7 +1239,7 @@ class XBoard {
                     return;
 
                 this.chess_load(this.fen);
-                let moves = this.chess.moves({legal: true, single_square: this.picked});
+                let moves = this.chess.moves({frc: this.frc, legal: true, single_square: this.picked});
                 for (let move of moves)
                     this.add_high(move.to, 'target');
                 if (moves[0])
@@ -1772,6 +1779,7 @@ class XBoard {
             return;
 
         this.start_fen = start_fen || START_FEN;
+        this.frc = this.start_fen != START_FEN;
 
         this.fen = '';
         this.goal = [-20.5, -1];
