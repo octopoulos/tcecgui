@@ -612,7 +612,7 @@ var Chess = function(fen) {
         }
 
         // turn off castling if we move a rook
-        if (castling[us] && move.piece == 'r') {
+        if (castling[us] && move.piece == 'r' && rank(move.from) == rank(kings[us])) {
             if (move.from > kings[us])
                 castling[us] &= ~BITS_KSIDE_CASTLE;
             else
@@ -620,7 +620,7 @@ var Chess = function(fen) {
         }
 
         // turn off castling if we capture a rook
-        if (castling[them] && move.captured == 'r') {
+        if (castling[them] && move.captured == 'r' && rank(move.from) == rank(kings[them])) {
             if (move.from > kings[them])
                 castling[them] &= ~BITS_KSIDE_CASTLE;
             else
