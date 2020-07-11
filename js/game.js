@@ -1987,6 +1987,15 @@ function set_season_events() {
         Class(this, 'active');
         Class(this.nextElementSibling, 'active');
     }, table);
+
+    // hover
+    Events('#table-season a', 'mouseenter mouseleave', function(e) {
+        Class('a.hover', '-hover');
+        if (e.type == 'mouseenter') {
+            Class(this, 'hover');
+            Class(this.dataset.u? this.nextElementSibling: this.previousElementSibling, 'hover');
+        }
+    });
 }
 
 // BRACKETS / TOURNAMENT
