@@ -81,6 +81,11 @@ let chess = new Chess(),
 [
     [START_FEN, ['e4'], 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'],
     [START_FEN, ['e4', 'e5'], 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'],
+    [
+        'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w KQkq - 1 11',
+        ['Rc1'],
+        'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B1R1KBR1 b Kkq - 2 11',
+    ],
 ].forEach(([fen, moves, answer], id) => {
     test(`fen:${id}`, () => {
         chess.load(fen);
@@ -147,6 +152,12 @@ let chess = new Chess(),
         {frc: true},
         {color: 0, flags: 64, frc: true, from: 115, piece: 'k', rook: 113, to: 114},
     ],
+    [
+        '4k1r1/p2rbpp1/1q2p1n1/2pb3p/5P1P/1PB1P1P1/2Q1BN2/R3K1R1 w Kk - 2 21',
+        'O-O',
+        {frc: true},
+        {color: 0, flags: 32, frc: true, from: 116, piece: 'k', rook: 118, to: 118},
+    ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`move:${id}`, () => {
         chess.load(fen);
@@ -180,6 +191,7 @@ let chess = new Chess(),
             },
         ],
     ],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', {}, 36, []],
 ].forEach(([fen, options, number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen);
@@ -248,13 +260,14 @@ let chess = new Chess(),
     ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', ['O-O'], {}, 1, ''],
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O'], {frc: true}, 1, ''],
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O-O'], {frc: true}, 1, ''],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Qq - 1 11', ['O-O-O'], {frc: true}, 1, ''],
 ].forEach(([fen, moves, options, steps, answer], id) => {
     test(`undo:${id}`, () => {
         chess.load(fen);
         for (let move of moves)
             chess.move(move, options);
         for (let i = 0; i < steps; i ++)
-            chess.undo(id == 6);
+            chess.undo();
         expect(chess.fen()).toEqual(answer || fen);
     });
 });

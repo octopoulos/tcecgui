@@ -103,17 +103,7 @@ var Chess = function(fen) {
             a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
             a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
             a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
-        },
-        ROOKS = [
-            [
-                {square: SQUARES.a1, flag: BITS_QSIDE_CASTLE},
-                {square: SQUARES.h1, flag: BITS_KSIDE_CASTLE},
-            ],
-            [
-                {square: SQUARES.a8, flag: BITS_QSIDE_CASTLE},
-                {square: SQUARES.h8, flag: BITS_KSIDE_CASTLE},
-            ],
-        ];
+        };
 
     let board = new Array(128);
     let kings = [EMPTY, EMPTY];
@@ -143,6 +133,9 @@ var Chess = function(fen) {
     }
 
     function load(fen) {
+        if (!fen)
+            return false;
+
         let tokens = fen.split(/\s+/),
             position = tokens[0],
             square = 0;
@@ -377,7 +370,7 @@ var Chess = function(fen) {
                             else
                                 error = pos;
                         }
-                        else if (attacked(them, pos))
+                        else if (rook != undefined && attacked(them, pos))
                             error = pos;
                         pos --;
                     }
@@ -419,7 +412,7 @@ var Chess = function(fen) {
                             else
                                 error = pos;
                         }
-                        else if (attacked(them, pos))
+                        else if (rook != undefined && attacked(them, pos))
                             error = pos;
                         pos ++;
                     }
@@ -599,7 +592,7 @@ var Chess = function(fen) {
 
         // if pawn promotion, replace with new piece
         if (move.flags & BITS_PROMOTION)
-            board[move.to] = {type: move.promotion, color: us};
+            board[move.to] = {color: us, type: move.promotion};
 
         // if we moved the king
         if (board[move.to].type === KING) {
@@ -609,8 +602,9 @@ var Chess = function(fen) {
             if (move.flags & BITS_CASTLE) {
                 let castling_from = move.rook,
                     castling_to = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
-                board[castling_to] = board[castling_from];
-                board[castling_from] = null;
+                board[castling_to] = {color: us, type: 'r'};
+                if (castling_from != castling_to && castling_from != move.to)
+                    board[castling_from] = null;
             }
 
             // turn off castling
@@ -618,23 +612,19 @@ var Chess = function(fen) {
         }
 
         // turn off castling if we move a rook
-        if (castling[us]) {
-            for (let i = 0, len = ROOKS[us].length; i < len; i ++) {
-                if (move.from === ROOKS[us][i].square && castling[us] & ROOKS[us][i].flag) {
-                    castling[us] ^= ROOKS[us][i].flag;
-                    break;
-                }
-            }
+        if (castling[us] && move.piece == 'r') {
+            if (move.from > kings[us])
+                castling[us] &= ~BITS_KSIDE_CASTLE;
+            else
+                castling[us] &= ~BITS_QSIDE_CASTLE;
         }
 
         // turn off castling if we capture a rook
-        if (castling[them]) {
-            for (let i = 0, len = ROOKS[them].length; i < len; i ++) {
-                if (move.to === ROOKS[them][i].square && castling[them] & ROOKS[them][i].flag) {
-                    castling[them] ^= ROOKS[them][i].flag;
-                    break;
-                }
-            }
+        if (castling[them] && move.captured == 'r') {
+            if (move.from > kings[them])
+                castling[them] &= ~BITS_KSIDE_CASTLE;
+            else
+                castling[them] &= ~BITS_QSIDE_CASTLE;
         }
 
         // if big pawn move, update the en passant square
@@ -660,7 +650,7 @@ var Chess = function(fen) {
         turn = 1 - turn;
     }
 
-    function undo_move(debug) {
+    function undo_move() {
         let old = history.pop();
         if (old == null)
             return null;
@@ -678,7 +668,8 @@ var Chess = function(fen) {
 
         if (move.from != move.to) {
             board[move.from] = board[move.to];
-            board[move.from].type = move.piece;    // to undo any promotions
+            if (board[move.from])
+                board[move.from].type = move.piece;
             board[move.to] = null;
         }
 
@@ -697,7 +688,7 @@ var Chess = function(fen) {
         if (move.flags & BITS_CASTLE) {
             let castling_from = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
             board[move.rook] = {color: us, type: 'r'};
-            if (castling_from != move.from)
+            if (castling_from != move.from && castling_from != move.rook)
                 board[castling_from] = null;
         }
 
@@ -812,8 +803,8 @@ var Chess = function(fen) {
          * @param {string|Object} move ex: Nxb7, {from: 'h7', to: 'h8', promotion: 'q'}
          * @param {Object=} options
          */
-        move: (move, options) => {
-            let frc = options && options.frc,
+        move: (move, options={}) => {
+            let frc = options.frc,
                 move_obj = null,
                 moves = generate_moves({frc: frc});
 
