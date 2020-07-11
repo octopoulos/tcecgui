@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-08
+// @version 2020-07-10
 //
 // Game specific code:
 // - control the board, moves
@@ -733,8 +733,9 @@ function redraw_arrows() {
  * - &1: mark board invalid
  * - &2: reset the board completely
  * - &4: reset board evals
+ * @param {string=} start_fen
  */
-function reset_sub_boards(mode) {
+function reset_sub_boards(mode, start_fen) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (board.main_manual)
@@ -743,7 +744,7 @@ function reset_sub_boards(mode) {
         if (mode & 1)
             board.valid = false;
         if (mode & 2)
-            board.reset(mode & 4);
+            board.reset(mode & 4, start_fen);
     });
 }
 
@@ -2870,7 +2871,7 @@ function update_mobility() {
 
     let mobility = main.chess_mobility(move),
         node = Id('mobil'),
-        [goal, gply] = move.goal;
+        [goal, gply] = move.goal || [];
 
     if (node) {
         HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
@@ -3229,9 +3230,12 @@ function update_pgn(section, pgn, extras, reset_moves) {
         num_move = moves.length,
         overview = Id('overview');
 
-    // FUTURE: use ?? operator
-    if (section == 'archive' && headers)
-        download_live_evals(headers.Round);
+    if (headers) {
+        if (section == 'archive')
+            download_live_evals(headers.Round);
+        if (headers.FEN && headers.SetUp)
+            pgn.frc = headers.FEN;
+    }
 
     // 2) update overview
     if (pgn.Users)
@@ -3254,9 +3258,9 @@ function update_pgn(section, pgn, extras, reset_moves) {
             LS(pgn);
         }
 
-        main.reset(1, headers.SetUp? headers.FEN: null);
+        main.reset(1, pgn.frc);
         if (is_same) {
-            reset_sub_boards(7);
+            reset_sub_boards(7, pgn.frc);
             reset_charts();
         }
         new_game = (main.event && main.round)? 2: 1;
@@ -3275,9 +3279,6 @@ function update_pgn(section, pgn, extras, reset_moves) {
         HTML(main.xmoves, '');
         HTML(main.pv_node, '');
     }
-
-    if (!num_move)
-        return;
 
     // 4) add the moves
     main.add_moves(moves);
