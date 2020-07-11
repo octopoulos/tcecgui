@@ -105,27 +105,27 @@ var Chess = function(fen) {
             a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
         };
 
-    let board = new Array(128);
-    let kings = [EMPTY, EMPTY];
-    let turn = WHITE;
-    let castling = [0, 0];
-    let ep_square = EMPTY;
-    let half_moves = 0;
-    let move_number = 1;
-    let history = [];
+    let board = new Array(128),
+        castling = [0, 0],
+        ep_square = EMPTY,
+        half_moves = 0,
+        history = [],
+        kings = [EMPTY, EMPTY],
+        move_number = 1,
+        turn = WHITE;
 
     // if the user passes in a fen string, load it, else default to starting position
     load((fen == undefined)? DEFAULT_POSITION: fen);
 
     function clear() {
         board = new Array(128);
-        kings = [EMPTY, EMPTY];
-        turn = WHITE;
         castling = [0, 0];
         ep_square = EMPTY;
         half_moves = 0;
-        move_number = 1;
         history = [];
+        kings = [EMPTY, EMPTY];
+        move_number = 1;
+        turn = WHITE;
     }
 
     function reset() {
@@ -145,7 +145,7 @@ var Chess = function(fen) {
         for (let i = 0; i < position.length; i ++) {
             let piece = position[i];
 
-            if (piece === '/')
+            if (piece == '/')
                 square += 8;
             else if ('0123456789'.includes(piece))
                 square += parseInt(piece, 10);
@@ -167,7 +167,7 @@ var Chess = function(fen) {
         if (tokens[2].indexOf('q') > -1)
             castling[1] |= BITS_QSIDE_CASTLE;
 
-        ep_square = (tokens[3] === '-') ? EMPTY : SQUARES[tokens[3]];
+        ep_square = (tokens[3] == '-') ? EMPTY : SQUARES[tokens[3]];
         half_moves = parseInt(tokens[4], 10);
         move_number = parseInt(tokens[5], 10);
         return true;
@@ -187,7 +187,7 @@ var Chess = function(fen) {
                 }
                 let color = board[i].color,
                     piece = board[i].type;
-                fen += (color === WHITE)? piece.toUpperCase() : piece.toLowerCase();
+                fen += (color == WHITE)? piece.toUpperCase(): piece.toLowerCase();
             }
 
             if ((i + 1) & 0x88) {
@@ -209,7 +209,7 @@ var Chess = function(fen) {
 
         // do we have an empty castling flag?
         cflags = cflags || '-';
-        let epflags = (ep_square === EMPTY) ? '-' : algebraic(ep_square);
+        let epflags = (ep_square == EMPTY)? '-': algebraic(ep_square);
 
         return [fen, COLORS[turn], cflags, epflags, half_moves, move_number].join(' ');
     }
@@ -237,7 +237,7 @@ var Chess = function(fen) {
         let sq = SQUARES[square];
 
         board[sq] = {color: piece.color, type: piece.type};
-        if (piece.type === KING)
+        if (piece.type == KING)
             kings[piece.color] = sq;
         return true;
     }
@@ -267,7 +267,7 @@ var Chess = function(fen) {
 
     function add_move(board, moves, from, to, flags, rook) {
         // if pawn promotion
-        if (board[from].type === PAWN && (rank(to) === RANK_8 || rank(to) === RANK_1)) {
+        if (board[from].type == PAWN && (rank(to) == RANK_8 || rank(to) == RANK_1)) {
             for (let piece of [QUEEN, ROOK, BISHOP, KNIGHT])
                 moves.push(build_move(board, from, to, flags, piece));
         }
@@ -300,7 +300,7 @@ var Chess = function(fen) {
             if (piece == null || piece.color !== us)
                 continue;
 
-            if (piece.type === PAWN) {
+            if (piece.type == PAWN) {
                 // single square, non-capturing
                 let square = i + PAWN_OFFSETS[us][0];
                 if (board[square] == null) {
@@ -308,7 +308,7 @@ var Chess = function(fen) {
 
                     // double square
                     square = i + PAWN_OFFSETS[us][1];
-                    if (second_rank[us] === rank(i) && board[square] == null)
+                    if (second_rank[us] == rank(i) && board[square] == null)
                         add_move(board, moves, i, square, BITS_BIG_PAWN);
                 }
 
@@ -317,9 +317,9 @@ var Chess = function(fen) {
                     square = i + PAWN_OFFSETS[us][j];
                     if (square & 0x88) continue;
 
-                    if (board[square] != null && board[square].color === them)
+                    if (board[square] != null && board[square].color == them)
                         add_move(board, moves, i, square, BITS_CAPTURE);
-                    else if (square === ep_square)
+                    else if (square == ep_square)
                         add_move(board, moves, i, ep_square, BITS_EP_CAPTURE);
                 }
             }
@@ -330,18 +330,20 @@ var Chess = function(fen) {
 
                     while (true) {
                         square += offset;
-                        if (square & 0x88) break;
+                        if (square & 0x88)
+                            break;
 
                         if (board[square] == null)
                             add_move(board, moves, i, square, BITS_NORMAL);
                         else {
-                            if (board[square].color === us) break;
+                            if (board[square].color == us)
+                                break;
                             add_move(board, moves, i, square, BITS_CAPTURE);
                             break;
                         }
 
                         // break, if knight or king
-                        if (piece.type === 'n' || piece.type === 'k')
+                        if (piece.type == 'n' || piece.type == 'k')
                             break;
                     }
                 }
@@ -352,7 +354,7 @@ var Chess = function(fen) {
         // a) we're generating all moves
         // b) we're doing single square move generation on the king's square
         let castling_from = kings[us];
-        if (castling_from != EMPTY && (!single_square || last_sq === castling_from)) {
+        if (castling_from != EMPTY && (!single_square || last_sq == castling_from)) {
             // king-side castling
             if (castling[us] & BITS_KSIDE_CASTLE) {
                 let castling_to, error, rook,
@@ -478,7 +480,7 @@ var Chess = function(fen) {
                 output += move.piece.toUpperCase() + disambiguator;
 
             if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE)) {
-                if (move.piece === PAWN)
+                if (move.piece == PAWN)
                     output += algebraic(move.from)[0];
                 output += 'x';
             }
@@ -520,18 +522,18 @@ var Chess = function(fen) {
                 piece = board[i];
 
             if (ATTACKS[index] & (1 << SHIFTS[piece.type])) {
-                if (piece.type === PAWN) {
+                if (piece.type == PAWN) {
                     if (difference > 0) {
-                        if (piece.color === WHITE)
+                        if (piece.color == WHITE)
                             return true;
                     }
-                    else if (piece.color === BLACK)
+                    else if (piece.color == BLACK)
                         return true;
                     continue;
                 }
 
                 // if the piece is a knight or a king
-                if (piece.type === 'n' || piece.type === 'k')
+                if (piece.type == 'n' || piece.type == 'k')
                     return true;
 
                 let blocked,
@@ -585,7 +587,7 @@ var Chess = function(fen) {
 
         // if ep capture, remove the captured pawn
         if (move.flags & BITS_EP_CAPTURE)
-            if (turn === BLACK)
+            if (turn == BLACK)
                 board[move.to - 16] = null;
             else
                 board[move.to + 16] = null;
@@ -595,7 +597,7 @@ var Chess = function(fen) {
             board[move.to] = {color: us, type: move.promotion};
 
         // if we moved the king
-        if (board[move.to].type === KING) {
+        if (board[move.to].type == KING) {
             kings[board[move.to].color] = move.to;
 
             // if we castled, move the rook next to the king
@@ -629,7 +631,7 @@ var Chess = function(fen) {
 
         // if big pawn move, update the en passant square
         if (move.flags & BITS_BIG_PAWN) {
-            if (turn === BLACK)
+            if (turn == BLACK)
                 ep_square = move.to - 16;
             else
                 ep_square = move.to + 16;
@@ -638,15 +640,15 @@ var Chess = function(fen) {
             ep_square = EMPTY;
 
         // reset the 50 move counter if a pawn is moved or a piece is captured
-        if (move.piece === PAWN)
+        if (move.piece == PAWN)
             half_moves = 0;
         else if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE))
             half_moves = 0;
         else
             half_moves ++;
 
-        if (turn === BLACK)
-            move_number++;
+        if (turn == BLACK)
+            move_number ++;
         turn = 1 - turn;
     }
 
@@ -677,7 +679,7 @@ var Chess = function(fen) {
             board[move.to] = {color: them, type: move.captured};
         else if (move.flags & BITS_EP_CAPTURE) {
             let index;
-            if (us === BLACK)
+            if (us == BLACK)
                 index = move.to - 16;
             else
                 index = move.to + 16;
@@ -712,12 +714,12 @@ var Chess = function(fen) {
 
             // if a move of the same piece type ends on the same to square,
             // we'll need to add a disambiguator to the algebraic notation
-            if (piece === ambig_piece && from !== ambig_from && to === ambig_to) {
+            if (piece == ambig_piece && from !== ambig_from && to == ambig_to) {
                 ambiguities ++;
 
-                if (rank(from) === rank(ambig_from))
+                if (rank(from) == rank(ambig_from))
                     same_rank ++;
-                if (file(from) === file(ambig_from))
+                if (file(from) == file(ambig_from))
                     same_file ++;
             }
         }
@@ -746,7 +748,7 @@ var Chess = function(fen) {
 
         for (let i = 0, len = moves.length; i < len; i ++) {
             // try the strict parser first, then the sloppy parser if requested by the user
-            if (clean_move === stripped_san(move_to_san(moves[i])))
+            if (clean_move == stripped_san(move_to_san(moves[i])))
                 return moves[i];
 
             if (matches &&
@@ -808,14 +810,14 @@ var Chess = function(fen) {
                 move_obj = null,
                 moves = generate_moves({frc: frc});
 
-            if (typeof move === 'string')
+            if (typeof move == 'string')
                 move_obj = move_from_san(move, moves, frc);
-            else if (typeof move === 'object') {
+            else if (typeof move == 'object') {
                 // convert the pretty move object to an ugly move object
                 for (let i = 0, len = moves.length; i < len; i ++) {
-                    if (move.from === algebraic(moves[i].from)
-                            && move.to === algebraic(moves[i].to)
-                            && (!('promotion' in moves[i]) || move.promotion === moves[i].promotion)) {
+                    if (move.from == algebraic(moves[i].from)
+                            && move.to == algebraic(moves[i].to)
+                            && (!('promotion' in moves[i]) || move.promotion == moves[i].promotion)) {
                         move_obj = moves[i];
                         move_obj.san = move_to_san(move_obj);
                         break;
