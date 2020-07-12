@@ -187,6 +187,7 @@ let ANALYSIS_URLS = {
         wdl: [3, 1],
     },
     old_cup,
+    old_width,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -1465,6 +1466,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     if (name.slice(0, 8) == 'shortcut') {
         name = Y[name];
         is_shortcut = true;
+        parent = 'quick';
     }
 
     // 2) update table data
@@ -1530,7 +1532,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             row_page = Y.rows_per_page,
             total = data.length;
 
-        if (active == name) {
+        if (active == name || is_shortcut) {
             let filter = data_x[`filter_${parent}`];
             if (filter) {
                 let words = Lower(filter).split(' ');
@@ -1558,11 +1560,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 page = (active_row >= 0)? Floor(active_row / row_page): 0;
             page = Min(page, num_page - 1);
 
-            HTML('.row-filter', num_row, node);
-            HTML('.row-total', total, node);
-            Class('.active', '-active', true, node);
-            Class(`[data-p="${page}"]`, 'active', true, node);
-
+            if (node) {
+                HTML('.row-filter', num_row, node);
+                HTML('.row-total', total, node);
+                Class('.active', '-active', true, node);
+                Class(`[data-p="${page}"]`, 'active', true, node);
+            }
             data_x[`rows_${parent}`] = num_row;
         }
 
@@ -1775,20 +1778,15 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // 6) update shortcuts
     if (parent == 'table') {
-        let html = HTML(table);
-        for (let id = 1; id <= 2 ; id ++) {
+        for (let id = 1; id <= 2; id ++) {
             // shortcut matches this table?
             let key = `shortcut_${id}`;
             if (name != Y[key])
                 continue;
 
-            let node = Id(key);
-            if (paginated && data_x.page_quick >= 0)
-                update_table(section, name, null, 'quick', {output: key});
-            else {
-                HTML(node, html);
+            if (!paginated || data_x.page_quick < 0)
                 data_x.page_quick = data_x[page_key];
-            }
+            update_table(section, key);
         }
     }
 
@@ -2324,9 +2322,7 @@ function create_bracket(section, data) {
     HTML(node, lines.join(''));
     translate_node(node);
 
-    // necessary to correctly size each round
-    Style(node.firstChild, `height:${node.clientHeight}px;width:${(240 + 24) * round}px`);
-    create_connectors();
+    resize_bracket(true);
 }
 
 /**
@@ -2395,6 +2391,13 @@ function create_connectors() {
 
     HTML(svg_node, '');
     InsertNodes(svg_node, svgs);
+
+    // mouse hover
+    Events('[data-s]', 'click mouseenter mouseleave', function(e) {
+        Class('[data-s]', 'high', false, parent);
+        if (e.type != 'mouseleave')
+            Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
+    }, null, parent);
 }
 
 /**
@@ -2439,14 +2442,6 @@ function create_cup(section, data, show) {
         else
             show_filtered_games(text);
     });
-
-    // mouse hover
-    let parent = Id('bracket');
-    Events('[data-s]', 'mouseenter mouseleave', function(e) {
-        Class('[data-s]', 'high', false, parent);
-        if (e.type == 'mouseenter')
-            Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
-    }, null, parent);
 }
 
 /**
@@ -2467,6 +2462,25 @@ function create_medals(parent) {
             style = `left:${ax + 4}px;top:${ay}px`;
         return CreateNode('hori', html, {class: `place place${place} fastart`, 'data-s': data.s, style: style});
     });
+}
+
+/**
+ * Resize the bracket + redo the connectors
+ * @param {boolean=} force
+ */
+function resize_bracket(force) {
+    let window_width = window.innerWidth;
+    if (!force && old_width)
+        if ((window_width > 640 && old_width > 640) || (window_width <= 640 && old_width <= 640))
+            return;
+
+    let node = Id('table-brak'),
+        round = A('.rounds', node).length,
+        width = (window_width <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
+
+    old_width = window_width;
+    Style(node.firstChild, `height:${node.clientHeight}px;width:${width}px`);
+    create_connectors();
 }
 
 // PGN
@@ -4321,6 +4335,9 @@ function opened_table(node, name, tab) {
     }
 
     switch (name) {
+    case 'brak':
+        resize_bracket(true);
+        break;
     case 'crash':
         download_table(section, 'crash.json', name);
         break;

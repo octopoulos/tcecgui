@@ -1052,8 +1052,8 @@ grid {
 
 /* bracket */
 .rounds {
-    margin: 0 24px 0 0;
-    width: 240px;
+    margin: 0 38px 0 0;
+    width: 227px;
 }
 .round {
     color: #888;
@@ -1063,7 +1063,7 @@ grid {
     border: 1px solid transparent;
     cursor: pointer;
     font-size: 13px;
-    margin: 0.5em;
+    margin: 8px;
     z-index: 3;
 }
 .final {
@@ -1079,7 +1079,7 @@ grid {
 .match-title {
     background: #808080;
     color: #fff;
-    padding: 0.15em 0 0.2em 0.3em;
+    padding: 0.05em 0 0.15em 0.3em;
     width: 100%;
 }
 .match-logo {
@@ -1087,8 +1087,7 @@ grid {
     margin-right: 0.3em;
     width: 38px;
 }
-.name,
-.name.win {
+.name {
     background: #eee;
     color: #000;
     min-height: 27px;
@@ -1502,15 +1501,39 @@ svg.down {
     }
 }
 @media (max-width: 640px) {
+    #bracket {
+        margin-left: 0;
+    }
     #header {
         padding: 0;
     }
-    .scroller td {
-        padding: 0.6em 0.3em;
+    .match-grid {
+        grid-template-columns: 1fr 30px;
+    }
+    .match-logo {
+        height: 17px;
+        width: 34px;
+    }
+    .match-title {
+        font-size: 12px;
+    }
+    .name {
+        font-size: 12px;
+        width: 156px;
     }
     #popup-about,
     .settings {
         font-size: 14px;
+    }
+    .rounds {
+        margin: 0 18px 0 0;
+        width: 204px;
+    }
+    .score {
+        font-size: 12px;
+    }
+    .scroller td {
+        padding: 0.6em 0.3em;
     }
 }
 @media (max-width: 866px) {

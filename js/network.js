@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-12
 //
 // all socket functions are here
 //
@@ -142,8 +142,10 @@ function listen_log() {
     if (!socket)
         return;
     let new_room = Y.live_log;
-    if (Y.log_auto_start && new_room == 0)
-        new_room= 'all';
+    if (Y.log_auto_start && new_room == 0) {
+        new_room = 'all';
+        Y.live_log = 'all';
+    }
 
     // 1) leave the previous room
     if (prev_room && prev_room != new_room) {
