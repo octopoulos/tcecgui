@@ -16,8 +16,8 @@ ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AU
 C, cannot_click, change_page, change_setting, change_setting_game, change_theme, changed_hash, changed_section,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS,
 detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll,
-game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML,
-ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes, Hide,
+HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
 players, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
@@ -365,6 +365,7 @@ function check_hash_special(dico) {
 
     if (!['archive', 'live'].includes(Y.x))
         Y.x = 'live';
+    hashes[Y.x] = dico;
 
     let is_live = (Y.x == 'live'),
         parent = Id('tables');
@@ -1632,7 +1633,7 @@ function set_global_events() {
             case 'load_pgn':
                 let new_section = 'archive';
                 if (update_pgn(new_section, data)) {
-                    Y.no_scroll = true;
+                    Y.scroll = '#overview';
                     Y.x = new_section;
                     check_hash_special({x: new_section});
                 }
