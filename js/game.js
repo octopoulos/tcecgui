@@ -2324,7 +2324,7 @@ function create_bracket(section, data) {
     translate_node(node);
 
     // necessary to correctly size each round
-    Style(node.firstChild, `height:${node.clientHeight}px;width:${(232 + 16) * round + 24}px`);
+    Style(node.firstChild, `height:${node.clientHeight}px;width:${(240 + 24) * round}px`);
     create_connectors();
 }
 
