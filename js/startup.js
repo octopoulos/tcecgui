@@ -20,7 +20,7 @@ game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_typ
 HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
+popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -932,6 +932,9 @@ function resize() {
             height = width / Max(0.5, Y.graph_aspect_ratio);
         Style(node, `height:${height}px;width:${width}px`);
     });
+
+    if (Visible('#table-brak'))
+        resize_bracket();
 
     adjust_popups();
     resize_game();
