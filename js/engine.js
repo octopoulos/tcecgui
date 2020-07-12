@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2020-07-11
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -522,7 +522,7 @@ function save_storage(name, value) {
  */
 function resize_text(text, resize)
 {
-    if (!text || resize < 1 || typeof(text) != 'string')
+    if (!text || resize < 1 || !IsString(text))
         return text;
 
     let len = text.length;
@@ -771,7 +771,7 @@ function set_combo_value(letter, value, save=true) {
 
     // save in memory
     if (save) {
-        if (typeof(save) == 'string')
+        if (IsString(save))
             letter = save;
 
         if (Y[letter] !== value) {
@@ -1488,7 +1488,7 @@ function create_url_list(dico) {
 
     let html = Keys(dico).map(key => {
         let value = dico[key];
-        if (typeof(value) != 'string')
+        if (!IsString(value))
             return '<hr>';
 
         if (!value)

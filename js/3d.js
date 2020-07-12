@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-11
 //
 // general 3d rendering code
 //
@@ -1290,12 +1290,13 @@ function show_settings(name, xy) {
 
             if (type == 'number')
                 lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
-            else if (type == 'text')
+            else if (type == 'text') {
                 lines.push(
                     `<input name="${key}" type="text" class="setting" data-t="Enter JSON data" data-t2="placeholder" value="">`
-                    + '<input id="file" type="file" class="dn">'
                     + '<label for="file" data-t="Choose file"></label>'
                 );
+                Attrs(Id('file'), {'data-x': key});
+            }
             else if (type)
                 lines.push(`<input name="${key}" type="${type}" class="setting" value="${y_key}">`);
             // dictionary
@@ -1492,15 +1493,6 @@ function set_modal_events(parent) {
     C('div[name]', function() {
         change_setting(this.getAttribute('name'));
     }, parent);
-
-    // file
-    Events(Id('file'), 'change', function() {
-        let file = this.files[0];
-        if (file)
-            file.text().then(data => {
-                change_setting('import_settings', data);
-            });
-    });
 
     if (virtual_set_modal_events_special)
         virtual_set_modal_events_special();

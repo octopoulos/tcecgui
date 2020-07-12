@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-10
+// @version 2020-07-11
 //
 // Game specific code:
 // - control the board, moves
@@ -2623,6 +2623,9 @@ function extract_threads(options) {
  * @returns {Object}
  */
 function parse_pgn(data, origin) {
+    if (!data)
+        return null;
+
     // A) maybe we have a JSON already?
     if (IsObject(data))
         return data;
@@ -2672,6 +2675,9 @@ function parse_pgn(data, origin) {
             break;
         }
     }
+    if (!Keys(headers).length)
+        return null;
+
     data = data.slice(end);
 
     // 2) options
@@ -2749,7 +2755,7 @@ function parse_pgn(data, origin) {
                 if (number != (ply + 1) / 2 + 1) {
                     LS(`ERROR: ${origin} : ${ply} : ${number}`);
                     LS(headers);
-                    return {};
+                    return null;
                 }
             }
             start = i + 1;
@@ -2778,7 +2784,7 @@ function parse_pgn(data, origin) {
     }
 
     // 4) result
-    if (!headers.Opening)
+    if (!headers.Opening && headers.Variant)
         headers.Opening = headers.Variant;
 
     Assign(pgn, {
@@ -2874,7 +2880,7 @@ function update_mobility() {
         [goal, gply] = move.goal || [];
 
     if (node) {
-        HTML(node, `${goal < 0? '-': ''}G${Abs(goal)}`);
+        HTML(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
         node.dataset.i = gply;
     }
     HTML(`#mobil${1 - ply % 2}`, Abs(mobility));
@@ -3084,12 +3090,15 @@ function update_overview_basic(section, headers) {
         });
         update_hardware(id, name, short, null, [box_node, node]);
 
-        HTML(Id(`engine${id}`), format_engine(name, true, 23));
+        HTML(Id(`engine${id}`), format_engine(name, true, 21));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
 
+        // load engine image
         let image = Id(`logo${id}`);
         if (image && image.src != src) {
-            image.setAttribute('alt', name);
+            image.onerror = function() {
+                this.src = 'image/tcec2.jpg';
+            };
             image.src = src;
         }
     });
@@ -3146,7 +3155,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     update_player_charts(null, moves);
 
     // 3) check adjudication
-    if (move.fen) {
+    if (move && move.fen) {
         let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
         if (tb <= 1)
             tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
@@ -3197,15 +3206,18 @@ function update_overview_moves(section, headers, moves, is_new) {
  * Update the PGN
  * - white played => lastMoveLoaded=109
  * @param {string} section archive, live
- * @param {string|Object} pgn
+ * @param {string|Object} data
  * @param {Object} extras
  * @param {boolean=} reset_moves triggered by check_missing_moves
+ * @returns {boolean}
  */
-function update_pgn(section, pgn, extras, reset_moves) {
+function update_pgn(section, data, extras, reset_moves) {
     if (!xboards[section])
-        return;
+        return false;
 
-    pgn = parse_pgn(pgn);
+    let pgn = parse_pgn(data);
+    if (!pgn)
+        return false;
     Assign(pgn, extras);
 
     // 0) trim keys, ex: " WhiteEngineOptions": ...
@@ -3334,6 +3346,7 @@ function update_pgn(section, pgn, extras, reset_moves) {
             players[who].time = 0;
         start_clock(who, finished, pgns[section].elapsed || 0);
     }
+    return true;
 }
 
 /**
@@ -3729,7 +3742,7 @@ function update_player_eval(section, data) {
     if (data.ply == cur_ply + 1) {
         let stats = {
             depth: data.depth,
-            engine: format_engine(data.engine, true, 23),
+            engine: format_engine(data.engine, true, 21),
             eval: format_eval(eval_, true),
             logo: short,
             node: FormatUnit(data.nodes),
@@ -4061,7 +4074,7 @@ function changed_section() {
     if (section == 'live')
         download_live(redraw_eval_charts);
     else {
-        if (Y.archive_scroll) {
+        if (Y.archive_scroll && !Y.no_scroll) {
             if (!['sched', 'season'].includes(get_active_tab('table')[0]))
                 open_table('season');
             if (!Y.game)
@@ -4072,6 +4085,7 @@ function changed_section() {
             open_event(section, true);
         }
     }
+    Y.no_scroll = false;
 
     // update overview
     update_overview_basic(section, headers);
