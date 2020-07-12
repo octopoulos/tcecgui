@@ -192,10 +192,6 @@ let ANALYSIS_URLS = {
         h2h: 10,
         sched: 10,
     },
-    pgns = {
-        archive: {},
-        live: {},
-    },
     PIECE_SIZES = {
         _: 80,
         metro: 160,
@@ -2588,7 +2584,9 @@ function download_live_evals(round) {
 function download_pgn(section, url, reset_moves) {
     if (DEV.new)
         LS(`download_pgn: ${section} : ${url} : ${reset_moves}`);
-    xboards[section].time = Now(true);
+
+    let main = xboards[section];
+    main.time = Now(true);
     clear_timeout(section);
 
     let no_cache = (section == 'live')? `?ts=${Now()}`: '';
@@ -2605,7 +2603,7 @@ function download_pgn(section, url, reset_moves) {
             });
         }
 
-        pgns[section] = null;
+        main.pgn = {};
         update_pgn(section, data, extra, reset_moves);
 
         if (section == 'archive' && Y.scroll)
@@ -3041,7 +3039,7 @@ function update_move_pv(section, ply, move) {
  */
 function update_options(section) {
     let main = xboards[section],
-        pgn = pgns[section],
+        pgn = main.pgn,
         players = main.players;
 
     for (let id = 0; id < 2; id ++) {
@@ -3261,10 +3259,8 @@ function update_overview_moves(section, headers, moves, is_new) {
  * @returns {boolean}
  */
 function update_pgn(section, data, extras, reset_moves) {
-    if (!xboards[section])
-        return false;
-
-    let pgn = parse_pgn(data);
+    let main = xboards[section],
+        pgn = parse_pgn(data);
     if (!pgn)
         return false;
     Assign(pgn, extras);
@@ -3279,13 +3275,11 @@ function update_pgn(section, data, extras, reset_moves) {
     });
 
     // 1) section check
-    pgns[section] = pgn;
-    window.pgns = pgns;
+    main.pgn = pgn;
 
     let finished,
         headers = pgn.Headers,
         is_same = (section == Y.x),
-        main = xboards[section],
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
@@ -3395,7 +3389,7 @@ function update_pgn(section, data, extras, reset_moves) {
         let who = 1 - last_move.ply % 2;
         if (!new_game)
             players[who].time = 0;
-        start_clock(who, finished, pgns[section].elapsed || 0);
+        start_clock(who, finished, pgn.elapsed || 0);
     }
     return true;
 }
@@ -4126,10 +4120,6 @@ function changed_section() {
     else
         open_table(DEFAULT_ACTIVES[section]);
 
-    // update PGN
-    let pgn = pgns[section],
-        headers = pgn.Headers;
-
     // reset some stuff
     reset_sub_boards(3);
     reset_charts();
@@ -4151,6 +4141,8 @@ function changed_section() {
     }
 
     // update overview
+    let main = xboards[section],
+        headers = main.pgn.Headers;
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
@@ -4383,13 +4375,13 @@ function popup_custom(id, name, e, scolor) {
         show = true;
     else {
         if (name == 'engine') {
-            let pgn = pgns[Y.x],
+            let main = xboards[Y.x],
+                pgn = main.pgn,
                 headers = pgn.Headers;
             if (!headers)
                 return;
 
-            let main = xboards[Y.x],
-                players = main.players,
+            let players = main.players,
                 player = players[scolor],
                 engine = Split(player.name),
                 options = players[scolor].options || {},

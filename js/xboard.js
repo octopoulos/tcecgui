@@ -190,6 +190,7 @@ class XBoard {
         this.node = _(this.id);
         this.nodes = {};
         this.overlay = null;                            // svg objects will be added there
+        this.pgn = {};
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
