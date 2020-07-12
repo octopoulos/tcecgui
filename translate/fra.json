@@ -185,6 +185,7 @@
 "live":"direct",
 "live~2":"en direct",
 "livelog":"journal en direct",
+"Load PGN":"charger PGN",
 "log auto start":"démarre le journal automatiquement",
 "log history":"historique du journal",
 "log":"journal",

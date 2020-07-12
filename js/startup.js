@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-08
+// @version 2020-07-11
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -13,11 +13,11 @@
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, cannot_click, change_page, change_setting_game, change_theme, changed_hash, changed_section, check_hash, Clamp,
-Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS, detect_device, DEV,
-device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll, game_action_key,
-game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML, ICONS:true, Id,
-import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+C, cannot_click, change_page, change_setting, change_setting_game, change_theme, changed_hash, changed_section,
+check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS,
+detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll,
+game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, Hide, HTML,
+ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
 players, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
@@ -25,7 +25,7 @@ S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_event
 show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
 translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_chart_options, update_debug,
-update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
 virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
@@ -1300,9 +1300,15 @@ function window_click(e) {
     // special cases
     if (dataset) {
         let id = dataset.id;
-        if (id == 'about') {
+        switch (id) {
+        case 'about':
             show_popup('');
             show_popup(id, true, {overlay: true});
+            return;
+        case 'load_pgn':
+            let file = Id('file');
+            Attrs(file, {'data-x': id});
+            file.click();
             return;
         }
     }
@@ -1610,6 +1616,30 @@ function set_global_events() {
         }
     });
     Events(window, 'drop', handle_drop);
+
+    // file
+    Events(Id('file'), 'change', function() {
+        let file = this.files[0],
+            id = this.dataset.x;
+        if (!file)
+            return;
+
+        file.text().then(data => {
+            switch (id) {
+            case 'import_settings':
+                change_setting(id, data);
+                break;
+            case 'load_pgn':
+                let new_section = 'archive';
+                if (update_pgn(new_section, data)) {
+                    Y.no_scroll = true;
+                    Y.x = new_section;
+                    check_hash_special({x: new_section});
+                }
+                break;
+            }
+        });
+    });
 }
 
 /**

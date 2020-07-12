@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-08
+// @version 2020-07-11
 /*
 globals
 __dirname, expect, global, require, test
@@ -331,8 +331,9 @@ create_chart_data();
     ['LCZero v0.24-sv-t60-3010', undefined, undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
     ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, undefined, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
     ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, 20, 'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>'],
-    ['LCZero v0.26.0-sv-t60-4229-mlh', undefined, 23, 'LCZero <i class="version version-small">v0.26.0-sv-t60-4229-mlh</i>'],
+    ['LCZero v0.26.0-sv-t60-4229-mlh', undefined, 21, 'LCZero <i class="version version-small">v0.26.0-sv-t60-4229-mlh</i>'],
     ['Stockfish 20200407DC', undefined, undefined, 'Stockfish <i class="version">20200407DC</i>'],
+    ['StockfishNNUE 20200704-StockFiNN-0.2', undefined, 21, 'StockfishNNUE <i class="version version-small">20200704-StockFiNN-0.2</i>'],
     ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
     ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
     ['Stoofvlees II a14', true, 1, 'Stoofvlees<div class="version version-small">II a14</div>'],
@@ -1393,6 +1394,12 @@ create_chart_data();
 
 // update_pgn
 [
+    ['live', null, false, 0],
+    ['live', '', false, 0],
+    ['live', 'HELP ME\n\n1 2 3\n*', false, 0],
+    ['live', '[Round "0.7"]', false, 0],
+    ['live', '[Round "0.8"]\n\n1. a3', true, 0],
+    ['live', '[Round "0.9"]\n\n1. a3\n*', true, 1],
     [
         'live',
         `
@@ -1408,13 +1415,15 @@ create_chart_data();
         21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
         *
         `,
+        true,
         54,
     ],
-].forEach(([section, data, answer], id) => {
+].forEach(([section, data, answer, num_move], id) => {
     test(`update_pgn:${id}`, () => {
-        update_pgn(section, data);
         let main = xboards[section];
-        expect(main.moves.length).toBe(answer);
+        main.moves.length = 0;
+        expect(update_pgn(section, data)).toEqual(answer);
+        expect(main.moves.length).toEqual(num_move);
     });
 });
 

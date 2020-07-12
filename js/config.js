@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-06-02
+// @version 2020-07-11
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -71,6 +71,7 @@ function startup_config() {
             Schedule: 'schedule.json',
             'Event PGN': 'evalbotelo/archive.pgn',
             'Current PGN': 'evalbotelo/live.pgn',
+            '{Load PGN} ...': '',
         },
         info: {
             About: '',

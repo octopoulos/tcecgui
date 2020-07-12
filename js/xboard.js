@@ -928,15 +928,15 @@ class XBoard {
 
         let fen = move.fen,
             ply = get_move_ply(move);
-        // CHECK THIS
-        if (!fen)
-            return -20.5;
 
         if (ply == -2) {
             move.goal = [-20.5, -1];
             move.mobil = 20.5;
             return -20.5;
         }
+        // CHECK THIS
+        if (!fen)
+            return -20.5;
         if (!no_load)
             this.chess.load(fen);
 
