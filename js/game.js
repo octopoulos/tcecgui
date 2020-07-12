@@ -2335,16 +2335,13 @@ function create_bracket(section, data) {
  * @param {Node[]} nexts
  * @param {string} target
  * @param {number[]} coeffs
- * @param {string} viewbox
- * @param {string} style
  * @returns {Node}
  */
-function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
+function create_connector(curr, id, nexts, target, coeffs) {
     // if there's a winner => connect the winner, otherwise the center
     curr = _(`.score.${target}`, curr) || curr;
-    let seed = curr.dataset.s;
-
-    let next = nexts[Floor(id / 2)];
+    let next = nexts[Floor(id / 2)],
+        seed = curr.dataset.s;
     if (seed != undefined)
         next = _(`[data-s="${seed}"]`, next) || next;
 
@@ -2353,12 +2350,17 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
         ay = curr.offsetTop + curr.offsetHeight / 2,
         bx = next.offsetLeft,
         by = next.offsetTop + next.offsetHeight / 2,
-        mx = (ax * coeffs[0] + bx * coeffs[1]) / (coeffs[0] + coeffs[1]);
-
-        let path = CreateSVG('path', {
-            d: `M${ax} ${ay}L${mx} ${ay}L${mx} ${by}L${bx} ${by}`,
+        x2 = bx - ax,
+        mm = x2 * coeffs[1] / (coeffs[0] + coeffs[1]),
+        y2 = by - ay,
+        y1 = 1.5 + (y2 < 0? -y2: 0),
+        yy = Abs(y2),
+        path = CreateSVG('path', {
+            d: `M${0} ${y1}L${mm} ${y1}L${mm} ${y2 + y1}L${x2} ${y2 + y1}`,
             fill: 'none',
-        });
+        }),
+        style = `height:${yy + 3}px;left:${ax}px;top:${Min(ay, by) - 1.5}px;width:${x2}px`,
+        viewbox = `0 0 ${x2} ${yy + 3}`;
 
     return CreateSVG('svg', {class: `connect ${target}`, 'data-s': seed, style: style, viewBox: viewbox}, [path]);
 }
@@ -2369,10 +2371,7 @@ function create_connector(curr, id, nexts, target, coeffs, viewbox, style) {
 function create_connectors() {
     let parent = Id('bracket'),
         svg_node = Id('svgs'),
-        svgs = [],
-        view_height = parent.clientHeight,
-        view_width = parent.clientWidth,
-        viewbox = `0 0 ${view_width} ${view_height}`;
+        svgs = [];
 
     for (let round = 0; ; round ++) {
         let nexts = A(`[data-r="${round + 1}"] .match-grid`, parent);
@@ -2384,7 +2383,7 @@ function create_connectors() {
 
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
-                let svg = create_connector(curr, id + offset, nexts, target, coeffs, viewbox, `height:${view_height}px;width:${view_width}px`);
+                let svg = create_connector(curr, id + offset, nexts, target, coeffs);
                 svgs.push(svg);
             }
         });
