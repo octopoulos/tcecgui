@@ -1394,6 +1394,8 @@ create_chart_data();
 
 // update_materials
 [
+    [{}, undefined],
+    [{mb: '+1-1-1+2+0'}, '+1-1-1+2+0'],
     [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36', mb: '-1-1+1+1+0'}, '-1-1+1+1+0'],
     [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36', mb: '-1-1+5+5+0'}, '-1-1+5+5+0'],
     [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36'}, '-1-1+1+1+0'],
