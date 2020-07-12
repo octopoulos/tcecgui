@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-12
 //
 /*
 globals
 _, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, fix_move_format, Floor, FormatUnit, FromSeconds,
-get_move_ply, Id, IsObject, Keys, load_library, LS, Min, Pad, players, Round, SetDefault, Sign, translate_expression,
-Visible, window, xboards, Y
+get_move_ply, Id, IsObject, Keys, load_library, LS, Min, Pad, Round, SetDefault, Sign, translate_expression, Visible,
+window, xboards, Y
 */
 'use strict';
 
@@ -62,7 +62,8 @@ function calculate_win(id, eval_, ply) {
     if (eval_ == undefined)
         return eval_;
 
-    let feature = players[id].feature,
+    let main = xboards[Y.x],
+        feature = main.players[id].feature,
         cache_features = SetDefault(cached_percents, feature, {}),
         key = `${eval_}:${ply}`,
         cache = cache_features[key];

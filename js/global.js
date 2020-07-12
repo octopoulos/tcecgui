@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 // global variables/functions shared across multiple js files
 //
@@ -39,8 +39,6 @@ let HOST_ARCHIVE,
         users: 5 * 1000,
     },
     VERSION = '20200712';
-
-let players = [{}, {}, {}, {}];         // current 2 players + 2 live engines
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

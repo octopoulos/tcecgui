@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -20,7 +20,7 @@ game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_typ
 HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-players, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
+popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_game, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -576,6 +576,10 @@ function init_customs(initial) {
  * Ran once at the last initialisation step
  */
 function init_globals() {
+    check_hash();
+    parse_dev();
+    api_translate_get(Y.new_version);
+
     HTML(Id('version'), VERSION);
     HTML(Id('champions'), CHAMPIONS.map(text => {
         let [season, winner] = text.split('|');
@@ -1071,7 +1075,9 @@ function show_archive_live() {
  * Show live engines
  */
 function show_live_engines() {
-    let single_line = Y.single_line;
+    let main = xboards[Y.x],
+        players = main.players,
+        single_line = Y.single_line;
 
     for (let id = 0; id < 2; id ++) {
         let hardware = players[id + 2].hardware;
@@ -1653,10 +1659,6 @@ function load_settings() {
 
     api_times = get_object('times') || {};
     translates = get_object('trans') || {};
-
-    check_hash();
-    parse_dev();
-    api_translate_get(Y.new_version);
 }
 
 /**
@@ -2090,15 +2092,13 @@ function startup() {
 
     prepare_settings();
     load_settings();
+    start_game();
 
     set_global_events();
     set_engine_events();
     set_game_events();
     startup_graph();
     add_history();
-
-    // start
-    start_game();
 
     init_sockets();
     init_globals();

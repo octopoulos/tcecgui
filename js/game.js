@@ -18,9 +18,9 @@ CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, documen
 fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
 IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
-push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
-resume_sleep, Round,
+listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, push_state,
+QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, resume_sleep,
+Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -599,7 +599,7 @@ function check_draw_arrow(board) {
     let id = board.live_id,
         main = xboards[Y.x];
 
-    if (!main || id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
+    if (id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
         return;
 
     let draw = false,
@@ -723,10 +723,6 @@ function order_boards() {
  * Redraw the arrows
  */
 function redraw_arrows() {
-    let main = xboards[Y.x];
-    if (!main)
-        return;
-
     Keys(xboards).forEach(key => {
         check_draw_arrow(xboards[key]);
     });
@@ -758,11 +754,9 @@ function reset_sub_boards(mode, start_fen) {
  * @param {boolean=} show undefined => show when center/engine is disabled
  */
 function show_board_info(show) {
-    let main = xboards[Y.x];
-    if (!main)
-        return;
-
-    let node = main.node,
+    let main = xboards[Y.x],
+        node = main.node,
+        players = main.players,
         status = Y.status;
 
     if (show == undefined) {
@@ -861,10 +855,8 @@ function update_board_theme(mode) {
  * Update engine pieces using the main board theme
  */
 function update_engine_pieces() {
-    let main = xboards.live;
-    if (!main)
-        return;
-    let [piece_size, style] = main.get_piece_background(20);
+    let main = xboards.live,
+        [piece_size, style] = main.get_piece_background(20);
 
     for (let i = 0; i < 2; i ++) {
         let node = Id(`king${i}`),
@@ -885,7 +877,9 @@ function update_engine_pieces() {
 function add_queue(section, parent) {
     for (let queue of QUEUES)
         queued_tables.add(`${section}/${parent}/${queue}`);
-    if (players[0].name)
+
+    let main = xboards[section];
+    if (main.players[0].name)
         add_timeout('queue', check_queued_tables, TIMEOUT_queue);
 }
 
@@ -993,11 +987,14 @@ function analyse_crosstable(section, data) {
  * Calculate H2H
  * - filter the rows
  * - calculate the scores
+ * @param {string} section
  * @param {Object[]} rows
  * @returns {Object[]} filtered rows
  */
-function calculate_h2h(rows) {
-    let names = {[players[0].name]: 1, [players[1].name]: 1},
+function calculate_h2h(section, rows) {
+    let main = xboards[section],
+        players = main.players,
+        names = {[players[0].name]: 1, [players[1].name]: 1},
         new_rows = rows.filter(row => names[row.white] && names[row.black]);
 
     // calculate h2h scores
@@ -1020,7 +1017,7 @@ function calculate_h2h(rows) {
         let player = players[id];
         player.score = (names[player.name] - 1).toFixed(1);
     }
-    update_scores();
+    update_scores(section);
 
     return new_rows;
 }
@@ -1143,7 +1140,7 @@ function check_queued_tables() {
 
         let data = data_x.data;
         if (table == 'h2h') {
-            let new_rows = calculate_h2h(data);
+            let new_rows = calculate_h2h(section, data);
             update_table(section, table, new_rows, parent);
             check_paginations();
         }
@@ -2915,11 +2912,8 @@ function update_materials(move) {
  * Update mobility
  */
 function update_mobility() {
-    let main = xboards[Y.x];
-    if (!main)
-        return;
-
-    let ply = main.ply,
+    let main = xboards[Y.x],
+        ply = main.ply,
         move = main.moves[ply] || {};
 
     let mobility = main.chess_mobility(move),
@@ -2935,11 +2929,12 @@ function update_mobility() {
 
 /**
  * Update engine info from a move
+ * @param {string} section
  * @param {number} ply
  * @param {Move} move
  * @param {boolean=} fresh is it the latest move?
  */
-function update_move_info(ply, move, fresh) {
+function update_move_info(section, ply, move, fresh) {
     if (!move)
         return;
 
@@ -2949,7 +2944,9 @@ function update_move_info(ply, move, fresh) {
         depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': Undefined(move.wv, '-'),
         id = (ply + 2) % 2,
-        num_ply = xboards[Y.x].moves.length,
+        main = xboards[section],
+        num_ply = main.moves.length,
+        players = main.players,
         stats = {
             depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
             eval: format_eval(eval_, true),
@@ -2976,10 +2973,10 @@ function update_move_info(ply, move, fresh) {
 
     // past move?
     if (ply < num_ply - 1)
-        update_clock(id, move);
+        update_clock(section, id, move);
     else {
-        update_clock(0);
-        update_clock(1);
+        update_clock(section, 0);
+        update_clock(section, 1);
     }
 }
 
@@ -3000,7 +2997,7 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
-        player = players[id],
+        player = main.players[id],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
         status_score = is_book? 'book': calculate_probability(player.short, eval_, ply, move.wdl || (player.info || {}).wdl);
@@ -3043,7 +3040,9 @@ function update_move_pv(section, ply, move) {
  * @param {string} section
  */
 function update_options(section) {
-    let pgn = pgns[section];
+    let main = xboards[section],
+        pgn = pgns[section],
+        players = main.players;
 
     for (let id = 0; id < 2; id ++) {
         let key = `${WB_TITLES[id]}EngineOptions`,
@@ -3072,7 +3071,7 @@ function update_options(section) {
         });
 
         players[id].options = {...pgn_options};
-        update_hardware(id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
+        update_hardware(section, id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
     }
 }
 
@@ -3087,7 +3086,9 @@ function update_overview_basic(section, headers) {
     if (section != Y.x)
         return;
 
-    let overview = Id('overview');
+    let main = xboards[section],
+        overview = Id('overview'),
+        players = main.players;
 
     // 1) overview
     Split('ECO|Event|Opening|Result|Round|TimeControl').forEach(key => {
@@ -3135,7 +3136,7 @@ function update_overview_basic(section, headers) {
             name: name,
             short: short,
         });
-        update_hardware(id, name, short, null, [box_node, node]);
+        update_hardware(section, id, name, short, null, [box_node, node]);
 
         HTML(Id(`engine${id}`), format_engine(name, true, 21));
         HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
@@ -3149,7 +3150,7 @@ function update_overview_basic(section, headers) {
             image.src = src;
         }
     });
-    update_scores();
+    update_scores(section);
 
     // 3) update title if needed
     let subtitle = (section == 'live')? 'Live Computer Chess Broadcast': 'Archived Game',
@@ -3174,6 +3175,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         overview = Id('overview'),
         is_live = (section == 'live'),
         main = xboards[section],
+        players = main.players,
         cur_ply = main.ply,
         num_move = moves.length,
         num_ply = main.moves.length,
@@ -3193,7 +3195,7 @@ function update_overview_moves(section, headers, moves, is_new) {
             });
         }
     }
-    update_time_control(who);
+    update_time_control(section, who);
 
     if (section != Y.x)
         return;
@@ -3240,7 +3242,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         for (let i = num_move - 1; i >= 0 && i >= num_move - 2; i --) {
             let move = moves[i],
                 ply2 = get_move_ply(move);
-            update_move_info(ply2, move, true);
+            update_move_info(section, ply2, move, true);
             update_move_pv(section, ply2, move);
         }
         update_materials(move);
@@ -3287,7 +3289,8 @@ function update_pgn(section, data, extras, reset_moves) {
         moves = pgn.Moves,
         new_game = pgn.gameChanged,
         num_move = moves.length,
-        overview = Id('overview');
+        overview = Id('overview'),
+        players = main.players;
 
     if (headers) {
         if (section == 'archive')
@@ -3321,14 +3324,15 @@ function update_pgn(section, data, extras, reset_moves) {
         if (is_same) {
             reset_sub_boards(7, pgn.frc);
             reset_charts();
-            update_move_info(0, {});
-            update_move_info(1, {});
-            players[0].info = {};
-            players[1].info = {};
         }
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
         main.round = headers.Round;
+
+        update_move_info(section, 0, {});
+        update_move_info(section, 1, {});
+        players[0].info = {};
+        players[1].info = {};
 
         if (reset_moves)
             add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
@@ -3398,8 +3402,11 @@ function update_pgn(section, data, extras, reset_moves) {
 
 /**
  * Update players' score in the UI
+ * @param {string} section
  */
-function update_scores() {
+function update_scores(section) {
+    let main = xboards[section],
+        players = main.players;
     for (let id = 0; id < 2; id ++) {
         let player = players[id];
         HTML(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
@@ -3408,10 +3415,12 @@ function update_scores() {
 
 /**
  * Update time control, player-specific
+ * @param {string} section
  * @param {number} id
  */
-function update_time_control(id) {
-    let player = players[id];
+function update_time_control(section, id) {
+    let main = xboards[section],
+        player = main.players[id];
     HTML(`#overview td[data-x="tc"]`, `${player.tc / 60}'+${player.tc2}"`);
 }
 
@@ -3435,7 +3444,10 @@ function analyse_log(line) {
         return;
 
     let id,
-        engine = left.slice(0, pos3);
+        engine = left.slice(0, pos3),
+        main = xboards.live,
+        players = main.players;
+
     if (engine == players[0].name)
         id = 0;
     else if (engine == players[1].name)
@@ -3488,7 +3500,6 @@ function analyse_log(line) {
     // 3) update eval + WDL
     if (Y.eval && info.eval != undefined) {
         let box_node = _(`#box-pv${id} .status`),
-            main = xboards.live,
             node = Id(`moves-pv${id}`),
             status_eval = format_eval(info.eval),
             status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
@@ -3507,8 +3518,9 @@ function analyse_log(line) {
  * @param {number} id
  */
 function clock_tick(id) {
-    let now = Now(true),
-        player = players[id],
+    let main = xboards.live,
+        now = Now(true),
+        player = main.players[id],
         elapsed = (now - player.start) * 1000,
         left = player.left - elapsed,
         // try to synchronise it with the left time
@@ -3521,7 +3533,7 @@ function clock_tick(id) {
         timeout += 100;
 
     player.elapsed = elapsed;
-    update_clock(id);
+    update_clock('live', id);
     add_timeout(`clock${id}`, () => {clock_tick(id, now);}, timeout);
 }
 
@@ -3546,8 +3558,9 @@ function start_clock(id, finished, delta) {
     S(Id(`cog${id}`), !finished);
     Hide(`#cog${1 - id}`);
 
-    let node = xboards.live.node,
-        player = players[id];
+    let main = xboards.live,
+        node = main.node,
+        player = main.players[id];
     S(`.xcolor${id} .xcog`, !finished, node);
     Hide(`.xcolor${1 - id} .xcog`, node);
 
@@ -3573,13 +3586,15 @@ function stop_clock(ids) {
 
 /**
  * Update the left + time UI info
+ * @param {string} section
  * @param {number} id
  * @param {Move} move move from the past
  */
-function update_clock(id, move) {
+function update_clock(section, id, move) {
     let elapsed, left, time,
-        main = xboards[Y.x],
-        player = players[id];
+        main = xboards[section],
+        player = main.players[id],
+        same = (section == Y.x);
 
     if (move) {
         elapsed = 0;
@@ -3599,13 +3614,15 @@ function update_clock(id, move) {
     left = isNaN(left)? '-': FromSeconds(Round((left - elapsed) / 1000)).slice(0, -1).map(item => Pad(item)).join(':');
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
-    HTML(Id(`remain${id}`), left);
-    HTML(Id(`time${id}`), time);
+    if (same) {
+        HTML(Id(`remain${id}`), left);
+        HTML(Id(`time${id}`), time);
+    }
     player.sleft = left;
     player.stime = time;
 
-    if (main) {
-        let mini = _(`.xcolor${id}`, main.node);
+    let mini = _(`.xcolor${id}`, main.node);
+    if (same) {
         HTML(`.xleft`, left, mini);
         HTML(`.xtime`, time, mini);
     }
@@ -3613,14 +3630,16 @@ function update_clock(id, move) {
 
 /**
  * Update hardware info
+ * @param {string} section
  * @param {number} id
  * @param {string} engine
  * @param {string} short
  * @param {string} hardware
  * @param {Node[]} nodes
  */
-function update_hardware(id, engine, short, hardware, nodes) {
-    let player = players[id];
+function update_hardware(section, id, engine, short, hardware, nodes) {
+    let main = xboards[section],
+        player = main.players[id];
     engine = engine || player.name;
     if (!engine)
         return;
@@ -3635,7 +3654,7 @@ function update_hardware(id, engine, short, hardware, nodes) {
         if (node && node.title != full_engine) {
             HTML(node, short);
             Attrs(node, {title: full_engine});
-            Assign(players[id], {
+            Assign(player, {
                 feature: Undefined(ENGINE_FEATURES[short], 0),
                 name: engine,
                 short: short,
@@ -3701,7 +3720,7 @@ function update_live_eval(section, data, id, force_ply) {
     // update engine name if it has changed
     engine = engine || data.engine;
     let short = get_short_name(engine);
-    update_hardware(id + 2, engine, short, desc, [box_node, node]);
+    update_hardware(section, id + 2, engine, short, desc, [box_node, node]);
 
     // invert eval for black?
     if (data.invert && data.ply % 2 == 0)
@@ -3755,7 +3774,7 @@ function update_player_eval(section, data) {
         id = data.color,
         mini = _(`.xcolor${id}`, main.node),
         node = Id(`moves-pv${id}`),
-        player = players[id],
+        player = main.players[id],
         short = get_short_name(engine);
 
     // 1) update the live part on the left
@@ -3765,7 +3784,7 @@ function update_player_eval(section, data) {
     };
 
     // update engine name if it has changed
-    update_hardware(id, engine, short, null, [node]);
+    update_hardware(section, id, engine, short, null, [node]);
 
     Keys(dico).forEach(key => {
         HTML(`[data-x="${key}"]`, dico[key], node);
@@ -4109,10 +4128,7 @@ function changed_section() {
 
     // update PGN
     let pgn = pgns[section],
-        headers = pgn.Headers,
-        main = xboards[section];
-    if (!main)
-        return;
+        headers = pgn.Headers;
 
     // reset some stuff
     reset_sub_boards(3);
@@ -4208,8 +4224,8 @@ function handle_board_events(board, type, value) {
             let cur_ply = board.ply,
                 prev_ply = cur_ply - 1,
                 prev_move = board.moves[prev_ply];
-            update_move_info(prev_ply, prev_move);
-            update_move_info(cur_ply, value);
+            update_move_info(section, prev_ply, prev_move);
+            update_move_info(section, cur_ply, value);
 
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
@@ -4226,7 +4242,7 @@ function handle_board_events(board, type, value) {
             if (Y.arrow_moves == 'all')
                 add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
 
-            update_time_control((cur_ply + 3) % 2);
+            update_time_control(section, (cur_ply + 3) % 2);
         }
         break;
     }
@@ -4372,7 +4388,9 @@ function popup_custom(id, name, e, scolor) {
             if (!headers)
                 return;
 
-            let player = players[scolor],
+            let main = xboards[Y.x],
+                players = main.players,
+                player = players[scolor],
                 engine = Split(player.name),
                 options = players[scolor].options || {},
                 lines = Keys(options).sort((a, b) => Lower(a).localeCompare(Lower(b))).map(key => [key, options[key]]);

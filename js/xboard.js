@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 // game board:
 // - 4 rendering modes:
@@ -193,6 +193,7 @@ class XBoard {
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
+        this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = 0;                                   // current ply
         this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);

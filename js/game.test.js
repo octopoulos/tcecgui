@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 /*
 globals
 __dirname, expect, global, require, test
@@ -23,13 +23,13 @@ create_module(IMPORT_PATH, [
     //
     'game',
     'startup',
-], OUTPUT_MODULE, 'Assign Keys players tour_info xboards Y');
+], OUTPUT_MODULE, 'Assign Keys tour_info xboards Y');
 
 let {
     analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
     create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
     format_eval, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
-    parse_date_time, parse_pgn, prepare_settings, players, tour_info, update_live_eval, update_materials, update_pgn,
+    parse_date_time, parse_pgn, prepare_settings, tour_info, update_live_eval, update_materials, update_pgn,
     update_player_eval, xboards, Y,
 } = require(OUTPUT_MODULE);
 
@@ -114,6 +114,7 @@ create_chart_data();
     ],
 ].forEach(([names, line, player_id, answer], id) => {
     test(`analyse_log:${id}`, () => {
+        let players = xboards.live.players;
         names.forEach((name, id) => {
             players[id].name = name;
         });
@@ -142,10 +143,11 @@ create_chart_data();
     ],
 ].forEach(([names, rows, answer, answer2], id) => {
     test(`calculate_h2h:${id}`, () => {
+        let players = xboards.live.players;
         for (let i = 0; i < names.length; i ++)
             players[i].name = names[i];
 
-        expect(calculate_h2h(rows)).toEqual(answer);
+        expect(calculate_h2h('live', rows)).toEqual(answer);
 
         for (let i = 0; i < answer2.length; i ++)
             expect(players[i].score).toEqual(answer2[i]);
