@@ -2390,6 +2390,13 @@ function create_connectors() {
 
     HTML(svg_node, '');
     InsertNodes(svg_node, svgs);
+
+    // mouse hover
+    Events('[data-s]', 'click mouseenter mouseleave', function(e) {
+        Class('[data-s]', 'high', false, parent);
+        if (e.type != 'mouseleave')
+            Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
+    }, null, parent);
 }
 
 /**
@@ -2434,14 +2441,6 @@ function create_cup(section, data, show) {
         else
             show_filtered_games(text);
     });
-
-    // mouse hover
-    let parent = Id('bracket');
-    Events('[data-s]', 'mouseenter mouseleave', function(e) {
-        Class('[data-s]', 'high', false, parent);
-        if (e.type == 'mouseenter')
-            Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
-    }, null, parent);
 }
 
 /**
@@ -2470,7 +2469,7 @@ function create_medals(parent) {
 function resize_bracket() {
     let node = Id('table-brak'),
         round = A('.rounds', node).length,
-        width = (window.innerWidth <= 640)? (204 + 18) * round + 16: (227 + 38) * round + 10;
+        width = (window.innerWidth <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
     Style(node.firstChild, `height:${node.clientHeight}px;width:${width}px`);
     create_connectors();
 }
