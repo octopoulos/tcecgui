@@ -187,6 +187,7 @@ let ANALYSIS_URLS = {
         wdl: [3, 1],
     },
     old_cup,
+    old_width,
     PAGINATION_PARENTS = ['quick', 'table'],
     PAGINATIONS = {
         h2h: 10,
@@ -2321,7 +2322,7 @@ function create_bracket(section, data) {
     HTML(node, lines.join(''));
     translate_node(node);
 
-    resize_bracket();
+    resize_bracket(true);
 }
 
 /**
@@ -2465,11 +2466,19 @@ function create_medals(parent) {
 
 /**
  * Resize the bracket + redo the connectors
+ * @param {boolean=} force
  */
-function resize_bracket() {
+function resize_bracket(force) {
+    let window_width = window.innerWidth;
+    if (!force && old_width)
+        if ((window_width > 640 && old_width > 640) || (window_width <= 640 && old_width <= 640))
+            return;
+
     let node = Id('table-brak'),
         round = A('.rounds', node).length,
-        width = (window.innerWidth <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
+        width = (window_width <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
+
+    old_width = window_width;
     Style(node.firstChild, `height:${node.clientHeight}px;width:${width}px`);
     create_connectors();
 }
@@ -4327,7 +4336,7 @@ function opened_table(node, name, tab) {
 
     switch (name) {
     case 'brak':
-        resize_bracket();
+        resize_bracket(true);
         break;
     case 'crash':
         download_table(section, 'crash.json', name);
