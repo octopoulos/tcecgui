@@ -2827,9 +2827,26 @@ function update_materials(move) {
 
     let material = move.material || move.mb,
         materials = [[], []];
-    if (!material)
-        return;
 
+    // no material => calculate it
+    if (!material) {
+        let fen = move.fen;
+        if (!fen)
+            return;
+
+        let stats = [0, 0, 0, 0, 0];
+        for (let char of fen.split(' ')[0]) {
+            let lower = Lower(char),
+                pos = 'pnbrq'.indexOf(lower);
+            if (pos >= 0) {
+                stats[pos] += (lower == char)? -1: 1;
+            }
+        }
+        move.mb = stats.map(item => `${item >= 0? '+': ''}${item}`).join('');
+        material = move.mb;
+    }
+
+    // parse the material
     let invert = (Y.material_color == 'invert')? 1: 0,
         is_string = IsString(material),
         size = 28,
@@ -2900,7 +2917,7 @@ function update_move_info(ply, move, fresh) {
 
     let is_book = move.book,
         depth = is_book? '-': Undefined(move.d, '-'),
-        eval_ = is_book? 'book': move.wv,
+        eval_ = is_book? 'book': Undefined(move.wv, '-'),
         id = (ply + 2) % 2,
         num_ply = xboards[Y.x].moves.length,
         stats = {

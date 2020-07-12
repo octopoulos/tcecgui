@@ -29,8 +29,8 @@ let {
     analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
     create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
     format_eval, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
-    parse_date_time, parse_pgn, prepare_settings, players, tour_info, update_live_eval, update_pgn, update_player_eval,
-    xboards, Y,
+    parse_date_time, parse_pgn, prepare_settings, players, tour_info, update_live_eval, update_materials, update_pgn,
+    update_player_eval, xboards, Y,
 } = require(OUTPUT_MODULE);
 
 Assign(global, {
@@ -1389,6 +1389,20 @@ create_chart_data();
     test(`update_live_eval:${id}`, () => {
         update_pgn(section, data);
         expect(update_live_eval(section, edata, eid, force_ply)).toEqual(answer);
+    });
+});
+
+// update_materials
+[
+    [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36', mb: '-1-1+1+1+0'}, '-1-1+1+1+0'],
+    [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36', mb: '-1-1+5+5+0'}, '-1-1+5+5+0'],
+    [{fen: '4q1k1/1p3p1n/4pB1p/1p1pP1pP/2r2P2/P5RR/1P3QPK/8 w - - 3 36'}, '-1-1+1+1+0'],
+    [{fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'}, '+0+0+0+0+0'],
+    [{fen: '4b1k1/4q1R1/8/p2Pn3/5pQ1/7P/6P1/6RK b - - 0 43'}, '+1-1-1+2+0'],
+].forEach(([move, answer], id) => {
+    test(`update_materials:${id}`, () => {
+        update_materials(move);
+        expect(move.mb).toEqual(answer);
     });
 });
 
