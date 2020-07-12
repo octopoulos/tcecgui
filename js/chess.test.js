@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 /*
 globals
@@ -85,6 +85,11 @@ let chess = new Chess(),
         'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w KQkq - 1 11',
         ['Rc1'],
         'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B1R1KBR1 b Kkq - 2 11',
+    ],
+    [
+        'r1bqk2r/1P3ppp/3b1n2/p2p4/8/P1P1P3/1B1N1PpP/R2QKB1R w KQkq - 0 14',
+        ['bxa8=Q'],
+        'Q1bqk2r/5ppp/3b1n2/p2p4/8/P1P1P3/1B1N1PpP/R2QKB1R b KQk - 0 14',
     ],
 ].forEach(([fen, moves, answer], id) => {
     test(`fen:${id}`, () => {

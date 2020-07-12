@@ -622,8 +622,8 @@ var Chess = function(fen) {
         }
 
         // turn off castling if we capture a rook
-        if (castling[them] && move.captured == 'r' && rank(move.from) == rank(kings[them])) {
-            if (move.from > kings[them])
+        if (castling[them] && move.captured == 'r' && rank(move.to) == rank(kings[them])) {
+            if (move.to > kings[them])
                 castling[them] &= ~BITS_KSIDE_CASTLE;
             else
                 castling[them] &= ~BITS_QSIDE_CASTLE;
