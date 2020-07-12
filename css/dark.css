@@ -110,6 +110,20 @@ html {
     color: #fff;
 }
 
+/* bracket */
+.place1 {
+    color: #da0;
+}
+.place2 {
+    color: #aaa;
+}
+.place3 {
+    color: #b64;
+}
+.place4 {
+    color: #7aa;
+}
+
 /* lives */
 #box-live0 .engine,
 #table-live0 .engine {
