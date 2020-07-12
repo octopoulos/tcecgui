@@ -1052,8 +1052,8 @@ grid {
 
 /* bracket */
 .rounds {
-    margin: 0 16px 0 0;
-    width: 232px;
+    margin: 0 24px 0 0;
+    width: 240px;
 }
 .round {
     color: #888;
