@@ -1,10 +1,10 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-07-12
 //
 /*
 globals
-__dirname, expect, require, test,
+__dirname, expect, global, require, test,
 */
 'use strict';
 
@@ -19,11 +19,17 @@ create_module(IMPORT_PATH, [
     'global',
     //
     'graph',
-], OUTPUT_MODULE, 'Assign chart_data Keys players Y');
+], OUTPUT_MODULE, 'Assign chart_data Keys Y');
 
 let {
-    Assign, calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, players, Y,
+    Assign, calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, Y,
 } = require(OUTPUT_MODULE);
+
+global.xboards = {
+    live: {
+        players: [{}, {}, {}, {}],
+    },
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +57,8 @@ let {
     [0, '#-18', -1, -100],
 ].forEach(([feature, eval_, ply, answer], id) => {
     test(`calculate_win:${id}`, () => {
-        players[0].feature = feature;
+        Y.x = 'live';
+        global.xboards.live.players[0].feature = feature;
         expect(calculate_win(0, eval_, ply)).toEqual(answer);
     });
 });
