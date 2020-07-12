@@ -164,6 +164,10 @@ let ANALYSIS_URLS = {
         live: {},
     },
     game_link,                          // current game link in the archive
+    hashes = {
+        archive: {},
+        live: {},
+    },
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
@@ -269,6 +273,7 @@ let ANALYSIS_URLS = {
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
+    TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
     TITLES = {
         50: 'Fifty-move rule',
@@ -1318,7 +1323,10 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
                 update_table(section, name, data);
                 if (show && section == Y.x) {
                     open_table(name);
-                    scroll_adjust(`#tables`);
+                    let is_game = hashes[section].game;
+                    add_timeout('scroll', () => {
+                        scroll_adjust(Y.scroll || (is_game? '#overview': '#tables'));
+                    }, TIMEOUT_scroll);
                 }
             }
         }
@@ -1746,9 +1754,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             Class(this, 'active');
         }
         let game = this.dataset.g * 1;
+        Y.scroll = '#overview';
         if (section == 'archive') {
             save_option('game', game);
-            open_game(true);
+            open_game();
         }
         // make sure the game is over
         else if (_('a.game[href]', this))
@@ -1873,10 +1882,9 @@ function expand_season(node, show) {
  * - show the event games
  * - open various tables
  * @param {string} section
- * @param {boolean=} scroll_up scroll to board
  * @param {function=} callback
  */
-function open_event(section, scroll_up, callback) {
+function open_event(section, callback) {
     let data_x = table_data.archive.season;
     if (!data_x)
         return;
@@ -1933,16 +1941,15 @@ function open_event(section, scroll_up, callback) {
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
     download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, {...{show: !event_tag}, ...dico});
 
-    open_game(scroll_up);
+    open_game();
     if (callback)
         callback();
 }
 
 /**
  * Open an archived game
- * @param {boolean=} scroll_up clicked on the game => scroll when loaded
  */
-function open_game(scroll_up) {
+function open_game() {
     let info = tour_info.archive,
         event = info.url;
     if (!event)
@@ -1953,7 +1960,7 @@ function open_game(scroll_up) {
         check_hash();
     }
     if (Y.game)
-        download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`, scroll_up);
+        download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`);
 }
 
 /**
@@ -1982,6 +1989,7 @@ function set_season_events() {
         save_option('game', 1);
 
         set_games_filter('');
+        Y.scroll = '#tables';
         open_event('archive');
 
         Class('a.active', '-active', true, table);
@@ -2432,7 +2440,8 @@ function create_cup(section, data, show) {
         Y.game = 0;
         if (Y.round != round) {
             Y.round = round;
-            open_event(section, false, () => {show_filtered_games(text);});
+            Y.scroll = '#tables';
+            open_event(section, () => {show_filtered_games(text);});
         }
         else
             show_filtered_games(text);
@@ -2546,7 +2555,8 @@ function check_missing_moves(ply, round, pos) {
     }
 
     add_timeout(section, () => {
-        download_pgn(section, 'live.pgn', false, true);
+        Y.scroll = '';
+        download_pgn(section, 'live.pgn', true);
     }, TIMEOUT_live_delay * 1000);
 }
 
@@ -2576,16 +2586,14 @@ function download_live_evals(round) {
  * Download the PGN
  * @param {string} section archive, live
  * @param {string} url live.pgn, live.json
- * @param {boolean=} scroll_up scroll up when loaded
  * @param {boolean=} reset_moves triggered by check_missing_moves
  */
-function download_pgn(section, url, scroll_up, reset_moves) {
+function download_pgn(section, url, reset_moves) {
     if (DEV.new)
-        LS(`download_pgn: ${section} : ${url} : ${scroll_up} : ${reset_moves}`);
+        LS(`download_pgn: ${section} : ${url} : ${reset_moves}`);
     xboards[section].time = Now(true);
     clear_timeout(section);
 
-    Y.scroll_up = scroll_up;
     let no_cache = (section == 'live')? `?ts=${Now()}`: '';
 
     Resource(`${url}${no_cache}`, (code, data, xhr) => {
@@ -2603,8 +2611,8 @@ function download_pgn(section, url, scroll_up, reset_moves) {
         pgns[section] = null;
         update_pgn(section, data, extra, reset_moves);
 
-        if (section == 'archive' && Y.scroll_up)
-            scroll_adjust('#overview', true);
+        if (section == 'archive' && Y.scroll)
+            scroll_adjust(Y.scroll);
     }, {type: 'text'});
 }
 
@@ -3313,14 +3321,14 @@ function update_pgn(section, data, extras, reset_moves) {
         if (is_same) {
             reset_sub_boards(7, pgn.frc);
             reset_charts();
+            update_move_info(0, {});
+            update_move_info(1, {});
+            players[0].info = {};
+            players[1].info = {};
         }
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
         main.round = headers.Round;
-        players[0].info = {};
-        players[1].info = {};
-        update_move_info(0, {});
-        update_move_info(1, {});
 
         if (reset_moves)
             add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
@@ -4113,18 +4121,18 @@ function changed_section() {
     if (section == 'live')
         download_live(redraw_eval_charts);
     else {
-        if (Y.archive_scroll && !Y.no_scroll) {
+        let hash = hashes[section];
+        if (Y.archive_scroll && !hash.game) {
             if (!['sched', 'season'].includes(get_active_tab('table')[0]))
                 open_table('season');
-            if (!Y.game)
-                scroll_adjust('#tables');
+            scroll_adjust('#tables');
         }
-        if (Y.game) {
+        if (hash.game) {
             set_games_filter('');
-            open_event(section, true);
+            Y.scroll = '#overview';
+            open_event(section);
         }
     }
-    Y.no_scroll = false;
 
     // update overview
     update_overview_basic(section, headers);

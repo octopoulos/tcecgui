@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 -          : 2020-06-23 : move players to xboards.live + archive + move other structures too
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
+2020-07-12 : 2020-07-12 : auto scroll improved
 2020-07-12 : 2020-07-11 : show trophies or final places (#1, #2, #3, #4)
 2020-07-11 : 2020-07-11 : bracket svg connectors should be smaller
 2020-07-11 : 2020-07-11 : calculate material balance from the FEN
