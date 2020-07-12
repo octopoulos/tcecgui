@@ -1095,9 +1095,6 @@ grid {
     padding: 4px;
     width: 182px;
 }
-.name.gold {
-    background: #da0;
-}
 .name.loss {
     background: #ddd;
     color: #999;
@@ -1107,9 +1104,6 @@ grid {
     color: #ccc;
     font-family: Arial;
     text-align: center;
-}
-.name.silver {
-    background: #ccc;
 }
 .name.high {
     background: #9df;
@@ -1124,9 +1118,6 @@ grid {
     font-size: 14px;
     text-align: center;
 }
-.score.gold {
-    background: #e7c44d;
-}
 .score.loss {
    background: #e7e7e7;
    color: #900;
@@ -1134,9 +1125,6 @@ grid {
 .score.none {
     background: #b8b8b8;
     color: #ccc;
-}
-.score.silver {
-    background: #dbdbdb;
 }
 .score.win {
     color: #060;
