@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -662,6 +662,20 @@ function create_canvas(width, height) {
 }
 
 /**
+ * Create an SVG icon
+ * @param {string} name
+ * @returns {string}
+ */
+function create_svg_icon(name) {
+    let image = ICONS[name.split(' ')[0]];
+    if (!image)
+        return '';
+    // VB=viewBox=; PFC=path fill="currentColor"
+    image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
+    return `<svg class="svg ${name}" xmlns="${NAMESPACE_SVG}" ${image}</svg>`;
+}
+
+/**
  * Fill a combo filter
  * @param {string} letter, ex: m=mode, v=view ... or a selector
  * @param {string[]} values list of values for the combo, default to [DEFAULTS[letter]]
@@ -842,11 +856,8 @@ function update_theme(themes, callback, version=15) {
 function update_svg(parent) {
     E('[data-svg]', node => {
         let name = node.dataset.svg,
-            image = ICONS[name.split(' ')[0]];
+            image = create_svg_icon(name);
         if (image) {
-            // VB=viewBox=; PFC=path fill="currentColor"
-            image = image.replace('VB=', 'viewBox=').replace('PFC', 'path fill="currentColor"');
-            image = `<svg class="svg ${name}" xmlns="${NAMESPACE_SVG}" ${image}</svg>`;
             HTML(node, image);
             delete node.dataset.svg;
         }

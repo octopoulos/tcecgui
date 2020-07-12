@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-07-12
 //
 // Game specific code:
 // - control the board, moves
@@ -13,11 +13,11 @@
 globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox,
 C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, CreateNode,
-CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format,
-Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
-HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
-IsString, Keys, KEYS,
+context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
+CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo,
+fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
+global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
+IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, players,
 push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history,
 resume_sleep, Round,
@@ -2259,6 +2259,7 @@ function create_bracket(section, data) {
                         class_,
                         result[id],
                         seed,
+                        (number == 1)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
                     ];
 
                     // propagate the winner to the next round
@@ -2268,12 +2269,8 @@ function create_bracket(section, data) {
                     else if (class_ == ' loss' && number == 2)
                         SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
 
-                    // last round
-                    if (number == 1) {
-                        LS(`i=${i} : id=${id} : class_=${class_} : short=${short}`);
-                        if (i == 1)
-                            link = ROUND_LINKS[3];
-                    }
+                    if (number == 1 && i == 1)
+                        link = ROUND_LINKS[3];
                 });
 
             lines.push(
@@ -2285,7 +2282,7 @@ function create_bracket(section, data) {
 
             for (let id = 0; id < 2; id ++) {
                 let [name_class, name] = names[id] || [],
-                    [score_class, score, seed] = scores[id] || [];
+                    [score_class, score, seed, place] = scores[id] || [];
 
                 if (!name) {
                     name = 'TBD';
@@ -2296,9 +2293,12 @@ function create_bracket(section, data) {
                 else
                     name_class += ' fastart';
 
+                if (place)
+                    place = ` data-p="${place}"`;
+
                 lines.push(
                     `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
-                    + `<vert class="score${score_class} fcenter" data-s="${seed}">${score}</vert>`
+                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
                 );
             }
 
@@ -2324,7 +2324,7 @@ function create_bracket(section, data) {
     translate_node(node);
 
     // necessary to correctly size each round
-    Style(node.firstChild, `height:${node.clientHeight}px;width:${(232 + 16) * round}px`);
+    Style(node.firstChild, `height:${node.clientHeight}px;width:${(232 + 16) * round + 24}px`);
     create_connectors();
 }
 
@@ -2367,6 +2367,7 @@ function create_connector(curr, id, nexts, target, coeffs) {
 
 /**
  * Create bracket connectors
+ * + medals
  */
 function create_connectors() {
     let parent = Id('bracket'),
@@ -2380,7 +2381,6 @@ function create_connectors() {
 
         let currs = A(`[data-r="${round}"] .match-grid`, parent),
             final = _(`[data-r="${round + 2}"]`, parent)? 0: 1;
-
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
                 let svg = create_connector(curr, id + offset, nexts, target, coeffs);
@@ -2388,6 +2388,9 @@ function create_connectors() {
             }
         });
     }
+
+    let medals = create_medals(parent);
+    svgs = [...svgs, ...medals];
 
     HTML(svg_node, '');
     InsertNodes(svg_node, svgs);
@@ -2442,6 +2445,26 @@ function create_cup(section, data, show) {
         if (e.type == 'mouseenter')
             Class(`[data-s="${this.dataset.s}"]`, 'high', true, parent);
     }, null, parent);
+}
+
+/**
+ * Create svg medals
+ * @param {Node} parent
+ * @returns {Node[]}
+ */
+function create_medals(parent) {
+    return From(A('[data-p]', parent)).map(node => {
+        let ax = node.offsetLeft + node.clientWidth,
+            ay = node.offsetTop + node.offsetHeight / 2,
+            data = node.dataset,
+            place = data.p,
+            html = [
+                `<div class="place-svg">${create_svg_icon(place < 4? 'trophy': 'medal')}</div>`,
+                `<div class="place-text">#${place}</div>`,
+            ].join(''),
+            style = `left:${ax + 4}px;top:${ay}px`;
+        return CreateNode('hori', html, {class: `place place${place} fastart`, 'data-s': data.s, style: style});
+    });
 }
 
 // PGN

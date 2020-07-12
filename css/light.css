@@ -1164,6 +1164,29 @@ grid {
 .connect.loss.high {
     opacity: 0.5;
 }
+.place {
+    position: absolute;
+    transform: translate(0, -50%);
+}
+.place-text {
+    font-size: 0.85em;
+    margin-left: 0.4em;
+}
+.place-svg {
+    width: 1em;
+}
+.place1 {
+    color: #d5a500;
+}
+.place2 {
+    color: #888;
+}
+.place3 {
+    color: #b75;
+}
+.place4 {
+    color: #599;
+}
 
 /* live */
 .live {
