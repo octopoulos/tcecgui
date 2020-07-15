@@ -85,7 +85,7 @@ const shlib = require("./lib.js");
 let jsonMenuData = 0;
 let frc = 0;
 
-let _TEST = true,
+let _TEST = false,
     portnum;
 
 function setArgs()
