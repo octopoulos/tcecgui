@@ -10,79 +10,99 @@
  */
 /*
 globals
-define, exports
+console, define, exports
 */
 'use strict';
 
 var Chess = function(fen) {
-    let COLORS = 'wb';
-    let BLACK = 1;
-    let WHITE = 0;
-
-    let EMPTY = -1;
-
-    let PAWN = 'p';
-    let KNIGHT = 'n';
-    let BISHOP = 'b';
-    let ROOK = 'r';
-    let QUEEN = 'q';
-    let KING = 'k';
-
-    let SYMBOLS = 'pnbrqkPNBRQK';
-
-    let DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-    let PAWN_OFFSETS = [
-        [-16, -32, -17, -15],
-        [16, 32, 17, 15],
-    ];
-
-    let PIECE_OFFSETS = {
-        n: [-18, -33, -31, -14,  18, 33, 31,  14],
-        b: [-17, -15,  17,  15],
-        r: [-16,   1,  16,  -1],
-        q: [-17, -16, -15,   1,  17, 16, 15,  -1],
-        k: [-17, -16, -15,   1,  17, 16, 15,  -1]
-    };
+    let BISHOP = 'b',
+        BLACK = 1,
+        COLOR = {
+            b: 1,
+            B: 0,
+            k: 1,
+            K: 0,
+            n: 1,
+            N: 0,
+            p: 1,
+            P: 0,
+            q: 1,
+            Q: 0,
+            r: 1,
+            R: 0,
+        },
+        COLORS = 'wb',
+        DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        EMPTY = -1,
+        KING = 'k',
+        KNIGHT = 'n',
+        PAWN = 'p',
+        QUEEN = 'q',
+        ROOK = 'r',
+        TYPE = {
+            b: 'b',
+            B: 'b',
+            k: 'k',
+            K: 'k',
+            n: 'n',
+            N: 'n',
+            p: 'p',
+            P: 'p',
+            q: 'q',
+            Q: 'q',
+            r: 'r',
+            R: 'r',
+        },
+        WHITE = 0;
 
     let ATTACKS = [
-        20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
-         0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-         0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-         0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-         0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-        24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
-         0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-         0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-         0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-         0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-        20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
-    ];
+           20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
+            0, 20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
+            0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
+            0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
+            0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
+            24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
+            0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
+            0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
+            0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
+            0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
+           20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
+        ],
+        ATTACK_BITS = {p: 1, n: 2, b: 4, r: 8, q: 16, k: 32},
+        PAWN_OFFSETS = [
+            [-16, -32, -17, -15],
+            [16, 32, 17, 15],
+        ],
+        PIECE_OFFSETS = {
+            n: [-18, -33, -31, -14,  18, 33, 31,  14],
+            b: [-17, -15,  17,  15],
+            r: [-16,   1,  16,  -1],
+            q: [-17, -16, -15,   1,  17, 16, 15,  -1],
+            k: [-17, -16, -15,   1,  17, 16, 15,  -1]
+        },
+        RAYS = [
+           17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
+            0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
+            0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
+            0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
+            0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
+            0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
+            0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
+            1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
+            0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
+            0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
+            0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
+            0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
+            0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
+            0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
+          -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
+        ];
 
-    let RAYS = [
-        17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
-         0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
-         0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
-         0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
-         0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
-         0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
-         0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
-         1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
-         0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
-         0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
-         0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
-         0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
-         0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
-         0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
-       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
-    ];
-
-    let SHIFTS = {p: 0, n: 1, b: 2, r: 3, q: 4, k: 5},
-        BITS_NORMAL = 1,
+    let BITS_NORMAL = 1,
         BITS_CAPTURE = 2,
         BITS_BIG_PAWN = 4,
         BITS_EP_CAPTURE = 8,
@@ -94,6 +114,8 @@ var Chess = function(fen) {
         RANK_2 = 6,
         RANK_7 = 1,
         RANK_8 = 0,
+        SQUARE_a8 = 0,
+        SQUARE_h1 = 119,
         SQUARES = {
             a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
             a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
@@ -128,6 +150,10 @@ var Chess = function(fen) {
         turn = WHITE;
     }
 
+    function colorize(color, type) {
+        return (color == BLACK)? type: type.toUpperCase();
+    }
+
     function reset() {
         load(DEFAULT_POSITION);
     }
@@ -147,11 +173,10 @@ var Chess = function(fen) {
 
             if (piece == '/')
                 square += 8;
-            else if ('0123456789'.includes(piece))
+            else if ('123456789'.includes(piece))
                 square += parseInt(piece, 10);
             else {
-                let color = (piece < 'a')? WHITE : BLACK;
-                put({color: color, type: piece.toLowerCase()}, algebraic(square));
+                put(piece, square);
                 square ++;
             }
         }
@@ -167,7 +192,7 @@ var Chess = function(fen) {
         if (tokens[2].indexOf('q') > -1)
             castling[1] |= BITS_QSIDE_CASTLE;
 
-        ep_square = (tokens[3] == '-') ? EMPTY : SQUARES[tokens[3]];
+        ep_square = (tokens[3] == '-') ? EMPTY: SQUARES[tokens[3]];
         half_moves = parseInt(tokens[4], 10);
         move_number = parseInt(tokens[5], 10);
         return true;
@@ -177,23 +202,22 @@ var Chess = function(fen) {
         let empty = 0,
             fen = '';
 
-        for (let i = SQUARES.a8; i <= SQUARES.h1; i ++) {
-            if (board[i] == null)
+        for (let i = SQUARE_a8; i <= SQUARE_h1; i ++) {
+            let piece = board[i];
+            if (!piece)
                 empty ++;
             else {
                 if (empty > 0) {
                     fen += empty;
                     empty = 0;
                 }
-                let color = board[i].color,
-                    piece = board[i].type;
-                fen += (color == WHITE)? piece.toUpperCase(): piece.toLowerCase();
+                fen += piece;
             }
 
             if ((i + 1) & 0x88) {
                 if (empty > 0)
                     fen += empty;
-                if (i !== SQUARES.h1)
+                if (i != SQUARE_h1)
                     fen += '/';
 
                 empty = 0;
@@ -217,38 +241,35 @@ var Chess = function(fen) {
     /**
      * Put a piece on a square
      * @param {string} piece
-     * @param {string} square
+     * @param {number|string} square
      * @returns {boolean}
      */
     function put(piece, square) {
-        let piece_color = piece.color,
-            piece_type = piece.type;
-        if (piece_color == undefined || !piece_type)
-            return false;
+        // convert square
+        if (!Number.isInteger(square)) {
+            square = SQUARES[square];
+            if (square == undefined)
+                return false;
+        }
 
-        // check for piece
-        if (!SYMBOLS.includes(piece.type))
-            return false;
-
-        // check for valid square
-        if (!(square in SQUARES))
-            return false;
-
-        let sq = SQUARES[square];
-
-        board[sq] = {color: piece.color, type: piece.type};
-        if (piece.type == KING)
-            kings[piece.color] = sq;
+        board[square] = piece;
+        if (TYPE[piece] == KING)
+            kings[COLOR[piece]] = square;
         return true;
     }
 
-    function build_move(board, from, to, flags, promotion, rook) {
+    function build_move(from, to, flags, promotion, rook) {
+        let piece = board[from];
+        if (turn != COLOR[piece])
+            console.log('DAMN');
+
         let move = {
             color: turn,
             flags: flags,
             from: from,
-            piece: board[from].type,
+            piece: piece,
             to: to,
+            type: TYPE[piece],
         };
 
         if (promotion) {
@@ -258,33 +279,33 @@ var Chess = function(fen) {
         if (rook != undefined)
             move.rook = rook;
         else if (board[to])
-            move.captured = board[to].type;
+            move.captured = TYPE[board[to]];
         else if (flags & BITS_EP_CAPTURE)
             move.captured = PAWN;
 
         return move;
     }
 
-    function add_move(board, moves, from, to, flags, rook) {
+    function add_move(moves, from, to, flags, rook) {
         // if pawn promotion
-        if (board[from].type == PAWN && (rank(to) == RANK_8 || rank(to) == RANK_1)) {
+        if (TYPE[board[from]] == PAWN && (rank(to) == RANK_8 || rank(to) == RANK_1)) {
             for (let piece of [QUEEN, ROOK, BISHOP, KNIGHT])
-                moves.push(build_move(board, from, to, flags, piece));
+                moves.push(build_move(from, to, flags, piece));
         }
         else
-            moves.push(build_move(board, from, to, flags, null, rook));
+            moves.push(build_move(from, to, flags, null, rook));
     }
 
     function generate_moves({frc, legal, single_square}={}) {
-        let first_sq = SQUARES.a8,
-            last_sq = SQUARES.h1,
+        let first_sq = SQUARE_a8,
+            last_sq = SQUARE_h1,
             moves = [],
             second_rank = [RANK_2, RANK_7],
             us = turn,
             them = 1 - us;
 
         // are we generating moves for a single square?
-        if (single_square != null) {
+        if (single_square != undefined) {
             first_sq = SQUARES[single_square] || single_square;
             last_sq = first_sq;
         }
@@ -297,19 +318,21 @@ var Chess = function(fen) {
             }
 
             let piece = board[i];
-            if (piece == null || piece.color !== us)
+            if (!piece || COLOR[piece] != us)
                 continue;
 
-            if (piece.type == PAWN) {
+            let piece_type = TYPE[piece];
+
+            if (piece_type == PAWN) {
                 // single square, non-capturing
                 let square = i + PAWN_OFFSETS[us][0];
-                if (board[square] == null) {
-                    add_move(board, moves, i, square, BITS_NORMAL);
+                if (!board[square]) {
+                    add_move(moves, i, square, BITS_NORMAL);
 
                     // double square
                     square = i + PAWN_OFFSETS[us][1];
-                    if (second_rank[us] == rank(i) && board[square] == null)
-                        add_move(board, moves, i, square, BITS_BIG_PAWN);
+                    if (second_rank[us] == rank(i) && !board[square])
+                        add_move(moves, i, square, BITS_BIG_PAWN);
                 }
 
                 // pawn captures
@@ -317,15 +340,15 @@ var Chess = function(fen) {
                     square = i + PAWN_OFFSETS[us][j];
                     if (square & 0x88) continue;
 
-                    if (board[square] != null && board[square].color == them)
-                        add_move(board, moves, i, square, BITS_CAPTURE);
+                    if (board[square] && COLOR[board[square]] == them)
+                        add_move(moves, i, square, BITS_CAPTURE);
                     else if (square == ep_square)
-                        add_move(board, moves, i, ep_square, BITS_EP_CAPTURE);
+                        add_move(moves, i, ep_square, BITS_EP_CAPTURE);
                 }
             }
             else {
-                for (let j = 0, len = PIECE_OFFSETS[piece.type].length; j < len; j++) {
-                    let offset = PIECE_OFFSETS[piece.type][j],
+                for (let j = 0, len = PIECE_OFFSETS[piece_type].length; j < len; j++) {
+                    let offset = PIECE_OFFSETS[piece_type][j],
                         square = i;
 
                     while (true) {
@@ -333,17 +356,17 @@ var Chess = function(fen) {
                         if (square & 0x88)
                             break;
 
-                        if (board[square] == null)
-                            add_move(board, moves, i, square, BITS_NORMAL);
+                        if (!board[square])
+                            add_move(moves, i, square, BITS_NORMAL);
                         else {
-                            if (board[square].color == us)
+                            if (COLOR[board[square]] == us)
                                 break;
-                            add_move(board, moves, i, square, BITS_CAPTURE);
+                            add_move(moves, i, square, BITS_CAPTURE);
                             break;
                         }
 
                         // break, if knight or king
-                        if (piece.type == 'n' || piece.type == 'k')
+                        if (piece_type == 'k' || piece_type == 'n')
                             break;
                     }
                 }
@@ -366,7 +389,7 @@ var Chess = function(fen) {
                         let square = board[pos];
                         if (square) {
                             if (rook == undefined) {
-                                if (square.type == 'r' && square.color == us)
+                                if (TYPE[square] == 'r' && COLOR[square] == us)
                                     rook = pos;
                             }
                             else
@@ -383,8 +406,8 @@ var Chess = function(fen) {
                     castling_to = castling_from + 2;
                     rook = pos0 + 7;
 
-                    if (board[castling_from + 1] != null
-                            || board[castling_to] != null
+                    if (board[castling_from + 1]
+                            || board[castling_to]
                             || attacked(them, castling_from + 1)
                             || attacked(them, castling_to))
                         error = -1;
@@ -393,7 +416,7 @@ var Chess = function(fen) {
                     error = -2;
 
                 if (!error && !attacked(them, castling_from))
-                    add_move(board, moves, castling_from, castling_to, BITS_KSIDE_CASTLE, rook);
+                    add_move(moves, castling_from, castling_to, BITS_KSIDE_CASTLE, rook);
             }
 
             // queen-side castling
@@ -408,7 +431,7 @@ var Chess = function(fen) {
                         let square = board[pos];
                         if (square) {
                             if (rook == undefined) {
-                                if (square.type == 'r' && square.color == us)
+                                if (TYPE[square] == 'r' && COLOR[square] == us)
                                     rook = pos;
                             }
                             else
@@ -425,9 +448,9 @@ var Chess = function(fen) {
                     castling_to = castling_from - 2;
                     rook = pos0;
 
-                    if (board[castling_from - 1] != null
-                            || board[castling_from - 2] != null
-                            || board[castling_from - 3] != null
+                    if (board[castling_from - 1]
+                            || board[castling_from - 2]
+                            || board[castling_from - 3]
                             || attacked(them, castling_from - 1)
                             || attacked(them, castling_to))
                         error = -1;
@@ -436,7 +459,7 @@ var Chess = function(fen) {
                     error = -2;
 
                 if (!error && !attacked(them, castling_from))
-                    add_move(board, moves, castling_from, castling_to, BITS_QSIDE_CASTLE, rook);
+                    add_move(moves, castling_from, castling_to, BITS_QSIDE_CASTLE, rook);
             }
         }
 
@@ -476,11 +499,11 @@ var Chess = function(fen) {
         else {
             let disambiguator = get_disambiguator(move, sloppy);
 
-            if (move.piece !== PAWN)
-                output += move.piece.toUpperCase() + disambiguator;
+            if (move.type !== PAWN)
+                output += move.type.toUpperCase() + disambiguator;
 
             if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE)) {
-                if (move.piece == PAWN)
+                if (move.type == PAWN)
                     output += algebraic(move.from)[0];
                 output += 'x';
             }
@@ -506,7 +529,7 @@ var Chess = function(fen) {
      * @returns {boolean}
      */
     function attacked(color, square) {
-        for (let i = SQUARES.a8; i <= SQUARES.h1; i ++) {
+        for (let i = SQUARE_a8; i <= SQUARE_h1; i ++) {
             // did we run off the end of the board
             if (i & 0x88) {
                 i += 7;
@@ -514,26 +537,31 @@ var Chess = function(fen) {
             }
 
             // if empty square or wrong color
-            if (board[i] == null || board[i].color !== color)
+            let piece = board[i];
+            if (!piece)
+                continue;
+
+            let piece_color = COLOR[piece];
+            if (piece_color != color)
                 continue;
 
             let difference = i - square,
                 index = difference + 119,
-                piece = board[i];
+                piece_type = TYPE[piece];
 
-            if (ATTACKS[index] & (1 << SHIFTS[piece.type])) {
-                if (piece.type == PAWN) {
+            if (ATTACKS[index] & ATTACK_BITS[piece_type]) {
+                if (piece_type == PAWN) {
                     if (difference > 0) {
-                        if (piece.color == WHITE)
+                        if (piece_color == WHITE)
                             return true;
                     }
-                    else if (piece.color == BLACK)
+                    else if (piece_color == BLACK)
                         return true;
                     continue;
                 }
 
                 // if the piece is a knight or a king
-                if (piece.type == 'n' || piece.type == 'k')
+                if (piece_type == 'k' || piece_type == 'n')
                     return true;
 
                 let blocked,
@@ -541,7 +569,7 @@ var Chess = function(fen) {
                     j = i + offset;
 
                 while (j !== square) {
-                    if (board[j] != null) {
+                    if (board[j]) {
                         blocked = true;
                         break;
                     }
@@ -594,17 +622,17 @@ var Chess = function(fen) {
 
         // if pawn promotion, replace with new piece
         if (move.flags & BITS_PROMOTION)
-            board[move.to] = {color: us, type: move.promotion};
+            board[move.to] = colorize(us, move.promotion);
 
         // if we moved the king
-        if (board[move.to].type == KING) {
-            kings[board[move.to].color] = move.to;
+        if (TYPE[board[move.to]] == KING) {
+            kings[COLOR[board[move.to]]] = move.to;
 
             // if we castled, move the rook next to the king
             if (move.flags & BITS_CASTLE) {
                 let castling_from = move.rook,
                     castling_to = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
-                board[castling_to] = {color: us, type: 'r'};
+                board[castling_to] = colorize(us, 'r');
                 if (castling_from != castling_to && castling_from != move.to)
                     board[castling_from] = null;
             }
@@ -614,7 +642,7 @@ var Chess = function(fen) {
         }
 
         // turn off castling if we move a rook
-        if (castling[us] && move.piece == 'r' && rank(move.from) == rank(kings[us])) {
+        if (castling[us] && move.type == 'r' && rank(move.from) == rank(kings[us])) {
             if (move.from > kings[us])
                 castling[us] &= ~BITS_KSIDE_CASTLE;
             else
@@ -640,7 +668,7 @@ var Chess = function(fen) {
             ep_square = EMPTY;
 
         // reset the 50 move counter if a pawn is moved or a piece is captured
-        if (move.piece == PAWN)
+        if (move.type == PAWN)
             half_moves = 0;
         else if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE))
             half_moves = 0;
@@ -669,27 +697,25 @@ var Chess = function(fen) {
             them = 1 - turn;
 
         if (move.from != move.to) {
-            board[move.from] = board[move.to];
-            if (board[move.from])
-                board[move.from].type = move.piece;
+            board[move.from] = move.piece;
             board[move.to] = null;
         }
 
         if (move.flags & BITS_CAPTURE)
-            board[move.to] = {color: them, type: move.captured};
+            board[move.to] = colorize(them, move.captured);
         else if (move.flags & BITS_EP_CAPTURE) {
             let index;
             if (us == BLACK)
                 index = move.to - 16;
             else
                 index = move.to + 16;
-            board[index] = {color: them, type: PAWN};
+            board[index] = colorize(them, PAWN);
         }
 
         // undo castle
         if (move.flags & BITS_CASTLE) {
             let castling_from = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
-            board[move.rook] = {color: us, type: 'r'};
+            board[move.rook] = colorize(us, 'r');
             if (castling_from != move.from && castling_from != move.rook)
                 board[castling_from] = null;
         }
@@ -702,19 +728,19 @@ var Chess = function(fen) {
         let ambiguities = 0,
             from = move.from,
             moves = generate_moves({legal: !sloppy}),
-            piece = move.piece,
             same_file = 0,
             same_rank = 0,
-            to = move.to;
+            to = move.to,
+            type = move.type;
 
         for (let i = 0, len = moves.length; i < len; i ++) {
             let ambig_from = moves[i].from,
-                ambig_piece = moves[i].piece,
-                ambig_to = moves[i].to;
+                ambig_to = moves[i].to,
+                ambig_type = moves[i].type;
 
             // if a move of the same piece type ends on the same to square,
             // we'll need to add a disambiguator to the algebraic notation
-            if (piece == ambig_piece && from !== ambig_from && to == ambig_to) {
+            if (type == ambig_type && from !== ambig_from && to == ambig_to) {
                 ambiguities ++;
 
                 if (rank(from) == rank(ambig_from))
@@ -752,9 +778,9 @@ var Chess = function(fen) {
                 return moves[i];
 
             if (matches &&
-                    (!piece || piece.toLowerCase() == moves[i].piece) &&
+                    (!piece || TYPE[piece] == moves[i].type) &&
                     SQUARES[from] == moves[i].from && SQUARES[to] == moves[i].to &&
-                    (!promotion || promotion.toLowerCase() == moves[i].promotion)) {
+                    (!promotion || TYPE[promotion] == moves[i].promotion)) {
                 return moves[i];
             }
         }
@@ -764,18 +790,16 @@ var Chess = function(fen) {
 
     // UTILITY
     //////////
-    function rank(i) {
-        return i >> 4;
+    function rank(square) {
+        return square >> 4;
     }
 
-    function file(i) {
-        return i & 15;
+    function file(square) {
+        return square & 15;
     }
 
-    function algebraic(i) {
-        let f = file(i),
-            r = rank(i);
-        return 'abcdefgh'.substring(f,f+1) + '87654321'.substring(r,r+1);
+    function algebraic(square) {
+        return `${'abcdefgh'[file(square)]}${'87654321'[rank(square)]}`;
     }
 
     // API
@@ -848,3 +872,8 @@ var Chess = function(fen) {
         undo: undo_move,
     };
 };
+
+// <<
+if (typeof exports != 'undefined')
+    exports.Chess = Chess;
+// >>

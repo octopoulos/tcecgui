@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-15
 //
 /*
 globals
@@ -43,7 +43,7 @@ let chess = new Chess(),
 // board
 [
     ['8/8/8/8/8/8/8/8 w - - 0 1', [], {127: undefined}],
-    ['8/8/8/8/8/8/8/4K3 w - - 0 1', [], {116: {color: 0, type: 'k'}, 127: undefined}],
+    ['8/8/8/8/8/8/8/4K3 w - - 0 1', [], {116: 'K', 127: undefined}],
 ].forEach(([fen, answer, dico], id) => {
     test(`board:${id}`, () => {
         chess.load(fen);
@@ -102,6 +102,7 @@ let chess = new Chess(),
 
 // load
 [
+    [START_FEN, [], START_FEN],
     [START_FEN, ['d5'], START_FEN],
     [START_FEN, ['d4'], 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
     [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
@@ -119,55 +120,62 @@ let chess = new Chess(),
 // move
 [
     [START_FEN, 'd5', undefined, null],
-    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 'p', to: 67}],
+    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 'P', to: 67, type: 'p'}],
+    [START_FEN, 'b2b4', undefined, null],
+    [
+        START_FEN,
+        {from: 'b2', to: 'b4'},
+        undefined,
+        {color: 0, flags: 4, from: 97, piece: 'P', san: 'b4', to: 65, type: 'p'},
+    ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         undefined,
-        {color: 0, flags: 32, frc: undefined, from: 116, piece: 'k', rook: 119, to: 118},
+        {color: 0, flags: 32, frc: undefined, from: 116, piece: 'K', rook: 119, to: 118, type: 'k'},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         undefined,
-        {color: 0, flags: 64, frc: undefined, from: 116, piece: 'k', rook: 112, to: 114},
+        {color: 0, flags: 64, frc: undefined, from: 116, piece: 'K', rook: 112, to: 114, type: 'k'},
     ],
     ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, null],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
         {frc: true},
-        {color: 1, flags: 32, frc: true, from: 3, piece: 'k', rook: 7, to: 6},
+        {color: 1, flags: 32, frc: true, from: 3, piece: 'k', rook: 7, to: 6, type: 'k'},
     ],
     [
         'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, frc: true, from: 118, piece: 'k', rook: 119, to: 118},
+        {color: 0, flags: 32, frc: true, from: 118, piece: 'K', rook: 119, to: 118, type: 'k'},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, frc: true, from: 115, piece: 'k', rook: 119, to: 118},
+        {color: 0, flags: 32, frc: true, from: 115, piece: 'K', rook: 119, to: 118, type: 'k'},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
         {frc: true},
-        {color: 0, flags: 64, frc: true, from: 115, piece: 'k', rook: 113, to: 114},
+        {color: 0, flags: 64, frc: true, from: 115, piece: 'K', rook: 113, to: 114, type: 'k'},
     ],
     [
         '4k1r1/p2rbpp1/1q2p1n1/2pb3p/5P1P/1PB1P1P1/2Q1BN2/R3K1R1 w Kk - 2 21',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, frc: true, from: 116, piece: 'k', rook: 118, to: 118},
+        {color: 0, flags: 32, frc: true, from: 116, piece: 'K', rook: 118, to: 118, type: 'k'},
     ],
     [
         'rk2r3/1pp4p/p5bQ/P2q4/2R4P/1PB1p3/2P5/1K2R3 b q - 2 34',
         'O-O-O',
         {frc: true},
-        {color: 1, flags: 64, frc: true, from: 1, piece: 'k', rook: 0, to: 2},
+        {color: 1, flags: 64, frc: true, from: 1, piece: 'k', rook: 0, to: 2, type: 'k'},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`move:${id}`, () => {
@@ -188,17 +196,19 @@ let chess = new Chess(),
                 color: 0,
                 flags: 32,
                 from: 115,
-                piece: 'k',
+                piece: 'K',
                 rook: 119,
                 to: 118,
+                type: 'k',
             },
             {
                 color: 0,
                 flags: 64,
                 from: 115,
-                piece: 'k',
+                piece: 'K',
                 rook: 113,
                 to: 114,
+                type: 'k',
             },
         ],
     ],
@@ -217,29 +227,36 @@ let chess = new Chess(),
 [
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        {type: 'q'},
-        'd8',
-        false,
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
+        'q',
+        3,
+        true,
+        '1r1qkb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        {color: 0, type: 'q'},
+        'Q',
         'd8',
         true,
         '1r1Qkb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        {color: 0, type: 'q'},
+        'Q',
         'e0',
         false,
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '8/8/8/8/8/8/8/8 w - - 0 1',
-        {color: 0, type: 'k'},
+        'K',
         'e1',
+        true,
+        '8/8/8/8/8/8/8/4K3 w - - 0 1',
+    ],
+    [
+        '8/8/8/8/8/8/8/8 w - - 0 1',
+        'K',
+        116,
         true,
         '8/8/8/8/8/8/8/4K3 w - - 0 1',
     ],
