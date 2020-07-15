@@ -3440,6 +3440,9 @@ function update_time_control(section, id) {
  * @param {string} line
  */
 function analyse_log(line) {
+    if (!Y.live_pv)
+        return;
+
     // 1) get engine name
     let pos = line.indexOf(' '),
         pos2 = line.indexOf(': ');

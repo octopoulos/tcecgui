@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2020-07-13
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -594,7 +594,7 @@ function Parent(node, {tag, class_, attrs, self}={}) {
         let ok = true;
 
         // 1) tag
-        if (tags && !tags.includes(parent.tagName.toLowerCase()))
+        if (tags && !tags.includes(Lower(parent.tagName)))
             continue;
 
         // 2) match all attrs
@@ -1427,7 +1427,7 @@ function Stringify(object, depth=0, max_depth=2) {
  */
 function Title(text) {
     text += '';
-    return text.slice(0, 1).toUpperCase() + text.slice(1);
+    return Upper(text.slice(0, 1)) + text.slice(1);
 }
 
 /**

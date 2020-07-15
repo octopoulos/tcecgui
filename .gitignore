@@ -13,11 +13,13 @@
 *.rar
 *.swp
 *.tmp
+.vscode/
 *.zip
 4d.js
 all.*
 archive/
 bracket.json
+c++/
 chart.js
 chess.js
 crash.json

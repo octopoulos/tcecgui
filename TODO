@@ -2,6 +2,8 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
+-          : 2020-06-03 : chess.wasm
+2020-07-15 : 2020-07-14 : improve chess-quick.js: make it have the same structure and tests as chess.cpp
 2020-07-12 : 2020-07-12 : fix shortcuts
 2020-07-12 : 2020-07-12 : resize brackets in real time
 2020-07-12 : 2020-06-23 : move players to xboards.live + archive + move other structures too
@@ -362,7 +364,6 @@ low:
 -          : 2020-06-20 : parse live log
 lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
--          : 2020-06-03 : chess.wasm
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
