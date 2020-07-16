@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 //
 // Game specific code:
 // - control the board, moves
@@ -252,7 +252,7 @@ let ANALYSIS_URLS = {
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|{Wins} [W/B]|{Losses} [W/B]|Crashes|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|{Wins} [{W/B}]|{Losses} [{W/B}]|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -681,6 +681,7 @@ function create_boards(mode='html') {
 
     // 2) set pointers: real board + duals
     assign_boards();
+    window.xboards = xboards;
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
@@ -2018,6 +2019,7 @@ function analyse_tournament(section, data) {
 
     open_event(section);
     update_table(section, 'sched', null);
+    window.tour_info = tour_info;
 }
 
 /**
@@ -2341,6 +2343,8 @@ function create_connector(curr, id, nexts, target, coeffs) {
         seed = curr.dataset.s;
     if (seed != undefined)
         next = _(`[data-s="${seed}"]`, next) || next;
+    if (!next)
+        return null;
 
     // create the SVG
     let ax = curr.offsetLeft + curr.clientWidth,
@@ -2381,7 +2385,8 @@ function create_connectors() {
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
                 let svg = create_connector(curr, id + offset, nexts, target, coeffs);
-                svgs.push(svg);
+                if (svg)
+                    svgs.push(svg);
             }
         });
     }
@@ -2842,6 +2847,7 @@ function parse_pgn(data, origin) {
  */
 function parse_time_control(value) {
     let mins,
+        moves = 0,
         items = value.split('+'),
         secs = 0;
 
@@ -2852,14 +2858,16 @@ function parse_time_control(value) {
     }
     else {
         items = value.split('/');
+        moves = items[0] * 1;
         mins = items[1] * 1;
-        value = `${items[0]}/${mins}'`;
+        value = `${moves}/${mins}'`;
     }
 
     return [
         value, {
             tc: mins,
             tc2: secs,
+            tc3: moves,
         },
     ];
 }
@@ -3450,8 +3458,9 @@ function update_scores(section) {
  */
 function update_time_control(section, id) {
     let main = xboards[section],
-        player = main.players[id];
-    HTML(`#overview td[data-x="tc"]`, `${player.tc / 60}'+${player.tc2}"`);
+        player = main.players[id],
+        mins = Round(player.tc / 60);
+    HTML(`#overview td[data-x="tc"]`, player.tc3? `${player.tc3}/${mins}'`: `${mins}'+${player.tc2}"`);
 }
 
 // LIVE ACTION / DATA

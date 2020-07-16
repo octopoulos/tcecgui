@@ -1325,8 +1325,8 @@ create_chart_data();
 
 // parse_time_control
 [
-    ['900+5', [`15'+5"`, {tc: 900, tc2: 5}]],
-    ['40/900', [`40/900'`, {tc: 900, tc2: 0}]],
+    ['900+5', [`15'+5"`, {tc: 900, tc2: 5, tc3: 0}]],
+    ['40/900', [`40/900'`, {tc: 900, tc2: 0, tc3: 40}]],
 ].forEach(([value, answer], id) => {
     test(`parse_time_control:${id}`, () => {
         expect(parse_time_control(value)).toEqual(answer);

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -610,7 +610,7 @@ function translate_expression(text) {
 
     // 3) translate [...]
     if (text.includes('['))
-        text = text.replace(/\[(.*?)\]/g, (_match, p1) => TRANSLATE_SPECIALS[p1] || p1);
+        text = text.replace(/\[(.*?)\]/g, (_match, p1) => TRANSLATE_SPECIALS[p1] || `[${p1}]`);
     return text;
 }
 
