@@ -575,6 +575,7 @@ function init_customs(initial) {
     set_draggable();
     populate_areas();
     update_board_theme(7);
+    update_background();
 }
 
 /**
