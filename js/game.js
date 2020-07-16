@@ -2836,6 +2836,35 @@ function parse_pgn(data, origin) {
 }
 
 /**
+ * Parse the time control
+ * @param {string} value
+ * @returns {[string, Object]}
+ */
+function parse_time_control(value) {
+    let mins,
+        items = value.split('+'),
+        secs = 0;
+
+    if (items.length >= 2) {
+        mins = items[0] * 1;
+        secs = items[1] * 1;
+        value = `${mins / 60}'+${secs}"`;
+    }
+    else {
+        items = value.split('/');
+        mins = items[1] * 1;
+        value = `${items[0]}/${mins}'`;
+    }
+
+    return [
+        value, {
+            tc: mins,
+            tc2: secs,
+        },
+    ];
+}
+
+/**
  * Resize game elements
  */
 function resize_game() {
@@ -3117,13 +3146,9 @@ function update_overview_basic(section, headers) {
             break;
         case 'timecontrol':
             if (value) {
-                let items = value.split('+');
                 key = 'tc';
-                value = `${items[0]/60}'+${items[1]}"`;
-                let dico = {
-                    tc: items[0] * 1,
-                    tc2: items[1] * 1,
-                };
+                let dico;
+                [value, dico] = parse_time_control(value);
                 Assign(players[0], dico);
                 Assign(players[1], dico);
             }
@@ -3200,11 +3225,8 @@ function update_overview_moves(section, headers, moves, is_new) {
     for (let id = 0; id < 2; id ++) {
         let tc = headers[`${WB_TITLES[id]}TimeControl`];
         if (tc) {
-            let items = tc.split('+');
-            Assign(players[id], {
-                tc: items[0] * 1,
-                tc2: items[1] * 1,
-            });
+            let dico = parse_time_control(tc)[1];
+            Assign(players[id], dico);
         }
     }
     update_time_control(section, who);
