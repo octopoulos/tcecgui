@@ -11,7 +11,7 @@
  */
 /*
 globals
-console, define, exports
+define, exports
 */
 'use strict';
 
@@ -20,7 +20,7 @@ var Chess = function(fen) {
         BLACK = 1,
         COLOR = piece => piece >> 3,
         COLOR_TEXT = 'wb',
-        COLORIZE = (color, type) => ((color == WHITE)? type: type + 8),
+        COLORIZE = (color, type) => ((color == WHITE)? type: (type | 8)),
         DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         EMPTY = -1,
         FILE = square => square & 15,
@@ -140,7 +140,7 @@ var Chess = function(fen) {
         // if pawn promotion
         if (TYPE(board[from]) == PAWN && [0, 7].includes(RANK(to))) {
             for (let piece of [QUEEN, ROOK, BISHOP, KNIGHT])
-                moves.push(buildMove(from, to, flags, COLORIZE(turn, piece)));
+                moves.push(buildMove(from, to, flags, piece));
         }
         else
             moves.push(buildMove(from, to, flags, null, rook));
@@ -224,7 +224,7 @@ var Chess = function(fen) {
 
         if (promotion) {
             move.flags |= BITS_PROMOTION;
-            move.promotion = promotion;
+            move.promotion = COLORIZE(turn, promotion);
         }
         if (rook != undefined)
             move.rook = rook;
@@ -809,11 +809,11 @@ var Chess = function(fen) {
                 move_obj = move_from_san(move, moves, frc);
             else if (typeof move == 'object') {
                 // convert the pretty move object to an ugly move object
-                for (let i = 0, len = moves.length; i < len; i ++) {
-                    if (move.from == algebraic(moves[i].from)
-                            && move.to == algebraic(moves[i].to)
-                            && (!('promotion' in moves[i]) || move.promotion == moves[i].promotion)) {
-                        move_obj = moves[i];
+                for (let move2 of moves) {
+                    if (move.from == algebraic(move2.from)
+                            && move.to == algebraic(move2.to)
+                            && (!move2.promotion || TYPE(move.promotion) == TYPE(move2.promotion))) {
+                        move_obj = move2;
                         move_obj.san = move_to_san(move_obj);
                         break;
                     }

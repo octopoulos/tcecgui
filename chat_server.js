@@ -58,9 +58,9 @@ server.on('connection', socket => {
                             from: best_move.slice(0, 2),
                             to: best_move.slice(2, 4),
                         },
-                        pos = best_move.indexOf('=');
-                    if (pos > 0)
-                        move.promotion = best_move[pos + 1];
+                        promotion = best_move[4];
+                    if (promotion)
+                        move.promotion = promotion;
                     LS(move);
                     let result = chess.move(move);
                     LS(result);

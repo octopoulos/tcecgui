@@ -177,6 +177,24 @@ let chess = new Chess(),
         {frc: true},
         {color: 1, flags: 64, frc: true, from: 1, piece: 14, rook: 0, to: 2, type: 6},
     ],
+    [
+        'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
+        'd8=Q',
+        {},
+        {color: 0, flags: 17, from: 19, piece: 1, promotion: 5, to: 3, type: 1},
+    ],
+    [
+        'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
+        'd8=q',
+        {},
+        null,
+    ],
+    [
+        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
+        'axb1=Q',
+        {},
+        {captured: 4, color: 1, flags: 18, from: 96, piece: 9, promotion: 13, to: 113, type: 1},
+    ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`move:${id}`, () => {
         chess.load(fen);
