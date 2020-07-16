@@ -2305,7 +2305,7 @@ function create_bracket(section, data) {
 
                 lines.push(
                     `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
-                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
+                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${Undefined(score, '--')}</vert>`
                 );
             }
 
