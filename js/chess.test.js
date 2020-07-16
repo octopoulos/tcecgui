@@ -19,7 +19,7 @@ create_module(IMPORT_PATH, [
     'libs/chess-quick',
 ], OUTPUT_MODULE, 'Chess Keys Undefined');
 
-let {Chess, Keys} = require(OUTPUT_MODULE);
+let {Chess, Keys, Undefined} = require(OUTPUT_MODULE);
 
 let chess = new Chess(),
     EMPTY = -1,
