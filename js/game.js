@@ -2015,9 +2015,9 @@ function analyse_tournament(section, data) {
 
     if (tour.cup) {
         let event_tag = (location.port != 8080)? tour.eventtag: '',
-            filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson?ts=${Now()}`: 'bracket.json';
+            filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
         window.filename = filename;
-        download_table(section, filename, 'brak', data => {
+        download_table(section, `${filename}?ts=${Now()}`, 'brak', data => {
             create_cup(section, data);
         });
     }
@@ -2032,9 +2032,10 @@ function analyse_tournament(section, data) {
  * - assume the final will be 1-2 then work backwards
  * - support non power of 2 => 0 will be the 'skip' seed
  * @param {number} num_team
+ * @param {number=} new_mode
  * @returns {number[]}
  */
-function calculate_seeds(num_team) {
+function calculate_seeds(num_team, new_mode) {
     let number = 2,
         nexts = [1, 2];
 
@@ -2042,7 +2043,7 @@ function calculate_seeds(num_team) {
         number *= 2;
         let seeds = [];
         for (let i = 0; i < number; i ++) {
-            let value = (i % 2)? (number + 1 - seeds[i - 1]): nexts[Floor(i / 2)];
+            let value = (i % 2)? (new_mode? (number/2 + seeds[i - 1]) % (number + 1): (number + 1 - seeds[i - 1])): nexts[Floor(i / 2)];
             seeds[i] = (value <= num_team)? value: 0;
         }
         nexts = seeds;
@@ -2217,7 +2218,7 @@ function create_bracket(section, data) {
         num_team = teams.length,
         round = 0,
         round_results = data.results[0] || [],
-        seeds = calculate_seeds(num_team * 2);
+        seeds = calculate_seeds(num_team * 2, tour_info.live.cup >= 6);
 
     // assign seeds
     teams.forEach((team, id) => {
@@ -2265,7 +2266,7 @@ function create_bracket(section, data) {
                         class_,
                         result[id],
                         seed,
-                        (number == 1)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
+                        (number == 1 && class_)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
                     ];
 
                     // propagate the winner to the next round
@@ -4566,6 +4567,7 @@ function startup_game() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        calculate_seeds: calculate_seeds,
         extract_threads: extract_threads,
         parse_pgn: parse_pgn,
     });
