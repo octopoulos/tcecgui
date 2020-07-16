@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 /*
 globals
 __dirname, expect, global, require, test
@@ -29,8 +29,8 @@ let {
     analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
     create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
     format_eval, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
-    parse_date_time, parse_pgn, prepare_settings, tour_info, update_live_eval, update_materials, update_pgn,
-    update_player_eval, xboards, Y,
+    parse_date_time, parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials,
+    update_pgn, update_player_eval, xboards, Y,
 } = require(OUTPUT_MODULE);
 
 Assign(global, {
@@ -1320,6 +1320,16 @@ create_chart_data();
 ].forEach(([data, answer], id) => {
     test(`parse_pgn:${id}`, () => {
         expect(parse_pgn(data)).toEqual(answer);
+    });
+});
+
+// parse_time_control
+[
+    ['900+5', [`15'+5"`, {tc: 900, tc2: 5}]],
+    ['40/900', [`40/900'`, {tc: 900, tc2: 0}]],
+].forEach(([value, answer], id) => {
+    test(`parse_time_control:${id}`, () => {
+        expect(parse_time_control(value)).toEqual(answer);
     });
 });
 

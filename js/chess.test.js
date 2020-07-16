@@ -17,9 +17,9 @@ create_module(IMPORT_PATH, [
     'common',
     //
     'libs/chess-quick',
-], OUTPUT_MODULE, 'Chess Keys');
+], OUTPUT_MODULE, 'Chess Keys Undefined');
 
-let {Chess, Keys} = require(OUTPUT_MODULE);
+let {Chess, Keys, Undefined} = require(OUTPUT_MODULE);
 
 let chess = new Chess(),
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -227,44 +227,39 @@ let chess = new Chess(),
 [
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        'q',
+        13,
         3,
-        true,
         '1r1qkb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        'Q',
+        5,
         'd8',
-        true,
         '1r1Qkb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        'Q',
+        5,
         'e0',
-        false,
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
     ],
     [
         '8/8/8/8/8/8/8/8 w - - 0 1',
         6,
         'e1',
-        true,
         '8/8/8/8/8/8/8/4K3 w - - 0 1',
     ],
     [
         '8/8/8/8/8/8/8/8 w - - 0 1',
         6,
         116,
-        true,
         '8/8/8/8/8/8/8/4K3 w - - 0 1',
     ],
-].forEach(([fen, piece, square, answer, answer_fen], id) => {
+].forEach(([fen, piece, square, answer], id) => {
     test(`put:${id}`, () => {
         chess.load(fen);
-        expect(chess.put(piece, square)).toEqual(answer);
-        expect(chess.fen()).toEqual(answer_fen);
+        chess.put(piece, Undefined(chess.SQUARES[square], square));
+        expect(chess.fen()).toEqual(answer);
     });
 });
 
