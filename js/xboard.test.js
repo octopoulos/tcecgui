@@ -117,43 +117,43 @@ live.dual = archive;
 // chess_move
 [
     [START_FEN, 'd5', undefined, null],
-    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 'P', to: 67, type: 'p'}],
+    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 1, to: 67, type: 1}],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         undefined,
-        {color: 0, flags: 32, frc: undefined, from: 116, piece: 'K', rook: 119, to: 118, type: 'k'},
+        {color: 0, flags: 32, frc: undefined, from: 116, piece: 6, rook: 119, to: 118, type: 6},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         undefined,
-        {color: 0, flags: 64, frc: undefined, from: 116, piece: 'K', rook: 112, to: 114, type: 'k'},
+        {color: 0, flags: 64, frc: undefined, from: 116, piece: 6, rook: 112, to: 114, type: 6},
     ],
     ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, null],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
         {frc: true},
-        {color: 1, flags: 32, frc: true, from: 3, piece: 'k', rook: 7, to: 6, type: 'k'},
+        {color: 1, flags: 32, frc: true, from: 3, piece: 14, rook: 7, to: 6, type: 6},
     ],
     [
         'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, frc: true, from: 118, piece: 'K', rook: 119, to: 118, type: 'k'},
+        {color: 0, flags: 32, frc: true, from: 118, piece: 6, rook: 119, to: 118, type: 6},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, frc: true, from: 115, piece: 'K', rook: 119, to: 118, type: 'k'},
+        {color: 0, flags: 32, frc: true, from: 115, piece: 6, rook: 119, to: 118, type: 6},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
         {frc: true},
-        {color: 0, flags: 64, frc: true, from: 115, piece: 'K', rook: 113, to: 114, type: 'k'},
+        {color: 0, flags: 64, frc: true, from: 115, piece: 6, rook: 113, to: 114, type: 6},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {
