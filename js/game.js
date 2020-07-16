@@ -2069,6 +2069,7 @@ function calculate_event_stats(section, rows) {
 
     let crashes = 0,
         games = 0,
+        length = rows.length,
         max_moves = [-1, 0],
         max_time = [-1, 0],
         min_moves = [Infinity, 0],
@@ -2080,7 +2081,7 @@ function calculate_event_stats(section, rows) {
             '1/2-1/2': 0,
         },
         seconds = 0,
-        start = rows.length? rows[0].start: '';
+        start = length? rows[0].start: '';
 
     for (let row of rows) {
         let game = row._id + 1,
@@ -2119,7 +2120,7 @@ function calculate_event_stats(section, rows) {
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
-        draw_rate: format_percent(results['1/2-1/2'] / games),
+        draws: `${results['1/2-1/2']} [${format_percent(results['1/2-1/2'] / games)}]`,
         //
         average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
@@ -2129,7 +2130,8 @@ function calculate_event_stats(section, rows) {
         min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
         //
-        games: games,
+        games: `${games}/${length}`,
+        progress: length? format_percent(games/length): '-',
         crashes: crashes,
     });
 

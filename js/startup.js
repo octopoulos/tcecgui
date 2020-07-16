@@ -15,9 +15,10 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting, change_setting_game, change_theme, changed_hash, changed_section,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS,
-detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll,
-game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes, Hide,
-HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader, From,
+full_scroll, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses,
+hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys,
+KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
 popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -185,6 +186,10 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'audio_set':
         audio_set(value);
+        break;
+    case 'background_color':
+    case 'background_opacity':
+        update_background();
         break;
     case 'chat_height':
     case 'column_bottom':
@@ -1239,6 +1244,15 @@ function tab_element(target) {
 }
 
 /**
+ * Update the background
+ */
+function update_background() {
+    let color = Y.background_color,
+        opacity = Y.background_opacity;
+    Style('#background', `background-color:${(color == '#000000')? '': color};opacity:${opacity}`);
+}
+
+/**
  * Update the shortcuts on the top right
  * - copy the tab text
  * - copy the table html
@@ -1634,6 +1648,19 @@ function set_global_events() {
         if (!file)
             return;
 
+        if (id == 'background_image') {
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = function() {
+                let node = _('#background');
+                node.style.backgroundImage = `url(${reader.result})`;
+                if (!Y.background_opacity)
+                    Y.background_opacity = 0.2;
+                update_background();
+            };
+            return;
+        }
+
         file.text().then(data => {
             switch (id) {
             case 'import_settings':
@@ -1783,6 +1810,11 @@ function prepare_settings() {
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
+        },
+        video: {
+            background_color: [{type: 'color'}, '#000000'],
+            background_image: [{type: 'text'}, ''],
+            background_opacity: option_number(0, 0, 1, 0.01),
         },
         // separator
         _1: {},
