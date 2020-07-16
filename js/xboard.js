@@ -1515,7 +1515,7 @@ class XBoard {
             return false;
 
         // 2) try to move, it might be invalid
-        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promotion: 'q'});
+        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promotion: 5});
         if (!move)
             return false;
 

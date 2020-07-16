@@ -3,7 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-06-03 : chess.wasm
--          : 2020-07-16 : add promotion tests
+2020-07-16 : 2020-07-16 : add promotion tests
 2020-07-16 : 2020-07-16 : CCRL time control
 2020-07-15 : 2020-07-15 : use numbers for pieces instead of chars, in chess-quick
 2020-07-15 : 2020-07-14 : improve chess-quick.js: make it have the same structure and tests as chess.cpp
