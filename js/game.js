@@ -2014,8 +2014,8 @@ function analyse_tournament(section, data) {
         tour.cup = 1;
 
     if (tour.cup) {
-        let event_tag = tour.eventtag,
-            filename = (event_tag && location.port != 8080)? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
+        let event_tag = (location.port != 8080)? tour.eventtag: '',
+            filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson?ts=${Now()}`: 'bracket.json';
         window.filename = filename;
         download_table(section, filename, 'brak', data => {
             create_cup(section, data);
