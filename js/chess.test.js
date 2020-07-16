@@ -193,7 +193,7 @@ let chess = new Chess(),
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'axb1=Q',
         {},
-        {captured: 4, color: 1, flags: 18, from: 96, piece: 9, promotion: 13, to: 113, type: 1},
+        {captured: 4, color: 1, flags: 18, from: 96, piece: 9, promotion: 5, to: 113, type: 1},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`move:${id}`, () => {
