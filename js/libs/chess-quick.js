@@ -136,11 +136,11 @@ var Chess = function(fen) {
     // CHESS
     ////////
 
-    function addMove(moves, from, to, flags, rook) {
-        // if pawn promotion
+    function addMove(moves, from, to, flags, rook=EMPTY) {
+        // pawn promotion?
         if (TYPE(board[from]) == PAWN && [0, 7].includes(RANK(to))) {
             for (let piece of [QUEEN, ROOK, BISHOP, KNIGHT])
-                moves.push(buildMove(from, to, flags, piece));
+                moves.push(buildMove(from, to, flags, piece, EMPTY));
         }
         else
             moves.push(buildMove(from, to, flags, null, rook));
@@ -224,9 +224,9 @@ var Chess = function(fen) {
 
         if (promotion) {
             move.flags |= BITS_PROMOTION;
-            move.promotion = COLORIZE(turn, promotion);
+            move.promotion = promotion;
         }
-        if (rook != undefined)
+        if (rook != EMPTY)
             move.rook = rook;
         else if (board[to])
             move.captured = TYPE(board[to]);
@@ -339,7 +339,8 @@ var Chess = function(fen) {
                 // pawn captures
                 for (let j = 2; j < 4; j++) {
                     square = i + PAWN_OFFSETS[us][j];
-                    if (square & 0x88) continue;
+                    if (square & 0x88)
+                        continue;
 
                     if (board[square] && COLOR(board[square]) == them)
                         addMove(moves, i, square, BITS_CAPTURE);
@@ -348,9 +349,12 @@ var Chess = function(fen) {
                 }
             }
             else {
-                for (let j = 0, len = PIECE_OFFSETS[piece_type].length; j < len; j++) {
-                    let offset = PIECE_OFFSETS[piece_type][j],
+                let offsets = PIECE_OFFSETS[piece_type];
+                for (let j = 0; j < 8; j++) {
+                    let offset = offsets[j],
                         square = i;
+                    if (!offset)
+                        break;
 
                     while (true) {
                         square += offset;
@@ -812,7 +816,7 @@ var Chess = function(fen) {
                 for (let move2 of moves) {
                     if (move.from == algebraic(move2.from)
                             && move.to == algebraic(move2.to)
-                            && (!move2.promotion || TYPE(move.promotion) == TYPE(move2.promotion))) {
+                            && (!move2.promotion || TYPE(move.promotion) == move2.promotion)) {
                         move_obj = move2;
                         move_obj.san = move_to_san(move_obj);
                         break;
