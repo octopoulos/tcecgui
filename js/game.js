@@ -1919,7 +1919,7 @@ function open_event(section, callback) {
     show_tables(!!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
-            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'cross', data => {
+            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'brak', data => {
                 create_cup(section, data, true);
                 bracket_link = event_tag;
             }, dico);
@@ -2008,14 +2008,19 @@ function set_season_events() {
  * @param {Object} data
  */
 function analyse_tournament(section, data) {
-    Assign(tour_info[section], data);
+    let tour = tour_info[section];
+    Assign(tour, data);
     if (DEV.cup)
-        tour_info[section].cup = 1;
+        tour.cup = 1;
 
-    if (tour_info[section].cup)
-        download_table(section, 'bracket.json', 'brak', data => {
+    if (tour.cup) {
+        let event_tag = tour.eventtag,
+            filename = (event_tag && location.port != 8080)? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
+        window.filename = filename;
+        download_table(section, filename, 'brak', data => {
             create_cup(section, data);
         });
+    }
 
     open_event(section);
     update_table(section, 'sched', null);
