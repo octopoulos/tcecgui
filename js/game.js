@@ -2218,7 +2218,7 @@ function create_bracket(section, data) {
     window.event = data;
     let game = 1,
         last_result = (data.matchresults || []).slice(-1)[0] || [],
-        last_scores = Assign({}, ...last_result.map(item => ({[item.name]: item.score}))),
+        last_scores = Assign({}, ...last_result.map(item => ({[item.name]: item.origscore}))),
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         teams = data.teams,
         num_team = teams.length,
