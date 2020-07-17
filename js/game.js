@@ -1474,7 +1474,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_sched = (name == 'sched'),
-        is_sched_archive = (is_sched && section == 'archive'),
+        // live cup has wrong Game# too
+        is_sched_archive = (is_sched && (section == 'archive' || tour_info[section].cup)),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
@@ -2015,7 +2016,8 @@ function analyse_tournament(section, data) {
 
     if (tour.cup) {
         let event_tag = (location.port != 8080)? tour.eventtag: '',
-            filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
+            // filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
+            filename = event_tag? 'Eventcrosstable.json': 'bracket.json';
         window.filename = filename;
         download_table(section, `${filename}?ts=${Now()}`, 'brak', data => {
             create_cup(section, data);
