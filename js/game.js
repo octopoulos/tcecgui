@@ -2216,14 +2216,14 @@ function create_bracket(section, data) {
 
     // 1) create seeds
     window.event = data;
-    let prev_finished,
-        game = 1,
+    let game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         matches = data.matchresults || [],
         forwards = Assign({}, ...matches.map(item => ({[`${item[0].name}|${item[1].name}`]: [item[0].origscore, item[1].origscore]}))),
         reverses = Assign({}, ...matches.map(item => ({[`${item[1].name}|${item[0].name}`]: [item[1].origscore, item[0].origscore]}))),
         teams = data.teams,
         num_team = teams.length,
+        prev_finished = true,
         round = 0,
         round_results = data.results[0] || [],
         seeds = calculate_seeds(num_team * 2, tour_info.live.cup >= 6);
