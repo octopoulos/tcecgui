@@ -11,6 +11,7 @@ teams = json.loads(open(team_js).read())
 teams = [[[team[0][0].strip(), team[0][1]], [team[1][0].strip(), team[1][1]]] for team in teams]
 
 old_table_s = ""
+prev_size = 0
 
 while True:
     time.sleep(1)
@@ -65,14 +66,21 @@ while True:
 
         result.append([a, b])
 
-    if not change:
-        continue
+    # if not change:
+    #     continue
 
     event_table['teams'] = result
 
     # save file
-    print(f'{change} changes => {table_filename_copy}')
+    data = json.dumps(event_table, indent=4) + "\n"
+    size = len(data)
+    if size == prev_size:
+        data += ' '
+        size += 1
+    print(f'{change} changes => {table_filename_copy} : {size}')
+
     with open(table_filename_copy, "w") as fp_out:
-        fp_out.write(json.dumps(event_table, indent=4) + "\n")
+        fp_out.write(data)
 
     old_table_s = table_s
+    prev_size = size

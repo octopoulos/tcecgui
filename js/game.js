@@ -2217,6 +2217,8 @@ function create_bracket(section, data) {
     // 1) create seeds
     window.event = data;
     let game = 1,
+        last_result = (data.matchresults || []).slice(-1)[0] || [],
+        last_scores = Assign({}, ...last_result.map(item => ({[item.name]: item.score}))),
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         teams = data.teams,
         num_team = teams.length,
@@ -2249,7 +2251,15 @@ function create_bracket(section, data) {
                 scores = [0, 0],
                 team = teams[i];
 
-            if (team)
+            if (!result[0] && !result[1])
+                result = [];
+
+            if (team) {
+                // game in progress
+                let lasts = [last_scores[team[0].name], last_scores[team[1].name]];
+                if (lasts[0] != undefined && lasts[1] != undefined)
+                    result = lasts;
+
                 team.forEach((item, id) => {
                     let class_ = '',
                         seed = item.seed,
@@ -2283,6 +2293,7 @@ function create_bracket(section, data) {
                     if (number == 1 && i == 1)
                         link = ROUND_LINKS[3];
                 });
+            }
 
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
