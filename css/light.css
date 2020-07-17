@@ -840,6 +840,7 @@ grid {
     font-style: italic;
     padding: 0.5em 0 0 2em;
 }
+.name.win,
 .url,
 .win {
     color: #008000;
@@ -1082,6 +1083,9 @@ grid {
     padding: 0.05em 0 0.15em 0.3em;
     width: 100%;
 }
+.match-title.active {
+    background: #bf5b5b;
+}
 .match-logo {
     height: 19px;
     margin-right: 0.3em;
@@ -1254,11 +1258,16 @@ grid {
     position: fixed;
     z-index: 9;
 }
+#background,
 #meta-canvas {
     height: 100%;
     pointer-events: none;
     position: fixed;
     width: 100%;
+}
+#background {
+    background-size: cover;
+    background-position: center;
 }
 #canvas {
     pointer-events: all;

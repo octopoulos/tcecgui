@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -15,9 +15,10 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, change_page, change_setting, change_setting_game, change_theme, changed_hash, changed_section,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS,
-detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, From, full_scroll,
-game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes, Hide,
-HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader, From,
+full_scroll, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses,
+hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys,
+KEYS,
 LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
 NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
 popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -185,6 +186,10 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'audio_set':
         audio_set(value);
+        break;
+    case 'background_color':
+    case 'background_opacity':
+        update_background();
         break;
     case 'chat_height':
     case 'column_bottom':
@@ -570,6 +575,7 @@ function init_customs(initial) {
     set_draggable();
     populate_areas();
     update_board_theme(7);
+    update_background();
 }
 
 /**
@@ -1239,6 +1245,15 @@ function tab_element(target) {
 }
 
 /**
+ * Update the background
+ */
+function update_background() {
+    let color = Y.background_color,
+        opacity = Y.background_opacity;
+    Style('#background', `background-color:${(color == '#000000')? '': color};opacity:${opacity}`);
+}
+
+/**
  * Update the shortcuts on the top right
  * - copy the tab text
  * - copy the table html
@@ -1634,6 +1649,19 @@ function set_global_events() {
         if (!file)
             return;
 
+        if (id == 'background_image') {
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = function() {
+                let node = _('#background');
+                node.style.backgroundImage = `url(${reader.result})`;
+                if (!Y.background_opacity)
+                    Y.background_opacity = 0.2;
+                update_background();
+            };
+            return;
+        }
+
         file.text().then(data => {
             switch (id) {
             case 'import_settings':
@@ -1668,17 +1696,6 @@ function load_settings() {
  * Prepare combined settings
  */
 function prepare_settings() {
-    LANGUAGES = {
-        bul: 'български',
-        eng: 'English',
-        spa: 'español',
-        fra: 'français',
-        jpn: '日本語',
-        pol: 'polski',
-        rus: 'русский',
-        ukr: 'українська',
-    };
-
     Assign(DEFAULTS, {
         areas: {
             bottom: [],
@@ -1794,6 +1811,11 @@ function prepare_settings() {
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
+        },
+        video: {
+            background_color: [{type: 'color'}, '#000000'],
+            background_image: [{type: 'text'}, ''],
+            background_opacity: option_number(0, 0, 1, 0.01),
         },
         // separator
         _1: {},
@@ -2077,6 +2099,17 @@ function startup() {
         trophy: 'VB="0 0 576 512"><PFC d="M552 64H448V24c0-13.3-10.7-24-24-24H152c-13.3 0-24 10.7-24 24v40H24C10.7 64 0 74.7 0 88v56c0 35.7 22.5 72.4 61.9 100.7 31.5 22.7 69.8 37.1 110 41.7C203.3 338.5 240 360 240 360v72h-48c-35.3 0-64 20.7-64 56v12c0 6.6 5.4 12 12 12h296c6.6 0 12-5.4 12-12v-12c0-35.3-28.7-56-64-56h-48v-72s36.7-21.5 68.1-73.6c40.3-4.6 78.6-19 110-41.7 39.3-28.3 61.9-65 61.9-100.7V88c0-13.3-10.7-24-24-24zM99.3 192.8C74.9 175.2 64 155.6 64 144v-16h64.2c1 32.6 5.8 61.2 12.8 86.2-15.1-5.2-29.2-12.4-41.7-21.4zM512 144c0 16.1-17.7 36.1-35.3 48.8-12.5 9-26.7 16.2-41.8 21.4 7-25 11.8-53.6 12.8-86.2H512v16z"/>',
         unlock: 'VB="0 0 448 512"><PFC d="M400 224h-24v-72C376 68.2 307.8 0 224 0S72 68.2 72 152v72H48c-26.5 0-48 21.5-48 48v192c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V272c0-26.5-21.5-48-48-48zm-104 0H152v-72c0-39.7 32.3-72 72-72s72 32.3 72 72v72z"/>',
         x: 'VB="0 0 352 512"><PFC d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"/>',
+    };
+
+    LANGUAGES = {
+        bul: 'български',
+        eng: 'English',
+        spa: 'español',
+        fra: 'français',
+        jpn: '日本語',
+        pol: 'polski',
+        rus: 'русский',
+        ukr: 'українська',
     };
 
     // assign virtual functions

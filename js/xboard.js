@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 //
 // game board:
 // - 4 rendering modes:
@@ -944,7 +944,7 @@ class XBoard {
 
         // calculate
         let checked = this.chess.checked(),
-            moves = this.chess.moves({frc: Undefined(move.frc, this.frc), legal: true}),
+            moves = this.chess.moves(Undefined(move.frc, this.frc), true, -1),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -978,8 +978,7 @@ class XBoard {
             };
         }
 
-        options.frc = options.frc || this.frc;
-        return this.chess.move(text, options);
+        return this.chess.move(text, Undefined(options.frc, this.frc));
     }
 
     /**

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-16
 //
 // Game specific code:
 // - control the board, moves
@@ -252,7 +252,7 @@ let ANALYSIS_URLS = {
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|{Wins} [W/B]|{Losses} [W/B]|Crashes|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|{Wins} [{W/B}]|{Losses} [{W/B}]|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -681,6 +681,7 @@ function create_boards(mode='html') {
 
     // 2) set pointers: real board + duals
     assign_boards();
+    window.xboards = xboards;
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
@@ -1473,7 +1474,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_sched = (name == 'sched'),
-        is_sched_archive = (is_sched && section == 'archive'),
+        // live cup has wrong Game# too
+        is_sched_archive = (is_sched && (section == 'archive' || tour_info[section].cup)),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
         body = _('tbody', table);
@@ -1918,7 +1920,7 @@ function open_event(section, callback) {
     show_tables(!!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
-            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'cross', data => {
+            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'brak', data => {
                 create_cup(section, data, true);
                 bracket_link = event_tag;
             }, dico);
@@ -2007,17 +2009,24 @@ function set_season_events() {
  * @param {Object} data
  */
 function analyse_tournament(section, data) {
-    Assign(tour_info[section], data);
+    let tour = tour_info[section];
+    Assign(tour, data);
     if (DEV.cup)
-        tour_info[section].cup = 1;
+        tour.cup = 1;
 
-    if (tour_info[section].cup)
-        download_table(section, 'bracket.json', 'brak', data => {
+    if (tour.cup) {
+        let event_tag = (location.port != 8080)? tour.eventtag: '',
+            // filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
+            filename = event_tag? 'Eventcrosstable.json': 'bracket.json';
+        window.filename = filename;
+        download_table(section, `${filename}?ts=${Now()}`, 'brak', data => {
             create_cup(section, data);
-        });
+        }, {no_cache: true});
+    }
 
     open_event(section);
     update_table(section, 'sched', null);
+    window.tour_info = tour_info;
 }
 
 /**
@@ -2025,9 +2034,10 @@ function analyse_tournament(section, data) {
  * - assume the final will be 1-2 then work backwards
  * - support non power of 2 => 0 will be the 'skip' seed
  * @param {number} num_team
+ * @param {number=} new_mode
  * @returns {number[]}
  */
-function calculate_seeds(num_team) {
+function calculate_seeds(num_team, new_mode) {
     let number = 2,
         nexts = [1, 2];
 
@@ -2035,7 +2045,7 @@ function calculate_seeds(num_team) {
         number *= 2;
         let seeds = [];
         for (let i = 0; i < number; i ++) {
-            let value = (i % 2)? (number + 1 - seeds[i - 1]): nexts[Floor(i / 2)];
+            let value = (i % 2)? (new_mode? (number/2 + seeds[i - 1]) % (number + 1): (number + 1 - seeds[i - 1])): nexts[Floor(i / 2)];
             seeds[i] = (value <= num_team)? value: 0;
         }
         nexts = seeds;
@@ -2061,6 +2071,7 @@ function calculate_event_stats(section, rows) {
 
     let crashes = 0,
         games = 0,
+        length = rows.length,
         max_moves = [-1, 0],
         max_time = [-1, 0],
         min_moves = [Infinity, 0],
@@ -2072,7 +2083,7 @@ function calculate_event_stats(section, rows) {
             '1/2-1/2': 0,
         },
         seconds = 0,
-        start = rows.length? rows[0].start: '';
+        start = length? rows[0].start: '';
 
     for (let row of rows) {
         let game = row._id + 1,
@@ -2111,7 +2122,7 @@ function calculate_event_stats(section, rows) {
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
-        draw_rate: format_percent(results['1/2-1/2'] / games),
+        draws: `${results['1/2-1/2']} [${format_percent(results['1/2-1/2'] / games)}]`,
         //
         average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
@@ -2121,7 +2132,8 @@ function calculate_event_stats(section, rows) {
         min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
         //
-        games: games,
+        games: `${games}/${length}`,
+        progress: length? format_percent(games/length): '-',
         crashes: crashes,
     });
 
@@ -2206,11 +2218,15 @@ function create_bracket(section, data) {
     window.event = data;
     let game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
+        matches = data.matchresults || [],
+        forwards = Assign({}, ...matches.map(item => ({[`${item[0].name}|${item[1].name}`]: [item[0].origscore, item[1].origscore]}))),
+        reverses = Assign({}, ...matches.map(item => ({[`${item[1].name}|${item[0].name}`]: [item[1].origscore, item[0].origscore]}))),
         teams = data.teams,
         num_team = teams.length,
+        prev_finished = true,
         round = 0,
         round_results = data.results[0] || [],
-        seeds = calculate_seeds(num_team * 2);
+        seeds = calculate_seeds(num_team * 2, tour_info.live.cup >= 6);
 
     // assign seeds
     teams.forEach((team, id) => {
@@ -2223,6 +2239,7 @@ function create_bracket(section, data) {
         let name = ROUND_NAMES[number] || `Round of ${number * 2}`,
             nexts = [],
             number2 = (number == 1)? 2: number,
+            // only good to know if the game has ended or not
             results = round_results[round] || [];
 
         lines.push(
@@ -2231,13 +2248,26 @@ function create_bracket(section, data) {
             + `<vert class="${number == 1? 'fcenter final': 'faround'} h100" data-r="${round}">`
         );
         for (let i = 0; i < number2; i ++) {
-            let link = ROUND_LINKS[number] || `round${number * 2}`,
+            let finished = false,
+                link = ROUND_LINKS[number] || `round${number * 2}`,
                 names = [0, 0],
                 result = results[i] || [],
                 scores = [0, 0],
                 team = teams[i];
 
-            if (team)
+            if (!result[0] && !result[1])
+                result = [];
+
+            if (team) {
+                // get the real scores + check if a game has finished
+                let key = `${team[0].name}|${team[1].name}`,
+                    exist = forwards[key] || reverses[key];
+                if (exist) {
+                    if (result[0] != undefined && result[1] != undefined)
+                        finished = true;
+                    result = exist;
+                }
+
                 team.forEach((item, id) => {
                     let class_ = '',
                         seed = item.seed,
@@ -2248,34 +2278,41 @@ function create_bracket(section, data) {
 
                     names[id] = [
                         class_,
+                        seed?
                         `<hori title="${item.name}">`
                             + `<img class="match-logo" src="image/engine/${short}.jpg">`
                             + `<div class="seed">#${seed}</div><div>${resize_text(short, 17)}</div>`
-                        + '</hori>',
+                        + '</hori>' : '',
                         short,
                     ];
                     scores[id] = [
                         class_,
                         result[id],
                         seed,
-                        (number == 1)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
+                        (number == 1 && class_)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
                     ];
 
                     // propagate the winner to the next round
-                    if (class_ == ' win')
-                        SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
-                    // match for 3rd place
-                    else if (class_ == ' loss' && number == 2)
-                        SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                    if (finished) {
+                        if (class_ == ' win')
+                            SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
+                        // match for 3rd place
+                        else if (class_ == ' loss' && number == 2)
+                            SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                    }
 
                     if (number == 1 && i == 1)
                         link = ROUND_LINKS[3];
                 });
+            }
+
+            let is_current = (prev_finished && !finished),
+                match_class = is_current? ' active': '';
 
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
                     // final has 3rd place game too
-                    + `<div class="match-title">#${game + (number == 1? 1 - i * 2: 0)}</div>`
+                    + `<div class="match-title${match_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
                     + '<grid class="match-grid">'
             );
 
@@ -2295,6 +2332,10 @@ function create_bracket(section, data) {
                 if (place)
                     place = ` data-p="${place}"`;
 
+                // game in progress or not yet started?
+                if (score == undefined)
+                    score = is_current? 0: '--';
+
                 lines.push(
                     `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
                     + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
@@ -2305,6 +2346,7 @@ function create_bracket(section, data) {
                     '</grid>'
                 + '</vert>'
             );
+            prev_finished = finished;
             game ++;
         }
         lines.push(
@@ -2341,6 +2383,8 @@ function create_connector(curr, id, nexts, target, coeffs) {
         seed = curr.dataset.s;
     if (seed != undefined)
         next = _(`[data-s="${seed}"]`, next) || next;
+    if (!next)
+        return null;
 
     // create the SVG
     let ax = curr.offsetLeft + curr.clientWidth,
@@ -2381,7 +2425,8 @@ function create_connectors() {
         currs.forEach((curr, id) => {
             for (let [offset, target, coeffs] of CONNECTORS[final]) {
                 let svg = create_connector(curr, id + offset, nexts, target, coeffs);
-                svgs.push(svg);
+                if (svg)
+                    svgs.push(svg);
             }
         });
     }
@@ -2842,6 +2887,7 @@ function parse_pgn(data, origin) {
  */
 function parse_time_control(value) {
     let mins,
+        moves = 0,
         items = value.split('+'),
         secs = 0;
 
@@ -2852,14 +2898,16 @@ function parse_time_control(value) {
     }
     else {
         items = value.split('/');
+        moves = items[0] * 1;
         mins = items[1] * 1;
-        value = `${items[0]}/${mins}'`;
+        value = `${moves}/${mins}'`;
     }
 
     return [
         value, {
             tc: mins,
             tc2: secs,
+            tc3: moves,
         },
     ];
 }
@@ -3450,8 +3498,9 @@ function update_scores(section) {
  */
 function update_time_control(section, id) {
     let main = xboards[section],
-        player = main.players[id];
-    HTML(`#overview td[data-x="tc"]`, `${player.tc / 60}'+${player.tc2}"`);
+        player = main.players[id],
+        mins = Round(player.tc / 60);
+    HTML(`#overview td[data-x="tc"]`, player.tc3? `${player.tc3}/${mins}'`: `${mins}'+${player.tc2}"`);
 }
 
 // LIVE ACTION / DATA
@@ -4552,6 +4601,7 @@ function startup_game() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        calculate_seeds: calculate_seeds,
         extract_threads: extract_threads,
         parse_pgn: parse_pgn,
     });

@@ -7,7 +7,7 @@
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_bracket, CreateNode, DEV, From,
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode, DEV, From,
 HasClass, Hide, HOST, HTML, Id, InsertNodes, io, location, LS, S, save_option, set_viewers, Show, TIMEOUTS,
 update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, Y
 */
@@ -57,7 +57,7 @@ function init_sockets() {
     });
     socket.on('bracket', data => {
         log_socket('bracket', data);
-        create_bracket('live', data);
+        create_cup('live', data);
     });
     socket.on('crash', data => {
         log_socket('crash', data);

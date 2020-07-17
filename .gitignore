@@ -18,7 +18,7 @@
 4d.js
 all.*
 archive/
-bracket.json
+bracket*.json
 c++/
 chart.js
 chess.js
@@ -43,6 +43,7 @@ sound/*.js
 stream.html
 svg/
 tcec.js
+TCEC*
 tempCodeRunnerFile.py
 test?.html
 tournament.json
