@@ -2293,11 +2293,13 @@ function create_bracket(section, data) {
                     ];
 
                     // propagate the winner to the next round
-                    if (class_ == ' win')
-                        SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
-                    // match for 3rd place
-                    else if (class_ == ' loss' && number == 2)
-                        SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                    if (finished) {
+                        if (class_ == ' win')
+                            SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
+                        // match for 3rd place
+                        else if (class_ == ' loss' && number == 2)
+                            SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                    }
 
                     if (number == 1 && i == 1)
                         link = ROUND_LINKS[3];
