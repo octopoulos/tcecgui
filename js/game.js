@@ -2263,7 +2263,7 @@ function create_bracket(section, data) {
                 let key = `${team[0].name}|${team[1].name}`,
                     exist = forwards[key] || reverses[key];
                 if (exist) {
-                    if (result[0] != 0 && result[1] != 0)
+                    if (result[0] != undefined && result[1] != undefined)
                         finished = true;
                     result = exist;
                 }
