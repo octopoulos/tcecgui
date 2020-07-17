@@ -1086,13 +1086,16 @@ grid {
 .match-title.active {
     background: #bf5b5b;
 }
+.match-title.done {
+    background: #888;
+}
 .match-logo {
     height: 19px;
     margin-right: 0.3em;
     width: 38px;
 }
 .name {
-    background: #eee;
+    background: #ddd;
     color: #000;
     min-height: 27px;
     padding: 4px;
@@ -1102,11 +1105,17 @@ grid {
     background: #ddd;
     color: #999;
 }
+.name.win {
+    background: #eee;
+}
 .name.none {
     background: #999;
     color: #ccc;
     font-family: Arial;
     text-align: center;
+}
+.name.undone {
+    color: #000;
 }
 .name.high {
     background: #9df;
@@ -1115,7 +1124,7 @@ grid {
     width: 2em;
 }
 .score {
-    background: #f3f3f3;
+    background: #e7e7e7;
     color: #000;
     font-family: Arial;
     font-size: 14px;
@@ -1125,12 +1134,16 @@ grid {
    background: #e7e7e7;
    color: #900;
 }
+.score.win {
+    background: #f3f3f3;
+    color: #060;
+}
 .score.none {
     background: #b8b8b8;
     color: #ccc;
 }
-.score.win {
-    color: #060;
+.score.undone {
+    color: #000;
 }
 .score.high {
     background: #a5e5ff;

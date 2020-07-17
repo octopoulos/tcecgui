@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-17
 //
 // Game specific code:
 // - control the board, moves
@@ -681,7 +681,8 @@ function create_boards(mode='html') {
 
     // 2) set pointers: real board + duals
     assign_boards();
-    window.xboards = xboards;
+    if (DEV.global)
+        window.xboards = xboards;
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
@@ -2019,7 +2020,8 @@ function analyse_tournament(section, data) {
         let event_tag = (location.port != 8080)? tour.eventtag: '',
             // filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
             filename = event_tag? 'Eventcrosstable.json': 'bracket.json';
-        window.filename = filename;
+        if (DEV.global)
+            window.filename = filename;
         download_table(section, filename, 'brak', data => {
             create_cup(section, data);
         }, {no_cache: true});
@@ -2027,7 +2029,8 @@ function analyse_tournament(section, data) {
 
     open_event(section);
     update_table(section, 'sched', null);
-    window.tour_info = tour_info;
+    if (DEV.global)
+        window.tour_info = tour_info;
 }
 
 /**
@@ -2216,7 +2219,8 @@ function create_bracket(section, data) {
         return;
 
     // 1) create seeds
-    window.event = data;
+    if (DEV.global)
+        window.event = data;
     let game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         matches = data.matchresults || [],
@@ -2266,12 +2270,8 @@ function create_bracket(section, data) {
                 if (exist) {
                     if (result[0] != undefined && result[1] != undefined)
                         finished = true;
-                    else
-                        LS(`${key} : ${finished}`);
                     result = exist;
                 }
-                else
-                    LS(`no exists: ${key}`);
 
                 team.forEach((item, id) => {
                     let class_ = '',
@@ -2294,7 +2294,7 @@ function create_bracket(section, data) {
                         class_,
                         result[id],
                         seed,
-                        (number == 1 && class_)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
+                        (number == 1 && finished && class_)? (i * 2 + (class_ == ' win'? 1: 2)): 0,
                     ];
 
                     // propagate the winner to the next round
@@ -2313,7 +2313,8 @@ function create_bracket(section, data) {
 
             let is_current = (prev_finished && !finished),
                 active_class = is_current? ' active': '',
-                done_class = finished? ' done': '';
+                done_class = finished? ' done': '',
+                undone_class = finished? '': ' undone';
 
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
@@ -2343,8 +2344,8 @@ function create_bracket(section, data) {
                     score = is_current? 0: '--';
 
                 lines.push(
-                    `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
-                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
+                    `<vert class="name${name_class}${undone_class} fcenter" data-s="${seed}">${name}</vert>`
+                    + `<vert class="score${score_class}${undone_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
                 );
             }
 
@@ -2369,6 +2370,13 @@ function create_bracket(section, data) {
     let node = Id('table-brak');
     HTML(node, lines.join(''));
     translate_node(node);
+
+    // 4) swap active in final round
+    let nodes = A('.final .match-title');
+    if (HasClass(nodes[0], 'active') && !HasClass(nodes[1], 'done')) {
+        Class(nodes[0], '-active');
+        Class(nodes[1], 'active');
+    }
 
     resize_bracket(true);
 }
