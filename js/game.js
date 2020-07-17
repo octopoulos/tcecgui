@@ -2278,10 +2278,11 @@ function create_bracket(section, data) {
 
                     names[id] = [
                         class_,
+                        seed?
                         `<hori title="${item.name}">`
                             + `<img class="match-logo" src="image/engine/${short}.jpg">`
-                            + `<div class="seed">#${Undefined(seed, '')}</div><div>${resize_text(short, 17)}</div>`
-                        + '</hori>',
+                            + `<div class="seed">#${seed}</div><div>${resize_text(short, 17)}</div>`
+                        + '</hori>' : '',
                         short,
                     ];
                     scores[id] = [
@@ -2303,10 +2304,13 @@ function create_bracket(section, data) {
                 });
             }
 
+            let is_current = (prev_finished && !finished),
+                match_class = is_current? ' active': '';
+
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
                     // final has 3rd place game too
-                    + `<div class="match-title">#${game + (number == 1? 1 - i * 2: 0)}</div>`
+                    + `<div class="match-title${match_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
                     + '<grid class="match-grid">'
             );
 
@@ -2328,7 +2332,7 @@ function create_bracket(section, data) {
 
                 // game in progress or not yet started?
                 if (score == undefined)
-                    score = (prev_finished && !finished)? 0: '--';
+                    score = is_current? 0: '--';
 
                 lines.push(
                     `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
