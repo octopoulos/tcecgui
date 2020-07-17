@@ -2021,7 +2021,7 @@ function analyse_tournament(section, data) {
         window.filename = filename;
         download_table(section, `${filename}?ts=${Now()}`, 'brak', data => {
             create_cup(section, data);
-        });
+        }, {no_cache: true});
     }
 
     open_event(section);
