@@ -20,13 +20,14 @@ SOURCE_TIMES = {
     'data.json': 5 + 1800,
     'data1.json': 4 + 1800,
     'enginerating.json': 3600 * 6,
+    'Eventcrosstable.json': 3600,
     'gamelist.json': 3600 * 12,
     'live.pgn': 1,
     'liveeval.json': 2 + 1800,
     'liveeval1.json': 3 + 1800,
     'schedule.json': 1200,
-    'tournament.json': 3600 * 12,
-    'winners.json': 3600 * 24 * 7,
+    'tournament.json': 3600 * 6,
+    'winners.json': 3600 * 24,
 }
 
 
