@@ -2212,15 +2212,13 @@ function calculate_estimates(section, rows) {
 /**
  * Create the brackets
  * @param {string} section archive, live
- * @param {Object} data
+ * @param {Object=} data
  */
 function create_bracket(section, data) {
     if (section != Y.x)
         return;
 
     // 1) create seeds
-    if (DEV.global)
-        window.event = data;
     let game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         matches = data.matchresults || [],
@@ -2231,7 +2229,7 @@ function create_bracket(section, data) {
         prev_finished = true,
         round = 0,
         round_results = data.results[0] || [],
-        seeds = calculate_seeds(num_team * 2, tour_info.live.cup >= 6);
+        seeds = calculate_seeds(num_team * 2, tour_info[section].cup >= 6);
 
     // assign seeds
     teams.forEach((team, id) => {
@@ -2462,12 +2460,22 @@ function create_connectors() {
 /**
  * Create a cup
  * @param {string} section archive, live
- * @param {Object} data
- * @param {boolean} show
+ * @param {Object=} data
+ * @param {boolean=} show
  */
 function create_cup(section, data, show) {
+    // 1) check data
+    let tour = tour_info[section];
+    if (data)
+        tour.data = data;
+    else
+        data = tour.data;
+    if (!data)
+        return;
+
     show_tables(true);
 
+    // 2) create the bracket
     let event = data.EventTable;
     if (event) {
         let rows = Keys(event).map(key => {
@@ -2480,7 +2488,7 @@ function create_cup(section, data, show) {
     if (show)
         open_table('brak');
 
-    // cup events
+    // 3) cup events
     // click on a match => load its games
     C('.match', function() {
         if (cannot_click())
@@ -4424,7 +4432,7 @@ function opened_table(node, name, tab) {
 
     switch (name) {
     case 'brak':
-        resize_bracket(true);
+        create_cup(section);
         break;
     case 'crash':
         download_table(section, 'crash.json', name);
