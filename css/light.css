@@ -1083,6 +1083,9 @@ grid {
     padding: 0.05em 0 0.15em 0.3em;
     width: 100%;
 }
+.match-title.active {
+    background: #bf5b5b;
+}
 .match-logo {
     height: 19px;
     margin-right: 0.3em;
