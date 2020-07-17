@@ -2216,10 +2216,12 @@ function create_bracket(section, data) {
 
     // 1) create seeds
     window.event = data;
-    let game = 1,
-        last_result = (data.matchresults || []).slice(-1)[0] || [],
-        last_scores = Assign({}, ...last_result.map(item => ({[item.name]: item.origscore}))),
+    let prev_finished,
+        game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
+        matches = data.matchresults || [],
+        forwards = Assign({}, ...matches.map(item => ({[`${item[0].name}|${item[1].name}`]: [item[0].origscore, item[1].origscore]}))),
+        reverses = Assign({}, ...matches.map(item => ({[`${item[1].name}|${item[0].name}`]: [item[1].origscore, item[0].origscore]}))),
         teams = data.teams,
         num_team = teams.length,
         round = 0,
@@ -2237,6 +2239,7 @@ function create_bracket(section, data) {
         let name = ROUND_NAMES[number] || `Round of ${number * 2}`,
             nexts = [],
             number2 = (number == 1)? 2: number,
+            // only good to know if the game has ended or not
             results = round_results[round] || [];
 
         lines.push(
@@ -2245,7 +2248,8 @@ function create_bracket(section, data) {
             + `<vert class="${number == 1? 'fcenter final': 'faround'} h100" data-r="${round}">`
         );
         for (let i = 0; i < number2; i ++) {
-            let link = ROUND_LINKS[number] || `round${number * 2}`,
+            let finished = false,
+                link = ROUND_LINKS[number] || `round${number * 2}`,
                 names = [0, 0],
                 result = results[i] || [],
                 scores = [0, 0],
@@ -2255,10 +2259,14 @@ function create_bracket(section, data) {
                 result = [];
 
             if (team) {
-                // game in progress
-                let lasts = [last_scores[team[0].name], last_scores[team[1].name]];
-                if (lasts[0] != undefined && lasts[1] != undefined)
-                    result = lasts;
+                // get the real scores + check if a game has finished
+                let key = `${team[0].name}|${team[1].name}`,
+                    exist = forwards[key] || reverses[key];
+                if (exist) {
+                    if (result[0] != 0 && result[1] != 0)
+                        finished = true;
+                    result = exist;
+                }
 
                 team.forEach((item, id) => {
                     let class_ = '',
@@ -2272,7 +2280,7 @@ function create_bracket(section, data) {
                         class_,
                         `<hori title="${item.name}">`
                             + `<img class="match-logo" src="image/engine/${short}.jpg">`
-                            + `<div class="seed">#${seed}</div><div>${resize_text(short, 17)}</div>`
+                            + `<div class="seed">#${Undefined(seed, '')}</div><div>${resize_text(short, 17)}</div>`
                         + '</hori>',
                         short,
                     ];
@@ -2318,9 +2326,13 @@ function create_bracket(section, data) {
                 if (place)
                     place = ` data-p="${place}"`;
 
+                // game in progress or not yet started?
+                if (score == undefined)
+                    score = (prev_finished && !finished)? 0: '--';
+
                 lines.push(
                     `<vert class="name${name_class} fcenter" data-s="${seed}">${name}</vert>`
-                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${Undefined(score, '--')}</vert>`
+                    + `<vert class="score${score_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
                 );
             }
 
@@ -2328,6 +2340,7 @@ function create_bracket(section, data) {
                     '</grid>'
                 + '</vert>'
             );
+            prev_finished = finished;
             game ++;
         }
         lines.push(
