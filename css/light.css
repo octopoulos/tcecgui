@@ -840,6 +840,7 @@ grid {
     font-style: italic;
     padding: 0.5em 0 0 2em;
 }
+.name.win,
 .url,
 .win {
     color: #008000;
