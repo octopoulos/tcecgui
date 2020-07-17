@@ -4227,8 +4227,10 @@ function changed_section() {
     let active = get_active_tab('table')[2];
     if (active && Visible(active))
         open_table(active);
-    else
-        open_table(DEFAULT_ACTIVES[section]);
+    else {
+        active = tour_info[section].cup? 'brak': DEFAULT_ACTIVES[section];
+        open_table(active);
+    }
 
     // reset some stuff
     reset_sub_boards(3);
