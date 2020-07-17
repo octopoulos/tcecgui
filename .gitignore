@@ -29,6 +29,7 @@ data*.json
 dist/
 doc/
 enginerating.json
+Eventcrosstable.json
 gamelist.json
 index.html
 json/

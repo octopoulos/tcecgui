@@ -1264,24 +1264,25 @@ function download_live(callback) {
     }
 
     // evals
-    download_table(section, `data.json?ts=${Now()}`, null, data => {
+    let dico = {no_cache: true};
+    download_table(section, 'data.json', null, data => {
         update_live_eval(section, data, 0);
         _done();
-    });
-    download_table(section, `data1.json?ts=${Now()}`, null, data => {
+    }, dico);
+    download_table(section, 'data1.json', null, data => {
         update_live_eval(section, data, 1);
         _done();
-    });
+    }, dico);
 
     // live engines
     download_table(section, 'liveeval.json', null, data => {
         update_live_eval(section, data, 0);
         _done();
-    });
+    }, dico);
     download_table(section, 'liveeval1.json', null, data => {
         update_live_eval(section, data, 1);
         _done();
-    });
+    }, dico);
 }
 
 /**
@@ -1348,7 +1349,7 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
         return;
 
     // get the data
-    Resource(url, (code, data, xhr) => {
+    Resource(`${url}?ts=${Now()}`, (code, data, xhr) => {
         if (code != 200)
             return;
 
@@ -2012,14 +2013,14 @@ function analyse_tournament(section, data) {
     let tour = tour_info[section];
     Assign(tour, data);
     if (DEV.cup)
-        tour.cup = 1;
+        tour.cup = 6;
 
     if (tour.cup) {
         let event_tag = (location.port != 8080)? tour.eventtag: '',
             // filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
             filename = event_tag? 'Eventcrosstable.json': 'bracket.json';
         window.filename = filename;
-        download_table(section, `${filename}?ts=${Now()}`, 'brak', data => {
+        download_table(section, filename, 'brak', data => {
             create_cup(section, data);
         }, {no_cache: true});
     }
@@ -2265,8 +2266,12 @@ function create_bracket(section, data) {
                 if (exist) {
                     if (result[0] != undefined && result[1] != undefined)
                         finished = true;
+                    else
+                        LS(`${key} : ${finished}`);
                     result = exist;
                 }
+                else
+                    LS(`no exists: ${key}`);
 
                 team.forEach((item, id) => {
                     let class_ = '',
@@ -2307,13 +2312,14 @@ function create_bracket(section, data) {
             }
 
             let is_current = (prev_finished && !finished),
-                match_class = is_current? ' active': '';
+                active_class = is_current? ' active': '',
+                done_class = finished? ' done': '';
 
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
                     // final has 3rd place game too
-                    + `<div class="match-title${match_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
-                    + '<grid class="match-grid">'
+                    + `<div class="match-title${active_class || done_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
+                    + `<grid class="match-grid${done_class}">`
             );
 
             for (let id = 0; id < 2; id ++) {
