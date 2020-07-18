@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-17
 //
 // game board:
 // - 4 rendering modes:
@@ -969,16 +969,14 @@ class XBoard {
      * @returns {Object}
      */
     chess_move(text, options={}) {
-        // handle UCI: e1g1 = O-O, e7e8q = promotion
-        if (text.length >= 4 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
-            text = {
-                from: text.slice(0, 2),
-                promotion: text[4],
-                to: text.slice(2, 4),
-            };
-        }
+        let chess = this.chess,
+            frc = Undefined(options.frc, this.frc);
 
-        return this.chess.move(text, Undefined(options.frc, this.frc));
+        // handle UCI: e1g1 = O-O, e7e8q = promotion
+        if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
+            return chess.moveUci(text, frc);
+
+        return IsString(text)? chess.moveSan(text, frc): chess.moveObject(text, frc);
     }
 
     /**

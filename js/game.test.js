@@ -17,7 +17,7 @@ create_module(IMPORT_PATH, [
     'engine',
     'global',
     '3d',
-    'libs/chess-quick',
+    'chess',
     'xboard',
     'graph',
     //

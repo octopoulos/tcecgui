@@ -21,12 +21,12 @@ archive/
 bracket*.json
 c++/
 chart.js
-chess.js
 crash.json
 create_list.js
 crosstable.json
 data*.json
 dist/
+dist/js/
 doc/
 enginerating.json
 Eventcrosstable.json
@@ -34,6 +34,7 @@ gamelist.json
 index.html
 json/
 kibitz/
+js/libs/chess.js
 live*.json
 model/
 new.json

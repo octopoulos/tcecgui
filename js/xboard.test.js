@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-17
 //
 /*
 globals
@@ -17,7 +17,7 @@ create_module(IMPORT_PATH, [
     'common',
     'engine',
     'global',
-    'libs/chess-quick',
+    'chess',
     //
     'xboard',
 ], OUTPUT_MODULE, 'Assign START_FEN XBoard');
@@ -117,43 +117,68 @@ live.dual = archive;
 // chess_move
 [
     [START_FEN, 'd5', undefined, null],
-    [START_FEN, 'd4', undefined, {color: 0, flags: 4, from: 99, piece: 1, to: 67, type: 1}],
+    [START_FEN, 'd4', undefined, {flags: 4, from: 99, piece: 1, to: 67}],
+    [START_FEN, 'd2d4', undefined, {flags: 4, from: 99, piece: 1, san: 'd4', to: 67}],
+    [
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
+        'e1g1',
+        undefined,
+        {flags: 32, from: 116, piece: 6, rook: 119, san: 'O-O', to: 118},
+    ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         undefined,
-        {color: 0, flags: 32, from: 116, piece: 6, rook: 119, to: 118, type: 6},
+        {flags: 32, from: 116, piece: 6, rook: 119, to: 118},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         undefined,
-        {color: 0, flags: 64, from: 116, piece: 6, rook: 112, to: 114, type: 6},
+        {flags: 64, from: 116, piece: 6, rook: 112, to: 114},
     ],
     ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, null],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
+        'd8g8',
+        {frc: true},
+        {flags: 32, from: 3, piece: 14, rook: 7, san: 'O-O', to: 6},
+    ],
+    [
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
         {frc: true},
-        {color: 1, flags: 32, from: 3, piece: 14, rook: 7, to: 6, type: 6},
+        {flags: 32, from: 3, piece: 14, rook: 7, to: 6},
     ],
     [
         'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, from: 118, piece: 6, rook: 119, to: 118, type: 6},
+        {flags: 32, from: 118, piece: 6, rook: 119, to: 118},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O',
         {frc: true},
-        {color: 0, flags: 32, from: 115, piece: 6, rook: 119, to: 118, type: 6},
+        {flags: 32, from: 115, piece: 6, rook: 119, to: 118},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
         {frc: true},
-        {color: 0, flags: 64, from: 115, piece: 6, rook: 113, to: 114, type: 6},
+        {flags: 64, from: 115, piece: 6, rook: 113, to: 114},
+    ],
+    [
+        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
+        'axb1=Q',
+        false,
+        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, to: 113},
+    ],
+    [
+        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
+        'a2b1q',
+        false,
+        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, san: 'axb1=Q', to: 113},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {

@@ -1,14 +1,14 @@
 // chess.js
-// - modified for speed
-// - temporary file, it will soon be removed once XBoard is improved
+// @version 2020-07-17
+// - javascript implementation (wasm version is a lot faster)
 // - FRC support
 /*
 globals
-define, exports
+define, exports, Undefined
 */
 'use strict';
 
-var Chess = function(fen) {
+var Chess = function(fen_) {
     let BISHOP = 3,
         BLACK = 1,
         COLOR = piece => piece >> 3,
@@ -21,7 +21,7 @@ var Chess = function(fen) {
         KNIGHT = 2,
         PAWN = 1,
         //             012345678901234
-        PIECE_LOWER = ' pnbrqk  pnbrqk',
+        // PIECE_LOWER = ' pnbrqk  pnbrqk',
         PIECE_NAMES = ' PNBRQK  pnbrqk',
         PIECE_UPPER = ' PNBRQK  PNBRQK',
         PIECES = {
@@ -118,8 +118,10 @@ var Chess = function(fen) {
         };
 
     let board = new Array(128).fill(0),
-        castling = [0, 0],
+        castling = [EMPTY, EMPTY, EMPTY, EMPTY],
         ep_square = EMPTY,
+        fen = '',
+        frc = false,
         half_moves = 0,
         histories = [],
         kings = [EMPTY, EMPTY],
@@ -127,7 +129,7 @@ var Chess = function(fen) {
         turn = WHITE;
 
     // if the user passes in a fen string, load it, else default to starting position
-    load((fen == undefined)? DEFAULT_POSITION: fen);
+    load(Undefined(fen_, DEFAULT_POSITION));
 
     // PRIVATE
     //////////
@@ -138,13 +140,13 @@ var Chess = function(fen) {
      */
     function addHistory(move) {
         histories.push({
-            move: move,
-            kings: [...kings],
-            turn: turn,
             castling: [...castling],
             ep_square: ep_square,
             half_moves: half_moves,
-            move_number: move_number
+            kings: [...kings],
+            move: move,
+            move_number: move_number,
+            turn: turn,
         });
     }
 
@@ -168,12 +170,12 @@ var Chess = function(fen) {
     function addSingleMove(moves, from, to, flags, promotion, rook) {
         let piece = board[from],
             move = {
-                color: turn,
+                // color: turn,
                 flags: flags,
                 from: from,
                 piece: piece,
                 to: to,
-                type: TYPE(piece),
+                // type: TYPE(piece),
             };
 
         if (promotion)
@@ -201,7 +203,7 @@ var Chess = function(fen) {
             same_file = 0,
             same_rank = 0,
             to = move.to,
-            type = move.type;
+            type = TYPE(move.piece);
 
         for (let move of moves) {
             let ambig_from = move.from,
@@ -209,7 +211,7 @@ var Chess = function(fen) {
 
             // if a move of the same piece type ends on the same to square,
             // we'll need to add a disambiguator to the algebraic notation
-            if (type == move.type && from != ambig_from && to == ambig_to) {
+            if (type == TYPE(move.piece) && from != ambig_from && to == ambig_to) {
                 ambiguities ++;
 
                 if (RANK(from) == RANK(ambig_from))
@@ -225,13 +227,13 @@ var Chess = function(fen) {
         // if there exists a similar moving piece on the same rank and file as
         // the move in question, use the square as the disambiguator
         if (same_rank > 0 && same_file > 0)
-            return algebraic(from);
+            return squareToAn(from);
         // if the moving piece rests on the same file, use the rank symbol as the disambiguator
         else if (same_file > 0)
-            return algebraic(from)[1];
+            return squareToAn(from)[1];
         // else use the file symbol
         else
-            return algebraic(from)[0];
+            return squareToAn(from)[0];
     }
 
     /**
@@ -275,25 +277,26 @@ var Chess = function(fen) {
             }
 
             // turn off castling
-            castling[us] = 0;
+            castling[us * 2] = EMPTY;
+            castling[us * 2 + 1] = EMPTY;
         }
 
         let move_type = TYPE(move.piece);
 
         // turn off castling if we move a rook
-        if (castling[us] && move_type == ROOK && RANK(move.from) == RANK(kings[us])) {
-            if (move.from > kings[us])
-                castling[us] &= ~BITS_KSIDE_CASTLE;
-            else
-                castling[us] &= ~BITS_QSIDE_CASTLE;
+        if (move_type == ROOK) {
+            if (move.from == castling[us * 2])
+                castling[us * 2] = EMPTY;
+            else if (move.from == castling[us * 2 + 1])
+                castling[us * 2 + 1] = EMPTY;
         }
 
         // turn off castling if we capture a rook
-        if (castling[them] && move.captured == ROOK && RANK(move.to) == RANK(kings[them])) {
-            if (move.to > kings[them])
-                castling[them] &= ~BITS_KSIDE_CASTLE;
-            else
-                castling[them] &= ~BITS_QSIDE_CASTLE;
+        if (move.captured == ROOK) {
+            if (move.to == castling[them * 2])
+                castling[them * 2] = EMPTY;
+            else if (move.to == castling[them * 2 + 1])
+                castling[them * 2 + 1] = EMPTY;
         }
 
         // if big pawn move, update the en passant square
@@ -319,32 +322,22 @@ var Chess = function(fen) {
         turn = 1 - turn;
     }
 
-    /**
-     * Remove decorators from the SAN
-     * @param {string} san
-     * @returns {string}
-     */
-    function strippedSan(san) {
-        return san.replace(/=/, '').replace(/[+#]?[?!]*$/, '');
-    }
-
     // PUBLIC
     /////////
 
     /**
-     * Convert a square number to an algebraic notation
-     * @param {number} square 112
-     * @returns {string} algebraic a1
+     * Convert AN to square
+     * @param {string} an c2
+     * @returns {number} 98
      */
-    function algebraic(square) {
-        return `${'abcdefgh'[FILE(square)]}${'87654321'[RANK(square)]}`;
+    function anToSquare(an) {
+        return Undefined(SQUARES[an], EMPTY);
     }
-
     /**
      * Check if a square is attacked by a color
      * @param {number} color attacking color
      * @param {number} square
-     * @returns {boolean}
+     * @returns {boolean} true if the square is attacked
      */
     function attacked(color, square) {
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
@@ -404,14 +397,23 @@ var Chess = function(fen) {
     }
 
     /**
+     * Remove decorators from the SAN
+     * @param {string} san Bxe6+!!
+     * @returns {string} clean san Bxe6
+     */
+    function cleanSan(san) {
+        return san.replace(/=/, '').replace(/[+#]?[?!]*$/, '');
+    }
+
+    /**
      * Clear the board
      */
     function clear() {
         board = new Array(128).fill(0);
-        castling[0] = 0;
-        castling[1] = 0;
+        castling.fill(EMPTY);
         ep_square = EMPTY;
-        fen = '';
+        fen = "";
+        frc = false;
         half_moves = 0;
         histories.length = 0;
         kings[0] = EMPTY;
@@ -420,49 +422,13 @@ var Chess = function(fen) {
         turn = WHITE;
     }
 
-    /* convert a move from 0x88 coordinates to Standard Algebraic Notation (SAN)
-     * https://github.com/jhlywa/chess.js
-     *
-     * @param {boolean} sloppy Use the sloppy SAN generator to work around over
-     * disambiguation bugs in Fritz and Chessbase.    See below:
-     *
-     * r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4
-     * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
-     * 4. ... Ne7 is technically the valid SAN
-     */
-    function coordToSan(move, sloppy) {
-        if (move.flags & BITS_KSIDE_CASTLE)
-            return "O-O";
-        if (move.flags & BITS_QSIDE_CASTLE)
-            return "O-O-O";
-
-        let disambiguator = getDisambiguator(move, sloppy),
-            output = '';
-
-        if (move.type != PAWN)
-            output += PIECE_UPPER[move.type] + disambiguator;
-
-        if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE)) {
-            if (move.type == PAWN)
-                output += algebraic(move.from)[0];
-            output += 'x';
-        }
-
-        output += algebraic(move.to);
-
-        if (move.flags & BITS_PROMOTION)
-            output += '=' + PIECE_UPPER[move.promotion];
-
-        return output;
-    }
-
     /**
      * Create the FEN
      * @returns {string} fen
      */
     function createFen() {
-        let empty = 0,
-            fen = '';
+        let empty = 0;
+        fen = '';
 
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             let piece = board[i];
@@ -488,24 +454,37 @@ var Chess = function(fen) {
             }
         }
 
-        let cflags = '';
-        if (castling[WHITE] & BITS_KSIDE_CASTLE) cflags += 'K';
-        if (castling[WHITE] & BITS_QSIDE_CASTLE) cflags += 'Q';
-        if (castling[BLACK] & BITS_KSIDE_CASTLE) cflags += 'k';
-        if (castling[BLACK] & BITS_QSIDE_CASTLE) cflags += 'q';
+        let castle = '';
+        if (frc) {
+            for (let square of castling)
+                if (square != EMPTY) {
+                    let file = FILE(square),
+                        rank = RANK(square);
+                    if (rank > 0)
+                        castle += 'ABCDEFGHIJ'[file];
+                    else
+                        castle += 'abcdefghij'[file];
+                }
+        }
+        else {
+            if (castling[0] != EMPTY) castle += 'K';
+            if (castling[1] != EMPTY) castle += 'Q';
+            if (castling[2] != EMPTY) castle += 'k';
+            if (castling[3] != EMPTY) castle += 'q';
+        }
 
         // empty castling flag?
-        cflags = cflags || '-';
-        let epflags = (ep_square == EMPTY)? '-': algebraic(ep_square);
+        castle = castle || '-';
+        let epflags = (ep_square == EMPTY)? '-': squareToAn(ep_square);
 
-        return [fen, COLOR_TEXT[turn], cflags, epflags, half_moves, move_number].join(' ');
+        return [fen, COLOR_TEXT[turn], castle, epflags, half_moves, move_number].join(' ');
     }
 
     /**
      * Create the moves
-     * @param {boolen} frc
-     * @param {boolean} legal
-     * @param {number} single_square
+     * @param {boolen} frc Fisher Random Chess
+     * @param {boolean} legal only consider legal moves
+     * @param {number} single_square calculate moves from a specific square
      * @returns {Object[]} moves
      */
     function createMoves(frc, legal, single_square) {
@@ -591,12 +570,13 @@ var Chess = function(fen) {
         let castling_from = kings[us];
         if (castling_from != EMPTY && (!is_single || single_square == castling_from)) {
             // king-side castling
-            if (castling[us] & BITS_KSIDE_CASTLE) {
+            if (castling[us * 2] != EMPTY) {
                 let castling_to, error,
                     pos0 = RANK(castling_from) << 4,
                     rook = EMPTY;
 
                 if (frc) {
+                    castling_to = pos0 + 6;
                     let pos = pos0 + 7;
                     while (!error && pos != castling_from) {
                         let square = board[pos];
@@ -608,12 +588,10 @@ var Chess = function(fen) {
                             else
                                 error = true;
                         }
-                        else if (rook != EMPTY && attacked(them, pos))
+                        else if (rook != EMPTY && pos <= castling_to && attacked(them, pos))
                             error = true;
                         pos --;
                     }
-
-                    castling_to = pos0 + 6;
                 }
                 else if (FILE(castling_from) == 4) {
                     castling_to = castling_from + 2;
@@ -633,12 +611,13 @@ var Chess = function(fen) {
             }
 
             // queen-side castling
-            if (castling[us] & BITS_QSIDE_CASTLE) {
+            if (castling[us * 2 + 1] != EMPTY) {
                 let castling_to, error,
                     pos0 = RANK(castling_from) << 4,
                     rook = EMPTY;
 
                 if (frc) {
+                    castling_to = pos0 + 2;
                     let pos = pos0;
                     while (!error && pos != castling_from) {
                         let square = board[pos];
@@ -650,12 +629,11 @@ var Chess = function(fen) {
                             else
                                 error = true;
                         }
-                        else if (rook != EMPTY && attacked(them, pos))
+                        else if (rook != EMPTY && pos >= castling_to && attacked(them, pos))
                             error = true;
                         pos ++;
                     }
 
-                    castling_to = pos0 + 2;
                 }
                 else if (FILE(castling_from) == 4) {
                     castling_to = castling_from - 2;
@@ -692,7 +670,7 @@ var Chess = function(fen) {
     /**
      * Check if the king is attacked
      * @param {number} color 0, 1
-     * @return {boolean}
+     * @return {boolean} true if king is attacked
      */
     function kingAttacked(color) {
         return attacked(1 - color, kings[color]);
@@ -703,15 +681,16 @@ var Chess = function(fen) {
      * @param {string} fen valid or invalid FEN
      * @returns {boolean} true if the FEN was successfully loaded
      */
-    function load(fen) {
-        if (!fen)
+    function load(fen_) {
+        if (!fen_)
             return false;
 
-        let tokens = fen.split(/\s+/),
+        let tokens = fen_.split(/\s+/),
             position = tokens[0],
             square = 0;
 
         clear();
+        fen = fen_;
 
         for (let i = 0; i < position.length; i ++) {
             let piece = position[i];
@@ -728,25 +707,143 @@ var Chess = function(fen) {
 
         turn = (tokens[1] == 'w')? 0: 1;
 
-        if (tokens[2].includes('K'))
-            castling[0] |= BITS_KSIDE_CASTLE;
-        if (tokens[2].includes('Q'))
-            castling[0] |= BITS_QSIDE_CASTLE;
-        if (tokens[2].includes('k'))
-            castling[1] |= BITS_KSIDE_CASTLE;
-        if (tokens[2].includes('q'))
-            castling[1] |= BITS_QSIDE_CASTLE;
+        // can detect FRC if castle not empty
+        if (tokens[2] != '-') {
+            for (let char of tokens[2]) {
+                let lower = char.toLowerCase(),
+                    final = (lower == 'k')? 'h': (lower == 'q')? 'a': lower,
+                    color = (char == lower)? 1: 0,
+                    square = anToSquare(`${final}${color? 8: 1}`),
+                    index = color * 2 + ((square < kings[color])? 1: 0);
 
-        ep_square = (tokens[3] == '-') ? EMPTY: SQUARES[tokens[3]];
+                castling[index] = square;
+                if (final == lower)
+                    frc = true;
+            }
+        }
+
+        ep_square = anToSquare(tokens[3]);
         half_moves = parseInt(tokens[4], 10);
         move_number = parseInt(tokens[5], 10);
         return true;
     }
 
     /**
+     * Try an object move
+     * @param {Object} move {from: 23, to: 7, promotion: 5}
+     * @param {boolean} frc Fisher Random Chess
+     * @returns {Object}
+     */
+    function moveObject(move, frc) {
+        let move_obj = null,
+            moves = createMoves(frc, false, move.from);
+
+        // find an existing match + add the SAN
+        for (let move2 of moves) {
+            if (move.from == move2.from && move.to == move2.to
+                    && (!move2.promotion || TYPE(move.promotion) == move2.promotion)) {
+                move_obj = move2;
+                move_obj.san = moveToSan(move_obj);
+                break;
+            }
+        }
+
+        // no suitable move?
+        if (!move_obj)
+            return null;
+
+        makeMove(move_obj);
+        return move_obj;
+    }
+
+    /**
+     * Try a string move
+     * @param {string} text Nxb7, a8=Q
+     * @param {boolean} frc Fisher Random Chess
+     * @param {boolean} sloppy allow sloppy parser
+     * @returns {Object}
+     */
+    function moveSan(text, frc, sloppy) {
+        let moves = createMoves(frc, false, EMPTY),
+            move = sanToMove(text, moves, sloppy);
+        if (!move)
+            return null;
+
+        makeMove(move);
+        return move;
+    }
+
+    /**
+     * Convert a move to SAN
+     * https://github.com/jhlywa/chess.js
+     * r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4
+     * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
+     * 4. ... Ne7 is technically the valid SAN
+     * @param {Move} move
+     * @param {boolean} allow sloppy parser
+     * @returns {string}
+     */
+    function moveToSan(move, sloppy) {
+        if (move.flags & BITS_KSIDE_CASTLE)
+            return "O-O";
+        if (move.flags & BITS_QSIDE_CASTLE)
+            return "O-O-O";
+
+        let disambiguator = getDisambiguator(move, sloppy),
+            move_type = TYPE(move.piece),
+            output = '';
+
+        if (move_type != PAWN)
+            output += PIECE_UPPER[move_type] + disambiguator;
+
+        if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE)) {
+            if (move_type == PAWN)
+                output += squareToAn(move.from)[0];
+            output += 'x';
+        }
+
+        output += squareToAn(move.to);
+
+        if (move.flags & BITS_PROMOTION)
+            output += '=' + PIECE_UPPER[move.promotion];
+        return output;
+    }
+
+    /**
+     * Try an UCI move
+     * @param {string} text c2c4, a7a8a
+     * @param {boolean} frc Fisher Random Chess
+     * @returns {Object}
+     */
+    function moveUci(text, frc) {
+        let move = {
+                from: anToSquare(text.slice(0, 2)),
+                promotion: PIECES[text[4]],
+                to: anToSquare(text.slice(2, 4)),
+            };
+        return moveObject(move, frc);
+    }
+
+    /**
      * Print the board
+     * @returns {string}
      */
     function print() {
+        let text = '';
+        for (let value of fen) {
+            if (value == ' ')
+                break;
+
+            if (value == '/')
+                text += '\n';
+            else if ('123456789'.includes(value)) {
+                for (let i = 0; i < parseInt(value); i ++)
+                    text += ' ';
+            }
+            else
+                text += value;
+        }
+        return text;
     }
 
     /**
@@ -770,62 +867,83 @@ var Chess = function(fen) {
     /**
      * Convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
      * https://github.com/jhlywa/chess.js
-     * @param {string} san
-     * @param {Object[]} moves
-     * @param {boolean} frc
+     * @param {string} san Nf3, Nf3+?!
+     * @param {Object[]} moves list of moves to match the san against
+     * @param {boolean} sloppy allow sloppy parser
      * @returns {Object}
      */
-    function sanToCoord(san, moves, frc) {
-        // strip off any move decorations: e.g Nf3+?!
-        let from, matches, piece, promotion, to,
-            clean_san = strippedSan(san);
+    function sanToMove(san, moves, sloppy) {
+        // 1) try exact matching
+        let clean = cleanSan(san);
+        for (let move of moves)
+            if (clean == cleanSan(moveToSan(move)))
+                return move;
+
+        // 2) try sloppy matching
+        if (!sloppy)
+            return null;
+
+        let from_file = -1,
+            from_rank = -1,
+            i = clean.length - 1,
+            to = EMPTY,
+            promotion = 0,
+            type = 0;
+
+        if (i < 2)
+            return null;
+
+        // analyse backwards
+        if ('bnrqBNRQ'.includes(clean[i])) {
+            promotion = TYPE(clean[i]);
+            i --;
+        }
+        // to
+        if (!'12345678'.includes(clean[i]))
+            return null;
+        i --;
+        if (!'abcdefghij'.includes(clean[i]))
+            return null;
+        to = anToSquare(`${clean[i]}${clean[i + 1]}`);
+        i --;
+        //
+        if (i >= 0 && clean[i] == 'x')
+            i --;
+        // from
+        if (i >= 0 && '12345678'.includes(clean[i])) {
+            from_rank = 8 - parseInt(clean[i]);
+            i --;
+        }
+        if (i >= 0 && 'abcdefghij'.includes(clean[i])) {
+            from_file = 'abcdefghij'.indexOf(clean[i]);
+            i --;
+        }
+        // type
+        type = TYPE(PIECES[clean[i]]);
 
         for (let move of moves) {
-            // try the strict parser first, then the sloppy parser if requested by the user
-            if (clean_san == strippedSan(coordToSan(move)))
-                return move;
-
-            if (matches
-                    && (!piece || TYPE(piece) == move.type)
-                    && SQUARES[from] == move.from && SQUARES[to] == move.to
-                    && (!promotion || TYPE(promotion) == move.promotion))
+            if (to == move.to
+                    && (!type || type == TYPE(move.piece))
+                    && (from_file < 0 || from_file == FILE(move.from))
+                    && (from_rank < 0 || from_rank == RANK(move.from))
+                    && (!promotion || promotion == move.promotion))
                 return move;
         }
-
         return null;
     }
 
     /**
-     * Try to move
-     * @param {string|Object} move, ex: Nxb7, {from: 'h7', to: 'h8', promotion: 5}
-     * @param {boolean} frc
-     * @returns {Object}
+     * Convert a square number to an algebraic notation
+     * @param {number} square 112
+     * @param {boolean=} check check the boundaries
+     * @returns {string} a1
      */
-    function tryMove(move, frc) {
-        let move_obj = null,
-            moves = createMoves(frc, false, EMPTY);
-
-        if (typeof move == 'string')
-            move_obj = sanToCoord(move, moves, frc);
-        else if (typeof move == 'object') {
-            // convert the pretty move object to an ugly move object
-            for (let move2 of moves) {
-                if (move.from == algebraic(move2.from)
-                        && move.to == algebraic(move2.to)
-                        && (!move2.promotion || TYPE(move.promotion) == move2.promotion)) {
-                    move_obj = move2;
-                    move_obj.san = coordToSan(move_obj);
-                    break;
-                }
-            }
-        }
-
-        // failed to find move
-        if (!move_obj)
-            return null;
-
-        makeMove(move_obj);
-        return move_obj;
+    function squareToAn(square, check) {
+        let file = FILE(square),
+            rank = RANK(square);
+        if (check && (file < 0 || file > 7 || rank < 0 || rank > 7))
+            return "";
+        return `${'abcdefghij'[file] || '?'}${'87654321'[rank] || '?'}`;
     }
 
     /**
@@ -872,23 +990,27 @@ var Chess = function(fen) {
     ////////////////////////
 
     return {
+        anToSquare: anToSquare,
         attacked: attacked,
-        board: () => {
-            return board;
-        },
-        checked: () => {
-            return kingAttacked(turn);
-        },
+        board: () => board,
+        castling: () => castling,
+        checked: () => kingAttacked(turn),
+        cleanSan: cleanSan,
         clear: clear,
+        currentFen: () => fen,
         fen: createFen,
         load: load,
-        move: tryMove,
+        moveObject: moveObject,
+        moveSan: moveSan,
+        moveToSan: moveToSan,
+        moveUci: moveUci,
         moves: createMoves,
-        PIECE_NAMES: PIECE_NAMES,
-        PIECES: PIECES,
+        piece: text => Undefined(PIECES[text], 0),
+        print: print,
         put: put,
         reset: reset,
-        SQUARES: SQUARES,
+        sanToMove: sanToMove,
+        squareToAn: squareToAn,
         undo: undoMove,
     };
 };

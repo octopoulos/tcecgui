@@ -386,6 +386,8 @@ function check_hash_special(dico) {
     translate_node(Id('table-tabs'));
 
     // changed section
+    changed_hash();
+
     if (Y.x != old_x) {
         old_x = Y.x;
         if (old_x == 'live')
@@ -394,7 +396,6 @@ function check_hash_special(dico) {
         changed_section();
         close_popups();
     }
-    changed_hash();
 }
 
 /**
