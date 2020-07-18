@@ -8,8 +8,9 @@ beforeAll, console, describe, expect, require, test
 */
 'use strict';
 
-let Module = require('../c++/chess-wasm.js'),
-    {Keys, LS, Undefined} = require('./common');
+let Module = require('./chess-wasm.js'),
+    {Keys, Undefined} = require('./common'),
+    {get_move_ply} = require('./global');
 
 let chess,
     EMPTY = -1,
@@ -181,9 +182,9 @@ beforeAll(async () => {
 [
     [
         START_FEN,
-        {captured: 0, flags: 0, from: 97, piece: 0, promote: 0, rook: -1, san: '', to: 65},
+        {capture: 0, fen: '', flags: 0, from: 97, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: 65},
         false,
-        {captured: 0, flags: 4, from: 97, piece: 1, promote: 0, rook: -1, san: 'b4', to: 65},
+        {capture: 0, fen: '', flags: 4, from: 97, piece: 1, ply: 0, promote: 0, rook: -1, san: 'b4', to: 65},
     ],
 ].forEach(([fen, move, frc, answer], id) => {
     test(`moveObject:${id}`, () => {
@@ -194,104 +195,109 @@ beforeAll(async () => {
 
 // moveSan
 [
-    [START_FEN, 'd5', false, false, {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1}],
-    [START_FEN, 'd4', false, false, {captured: 0, flags: 4, from: 99, piece: 1, promote: 0, rook: -1, san: '', to: 67}],
-    [START_FEN, 'b2b4', false, false, {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1}],
+    [
+        START_FEN,
+        'd5',
+        [false, false],
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
+    ],
+    [
+        START_FEN,
+        'd4',
+        [false, false],
+        {capture: 0, fen: '', flags: 4, from: 99, piece: 1, ply: 0, promote: 0, rook: -1, san: 'd4', to: 67},
+    ],
+    [
+        START_FEN,
+        'b2b4',
+        [false, false],
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
+    ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
-        false,
-        false,
-        {captured: 0, flags: 32, from: 116, piece: 6, promote: 0, rook: 119, san: '', to: 118},
+        [false, false],
+        {capture: 0, fen: '', flags: 32, from: 116, piece: 6, ply: 0, promote: 0, rook: 119, san: 'O-O', to: 118},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
-        false,
-        false,
-        {captured: 0, flags: 64, from: 116, piece: 6, promote: 0, rook: 112, san: '', to: 114},
+        [false, false],
+        {capture: 0, fen: '', flags: 64, from: 116, piece: 6, ply: 0, promote: 0, rook: 112, san: 'O-O-O', to: 114},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
-        false,
-        false,
-        {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1},
+        [false, false],
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
-        true,
-        false,
-        {captured: 0, flags: 32, from: 3, piece: 14, promote: 0, rook: 7, san: '', to: 6},
+        [true, false],
+        {capture: 0, fen: '', flags: 32, from: 3, piece: 14, ply: 19, promote: 0, rook: 7, san: 'O-O', to: 6},
     ],
     [
         'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
         'O-O',
-        true,
-        false,
-        {captured: 0, flags: 32, from: 118, piece: 6, promote: 0, rook: 119, san: '', to: 118},
+        [true, false],
+        {capture: 0, fen: '', flags: 32, from: 118, piece: 6, ply: 4, promote: 0, rook: 119, san: 'O-O', to: 118},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O',
-        true,
-        false,
-        {captured: 0, flags: 32, from: 115, piece: 6, promote: 0, rook: 119, san: '', to: 118},
+        [true, false],
+        {capture: 0, fen: '', flags: 32, from: 115, piece: 6, ply: 38, promote: 0, rook: 119, san: 'O-O', to: 118},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
-        true,
-        false,
-        {captured: 0, flags: 64, from: 115, piece: 6, promote: 0, rook: 113, san: '', to: 114},
+        [true, false],
+        {capture: 0, fen: '', flags: 64, from: 115, piece: 6, ply: 38, promote: 0, rook: 113, san: 'O-O-O', to: 114},
     ],
     [
         '4k1r1/p2rbpp1/1q2p1n1/2pb3p/5P1P/1PB1P1P1/2Q1BN2/R3K1R1 w Kk - 2 21',
         'O-O',
-        true,
-        false,
-        {captured: 0, flags: 32, from: 116, piece: 6, promote: 0, rook: 118, san: '', to: 118},
+        [true, false],
+        {capture: 0, fen: '', flags: 32, from: 116, piece: 6, ply: 40, promote: 0, rook: 118, san: 'O-O', to: 118},
     ],
     [
         'rk2r3/1pp4p/p5bQ/P2q4/2R4P/1PB1p3/2P5/1K2R3 b q - 2 34',
         'O-O-O',
-        true,
-        false,
-        {captured: 0, flags: 64, from: 1, piece: 14, promote: 0, rook: 0, san: '', to: 2},
+        [true, false],
+        {capture: 0, fen: '', flags: 64, from: 1, piece: 14, ply: 67, promote: 0, rook: 0, san: 'O-O-O', to: 2},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=Q',
-        false,
-        false,
-        {captured: 0, flags: 17, from: 19, piece: 1, promote: 5, rook: -1, san: '', to: 3},
+        [false, false],
+        {capture: 0, fen: '', flags: 17, from: 19, piece: 1, ply: 50, promote: 5, rook: -1, san: 'd8=Q', to: 3},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
-        false,
-        false,
-        {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1},
+        [false, false],
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'axb1=Q',
-        false,
-        false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, rook: -1, san: '', to: 113},
+        [false, false],
+        {capture: 4, fen: '', flags: 18, from: 96, piece: 9, ply: 51, promote: 5, rook: -1, san: 'axb1=Q', to: 113},
     ],
     [
         'r2r2k1/pp4pp/2pN1pb1/8/5P2/6P1/PP2P1NP/R2K3R w KQ - 0 16',
         'O-O-O',
-        true,
-        false,
-        {captured: 0, flags: 64, from: 115, piece: 6, promote: 0, rook: 112, san: '', to: 114},
+        [true, false],
+        {capture: 0, fen: '', flags: 64, from: 115, piece: 6, ply: 30, promote: 0, rook: 112, san: 'O-O-O', to: 114},
     ],
-].forEach(([fen, move, frc, sloppy, answer], id) => {
+].forEach(([fen, move, options, answer], id) => {
     test(`moveSan:${id}`, () => {
         chess.load(fen);
-        expect(chess.moveSan(move, frc, sloppy)).toEqual(answer);
+        let result = chess.moveSan(move, options[0], options[1]);
+        expect(result).toEqual(answer);
+        if (result.piece)
+            expect(get_move_ply({fen: fen}) + 1).toEqual(result.ply);
     });
 });
 
@@ -299,7 +305,7 @@ beforeAll(async () => {
 [
     [
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
-        {captured: 0, flags: 0, from: 6, piece: 10, promote: 0, rook: -1, san: '', to: 20},
+        {capture: 0, fen: '', flags: 0, from: 6, piece: 10, ply: -1, promote: 0, rook: -1, san: '', to: 20},
         false,
         'Ne7',
     ],
@@ -312,24 +318,29 @@ beforeAll(async () => {
 
 // moveUci
 [
-    [START_FEN, 'd2d4', false, {captured: 0, flags: 4, from: 99, piece: 1, promote: 0, rook: -1, san: 'd4', to: 67}],
+    [
+        START_FEN,
+        'd2d4',
+        false,
+        {capture: 0, fen: '', flags: 4, from: 99, piece: 1, ply: 0, promote: 0, rook: -1, san: 'd4', to: 67},
+    ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'e1g1',
         true,
-        {captured: 0, flags: 32, from: 116, piece: 6, promote: 0, rook: 119, san: 'O-O', to: 118},
+        {capture: 0, fen: '', flags: 32, from: 116, piece: 6, ply: 0, promote: 0, rook: 119, san: 'O-O', to: 118},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'd8g8',
         true,
-        {captured: 0, flags: 32, from: 3, piece: 14, promote: 0, rook: 7, san: 'O-O', to: 6},
+        {capture: 0, fen: '', flags: 32, from: 3, piece: 14, ply: 19, promote: 0, rook: 7, san: 'O-O', to: 6},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'a2b1q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, rook: -1, san: 'axb1=Q', to: 113},
+        {capture: 4, fen: '', flags: 18, from: 96, piece: 9, ply: 51, promote: 5, rook: -1, san: 'axb1=Q', to: 113},
     ],
 ].forEach(([fen, move, frc, answer], id) => {
     test(`moveUci:${id}`, () => {
@@ -354,13 +365,13 @@ beforeAll(async () => {
         [true, false, EMPTY],
         48,
         [
-            {captured: 0, flags: 32, from: 115, piece: 6, promote: 0, rook: 119, san: '', to: 118},
-            {captured: 0, flags: 64, from: 115, piece: 6, promote: 0, rook: 113, san: '', to: 114},
+            {capture: 0, fen: '', flags: 32, from: 115, piece: 6, ply: 38, promote: 0, rook: 119, san: '', to: 118},
+            {capture: 0, fen: '', flags: 64, from: 115, piece: 6, ply: 38, promote: 0, rook: 113, san: '', to: 114},
         ],
     ],
     ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', [false, false, EMPTY], 36, []],
 ].forEach(([fen, options, number, answer], id) => {
-    test(`moves22:${id}`, () => {
+    test(`moves:${id}`, () => {
         chess.load(fen);
         let moves = chess.moves(options[0], options[1], options[2]);
         moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
@@ -369,6 +380,116 @@ beforeAll(async () => {
         expect(moves.length).toEqual(number);
         for (let item of answer)
             expect(moves).toContainEqual(item);
+    });
+});
+
+// multiSan
+[
+    [
+        '1. d4 d5 2. c4',
+        [false, false],
+        [
+            {
+                capture: 0,
+                fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+                flags: 4,
+                from: 99,
+                piece: 1,
+                ply: 0,
+                promote: 0,
+                rook: -1,
+                san: 'd4',
+                to: 67,
+            },
+            {
+                capture: 0,
+                fen: 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2',
+                flags: 4,
+                from: 19,
+                piece: 9,
+                ply: 1,
+                promote: 0,
+                rook: -1,
+                san: 'd5',
+                to: 51,
+            },
+            {
+                capture: 0,
+                fen: 'rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2',
+                flags: 4,
+                from: 98,
+                piece: 1,
+                ply: 2,
+                promote: 0,
+                rook: -1,
+                san: 'c4',
+                to: 66,
+            },
+        ],
+    ],
+].forEach(([multi, options, answer], id) => {
+    test(`multiSan:${id}`, () => {
+        chess.load(START_FEN);
+        let moves = chess.multiSan(multi, options[0], options[1]);
+        moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        for (let move of moves)
+            expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
+        expect(moves).toEqual(answer);
+    });
+});
+
+// multiUci
+[
+    [
+        'd2d4 d7d5 c2c4',
+        false,
+        [
+            {
+                capture: 0,
+                fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+                flags: 4,
+                from: 99,
+                piece: 1,
+                ply: 0,
+                promote: 0,
+                rook: -1,
+                san: 'd4',
+                to: 67,
+              },
+              {
+                capture: 0,
+                fen: 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2',
+                flags: 4,
+                from: 19,
+                piece: 9,
+                ply: 1,
+                promote: 0,
+                rook: -1,
+                san: 'd5',
+                to: 51,
+              },
+              {
+                capture: 0,
+                fen: 'rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2',
+                flags: 4,
+                from: 98,
+                piece: 1,
+                ply: 2,
+                promote: 0,
+                rook: -1,
+                san: 'c4',
+                to: 66,
+              },
+        ],
+    ],
+].forEach(([multi, frc, answer], id) => {
+    test(`multiUci:${id}`, () => {
+        chess.load(START_FEN);
+        let moves = chess.multiUci(multi, frc);
+        moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        for (let move of moves)
+            expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
+        expect(moves).toEqual(answer);
     });
 });
 
@@ -461,37 +582,37 @@ beforeAll(async () => {
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
         'Ne7',
         false,
-        {captured: 0, flags: 1, from: 6, piece: 10, promote: 0, rook: -1, san: '', to: 20},
+        {capture: 0, fen: '', flags: 1, from: 6, piece: 10, ply: 7, promote: 0, rook: -1, san: 'Ne7', to: 20},
     ],
     [
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
         'Nge7',
         false,
-        {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1},
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
     ],
     [
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
         'Nge7',
         true,
-        {captured: 0, flags: 1, from: 6, piece: 10, promote: 0, rook: -1, san: '', to: 20},
+        {capture: 0, fen: '', flags: 1, from: 6, piece: 10, ply: 7, promote: 0, rook: -1, san: 'Ne7', to: 20},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         false,
-        {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1},
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         true,
-        {captured: 0, flags: 17, from: 19, piece: 1, promote: 5, rook: -1, san: '', to: 3},
+        {capture: 0, fen: '', flags: 17, from: 19, piece: 1, ply: 50, promote: 5, rook: -1, san: 'd8=Q', to: 3},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'Rd1',
         false,
-        {captured: 0, flags: 0, from: -1, piece: 0, promote: 0, rook: -1, san: '', to: -1},
+        {capture: 0, fen: '', flags: 0, from: -1, piece: 0, ply: -1, promote: 0, rook: -1, san: '', to: -1},
     ],
 ].forEach(([fen, san, sloppy, answer], id) => {
     test(`sanToMove:${id}`, () => {

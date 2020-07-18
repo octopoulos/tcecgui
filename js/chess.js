@@ -172,6 +172,7 @@ var Chess = function(fen_) {
                 flags: flags,
                 from: from,
                 piece: piece,
+                ply: move_number * 2 + turn -2,
                 to: to,
             };
 
@@ -180,9 +181,9 @@ var Chess = function(fen_) {
         if (rook != EMPTY)
             move.rook = rook;
         else if (board[to])
-            move.captured = TYPE(board[to]);
+            move.capture = TYPE(board[to]);
         else if (flags & BITS_EP_CAPTURE)
-            move.captured = PAWN;
+            move.capture = PAWN;
 
         moves.push(move);
     }
@@ -248,7 +249,7 @@ var Chess = function(fen_) {
             board[move.from] = 0;
         }
 
-        // if ep capture, remove the captured pawn
+        // if ep capture, remove the capture pawn
         if (move.flags & BITS_EP_CAPTURE)
             board[move.to + (turn == BLACK? -16: 16)] = 0;
 
@@ -285,7 +286,7 @@ var Chess = function(fen_) {
         }
 
         // turn off castling if we capture a rook
-        if (move.captured == ROOK) {
+        if (move.capture == ROOK) {
             if (move.to == castling[them * 2])
                 castling[them * 2] = EMPTY;
             else if (move.to == castling[them * 2 + 1])
@@ -298,7 +299,7 @@ var Chess = function(fen_) {
         else
             ep_square = EMPTY;
 
-        // reset the 50 move counter if a pawn is moved or a piece is captured
+        // reset the 50 move counter if a pawn is moved or a piece is capture
         if (move_type == PAWN)
             half_moves = 0;
         else if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE))
@@ -729,8 +730,8 @@ var Chess = function(fen_) {
         for (let move2 of moves) {
             if (move.from == move2.from && move.to == move2.to
                     && (!move2.promote || TYPE(move.promote) == move2.promote)) {
+                move2.san = moveToSan(move2, false);
                 move_obj = move2;
-                move_obj.san = moveToSan(move_obj, false);
                 break;
             }
         }
@@ -809,6 +810,52 @@ var Chess = function(fen_) {
     }
 
     /**
+     * Parse a list of SAN moves + create FEN for each move
+     * @param {string} text c2c4 a7a8a ...
+     * @param {boolean} frc Fisher Random Chess
+     * @returns {Object[]}
+     */
+    function multiSan(multi, frc, sloppy) {
+        let result = [],
+            texts = multi.split(' ');
+        for (let text of texts) {
+            if ('0123456789'.includes(text[0]))
+                continue;
+
+            let moves = createMoves(frc, false, EMPTY),
+                move = sanToMove(text, moves, sloppy);
+            if (!move.piece)
+                break;
+            makeMove(move);
+            move.fen = createFen();
+            result.push(move);
+        }
+        return result;
+    }
+
+    /**
+     * Parse a list of UCI moves + create SAN + FEN for each move
+     * @param {string} text c2c4 a7a8a ...
+     * @param {boolean} frc Fisher Random Chess
+     * @returns {Object[]}
+     */
+    function multiUci(multi, frc) {
+        let result = [],
+            texts = multi.split(' ');
+        for (let text of texts) {
+            if ('0123456789'.includes(text[0]))
+                continue;
+
+            let move = moveUci(text, frc);
+            if (move.piece) {
+                move.fen = createFen();
+                result.push(move);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Print the board
      * @returns {string}
      */
@@ -860,8 +907,10 @@ var Chess = function(fen_) {
         // 1) try exact matching
         let clean = cleanSan(san);
         for (let move of moves)
-            if (clean == cleanSan(moveToSan(move, false)))
+            if (clean == cleanSan(moveToSan(move, false))) {
+                move.san = san;
                 return move;
+            }
 
         // 2) try sloppy matching
         let null_move = {};
@@ -911,8 +960,10 @@ var Chess = function(fen_) {
                     && (!type || type == TYPE(move.piece))
                     && (from_file < 0 || from_file == FILE(move.from))
                     && (from_rank < 0 || from_rank == RANK(move.from))
-                    && (!promote || promote == move.promote))
+                    && (!promote || promote == move.promote)) {
+                move.san = moveToSan(move, false);
                 return move;
+            }
         }
         return null_move;
     }
@@ -956,7 +1007,7 @@ var Chess = function(fen_) {
         }
 
         if (move.flags & BITS_CAPTURE)
-            board[move.to] = COLORIZE(them, move.captured);
+            board[move.to] = COLORIZE(them, move.capture);
         else if (move.flags & BITS_EP_CAPTURE) {
             let index = (us == BLACK)? move.to - 16: move.to + 16;
             board[index] = COLORIZE(them, PAWN);
@@ -990,6 +1041,8 @@ var Chess = function(fen_) {
         moveToSan: moveToSan,
         moveUci: moveUci,
         moves: createMoves,
+        multiSan: multiSan,
+        multiUci: multiUci,
         piece: text => PIECES[text] || 0,
         print: print,
         put: put,

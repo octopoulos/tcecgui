@@ -116,20 +116,23 @@ std::map<char, uint8_t> PIECES = {
 };
 
 struct Move {
-    uint8_t captured;
+    uint8_t capture;
+    std::string fen;
     uint8_t flags;
     int     from;
     uint8_t piece;
+    int     ply;
     uint8_t promote;
     int     rook;
     std::string san;
     int     to;
 
     Move() {
-        captured = 0;
+        capture = 0;
         flags = 0;
         from = EMPTY;
         piece = 0;
+        ply = -1;
         promote = 0;
         rook = EMPTY;
         to = EMPTY;
@@ -199,6 +202,7 @@ private:
         move.flags = flags;
         move.from = from;
         move.piece = piece;
+        move.ply = move_number * 2 + turn - 2;
         move.to = to;
 
         if (promote)
@@ -206,9 +210,9 @@ private:
         if (rook != EMPTY)
             move.rook = rook;
         else if (board[to])
-            move.captured = TYPE(board[to]);
+            move.capture = TYPE(board[to]);
         else if (flags & BITS_EP_CAPTURE)
-            move.captured = PAWN;
+            move.capture = PAWN;
 
         moves.push_back(move);
     }
@@ -269,7 +273,7 @@ private:
             board[move.from] = 0;
         }
 
-        // if ep capture, remove the captured pawn
+        // if ep capture, remove the capture pawn
         if (move.flags & BITS_EP_CAPTURE)
             board[move.to + (turn == BLACK? -16: 16)] = 0;
 
@@ -306,7 +310,7 @@ private:
         }
 
         // remove castling if we capture a rook
-        if (move.captured == ROOK) {
+        if (move.capture == ROOK) {
             if (move.to == castling[them * 2])
                 castling[them * 2] = EMPTY;
             else if (move.to == castling[them * 2 + 1])
@@ -319,7 +323,7 @@ private:
         else
             ep_square = EMPTY;
 
-        // reset the 50 move counter if a pawn is moved or a piece is captured
+        // reset the 50 move counter if a pawn is moved or a piece is capture
         if (move_type == PAWN)
             half_moves = 0;
         else if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE))
@@ -834,7 +838,6 @@ public:
      * @param frc Fisher Random Chess
      * @param sloppy allow sloppy parser
      */
-
     Move moveSan(std::string text, bool frc, bool sloppy) {
         auto moves = createMoves(frc, false, EMPTY);
         Move move = sanToMove(text, moves, sloppy);
@@ -894,6 +897,60 @@ public:
     }
 
     /**
+     * Parse a list of SAN moves + create FEN for each move
+     * @param text c2c4 a7a8a ...
+     * @param frc Fisher Random Chess
+     */
+    std::vector<Move> multiSan(std::string multi, bool frc, bool sloppy) {
+        std::vector<Move> result;
+        int prev = 0,
+            size = multi.size();
+        for (int i = 0; i <= size; i ++) {
+            if (i < size && multi[i] != ' ')
+                continue;
+
+            if (multi[prev] >= 'A') {
+                auto text = multi.substr(prev, i - prev);
+                auto moves = createMoves(frc, false, EMPTY);
+                Move move = sanToMove(text, moves, sloppy);
+                if (!move.piece)
+                    break;
+                makeMove(move);
+                move.fen = createFen();
+                result.push_back(move);
+            }
+            prev = i + 1;
+        }
+        return result;
+    }
+
+    /**
+     * Parse a list of UCI moves + create SAN + FEN for each move
+     * @param text c2c4 a7a8a ...
+     * @param frc Fisher Random Chess
+     */
+    std::vector<Move> multiUci(std::string multi, bool frc) {
+        std::vector<Move> result;
+        int prev = 0,
+            size = multi.size();
+        for (int i = 0; i <= size; i ++) {
+            if (i < size && multi[i] != ' ')
+                continue;
+
+            if (multi[prev] >= 'A') {
+                auto text = multi.substr(prev, i - prev);
+                auto move = moveUci(text, frc);
+                if (move.piece) {
+                    move.fen = createFen();
+                    result.push_back(move);
+                }
+            }
+            prev = i + 1;
+        }
+        return result;
+    }
+
+    /**
      * Print the board
      */
     std::string print() {
@@ -940,8 +997,10 @@ public:
         // 1) try exact matching
         auto clean = cleanSan(san);
         for (auto move : moves)
-            if (clean == cleanSan(moveToSan(move, false)))
+            if (clean == cleanSan(moveToSan(move, false))) {
+                move.san = san;
                 return move;
+            }
 
         // 2) try sloppy matching
         Move null_move;
@@ -991,8 +1050,10 @@ public:
                     && (!type || type == TYPE(move.piece))
                     && (from_file < 0 || from_file == FILE(move.from))
                     && (from_rank < 0 || from_rank == RANK(move.from))
-                    && (!promote || promote == move.promote))
+                    && (!promote || promote == move.promote)) {
+                move.san = moveToSan(move, false);
                 return move;
+            }
         }
         return null_move;
     }
@@ -1039,7 +1100,7 @@ public:
         }
 
         if (move.flags & BITS_CAPTURE)
-            board[move.to] = COLORIZE(them, move.captured);
+            board[move.to] = COLORIZE(them, move.capture);
         else if (move.flags & BITS_EP_CAPTURE) {
             auto index = (us == BLACK)? move.to - 16: move.to + 16;
             board[index] = COLORIZE(them, PAWN);
@@ -1088,10 +1149,12 @@ public:
 
 EMSCRIPTEN_BINDINGS(chess) {
     value_object<Move>("Move")
-        .field("captured", &Move::captured)
+        .field("capture", &Move::capture)
+        .field("fen", &Move::fen)
         .field("flags", &Move::flags)
         .field("from", &Move::from)
         .field("piece", &Move::piece)
+        .field("ply", &Move::ply)
         .field("promote", &Move::promote)
         .field("rook", &Move::rook)
         .field("san", &Move::san)
@@ -1115,6 +1178,8 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("moveToSan", &Chess::moveToSan)
         .function("moveUci", &Chess::moveUci)
         .function("moves", &Chess::createMoves)
+        .function("multiSan", &Chess::multiSan)
+        .function("multiUci", &Chess::multiUci)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)
         .function("put", &Chess::put)

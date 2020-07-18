@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
+2020-07-18 : 2020-07-18 : multiSan + multiUci
 2020-07-17 : 2020-06-03 : chess.wasm
 2020-07-17 : 2020-07-16 : full chess tests
 2020-07-17 : 2020-07-17 : improved chess

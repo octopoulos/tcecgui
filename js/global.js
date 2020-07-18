@@ -361,5 +361,6 @@ function stoof_cp_to_score(cp) {
 if (typeof exports != 'undefined')
     Assign(exports, {
         fix_move_format: fix_move_format,
+        get_move_ply: get_move_ply,
     });
 // >>
