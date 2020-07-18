@@ -1,14 +1,14 @@
-// Include Nodejs' net module.
 /*
 globals
 console, require
 */
 'use strict';
 
-let Chess = require('./js/libs/chess-quick').Chess,
+let Module = require('./js/chess-wasm.js'),
     Net = require('net');
 
-let LS = console.log,
+let frc = false,
+    LS = console.log,
     port = 8090,
     server = new Net.Server();
 
@@ -16,13 +16,22 @@ server.listen(port, () => {
     LS(`Server listening for connection requests on socket localhost:${port}.`);
 });
 
-let chess = new Chess(),
+let chess,
     count = 1,
     fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     ips = {},
     votes = {c2c4: count, b1c3: 1, e2e4: 3, a2a4: 4};
 
-server.on('connection', socket => {
+/**
+ * Load chess-wasm
+ */
+async function load_wasm() {
+    let instance = await Module();
+    chess = new instance.Chess();
+    LS('chess library loaded');
+}
+
+server.on('connection', async socket => {
     let ip = socket.remoteAddress;
     LS(`A new connection has been established: ${ip}.`);
     if (ip != '::ffff:127.0.0.1') {
@@ -31,7 +40,11 @@ server.on('connection', socket => {
         return;
     }
 
+    if (!chess)
+        await load_wasm();
+
     socket.on('data', chunk => {
+        LS('data');
         // TODO:
         // handle voting on and off messages: send approriate message to users and set global variables to correct values
         let data, text;
@@ -54,18 +67,13 @@ server.on('connection', socket => {
             else {
                 let best_move = data.best_move;
                 if (best_move) {
-                    let move = {
-                            from: best_move.slice(0, 2),
-                            to: best_move.slice(2, 4),
-                        },
-                        promotion = best_move[4];
-                    if (promotion)
-                        move.promotion = promotion;
-                    LS(move);
-                    let result = chess.move(move);
+                    LS(best_move);
+                    let result = chess.moveUci(best_move, frc);
                     LS(result);
-                    if (result)
+                    if (result.piece) {
                         fen = chess.fen();
+                        chess.undo();
+                    }
                 }
             }
         }

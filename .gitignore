@@ -19,7 +19,10 @@
 all.*
 archive/
 bracket*.json
-c++/
+c++/*.html
+c++/*.js
+c++/*.wasm
+c++/shared*
 chart.js
 crash.json
 create_list.js

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
+// @version 2020-07-18
 //
 // Game specific code:
 // - control the board, moves
@@ -18,9 +18,9 @@ CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, documen
 fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
 IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, push_state,
-QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, resume_sleep,
-Round,
+listen_log, load_library, load_model, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent, parse_time,
+play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource,
+restore_history, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -4607,6 +4607,16 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
+
+    load_library('js/chess-wasm.js', () => {
+        Module().then(instance => {
+            let ChessWASM = instance.Chess;
+            Keys(xboards).forEach(key => {
+                xboards[key].chess = new ChessWASM();
+                xboards[key].wasm = true;
+            });
+        });
+    }, {async: ''});
 }
 
 /**
