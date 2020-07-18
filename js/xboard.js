@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
+// @version 2020-07-18
 //
 // game board:
 // - 4 rendering modes:
@@ -882,7 +882,7 @@ class XBoard {
                 for (let next = curr + 1; next <= ply; next ++) {
                     let move_next = moves[next],
                         result = this.chess_move(move_next.m);
-                    if (!result) {
+                    if (!result.piece) {
                         if (DEV.ply)
                             LS(`${this.id}: invalid move at ply ${next}: ${move_next.m}`);
                         return false;
@@ -976,7 +976,7 @@ class XBoard {
         if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
             return chess.moveUci(text, frc);
 
-        return IsString(text)? chess.moveSan(text, frc): chess.moveObject(text, frc);
+        return IsString(text)? chess.moveSan(text, frc, false): chess.moveObject(text, frc);
     }
 
     /**
@@ -1512,8 +1512,8 @@ class XBoard {
             return false;
 
         // 2) try to move, it might be invalid
-        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promotion: 5});
-        if (!move)
+        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promote: 5});
+        if (!move.piece)
             return false;
 
         // 3) update

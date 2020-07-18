@@ -155,7 +155,7 @@ describe('chess.js', () => {
     test(`fen:${id}`, () => {
         chess.load(fen);
         for (let move of moves)
-            chess.moveSan(move, false);
+            chess.moveSan(move, false, false);
         expect(chess.fen()).toEqual(Undefined(answer, fen));
     });
 });
@@ -176,7 +176,7 @@ describe('chess.js', () => {
     test(`load:${id}`, () => {
         chess.load(fen);
         for (let move of moves)
-            chess.moveSan(move, false);
+            chess.moveSan(move, false, false);
         expect(chess.fen()).toEqual(answer);
     });
 });
@@ -198,9 +198,9 @@ describe('chess.js', () => {
 
 // moveSan
 [
-    [START_FEN, 'd5', false, false, null],
+    [START_FEN, 'd5', false, false, {}],
     [START_FEN, 'd4', false, false, {flags: 4, from: 99, piece: 1, to: 67}],
-    [START_FEN, 'b2b4', false, false, null],
+    [START_FEN, 'b2b4', false, false, {}],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
@@ -215,7 +215,13 @@ describe('chess.js', () => {
         false,
         {flags: 64, from: 116, piece: 6, rook: 112, to: 114},
     ],
-    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', false, false, null],
+    [
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
+        'O-O',
+        false,
+        false,
+        {},
+    ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
@@ -263,21 +269,21 @@ describe('chess.js', () => {
         'd8=Q',
         false,
         false,
-        {flags: 17, from: 19, piece: 1, promotion: 5, to: 3},
+        {flags: 17, from: 19, piece: 1, promote: 5, to: 3},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         false,
         false,
-        null,
+        {},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'axb1=Q',
         false,
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, to: 113},
+        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, to: 113},
     ],
     [
         'r2r2k1/pp4pp/2pN1pb1/8/5P2/6P1/PP2P1NP/R2K3R w KQ - 0 16',
@@ -327,7 +333,7 @@ describe('chess.js', () => {
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'a2b1q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, san: 'axb1=Q', to: 113},
+        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, san: 'axb1=Q', to: 113},
     ],
 ].forEach(([fen, move, frc, answer], id) => {
     test(`moveUci:${id}`, () => {
@@ -379,7 +385,6 @@ describe('chess.js', () => {
     ['k', 14],
     ['T', 0],
     ['', 0],
-    [null, 0],
     ['PQ', 0],
 ].forEach(([text, answer], id) => {
     test(`piece:${id}`, () => {
@@ -463,7 +468,7 @@ describe('chess.js', () => {
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
         'Nge7',
         false,
-        null,
+        {},
     ],
     [
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
@@ -475,19 +480,19 @@ describe('chess.js', () => {
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         false,
-        null,
+        {},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         true,
-        {flags: 17, from: 19, piece: 1, promotion: 5, to: 3},
+        {flags: 17, from: 19, piece: 1, promote: 5, to: 3},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'Rd1',
         false,
-        null,
+        {},
     ],
 ].forEach(([fen, san, sloppy, answer], id) => {
     test(`sanToMove:${id}`, () => {
@@ -528,7 +533,7 @@ describe('chess.js', () => {
     test(`undo:${id}`, () => {
         chess.load(fen);
         for (let move of moves)
-            chess.moveSan(move, frc);
+            chess.moveSan(move, frc, false);
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);

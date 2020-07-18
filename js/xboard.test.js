@@ -116,7 +116,7 @@ live.dual = archive;
 
 // chess_move
 [
-    [START_FEN, 'd5', undefined, null],
+    [START_FEN, 'd5', undefined, {}],
     [START_FEN, 'd4', undefined, {flags: 4, from: 99, piece: 1, to: 67}],
     [START_FEN, 'd2d4', undefined, {flags: 4, from: 99, piece: 1, san: 'd4', to: 67}],
     [
@@ -137,7 +137,7 @@ live.dual = archive;
         undefined,
         {flags: 64, from: 116, piece: 6, rook: 112, to: 114},
     ],
-    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, null],
+    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, {}],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'd8g8',
@@ -172,13 +172,13 @@ live.dual = archive;
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'axb1=Q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, to: 113},
+        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, to: 113},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'a2b1q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promotion: 5, san: 'axb1=Q', to: 113},
+        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, san: 'axb1=Q', to: 113},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {
