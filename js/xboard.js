@@ -375,7 +375,8 @@ class XBoard {
                 let no_load;
                 if (!move.fen) {
                     this.chess_load(fen);
-                    let result = this.chess_move(move.m);
+                    let san = move.m,
+                        result = this.chess_move(san);
                     Assign(move, result);
                     move.fen = this.chess_fen();
                     no_load = true;
@@ -888,9 +889,6 @@ class XBoard {
                         return false;
                     }
                     Assign(move_next, result);
-                    if (result.san)
-                        move_next.m = result.san;
-
                     move_next.fen = this.chess_fen();
                     move_next.ply = next;
                     // LS(`next=${next} : ${get_move_ply(move_next)}`);
@@ -944,7 +942,7 @@ class XBoard {
 
         // calculate
         let checked = this.chess.checked(),
-            moves = this.chess.moves(Undefined(move.frc, this.frc), true, -1),
+            moves = this.chess_moves(Undefined(move.frc, this.frc), true, -1),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -969,14 +967,21 @@ class XBoard {
      * @returns {Object}
      */
     chess_move(text, options={}) {
-        let chess = this.chess,
+        let result,
+            chess = this.chess,
             frc = Undefined(options.frc, this.frc);
 
         // handle UCI: e1g1 = O-O, e7e8q = promotion
         if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
-            return chess.moveUci(text, frc);
+            result = chess.moveUci(text, frc);
+        else
+            result = IsString(text)? chess.moveSan(text, frc, false): chess.moveObject(text, frc);
 
-        return IsString(text)? chess.moveSan(text, frc, false): chess.moveObject(text, frc);
+        if (result.piece) {
+            result.san = result.m;
+            result.m = text;
+        }
+        return result;
     }
 
     /**
@@ -984,8 +989,11 @@ class XBoard {
      * @param {Object=} options
      * @returns {Object[]}
      */
-    chess_moves(options={legal: true}) {
-        return this.chess.moves(options);
+    chess_moves(frc, legal, single_square) {
+        let moves = this.chess.moves(frc, legal, single_square);
+        if (moves.size)
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        return moves;
     }
 
     /**
@@ -1238,7 +1246,7 @@ class XBoard {
                     return;
 
                 this.chess_load(this.fen);
-                let moves = this.chess.moves({frc: this.frc, legal: true, single_square: this.picked});
+                let moves = this.chess_moves(this.frc, true, this.picked);
                 for (let move of moves)
                     this.add_high(move.to, 'target');
                 if (moves[0])
@@ -1512,7 +1520,9 @@ class XBoard {
             return false;
 
         // 2) try to move, it might be invalid
-        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promote: 5});
+        // TODO: handle promotions
+        let promote = 'q';
+        let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`);
         if (!move.piece)
             return false;
 
@@ -1540,7 +1550,7 @@ class XBoard {
         // add moves
         this.add_moves([{
             fen: fen,
-            m: move.san,
+            m: move.m,
             ply: ply,
         }]);
         return true;
@@ -2023,7 +2033,7 @@ class XBoard {
         this.chess_load(this.fen);
         this.fen2 = this.fen;
 
-        let moves = this.chess.moves({legal: true}),
+        let moves = this.chess_moves(this.frc, true, -1),
             froms = new Set(moves.map(move => move.from));
 
         this.clear_high('source target');

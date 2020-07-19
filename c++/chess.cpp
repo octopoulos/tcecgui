@@ -1,9 +1,9 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
-// - wasm implementation, 3x faster than original, and 1.5x faster than fast chess.js
+// @version 2020-07-18
+// - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
 // - FRC support
-// - emcc --bind -o chess.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
+// - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -48,7 +48,7 @@ using namespace emscripten;
 #define PIECE_LOWER " pnbrqk  pnbrqk"
 #define PIECE_NAMES " PNBRQK  pnbrqk"
 #define PIECE_UPPER " PNBRQK  PNBRQK"
-#define TYPE(piece) (piece % 8)
+#define TYPE(piece) (piece & 7)
 #define WHITE 0
 
 int ATTACKS[] = {
@@ -120,11 +120,10 @@ struct Move {
     std::string fen;
     uint8_t flags;
     int     from;
+    std::string m;          // san
     uint8_t piece;
     int     ply;
     uint8_t promote;
-    int     rook;
-    std::string san;
     int     to;
 
     Move() {
@@ -134,7 +133,6 @@ struct Move {
         piece = 0;
         ply = -1;
         promote = 0;
-        rook = EMPTY;
         to = EMPTY;
     }
 };
@@ -182,21 +180,21 @@ private:
     /**
      * Add a move + promote moves
      */
-    void addMove(std::vector<Move> &moves, int from, int to, uint8_t flags, int rook) {
+    void addMove(std::vector<Move> &moves, int from, int to, uint8_t flags) {
         // pawn promotion?
         int rank = RANK(to);
-        if (TYPE(board[from]) == PAWN && (rank == 0 || rank == 7)) {
+        if (TYPE(board[from]) == PAWN && (rank % 7) == 0) {
             for (uint8_t piece = QUEEN; piece >= KNIGHT; piece --)
-                addSingleMove(moves, from, to, flags | BITS_PROMOTION, piece, EMPTY);
+                addSingleMove(moves, from, to, flags | BITS_PROMOTION, piece);
         }
         else
-            addSingleMove(moves, from, to, flags, 0, rook);
+            addSingleMove(moves, from, to, flags, 0);
     }
 
     /**
      * Add a single move
      */
-    void addSingleMove(std::vector<Move> &moves, int from, int to, uint8_t flags, uint8_t promote, int rook) {
+    void addSingleMove(std::vector<Move> &moves, int from, int to, uint8_t flags, uint8_t promote) {
         uint8_t piece = board[from];
         Move move;
         move.flags = flags;
@@ -205,28 +203,26 @@ private:
         move.ply = move_number * 2 + turn - 2;
         move.to = to;
 
-        if (promote)
-            move.promote = promote;
-        if (rook != EMPTY)
-            move.rook = rook;
-        else if (board[to])
-            move.capture = TYPE(board[to]);
-        else if (flags & BITS_EP_CAPTURE)
-            move.capture = PAWN;
-
+        if (!(flags & BITS_CASTLE)) {
+            if (promote)
+                move.promote = promote;
+            if (board[to])
+                move.capture = TYPE(board[to]);
+            else if (flags & BITS_EP_CAPTURE)
+                move.capture = PAWN;
+        }
         moves.push_back(move);
     }
 
     /**
      * Uniquely identify ambiguous moves
      */
-    std::string getDisambiguator(Move &move, bool sloppy) {
+    std::string getDisambiguator(Move &move, std::vector<Move> &moves) {
         int ambiguities = 0,
             from = move.from,
             same_file = 0,
             same_rank = 0,
             to = move.to;
-        auto moves = createMoves(false, !sloppy, EMPTY);
         uint8_t type = TYPE(move.piece);
 
         for (auto move2 : moves) {
@@ -250,14 +246,15 @@ private:
 
         // if there exists a similar moving piece on the same rank and file as
         // the move in question, use the square as the disambiguator
+        auto an = squareToAn(from, false);
         if (same_rank > 0 && same_file > 0)
-            return squareToAn(from, false);
+            return an;
         // if the moving piece rests on the same file, use the rank symbol as the disambiguator
         else if (same_file > 0)
-            return squareToAn(from, false).substr(1, 1);
+            return an.substr(1, 1);
         // else use the file symbol
         else
-            return squareToAn(from, false).substr(0, 1);
+            return an.substr(0, 1);
     }
 
     /**
@@ -266,70 +263,77 @@ private:
     void makeMove(Move &move) {
         uint8_t us = turn,
             them = us ^ 1;
+
+        // not smart to do it for every move
         addHistory(move);
 
-        if (move.from != move.to) {
-            board[move.to] = board[move.from];
-            board[move.from] = 0;
-        }
+        int is_castle = (move.flags & BITS_CASTLE),
+            move_from = move.from,
+            move_to = move.to;
+        auto move_type = TYPE(move.piece);
 
-        // if ep capture, remove the capture pawn
-        if (move.flags & BITS_EP_CAPTURE)
-            board[move.to + (turn == BLACK? -16: 16)] = 0;
+        half_moves ++;
 
-        // if pawn promote, replace with new piece
-        if (move.flags & BITS_PROMOTION)
-            board[move.to] = COLORIZE(us, move.promote);
+        // moved king?
+        if (move_type == KING) {
+            if (is_castle) {
+                int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
+                    castling_from = kings[us],
+                    castling_to = (RANK(castling_from) << 4) + (q? 2: 6),
+                    rook = castling[us * 2 + q];
 
-        // if we moved the king
-        if (TYPE(board[move.to]) == KING) {
-            kings[COLOR(board[move.to])] = move.to;
-
-            // if we castled, move the rook next to the king
-            if (move.flags & BITS_CASTLE) {
-                int castling_from = move.rook,
-                    castling_to = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
-                board[castling_to] = COLORIZE(us, ROOK);
-                if (castling_from != castling_to && castling_from != move.to)
-                    board[castling_from] = 0;
+                board[castling_from] = 0;
+                board[rook] = 0;
+                board[castling_to] = COLORIZE(us, KING);
+                board[castling_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                move_to = castling_to;
             }
 
-            // turn off castling
+            kings[us] = move_to;
             castling[us * 2] = EMPTY;
             castling[us * 2 + 1] = EMPTY;
         }
 
-        uint8_t move_type = TYPE(move.piece);
+        if (!is_castle) {
+            if (move_from != move_to) {
+                board[move_to] = board[move_from];
+                board[move_from] = 0;
+            }
 
-        // remove castling if we move a rook
-        if (move_type == ROOK) {
-            if (move.from == castling[us * 2])
-                castling[us * 2] = EMPTY;
-            else if (move.from == castling[us * 2 + 1])
-                castling[us * 2 + 1] = EMPTY;
+            // remove castling if we capture a rook
+            if (move.capture == ROOK) {
+                if (move_to == castling[them * 2])
+                    castling[them * 2] = EMPTY;
+                else if (move_to == castling[them * 2 + 1])
+                    castling[them * 2 + 1] = EMPTY;
+            }
+
+            // remove castling if we move a rook
+            if (move_type == ROOK) {
+                if (move_from == castling[us * 2])
+                    castling[us * 2] = EMPTY;
+                else if (move_from == castling[us * 2 + 1])
+                    castling[us * 2 + 1] = EMPTY;
+            }
+            // pawn + update 50MR
+            else if (move_type == PAWN) {
+                // pawn moves 2 squares
+                if (move.flags & BITS_BIG_PAWN)
+                    ep_square = move_to + (turn == BLACK? -16: 16);
+                else {
+                    ep_square = EMPTY;
+
+                    if (move.flags & BITS_EP_CAPTURE)
+                        board[move_to + (turn == BLACK? -16: 16)] = 0;
+
+                    if (move.flags & BITS_PROMOTION)
+                        board[move_to] = COLORIZE(us, move.promote);
+                }
+                half_moves = 0;
+            }
+            else if (move.flags & BITS_CAPTURE)
+                half_moves = 0;
         }
-
-        // remove castling if we capture a rook
-        if (move.capture == ROOK) {
-            if (move.to == castling[them * 2])
-                castling[them * 2] = EMPTY;
-            else if (move.to == castling[them * 2 + 1])
-                castling[them * 2 + 1] = EMPTY;
-        }
-
-        // if big pawn move, update the en passant square
-        if (move.flags & BITS_BIG_PAWN)
-            ep_square = move.to + (turn == BLACK? -16: 16);
-        else
-            ep_square = EMPTY;
-
-        // reset the 50 move counter if a pawn is moved or a piece is capture
-        if (move_type == PAWN)
-            half_moves = 0;
-        else if (move.flags & (BITS_CAPTURE | BITS_EP_CAPTURE))
-            half_moves = 0;
-        else
-            half_moves ++;
 
         if (turn == BLACK)
             move_number ++;
@@ -381,13 +385,13 @@ public:
             if (!piece)
                 continue;
 
-            uint8_t piece_color = COLOR(piece);
+            auto piece_color = COLOR(piece);
             if (piece_color != color)
                 continue;
 
             int difference = i - square,
                 index = difference + 119;
-            uint8_t piece_type = TYPE(piece);
+            auto piece_type = TYPE(piece);
 
             if (ATTACKS[index] & ATTACK_BITS[piece_type]) {
                 // pawn
@@ -541,7 +545,7 @@ public:
         std::vector<Move> moves;
         int second_rank[] = {6, 1};
         uint8_t us = turn,
-            them = 1 - us;
+            them = us ^ 1;
 
         for (int i = first_sq; i <= last_sq; i ++) {
             // off board
@@ -561,12 +565,12 @@ public:
                 // single square, non-capturing
                 int square = i + offsets[0];
                 if (!board[square]) {
-                    addMove(moves, i, square, BITS_NORMAL, EMPTY);
+                    addMove(moves, i, square, BITS_NORMAL);
 
                     // double square
                     square = i + offsets[1];
                     if (second_rank[us] == RANK(i) && !board[square])
-                        addMove(moves, i, square, BITS_BIG_PAWN, EMPTY);
+                        addMove(moves, i, square, BITS_BIG_PAWN);
                 }
 
                 // pawn captures
@@ -576,9 +580,9 @@ public:
                         continue;
 
                     if (board[square] && COLOR(board[square]) == them)
-                        addMove(moves, i, square, BITS_CAPTURE, EMPTY);
+                        addMove(moves, i, square, BITS_CAPTURE);
                     else if (square == ep_square)
-                        addMove(moves, i, ep_square, BITS_EP_CAPTURE, EMPTY);
+                        addMove(moves, i, ep_square, BITS_EP_CAPTURE);
                 }
             }
             else {
@@ -595,11 +599,11 @@ public:
                             break;
 
                         if (!board[square])
-                            addMove(moves, i, square, BITS_NORMAL, EMPTY);
+                            addMove(moves, i, square, BITS_NORMAL);
                         else {
                             if (COLOR(board[square]) == us)
                                 break;
-                            addMove(moves, i, square, BITS_CAPTURE, EMPTY);
+                            addMove(moves, i, square, BITS_CAPTURE);
                             break;
                         }
 
@@ -616,89 +620,37 @@ public:
         // b) we're doing single square move generation on the king's square
         int castling_from = kings[us];
         if (castling_from != EMPTY && (!is_single || single_square == castling_from)) {
-            // king-side castling
-            if (castling[us * 2] != EMPTY) {
-                auto error = false;
-                int castling_to,
-                    pos0 = RANK(castling_from) << 4,
-                    rook = EMPTY;
+            auto pos0 = RANK(castling_from) << 4;
 
-                if (frc) {
-                    castling_to = pos0 + 6;
-                    int pos = pos0 + 7;
-                    while (!error && pos != castling_from) {
-                        auto square = board[pos];
-                        if (square) {
-                            if (rook == EMPTY) {
-                                if (TYPE(square) == ROOK && COLOR(square) == us)
-                                    rook = pos;
-                            }
-                            else
-                                error = true;
-                        }
-                        else if (rook != EMPTY && pos <= castling_to && attacked(them, pos))
-                            error = true;
-                        pos --;
-                    }
-                }
-                else if (FILE(castling_from) == 4) {
-                    castling_to = castling_from + 2;
-                    rook = pos0 + 7;
+            // q=0: king side, q=1: queen side
+            for (auto q = 0; q < 2; q ++) {
+                auto rook = castling[us * 2 + q];
+                if (rook == EMPTY)
+                    continue;
 
-                    if (board[castling_from + 1]
-                            || board[castling_to]
-                            || attacked(them, castling_from + 1)
-                            || attacked(them, castling_to))
+                int castling_to = pos0 + (q? 2: 6),
+                    error = false,
+                    flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE;
+
+                // check that all squares are empty between king and rook
+                for (auto j = std::min(castling_from, rook) + 1; j <= std::max(castling_from, rook) - 1; j ++)
+                    if (board[j]) {
                         error = true;
-                }
-                else
-                    error = true;
-
-                if (!error && !attacked(them, castling_from))
-                    addMove(moves, castling_from, castling_to, BITS_KSIDE_CASTLE, rook);
-            }
-
-            // queen-side castling
-            if (castling[us * 2 + 1] != EMPTY) {
-                auto error = false;
-                int castling_to,
-                    pos0 = RANK(castling_from) << 4,
-                    rook = EMPTY;
-
-                if (frc) {
-                    castling_to = pos0 + 2;
-                    int pos = pos0;
-                    while (!error && pos != castling_from) {
-                        auto square = board[pos];
-                        if (square) {
-                            if (rook == EMPTY) {
-                                if (TYPE(square) == ROOK && COLOR(square) == us)
-                                    rook = pos;
-                            }
-                            else
-                                error = true;
-                        }
-                        else if (rook != EMPTY && pos >= castling_to && attacked(them, pos))
-                            error = true;
-                        pos ++;
+                        break;
                     }
-                }
-                else if (FILE(castling_from) == 4) {
-                    castling_to = castling_from - 2;
-                    rook = pos0;
+                if (error)
+                    continue;
 
-                    if (board[castling_from - 1]
-                            || board[castling_from - 2]
-                            || board[castling_from - 3]
-                            || attacked(them, castling_from - 1)
-                            || attacked(them, castling_to))
+                // check that the king is not attacked
+                for (auto j = std::min(castling_from, castling_to); j <= std::max(castling_from, castling_to); j ++)
+                    if (attacked(them, j)) {
                         error = true;
-                }
-                else
-                    error = true;
+                        break;
+                    }
 
-                if (!error && !attacked(them, castling_from))
-                    addMove(moves, castling_from, castling_to, BITS_QSIDE_CASTLE, rook);
+                // add castle + detect FRC even if not set
+                if (!error)
+                    addMove(moves, castling_from, (frc || FILE(castling_from) != 4 || FILE(rook) % 7)? rook: castling_to, flags);
             }
         }
 
@@ -813,18 +765,36 @@ public:
      */
 
     Move moveObject(Move &move, bool frc) {
+        uint8_t flags = 0;
         Move move_obj;
-        auto moves = createMoves(frc, false, move.from);
+        auto moves = createMoves(frc, true, EMPTY);     // move.from);
+
+        // FRC castle?
+        if (frc && move.from == kings[turn]) {
+            if (move.to == castling[turn * 2] || move.to == move.from + 2)
+                flags = BITS_KSIDE_CASTLE;
+            else if (move.to == castling[turn * 2 + 1] || move.to == move.from - 2)
+                flags = BITS_QSIDE_CASTLE;
+        }
 
         // find an existing match + add the SAN
-        for (auto move2 : moves) {
-            if (move.from == move2.from && move.to == move2.to
-                    && (!move2.promote || TYPE(move.promote) == move2.promote)) {
-                move2.san = moveToSan(move2, false);
-                move_obj = move2;
-                break;
-            }
+        if (flags) {
+            for (auto move2 : moves)
+                if (move2.flags & flags) {
+                    move2.m = moveToSan(move2, moves);
+                    move_obj = move2;
+                    break;
+                }
         }
+        else
+            for (auto move2 : moves) {
+                if (move.from == move2.from && move.to == move2.to
+                        && (!move2.promote || TYPE(move.promote) == move2.promote)) {
+                    move2.m = moveToSan(move2, moves);
+                    move_obj = move2;
+                    break;
+                }
+            }
 
         // no suitable move?
         if (move_obj.piece)
@@ -839,7 +809,7 @@ public:
      * @param sloppy allow sloppy parser
      */
     Move moveSan(std::string text, bool frc, bool sloppy) {
-        auto moves = createMoves(frc, false, EMPTY);
+        auto moves = createMoves(frc, true, EMPTY);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece)
             makeMove(move);
@@ -855,13 +825,13 @@ public:
      * @param move
      * @param sloppy allow sloppy parser
      */
-    std::string moveToSan(Move &move, bool sloppy) {
+    std::string moveToSan(Move &move, std::vector<Move> &moves) {
         if (move.flags & BITS_KSIDE_CASTLE)
             return "O-O";
         if (move.flags & BITS_QSIDE_CASTLE)
             return "O-O-O";
 
-        std::string disambiguator = getDisambiguator(move, sloppy),
+        std::string disambiguator = getDisambiguator(move, moves),
             output;
         auto move_type = TYPE(move.piece);
 
@@ -911,7 +881,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto moves = createMoves(frc, false, EMPTY);
+                auto moves = createMoves(frc, true, EMPTY);
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
@@ -997,8 +967,8 @@ public:
         // 1) try exact matching
         auto clean = cleanSan(san);
         for (auto move : moves)
-            if (clean == cleanSan(moveToSan(move, false))) {
-                move.san = san;
+            if (clean == cleanSan(moveToSan(move, moves))) {
+                move.m = san;
                 return move;
             }
 
@@ -1051,7 +1021,7 @@ public:
                     && (from_file < 0 || from_file == FILE(move.from))
                     && (from_rank < 0 || from_rank == RANK(move.from))
                     && (!promote || promote == move.promote)) {
-                move.san = moveToSan(move, false);
+                move.m = moveToSan(move, moves);
                 return move;
             }
         }
@@ -1094,24 +1064,30 @@ public:
         uint8_t us = turn,
             them = turn ^ 1;
 
-        if (move.from != move.to) {
-            board[move.from] = move.piece;
-            board[move.to] = 0;
-        }
-
-        if (move.flags & BITS_CAPTURE)
-            board[move.to] = COLORIZE(them, move.capture);
-        else if (move.flags & BITS_EP_CAPTURE) {
-            auto index = (us == BLACK)? move.to - 16: move.to + 16;
-            board[index] = COLORIZE(them, PAWN);
-        }
-
         // undo castle
         if (move.flags & BITS_CASTLE) {
-            auto castling_from = (move.flags & BITS_KSIDE_CASTLE)? move.to - 1: move.to + 1;
-            board[move.rook] = COLORIZE(us, ROOK);
-            if (castling_from != move.from && castling_from != move.rook)
-                board[castling_from] = 0;
+                int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
+                    castling_from = kings[us],
+                    castling_to = (RANK(castling_from) << 4) + (q? 2: 6),
+                    rook = castling[us * 2 + q];
+
+                board[castling_to] = 0;
+                board[castling_to + (q? 1: -1)] = 0;
+                board[castling_from] = COLORIZE(us, KING);
+                board[rook] = COLORIZE(us, ROOK);
+        }
+        else {
+            if (move.from != move.to) {
+                board[move.from] = move.piece;
+                board[move.to] = 0;
+            }
+
+            if (move.flags & BITS_CAPTURE)
+                board[move.to] = COLORIZE(them, move.capture);
+            else if (move.flags & BITS_EP_CAPTURE) {
+                int index = move.to + (us == BLACK? -16: 16);
+                board[index] = COLORIZE(them, PAWN);
+            }
         }
 
         histories.pop_back();
@@ -1153,11 +1129,10 @@ EMSCRIPTEN_BINDINGS(chess) {
         .field("fen", &Move::fen)
         .field("flags", &Move::flags)
         .field("from", &Move::from)
+        .field("m", &Move::m)
         .field("piece", &Move::piece)
         .field("ply", &Move::ply)
         .field("promote", &Move::promote)
-        .field("rook", &Move::rook)
-        .field("san", &Move::san)
         .field("to", &Move::to)
         ;
 

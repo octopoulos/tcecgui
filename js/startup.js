@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-18
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1902,6 +1902,7 @@ function prepare_settings() {
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
             play_every: option_number(1200, 100, 5000, 100),
+            wasm: [ON_OFF, 1],
         },
         engine: {
             material_color: [['invert', 'normal'], 'normal'],

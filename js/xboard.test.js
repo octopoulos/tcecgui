@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
+// @version 2020-07-18
 //
 /*
 globals
@@ -107,7 +107,7 @@ live.dual = archive;
     [{fen: '8/8/7k/5B2/6K1/8/8/8 b - - 0 1'}, 1.5],
     [{fen: '8/8/4k3/5q2/6K1/8/8/8 w - - 0 1'}, -2],
     [{fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, -20.5],
-    [{fen: 'b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', frc: true}, -37.5],
+    [{fen: 'b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', frc: true}, -36.5],
 ].forEach(([move, answer], id) => {
     test(`chess_mobility:${id}`, () => {
         expect(live.chess_mobility(move)).toEqual(answer);
@@ -117,68 +117,79 @@ live.dual = archive;
 // chess_move
 [
     [START_FEN, 'd5', undefined, {}],
-    [START_FEN, 'd4', undefined, {flags: 4, from: 99, piece: 1, to: 67}],
-    [START_FEN, 'd2d4', undefined, {flags: 4, from: 99, piece: 1, san: 'd4', to: 67}],
+    [START_FEN, 'd4', undefined, {flags: 4, from: 99, m: 'd4', piece: 1, ply: 0, san: 'd4', to: 67}],
+    [START_FEN, 'd2d4', undefined, {flags: 4, from: 99, m: 'd2d4', piece: 1, ply: 0, san: 'd4', to: 67}],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'e1g1',
         undefined,
-        {flags: 32, from: 116, piece: 6, rook: 119, san: 'O-O', to: 118},
+        {flags: 32, from: 116, m: 'e1g1', piece: 6, ply: 0, san: 'O-O', to: 118},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         undefined,
-        {flags: 32, from: 116, piece: 6, rook: 119, to: 118},
+        {flags: 32, from: 116, m: 'O-O', piece: 6, ply: 0, san: 'O-O', to: 118},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         undefined,
-        {flags: 64, from: 116, piece: 6, rook: 112, to: 114},
+        {flags: 64, from: 116, m: 'O-O-O', piece: 6, ply: 0, san: 'O-O-O', to: 114},
     ],
-    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined, {}],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
-        'd8g8',
+        'O-O',
+        undefined,
+        {flags: 32, from: 3, m: 'O-O', piece: 14, ply: 19, san: 'O-O', to: 7},
+    ],
+    [
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
+        'd8h8',
         {frc: true},
-        {flags: 32, from: 3, piece: 14, rook: 7, san: 'O-O', to: 6},
+        {flags: 32, from: 3, m: 'd8h8', piece: 14, ply: 19, san: 'O-O', to: 7},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         'O-O',
         {frc: true},
-        {flags: 32, from: 3, piece: 14, rook: 7, to: 6},
+        {flags: 32, from: 3, m: 'O-O', piece: 14, ply: 19, san: 'O-O', to: 7},
     ],
     [
         'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
         'O-O',
         {frc: true},
-        {flags: 32, from: 118, piece: 6, rook: 119, to: 118},
+        {flags: 32, from: 118, m: 'O-O', piece: 6, ply: 4, san: 'O-O', to: 119},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O',
         {frc: true},
-        {flags: 32, from: 115, piece: 6, rook: 119, to: 118},
+        {flags: 32, from: 115, m: 'O-O', piece: 6, ply: 38, san: 'O-O', to: 119},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
         {frc: true},
-        {flags: 64, from: 115, piece: 6, rook: 113, to: 114},
+        {},
+    ],
+    [
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',
+        'O-O-O',
+        {frc: true},
+        {flags: 64, from: 115, m: 'O-O-O', piece: 6, ply: 38, san: 'O-O-O', to: 113},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'axb1=Q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, to: 113},
+        {capture: 4, flags: 18, from: 96, m: 'axb1=Q', piece: 9, ply: 51, promote: 5, san: 'axb1=Q', to: 113},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
         'a2b1q',
         false,
-        {captured: 4, flags: 18, from: 96, piece: 9, promote: 5, san: 'axb1=Q', to: 113},
+        {capture: 4, flags: 18, from: 96, m: 'a2b1q', piece: 9, ply: 51, san: 'axb1=Q', promote: 5, to: 113},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {

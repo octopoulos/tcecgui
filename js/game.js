@@ -178,6 +178,7 @@ let ANALYSIS_URLS = {
     LOG_KEYS = {
         cp: [1, 2],
         depth: [1, 1],
+        hashfull: [1, 1],
         nodes: [1, 1],
         nps: [1, 1],
         pv: [-1, 0],
@@ -3560,7 +3561,10 @@ function analyse_log(line) {
         return;
 
     // 2) analyse info
-    let info = {},
+    let info = {
+            engine: engine,
+            id: id,
+        },
         items = line.slice(pos2 + 2).split(' '),
         num_item = items.length,
         player = players[id];
@@ -3568,33 +3572,37 @@ function analyse_log(line) {
     for (let i = 0; i < num_item; i ++) {
         let key = items[i],
             log_key = LOG_KEYS[key];
-        if (log_key) {
-            let [number, type] = log_key,
-                value,
-                values = [];
-            i ++;
-            for (let j = 0; i < num_item && (number < 0 || j < number); j ++) {
-                values.push(items[i]);
-                i ++;
-            }
-            i --;
-            if (number == 1) {
-                value = values[0];
-                if (type == 1)
-                    value = DefaultInt(value, value);
-                else if (type == 2)
-                    value = DefaultFloat(value, value);
-            }
-            else
-                value = values.join(' ');
-            info[key] = value;
+        if (!log_key)
+            continue;
 
-            // invert scores when black
-            if (key == 'cp')
-                info.eval = (value / 100) * (id == 1? -1: 1);
-            else if (key == 'wdl' && id == 1)
-                info.wdl = value.split(' ').reverse().join(' ');
+        let [number, type] = log_key,
+            value,
+            values = [];
+        i ++;
+        for (let j = 0; i < num_item && (number < 0 || j < number); j ++) {
+            let item = items[i];
+            if (LOG_KEYS[item])
+                break;
+            values.push(item);
+            i ++;
         }
+        i --;
+        if (number == 1) {
+            value = values[0];
+            if (type == 1)
+                value = DefaultInt(value, value);
+            else if (type == 2)
+                value = DefaultFloat(value, value);
+        }
+        else
+            value = values.join(' ');
+        info[key] = value;
+
+        // invert scores when black
+        if (key == 'cp')
+            info.eval = (value / 100) * (id == 1? -1: 1);
+        else if (key == 'wdl' && id == 1)
+            info.wdl = value.split(' ').reverse().join(' ');
     }
 
     player.info = info;
@@ -3602,19 +3610,28 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (Y.eval && info.eval != undefined) {
-        let box_node = _(`#box-pv${id} .status`),
-            node = Id(`moves-pv${id}`),
-            status_eval = format_eval(info.eval),
-            status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
+    if (!DEV.wasm) {
+        if (Y.eval && info.eval != undefined) {
+            let box_node = _(`#box-pv${id} .status`),
+                node = Id(`moves-pv${id}`),
+                status_eval = format_eval(info.eval),
+                status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
 
-        for (let child of [box_node, node]) {
-            HTML(`[data-x="eval"]`, status_eval, child);
-            HTML(`[data-x="score"]`, status_score, child);
+            for (let child of [box_node, node]) {
+                HTML(`[data-x="eval"]`, status_eval, child);
+                HTML(`[data-x="score"]`, status_score, child);
+            }
         }
     }
-
     // 4) update PV (need chess.wasm)
+    else if (main.wasm) {
+        LS(info.pv);
+        main.chess.load(main.fen);
+        let moves = main.chess.multiUci(info.pv, false);
+        info.moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        LS(info);
+        update_player_eval('live', info);
+    }
 }
 
 /**
@@ -3875,7 +3892,7 @@ function update_player_eval(section, data) {
         cur_ply = main.ply,
         engine = data.engine,
         eval_ = data.eval,
-        id = data.color,
+        id = Undefined(data.id, data.color),
         mini = _(`.xcolor${id}`, main.node),
         node = Id(`moves-pv${id}`),
         player = main.players[id],
@@ -3898,9 +3915,20 @@ function update_player_eval(section, data) {
     HTML(`.xeval`, format_eval(eval_), mini);
 
     // 2) add moves
-    let board = xboards[`pv${id}`];
-    data.ply = split_move_string(data.pv)[0];
-    board.add_moves_string(data.pv);
+    let board = xboards[`pv${id}`],
+        moves = data.moves;
+    if (moves && moves.length) {
+        data.ply = moves[0].ply;
+        board.reset();
+        board.instant();
+        board.add_moves(moves, cur_ply);
+        LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
+        LS(board.moves);
+    }
+    else {
+        data.ply = split_move_string(data.pv)[0];
+        board.add_moves_string(data.pv);
+    }
 
     if (DEV.eval) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
@@ -3916,7 +3944,7 @@ function update_player_eval(section, data) {
             eval: format_eval(eval_, true),
             logo: short,
             node: FormatUnit(data.nodes),
-            speed: data.speed,
+            speed: (data.nps != undefined)? `${FormatUnit(data.nps)}nps`: data.speed,
             tb: FormatUnit(data.tbhits),
         };
         Keys(stats).forEach(key => {
@@ -4608,15 +4636,16 @@ function start_game() {
     create_tables();
     create_boards();
 
-    load_library('js/chess-wasm.js', () => {
-        Module().then(instance => {
-            let ChessWASM = instance.Chess;
-            Keys(xboards).forEach(key => {
-                xboards[key].chess = new ChessWASM();
-                xboards[key].wasm = true;
+    if (Y.wasm)
+        load_library('js/chess-wasm.js', () => {
+            Module().then(instance => {
+                let ChessWASM = instance.Chess;
+                Keys(xboards).forEach(key => {
+                    xboards[key].chess = new ChessWASM();
+                    xboards[key].wasm = true;
+                });
             });
-        });
-    }, {async: ''});
+        }, {async: ''});
 }
 
 /**

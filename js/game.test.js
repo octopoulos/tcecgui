@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-18
 /*
 globals
 __dirname, expect, global, require, test
@@ -53,7 +53,10 @@ create_chart_data();
         {
             cp: -90,
             depth: 31,
+            engine: 'Komodo 2566.00',
             eval: 0.9,
+            hashfull: 66,
+            id: 1,
             nodes: 798000183,
             nps: 113047203,
             pv: 'b7b5 a2a3 c8b7',
@@ -68,7 +71,10 @@ create_chart_data();
         {
             cp: 859,
             depth: 32,
+            engine: 'Stockfish 20200701',
             eval: 8.59,
+            hashfull: 241,
+            id: 0,
             nodes: 1268292755,
             nps: 187561779,
             pv: 'b1g1 c8f5',
@@ -85,7 +91,10 @@ create_chart_data();
         {
             cp: 142,
             depth: 31,
+            engine: 'Stockfish 20200701',
             eval: 1.42,
+            hashfull: 237,
+            id: 0,
             nodes: 1052562509,
             nps: 151186801,
             pv: 'c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
@@ -102,7 +111,9 @@ create_chart_data();
         {
             cp: -38,
             depth: 10,
+            engine: 'LCZeroCPU v0.26.0-n703596',
             eval: 0.38,
+            id: 1,
             nodes: 312494,
             nps: 25028,
             pv: 'f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
@@ -112,6 +123,25 @@ create_chart_data();
             wdl: '497 263 240',
         },
     ],
+    [
+        ['Fritz 17_20200130', 'iCE 4.0.853'],
+        '32813087 iCE 4.0.853(17): info depth 29 seldepth 0 score cp 0 nodes 156671098 nps 17407901696 time 9 multipv 1 pv g8e7 c6a4 e7f5 b1c3 a8b8 hashfull 349 tbhits 0',
+        1,
+        {
+            cp: 0,
+            depth: 29,
+            engine: 'iCE 4.0.853',
+            eval: -0,
+            hashfull: 349,
+            id: 1,
+            nodes: 156671098,
+            nps: 17407901696,
+            pv: 'g8e7 c6a4 e7f5 b1c3 a8b8',
+            seldepth: 0,
+            tbhits: 0,
+            time: 9,
+        },
+    ],
 ].forEach(([names, line, player_id, answer], id) => {
     test(`analyse_log:${id}`, () => {
         let players = xboards.live.players;
@@ -119,7 +149,9 @@ create_chart_data();
             players[id].name = name;
         });
         analyse_log(line);
-        expect(players[player_id].info).toEqual(answer);
+        let info = players[player_id].info;
+        expect(info.id).toEqual(player_id);
+        expect(info).toEqual(answer);
     });
 });
 

@@ -227,6 +227,7 @@ function parse_dev() {
             S: 'no_socket',
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
+            w: 'wasm',
             y: 'ply',
         },
         text = Y.dev || '';

@@ -1450,6 +1450,7 @@ if (typeof exports != 'undefined') {
         FormatUnit: FormatUnit,
         Keys: Keys,
         IsObject: IsObject,
+        IsString: IsString,
         Lower: Lower,
         LS: LS,
         Max: Max,
