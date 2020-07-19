@@ -334,7 +334,7 @@ private:
             move_number ++;
         turn ^= 1;
 
-        if (decorate && !strchr(move.m.c_str(), '-') && kingAttacked(turn))
+        if (decorate && !strchr(move.m.c_str(), '+') && kingAttacked(turn))
             move.m += '+';
     }
 
