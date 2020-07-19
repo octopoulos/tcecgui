@@ -1968,7 +1968,7 @@ function prepare_settings() {
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
-            grid_pva: option_number(1, 0, 10),
+            grid_pva: option_number(0, 0, 10),
             move_height: option_number(5.2, 3, 100, 0.05),
             move_height_copy: option_number(20, 3, 100, 0.05),
             move_height_live: option_number(3.6, 3, 100, 0.05),
@@ -2027,7 +2027,7 @@ function prepare_settings() {
         copy_pva: {
             _pop: true,
             copy_moves: '1',
-            grid_pva: option_number(1, 0, 10),
+            grid_pva: option_number(0, 0, 10),
             move_height_pva: option_number(5, 3, 100, 0.05),
             moves_pva: [ON_OFF, 1],
         },

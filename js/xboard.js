@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-19
 //
 // game board:
 // - 4 rendering modes:
@@ -926,7 +926,8 @@ class XBoard {
         if (move.mobil != undefined)
             return move.mobil;
 
-        let fen = move.fen,
+        let chess = this.chess,
+            fen = move.fen,
             ply = get_move_ply(move);
 
         if (ply == -2) {
@@ -938,10 +939,10 @@ class XBoard {
         if (!fen)
             return -20.5;
         if (!no_load)
-            this.chess.load(fen);
+            chess.load(fen);
 
         // calculate
-        let checked = this.chess.checked(),
+        let checked = chess.checked(chess.turn()),
             moves = this.chess_moves(Undefined(move.frc, this.frc), true, -1),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
@@ -969,17 +970,19 @@ class XBoard {
     chess_move(text, options={}) {
         let result,
             chess = this.chess,
+            decorate = Undefined(options.decorate, false),
             frc = Undefined(options.frc, this.frc);
 
         // handle UCI: e1g1 = O-O, e7e8q = promotion
         if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
-            result = chess.moveUci(text, frc);
+            result = chess.moveUci(text, frc, true);
         else
-            result = IsString(text)? chess.moveSan(text, frc, false): chess.moveObject(text, frc);
+            result = IsString(text)? chess.moveSan(text, frc, decorate, false): chess.moveObject(text, frc, true);
 
         if (result.piece) {
             result.san = result.m;
-            result.m = text;
+            if (!decorate)
+                result.m = text;
         }
         return result;
     }
@@ -1522,7 +1525,7 @@ class XBoard {
         // 2) try to move, it might be invalid
         // TODO: handle promotions
         let promote = 'q';
-        let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`);
+        let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`, {decorate: true});
         if (!move.piece)
             return false;
 

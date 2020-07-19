@@ -247,8 +247,9 @@ var Chess = function(fen_) {
      * Make a move
      * https://github.com/jhlywa/chess.js
      * @param {Object} move
+     * @param {boolean} decorate add + # decorators
      */
-    function makeMove(move) {
+    function makeMove(move, decorate) {
         let us = turn,
             them = us ^ 1;
 
@@ -325,6 +326,9 @@ var Chess = function(fen_) {
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
+
+        if (decorate && !move.m.includes('+') && kingAttacked(turn))
+            move.m += '+';
     }
 
     // PUBLIC
@@ -617,7 +621,7 @@ var Chess = function(fen_) {
 
         // filter out illegal moves
         return moves.filter(move => {
-            makeMove(move);
+            makeMove(move, false);
             let is_legal = !kingAttacked(us);
             undoMove();
             return is_legal;
@@ -719,9 +723,10 @@ var Chess = function(fen_) {
      * Try an object move
      * @param {Object} move {from: 23, to: 7, promote: 5}
      * @param {boolean} frc Fisher Random Chess
+     * @param {boolean} decorate add + # decorators
      * @returns {Object}
      */
-    function moveObject(move, frc) {
+    function moveObject(move, frc, decorate) {
         let flags = 0,
             move_obj = {},
             moves = createMoves(frc, true, EMPTY);     // move.from);
@@ -755,7 +760,7 @@ var Chess = function(fen_) {
 
         // no suitable move?
         if (move_obj.piece)
-            makeMove(move_obj);
+            makeMove(move_obj, decorate);
         return move_obj;
     }
 
@@ -763,14 +768,15 @@ var Chess = function(fen_) {
      * Try a string move
      * @param {string} text Nxb7, a8=Q
      * @param {boolean} frc Fisher Random Chess
+     * @param {boolean} decorate add + # decorators
      * @param {boolean} sloppy allow sloppy parser
      * @returns {Object}
      */
-    function moveSan(text, frc, sloppy) {
+    function moveSan(text, frc, decorate, sloppy) {
         let moves = createMoves(frc, true, EMPTY),
             move = sanToMove(text, moves, sloppy);
         if (move.piece)
-            makeMove(move);
+            makeMove(move, decorate);
         return move;
     }
 
@@ -816,20 +822,22 @@ var Chess = function(fen_) {
      * Try an UCI move
      * @param {string} text c2c4, a7a8a
      * @param {boolean} frc Fisher Random Chess
+     * @param {boolean} decorate add + # decorators
      * @returns {Object}
      */
-    function moveUci(text, frc) {
+    function moveUci(text, frc, decorate) {
         let move = {};
         move.from = anToSquare(text.substr(0, 2));
         move.promote = PIECES[text[4]];
         move.to = anToSquare(text.substr(2, 2));
-        return moveObject(move, frc);
+        return moveObject(move, frc, decorate);
     }
 
     /**
      * Parse a list of SAN moves + create FEN for each move
      * @param {string} text c2c4 a7a8a ...
      * @param {boolean} frc Fisher Random Chess
+     * @param {boolean} sloppy allow sloppy parser
      * @returns {Object[]}
      */
     function multiSan(multi, frc, sloppy) {
@@ -843,7 +851,7 @@ var Chess = function(fen_) {
                 move = sanToMove(text, moves, sloppy);
             if (!move.piece)
                 break;
-            makeMove(move);
+            makeMove(move, false);
             move.fen = createFen();
             result.push(move);
         }
@@ -863,7 +871,7 @@ var Chess = function(fen_) {
             if ('0123456789'.includes(text[0]))
                 continue;
 
-            let move = moveUci(text, frc);
+            let move = moveUci(text, frc, true);
             if (move.piece) {
                 move.fen = createFen();
                 result.push(move);
@@ -1050,7 +1058,7 @@ var Chess = function(fen_) {
         attacked: attacked,
         board: () => board,
         castling: () => castling,
-        checked: () => kingAttacked(turn),
+        checked: color => kingAttacked(color),
         cleanSan: cleanSan,
         clear: clear,
         currentFen: () => fen,
@@ -1070,6 +1078,7 @@ var Chess = function(fen_) {
         reset: reset,
         sanToMove: sanToMove,
         squareToAn: squareToAn,
+        turn: () => turn,
         undo: undoMove,
     };
 };

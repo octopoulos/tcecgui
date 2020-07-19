@@ -253,8 +253,10 @@ private:
 
     /**
      * Make a move
+     * @param move
+     * @param decorate add + # decorators
      */
-    void makeMove(Move &move) {
+    void makeMove(Move &move, bool decorate) {
         uint8_t us = turn,
             them = us ^ 1;
 
@@ -331,6 +333,9 @@ private:
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
+
+        if (decorate && !strchr(move.m.c_str(), '-') && kingAttacked(turn))
+            move.m += '+';
     }
 
     // PUBLIC
@@ -657,7 +662,7 @@ public:
         // filter out illegal moves
         std::vector<Move> legal_moves;
         for (auto move : moves) {
-            makeMove(move);
+            makeMove(move, false);
             if (!kingAttacked(us))
                 legal_moves.push_back(move);
             undoMove();
@@ -797,9 +802,10 @@ public:
      * Try an object move
      * @param move {from: 23, to: 7, promote: 5}
      * @param frc Fisher Random Chess
+     * @param decorate add + # decorators
      */
 
-    Move moveObject(Move &move, bool frc) {
+    Move moveObject(Move &move, bool frc, bool decorate) {
         uint8_t flags = 0;
         Move move_obj;
         auto moves = createMoves(frc, true, EMPTY);     // move.from);
@@ -833,7 +839,7 @@ public:
 
         // no suitable move?
         if (move_obj.piece)
-            makeMove(move_obj);
+            makeMove(move_obj, decorate);
         return move_obj;
     }
 
@@ -841,13 +847,14 @@ public:
      * Try a SAN move
      * @param text Nxb7, a8=Q
      * @param frc Fisher Random Chess
+     * @param decorate add + # decorators
      * @param sloppy allow sloppy parser
      */
-    Move moveSan(std::string text, bool frc, bool sloppy) {
+    Move moveSan(std::string text, bool frc, bool decorate, bool sloppy) {
         auto moves = createMoves(frc, true, EMPTY);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece)
-            makeMove(move);
+            makeMove(move, decorate);
         return move;
     }
 
@@ -892,19 +899,21 @@ public:
      * Try an UCI move
      * @param text c2c4, a7a8a
      * @param frc Fisher Random Chess
+     * @param decorate add + # decorators
      */
-    Move moveUci(std::string text, bool frc) {
+    Move moveUci(std::string text, bool frc, bool decorate) {
         Move move;
         move.from = anToSquare(text.substr(0, 2));
         move.promote = PIECES[text[4]];
         move.to = anToSquare(text.substr(2, 2));
-        return moveObject(move, frc);
+        return moveObject(move, frc, decorate);
     }
 
     /**
      * Parse a list of SAN moves + create FEN for each move
      * @param text c2c4 a7a8a ...
      * @param frc Fisher Random Chess
+     * @param sloppy allow sloppy parser
      */
     std::vector<Move> multiSan(std::string multi, bool frc, bool sloppy) {
         std::vector<Move> result;
@@ -920,7 +929,7 @@ public:
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
-                makeMove(move);
+                makeMove(move, false);
                 move.fen = createFen();
                 result.push_back(move);
             }
@@ -944,7 +953,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto move = moveUci(text, frc);
+                auto move = moveUci(text, frc, true);
                 if (move.piece) {
                     move.fen = createFen();
                     result.push_back(move);
@@ -1136,8 +1145,8 @@ public:
         return val(typed_memory_view(4, castling));
     }
 
-    bool em_checked() {
-        return kingAttacked(turn);
+    bool em_checked(uint8_t color) {
+        return kingAttacked(color);
     }
 
     std::string em_fen() {
@@ -1149,6 +1158,10 @@ public:
             return 0;
         auto it = PIECES.find(text.at(0));
         return (it != PIECES.end())? it->second: 0;
+    }
+
+    uint8_t em_turn() {
+        return turn;
     }
 };
 
@@ -1193,6 +1206,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("reset", &Chess::reset)
         .function("sanToMove", &Chess::sanToMove)
         .function("squareToAn", &Chess::squareToAn)
+        .function("turn", &Chess::em_turn)
         .function("undo", &Chess::undoMove)
         ;
 

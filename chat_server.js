@@ -68,7 +68,7 @@ server.on('connection', async socket => {
                 let best_move = data.best_move;
                 if (best_move) {
                     LS(best_move);
-                    let result = chess.moveUci(best_move, frc);
+                    let result = chess.moveUci(best_move, frc, true);
                     LS(result);
                     if (result.piece) {
                         fen = chess.fen();
