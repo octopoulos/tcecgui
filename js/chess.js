@@ -248,6 +248,7 @@ var Chess = function(fen_) {
             move_type = TYPE(move.piece);
 
         half_moves ++;
+        ep_square = EMPTY;
 
         // moved king?
         if (move_type == KING) {
@@ -296,11 +297,8 @@ var Chess = function(fen_) {
                 if (flags & BITS_BIG_PAWN)
                     ep_square = move_to + (turn == BLACK? -16: 16);
                 else {
-                    ep_square = EMPTY;
-
                     if (flags & BITS_EP_CAPTURE)
                         board[move_to + (turn == BLACK? -16: 16)] = 0;
-
                     if (flags & BITS_PROMOTION)
                         board[move_to] = COLORIZE(us, move.promote);
                 }

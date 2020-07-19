@@ -489,6 +489,7 @@ beforeEach(() => {
 // multiSan
 [
     [
+        START_FEN,
         '1. d4 d5 2. c4',
         [false, false],
         [
@@ -526,21 +527,33 @@ beforeEach(() => {
                 to: 66,
             },
         ],
+        'rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2',
     ],
-].forEach(([multi, options, answer], id) => {
+    [
+        START_FEN,
+        '1. b4 e5 2. Bb2 d6 3. e3 Be7 4. c4 Nf6 5. Nc3 O-O 6. Qc2 c6 7. Nf3 Bg4 8. Be2 Nbd7 9. h3 Bh5 10. O-O Bg6 11. Qb3 Ne4 12. Nxe4 Bxe4 13. Bc3 Qc7 14. a4 a5 15. bxa5 Nc5 16. Qb2 Bf6 17. d4 exd4 18. exd4 Ne6 19. Nd2 Bf5 20. Rfd1 Rfe8 21. Bf1 c5 22. Nb3 h6 23. dxc5 Bxc3 24. Qxc3 Nxc5 25. Nd4 Qd7 26. Qb4 Ra6 27. Ra2 Be6 28. Nxe6 Qxe6 29. Re2 Qc8 30. Rxe8+ Qxe8 31. g3 Qe7 32. Bg2 Kf8 33. Bd5 Qd7 34. Rd4 Qxa4 35. Qb1 Rxa5 36. Kg2 Ne6 37. Bxe6 fxe6 38. Qxb7 Qe8 39. Rxd6 Qa8 40. Qxa8+ Rxa8 41. Rxe6 Kf7 42. Rc6 h5 43. Rc5 g6 44. Kf3 Ra2 45. h4 Rc2 46. Kf4 Rxf2+ 47. Kg5 Rf3 48. Rc7+ Ke6 49. Kxg6 Rxg3+ 50. Kxh5',
+        [false, false],
+        undefined,
+        '8/2R5/4k3/7K/2P4P/6r1/8/8 b - - 0 50',
+    ],
+].forEach(([fen, multi, options, answer, new_fen], id) => {
     test(`multiSan:${id}`, () => {
-        chess.load(START_FEN);
+        chess.load(fen);
         let moves = chess.multiSan(multi, options[0], options[1]);
-        moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-        for (let move of moves)
-            expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
-        expect(moves).toEqual(answer);
+        if (answer) {
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+            for (let move of moves)
+                expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
+            expect(moves).toEqual(answer);
+        }
+        expect(chess.fen()).toEqual(new_fen);
     });
 });
 
 // multiUci
 [
     [
+        START_FEN,
         'd2d4 d7d5 c2c4',
         false,
         [
@@ -578,24 +591,36 @@ beforeEach(() => {
                 to: 66,
               },
         ],
+        'rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2',
     ],
     [
+        START_FEN,
         'd2d4 d7d5 c2c4 c7c6 b1c3 g8f6 e2e3 e7e6 f1d3 d5c4 d3c4 a7a6 a2a4 c6c5 g1f3 b8c6 e1g1 f8e7 d4c5 d8d1 f1d1 e7c5 h2h3 e8e7 e3e4 h8d8 d1d8 e7d8 e4e5 f6d7 c1f4 c5e7 c3e4 d7b6 c4b3 c6a5 b3a2 b6a4 f4e3 d8c7 a1c1 a5c6 c1c2 b7b6 a2b3 a4c5 e4c5 b6c5 e3c5 e7c5 c2c5 c7b6 c5c3 c8b7 f3g5 a8f8 g5h7 f8d8 h7g5 c6e5 c3e3 b7d5 f2f4 e5c4 e3c3 c4d6 f4f5 d6f5 g5f7 d8d7 f7e5 d7c7 c3d3 b6c5 b3d5 e6d5 d3c3 c5b6 c3d3 b6c5 d3c3 c5b6 c3c7 b6c7 g1f2 a6a5 g2g4 c7d6 e5f3',
         false,
         '1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 e6 5. Bd3 dxc4 6. Bxc4 a6 7. a4 c5 8. Nf3 Nc6 9. O-O Be7 10. dxc5 Qxd1 11. Rxd1 Bxc5 12. h3 Ke7 13. e4 Rd8 14. Rxd8 Kxd8 15. e5 Nd7 16. Bf4 Be7 17. Ne4 Nb6 18. Bb3 Na5 19. Ba2 Nxa4 20. Be3 Kc7 21. Rc1 Nc6 22. Rc2 b6 23. Bb3 Nc5 24. Nxc5 bxc5 25. Bxc5 Bxc5 26. Rxc5 Kb6 27. Rc3 Bb7 28. Ng5 Rf8 29. Nxh7 Rd8 30. Ng5 Nxe5 31. Re3 Bd5 32. f4 Nc4 33. Rc3 Nd6 34. f5 Nxf5 35. Nxf7 Rd7 36. Ne5 Rc7 37. Rd3 Kc5 38. Bxd5 exd5 39. Rc3 Kb6 40. Rd3 Kc5 41. Rc3 Kb6 42. Rxc7 Kxc7 43. Kf2 a5 44. g4 Kd6 45. Nf3',
-
+        '8/6p1/3k4/p2p1n2/6P1/5N1P/1P3K2/8 b - - 2 45',
     ],
-].forEach(([multi, frc, answer], id) => {
+    [
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+        '1. d2d4q g8f6q 2. c1b3q c8b6q 3. e2e4q',
+        true,
+        '1. d4 Nf6 2. Nb3 Nb6 3. e4',
+        'rk1rbq1b/pppppppp/1n3n2/8/3PP3/1N6/PPP2PPP/RK1RBQNB b DAda e3 0 3',
+    ],
+].forEach(([fen, multi, frc, answer, new_fen], id) => {
     test(`multiUci:${id}`, () => {
-        chess.load(START_FEN);
+        chess.load(fen);
         let moves = chess.multiUci(multi, frc);
-        moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-        for (let move of moves)
-            expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
+        if (answer) {
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+            for (let move of moves)
+                expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
 
-        if (IsString(answer))
-            moves = moves.map((item, id) => `${id % 2 == 0? (1 + id / 2 + '. '): ''}${item.m}`).join(' ');
-        expect(moves).toEqual(answer);
+            if (IsString(answer))
+                moves = moves.map((item, id) => `${id % 2 == 0? (1 + id / 2 + '. '): ''}${item.m}`).join(' ');
+            expect(moves).toEqual(answer);
+        }
+        expect(chess.fen()).toEqual(new_fen);
     });
 });
 

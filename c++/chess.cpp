@@ -268,6 +268,7 @@ private:
         auto move_type = TYPE(move.piece);
 
         half_moves ++;
+        ep_square = EMPTY;
 
         // moved king?
         if (move_type == KING) {
@@ -316,11 +317,8 @@ private:
                 if (flags & BITS_BIG_PAWN)
                     ep_square = move_to + (turn == BLACK? -16: 16);
                 else {
-                    ep_square = EMPTY;
-
                     if (flags & BITS_EP_CAPTURE)
                         board[move_to + (turn == BLACK? -16: 16)] = 0;
-
                     if (flags & BITS_PROMOTION)
                         board[move_to] = COLORIZE(us, move.promote);
                 }
@@ -789,7 +787,6 @@ public:
                         }
                 }
                 fen = fen.substr(0, step2) + " " + castle + fen.substr(step3);
-                std::cout << step2 << " " << step3 << " " << fen << '\n';
                 frc = true;
             }
         }
