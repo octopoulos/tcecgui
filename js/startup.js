@@ -585,6 +585,7 @@ function init_customs(initial) {
 function init_globals() {
     check_hash();
     parse_dev();
+    changed_hash();
     api_translate_get(Y.new_version);
 
     HTML(Id('version'), VERSION);

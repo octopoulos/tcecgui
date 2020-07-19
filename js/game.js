@@ -682,8 +682,6 @@ function create_boards(mode='html') {
 
     // 2) set pointers: real board + duals
     assign_boards();
-    if (DEV.global)
-        window.xboards = xboards;
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
@@ -1434,10 +1432,11 @@ function show_filtered_games(text) {
 
 /**
  * Show tables depending on the event type
+ * @param {string} section
  * @param {boolean=} is_cup
  */
-function show_tables(is_cup) {
-    if (is_cup == old_cup)
+function show_tables(section, is_cup) {
+    if (section != Y.x || is_cup == old_cup)
         return;
     old_cup = is_cup;
 
@@ -1920,7 +1919,7 @@ function open_event(section, callback) {
         prefix = `${HOST_ARCHIVE}/${found}`;
 
     // cup?
-    show_tables(!!event_tag);
+    show_tables(section, !!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
             download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'brak', data => {
@@ -2474,7 +2473,7 @@ function create_cup(section, data, show) {
     if (!data)
         return;
 
-    show_tables(true);
+    show_tables(section, true);
 
     // 2) create the bracket
     let event = data.EventTable;
@@ -4232,7 +4231,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
-    show_tables(tour_info[Y.x].cup);
+    let section = Y.x;
+    show_tables(section, tour_info[section].cup);
 
     let missing = 0,
         string = ARCHIVE_KEYS.map(key => {
@@ -4250,17 +4250,23 @@ function changed_hash() {
         LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
     game_link = string;
 
-    if (Y.x == 'live')
-        open_event(Y.x);
+    if (section == 'live')
+        open_event(section);
+
+    if (DEV.global)
+        window.xboards = xboards;
 }
 
 /**
  * The section was changed archive <-> live
  */
 function changed_section() {
-    let section = Y.x;
-    old_cup = null;
+    let section = Y.x,
+        is_cup = tour_info[section].cup;
     assign_boards();
+
+    old_cup = null;
+    show_tables(section, is_cup);
 
     // click on the active tab, ex: schedule, stats
     // - if doesn't exist, then active the default tab
@@ -4268,7 +4274,7 @@ function changed_section() {
     if (active && Visible(active))
         open_table(active);
     else {
-        active = tour_info[section].cup? 'brak': DEFAULT_ACTIVES[section];
+        active = is_cup? 'brak': DEFAULT_ACTIVES[section];
         open_table(active);
     }
 

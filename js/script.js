@@ -10,6 +10,7 @@ startup, window
 /** @namespace */
 window.onload = function() {
     // @import {common.js}
+    // @import {chess.js}
     // @import {engine.js}
     // @import {global.js}
     // @import {3d.js}

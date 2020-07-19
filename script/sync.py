@@ -46,7 +46,7 @@ JS_FILES = {
     'all': [
         'libs/socket.io',
         ':common',
-        'libs/chess-quick',
+        ':chess',
         ':engine',
         ':global',
         ':3d',

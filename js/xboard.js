@@ -375,8 +375,7 @@ class XBoard {
                 let no_load;
                 if (!move.fen) {
                     this.chess_load(fen);
-                    let san = move.m,
-                        result = this.chess_move(san);
+                    let result = this.chess_move(move.m);
                     Assign(move, result);
                     move.fen = this.chess_fen();
                     no_load = true;

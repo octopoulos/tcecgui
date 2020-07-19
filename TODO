@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-07-18 : add check/mate decorators to SAN
+-          : 2020-07-19 : switch between Chess and ChessWASM
 2020-07-19 : 2020-07-19 : fix FRC FEN in the archive, the KQkq is incorrect
 2020-07-18 : 2020-07-18 : tests for UCI frc castle
 2020-07-18 : 2020-07-18 : multiSan + multiUci

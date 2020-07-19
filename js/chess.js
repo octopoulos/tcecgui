@@ -5,9 +5,22 @@
 // - FRC support
 /*
 globals
-exports
+Assign, exports, global, Lower, Max, Min, require
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {Assign, Lower, Max, Min} = req('./common');
+    Assign(global, {
+        Assign: Assign,
+        Lower: Lower,
+        Max: Max,
+        Min: Min,
+    });
+}
+// >>
 
 var Chess = function(fen_) {
     let BISHOP = 3,
@@ -18,6 +31,7 @@ var Chess = function(fen_) {
         DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         EMPTY = -1,
         FILE = square => square & 15,
+        I8 = array => new Int8Array(array),
         KING = 6,
         KNIGHT = 2,
         PAWN = 1,
@@ -42,11 +56,11 @@ var Chess = function(fen_) {
         RANK = square => square >> 4,
         ROOK = 4,
         TYPE = piece => piece & 7,
-        UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
+        // UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
         WHITE = 0;
 
     // https://github.com/jhlywa/chess.js
-    let ATTACKS = [
+    let ATTACKS = I8([
            20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
             0, 20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
             0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
@@ -62,23 +76,23 @@ var Chess = function(fen_) {
             0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
             0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
            20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
-        ],
-        ATTACK_BITS = [0, 1, 2, 4, 8, 16, 32],
+        ]),
+        ATTACK_BITS = I8([0, 1, 2, 4, 8, 16, 32]),
         PAWN_OFFSETS = [
-            [-16, -32, -17, -15],
-            [16, 32, 17, 15],
+            I8([-16, -32, -17, -15]),
+            I8([16, 32, 17, 15]),
         ],
         PIECE_OFFSETS = [
             [],
             [],
-            [-18, -33, -31, -14,  18, 33, 31,  14],
-            [-17, -15,  17,  15],
-            [-16,   1,  16,  -1],
-            [-17, -16, -15,   1,  17, 16, 15,  -1],
-            [-17, -16, -15,   1,  17, 16, 15,  -1],
+            I8([-18, -33, -31, -14,  18, 33, 31,  14]),
+            I8([-17, -15,  17,  15]),
+            I8([-16,   1,  16,  -1]),
+            I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+            I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
         ],
         // https://github.com/jhlywa/chess.js
-        RAYS = [
+        RAYS = I8([
            17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
             0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
             0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
@@ -94,7 +108,7 @@ var Chess = function(fen_) {
             0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
             0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
           -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
-        ];
+        ]);
 
     let BITS_NORMAL = 1,
         BITS_CAPTURE = 2,
@@ -118,7 +132,7 @@ var Chess = function(fen_) {
             a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
         };
 
-    let board = new Array(128).fill(0),
+    let board = new Uint8Array(128),
         castling = [EMPTY, EMPTY, EMPTY, EMPTY],
         ep_square = EMPTY,
         fen = '',
@@ -401,7 +415,7 @@ var Chess = function(fen_) {
      * Clear the board
      */
     function clear() {
-        board = new Array(128).fill(0);
+        board = new Uint8Array(128);
         castling.fill(EMPTY);
         ep_square = EMPTY;
         fen = "";
@@ -570,10 +584,10 @@ var Chess = function(fen_) {
                     flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
                     king_to = pos0 + (q? 2: 6),
                     rook_to = king_to + (q? 1: -1),
-                    max_king = Math.max(king, king_to),
-                    min_king = Math.min(king, king_to),
-                    max_path = Math.max(max_king, rook, rook_to),
-                    min_path = Math.min(min_king, rook, rook_to);
+                    max_king = Max(king, king_to),
+                    min_king = Min(king, king_to),
+                    max_path = Max(max_king, rook, rook_to),
+                    min_path = Min(min_king, rook, rook_to);
 
                 // check that all squares are empty along the path
                 for (let j = min_path; j <= max_path; j ++)
@@ -659,7 +673,7 @@ var Chess = function(fen_) {
         if (tokens[2] != "-") {
             let error;
             for (let letter of tokens[2]) {
-                let lower = letter.toLowerCase(),
+                let lower = Lower(letter),
                     final = (lower == 'k')? 'h': (lower == 'q')? 'a': lower,
                     color = (letter == lower)? 1: 0,
                     square = 'abcdefghij'.indexOf(final) + ((color? 0: 7) << 4),
@@ -1060,7 +1074,10 @@ var Chess = function(fen_) {
     };
 };
 
+
 // <<
 if (typeof exports != 'undefined')
-    exports.Chess = Chess;
+    Assign(exports, {
+        Chess: Chess,
+    });
 // >>

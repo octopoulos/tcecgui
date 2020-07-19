@@ -1,26 +1,16 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-19
 //
 /*
 globals
-__dirname, beforeEach, describe, expect, require, test
+beforeEach, describe, expect, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/chess+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    'global',
-    //
-    'chess',
-], OUTPUT_MODULE, 'Chess IsString Keys Undefined');
-
-let {Chess, get_move_ply, IsString, Keys, Undefined} = require(OUTPUT_MODULE);
+let {Chess} = require('./chess.js'),
+    {IsString, Keys, Undefined} = require('./common'),
+    {get_move_ply} = require('./global');
 
 let chess = new Chess(),
     EMPTY = -1,
@@ -73,7 +63,7 @@ beforeEach(() => {
 ].forEach(([fen, answer, dico], id) => {
     test(`board:${id}`, () => {
         chess.load(fen);
-        answer = new Array(answer).fill(0);
+        answer = new Uint8Array(answer);
         Keys(dico).forEach(key => {
             answer[key] = dico[key];
         });

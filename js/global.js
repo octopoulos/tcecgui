@@ -8,7 +8,7 @@
 /*
 globals
 Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, IsArray, Keys, LS, Max, Min, Pad, Pow, require, Round,
-save_option, Split, Undefined, X_SETTINGS, Y
+save_option, Split, Undefined, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -246,6 +246,7 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+    window.DEV = DEV;
 }
 
 /**
