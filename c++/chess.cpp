@@ -244,17 +244,11 @@ private:
         if (!ambiguities)
             return "";
 
-        // if there exists a similar moving piece on the same rank and file as
-        // the move in question, use the square as the disambiguator
         auto an = squareToAn(from, false);
         if (same_rank > 0 && same_file > 0)
             return an;
-        // if the moving piece rests on the same file, use the rank symbol as the disambiguator
-        else if (same_file > 0)
-            return an.substr(1, 1);
-        // else use the file symbol
         else
-            return an.substr(0, 1);
+            return an.substr((same_file > 0)? 1: 0, 1);
     }
 
     /**
@@ -267,7 +261,8 @@ private:
         // not smart to do it for every move
         addHistory(move);
 
-        int is_castle = (move.flags & BITS_CASTLE),
+        int flags = move.flags,
+            is_castle = (flags & BITS_CASTLE),
             move_from = move.from,
             move_to = move.to;
         auto move_type = TYPE(move.piece);
@@ -277,16 +272,16 @@ private:
         // moved king?
         if (move_type == KING) {
             if (is_castle) {
-                int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    castling_from = kings[us],
-                    castling_to = (RANK(castling_from) << 4) + (q? 2: 6),
+                int q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
+                    king = kings[us],
+                    king_to = (RANK(king) << 4) + (q? 2: 6),
                     rook = castling[us * 2 + q];
 
-                board[castling_from] = 0;
+                board[king] = 0;
                 board[rook] = 0;
-                board[castling_to] = COLORIZE(us, KING);
-                board[castling_to + (q? 1: -1)] = COLORIZE(us, ROOK);
-                move_to = castling_to;
+                board[king_to] = COLORIZE(us, KING);
+                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                move_to = king_to;
             }
 
             kings[us] = move_to;
@@ -318,20 +313,20 @@ private:
             // pawn + update 50MR
             else if (move_type == PAWN) {
                 // pawn moves 2 squares
-                if (move.flags & BITS_BIG_PAWN)
+                if (flags & BITS_BIG_PAWN)
                     ep_square = move_to + (turn == BLACK? -16: 16);
                 else {
                     ep_square = EMPTY;
 
-                    if (move.flags & BITS_EP_CAPTURE)
+                    if (flags & BITS_EP_CAPTURE)
                         board[move_to + (turn == BLACK? -16: 16)] = 0;
 
-                    if (move.flags & BITS_PROMOTION)
+                    if (flags & BITS_PROMOTION)
                         board[move_to] = COLORIZE(us, move.promote);
                 }
                 half_moves = 0;
             }
-            else if (move.flags & BITS_CAPTURE)
+            else if (flags & BITS_CAPTURE)
                 half_moves = 0;
         }
 
@@ -587,7 +582,7 @@ public:
             }
             else {
                 int *offsets = PIECE_OFFSETS[piece_type];
-                for (int j = 0; j < 8; j++) {
+                for (int j = 0; j < 8; j ++) {
                     int offset = offsets[j],
                         square = i;
                     if (!offset)
@@ -615,12 +610,10 @@ public:
             }
         }
 
-        // check for castling if:
-        // a) we're generating all moves
-        // b) we're doing single square move generation on the king's square
-        int castling_from = kings[us];
-        if (castling_from != EMPTY && (!is_single || single_square == castling_from)) {
-            auto pos0 = RANK(castling_from) << 4;
+        // castling
+        int king = kings[us];
+        if (king != EMPTY && (!is_single || single_square == king)) {
+            auto pos0 = RANK(king) << 4;
 
             // q=0: king side, q=1: queen side
             for (auto q = 0; q < 2; q ++) {
@@ -628,13 +621,18 @@ public:
                 if (rook == EMPTY)
                     continue;
 
-                int castling_to = pos0 + (q? 2: 6),
-                    error = false,
-                    flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE;
+                int error = false,
+                    flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
+                    king_to = pos0 + (q? 2: 6),
+                    rook_to = king_to + (q? 1: -1),
+                    max_king = std::max(king, king_to),
+                    min_king = std::min(king, king_to),
+                    max_path = std::max(max_king, std::max(rook, rook_to)),
+                    min_path = std::min(min_king, std::min(rook, rook_to));
 
-                // check that all squares are empty between king and rook
-                for (auto j = std::min(castling_from, rook) + 1; j <= std::max(castling_from, rook) - 1; j ++)
-                    if (board[j]) {
+                // check that all squares are empty along the path
+                for (auto j = min_path; j <= max_path; j ++)
+                    if (j != king && j != rook && board[j]) {
                         error = true;
                         break;
                     }
@@ -642,7 +640,7 @@ public:
                     continue;
 
                 // check that the king is not attacked
-                for (auto j = std::min(castling_from, castling_to); j <= std::max(castling_from, castling_to); j ++)
+                for (auto j = min_king; j <= max_king; j ++)
                     if (attacked(them, j)) {
                         error = true;
                         break;
@@ -650,7 +648,7 @@ public:
 
                 // add castle + detect FRC even if not set
                 if (!error)
-                    addMove(moves, castling_from, (frc || FILE(castling_from) != 4 || FILE(rook) % 7)? rook: castling_to, flags);
+                    addMove(moves, king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
             }
         }
 
@@ -681,11 +679,11 @@ public:
     /**
      * Load a FEN
      * @param fen valid or invalid FEN
-     * @return true if the FEN was successfully loaded
+     * @return empty on error, and the FEN may be corrected
      */
-    bool load(std::string fen_) {
+    std::string load(std::string fen_) {
         if (fen_.empty())
-            return false;
+            return "";
 
         clear();
         fen = fen_;
@@ -693,12 +691,19 @@ public:
         int half = 0,
             move = 0,
             step = 0,
+            step2 = 0,
+            step3 = 0,
             square = 0;
         std::string castle, ep;
 
-        for (auto value : fen) {
+        for (auto i = 0; i < fen.size(); i ++) {
+            auto value = fen[i];
             if (value == ' ') {
                 step ++;
+                if (step == 2)
+                    step2 = i;
+                else if (step == 3)
+                    step3 = i;
                 continue;
             }
 
@@ -737,8 +742,17 @@ public:
             }
         }
 
+        ep_square = (ep == "-")? EMPTY: anToSquare(ep);
+        half_moves = half;
+        move_number = move;
+
+        bool start = (!turn && move_number == 1);
+        if (start)
+            frc = false;
+
         // can detect FRC if castle is not empty
         if (castle != "-") {
+            bool error = false;
             for (auto letter : castle) {
                 auto lower = (letter < 'a')? letter + 'a' - 'A': letter,
                     final = (lower == 'k')? 'h': (lower == 'q')? 'a': lower,
@@ -747,15 +761,39 @@ public:
                     index = color * 2 + ((square < kings[color])? 1: 0);
 
                 castling[index] = square;
+                if (start && TYPE(board[square]) != ROOK)
+                    error = true;
                 if (final == lower)
                     frc = true;
             }
-        }
 
-        ep_square = (ep == "-")? EMPTY: anToSquare(ep);
-        half_moves = half;
-        move_number = move;
-        return true;
+            // fix corrupted FEN (only for the initial board)
+            if (error) {
+                castle = "";
+                for (uint8_t color = 0; color < 2; color ++) {
+                    char file_letter = color? 'a': 'A';
+                    auto king = kings[color];
+
+                    for (int i = king + 1; FILE(i) <= 7; i ++)
+                        if (TYPE(board[i]) == ROOK) {
+                            castling[color * 2] = i;
+                            castle += file_letter + FILE(i);
+                            break;
+                        }
+
+                    for (int i = king - 1; FILE(i) >= 0; i --)
+                        if (TYPE(board[i]) == ROOK) {
+                            castling[color * 2 + 1] = i;
+                            castle += file_letter + FILE(i);
+                            break;
+                        }
+                }
+                fen = fen.substr(0, step2) + " " + castle + fen.substr(step3);
+                std::cout << step2 << " " << step3 << " " << fen << '\n';
+                frc = true;
+            }
+        }
+        return fen;
     }
 
     /**
@@ -823,7 +861,7 @@ public:
      * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
      * 4. ... Ne7 is technically the valid SAN
      * @param move
-     * @param sloppy allow sloppy parser
+     * @param moves
      */
     std::string moveToSan(Move &move, std::vector<Move> &moves) {
         if (move.flags & BITS_KSIDE_CASTLE)
@@ -925,18 +963,14 @@ public:
      */
     std::string print() {
         std::string text;
-        for (auto value : fen) {
-            if (value == ' ')
-                break;
-
-            if (value == '/')
+        for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
+            // off board
+            if (i & 0x88) {
+                i += 7;
                 text += '\n';
-            else if (value >= '1' && value <= '9') {
-                for (int i = 0; i < value - '0'; i ++)
-                    text += ' ';
+                continue;
             }
-            else
-                text += value;
+            text += PIECE_NAMES[board[i]];
         }
         return text;
     }
@@ -954,6 +988,7 @@ public:
      * Reset the board to the default position
      */
     void reset() {
+        frc = false;
         load(DEFAULT_POSITION);
     }
 
@@ -1067,13 +1102,13 @@ public:
         // undo castle
         if (move.flags & BITS_CASTLE) {
                 int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    castling_from = kings[us],
-                    castling_to = (RANK(castling_from) << 4) + (q? 2: 6),
+                    king = kings[us],
+                    king_to = (RANK(king) << 4) + (q? 2: 6),
                     rook = castling[us * 2 + q];
 
-                board[castling_to] = 0;
-                board[castling_to + (q? 1: -1)] = 0;
-                board[castling_from] = COLORIZE(us, KING);
+                board[king_to] = 0;
+                board[king_to + (q? 1: -1)] = 0;
+                board[king] = COLORIZE(us, KING);
                 board[rook] = COLORIZE(us, ROOK);
         }
         else {

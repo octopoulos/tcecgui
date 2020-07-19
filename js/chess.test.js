@@ -4,7 +4,7 @@
 //
 /*
 globals
-__dirname, describe, expect, require, test
+__dirname, beforeEach, describe, expect, require, test
 */
 'use strict';
 
@@ -29,6 +29,10 @@ let chess = new Chess(),
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 describe('chess.js', () => {
+beforeEach(() => {
+    chess.reset();
+});
+
 // anToSquare
 [
     ['a8', 0],
@@ -133,16 +137,25 @@ describe('chess.js', () => {
 
 // currentFen
 [
-    '2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42',
-].forEach((fen, id) => {
+    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', undefined],
+    [
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+    ],
+].forEach(([fen, answer], id) => {
     test(`currentFen:${id}`, () => {
         chess.load(fen);
-        expect(chess.currentFen()).toEqual(fen);
+        expect(chess.currentFen()).toEqual(Undefined(answer, fen));
     });
 });
 
 // fen
 [
+    [
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
+        [],
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+    ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
         ['O-O'],
@@ -165,6 +178,11 @@ describe('chess.js', () => {
     ['rnkrnbbq/pppppppp/8/8/8/8/PPPPPPPP/RNKRNBBQ w DAda - 0 1', [], undefined],
     ['bbrknqrn/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQRN w GCgc - 0 1', [], undefined],
     ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', [], undefined],
+    [
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+        ['e4'],
+        'rknrbqnb/pppppppp/8/8/4P3/8/PPPP1PPP/RKNRBQNB b DAda e3 0 1',
+    ],
 ].forEach(([fen, moves, answer], id) => {
     test(`fen:${id}`, () => {
         chess.load(fen);
@@ -176,22 +194,34 @@ describe('chess.js', () => {
 
 // load
 [
-    [START_FEN, [], START_FEN],
-    [START_FEN, ['d5'], START_FEN],
-    [START_FEN, ['d4'], 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
-    [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
-    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1'],
+    [START_FEN, [], undefined, START_FEN],
+    [START_FEN, ['d5'], undefined, START_FEN],
+    [START_FEN, ['d4'], undefined, 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
+    [START_FEN, ['d4', 'd5'], undefined, 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
+    [
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
+        ['O-O'],
+        undefined,
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1',
+    ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         ['O-O-O'],
+        undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1',
     ],
-].forEach(([fen, moves, answer], id) => {
+    [
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
+        [],
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+        'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+    ],
+].forEach(([fen, moves, answer, new_fen], id) => {
     test(`load:${id}`, () => {
-        chess.load(fen);
+        expect(chess.load(fen)).toEqual(Undefined(answer, fen));
         for (let move of moves)
             chess.moveSan(move, false, false);
-        expect(chess.fen()).toEqual(answer);
+        expect(chess.fen()).toEqual(new_fen);
     });
 });
 

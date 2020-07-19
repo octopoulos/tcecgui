@@ -2725,11 +2725,13 @@ function extract_threads(options) {
 
 /**
  * Parse raw pgn data
+ * @param {string} section
  * @param {string|Object} data
- * @param {string=} origin
+ * @param {number=} mode &1:header, &2:options, &4:moves
+ * @param {string=} origin debug information
  * @returns {Object}
  */
-function parse_pgn(data, origin) {
+function parse_pgn(section, data, mode=7, origin='') {
     if (!data)
         return null;
 
@@ -2785,6 +2787,17 @@ function parse_pgn(data, origin) {
     if (!Keys(headers).length)
         return null;
 
+    // fix FEN for FRC (archive)
+    let fen = headers.FEN;
+    if (fen) {
+        let board = xboards[section] || xboards.pva;
+        headers.FEN = board.chess_load(fen) || fen;
+    }
+
+    pgn.Headers = headers;
+    if (!(mode & 6))
+        return pgn;
+
     data = data.slice(end);
 
     // 2) options
@@ -2808,6 +2821,8 @@ function parse_pgn(data, origin) {
             data = data.slice(pos2 + 1);
         }
     }
+    if (!(mode & 4))
+        return pgn;
 
     // 3) moves
     let has_text,
@@ -2894,10 +2909,7 @@ function parse_pgn(data, origin) {
     if (!headers.Opening && headers.Variant)
         headers.Opening = headers.Variant;
 
-    Assign(pgn, {
-        Headers: headers,
-        Moves: moves,
-    });
+    pgn.Moves = moves;
     if (DEV.fen)
         LS(pgn);
     return pgn;
@@ -3367,7 +3379,7 @@ function update_overview_moves(section, headers, moves, is_new) {
  */
 function update_pgn(section, data, extras, reset_moves) {
     let main = xboards[section],
-        pgn = parse_pgn(data);
+        pgn = parse_pgn(section, data);
     if (!pgn)
         return false;
     Assign(pgn, extras);

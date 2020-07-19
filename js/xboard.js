@@ -911,9 +911,10 @@ class XBoard {
     /**
      * Temporary chess.js
      * @param {string} fen
+     * @returns {string}
      */
     chess_load(fen) {
-        this.chess.load(fen);
+        return this.chess.load(fen);
     }
 
     /**
