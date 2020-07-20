@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-19
+// @version 2020-07-20
 //
 // game board:
 // - 4 rendering modes:
@@ -23,10 +23,11 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG,
-DEV, Events, Floor, From, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys, Lower, LS, Min,
-mix_hex_colors, Now, Parent, play_sound, requestAnimationFrame, S, SetDefault, Show, Sign, split_move_string, Style, T,
-timers, Undefined, update_svg, Upper, Visible, Y
+_, A, Abs, add_timeout, Assign, AttrsNS, audiobox,
+C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV, Events, Floor, FormatUnit, From,
+get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame,
+S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, Y
 */
 'use strict';
 
@@ -57,19 +58,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
-    // piece moves based on the SQUARES
-    // - p2 = there must be an piece of the opposite color
-    PIECE_MOVES = {
-        b: [-17, -15, 15, 17],
-        k: [-17, -16, -15, -1, 1, 15, 16, 17],
-        n: [-33, -31, -18, -14, 14, 18, 31, 33],
-        P: [-16],
-        P2: [-17, 17],
-        p: [16],
-        p2: [-15, 15],
-        q: [-17, -16, -15, -1, 1, 15, 16, 17],
-        r: [-16, -1, 1, 16],
-    },
+    PIECE_SCORES = [0, 1, 3, 3, 5, 9, 100, 0, 0, 1, 3, 3, 5, 9, 128],
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
@@ -86,7 +75,8 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_click = 200,
-    TIMEOUT_pick = 500;
+    TIMEOUT_pick = 500,
+    TIMEOUT_think = 500;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,12 +156,14 @@ class XBoard {
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
+        this.count = 0;
         this.delayed_ply = -2;
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
         this.evals = [];                                // eval history
         this.fen = '';                                  // current fen
         this.fen2 = '';
+        this.frc = (this.manual && Y.game_960);         // fischer random
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
         this.grid2 = new Array(128);
@@ -594,11 +586,7 @@ class XBoard {
      * @param {boolean} animate
      */
     animate(move, animate) {
-        if (this.manual)
-            requestAnimationFrame(() => {
-                add_timeout('pick', () => {this.show_picks();}, move? TIMEOUT_pick: 0);
-            });
-
+        this.delayed_picks(!!move);
         if (!move)
             return;
 
@@ -1146,6 +1134,19 @@ class XBoard {
     }
 
     /**
+     * Show picks after a delay, to make sure the animation is done
+     * @param {boolean} is_delay
+     */
+    delayed_picks(is_delay) {
+        if (!this.manual || !this.human_turn())
+            return;
+
+        requestAnimationFrame(() => {
+            add_timeout('pick', () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
+        });
+    }
+
+    /**
      * Listen to clicking events
      * @param {function} callback
      */
@@ -1460,10 +1461,51 @@ class XBoard {
     }
 
     /**
+     * Check if it's a human turn
+     * @returns {boolean}
+     */
+    human_turn() {
+        let players = Y.game_players,
+            ply = get_move_ply({fen: this.fen});
+
+        if (ply >= 0 && players != 'Human vs Human')
+            if ((ply % 2) == 0 || players == 'AI vs AI')
+                return false;
+        return true;
+    }
+
+    /**
      * Hold the smooth value for 1 render frame
      */
     instant() {
         this.smooth = false;
+    }
+
+    /**
+     * Check if computer should play this move
+     */
+    maybe_play() {
+        // TODO: put this in another thread
+        if (!this.human_turn())
+            add_timeout('think', () => {this.think();}, TIMEOUT_think);
+    }
+
+    /**
+     * Start a new game
+     */
+    new_game() {
+        let fen;
+        if (this.frc) {
+            let index = RandomInt(960);
+            fen = this.chess.fen960(index);
+        }
+        else
+            fen = START_FEN;
+
+        this.reset(true, fen);
+        this.render(7);
+        this.chess_fen(fen);
+        this.delayed_picks(true);
     }
 
     /**
@@ -1550,12 +1592,8 @@ class XBoard {
             }
         }
 
-        // add moves
-        this.add_moves([{
-            fen: fen,
-            m: move.m,
-            ply: ply,
-        }]);
+        this.add_moves([move]);
+        this.maybe_play();
         return true;
     }
 
@@ -1794,6 +1832,7 @@ class XBoard {
         this.frc = this.start_fen != START_FEN;
 
         this.fen = '';
+        this.fen2 = '';
         this.goal = [-20.5, -1];
         this.grid.fill('');
         this.moves.length = 0;
@@ -1810,7 +1849,7 @@ class XBoard {
 
         this.set_fen(null);
         this.set_last(this.last);
-        this.show_picks();
+        this.delayed_picks(true);
     }
 
     /**
@@ -1843,6 +1882,49 @@ class XBoard {
         this.size = size;
         if (render)
             this.render(2);
+    }
+
+    /**
+     * Basic tree search
+     * @param {Move[]} moves
+     * @param {number} depth
+     * @param {number} depth2
+     * @returns {[number, number]}
+     */
+    search(moves, depth, max_depth) {
+        let best,
+            best_depth = depth,
+            chess = this.chess,
+            length = moves.length;
+        this.count += length;
+
+        for (let move of moves) {
+            move.depth = depth;
+            move.score = PIECE_SCORES[move.capture || 0] + length * 0.01;
+            if (move.score >= 128) {
+                best = move.score;
+                move.depth = depth;
+                break;
+            }
+
+            if (depth < max_depth && (depth < 4 || move.score > 1)) {
+                chess.moveObject(move, this.frc, false);
+
+                let moves2 = chess.moves(this.frc, false, -1),
+                    [score, depth2] = this.search(moves2, depth + 1, max_depth);
+                move.score -= score;
+                move.depth = depth2;
+
+                chess.undo();
+            }
+
+            if (best == undefined || best < move.score) {
+                best = move.score;
+                best_depth = move.depth;
+            }
+        }
+
+        return [best, best_depth];
     }
 
     /**
@@ -2031,7 +2113,6 @@ class XBoard {
         if (!this.manual || this.playing())
             return;
         if (this.fen == this.fen2)
-            return;
 
         this.chess_load(this.fen);
         this.fen2 = this.fen;
@@ -2042,6 +2123,47 @@ class XBoard {
         this.clear_high('source target');
         for (let from of froms)
             this.add_high(from, 'turn');
+    }
+
+    /**
+     * Think ...
+     */
+    think() {
+        let chess = this.chess,
+            ply = get_move_ply({fen: this.fen});
+        chess.load(this.fen);
+
+        let moves = chess.moves(this.frc, true, -1);
+        if (!moves.length) {
+            LS(`${'BW'[ply % 2]}: I resign.`);
+            play_sound(audiobox, Y.sound_win, {interrupt: true});
+            return;
+        }
+
+        // most basic AI, just look 2 plies with minimax
+        let best = 0,
+            depth = 0,
+            max_depth = Y.game_depth,
+            start = Now(true);
+        this.count = 0;
+
+        if (max_depth > 0)
+            [best, depth] = this.search(moves, 1, max_depth);
+        for (let move of moves)
+            move.score = Undefined(move.score, 0) + Random() * 0.1;
+
+        let elapsed = Now(true) - start,
+            nps = (elapsed> 0.001)? `${FormatUnit(this.count / elapsed)}nps`: '-';
+
+        moves.sort((a, b) => b.score - a.score);
+        let move = this.chess_move(moves[0], {decorate: true});
+        move.fen = chess.fen();
+
+        LS(`${move.m} : ${FormatUnit(this.count)} / ${elapsed.toFixed(1)}s = ${nps} : best=${best.toFixed(3)} : ${moves[0].depth}/${depth}`);
+
+        // add moves
+        this.add_moves([move]);
+        this.maybe_play();
     }
 
     /**

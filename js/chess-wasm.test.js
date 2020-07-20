@@ -1,6 +1,6 @@
 // chess-wasm.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-19
+// @version 2020-07-20
 //
 /*
 globals
@@ -189,6 +189,20 @@ beforeEach(() => {
     });
 });
 
+// fen960
+[
+    [-1, ''],
+    [0, 'bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w HFhf - 0 1'],
+    [118, 'nqbrnbkr/pppppppp/8/8/8/8/PPPPPPPP/NQBRNBKR w HDhd - 0 1'],
+    [644, 'rbbnkrqn/pppppppp/8/8/8/8/PPPPPPPP/RBBNKRQN w FAfa - 0 1'],
+    [959, 'rkrnnqbb/pppppppp/8/8/8/8/PPPPPPPP/RKRNNQBB w CAca - 0 1'],
+    [960, ''],
+].forEach(([index, fen], id) => {
+    test(`fen960:${id}`, () => {
+        expect(chess.fen960(index)).toEqual(fen);
+    });
+});
+
 // load
 [
     [START_FEN, [], undefined, START_FEN],
@@ -253,6 +267,12 @@ beforeEach(() => {
         {capture: 0, fen: '', flags: 0, from: 54, m: '', piece: 0, ply: -1, promote: 0, to: 21},
         [true, true],
         {capture: 0, fen: '', flags: 1, from: 54, m: 'Nf7+', piece: 2, ply: 92, promote: 0, to: 21},
+    ],
+    [
+        '3r2r1/pp3p1k/8/7P/4R2K/1P3q1P/P7/3R4 b - - 7 29',
+        {capture: 0, fen: '', flags: 0, from: 85, m: '', piece: 0, ply: -1, promote: 0, to: 68},
+        [true, true],
+        {capture: 4, fen: '', flags: 2, from: 85, m: 'Qxe4#', piece: 13, ply: 57, promote: 0, to: 68},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`moveObject:${id}`, () => {

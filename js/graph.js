@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-19
 //
 /*
 globals
@@ -707,7 +707,7 @@ function init_graph(callback) {
     if (window.Chart)
         _done();
     else
-        load_library(CHART_JS, () => {_done();});
+        load_library(CHART_JS, _done);
 }
 
 /**
