@@ -1603,7 +1603,8 @@ class XBoard {
 
         // 3) update
         this.new_move(move);
-        return true;
+        if (!this.human_turn())
+            add_timeout('think', () => {this.think();}, TIMEOUT_think);
     }
 
     /**
@@ -1904,7 +1905,7 @@ class XBoard {
         let best,
             best_depth = depth,
             chess = this.chess,
-            coeff = 5 / (5 + depth),
+            coeff = 8 / (8 + depth),
             length = moves.length;
 
         // checkmate?
@@ -2169,7 +2170,7 @@ class XBoard {
 
         moves.sort((a, b) => b.score - a.score);
         let move = this.chess_move(moves[0], {decorate: true});
-        LS(`${move.m.padStart(5)} : ${elapsed.toFixed(1)}s : ${FormatUnit(this.count).padStart(6)} : ${nps.padStart(9)} : ${best.toFixed(3).padStart(6)} : ${moves[0].depth}/${depth}`);
+        LS(`${move.m.padStart(5)} : ${elapsed.toFixed(1).padStart(6)}s : ${FormatUnit(this.count).padStart(6)} : ${nps.padStart(9)} : ${best.toFixed(3).padStart(6)} : ${moves[0].depth}/${depth}`);
 
         // update
         this.new_move(move);
