@@ -242,7 +242,8 @@ function change_setting_special(name, value, no_close) {
     case 'percent':
     case 'single_line':
     case 'status_pv':
-        resize_panels();
+    case 'status_pva':
+            resize_panels();
         break;
     case 'export_settings':
         export_settings('tcec-settings');
@@ -1904,10 +1905,13 @@ function prepare_settings() {
             controls_pva: [ON_OFF, 1],
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
+            highlight_color_pva: [{type: 'color'}, '#ffff00'],
+            highlight_size_pva: option_number(0.088, 0, 0.4, 0.001),
             notation_pva: [ON_OFF, 1],
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: [{type: 'color'}, '#ffb400'],
             source_opacity: option_number(0.7, 0, 1, 0.01),
+            status_pva: [ON_OFF, 1],
             target_color: [{type: 'color'}, '#ff5a00'],
             target_opacity: option_number(0.7, 0, 1, 0.01),
             turn_color: [{type: 'color'}, '#ff5a00'],
@@ -1946,6 +1950,7 @@ function prepare_settings() {
             game_960: [ON_OFF, 1],
             game_depth_black: option_number(4, 0, 4),
             game_depth_white: option_number(4, 0, 4),
+            game_every: option_number(600, 100, 5000, 100),
             game_nodes: option_number(2e7, 0, 1e8),
             game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
             new_game: '1',

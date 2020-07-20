@@ -1432,8 +1432,13 @@ class XBoard {
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
         let success = this.set_ply(ply, {animate: true, manual: true});
-        if (!success && this.manual && ply >= num_move)
+
+        // next to think
+        if (!success && this.manual && ply >= num_move) {
             success = this.think();
+            if (success)
+                this.play_mode = 'game';
+        }
         return success;
     }
 
@@ -2143,7 +2148,7 @@ class XBoard {
         let moves = chess.moves(this.frc, true, -1);
         if (!moves.length) {
             LS(`${'BW'[ply % 2]}: I resign.`);
-            play_sound(audiobox, Y.sound_win, {interrupt: true});
+            play_sound(audiobox, Y.sound_win);
             return false;
         }
 
