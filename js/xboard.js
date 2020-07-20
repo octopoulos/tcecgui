@@ -1562,7 +1562,7 @@ class XBoard {
             if (!moves.length) {
                 let is_mate = move.m.slice(-1) == '#';
                 LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
-                play_sound(audiobox, is_mate? Y.sound_win: Y.sound_draw);
+                play_sound(audiobox, Y.sound_draw);
             }
         }
         this.delayed_picks(true);
