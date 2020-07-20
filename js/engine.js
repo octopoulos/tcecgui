@@ -9,11 +9,12 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat,
+_, A, Abs, Assign, Attrs,
+cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat,
 DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
-requestAnimationFrame, Resource, ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title,
-Undefined, Upper, Visible, window
+requestAnimationFrame, Resource,
+ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, window
 */
 'use strict';
 

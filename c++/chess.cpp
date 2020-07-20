@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-20
 // - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -334,8 +334,14 @@ private:
             move_number ++;
         turn ^= 1;
 
-        if (decorate && !strchr(move.m.c_str(), '+') && kingAttacked(turn))
-            move.m += '+';
+        // decorate the SAN with + or #
+        if (decorate) {
+            char last = move.m[move.m.size() - 1];
+            if (last != '+' && last != '#' && kingAttacked(turn)) {
+                auto moves = createMoves(frc, true, EMPTY);
+                move.m += moves.size()? '+': '#';
+            }
+        }
     }
 
     // PUBLIC
@@ -527,6 +533,73 @@ public:
 
         fen = fen + " " + COLOR_TEXT(turn) + " " + castle + " " + epflags + " " + std::to_string(half_moves) + " " + std::to_string(move_number);
         return fen;
+    }
+
+    /**
+     * Create a Fischer Random 960 FEN
+     * http://www.russellcottrell.com/Chess/Chess960.htm
+     * @param index between 0 and 959
+     */
+    std::string createFen960(int index) {
+        if (index < 0 || index >= 960)
+            return "";
+
+        int i, n1, n2, q;
+        std::string line = "        ";
+
+        line[(index % 4) * 2 + 1] = 'B';
+        index /= 4;
+        line[(index % 4) * 2] = 'B';
+        index /= 4;
+        q = index % 6;
+        index /= 6;
+
+        for (n1 = 0; n1 < 4; n1 ++) {
+            n2 = index + ((3 - n1) * (4 - n1)) / 2 - 5;
+            if (n1 < n2 && n2 > 0 && n2 < 5)
+                break;
+        }
+
+        // queen
+        for (i = 0; i < 8; i ++)
+            if (line[i] == ' ') {
+                if (!q) {
+                    line[i] = 'Q';
+                    break;
+                }
+                q --;
+            }
+
+        // knights
+        for (i = 0; i < 8; i ++)
+            if (line[i] == ' ') {
+                if (!n1 || !n2)
+                    line[i] = 'N';
+                n1 --;
+                n2 --;
+            }
+
+        // rook - king - rook
+        std::string rooks, rooks2;
+        i = 7;
+        for (auto type : "RKR")
+            for (; i >= 0; i --) {
+                if (line[i] == ' ') {
+                    line[i] = type;
+                    if (type == 'R') {
+                        rooks += 'A' + i;
+                        rooks2 += 'a' + i;
+                    }
+                    break;
+                }
+            }
+
+        std::string result;
+        for (auto letter : line)
+            result += letter + 'a' - 'A';
+
+        result = result + "/pppppppp/8/8/8/8/PPPPPPPP/" + line + " w " + rooks + rooks2 + " - 0 1";
+        return result;
     }
 
     /**
@@ -1153,6 +1226,10 @@ public:
         return fen;
     }
 
+    bool em_frc() {
+        return frc;
+    }
+
     uint8_t em_piece(std::string text) {
         if (text.size() != 1)
             return 0;
@@ -1192,6 +1269,8 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("clear", &Chess::clear)
         .function("currentFen", &Chess::em_fen)
         .function("fen", &Chess::createFen)
+        .function("frc", &Chess::em_frc)
+        .function("fen960", &Chess::createFen960)
         .function("load", &Chess::load)
         .function("moveObject", &Chess::moveObject)
         .function("moveSan", &Chess::moveSan)

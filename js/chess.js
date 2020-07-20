@@ -1,20 +1,21 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-20
 // - fast javascript implementation, 20x faster than original
 // - FRC support
 /*
 globals
-Assign, exports, global, Lower, Max, Min, require
+Assign, exports, Floor, global, Lower, Max, Min, require
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, Lower, Max, Min} = req('./common');
+        {Assign, Floor, Lower, Max, Min} = req('./common');
     Assign(global, {
         Assign: Assign,
+        Floor: Floor,
         Lower: Lower,
         Max: Max,
         Min: Min,
@@ -327,8 +328,14 @@ var Chess = function(fen_) {
             move_number ++;
         turn ^= 1;
 
-        if (decorate && !move.m.includes('+') && kingAttacked(turn))
-            move.m += '+';
+        // decorate the SAN with + or #
+        if (decorate) {
+            let last = move.m.slice(-1);
+            if (!'+#'.includes(last) && kingAttacked(turn)) {
+                let moves = createMoves(frc, true, EMPTY);
+                move.m += moves.length? '+': '#';
+            }
+        }
     }
 
     // PUBLIC
@@ -487,6 +494,68 @@ var Chess = function(fen_) {
         let epflags = (ep_square == EMPTY)? '-': squareToAn(ep_square, false);
 
         return [fen, COLOR_TEXT[turn], castle, epflags, half_moves, move_number].join(' ');
+    }
+
+    /**
+     * Create a Fischer Random 960 FEN
+     * http://www.russellcottrell.com/Chess/Chess960.htm
+     * @param {number} index between 0 and 959
+     * @returns {string}
+     */
+    function createFen960(index) {
+        if (index < 0 || index >= 960)
+            return '';
+
+        let i, n1, n2, q,
+            line = new Array(8).fill(' ');
+
+        line[(index % 4) * 2 + 1] = 'B';
+        index = Floor(index / 4);
+        line[(index % 4) * 2] = 'B';
+        index = Floor(index / 4);
+        q = index % 6;
+        index = Floor(index / 6);
+
+        for (n1 = 0; n1 < 4; n1 ++) {
+            n2 = index + Floor(((3 - n1) * (4 - n1)) / 2) - 5;
+            if (n1 < n2 && n2 > 0 && n2 < 5)
+                break;
+        }
+
+        // queen
+        for (i = 0; i < 8; i ++)
+            if (line[i] == ' ') {
+                if (!q) {
+                    line[i] = 'Q';
+                    break;
+                }
+                q --;
+            }
+
+        // knights
+        for (i = 0; i < 8; i ++)
+            if (line[i] == ' ') {
+                if (!n1 || !n2)
+                    line[i] = 'N';
+                n1 --;
+                n2 --;
+            }
+
+        // rook - king - rook
+        let rooks = '';
+        i = 7;
+        for (let type of "RKR")
+            for (; i >= 0; i --) {
+                if (line[i] == ' ') {
+                    line[i] = type;
+                    if (type == 'R')
+                        rooks += 'ABCDEFGHIJ'[i];
+                    break;
+                }
+            }
+
+        line = line.join('');
+        return `${Lower(line)}/pppppppp/8/8/8/8/PPPPPPPP/${line} w ${rooks}${Lower(rooks)} - 0 1`;
     }
 
     /**
@@ -1063,6 +1132,7 @@ var Chess = function(fen_) {
         clear: clear,
         currentFen: () => fen,
         fen: createFen,
+        fen960: createFen960,
         frc: () => frc,
         load: load,
         moveObject: moveObject,

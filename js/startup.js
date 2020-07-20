@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -155,7 +155,8 @@ function change_setting_special(name, value, no_close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
-    let result = true;
+    let pva = xboards.pva,
+        result = true;
 
     add_history();
 
@@ -246,6 +247,14 @@ function change_setting_special(name, value, no_close) {
     case 'export_settings':
         export_settings('tcec-settings');
         break;
+    case 'game_960':
+        pva.frc = value;
+        pva.delayed_picks();
+        break;
+    case 'game_players':
+        if (value == 'AI vs AI')
+            pva.think();
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -294,6 +303,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'moves_copy':
         populate_areas();
+        break;
+    case 'new_game':
+        xboards.pva.new_game();
         break;
     case 'preset':
         load_preset(value);
@@ -1889,6 +1901,7 @@ function prepare_settings() {
             controls_pva: [ON_OFF, 1],
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
+            game: '',
             notation_pva: [ON_OFF, 1],
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: [{type: 'color'}, '#ffb400'],
@@ -1924,6 +1937,13 @@ function prepare_settings() {
             wrap_h2h: [AUTO_ON_OFF, 'auto'],
             wrap_sched: [AUTO_ON_OFF, 'auto'],
             wrap_stand: [AUTO_ON_OFF, 'auto'],
+        },
+        game: {
+            _prefix: 'game_',
+            game_960: [ON_OFF, 0],
+            game_depth: option_number(2, 0, 4),
+            game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
+            new_game: '1',
         },
         graph: {
             _prefix: 'graph_',
