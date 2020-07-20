@@ -2016,16 +2016,10 @@ function analyse_tournament(section, data) {
     if (DEV.cup)
         tour.cup = 6;
 
-    if (tour.cup) {
-        let event_tag = (location.port != 8080)? tour.eventtag: '',
-            // filename = event_tag? `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`: 'bracket.json';
-            filename = event_tag? 'Eventcrosstable.json': 'bracket.json';
-        if (DEV.global)
-            window.filename = filename;
-        download_table(section, filename, 'brak', data => {
+    if (tour.cup)
+        download_table(section, 'Eventcrosstable.json', 'brak', data => {
             create_cup(section, data);
         }, {no_cache: true});
-    }
 
     open_event(section);
     update_table(section, 'sched', null);
@@ -2336,6 +2330,7 @@ function create_bracket(section, data) {
 
                 if (place)
                     place = ` data-p="${place}"`;
+                seed |= 0;
 
                 // game in progress or not yet started?
                 if (score == undefined)
@@ -2395,6 +2390,11 @@ function create_connector(curr, id, nexts, target, coeffs) {
         seed = curr.dataset.s;
     if (seed != undefined)
         next = _(`[data-s="${seed}"]`, next) || next;
+    else {
+        let subs = From(A('.name[data-s]', next)).filter(node => node.dataset.s == '0');
+        if (subs.length == 1)
+            next = subs[0];
+    }
     if (!next)
         return null;
 
