@@ -1903,20 +1903,19 @@ class XBoard {
         let best,
             best_depth = depth,
             chess = this.chess,
+            coeff = 10 / (10 + depth),
             length = moves.length;
+
+        // checkmate?
+        if (!length && chess.checked(2))
+            return [-256 * coeff, depth];
 
         this.count += length;
         let again = (this.count < Y.game_nodes);
 
         for (let move of moves) {
             move.depth = depth;
-            move.score = PIECE_SCORES[move.capture || 0] + length * 0.01;
-            if (move.score >= 128) {
-                LS('HMMMMM');
-                best = move.score;
-                move.depth = depth;
-                break;
-            }
+            move.score = (PIECE_SCORES[move.capture || 0] + length * 0.01) * coeff;
 
             if (depth < max_depth && again && (depth <= 4 || move.score > 1)) {
                 chess.moveObject(move, this.frc, false);
@@ -1930,6 +1929,8 @@ class XBoard {
             if (best == undefined || best < move.score) {
                 best = move.score;
                 best_depth = move.depth;
+                if (best > 128)
+                    break;
             }
         }
 
