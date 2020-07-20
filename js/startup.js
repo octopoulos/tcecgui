@@ -1944,7 +1944,8 @@ function prepare_settings() {
         game: {
             _prefix: 'game_',
             game_960: [ON_OFF, 1],
-            game_depth: option_number(4, 0, 4),
+            game_depth_0: option_number(4, 0, 4),
+            game_depth_1: option_number(4, 0, 4),
             game_nodes: option_number(2e7, 0, 1e8),
             game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
             new_game: '1',
