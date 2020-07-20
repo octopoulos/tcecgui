@@ -57,8 +57,10 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
+    I8 = array => new Int8Array(array),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
-    PIECE_SCORES = [0, 1, 3, 3, 5, 9, 100, 0, 0, 1, 3, 3, 5, 9, 128],
+    PIECE_SCORES = I8([0, 1, 3, 3, 5, 9, 100, 0, 0, 1, 3, 3, 5, 9, 128]),
+    PROMOTE_SCORES = I8([0, 0, 2, 2, 4, 8, 0, 0, 0, 0, 2, 2, 4, 8, 0]),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
@@ -1915,7 +1917,7 @@ class XBoard {
 
         for (let move of moves) {
             move.depth = depth;
-            move.score = (PIECE_SCORES[move.capture || 0] + length * 0.01) * coeff;
+            move.score = (PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0] + length * 0.01) * coeff;
 
             if (depth < max_depth && again && (depth <= 4 || move.score > 1)) {
                 chess.moveObject(move, this.frc, false);
