@@ -703,6 +703,8 @@ var Chess = function(fen_) {
      * @return {boolean} true if king is attacked
      */
     function kingAttacked(color) {
+        if (color == 2)
+            color = turn;
         return attacked(color ^ 1, kings[color]);
     }
 

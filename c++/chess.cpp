@@ -749,6 +749,8 @@ public:
      * @return true if king is attacked
      */
     bool kingAttacked(uint8_t color) {
+        if (color == 2)
+            color = turn;
         return attacked(color ^ 1, kings[color]);
     }
 
