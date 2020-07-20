@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
+// @version 2020-07-18
 //
 // Game specific code:
 // - control the board, moves
@@ -18,9 +18,9 @@ CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, documen
 fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
 IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_model, location, Lower, LS, Max, Min, navigator, Now, Pad, Parent, parse_time, play_sound, push_state,
-QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, resume_sleep,
-Round,
+listen_log, load_library, load_model, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent, parse_time,
+play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource,
+restore_history, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -178,6 +178,7 @@ let ANALYSIS_URLS = {
     LOG_KEYS = {
         cp: [1, 2],
         depth: [1, 1],
+        hashfull: [1, 1],
         nodes: [1, 1],
         nps: [1, 1],
         pv: [-1, 0],
@@ -681,8 +682,6 @@ function create_boards(mode='html') {
 
     // 2) set pointers: real board + duals
     assign_boards();
-    if (DEV.global)
-        window.xboards = xboards;
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
@@ -1433,10 +1432,11 @@ function show_filtered_games(text) {
 
 /**
  * Show tables depending on the event type
+ * @param {string} section
  * @param {boolean=} is_cup
  */
-function show_tables(is_cup) {
-    if (is_cup == old_cup)
+function show_tables(section, is_cup) {
+    if (section != Y.x || is_cup == old_cup)
         return;
     old_cup = is_cup;
 
@@ -1919,7 +1919,7 @@ function open_event(section, callback) {
         prefix = `${HOST_ARCHIVE}/${found}`;
 
     // cup?
-    show_tables(!!event_tag);
+    show_tables(section, !!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
             download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'brak', data => {
@@ -2473,7 +2473,7 @@ function create_cup(section, data, show) {
     if (!data)
         return;
 
-    show_tables(true);
+    show_tables(section, true);
 
     // 2) create the bracket
     let event = data.EventTable;
@@ -2724,11 +2724,13 @@ function extract_threads(options) {
 
 /**
  * Parse raw pgn data
+ * @param {string} section
  * @param {string|Object} data
- * @param {string=} origin
+ * @param {number=} mode &1:header, &2:options, &4:moves
+ * @param {string=} origin debug information
  * @returns {Object}
  */
-function parse_pgn(data, origin) {
+function parse_pgn(section, data, mode=7, origin='') {
     if (!data)
         return null;
 
@@ -2784,6 +2786,17 @@ function parse_pgn(data, origin) {
     if (!Keys(headers).length)
         return null;
 
+    // fix FEN for FRC (archive)
+    let fen = headers.FEN;
+    if (fen) {
+        let board = xboards[section] || xboards.pva;
+        headers.FEN = board.chess_load(fen) || fen;
+    }
+
+    pgn.Headers = headers;
+    if (!(mode & 6))
+        return pgn;
+
     data = data.slice(end);
 
     // 2) options
@@ -2807,6 +2820,8 @@ function parse_pgn(data, origin) {
             data = data.slice(pos2 + 1);
         }
     }
+    if (!(mode & 4))
+        return pgn;
 
     // 3) moves
     let has_text,
@@ -2893,10 +2908,7 @@ function parse_pgn(data, origin) {
     if (!headers.Opening && headers.Variant)
         headers.Opening = headers.Variant;
 
-    Assign(pgn, {
-        Headers: headers,
-        Moves: moves,
-    });
+    pgn.Moves = moves;
     if (DEV.fen)
         LS(pgn);
     return pgn;
@@ -3366,7 +3378,7 @@ function update_overview_moves(section, headers, moves, is_new) {
  */
 function update_pgn(section, data, extras, reset_moves) {
     let main = xboards[section],
-        pgn = parse_pgn(data);
+        pgn = parse_pgn(section, data);
     if (!pgn)
         return false;
     Assign(pgn, extras);
@@ -3560,7 +3572,10 @@ function analyse_log(line) {
         return;
 
     // 2) analyse info
-    let info = {},
+    let info = {
+            engine: engine,
+            id: id,
+        },
         items = line.slice(pos2 + 2).split(' '),
         num_item = items.length,
         player = players[id];
@@ -3568,33 +3583,37 @@ function analyse_log(line) {
     for (let i = 0; i < num_item; i ++) {
         let key = items[i],
             log_key = LOG_KEYS[key];
-        if (log_key) {
-            let [number, type] = log_key,
-                value,
-                values = [];
-            i ++;
-            for (let j = 0; i < num_item && (number < 0 || j < number); j ++) {
-                values.push(items[i]);
-                i ++;
-            }
-            i --;
-            if (number == 1) {
-                value = values[0];
-                if (type == 1)
-                    value = DefaultInt(value, value);
-                else if (type == 2)
-                    value = DefaultFloat(value, value);
-            }
-            else
-                value = values.join(' ');
-            info[key] = value;
+        if (!log_key)
+            continue;
 
-            // invert scores when black
-            if (key == 'cp')
-                info.eval = (value / 100) * (id == 1? -1: 1);
-            else if (key == 'wdl' && id == 1)
-                info.wdl = value.split(' ').reverse().join(' ');
+        let [number, type] = log_key,
+            value,
+            values = [];
+        i ++;
+        for (let j = 0; i < num_item && (number < 0 || j < number); j ++) {
+            let item = items[i];
+            if (LOG_KEYS[item])
+                break;
+            values.push(item);
+            i ++;
         }
+        i --;
+        if (number == 1) {
+            value = values[0];
+            if (type == 1)
+                value = DefaultInt(value, value);
+            else if (type == 2)
+                value = DefaultFloat(value, value);
+        }
+        else
+            value = values.join(' ');
+        info[key] = value;
+
+        // invert scores when black
+        if (key == 'cp')
+            info.eval = (value / 100) * (id == 1? -1: 1);
+        else if (key == 'wdl' && id == 1)
+            info.wdl = value.split(' ').reverse().join(' ');
     }
 
     player.info = info;
@@ -3602,19 +3621,28 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (Y.eval && info.eval != undefined) {
-        let box_node = _(`#box-pv${id} .status`),
-            node = Id(`moves-pv${id}`),
-            status_eval = format_eval(info.eval),
-            status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
+    if (!DEV.wasm) {
+        if (Y.eval && info.eval != undefined) {
+            let box_node = _(`#box-pv${id} .status`),
+                node = Id(`moves-pv${id}`),
+                status_eval = format_eval(info.eval),
+                status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
 
-        for (let child of [box_node, node]) {
-            HTML(`[data-x="eval"]`, status_eval, child);
-            HTML(`[data-x="score"]`, status_score, child);
+            for (let child of [box_node, node]) {
+                HTML(`[data-x="eval"]`, status_eval, child);
+                HTML(`[data-x="score"]`, status_score, child);
+            }
         }
     }
-
     // 4) update PV (need chess.wasm)
+    else if (main.wasm) {
+        LS(info.pv);
+        main.chess.load(main.fen);
+        let moves = main.chess.multiUci(info.pv, false);
+        info.moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        LS(info);
+        update_player_eval('live', info);
+    }
 }
 
 /**
@@ -3875,7 +3903,7 @@ function update_player_eval(section, data) {
         cur_ply = main.ply,
         engine = data.engine,
         eval_ = data.eval,
-        id = data.color,
+        id = Undefined(data.id, data.color),
         mini = _(`.xcolor${id}`, main.node),
         node = Id(`moves-pv${id}`),
         player = main.players[id],
@@ -3898,9 +3926,20 @@ function update_player_eval(section, data) {
     HTML(`.xeval`, format_eval(eval_), mini);
 
     // 2) add moves
-    let board = xboards[`pv${id}`];
-    data.ply = split_move_string(data.pv)[0];
-    board.add_moves_string(data.pv);
+    let board = xboards[`pv${id}`],
+        moves = data.moves;
+    if (moves && moves.length) {
+        data.ply = moves[0].ply;
+        board.reset();
+        board.instant();
+        board.add_moves(moves, cur_ply);
+        LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
+        LS(board.moves);
+    }
+    else {
+        data.ply = split_move_string(data.pv)[0];
+        board.add_moves_string(data.pv);
+    }
 
     if (DEV.eval) {
         LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
@@ -3916,7 +3955,7 @@ function update_player_eval(section, data) {
             eval: format_eval(eval_, true),
             logo: short,
             node: FormatUnit(data.nodes),
-            speed: data.speed,
+            speed: (data.nps != undefined)? `${FormatUnit(data.nps)}nps`: data.speed,
             tb: FormatUnit(data.tbhits),
         };
         Keys(stats).forEach(key => {
@@ -4192,7 +4231,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
-    show_tables(tour_info[Y.x].cup);
+    let section = Y.x;
+    show_tables(section, tour_info[section].cup);
 
     let missing = 0,
         string = ARCHIVE_KEYS.map(key => {
@@ -4210,17 +4250,23 @@ function changed_hash() {
         LS(`changed_hash: ${game_link} => ${string} : ${missing}`);
     game_link = string;
 
-    if (Y.x == 'live')
-        open_event(Y.x);
+    if (section == 'live')
+        open_event(section);
+
+    if (DEV.global)
+        window.xboards = xboards;
 }
 
 /**
  * The section was changed archive <-> live
  */
 function changed_section() {
-    let section = Y.x;
-    old_cup = null;
+    let section = Y.x,
+        is_cup = tour_info[section].cup;
     assign_boards();
+
+    old_cup = null;
+    show_tables(section, is_cup);
 
     // click on the active tab, ex: schedule, stats
     // - if doesn't exist, then active the default tab
@@ -4228,7 +4274,7 @@ function changed_section() {
     if (active && Visible(active))
         open_table(active);
     else {
-        active = tour_info[section].cup? 'brak': DEFAULT_ACTIVES[section];
+        active = is_cup? 'brak': DEFAULT_ACTIVES[section];
         open_table(active);
     }
 
@@ -4607,6 +4653,17 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
+
+    if (Y.wasm)
+        load_library('js/chess-wasm.js', () => {
+            Module().then(instance => {
+                let ChessWASM = instance.Chess;
+                Keys(xboards).forEach(key => {
+                    xboards[key].chess = new ChessWASM();
+                    xboards[key].wasm = true;
+                });
+            });
+        }, {async: ''});
 }
 
 /**

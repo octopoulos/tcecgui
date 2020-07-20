@@ -99,7 +99,8 @@ function init_sockets() {
     });
     socket.on('updeng', data => {
         log_socket('updeng', data);
-        update_player_eval('live', data);
+        if (!DEV.wasm)
+            update_player_eval('live', data);
     });
     socket.on('users', data => {
         log_socket('users', data);

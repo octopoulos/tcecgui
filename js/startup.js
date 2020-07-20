@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-18
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -386,6 +386,8 @@ function check_hash_special(dico) {
     translate_node(Id('table-tabs'));
 
     // changed section
+    changed_hash();
+
     if (Y.x != old_x) {
         old_x = Y.x;
         if (old_x == 'live')
@@ -394,7 +396,6 @@ function check_hash_special(dico) {
         changed_section();
         close_popups();
     }
-    changed_hash();
 }
 
 /**
@@ -584,6 +585,7 @@ function init_customs(initial) {
 function init_globals() {
     check_hash();
     parse_dev();
+    changed_hash();
     api_translate_get(Y.new_version);
 
     HTML(Id('version'), VERSION);
@@ -1799,8 +1801,8 @@ function prepare_settings() {
         audio: {
             audio_book: [ON_OFF, 1],
             audio_delay: option_number(150, 0, 2000),
-            audio_live_archive: [ON_OFF, 1],
-            audio_moves: [['none', 'all', 'last'], 'last'],
+            audio_live_archive: [ON_OFF, 0],
+            audio_moves: [['none', 'all', 'last'], 'all'],
             audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             capture_delay: option_number(-200, -1000, 1000),
@@ -1901,6 +1903,7 @@ function prepare_settings() {
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
             play_every: option_number(1200, 100, 5000, 100),
+            wasm: [ON_OFF, 0],
         },
         engine: {
             material_color: [['invert', 'normal'], 'normal'],
@@ -1965,7 +1968,7 @@ function prepare_settings() {
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(1, 0, 10),
-            grid_pva: option_number(1, 0, 10),
+            grid_pva: option_number(0, 0, 10),
             move_height: option_number(5.2, 3, 100, 0.05),
             move_height_copy: option_number(20, 3, 100, 0.05),
             move_height_live: option_number(3.6, 3, 100, 0.05),
@@ -2024,7 +2027,7 @@ function prepare_settings() {
         copy_pva: {
             _pop: true,
             copy_moves: '1',
-            grid_pva: option_number(1, 0, 10),
+            grid_pva: option_number(0, 0, 10),
             move_height_pva: option_number(5, 3, 100, 0.05),
             moves_pva: [ON_OFF, 1],
         },

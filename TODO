@@ -2,8 +2,14 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
--          : 2020-06-03 : chess.wasm
-~          : 2020-07-16 : chess coordinates tests: anToSquare, cleanSan, squareToAn
+-          : 2020-07-19 : switch between Chess and ChessWASM
+2020-07-19 : 2020-07-18 : add + check decorators to SAN when requested
+2020-07-19 : 2020-07-19 : fix FRC FEN in the archive, the KQkq is incorrect
+2020-07-18 : 2020-07-18 : tests for UCI frc castle
+2020-07-18 : 2020-07-18 : multiSan + multiUci
+2020-07-17 : 2020-06-03 : chess.wasm
+2020-07-17 : 2020-07-16 : full chess tests
+2020-07-17 : 2020-07-17 : improved chess
 2020-07-17 : 2020-07-17 : brackets are lost when going to archive then back live
 2020-07-17 : 2020-07-17 : bronze should be played before gold
 2020-07-17 : 2020-07-17 : finals show medals too early

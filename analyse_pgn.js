@@ -61,7 +61,7 @@ function get_multi_pgn_stats(data, result, origin) {
  * @returns {Object}
  */
 function get_pgn_stats(data, origin) {
-    let dico = parse_pgn(data, origin);
+    let dico = parse_pgn('', data, 7, origin);
     if (!dico || !dico.Headers || !dico.Moves)
         return {};
 

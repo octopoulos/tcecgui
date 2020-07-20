@@ -627,6 +627,8 @@ function update_player_chart(name, moves) {
                 ply: ply,           // used for jumping to the position
             },
             id = (ply + invert_wb) % 2;
+        if (id < 0)
+            continue;
 
         switch (name) {
         case 'depth':

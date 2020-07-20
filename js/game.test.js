@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-18
 /*
 globals
 __dirname, expect, global, require, test
@@ -17,7 +17,7 @@ create_module(IMPORT_PATH, [
     'engine',
     'global',
     '3d',
-    'libs/chess-quick',
+    'chess',
     'xboard',
     'graph',
     //
@@ -53,7 +53,10 @@ create_chart_data();
         {
             cp: -90,
             depth: 31,
+            engine: 'Komodo 2566.00',
             eval: 0.9,
+            hashfull: 66,
+            id: 1,
             nodes: 798000183,
             nps: 113047203,
             pv: 'b7b5 a2a3 c8b7',
@@ -68,7 +71,10 @@ create_chart_data();
         {
             cp: 859,
             depth: 32,
+            engine: 'Stockfish 20200701',
             eval: 8.59,
+            hashfull: 241,
+            id: 0,
             nodes: 1268292755,
             nps: 187561779,
             pv: 'b1g1 c8f5',
@@ -85,7 +91,10 @@ create_chart_data();
         {
             cp: 142,
             depth: 31,
+            engine: 'Stockfish 20200701',
             eval: 1.42,
+            hashfull: 237,
+            id: 0,
             nodes: 1052562509,
             nps: 151186801,
             pv: 'c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
@@ -102,7 +111,9 @@ create_chart_data();
         {
             cp: -38,
             depth: 10,
+            engine: 'LCZeroCPU v0.26.0-n703596',
             eval: 0.38,
+            id: 1,
             nodes: 312494,
             nps: 25028,
             pv: 'f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
@@ -112,6 +123,25 @@ create_chart_data();
             wdl: '497 263 240',
         },
     ],
+    [
+        ['Fritz 17_20200130', 'iCE 4.0.853'],
+        '32813087 iCE 4.0.853(17): info depth 29 seldepth 0 score cp 0 nodes 156671098 nps 17407901696 time 9 multipv 1 pv g8e7 c6a4 e7f5 b1c3 a8b8 hashfull 349 tbhits 0',
+        1,
+        {
+            cp: 0,
+            depth: 29,
+            engine: 'iCE 4.0.853',
+            eval: -0,
+            hashfull: 349,
+            id: 1,
+            nodes: 156671098,
+            nps: 17407901696,
+            pv: 'g8e7 c6a4 e7f5 b1c3 a8b8',
+            seldepth: 0,
+            tbhits: 0,
+            time: 9,
+        },
+    ],
 ].forEach(([names, line, player_id, answer], id) => {
     test(`analyse_log:${id}`, () => {
         let players = xboards.live.players;
@@ -119,7 +149,9 @@ create_chart_data();
             players[id].name = name;
         });
         analyse_log(line);
-        expect(players[player_id].info).toEqual(answer);
+        let info = players[player_id].info;
+        expect(info.id).toEqual(player_id);
+        expect(info).toEqual(answer);
     });
 });
 
@@ -493,6 +525,7 @@ create_chart_data();
         1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 {This opening is called the Ruy Lopez.}
         4. Ba4 Nf6 5. O-O 1/2-1/2
         `,
+        7,
         {
             Headers: {
                 Black: 'Spassky, Boris V.',
@@ -547,6 +580,7 @@ create_chart_data();
         10. Ne1 {d=21, sd=62, mt=178275, tl=5049095, s=19793, n=3528600, pv=Ne1 Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 b6 axb6 axb6 Ra3 Ra5 Qb3 Nh7 Nb5 Bxb5 cxb5 Qd7 Bxb4 cxb4 Qxb4 Qxb5 Qxb5 Rxb5 Nd3 Ra5 Rb3 Rb8 Nb4 Rba8 Nc6 R5a6 f3 h5 h4 Bh6 Bh3 Kg7 Kf2 Nf6 Ke2 Kf8 Kd3 Kg7 Ke2, tb=0, h=9.8, ph=0.0, wv=0.78, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         Bd7 {d=16, sd=62, pd=Qe2, mt=137082, tl=5176035, s=45633, n=6277978, pv=Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 Kh7 Nb5 Ne8 Qb3 a6 Nc3 b6 axb6 Qxb6 Qd1 Qd8 Ra3 Qe7 Qe2 f5 exf5 gxf5 g4 fxg4 Be4+ Kg8 Bb1 Nf6 Ng2 e4, tb=0, h=0.0, ph=0.0, wv=0.40, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         `,
+        7,
         {
             BlackEngineOptions: {
                 Backend: 'demux',
@@ -815,6 +849,7 @@ create_chart_data();
         10. c3 {d=42, sd=57, pd=c5, mt=16209, tl=5131837, s=289034, n=4684667, pv=c3 Nh4 Nxh4 Qxh4 Bb5 a6 Bxd7+ Kxd7 dxc5 Bxc5 Be3 Qg4 Qd2 Be7 Ng3 Rhd8 Bb6 Rh8 a4 Rc6 a5 Rhc8 f3 Qg5 Be3 Qg6 Ra4 h6 Rf4 Bd3 Ne4 Bc4 b4 Ke8 Rg4 Qh7 Nc5 Bb5 Qd1, tb=0, h=92.4, ph=100.0, wv=0.57, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         *
         `,
+        7,
         {
             BlackEngineOptions: {
                 Hash: '65536',
@@ -1051,6 +1086,7 @@ create_chart_data();
         3. e5 {d=21, sd=36, pd=d5, mt=11367, tl=287132, s=50349, n=478414, pv=e5 Bf5 c3 e6 Nd2 f6 f4 g5 Ndf3 gxf4 Bb5 fxe5 Nxe5 Qh4+ Kf1 Ne7 Ngf3 Qh5 Bxf4 Bg7 Kg1 O-O Nd7 Rf7 Ng5 Bg4 Qd2 Rxf4 Qxf4 e5, tb=0, h=7.6, ph=100.0, wv=0.62, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         Bf5 {d=23, sd=36, pd=e5, mt=3567, tl=282506, s=3912544, n=13959958, pv=Bf5 Bb5 e6 Ne2 Qd7 c3 a6 Ba4 f6 O-O O-O-O f4 Nge7 Be3 Kb8 Nd2 Bg4 h3 Nf5 Bf2 Bxe2 Qxe2 Ncxd4 cxd4 Qxa4, tb=0, h=6.9, ph=100.0, wv=0.11, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         `,
+        7,
         {
             BlackEngineOptions: {
                 Hash: '2048',
@@ -1206,6 +1242,7 @@ create_chart_data();
         1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Bd7 6. a3 c4 7. Be2 Nge7 8. Nbd2 Na5
         1/2-1/2
         `,
+        7,
         {
             Headers: {
                 Black: "Komodo 2246.00",
@@ -1256,6 +1293,7 @@ create_chart_data();
         21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
         *
         `,
+        7,
         {
             Headers: {
                 White: 'LCZero v0.26.0-sv-t60-4229-mlh',
@@ -1323,9 +1361,63 @@ create_chart_data();
             ],
         },
     ],
-].forEach(([data, answer], id) => {
+    [
+        `
+        [Event "TCEC Season 16 - FRC Sufi"]
+        [Site "https://tcec-chess.com"]
+        [Date "2019.11.07"]
+        [Round "3.1"]
+        [White "AllieStein v0.5_c328142-n11.1"]
+        [Black "Stockfish 191107"]
+        [Result "0-1"]
+        [BlackElo "3917"]
+        [BlackTimeControl "1800+5"]
+        [FEN "rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1"]
+        [GameDuration "00:55:26"]
+        [GameEndTime "2019-11-07T20:22:46.486 CST"]
+        [GameStartTime "2019-11-07T19:27:20.106 CST"]
+        [PlyCount "105"]
+        [SetUp "1"]
+        [Termination "adjudication"]
+        [TerminationDetails "TCEC win rule"]
+        [Variant "fischerandom"]
+        [WhiteElo "3853"]
+        [WhiteTimeControl "1800+5.232"]
+
+        {WhiteEngineOptions: Protocol=uci; GPUCores=2; Hash=7168; MoveOverhead=2000; TreeSize=7168; MaxBatchSize=160; UseFP16=true; SyzygyPath=C:/Tb; CommandLineOptions=;, BlackEngineOptions: Protocol=uci; Hash=16384; Threads=256; SyzygyPath=/home/syzygy/; Move Overhead=1000; OwnBook=false; Ponder=false;}
+        1. e4 {d=11, sd=29, mt=43274, tl=1761958, s=263995, n=11230595, pv=e4 a5 a4 e6 Nb3 d5 g3 Nge7 f4 Nb6 d4 Bxa4 Nxa5 g6 e5 Qe8 Bf3 Bb5 Be2 Nc4, tb=0, h=27.2, ph=0.0, wv=0.54, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        d6 {d=34, sd=55, mt=138857, tl=1666143, s=87176274, n=12102420613, pv=d6 g3 f5 Nb3 fxe4 Bxe4 Nb6 d4 Nf6 Bg2 g5 a4 a6 a5 Bb5 Ne2 Nc4 Nbc1 d5 Bb4 g4 Nd3 Ne4 Qe1 Qf7 Nc3 Nxc3+ Bxc3 e6 Qe2 Qg8 Qe1, tb=1, h=100.0, ph=0.0, wv=0.00, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        2. a4 {d=12, sd=35, pd=a5, mt=43360, tl=1723830, s=249188, n=10538392, pv=a4 f5 g3 g5 d4 fxe4 Bxe4 Nf6 Bg2 a6 Nge2 Qg8 a5 e6 f4 h6 Ra3 Ne7 Nd3 Bb5 Nc3 Bc6 Bf2, tb=0, h=53.6, ph=0.0, wv=0.72, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
+        `,
+        1,
+        {
+            Headers: {
+                Black: 'Stockfish 191107',
+                BlackElo: '3917',
+                BlackTimeControl: '1800+5',
+                Date: '2019.11.07',
+                Event: 'TCEC Season 16 - FRC Sufi',
+                FEN: 'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+                GameDuration: '00:55:26',
+                GameEndTime: '2019-11-07T20:22:46.486 CST',
+                GameStartTime: '2019-11-07T19:27:20.106 CST',
+                PlyCount: '105',
+                Result: '0-1',
+                Round: '3.1',
+                SetUp: '1',
+                Site: 'https://tcec-chess.com',
+                Termination: 'adjudication',
+                TerminationDetails: 'TCEC win rule',
+                Variant: 'fischerandom',
+                White: 'AllieStein v0.5_c328142-n11.1',
+                WhiteElo: '3853',
+                WhiteTimeControl: '1800+5.232',
+            },
+        },
+    ],
+].forEach(([data, mode, answer], id) => {
     test(`parse_pgn:${id}`, () => {
-        expect(parse_pgn(data)).toEqual(answer);
+        expect(parse_pgn('archive', data, mode)).toEqual(answer);
     });
 });
 

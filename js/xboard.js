@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-07-19
 //
 // game board:
 // - 4 rendering modes:
@@ -882,15 +882,12 @@ class XBoard {
                 for (let next = curr + 1; next <= ply; next ++) {
                     let move_next = moves[next],
                         result = this.chess_move(move_next.m);
-                    if (!result) {
+                    if (!result.piece) {
                         if (DEV.ply)
                             LS(`${this.id}: invalid move at ply ${next}: ${move_next.m}`);
                         return false;
                     }
                     Assign(move_next, result);
-                    if (result.san)
-                        move_next.m = result.san;
-
                     move_next.fen = this.chess_fen();
                     move_next.ply = next;
                     // LS(`next=${next} : ${get_move_ply(move_next)}`);
@@ -913,9 +910,10 @@ class XBoard {
     /**
      * Temporary chess.js
      * @param {string} fen
+     * @returns {string}
      */
     chess_load(fen) {
-        this.chess.load(fen);
+        return this.chess.load(fen);
     }
 
     /**
@@ -928,7 +926,8 @@ class XBoard {
         if (move.mobil != undefined)
             return move.mobil;
 
-        let fen = move.fen,
+        let chess = this.chess,
+            fen = move.fen,
             ply = get_move_ply(move);
 
         if (ply == -2) {
@@ -940,11 +939,11 @@ class XBoard {
         if (!fen)
             return -20.5;
         if (!no_load)
-            this.chess.load(fen);
+            chess.load(fen);
 
         // calculate
-        let checked = this.chess.checked(),
-            moves = this.chess.moves(Undefined(move.frc, this.frc), true, -1),
+        let checked = chess.checked(chess.turn()),
+            moves = this.chess_moves(Undefined(move.frc, this.frc), true, -1),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -969,16 +968,23 @@ class XBoard {
      * @returns {Object}
      */
     chess_move(text, options={}) {
-        // handle UCI: e1g1 = O-O, e7e8q = promotion
-        if (text.length >= 4 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2])) {
-            text = {
-                from: text.slice(0, 2),
-                promotion: text[4],
-                to: text.slice(2, 4),
-            };
-        }
+        let result,
+            chess = this.chess,
+            decorate = Undefined(options.decorate, false),
+            frc = Undefined(options.frc, this.frc);
 
-        return this.chess.move(text, Undefined(options.frc, this.frc));
+        // handle UCI: e1g1 = O-O, e7e8q = promotion
+        if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
+            result = chess.moveUci(text, frc, true);
+        else
+            result = IsString(text)? chess.moveSan(text, frc, decorate, false): chess.moveObject(text, frc, true);
+
+        if (result.piece) {
+            result.san = result.m;
+            if (!decorate)
+                result.m = text;
+        }
+        return result;
     }
 
     /**
@@ -986,8 +992,11 @@ class XBoard {
      * @param {Object=} options
      * @returns {Object[]}
      */
-    chess_moves(options={legal: true}) {
-        return this.chess.moves(options);
+    chess_moves(frc, legal, single_square) {
+        let moves = this.chess.moves(frc, legal, single_square);
+        if (moves.size)
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        return moves;
     }
 
     /**
@@ -1240,7 +1249,7 @@ class XBoard {
                     return;
 
                 this.chess_load(this.fen);
-                let moves = this.chess.moves({frc: this.frc, legal: true, single_square: this.picked});
+                let moves = this.chess_moves(this.frc, true, this.picked);
                 for (let move of moves)
                     this.add_high(move.to, 'target');
                 if (moves[0])
@@ -1514,8 +1523,10 @@ class XBoard {
             return false;
 
         // 2) try to move, it might be invalid
-        let move = this.chess_move({from: SQUARES_INV[this.picked], to: SQUARES_INV[found], promotion: 5});
-        if (!move)
+        // TODO: handle promotions
+        let promote = 'q';
+        let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`, {decorate: true});
+        if (!move.piece)
             return false;
 
         // 3) update
@@ -1542,7 +1553,7 @@ class XBoard {
         // add moves
         this.add_moves([{
             fen: fen,
-            m: move.san,
+            m: move.m,
             ply: ply,
         }]);
         return true;
@@ -2025,7 +2036,7 @@ class XBoard {
         this.chess_load(this.fen);
         this.fen2 = this.fen;
 
-        let moves = this.chess.moves({legal: true}),
+        let moves = this.chess_moves(this.frc, true, -1),
             froms = new Set(moves.map(move => move.from));
 
         this.clear_high('source target');

@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-17
+// @version 2020-07-18
 //
 // global variables/functions shared across multiple js files
 //
@@ -8,7 +8,7 @@
 /*
 globals
 Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, IsArray, Keys, LS, Max, Min, Pad, Pow, require, Round,
-save_option, Split, Undefined, X_SETTINGS, Y
+save_option, Split, Undefined, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -38,7 +38,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200717';
+    VERSION = '20200719';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -227,6 +227,7 @@ function parse_dev() {
             S: 'no_socket',
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
+            w: 'wasm',
             y: 'ply',
         },
         text = Y.dev || '';
@@ -245,6 +246,7 @@ function parse_dev() {
 
     if (DEV.debug)
         LS(DEV);
+    window.DEV = DEV;
 }
 
 /**
@@ -361,5 +363,6 @@ function stoof_cp_to_score(cp) {
 if (typeof exports != 'undefined')
     Assign(exports, {
         fix_move_format: fix_move_format,
+        get_move_ply: get_move_ply,
     });
 // >>
