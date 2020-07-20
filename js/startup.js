@@ -252,9 +252,14 @@ function change_setting_special(name, value, no_close) {
         pva.frc = value;
         pva.delayed_picks();
         break;
-    case 'game_players':
-        if (value == 'AI vs AI')
-            pva.think();
+    case 'game_advice':
+        pva.think(true);
+        break;
+    case 'game_new_game':
+        pva.new_game();
+        break;
+    case 'game_play_as':
+        pva.new_game();
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -305,9 +310,6 @@ function change_setting_special(name, value, no_close) {
     case 'moves_copy':
         populate_areas();
         break;
-    case 'new_game':
-        pva.new_game();
-        break;
     case 'preset':
         load_preset(value);
         break;
@@ -317,9 +319,6 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'theme':
         change_theme(value);
-        break;
-    case 'think':
-        pva.think();
         break;
     case 'unhide':
         Keys(context_areas).forEach(key => {
@@ -1948,13 +1947,13 @@ function prepare_settings() {
             _prefix: 'game_',
             board_pva: '',
             game_960: [ON_OFF, 1],
+            game_advice: '1',
             game_depth_black: option_number(4, 0, 4),
             game_depth_white: option_number(4, 0, 4),
             game_every: option_number(600, 100, 5000, 100),
+            game_new_game: '1',
             game_nodes: option_number(2e7, 0, 1e8),
-            game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
-            new_game: '1',
-            think: '1',
+            game_play_as: [['White', 'Black', 'AI'], 'AI'],
         },
         graph: {
             _prefix: 'graph_',
