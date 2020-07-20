@@ -240,6 +240,7 @@ live.dual = archive;
 // search
 // 6r1/p7/n1k4p/1p3N2/4K1p1/P7/1P6/8 b - - 2 35
 // 8/2k5/8/3q4/n5q1/2q1q3/8/1K6 b - - 34 190
+// k7/2R5/4p3/PQ1p1p2/3P4/2N4q/8/3KN3 w - - 42 73
 
 // set_fen
 [
