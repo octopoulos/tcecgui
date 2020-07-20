@@ -305,7 +305,7 @@ function change_setting_special(name, value, no_close) {
         populate_areas();
         break;
     case 'new_game':
-        xboards.pva.new_game();
+        pva.new_game();
         break;
     case 'preset':
         load_preset(value);
@@ -316,6 +316,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'theme':
         change_theme(value);
+        break;
+    case 'think':
+        pva.think();
         break;
     case 'unhide':
         Keys(context_areas).forEach(key => {
@@ -1940,10 +1943,12 @@ function prepare_settings() {
         },
         game: {
             _prefix: 'game_',
-            game_960: [ON_OFF, 0],
-            game_depth: option_number(2, 0, 4),
+            game_960: [ON_OFF, 1],
+            game_depth: option_number(4, 0, 4),
+            game_nodes: option_number(2e7, 0, 1e8),
             game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
             new_game: '1',
+            think: '1',
         },
         graph: {
             _prefix: 'graph_',

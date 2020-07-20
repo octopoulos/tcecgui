@@ -1509,6 +1509,35 @@ class XBoard {
     }
 
     /**
+     * Add a new move
+     * @param {Move} move
+     */
+    new_move(move) {
+        // fen/ply
+        let fen = this.chess_fen();
+        move.fen = fen;
+        let ply = get_move_ply(move);
+
+        this.set_fen(fen, true);
+        this.clear_high('source target');
+        this.picked = null;
+
+        // delete some moves?
+        if (ply < this.moves.length) {
+            this.moves = this.moves.slice(0, ply);
+            let node = _(`[data-i="${ply}"]`, this.xmoves);
+            while (node) {
+                let next = node.nextElementSibling;
+                node.remove();
+                node = next;
+            }
+        }
+
+        this.add_moves([move]);
+        this.maybe_play();
+    }
+
+    /**
      * Output HTML or text to an element or the console
      * @param {string} text
      */
@@ -1572,28 +1601,7 @@ class XBoard {
             return false;
 
         // 3) update
-        // fen/ply
-        let fen = this.chess_fen();
-        move.fen = fen;
-        let ply = get_move_ply(move);
-
-        this.set_fen(fen, true);
-        this.clear_high('source target');
-        this.picked = null;
-
-        // delete some moves?
-        if (ply < this.moves.length) {
-            this.moves = this.moves.slice(0, ply);
-            let node = _(`[data-i="${ply}"]`, this.xmoves);
-            while (node) {
-                let next = node.nextElementSibling;
-                node.remove();
-                node = next;
-            }
-        }
-
-        this.add_moves([move]);
-        this.maybe_play();
+        this.new_move(move);
         return true;
     }
 
@@ -1896,25 +1904,26 @@ class XBoard {
             best_depth = depth,
             chess = this.chess,
             length = moves.length;
+
         this.count += length;
+        let again = (this.count < Y.game_nodes);
 
         for (let move of moves) {
             move.depth = depth;
             move.score = PIECE_SCORES[move.capture || 0] + length * 0.01;
             if (move.score >= 128) {
+                LS('HMMMMM');
                 best = move.score;
                 move.depth = depth;
                 break;
             }
 
-            if (depth < max_depth && (depth < 4 || move.score > 1)) {
+            if (depth < max_depth && again && (depth <= 4 || move.score > 1)) {
                 chess.moveObject(move, this.frc, false);
-
-                let moves2 = chess.moves(this.frc, false, -1),
+                let moves2 = chess.moves(this.frc, true, -1),
                     [score, depth2] = this.search(moves2, depth + 1, max_depth);
                 move.score -= score;
                 move.depth = depth2;
-
                 chess.undo();
             }
 
@@ -2157,13 +2166,10 @@ class XBoard {
 
         moves.sort((a, b) => b.score - a.score);
         let move = this.chess_move(moves[0], {decorate: true});
-        move.fen = chess.fen();
+        LS(`${move.m.padStart(5)} : ${elapsed.toFixed(1)}s : ${FormatUnit(this.count).padStart(6)} : ${nps.padStart(9)} : ${best.toFixed(3).padStart(6)} : ${moves[0].depth}/${depth}`);
 
-        LS(`${move.m} : ${FormatUnit(this.count)} / ${elapsed.toFixed(1)}s = ${nps} : best=${best.toFixed(3)} : ${moves[0].depth}/${depth}`);
-
-        // add moves
-        this.add_moves([move]);
-        this.maybe_play();
+        // update
+        this.new_move(move);
     }
 
     /**

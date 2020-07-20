@@ -237,6 +237,9 @@ live.dual = archive;
     });
 });
 
+// search
+// 6r1/p7/n1k4p/1p3N2/4K1p1/P7/1P6/8 b - - 2 35
+
 // set_fen
 [
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1', null],

@@ -93,17 +93,17 @@ beforeEach(() => {
 
 // checked
 [
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', undefined, false],
-    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', undefined, true],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', undefined, false],
-    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/1Kq5/8 w - - 1 43', undefined, true],
-    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/2q5/K7 b - - 2 43', undefined, false],
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', 2, false],
+    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', 2, true],
+    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 2, false],
+    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/1Kq5/8 w - - 1 43', 2, true],
+    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/2q5/K7 b - - 2 43', 2, false],
     ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', 0, false],
     ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', 1, true],
 ].forEach(([fen, color, answer], id) => {
     test(`checked:${id}`, () => {
         chess.load(fen);
-        expect(chess.checked(Undefined(color, chess.turn()))).toEqual(answer);
+        expect(chess.checked(color)).toEqual(answer);
     });
 });
 
