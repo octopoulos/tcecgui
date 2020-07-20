@@ -1588,7 +1588,7 @@ function set_global_events() {
                 else if (HasClass(target, 'xbottom'))
                     return;
                 else if (HasClass(target, 'xcontain'))
-                    name = is_pva? 'board_pva': (is_pv? 'board_pv': 'board');
+                    name = is_pva? 'game': (is_pv? 'board_pv': 'board');
                 else if (HasClass(target, 'xcontrol'))
                     name = 'control';
                 else if (HasClass(target, 'xmoves'))
@@ -1904,7 +1904,6 @@ function prepare_settings() {
             controls_pva: [ON_OFF, 1],
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
-            game: '',
             notation_pva: [ON_OFF, 1],
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: [{type: 'color'}, '#ffb400'],
@@ -1943,9 +1942,10 @@ function prepare_settings() {
         },
         game: {
             _prefix: 'game_',
+            board_pva: '',
             game_960: [ON_OFF, 1],
-            game_depth_0: option_number(4, 0, 4),
-            game_depth_1: option_number(4, 0, 4),
+            game_depth_black: option_number(4, 0, 4),
+            game_depth_white: option_number(4, 0, 4),
             game_nodes: option_number(2e7, 0, 1e8),
             game_players: [['AI vs AI', 'Human vs AI', 'Human vs Human'], 'Human vs AI'],
             new_game: '1',

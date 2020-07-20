@@ -78,7 +78,8 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_click = 200,
     TIMEOUT_pick = 500,
-    TIMEOUT_think = 500;
+    TIMEOUT_think = 500,
+    WHITE_BLACK = ['white', 'black'];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1430,7 +1431,10 @@ class XBoard {
             ply = this.ply + 1;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
-        return this.set_ply(ply, {animate: true, manual: true});
+        let success = this.set_ply(ply, {animate: true, manual: true});
+        if (!success && this.manual && ply >= num_move)
+            success = this.think();
+        return success;
     }
 
     /**
@@ -1484,15 +1488,6 @@ class XBoard {
     }
 
     /**
-     * Check if computer should play this move
-     */
-    maybe_play() {
-        // TODO: put this in another thread
-        if (!this.human_turn())
-            add_timeout('think', () => {this.think();}, TIMEOUT_think);
-    }
-
-    /**
      * Start a new game
      */
     new_game() {
@@ -1536,7 +1531,6 @@ class XBoard {
         }
 
         this.add_moves([move]);
-        this.maybe_play();
     }
 
     /**
@@ -1905,7 +1899,7 @@ class XBoard {
         let best,
             best_depth = depth,
             chess = this.chess,
-            coeff = 10 / (10 + depth),
+            coeff = 5 / (5 + depth),
             length = moves.length;
 
         // checkmate?
@@ -1917,7 +1911,7 @@ class XBoard {
 
         for (let move of moves) {
             move.depth = depth;
-            move.score = (PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0] + length * 0.01) * coeff;
+            move.score = (PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0] + length * 0.005) * coeff;
 
             if (depth < max_depth && again && (depth <= 4 || move.score > 1)) {
                 chess.moveObject(move, this.frc, false);
@@ -2139,6 +2133,7 @@ class XBoard {
 
     /**
      * Think ...
+     * @returns {boolean} true if the AI was able to play
      */
     think() {
         let chess = this.chess,
@@ -2149,13 +2144,13 @@ class XBoard {
         if (!moves.length) {
             LS(`${'BW'[ply % 2]}: I resign.`);
             play_sound(audiobox, Y.sound_win, {interrupt: true});
-            return;
+            return false;
         }
 
         // most basic AI, just look 2 plies with minimax
         let best = 0,
             depth = 0,
-            max_depth = Y[`game_depth_${chess.turn()}`],
+            max_depth = Y[`game_depth_${WHITE_BLACK[chess.turn()]}`],
             start = Now(true);
         this.count = 0;
 
@@ -2173,6 +2168,7 @@ class XBoard {
 
         // update
         this.new_move(move);
+        return true;
     }
 
     /**
