@@ -2153,7 +2153,7 @@ class XBoard {
         // most basic AI, just look 2 plies with minimax
         let best = 0,
             depth = 0,
-            max_depth = Y.game_depth,
+            max_depth = Y[`game_depth_${chess.turn()}`],
             start = Now(true);
         this.count = 0;
 
