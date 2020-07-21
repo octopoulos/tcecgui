@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-07-21
 //
 // Game specific code:
 // - control the board, moves
@@ -18,9 +18,9 @@ CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, documen
 fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
 IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_library, load_model, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent, parse_time,
-play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource,
-restore_history, resume_sleep, Round,
+listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
+parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
+Resource, restore_history, resume_sleep, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -749,13 +749,14 @@ function reset_sub_boards(mode, start_fen) {
 
 /**
  * Show/hide the timers around the board
+ * @param {string} name
  * @param {boolean=} show undefined => show when center/engine is disabled
  */
-function show_board_info(show) {
-    let main = xboards[Y.x],
-        node = main.node,
-        players = main.players,
-        status = Y.status;
+function show_board_info(name, show) {
+    let board = xboards[name],
+        node = board.node,
+        players = board.players,
+        status = (name == 'pva')? Y.status_pva: Y.status;
 
     if (show == undefined) {
         // auto => if engine is not visible => show the status
@@ -779,8 +780,9 @@ function show_board_info(show) {
     }
 
     S('.xbottom, .xtop', show, node);
-    Class('.xbottom', '-xcolor0 xcolor1', main.rotate);
-    Class('.xtop', 'xcolor0 -xcolor1', main.rotate);
+    Class('.xbottom', '-xcolor0 xcolor1', board.rotate, node);
+    Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
+    Style('.xframe', `top:${show? 23: 0}px`, true, node);
 
     for (let id = 0; id < 2; id ++) {
         let player = players[id],
@@ -2582,7 +2584,7 @@ function check_adjudication(dico, total_moves) {
  * @param {number=} pos used by player_eval, last finished pos, if different then it's a new game
  */
 function check_missing_moves(ply, round, pos) {
-    if (!Y.reload_missing)
+    if (!Y.reload_missing || LOCALHOST)
         return;
     let section = Y.x;
     if (section != 'live')
@@ -2962,7 +2964,7 @@ function resize_game() {
         board.resize(size);
     });
 
-    show_board_info();
+    show_board_info(Y.x);
     resize_3d();
 }
 
@@ -3446,7 +3448,7 @@ function update_pgn(section, data, extras, reset_moves) {
         players[0].info = {};
         players[1].info = {};
 
-        if (reset_moves)
+        if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
     }
     // can happen after resume
@@ -4212,7 +4214,10 @@ function change_setting_game(name, value) {
         });
         break;
     case 'status':
-        show_board_info();
+        show_board_info(Y.x);
+        break;
+    case 'status_pva':
+        show_board_info('pva');
         break;
     }
 
@@ -4349,7 +4354,7 @@ function handle_board_events(board, type, value) {
             board.render(3);
         }
         else if (value == 'rotate') {
-            show_board_info();
+            show_board_info(board.name);
             redraw_arrows();
             order_boards();
         }
@@ -4509,7 +4514,7 @@ function opened_table(node, name, tab) {
     }
 
     check_paginations();
-    show_board_info();
+    show_board_info(section);
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
@@ -4602,7 +4607,7 @@ function popup_custom(id, name, e, scolor) {
  */
 function resume_sleep() {
     check_missing_moves();
-    show_board_info();
+    show_board_info(Y.x);
 }
 
 /**
@@ -4653,6 +4658,7 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
+    show_board_info('pva', true);
 
     if (Y.wasm)
         load_library('js/chess-wasm.js', () => {

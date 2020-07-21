@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-07-20
 //
 // all socket functions are here
 //
@@ -8,7 +8,7 @@
 /*
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode, DEV, From,
-HasClass, Hide, HOST, HTML, Id, InsertNodes, io, location, LS, S, save_option, set_viewers, Show, TIMEOUTS,
+HasClass, Hide, HOST, HTML, Id, InsertNodes, io, LOCALHOST, location, LS, S, save_option, set_viewers, Show, TIMEOUTS,
 update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
@@ -209,7 +209,7 @@ function update_twitch(dark, chat_url, only_resize) {
     if (!node)
         return;
 
-    if (location.port == 8080) {
+    if (LOCALHOST) {
         Y.twitch_chat = 0;
         Y.twitch_video = 0;
     }

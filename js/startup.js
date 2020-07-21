@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-07-21
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -19,9 +19,10 @@ detect_device, DEV, device, document, download_live, download_tables, E, Events,
 full_scroll, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses,
 hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys,
 KEYS,
-LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, location, LS, Max, merge_settings, Min,
-NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max,
+merge_settings, Min, navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent,
+parse_dev, PD, PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket,
+resize_game, resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
 show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -242,8 +243,7 @@ function change_setting_special(name, value, no_close) {
     case 'percent':
     case 'single_line':
     case 'status_pv':
-    case 'status_pva':
-            resize_panels();
+        resize_panels();
         break;
     case 'export_settings':
         export_settings('tcec-settings');
@@ -625,7 +625,7 @@ function init_globals() {
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
     // google ads
-    if (!Y.no_ad && !DEV.ad && location.port != 8080) {
+    if (!Y.no_ad && !DEV.ad && !LOCALHOST) {
         add_timeout('adblock', () => {
             if (_('.google-ad').clientHeight <= 0) {
                 HTML('.adblock', HTML(Id('adblock')));
@@ -1804,6 +1804,7 @@ function prepare_settings() {
 
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
+        cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
         shortcuts = [...['off'], ...Keys(TABLES)];
 
@@ -1905,7 +1906,7 @@ function prepare_settings() {
             custom_black_pva: [{type: 'color'}, '#000000'],
             custom_white_pva: [{type: 'color'}, '#ffffff'],
             highlight_color_pva: [{type: 'color'}, '#ffff00'],
-            highlight_size_pva: option_number(0.088, 0, 0.4, 0.001),
+            highlight_size_pva: option_number(0.055, 0, 0.4, 0.001),
             notation_pva: [ON_OFF, 1],
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: [{type: 'color'}, '#ffb400'],
@@ -1948,12 +1949,14 @@ function prepare_settings() {
             board_pva: '',
             game_960: [ON_OFF, 1],
             game_advice: '1',
-            game_depth_black: option_number(4, 0, 4),
-            game_depth_white: option_number(4, 0, 4),
+            game_depth_black: option_number(4, 0, 5),
+            game_depth_white: option_number(4, 0, 5),
+            game_engine: [['Basic', 'RandomMove'], 'Basic'],
             game_every: option_number(600, 100, 5000, 100),
             game_new_game: '1',
             game_nodes: option_number(2e7, 0, 1e8),
             game_play_as: [['White', 'Black', 'AI'], 'AI'],
+            game_threads: option_number(Max(1, cores - 1), 0, cores),
         },
         graph: {
             _prefix: 'graph_',

@@ -30,6 +30,12 @@ html {
 .xframe {
     background: rgba(255, 255, 255, 0.08);
 }
+#pva .xcolor0 {
+    background: #e0e0e0;
+}
+#pva .xcolor1 {
+    background: #1c1c1c;
+}
 #archive .xmoves,
 #live .xmoves,
 #pva .xmoves,
