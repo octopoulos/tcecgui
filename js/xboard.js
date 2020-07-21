@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-07-21
 //
 // game board:
 // - 4 rendering modes:
@@ -26,8 +26,8 @@ globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox,
 C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV, Events, Floor, FormatUnit, From,
 get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame,
-S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, Y
+Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame, Round,
+S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, Worker, Y
 */
 'use strict';
 
@@ -159,7 +159,6 @@ class XBoard {
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
-        this.count = 0;
         this.delayed_ply = -2;
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
@@ -183,7 +182,7 @@ class XBoard {
         this.moves = [];                                // move list
         this.next = null;
         this.node = _(this.id);
-        this.nodes = {};
+
         this.overlay = null;                            // svg objects will be added there
         this.pgn = {};
         this.picked = null;                             // picked piece
@@ -194,8 +193,10 @@ class XBoard {
         this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
+        this.replies = {};                              // worker replies
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
         this.svgs = [
             {id: 0},
@@ -205,6 +206,7 @@ class XBoard {
         ];                                              // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
         this.valid = true;
+        this.workers = [];                              // web workers
         this.xmoves = null;
         this.xpieces = null;
         this.xsquares = null;
@@ -641,8 +643,8 @@ class XBoard {
             return;
 
         let color = this.high_color,
-            node_from = this.nodes[SQUARES_INV[move.from] || move.from],
-            node_to = this.nodes[SQUARES_INV[move.to] || move.to],
+            node_from = this.squares[SQUARES_INV[move.from] || move.from],
+            node_to = this.squares[SQUARES_INV[move.to] || move.to],
             size = this.high_size,
             high_style = `box-shadow: inset 0 0 ${size}em ${size}em ${color}`;
 
@@ -1138,6 +1140,41 @@ class XBoard {
     }
 
     /**
+     * Create web workers
+     */
+    create_workers() {
+        if (!this.manual)
+            return;
+
+        let number = Y.game_threads;
+        if (number == this.workers.length)
+            return;
+        if (DEV.engine)
+            LS(`threads: ${this.workers.length} => ${number}`);
+
+        for (let worker of this.workers)
+            worker.terminate();
+
+        this.workers = [];
+
+        for (let id = 0; id < number; id ++) {
+            let worker = new Worker('js/worker.js');
+            this.worker = worker;
+
+            worker.onerror = error => {
+                LS(`worker error:`);
+                LS(error);
+            };
+            worker.onmessage = e => {
+                this.worker_message(e);
+            };
+
+            worker.id = id;
+            this.workers.push(worker);
+        }
+    }
+
+    /**
      * Show picks after a delay, to make sure the animation is done
      * @param {boolean} is_delay
      */
@@ -1376,7 +1413,7 @@ class XBoard {
 
         HTML(this.node, [
             '<hori class="xtop xcolor1 dn">',
-                '<div class="xshort"></div>',
+                '<hori class="xshort fbetween"></hori>',
                 '<div class="xleft"></div>',
                 '<div class="xtime"></div>',
                 '<div class="xeval"></div>',
@@ -1388,7 +1425,7 @@ class XBoard {
                 '<div class="xoverlay"></div>',
                 '<div class="xpieces"></div>',
                 '<hori class="xbottom xcolor0 dn">',
-                    '<div class="xshort"></div>',
+                    '<hori class="xshort fbetween"></hori>',
                     '<div class="xleft"></div>',
                     '<div class="xtime"></div>',
                     '<div class="xeval"></div>',
@@ -1414,6 +1451,8 @@ class XBoard {
 
         if (this.hook)
             this.event_hook(this.hook);
+
+        this.create_workers();
     }
 
     /**
@@ -1517,6 +1556,7 @@ class XBoard {
             fen = START_FEN;
 
         this.reset(true, fen);
+        this.replies = {};
 
         if (play_as != 'AI')
             this.rotate = (play_as == 'Black');
@@ -1741,7 +1781,7 @@ class XBoard {
             this.output(lines.join(''));
 
             // remember all the nodes for quick access
-            this.nodes = Assign({}, ...From(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
+            this.squares = Assign({}, ...From(A('.xsquare', this.node)).map(node => ({[node.dataset.q]: node})));
             this.move2 = null;
         }
 
@@ -1916,51 +1956,6 @@ class XBoard {
     }
 
     /**
-     * Basic tree search
-     * @param {Move[]} moves
-     * @param {number} depth
-     * @param {number} depth2
-     * @returns {[number, number]}
-     */
-    search(moves, depth, max_depth) {
-        let best,
-            best_depth = depth,
-            chess = this.chess,
-            coeff = 8 / (8 + depth),
-            length = moves.length;
-
-        // checkmate?
-        if (!length && chess.checked(2))
-            return [-256 * coeff, depth];
-
-        this.count += length;
-        let again = (this.count < Y.game_nodes);
-
-        for (let move of moves) {
-            move.depth = depth;
-            move.score = (PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0] + length * 0.005) * coeff;
-
-            if (depth < max_depth && again && (depth <= 4 || move.score > 1)) {
-                chess.moveObject(move, this.frc, false);
-                let moves2 = chess.moves(this.frc, true, -1),
-                    [score, depth2] = this.search(moves2, depth + 1, max_depth);
-                move.score -= score;
-                move.depth = depth2;
-                chess.undo();
-            }
-
-            if (best == undefined || best < move.score) {
-                best = move.score;
-                best_depth = move.depth;
-                if (best > 128)
-                    break;
-            }
-        }
-
-        return [best, best_depth];
-    }
-
-    /**
      * Set a delayed ply
      * @param {number} ply
      */
@@ -2107,7 +2102,7 @@ class XBoard {
         if (can_source && can_moves) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
-                text = move.m,
+                text = Undefined(move.m, '???'),
                 last = text.slice(-1),
                 sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
 
@@ -2166,38 +2161,78 @@ class XBoard {
      * @returns {boolean} true if the AI was able to play
      */
     think(suggest) {
-        let chess = this.chess;
-        chess.load(this.fen);
+        let chess = this.chess,
+            fen = this.fen;
 
-        let moves = chess.moves(this.frc, true, -1);
-        if (!moves.length)
+        // busy thinking => return
+        let reply = SetDefault(this.replies, fen, {});
+        if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
+            return true;
+
+        this.create_workers();
+
+        chess.load(fen);
+        let moves = chess.moves(this.frc, true, -1),
+            num_move = moves.length;
+        if (!num_move)
             return false;
 
-        // most basic AI, just look 2 plies with minimax
-        let best = 0,
-            depth = 0,
-            max_depth = Y[`game_depth_${WHITE_BLACK[chess.turn()]}`],
-            start = Now(true);
-        this.count = 0;
+        let max_depth = Y[`game_depth_${WHITE_BLACK[(1 + this.ply) % 2]}`],
+            num_worker = this.workers.length;
 
-        if (max_depth > 0)
-            [best, depth] = this.search(moves, 1, max_depth);
-        for (let move of moves)
-            move.score = Undefined(move.score, 0) + Random() * 0.1;
+        Assign(reply, {
+            lefts: I8(num_worker),
+            moves: [],
+            moves2: moves,
+            nodes: 0,
+            start: Now(true),
+        });
 
-        let elapsed = Now(true) - start,
-            nps = (elapsed> 0.001)? `${FormatUnit(this.count / elapsed)}nps`: '-';
-
-        moves.sort((a, b) => b.score - a.score);
-
-        // update
-        if (suggest)
-            this.arrow(3, moves[0]);
-        else {
-            let move = this.chess_move(moves[0], {decorate: true});
-            LS(`${move.m.padStart(5)} : ${elapsed.toFixed(1).padStart(6)}s : ${FormatUnit(this.count).padStart(6)} : ${nps.padStart(9)} : ${best.toFixed(3).padStart(6)} : ${moves[0].depth}/${depth}`);
-            this.new_move(move);
+        // pure random?
+        if (max_depth < 1 || num_worker < 1 || num_move < 2) {
+            let move = moves[RandomInt(num_move)];
+            move.depth = 0;
+            move.score = 0;
+            this.worker_message({
+                data: {
+                    count: 0,
+                    depth: 0,
+                    fen: fen,
+                    id: -1,
+                    move: move,
+                    score: 0,
+                    suggest: suggest,
+                },
+            });
+            return true;
         }
+
+        // split moves across workers
+        let splits = [];
+        for (let id = 0; id < num_worker; id ++)
+            splits.push([]);
+
+        moves.forEach((move, i) => {
+            splits[i % num_worker].push(move);
+        });
+
+        splits.forEach((split, id) => {
+            if (!split.length)
+                return;
+            reply.lefts[id] = id + 1;
+            if (DEV.engine)
+                LS(`${id}/${num_worker} : [${split.length}] / ${num_move}`);
+
+            this.workers[id].postMessage({
+                func: 'think',
+                fen: fen,
+                id: id,
+                max_depth: max_depth,
+                max_nodes: Y.game_nodes,
+                moves: split,
+                suggest: suggest,
+            });
+        });
         return true;
     }
 
@@ -2230,6 +2265,70 @@ class XBoard {
 
             // keep the cursor in the center
             parent.scrollTop = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
+        }
+    }
+
+    /**
+     * Receive a worker message
+     * @param {Event} e
+     */
+    worker_message(e) {
+        let data = e.data,
+            count = data.count,
+            depth = data.depth,
+            fen = data.fen,
+            id = data.id,
+            move = data.move,
+            score = data.score,
+            suggest = data.suggest;
+
+        let reply = this.replies[this.fen];
+        if (!reply) {
+            LS(`error, no reply for ${this.fen}`);
+            return;
+        }
+        let moves = reply.moves;
+        reply.lefts[id] = 0;
+        if (move.piece)
+            moves.push(move);
+        reply.nodes += count;
+
+        if (DEV.engine)
+            LS(`>> ${id} : ${fen == this.fen? 'OK': 'XX'} : ${reply.lefts} : ${fen} : ${moves.length} : ${move.from}:${move.to}`);
+        if (fen != this.fen)
+            return;
+
+        if (!reply.lefts.every(item => !item))
+            return;
+
+        let elapsed = Now(true) - reply.start,
+            nps = (elapsed> 0.001)? `${FormatUnit(reply.nodes / elapsed)}nps`: '-';
+
+        // get the best move
+        for (let move of moves)
+            move.score += Random() * 0.1;
+        moves.sort((a, b) => b.score - a.score);
+
+        let best = moves[0];
+        if (DEV.engine) {
+            LS('GOT ALL DATA!');
+            LS(moves);
+        }
+
+        // update
+        if (suggest)
+            this.arrow(3, best);
+        else {
+            let color = (1 + this.ply) % 2,
+                mini = _(`.xcolor${color}`, this.node),
+                result = this.chess_move(best, {decorate: true});
+
+            HTML('.xeval', score.toFixed(2), mini);
+            HTML(`.xleft`, elapsed.toFixed(1), mini);
+            HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
+            HTML(`.xtime`, `${best.depth}/${depth}`, mini);
+
+            this.new_move(result);
         }
     }
 }
