@@ -2177,7 +2177,7 @@ class XBoard {
         if (!num_move)
             return false;
 
-        let max_depth = Y[`game_depth_${WHITE_BLACK[(1 + this.ply) % 2]}`],
+        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WHITE_BLACK[(1 + this.ply) % 2]}`],
             num_worker = this.workers.length;
 
         Assign(reply, {
@@ -2220,8 +2220,6 @@ class XBoard {
             if (!split.length)
                 return;
             reply.lefts[id] = id + 1;
-            if (DEV.engine)
-                LS(`${id}/${num_worker} : [${split.length}] / ${num_move}`);
 
             this.workers[id].postMessage({
                 func: 'think',
@@ -2293,8 +2291,11 @@ class XBoard {
             moves.push(move);
         reply.nodes += count;
 
-        if (DEV.engine)
-            LS(`>> ${id} : ${fen == this.fen? 'OK': 'XX'} : ${reply.lefts} : ${fen} : ${moves.length} : ${move.from}:${move.to}`);
+        if (DEV.engine) {
+            if (moves.length == 1)
+                LS(this.fen);
+            LS(`  ${id}${fen == this.fen? '': 'X'} : ${reply.lefts}/${moves.length} : ${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`);
+        }
         if (fen != this.fen)
             return;
 
@@ -2310,10 +2311,8 @@ class XBoard {
         moves.sort((a, b) => b.score - a.score);
 
         let best = moves[0];
-        if (DEV.engine) {
-            LS('GOT ALL DATA!');
+        if (DEV.engine)
             LS(moves);
-        }
 
         // update
         if (suggest)
