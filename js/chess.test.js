@@ -9,7 +9,7 @@ beforeEach, describe, expect, require, test
 'use strict';
 
 let {Chess} = require('./chess.js'),
-    {IsArray, IsString, Keys, Undefined} = require('./common'),
+    {Assign, IsArray, IsString, Keys, LS, Undefined} = require('./common'),
     {get_move_ply} = require('./global');
 
 let chess = new Chess(),
@@ -246,6 +246,21 @@ beforeEach(() => {
         for (let move of moves)
             chess.moveSan(move, false, false, false);
         expect(chess.fen()).toEqual(new_fen);
+    });
+});
+
+// material
+[
+    ['8/8/8/8/8/8/8/8 w - - 0 1', 0, 0],
+    ['8/8/8/8/8/8/8/8 w - - 0 1', 1, 0],
+    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 0, 900],
+    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 1, 100],
+    [START_FEN, 0, 3900],
+    [START_FEN, 1, 3900],
+].forEach(([fen, color, answer], id) => {
+    test(`material:${id}`, () => {
+        chess.load(fen);
+        expect(chess.material(color)).toEqual(answer);
     });
 });
 
@@ -880,33 +895,52 @@ beforeEach(() => {
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
         [false, 1, 1e8],
-        [0, 50, 1],
+        [600, 700, 1],
+        {},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
         [false, 2, 1e8],
-        [19000, 26000, 2],
+        [43500, 44500, 2],
+        {1: 'g5e6 h7f7'},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
         [false, 3, 1e8],
-        [19000, 26000, 2],
+        [43500, 44500, 2],
+        {1: 'g5e6 h7f7'},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '',
         [false, 1, 1e8],
         [800, 900, 1],
+        {},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '1000000000000000000000000',
         [false, 1, 1e8],
-        [0, 10, 1],
+        [-150, -50, 1],
+        {},
     ],
-].forEach(([fen, mask, [frc, max_depth, max_nodes], answer], id) => {
+    [
+        '4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42',
+        '',
+        [false, 4, 1e8],
+        [],
+        {e4f6: [0, 80], g3g5: [11500, 12500]},
+    ],
+    [
+        '7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47',
+        '',
+        [false, 4, 1e8],
+        [],
+        {1: 'd3d8', b5c4: [0, 80], c7f7: [0, 80]},
+    ],
+].forEach(([fen, mask, [frc, max_depth, max_nodes], answer, checks], id) => {
     test(`search:${id}`, () => {
         chess.load(fen);
         chess.configure(frc, max_depth, max_nodes);
@@ -916,10 +950,42 @@ beforeEach(() => {
         if (masks.size)
             masks = new Array(masks.size()).fill(0).map((_, id) => masks.get(id));
         masks.sort((a, b) => b.score - a.score);
-        let best = masks[0];
-        expect(best.score).toBeGreaterThanOrEqual(answer[0]);
-        expect(best.score).toBeLessThanOrEqual(answer[1]);
-        expect(best.depth).toEqual(answer[2]);
+
+        let best = masks[0],
+            keys = Keys(checks),
+            uci = chess.ucify(best);
+
+        if (keys.length) {
+            let missing = false,
+                dico = Assign({}, ...masks.map(move => ({[chess.ucify(move)]: move.score})));
+            keys.forEach(key => {
+                let check = checks[key],
+                    value = dico[key];
+                if (key == 1) {
+                    if (!check.includes(uci)) {
+                        missing = key;
+                        return;
+                    }
+                    expect(check.includes(uci)).toBeTruthy();
+                }
+                else {
+                    if (value == undefined) {
+                        missing = key;
+                        return;
+                    }
+                    expect(value).toBeGreaterThanOrEqual(check[0]);
+                    expect(value).toBeLessThanOrEqual(check[1]);
+                }
+            });
+            if (missing)
+                LS(dico);
+        }
+
+        if (answer.length) {
+            expect(best.score).toBeGreaterThanOrEqual(answer[0]);
+            expect(best.score).toBeLessThanOrEqual(answer[1]);
+            expect(best.depth).toEqual(answer[2]);
+        }
     });
 });
 
@@ -952,6 +1018,22 @@ beforeEach(() => {
         for (let move of moves)
             chess.moveSan(move, true, false, false);
         expect(chess.turn()).toEqual(answer);
+    });
+});
+
+// ucify
+[
+    [
+        {capture: 0, depth: 0, fen: '', flags: 4, from: 99, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 67},
+        'd2d4',
+    ],
+    [
+        {capture: 4, depth: 0, fen: '', flags: 18, from: 96, m: '', piece: 9, ply: 51, promote: 5, score: 0, to: 113},
+        'a2b1q',
+    ],
+].forEach(([move, answer], id) => {
+    test(`ucify:${id}`, () => {
+        expect(chess.ucify(move)).toEqual(answer);
     });
 });
 

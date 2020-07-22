@@ -37,17 +37,15 @@ using namespace emscripten;
 #define KING 6
 #define KNIGHT 2
 #define PAWN 1
+#define PIECE_LOWER " pnbrqk  pnbrqk"
+#define PIECE_NAMES " PNBRQK  pnbrqk"
+#define PIECE_UPPER " PNBRQK  PNBRQK"
 #define QUEEN 5
 #define RANK(square) (square >> 4)
 #define RANK_ALGEBRAIC(square) ('8' - RANK(square))
 #define ROOK 4
 #define SQUARE_A8 0
 #define SQUARE_H1 119
-//                             11111
-//                   012345678901234
-#define PIECE_LOWER " pnbrqk  pnbrqk"
-#define PIECE_NAMES " PNBRQK  pnbrqk"
-#define PIECE_UPPER " PNBRQK  PNBRQK"
 #define TYPE(piece) (piece & 7)
 #define WHITE 0
 
@@ -182,6 +180,7 @@ struct History {
     int     ep_square;
     int     half_moves;
     int     kings[2];
+    int     materials[2];
     Move    move;
     int     move_number;
     uint8_t turn;
@@ -200,6 +199,7 @@ private:
     int     half_moves;
     std::vector<History> histories;
     int     kings[2];
+    int     materials[2];
     int     max_depth;
     int     max_nodes;
     int     move_number;
@@ -216,6 +216,7 @@ private:
         history.ep_square = ep_square;
         history.half_moves = half_moves;
         memcpy(&history.kings, &kings, sizeof(kings));
+        memcpy(&history.materials, &materials, sizeof(materials));
         memcpy(&history.move, &move, sizeof(Move));
         history.move_number = move_number;
         histories.push_back(history);
@@ -410,11 +411,12 @@ public:
         memset(castling, EMPTY, 4 * sizeof(int));
         ep_square = EMPTY;
         fen = "";
-        frc = false;
         half_moves = 0;
         histories.clear();
         kings[0] = EMPTY;
         kings[1] = EMPTY;
+        materials[0] = 0;
+        materials[1] = 0;
         move_number = 1;
         nodes = 0;
         sel_depth = 0;
@@ -892,7 +894,8 @@ public:
         // not smart to do it for every move
         addHistory(move);
 
-        int flags = move.flags,
+        int capture = move.capture,
+            flags = move.flags,
             is_castle = (flags & BITS_CASTLE),
             move_from = move.from,
             move_to = move.to;
@@ -928,11 +931,14 @@ public:
             }
 
             // remove castling if we capture a rook
-            if (move.capture == ROOK) {
-                if (move_to == castling[them * 2])
-                    castling[them * 2] = EMPTY;
-                else if (move_to == castling[them * 2 + 1])
-                    castling[them * 2 + 1] = EMPTY;
+            if (capture) {
+                materials[them] -= PIECE_SCORES[capture];
+                if (capture == ROOK) {
+                    if (move_to == castling[them * 2])
+                        castling[them * 2] = EMPTY;
+                    else if (move_to == castling[them * 2 + 1])
+                        castling[them * 2 + 1] = EMPTY;
+                }
             }
 
             // remove castling if we move a rook
@@ -950,8 +956,10 @@ public:
                 else {
                     if (flags & BITS_EP_CAPTURE)
                         board[move_to + (turn == BLACK? -16: 16)] = 0;
-                    if (flags & BITS_PROMOTION)
+                    if (flags & BITS_PROMOTION) {
                         board[move_to] = COLORIZE(us, move.promote);
+                        materials[us] += PROMOTE_SCORES[move.promote];
+                    }
                 }
                 half_moves = 0;
             }
@@ -1118,6 +1126,8 @@ public:
         board[square] = piece;
         if (TYPE(piece) == KING)
             kings[COLOR(piece)] = square;
+        else
+            materials[COLOR(piece)] += PIECE_SCORES[piece];
     }
 
     /**
@@ -1234,7 +1244,6 @@ public:
     void searchMoves(std::vector<Move> &moves, int depth, int *result) {
         int best = -99999;
         int best_depth = depth;
-        float coeff = 15.0f / (15 + depth);
         auto length = moves.size();
         bool look_deeper = (depth < max_depth && nodes < max_nodes);
         int temp[] = {0, 0};
@@ -1252,31 +1261,36 @@ public:
             if (kingAttacked(3))
                 move.score = -99900;
             else {
-                move.score = int((PIECE_SCORES[move.capture] + PROMOTE_SCORES[move.promote]) * coeff + 0.5f);
+                move.score = materials[turn ^ 1] - materials[turn];
                 valid ++;
 
                 // look deeper
                 if (look_deeper) {
                     auto moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
-                    move.score -= temp[0];
+
+                    // stalemate? good if we're losing, otherwise BAD!
+                    if (temp[0] < -80000)
+                        move.score = 0;
+                    else
+                        move.score -= temp[0];
                     move.depth = temp[1];
                 }
             }
 
             undoMove();
-            if (depth >= 3 && move.score > 12800)
+            if (depth >= 3 && move.score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2)) {
-            best = int(-25600 * coeff + 0.5f);
+            best = -51200 + depth * 4000;
             best_depth = depth;
         }
         else {
             for (auto &move : moves) {
-                move.score += int(valid * 0.7 * coeff + 0.5f);
+                move.score += int(valid * 0.7 + 0.5f);
                 if (best < move.score) {
                     best = move.score;
                     best_depth = move.depth;
@@ -1306,6 +1320,18 @@ public:
     }
 
     /**
+     * Add UCI to a move
+     * @param {Move} move
+     * @returns {string}
+     */
+    std::string ucify(Move &move) {
+        move.m = squareToAn(move.from, false) + squareToAn(move.to, false);
+        if (move.promote)
+            move.m += PIECE_LOWER[move.promote];
+        return move.m;
+    }
+
+    /**
      * Undo a move
      */
     void undoMove() {
@@ -1318,6 +1344,7 @@ public:
         ep_square = old.ep_square;
         half_moves = old.half_moves;
         memcpy(&kings, &old.kings, sizeof(kings));
+        memcpy(&materials, &old.materials, sizeof(materials));
         move_number = old.move_number;
         turn ^= 1;
 
@@ -1376,6 +1403,10 @@ public:
         return frc;
     }
 
+    int em_material(uint8_t color) {
+        return materials[color];
+    }
+
     int em_nodes() {
         return nodes;
     }
@@ -1431,6 +1462,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("frc", &Chess::em_frc)
         .function("fen960", &Chess::createFen960)
         .function("load", &Chess::load)
+        .function("material", &Chess::em_material)
         .function("moveObject", &Chess::moveObject)
         .function("moveRaw", &Chess::moveRaw)
         .function("moveSan", &Chess::moveSan)
@@ -1449,6 +1481,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("selDepth", &Chess::em_selDepth)
         .function("squareToAn", &Chess::squareToAn)
         .function("turn", &Chess::em_turn)
+        .function("ucify", &Chess::ucify)
         .function("undo", &Chess::undoMove)
         ;
 
