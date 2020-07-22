@@ -1595,11 +1595,23 @@ class XBoard {
 
         this.add_moves([move]);
 
+        // maybe finished the game? 50MR / stalemate / win
         if (this.manual) {
-            let moves = this.chess_moves(this.frc, true, -1);
-            if (!moves.length) {
-                let is_mate = move.m.slice(-1) == '#';
-                LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
+            let finished,
+                rule50 = this.fen.split(' ')[4] * 1;
+            if (rule50 >= 50) {
+                LS('Fifty move rule.');
+                finished = true;
+            }
+            else {
+                let moves = this.chess_moves(this.frc, true, -1);
+                if (!moves.length) {
+                    let is_mate = move.m.slice(-1) == '#';
+                    LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
+                    finished = true;
+                }
+            }
+            if (finished) {
                 play_sound(audiobox, Y.sound_draw);
                 this.play(true);
             }
