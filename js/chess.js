@@ -46,6 +46,7 @@ var Chess = function(fen_) {
         KING = 6,
         KNIGHT = 2,
         PAWN = 1,
+        PIECE_LOWER = ' pnbrqk  pnbrqk',
         PIECE_NAMES = ' PNBRQK  pnbrqk',
         PIECE_UPPER = ' PNBRQK  PNBRQK',
         QUEEN = 5,
@@ -181,6 +182,7 @@ var Chess = function(fen_) {
         half_moves = 0,
         histories = [],
         kings = [EMPTY, EMPTY],
+        materials = [0, 0],
         max_depth = 4,
         max_nodes = 1e8,
         move_number = 1,
@@ -201,6 +203,7 @@ var Chess = function(fen_) {
             ep_square: ep_square,
             half_moves: half_moves,
             kings: [...kings],
+            materials: [...materials],
             move: move,
             move_number: move_number,
         });
@@ -387,6 +390,8 @@ var Chess = function(fen_) {
         histories.length = 0;
         kings[0] = EMPTY;
         kings[1] = EMPTY;
+        materials[0] = 0;
+        materials[1] = 0;
         move_number = 1;
         nodes = 0;
         sel_depth = 0;
@@ -812,7 +817,8 @@ var Chess = function(fen_) {
         // not smart to do it for every move
         addHistory(move);
 
-        let flags = move.flags,
+        let capture = move.capture,
+            flags = move.flags,
             is_castle = (flags & BITS_CASTLE),
             move_from = move.from,
             move_to = move.to,
@@ -848,11 +854,14 @@ var Chess = function(fen_) {
             }
 
             // remove castling if we capture a rook
-            if (move.capture == ROOK) {
-                if (move_to == castling[them * 2])
-                    castling[them * 2] = EMPTY;
-                else if (move_to == castling[them * 2 + 1])
-                    castling[them * 2 + 1] = EMPTY;
+            if (capture) {
+                materials[them] -= PIECE_SCORES[capture];
+                if (capture == ROOK) {
+                    if (move_to == castling[them * 2])
+                        castling[them * 2] = EMPTY;
+                    else if (move_to == castling[them * 2 + 1])
+                        castling[them * 2 + 1] = EMPTY;
+                }
             }
 
             // remove castling if we move a rook
@@ -870,8 +879,10 @@ var Chess = function(fen_) {
                 else {
                     if (flags & BITS_EP_CAPTURE)
                         board[move_to + (turn == BLACK? -16: 16)] = 0;
-                    if (flags & BITS_PROMOTION)
+                    if (flags & BITS_PROMOTION) {
                         board[move_to] = COLORIZE(us, move.promote);
+                        materials[us] += PROMOTE_SCORES[move.promote];
+                    }
                 }
                 half_moves = 0;
             }
@@ -1036,6 +1047,8 @@ var Chess = function(fen_) {
         board[square] = piece;
         if (TYPE(piece) == KING)
             kings[COLOR(piece)] = square;
+        else
+            materials[COLOR(piece)] += PIECE_SCORES[piece];
     }
 
     /**
@@ -1149,7 +1162,6 @@ var Chess = function(fen_) {
     function searchMoves(moves, depth, result) {
         let best = -99999,
             best_depth = depth,
-            coeff = 15 / (15 + depth),
             length = moves.length,
             look_deeper = (depth < max_depth && nodes < max_nodes),
             temp = [0, 0],
@@ -1160,8 +1172,6 @@ var Chess = function(fen_) {
             sel_depth = depth;
 
         for (let move of moves) {
-            if (!move)
-                continue;
             move.depth = depth;
             moveRaw(move, false);
 
@@ -1169,31 +1179,36 @@ var Chess = function(fen_) {
             if (kingAttacked(3))
                 move.score = -99900;
             else {
-                move.score = Floor((PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0]) * coeff + 0.5);
+                move.score = materials[turn ^ 1] - materials[turn];
                 valid ++;
 
                 // look deeper
                 if (look_deeper) {
                     let moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
-                    move.score -= temp[0];
+
+                    // stalemate? good if we're losing, otherwise BAD!
+                    if (temp[0] < -80000)
+                        move.score = 0;
+                    else
+                        move.score -= temp[0];
                     move.depth = temp[1];
                 }
             }
 
             undoMove();
-            if (depth >= 3 && move.score > 12800)
+            if (depth >= 3 && move.score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2)) {
-            best = Floor(-25600 * coeff + 0.5);
+            best = -51200 + depth * 4000;
             best_depth = depth;
         }
         else {
             for (let move of moves) {
-                move.score += Floor(valid * 0.7 * coeff + 0.5);
+                move.score += Floor(valid * 0.7 + 0.5);
                 if (best < move.score) {
                     best = move.score;
                     best_depth = move.depth;
@@ -1220,6 +1235,18 @@ var Chess = function(fen_) {
     }
 
     /**
+     * Add UCI to a move
+     * @param {Move} move
+     * @returns {string}
+     */
+    function ucify(move) {
+        move.m = squareToAn(move.from, false) + squareToAn(move.to, false);
+        if (move.promote)
+            move.m += PIECE_LOWER[move.promote];
+        return move.m;
+    }
+
+    /**
      * Undo a move
      */
     function undoMove() {
@@ -1232,6 +1259,7 @@ var Chess = function(fen_) {
         ep_square = old.ep_square;
         half_moves = old.half_moves;
         kings = old.kings;
+        materials = old.materials;
         move_number = old.move_number;
         turn ^= 1;
 
@@ -1284,6 +1312,7 @@ var Chess = function(fen_) {
         fen960: createFen960,
         frc: () => frc,
         load: load,
+        material: color => materials[color],
         moveObject: moveObject,
         moveRaw: moveRaw,
         moveSan: moveSan,
@@ -1302,6 +1331,7 @@ var Chess = function(fen_) {
         selDepth: () => sel_depth,
         squareToAn: squareToAn,
         turn: () => turn,
+        ucify: ucify,
         undo: undoMove,
     };
 };

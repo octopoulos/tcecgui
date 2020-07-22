@@ -2344,6 +2344,9 @@ class XBoard {
             color = (1 + ply) % 2,
             mini = _(`.xcolor${color}`, this.node);
 
+        if (color)
+            best.score *= -1;
+
         Hide(`.xcog`, mini);
         HTML('.xeval', best.score.toFixed(2), mini);
         HTML(`.xleft`, elapsed.toFixed(1), mini);
