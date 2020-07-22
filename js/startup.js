@@ -1952,6 +1952,8 @@ function prepare_settings() {
             game_depth_black: option_number(4, 0, 5),
             game_depth_white: option_number(4, 0, 5),
             game_engine: [['Minimax', 'RandomMove'], 'Minimax'],
+            game_extend_black: option_number(0, 0, 10),
+            game_extend_white: option_number(0, 0, 10),
             game_every: option_number(600, 100, 5000, 100),
             game_new_game: '1',
             game_nodes: option_number(2e7, 0, 1e8),
