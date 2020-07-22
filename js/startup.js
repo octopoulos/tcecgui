@@ -1956,7 +1956,7 @@ function prepare_settings() {
             game_extend_white: option_number(0, 0, 10),
             game_every: option_number(600, 100, 5000, 100),
             game_new_game: '1',
-            game_nodes: option_number(2e7, 0, 1e8),
+            game_nodes: option_number(1e9, 0, 1e10),
             game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
             game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),
