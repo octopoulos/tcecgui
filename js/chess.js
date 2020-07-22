@@ -1190,7 +1190,7 @@ var Chess = function(fen_) {
                 valid ++;
 
                 // look deeper
-                if (look_deeper || (depth < max_extend && move.capture && PIECE_SCORES[move.capture] < PIECE_SCORES[move.piece])) {
+                if (look_deeper || (depth < max_extend && move.capture)) {
                     let moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
 
@@ -1215,7 +1215,7 @@ var Chess = function(fen_) {
         }
         else {
             for (let move of moves) {
-                move.score += Floor(valid * 0.7 + 0.5);
+                move.score += valid * 2;
                 if (best < move.score) {
                     best = move.score;
                     best_depth = move.depth;

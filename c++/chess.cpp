@@ -1276,7 +1276,7 @@ public:
                 valid ++;
 
                 // look deeper
-                if (look_deeper || (depth < max_extend && move.capture && PIECE_SCORES[move.capture] < PIECE_SCORES[move.piece])) {
+                if (look_deeper || (depth < max_extend && move.capture)) {
                     auto moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
 
@@ -1301,7 +1301,7 @@ public:
         }
         else {
             for (auto &move : moves) {
-                move.score += int(valid * 0.7 + 0.5f);
+                move.score += valid * 2;
                 if (best < move.score) {
                     best = move.score;
                     best_depth = move.depth;
