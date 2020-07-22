@@ -56,7 +56,7 @@ function think(engine, fen, mask, frc, max_depth, max_nodes) {
 
     let chess = engines[engine];
     if (!chess) {
-        LS(`creating new "${engine}" engine`);
+        LS(`creating "${engine}" engine`);
         engines[engine] = new engine_class();
         chess = engines[engine];
     }
