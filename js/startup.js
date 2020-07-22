@@ -261,6 +261,9 @@ function change_setting_special(name, value, no_close) {
     case 'game_play_as':
         pva.new_game();
         break;
+    case 'game_think':
+        pva.think();
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -1956,7 +1959,9 @@ function prepare_settings() {
             game_new_game: '1',
             game_nodes: option_number(2e7, 0, 1e8),
             game_play_as: [['White', 'Black', 'AI'], 'AI'],
+            game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),
+            game_wasm: [ON_OFF, 1],
         },
         graph: {
             _prefix: 'graph_',

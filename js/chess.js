@@ -24,7 +24,16 @@ if (typeof global != 'undefined') {
 // >>
 
 var Chess = function(fen_) {
+    // defines
     let BISHOP = 3,
+        BITS_NORMAL = 1,
+        BITS_CAPTURE = 2,
+        BITS_BIG_PAWN = 4,
+        BITS_EP_CAPTURE = 8,
+        BITS_PROMOTION = 16,
+        BITS_KSIDE_CASTLE = 32,
+        BITS_QSIDE_CASTLE = 64,
+        BITS_CASTLE = 32 + 64,
         BLACK = 1,
         COLOR = piece => piece >> 3,
         COLOR_TEXT = 'wb',
@@ -33,34 +42,23 @@ var Chess = function(fen_) {
         EMPTY = -1,
         FILE = square => square & 15,
         I8 = array => new Int8Array(array),
+        I32 = array => new Int32Array(array),
         KING = 6,
         KNIGHT = 2,
         PAWN = 1,
-        //             012345678901234
         PIECE_NAMES = ' PNBRQK  pnbrqk',
         PIECE_UPPER = ' PNBRQK  PNBRQK',
-        PIECES = {
-            b: 11,
-            B: 3,
-            k: 14,
-            K: 6,
-            n: 10,
-            N: 2,
-            p: 9,
-            P: 1,
-            q: 13,
-            Q: 5,
-            r: 12,
-            R: 4,
-        },
         QUEEN = 5,
         RANK = square => square >> 4,
         ROOK = 4,
+        SQUARE_A8 = 0,
+        SQUARE_H1 = 119,
         TYPE = piece => piece & 7,
         // UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
         WHITE = 0;
 
     // https://github.com/jhlywa/chess.js
+    // tables
     let ATTACKS = I8([
            20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
             0, 20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
@@ -92,6 +90,40 @@ var Chess = function(fen_) {
             I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
             I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
         ],
+        PIECE_SCORES = I32([
+            0,
+            100,        // P
+            300,        // N
+            300,        // B
+            500,        // R
+            900,        // Q
+            12800,      // K
+            0,
+            0,
+            100,        // p
+            300,        // n
+            300,        // b
+            500,        // r
+            900,        // q
+            12800,      // k
+        ]),
+        PROMOTE_SCORES = I32([
+            0,
+            0,          // P
+            200,        // N
+            200,        // B
+            400,        // R
+            800,        // Q
+            11800,      // K
+            0,
+            0,
+            0,          // p
+            200,        // n
+            200,        // b
+            400,        // r
+            800,        // q
+            11800,      // k
+        ]),
         // https://github.com/jhlywa/chess.js
         RAYS = I8([
            17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
@@ -111,16 +143,21 @@ var Chess = function(fen_) {
           -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
         ]);
 
-    let BITS_NORMAL = 1,
-        BITS_CAPTURE = 2,
-        BITS_BIG_PAWN = 4,
-        BITS_EP_CAPTURE = 8,
-        BITS_PROMOTION = 16,
-        BITS_KSIDE_CASTLE = 32,
-        BITS_QSIDE_CASTLE = 64,
-        BITS_CASTLE = 32 + 64,
-        SQUARE_A8 = 0,
-        SQUARE_H1 = 119,
+    // extras
+    let PIECES = {
+            b: 11,
+            B: 3,
+            k: 14,
+            K: 6,
+            n: 10,
+            N: 2,
+            p: 9,
+            P: 1,
+            q: 13,
+            Q: 5,
+            r: 12,
+            R: 4,
+        },
         // https://github.com/jhlywa/chess.js
         SQUARES = {
             a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
@@ -133,6 +170,9 @@ var Chess = function(fen_) {
             a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
         };
 
+    // PRIVATE
+    //////////
+
     let board = new Uint8Array(128),
         castling = [EMPTY, EMPTY, EMPTY, EMPTY],
         ep_square = EMPTY,
@@ -141,14 +181,15 @@ var Chess = function(fen_) {
         half_moves = 0,
         histories = [],
         kings = [EMPTY, EMPTY],
+        max_depth = 4,
+        max_nodes = 1e8,
         move_number = 1,
+        nodes = 0,
+        sel_depth = 0,
         turn = WHITE;
 
     // if the user passes in a fen string, load it, else default to starting position
     load(fen_ || DEFAULT_POSITION);
-
-    // PRIVATE
-    //////////
 
     /**
      * Add a move to the history
@@ -185,10 +226,16 @@ var Chess = function(fen_) {
     function addSingleMove(moves, from, to, flags, promote) {
         let piece = board[from],
             move = {
+                capture: 0,
+                depth: 0,
+                fen: '',
                 flags: flags,
                 from: from,
+                m: '',
                 piece: piece,
                 ply: move_number * 2 + turn - 2,
+                promote: 0,
+                score: 0,
                 to: to,
             };
 
@@ -210,7 +257,7 @@ var Chess = function(fen_) {
      * @param {Object[]} moves
      * @returns {string}
      */
-    function getDisambiguator(move, moves) {
+    function disambiguate(move, moves) {
         let ambiguities = 0,
             from = move.from,
             same_file = 0,
@@ -341,7 +388,18 @@ var Chess = function(fen_) {
         kings[0] = EMPTY;
         kings[1] = EMPTY;
         move_number = 1;
+        nodes = 0;
+        sel_depth = 0;
         turn = WHITE;
+    }
+
+    /**
+     * Configure some parameters
+     */
+    function configure(frc_, max_depth_, max_nodes_) {
+        frc = frc_;
+        max_depth = max_depth_;
+        max_nodes = max_nodes_;
     }
 
     /**
@@ -867,7 +925,7 @@ var Chess = function(fen_) {
         if (move.flags & BITS_QSIDE_CASTLE)
             return "O-O-O";
 
-        let disambiguator = getDisambiguator(move, moves),
+        let disambiguator = disambiguate(move, moves),
             move_type = TYPE(move.piece),
             output = '';
 
@@ -1062,6 +1120,92 @@ var Chess = function(fen_) {
     }
 
     /**
+     * Basic tree search with mask
+     * @param {Move[]} moves
+     * @param {string} mask moves to search, ex: 01100
+     * @returns {Move[]} updated moves
+     */
+    function search(moves, mask) {
+        nodes = 0;
+        sel_depth = 0;
+
+        let result = [0, 0];
+        if (!mask) {
+            searchMoves(moves, 1, result);
+            return moves;
+        }
+
+        let masked = moves.filter((_, i) => !mask || mask[i] != '0');
+        searchMoves(masked, 1, result);
+        return masked;
+    }
+
+    /**
+     * Basic tree search
+     * @param {Move[]} moves
+     * @param {number} depth
+     * @param {[number, number]} result
+     */
+    function searchMoves(moves, depth, result) {
+        let best = -99999,
+            best_depth = depth,
+            coeff = 15 / (15 + depth),
+            length = moves.length,
+            look_deeper = (depth < max_depth && nodes < max_nodes),
+            temp = [0, 0],
+            valid = 0;
+
+        nodes += length;
+        if (depth > sel_depth)
+            sel_depth = depth;
+
+        for (let move of moves) {
+            if (!move)
+                continue;
+            move.depth = depth;
+            moveRaw(move, false);
+
+            // invalid move?
+            if (kingAttacked(3))
+                move.score = -99900;
+            else {
+                move.score = Floor((PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0]) * coeff + 0.5);
+                valid ++;
+
+                // look deeper
+                if (look_deeper) {
+                    let moves2 = createMoves(frc, false, -1);
+                    searchMoves(moves2, depth + 1, temp);
+                    move.score -= temp[0];
+                    move.depth = temp[1];
+                }
+            }
+
+            undoMove();
+            if (depth >= 3 && move.score > 12800)
+                break;
+        }
+
+        // checkmate?
+        if (!valid && kingAttacked(2)) {
+            best = Floor(-25600 * coeff + 0.5);
+            best_depth = depth;
+        }
+        else {
+            for (let move of moves) {
+                move.score += Floor(valid * 0.7 * coeff + 0.5);
+                if (best < move.score) {
+                    best = move.score;
+                    best_depth = move.depth;
+                }
+            }
+        }
+
+        result[0] = best;
+        result[1] = best_depth;
+    }
+
+    /**
      * Convert a square number to an algebraic notation
      * @param {number} square 112
      * @param {boolean=} check check the boundaries
@@ -1124,7 +1268,9 @@ var Chess = function(fen_) {
     // BINDING CODE
     ///////////////
 
+    // CHESS BINDINGS
     return {
+        //
         anToSquare: anToSquare,
         attacked: attacked,
         board: () => board,
@@ -1132,6 +1278,7 @@ var Chess = function(fen_) {
         checked: color => kingAttacked(color),
         cleanSan: cleanSan,
         clear: clear,
+        configure: configure,
         currentFen: () => fen,
         fen: createFen,
         fen960: createFen960,
@@ -1145,11 +1292,14 @@ var Chess = function(fen_) {
         moves: createMoves,
         multiSan: multiSan,
         multiUci: multiUci,
+        nodes: () => nodes,
         piece: text => PIECES[text] || 0,
         print: print,
         put: put,
         reset: reset,
         sanToMove: sanToMove,
+        search: search,
+        selDepth: () => sel_depth,
         squareToAn: squareToAn,
         turn: () => turn,
         undo: undoMove,
