@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-07-21
 // - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -249,99 +249,6 @@ private:
             return an;
         else
             return an.substr((same_file > 0)? 1: 0, 1);
-    }
-
-    /**
-     * Make a move
-     * @param move
-     * @param decorate add + # decorators
-     */
-    void makeMove(Move &move, bool decorate) {
-        uint8_t us = turn,
-            them = us ^ 1;
-
-        // not smart to do it for every move
-        addHistory(move);
-
-        int flags = move.flags,
-            is_castle = (flags & BITS_CASTLE),
-            move_from = move.from,
-            move_to = move.to;
-        auto move_type = TYPE(move.piece);
-
-        half_moves ++;
-        ep_square = EMPTY;
-
-        // moved king?
-        if (move_type == KING) {
-            if (is_castle) {
-                int q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
-
-                board[king] = 0;
-                board[rook] = 0;
-                board[king_to] = COLORIZE(us, KING);
-                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
-                move_to = king_to;
-            }
-
-            kings[us] = move_to;
-            castling[us * 2] = EMPTY;
-            castling[us * 2 + 1] = EMPTY;
-        }
-
-        if (!is_castle) {
-            if (move_from != move_to) {
-                board[move_to] = board[move_from];
-                board[move_from] = 0;
-            }
-
-            // remove castling if we capture a rook
-            if (move.capture == ROOK) {
-                if (move_to == castling[them * 2])
-                    castling[them * 2] = EMPTY;
-                else if (move_to == castling[them * 2 + 1])
-                    castling[them * 2 + 1] = EMPTY;
-            }
-
-            // remove castling if we move a rook
-            if (move_type == ROOK) {
-                if (move_from == castling[us * 2])
-                    castling[us * 2] = EMPTY;
-                else if (move_from == castling[us * 2 + 1])
-                    castling[us * 2 + 1] = EMPTY;
-            }
-            // pawn + update 50MR
-            else if (move_type == PAWN) {
-                // pawn moves 2 squares
-                if (flags & BITS_BIG_PAWN)
-                    ep_square = move_to + (turn == BLACK? -16: 16);
-                else {
-                    if (flags & BITS_EP_CAPTURE)
-                        board[move_to + (turn == BLACK? -16: 16)] = 0;
-                    if (flags & BITS_PROMOTION)
-                        board[move_to] = COLORIZE(us, move.promote);
-                }
-                half_moves = 0;
-            }
-            else if (flags & BITS_CAPTURE)
-                half_moves = 0;
-        }
-
-        if (turn == BLACK)
-            move_number ++;
-        turn ^= 1;
-
-        // decorate the SAN with + or #
-        if (decorate) {
-            char last = move.m[move.m.size() - 1];
-            if (last != '+' && last != '#' && kingAttacked(turn)) {
-                auto moves = createMoves(frc, true, EMPTY);
-                move.m += moves.size()? '+': '#';
-            }
-        }
     }
 
     // PUBLIC
@@ -735,7 +642,7 @@ public:
         // filter out illegal moves
         std::vector<Move> legal_moves;
         for (auto move : moves) {
-            makeMove(move, false);
+            moveRaw(move, false);
             if (!kingAttacked(us))
                 legal_moves.push_back(move);
             undoMove();
@@ -745,12 +652,12 @@ public:
 
     /**
      * Check if the king is attacked
-     * @param color 0, 1
+     * @param color 0, 1 + special cases: 2, 3
      * @return true if king is attacked
      */
     bool kingAttacked(uint8_t color) {
-        if (color == 2)
-            color = turn;
+        if (color > 1)
+            color = (color == 2)? turn: turn ^ 1;
         return attacked(color ^ 1, kings[color]);
     }
 
@@ -914,8 +821,101 @@ public:
 
         // no suitable move?
         if (move_obj.piece)
-            makeMove(move_obj, decorate);
+            moveRaw(move_obj, decorate);
         return move_obj;
+    }
+
+    /**
+     * Make a raw move, no verification is being performed
+     * @param move
+     * @param decorate add + # decorators
+     */
+    void moveRaw(Move &move, bool decorate) {
+        uint8_t us = turn,
+            them = us ^ 1;
+
+        // not smart to do it for every move
+        addHistory(move);
+
+        int flags = move.flags,
+            is_castle = (flags & BITS_CASTLE),
+            move_from = move.from,
+            move_to = move.to;
+        auto move_type = TYPE(move.piece);
+
+        half_moves ++;
+        ep_square = EMPTY;
+
+        // moved king?
+        if (move_type == KING) {
+            if (is_castle) {
+                int q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
+                    king = kings[us],
+                    king_to = (RANK(king) << 4) + (q? 2: 6),
+                    rook = castling[us * 2 + q];
+
+                board[king] = 0;
+                board[rook] = 0;
+                board[king_to] = COLORIZE(us, KING);
+                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                move_to = king_to;
+            }
+
+            kings[us] = move_to;
+            castling[us * 2] = EMPTY;
+            castling[us * 2 + 1] = EMPTY;
+        }
+
+        if (!is_castle) {
+            if (move_from != move_to) {
+                board[move_to] = board[move_from];
+                board[move_from] = 0;
+            }
+
+            // remove castling if we capture a rook
+            if (move.capture == ROOK) {
+                if (move_to == castling[them * 2])
+                    castling[them * 2] = EMPTY;
+                else if (move_to == castling[them * 2 + 1])
+                    castling[them * 2 + 1] = EMPTY;
+            }
+
+            // remove castling if we move a rook
+            if (move_type == ROOK) {
+                if (move_from == castling[us * 2])
+                    castling[us * 2] = EMPTY;
+                else if (move_from == castling[us * 2 + 1])
+                    castling[us * 2 + 1] = EMPTY;
+            }
+            // pawn + update 50MR
+            else if (move_type == PAWN) {
+                // pawn moves 2 squares
+                if (flags & BITS_BIG_PAWN)
+                    ep_square = move_to + (turn == BLACK? -16: 16);
+                else {
+                    if (flags & BITS_EP_CAPTURE)
+                        board[move_to + (turn == BLACK? -16: 16)] = 0;
+                    if (flags & BITS_PROMOTION)
+                        board[move_to] = COLORIZE(us, move.promote);
+                }
+                half_moves = 0;
+            }
+            else if (flags & BITS_CAPTURE)
+                half_moves = 0;
+        }
+
+        if (turn == BLACK)
+            move_number ++;
+        turn ^= 1;
+
+        // decorate the SAN with + or #
+        if (decorate) {
+            char last = move.m[move.m.size() - 1];
+            if (last != '+' && last != '#' && kingAttacked(turn)) {
+                auto moves = createMoves(frc, true, EMPTY);
+                move.m += moves.size()? '+': '#';
+            }
+        }
     }
 
     /**
@@ -929,7 +929,7 @@ public:
         auto moves = createMoves(frc, true, EMPTY);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece)
-            makeMove(move, decorate);
+            moveRaw(move, decorate);
         return move;
     }
 
@@ -1004,7 +1004,7 @@ public:
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
-                makeMove(move, false);
+                moveRaw(move, false);
                 move.fen = createFen();
                 result.push_back(move);
             }
@@ -1275,6 +1275,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("fen960", &Chess::createFen960)
         .function("load", &Chess::load)
         .function("moveObject", &Chess::moveObject)
+        .function("moveRaw", &Chess::moveRaw)
         .function("moveSan", &Chess::moveSan)
         .function("moveToSan", &Chess::moveToSan)
         .function("moveUci", &Chess::moveUci)

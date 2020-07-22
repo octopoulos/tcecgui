@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-07-21
 // - fast javascript implementation, 20x faster than original
 // - FRC support
 /*
@@ -242,100 +242,6 @@ var Chess = function(fen_) {
             return an;
         else
             return an[(same_file > 0)? 1: 0];
-    }
-
-    /**
-     * Make a move
-     * https://github.com/jhlywa/chess.js
-     * @param {Object} move
-     * @param {boolean} decorate add + # decorators
-     */
-    function makeMove(move, decorate) {
-        let us = turn,
-            them = us ^ 1;
-
-        // not smart to do it for every move
-        addHistory(move);
-
-        let flags = move.flags,
-            is_castle = (flags & BITS_CASTLE),
-            move_from = move.from,
-            move_to = move.to,
-            move_type = TYPE(move.piece);
-
-        half_moves ++;
-        ep_square = EMPTY;
-
-        // moved king?
-        if (move_type == KING) {
-            if (is_castle) {
-                let q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
-
-                board[king] = 0;
-                board[rook] = 0;
-                board[king_to] = COLORIZE(us, KING);
-                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
-                move_to = king_to;
-            }
-
-            kings[us] = move_to;
-            castling[us * 2] = EMPTY;
-            castling[us * 2 + 1] = EMPTY;
-        }
-
-        if (!is_castle) {
-            if (move_from != move_to) {
-                board[move_to] = board[move_from];
-                board[move_from] = 0;
-            }
-
-            // remove castling if we capture a rook
-            if (move.capture == ROOK) {
-                if (move_to == castling[them * 2])
-                    castling[them * 2] = EMPTY;
-                else if (move_to == castling[them * 2 + 1])
-                    castling[them * 2 + 1] = EMPTY;
-            }
-
-            // remove castling if we move a rook
-            if (move_type == ROOK) {
-                if (move_from == castling[us * 2])
-                    castling[us * 2] = EMPTY;
-                else if (move_from == castling[us * 2 + 1])
-                    castling[us * 2 + 1] = EMPTY;
-            }
-            // pawn + update 50MR
-            else if (move_type == PAWN) {
-                // pawn moves 2 squares
-                if (flags & BITS_BIG_PAWN)
-                    ep_square = move_to + (turn == BLACK? -16: 16);
-                else {
-                    if (flags & BITS_EP_CAPTURE)
-                        board[move_to + (turn == BLACK? -16: 16)] = 0;
-                    if (flags & BITS_PROMOTION)
-                        board[move_to] = COLORIZE(us, move.promote);
-                }
-                half_moves = 0;
-            }
-            else if (flags & BITS_CAPTURE)
-                half_moves = 0;
-        }
-
-        if (turn == BLACK)
-            move_number ++;
-        turn ^= 1;
-
-        // decorate the SAN with + or #
-        if (decorate) {
-            let last = move.m.slice(-1);
-            if (!'+#'.includes(last) && kingAttacked(turn)) {
-                let moves = createMoves(frc, true, EMPTY);
-                move.m += moves.length? '+': '#';
-            }
-        }
     }
 
     // PUBLIC
@@ -690,7 +596,7 @@ var Chess = function(fen_) {
 
         // filter out illegal moves
         return moves.filter(move => {
-            makeMove(move, false);
+            moveRaw(move, false);
             let is_legal = !kingAttacked(us);
             undoMove();
             return is_legal;
@@ -699,12 +605,12 @@ var Chess = function(fen_) {
 
     /**
      * Check if the king is attacked
-     * @param {number} color 0, 1
+     * @param {number} color 0, 1 + special cases: 2, 3
      * @return {boolean} true if king is attacked
      */
     function kingAttacked(color) {
-        if (color == 2)
-            color = turn;
+        if (color > 1)
+            color = (color == 2)? turn: turn ^ 1;
         return attacked(color ^ 1, kings[color]);
     }
 
@@ -831,8 +737,102 @@ var Chess = function(fen_) {
 
         // no suitable move?
         if (move_obj.piece)
-            makeMove(move_obj, decorate);
+            moveRaw(move_obj, decorate);
         return move_obj;
+    }
+
+    /**
+     * Make a raw move, no verification is being performed
+     * https://github.com/jhlywa/chess.js
+     * @param {Object} move
+     * @param {boolean} decorate add + # decorators
+     */
+    function moveRaw(move, decorate) {
+        let us = turn,
+            them = us ^ 1;
+
+        // not smart to do it for every move
+        addHistory(move);
+
+        let flags = move.flags,
+            is_castle = (flags & BITS_CASTLE),
+            move_from = move.from,
+            move_to = move.to,
+            move_type = TYPE(move.piece);
+
+        half_moves ++;
+        ep_square = EMPTY;
+
+        // moved king?
+        if (move_type == KING) {
+            if (is_castle) {
+                let q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
+                    king = kings[us],
+                    king_to = (RANK(king) << 4) + (q? 2: 6),
+                    rook = castling[us * 2 + q];
+
+                board[king] = 0;
+                board[rook] = 0;
+                board[king_to] = COLORIZE(us, KING);
+                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                move_to = king_to;
+            }
+
+            kings[us] = move_to;
+            castling[us * 2] = EMPTY;
+            castling[us * 2 + 1] = EMPTY;
+        }
+
+        if (!is_castle) {
+            if (move_from != move_to) {
+                board[move_to] = board[move_from];
+                board[move_from] = 0;
+            }
+
+            // remove castling if we capture a rook
+            if (move.capture == ROOK) {
+                if (move_to == castling[them * 2])
+                    castling[them * 2] = EMPTY;
+                else if (move_to == castling[them * 2 + 1])
+                    castling[them * 2 + 1] = EMPTY;
+            }
+
+            // remove castling if we move a rook
+            if (move_type == ROOK) {
+                if (move_from == castling[us * 2])
+                    castling[us * 2] = EMPTY;
+                else if (move_from == castling[us * 2 + 1])
+                    castling[us * 2 + 1] = EMPTY;
+            }
+            // pawn + update 50MR
+            else if (move_type == PAWN) {
+                // pawn moves 2 squares
+                if (flags & BITS_BIG_PAWN)
+                    ep_square = move_to + (turn == BLACK? -16: 16);
+                else {
+                    if (flags & BITS_EP_CAPTURE)
+                        board[move_to + (turn == BLACK? -16: 16)] = 0;
+                    if (flags & BITS_PROMOTION)
+                        board[move_to] = COLORIZE(us, move.promote);
+                }
+                half_moves = 0;
+            }
+            else if (flags & BITS_CAPTURE)
+                half_moves = 0;
+        }
+
+        if (turn == BLACK)
+            move_number ++;
+        turn ^= 1;
+
+        // decorate the SAN with + or #
+        if (decorate) {
+            let last = move.m.slice(-1);
+            if (!'+#'.includes(last) && kingAttacked(turn)) {
+                let moves = createMoves(frc, true, EMPTY);
+                move.m += moves.length? '+': '#';
+            }
+        }
     }
 
     /**
@@ -847,7 +847,7 @@ var Chess = function(fen_) {
         let moves = createMoves(frc, true, EMPTY),
             move = sanToMove(text, moves, sloppy);
         if (move.piece)
-            makeMove(move, decorate);
+            moveRaw(move, decorate);
         return move;
     }
 
@@ -922,7 +922,7 @@ var Chess = function(fen_) {
                 move = sanToMove(text, moves, sloppy);
             if (!move.piece)
                 break;
-            makeMove(move, false);
+            moveRaw(move, false);
             move.fen = createFen();
             result.push(move);
         }
@@ -1138,6 +1138,7 @@ var Chess = function(fen_) {
         frc: () => frc,
         load: load,
         moveObject: moveObject,
+        moveRaw: moveRaw,
         moveSan: moveSan,
         moveToSan: moveToSan,
         moveUci: moveUci,

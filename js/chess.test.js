@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-07-21
 //
 /*
 globals
@@ -9,7 +9,7 @@ beforeEach, describe, expect, require, test
 'use strict';
 
 let {Chess} = require('./chess.js'),
-    {IsString, Keys, Undefined} = require('./common'),
+    {IsArray, IsString, Keys, Undefined} = require('./common'),
     {get_move_ply} = require('./global');
 
 let chess = new Chess(),
@@ -88,16 +88,34 @@ beforeEach(() => {
 
 // checked
 [
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', 2, false],
-    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', 2, true],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 2, false],
-    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/1Kq5/8 w - - 1 43', 2, true],
-    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/2q5/K7 b - - 2 43', 2, false],
-    ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', 0, false],
-    ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', 1, true],
-].forEach(([fen, color, answer], id) => {
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', null, 2, false],
+    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', null, 2, true],
+    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', null, 2, false],
+    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/1Kq5/8 w - - 1 43', null, 2, true],
+    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/2q5/K7 b - - 2 43', null, 2, false],
+    ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', null, 0, false],
+    ['8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47', null, 1, true],
+    ['rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 3', null, 0, false],
+    ['rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 3', null, 1, true],
+    ['rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 3', null, 2, false],
+    ['rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 3', null, 3, true],
+    [
+        'rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2',
+        {flags: 1, from: 19, piece: 9, ply: 3, to: 35},
+        2,
+        false,
+    ],
+    [
+        'rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2',
+        {flags: 1, from: 19, piece: 9, ply: 3, to: 35},
+        3,
+        true,
+    ],
+].forEach(([fen, move, color, answer], id) => {
     test(`checked:${id}`, () => {
         chess.load(fen);
+        if (move)
+            chess.moveRaw(move, false);
         expect(chess.checked(color)).toEqual(answer);
     });
 });
@@ -273,6 +291,23 @@ beforeEach(() => {
     test(`moveObject:${id}`, () => {
         chess.load(fen);
         expect(chess.moveObject(move, options[0], options[1])).toEqual(answer);
+    });
+});
+
+// moveRaw
+[
+    [
+        START_FEN,
+        {flags: 4, from: 97, piece: 1, to: 65},
+        false,
+        undefined,
+    ],
+].forEach(([fen, move, decorate, answer], id) => {
+    test(`moveRaw:${id}`, () => {
+        chess.load(fen);
+        let old = {...move};
+        chess.moveRaw(move, decorate);
+        expect(move).toEqual(Undefined(answer, old));
     });
 });
 
@@ -814,6 +849,7 @@ beforeEach(() => {
     [START_FEN, [], 0],
     [START_FEN, ['e4'], 1],
     [START_FEN, ['e4', 'd5'], 0],
+    ['rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2', ['e6'], 0],
 ].forEach(([fen, moves, answer], id) => {
     test(`turn:${id}`, () => {
         chess.load(fen);
@@ -833,11 +869,29 @@ beforeEach(() => {
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O'], true, 1, ''],
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O-O'], true, 1, ''],
     ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Qq - 1 11', ['O-O-O'], true, 1, ''],
+    [
+        '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
+        {flags: 1, from: 65, piece: 14, ply: 215, to: 48},
+        false,
+        1,
+        '',
+    ],
+    [
+        '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
+        {flags: 1, from: 65, piece: 14, ply: 215, to: 80},
+        false,
+        1,
+        '',
+    ],
 ].forEach(([fen, moves, frc, steps, answer], id) => {
     test(`undo:${id}`, () => {
         chess.load(fen);
-        for (let move of moves)
-            chess.moveSan(move, frc, false, false);
+        if (IsArray(moves)) {
+            for (let move of moves)
+                chess.moveSan(move, frc, false, false);
+        }
+        else
+            chess.moveRaw(moves, false);
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);
