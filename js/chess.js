@@ -184,6 +184,7 @@ var Chess = function(fen_) {
         kings = [EMPTY, EMPTY],
         materials = [0, 0],
         max_depth = 4,
+        max_extend = 4,
         max_nodes = 1e8,
         move_number = 1,
         nodes = 0,
@@ -401,9 +402,10 @@ var Chess = function(fen_) {
     /**
      * Configure some parameters
      */
-    function configure(frc_, max_depth_, max_nodes_) {
+    function configure(frc_, max_depth_, max_extend_, max_nodes_) {
         frc = frc_;
         max_depth = max_depth_;
+        max_extend = max_extend_;
         max_nodes = max_nodes_;
     }
 
@@ -1188,7 +1190,7 @@ var Chess = function(fen_) {
                 valid ++;
 
                 // look deeper
-                if (look_deeper) {
+                if (look_deeper || (depth < max_extend && move.capture && PIECE_SCORES[move.capture] < PIECE_SCORES[move.piece])) {
                     let moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
 
