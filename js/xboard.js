@@ -77,7 +77,8 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     TIMEOUT_click = 200,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
-    WHITE_BLACK = ['white', 'black'];
+    WB_LOWER = ['white', 'black'],
+    WB_TITLE = ['White', 'Black'];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1520,8 +1521,10 @@ class XBoard {
             ply = get_fen_ply(this.fen);
         if (play_as == 'AI')
             return false;
+        else if (play_as == 'Human')
+            return true;
         else
-            return (play_as == ['White', 'Black'][(1 + ply) % 2]);
+            return (play_as == WB_TITLE[(1 + ply) % 2]);
     }
 
     /**
@@ -1557,7 +1560,7 @@ class XBoard {
         this.replies = {};
 
         if (play_as != 'AI')
-            this.rotate = (play_as == 'Black');
+            this.rotate = (play_as == WB_TITLE[1]);
 
         this.instant();
         this.render(7);
@@ -2192,7 +2195,7 @@ class XBoard {
         if (!num_move)
             return false;
 
-        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WHITE_BLACK[color]}`],
+        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WB_LOWER[color]}`],
             num_worker = this.workers.length;
 
         Assign(reply, {
