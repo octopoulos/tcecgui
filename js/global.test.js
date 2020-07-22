@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2020-07-21
 //
 /*
 globals
@@ -20,8 +20,8 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE);
 
 let {
-    allie_cp_to_score, calculate_feature_q, fix_move_format, get_move_ply, leela_cp_to_score, mix_hex_colors,
-    split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score,
+    allie_cp_to_score, calculate_feature_q, fix_move_format, get_fen_ply, get_move_ply, leela_cp_to_score,
+    mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,6 +253,20 @@ let {
     test(`fix_move_format:${id}`, () => {
         fix_move_format(move);
         expect(move).toEqual(answer);
+    });
+});
+
+// get_fen_ply
+[
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', -1],
+    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', 0],
+    ['rnbqkbnr/pppppp1p/6p1/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2', 1],
+    ['rnbqkbnr/pppppp1p/6p1/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2', 2],
+    ['2r2rk1/ppqbppbp/6p1/nPPp4/Q7/3BPNP1/P2N1PP1/2R2RK1 b - - 2 18', 34],
+    ['8/1p2Bp2/p4pkp/4b3/P7/1P1R2PP/2r2PK1/8 b - - 0 35', 68],
+].forEach(([fen, answer], id) => {
+    test(`get_fen_ply:${id}`, () => {
+        expect(get_fen_ply(fen)).toEqual(answer);
     });
 });
 

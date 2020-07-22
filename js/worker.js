@@ -3,17 +3,26 @@
 // @version 2020-07-21
 /*
 globals
-Assign, Chess, FormatUnit, HTML, importScripts, LS, Now, Random, self, Undefined
+Assign, Chess, FormatUnit, HTML, importScripts, Keys, LS, Now, Random, self, Undefined
 */
 'use strict';
 
 importScripts('common.js');
 importScripts('chess.js');
+importScripts('chess-wasm.js');
 
-let I8 = array => new Int8Array(array),
-    PIECE_SCORES = I8([0, 1, 3, 3, 5, 9, 100, 0, 0, 1, 3, 3, 5, 9, 128]),
-    PROMOTE_SCORES = I8([0, 0, 2, 2, 4, 8, 0, 0, 0, 0, 2, 2, 4, 8, 0]),
-    SQUARES_INV = [
+let engine_classes = {
+        js: Chess,
+    },
+    engines = {};
+
+if (self.Module) {
+    self.Module().then(instance => {
+        engine_classes.wasm = instance.Chess;
+    });
+}
+
+let SQUARES_INV = [
         'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8', '??', '??', '??', '??', '??', '??', '??', '??',
         'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7', '??', '??', '??', '??', '??', '??', '??', '??',
         'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6', '??', '??', '??', '??', '??', '??', '??', '??',
@@ -24,105 +33,57 @@ let I8 = array => new Int8Array(array),
         'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1', '??', '??', '??', '??', '??', '??', '??', '??',
     ];
 
-// CLASS
-////////
+// FUNCTION
+///////////
 
-class ChessWoker {
-    constructor() {
-        this.chess = new Chess();
-        this.count = 0;
-        this.elapsed = 0;
-        this.max_depth = 4;
-        this.max_nodes = 1e7;
+/**
+ * Think ...
+ * @param {string} engine
+ * @param {string} fen
+ * @param {string} mask
+ * @param {boolean} frc
+ * @param {number} max_depth
+ * @param {number} max_nodes
+ * @returns {[Move, number, number]} best_move, score, depth
+ */
+function think(engine, fen, mask, frc, max_depth, max_nodes) {
+    // 1) use the desired engine
+    let engine_class = engine_classes[engine];
+    if (!engine_class) {
+        engine = 'js';
+        engine_class = engine_classes[engine];
     }
 
-    /**
-     * Basic tree search
-     * @param {Move[]} moves
-     * @param {number} depth
-     * @returns {[number, number]}
-     */
-    search(moves, depth) {
-        let best = 0,
-            best_depth = depth,
-            chess = this.chess,
-            coeff = 8 / (8 + depth),
-            id = 0,
-            length = moves.length,
-            valid = 0;
-
-        this.count += length;
-        let again = (this.count < this.max_nodes);
-
-        for (let move of moves) {
-            move.depth = depth;
-            chess.moveRaw(move, false);
-
-            // invalid move?
-            if (chess.checked(3))
-                move.score = -999;
-            else {
-                move.score = (PIECE_SCORES[move.capture | 0] + PROMOTE_SCORES[move.promote | 0]) * coeff;
-                valid ++;
-
-                // look deeper
-                if (depth < this.max_depth && again) {
-                    let moves2 = chess.moves(this.frc, false, -1),
-                        [score, depth2] = this.search(moves2, depth + 1, this.max_depth);
-                    move.score -= score;
-                    move.depth = depth2;
-                }
-            }
-
-            chess.undo();
-
-            if (move.score > -900 && (!id || best < move.score)) {
-                id ++;
-                best = move.score;
-                best_depth = move.depth;
-                if (depth >= 3 && best > 128)
-                    break;
-            }
-        }
-
-        // checkmate?
-        if (!valid && chess.checked(2))
-            return [-256 * coeff, depth];
-
-        for (let move of moves)
-            if (move.score > -900)
-                move.score += valid * 0.007 * coeff;
-
-        return [best, best_depth];
+    let chess = engines[engine];
+    if (!chess) {
+        LS(`creating new "${engine}" engine`);
+        engines[engine] = new engine_class();
+        chess = engines[engine];
     }
 
-    /**
-     * Think ...
-     * @param {string} fen
-     * @param {Move[]} moves moves to analyse, from depth=0
-     * @returns {[Move, number, number]} best_move, score, depth
-     */
-    think(fen, moves) {
-        this.chess.load(fen);
-        this.count = 0;
+    // 2) generate all moves + analyse them, using the mask
+    chess.load(fen);
+    chess.configure(frc, max_depth, max_nodes);
 
-        let start = Now(true),
-            [best, depth] = this.search(moves, 1);
-        this.elapsed = Now(true) - start;
+    let start = Now(true),
+        moves = chess.moves(frc, true, -1),
+        masks = chess.search(moves, mask),
+        elapsed = Now(true) - start;
 
-        for (let move of moves) {
-            move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-            move.score = Undefined(move.score, 0) + Random() * 0.1;
-        }
-        moves.sort((a, b) => b.score - a.score);
-        return [moves, best, depth];
+    // convert wasm to object
+    if (masks.size)
+        masks = new Array(masks.size()).fill(0).map((_, id) => masks.get(id));
+
+    for (let move of masks) {
+        move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
+        move.score = Undefined(move.score, 0) / 100 + Random() * 0.1;
     }
+    masks.sort((a, b) => b.score - a.score);
+    return [masks, elapsed, chess.nodes(), chess.selDepth()];
 }
 
 // COMMUNICATION
 ////////////////
-
-let chess_worker = new ChessWoker();
 
 self.onconnect = () => {
 };
@@ -130,20 +91,15 @@ self.onconnect = () => {
 self.onmessage = e => {
     let data = e.data;
     if (data.func == 'think') {
-        Assign(chess_worker, {
-            max_depth: data.max_depth,
-            max_nodes: data.max_nodes,
-        });
-
-        let [moves, score, depth] = chess_worker.think(data.fen, data.moves, data.max_depth, data.max_moves);
+        let [moves, elapsed, nodes, sel_depth] = think(
+            data.engine, data.fen, data.mask, data.frc, data.max_depth, data.max_nodes);
         self.postMessage({
-            count: chess_worker.count,
-            depth: depth,
-            elapsed: chess_worker.elapsed,
+            elapsed: elapsed,
             fen: data.fen,
             id: data.id,
             moves: moves,
-            score: score,
+            nodes: nodes,
+            sel_depth: sel_depth,
             suggest: data.suggest,
         });
     }

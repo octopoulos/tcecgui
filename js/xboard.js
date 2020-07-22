@@ -59,8 +59,6 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     FIGURES = 'bknpqrBKNPQR'.split(''),
     I8 = array => new Int8Array(array),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
-    PIECE_SCORES = I8([0, 1, 3, 3, 5, 9, 100, 0, 0, 1, 3, 3, 5, 9, 128]),
-    PROMOTE_SCORES = I8([0, 0, 2, 2, 4, 8, 0, 0, 0, 0, 2, 2, 4, 8, 0]),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
@@ -1518,13 +1516,11 @@ class XBoard {
      * @returns {boolean}
      */
     human_turn() {
-        let play_as = Y.game_play_as,
-            ply = get_move_ply({fen: this.fen});
-
+        let play_as = Y.game_play_as;
         if (play_as == 'AI')
             return false;
         else
-            return (play_as == ['White', 'Black'][(1 + ply) % 2]);
+            return (play_as == ['White', 'Black'][(1 + this.ply) % 2]);
     }
 
     /**
@@ -1599,7 +1595,7 @@ class XBoard {
         this.add_moves([move]);
 
         if (this.manual) {
-            let moves = this.chess.moves(this.frc, true, -1);
+            let moves = this.chess_moves(this.frc, true, -1);
             if (!moves.length) {
                 let is_mate = move.m.slice(-1) == '#';
                 LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
@@ -2164,17 +2160,20 @@ class XBoard {
      */
     think(suggest) {
         let chess = this.chess,
-            fen = this.fen;
+            fen = this.fen,
+            color = (1 + this.ply) % 2;
 
         // busy thinking => return
         let reply = SetDefault(this.replies, fen, {});
         if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
             return true;
 
+        Show(`.xcolor${color} .xcog`, this.node);
+
         this.create_workers();
 
         chess.load(fen);
-        let moves = chess.moves(this.frc, true, -1),
+        let moves = this.chess_moves(this.frc, true, -1),
             num_move = moves.length;
         if (!num_move)
             return false;
@@ -2188,22 +2187,24 @@ class XBoard {
             moves: [],
             moves2: moves,
             nodes: 0,
+            sel_depth: 0,
             start: Now(true),
         });
 
         // pure random?
         if (max_depth < 1 || num_worker < 1 || num_move < 2) {
-            let move = moves[RandomInt(num_move)];
+            let id = RandomInt(num_move),
+                move = moves[id];
             move.depth = 0;
             move.score = 0;
             this.worker_message({
                 data: {
-                    count: 0,
-                    depth: 0,
                     fen: fen,
+                    frc: this.frc,
                     id: -1,
-                    move: move,
-                    score: 0,
+                    moves: [move],
+                    nodes: 0,
+                    sel_depth: 0,
                     suggest: suggest,
                 },
             });
@@ -2211,29 +2212,36 @@ class XBoard {
         }
 
         // split moves across workers
-        let splits = [];
-        for (let id = 0; id < num_worker; id ++)
-            splits.push([]);
+        let has_moves = {},
+            masks = [];
+        for (let i = 0; i < num_worker; i ++)
+            masks.push(I8(num_move));
 
-        moves.forEach((move, i) => {
-            splits[i % num_worker].push(move);
-        });
+        for (let i = 0; i < num_move; i ++) {
+            let id = i % num_worker;
+            masks[id][i] = 1;
+            has_moves[id] = 1;
+        }
 
-        splits.forEach((split, id) => {
-            if (!split.length)
-                return;
+        // send messages
+        for (let id = 0; id < num_worker; id ++) {
+            if (!has_moves[id])
+                continue;
             reply.lefts[id] = id + 1;
 
             this.workers[id].postMessage({
+                engine: Y.game_wasm? 'wasm': 'js',
                 func: 'think',
                 fen: fen,
+                frc: this.frc,
                 id: id,
+                mask: masks[id].join(''),
                 max_depth: max_depth,
                 max_nodes: Y.game_nodes,
-                moves: split,
                 suggest: suggest,
             });
-        });
+        }
+
         return true;
     }
 
@@ -2275,12 +2283,11 @@ class XBoard {
      */
     worker_message(e) {
         let data = e.data,
-            count = data.count,
-            depth = data.depth,
             fen = data.fen,
             id = data.id,
             moves = data.moves,
-            score = data.score,
+            nodes = data.nodes,
+            sel_depth = data.sel_depth,
             suggest = data.suggest;
 
         // 1) reject if FEN doesn't match
@@ -2301,7 +2308,10 @@ class XBoard {
             if (move.piece && move.score > -900)
                 combine.push(move);
         }
-        reply.nodes += count;
+
+        reply.nodes += nodes;
+        if (sel_depth > reply.sel_depth)
+            reply.sel_depth = sel_depth;
 
         // still expecting more data?
         if (DEV.engine) {
@@ -2335,10 +2345,11 @@ class XBoard {
                 mini = _(`.xcolor${color}`, this.node),
                 result = this.chess_move(best, {decorate: true});
 
-            HTML('.xeval', score.toFixed(2), mini);
+            Hide(`.xcog`, mini);
+            HTML('.xeval', best.score.toFixed(2), mini);
             HTML(`.xleft`, elapsed.toFixed(1), mini);
             HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
-            HTML(`.xtime`, `${best.depth}/${depth}`, mini);
+            HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
 
             this.new_move(result);
         }

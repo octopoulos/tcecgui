@@ -1458,6 +1458,7 @@ if (typeof exports != 'undefined') {
         Min: Min,
         Now: Now,
         Pad: Pad,
+        Round: Round,
         SetDefault: SetDefault,
         Undefined: Undefined,
     });

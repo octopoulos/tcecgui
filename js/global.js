@@ -39,7 +39,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200720';
+    VERSION = '20200721';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -143,6 +143,15 @@ function fix_move_format(move) {
 }
 
 /**
+ * Get the ply from the FEN
+ * @param {string} fen
+ */
+function get_fen_ply(fen) {
+    let items = fen.split(' ');
+    return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+}
+
+/**
  * Get the move ply, either directly or by looking at the FEN
  * - also update move.ply
  * @param {Move} move
@@ -156,8 +165,7 @@ function get_move_ply(move) {
     if (!move.fen)
         return -2;
 
-    let items = move.fen.split(' '),
-        ply = (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+    let ply = get_fen_ply(move.fen);
     if (ply >= -1) {
         move.ply = ply;
         return ply;

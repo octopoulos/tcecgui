@@ -16,7 +16,7 @@ using namespace emscripten;
 #define DELETE(x) {if (x) delete x; x = nullptr;}
 #define DELETE_ARRAY(x) {if (x) delete [] x; x = nullptr;}
 
-// chess
+// defines
 #define BISHOP 3
 #define BITS_BIG_PAWN 4
 #define BITS_CAPTURE 2
@@ -51,6 +51,7 @@ using namespace emscripten;
 #define TYPE(piece) (piece & 7)
 #define WHITE 0
 
+// tables
 int ATTACKS[] = {
        20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
         0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
@@ -82,6 +83,40 @@ int ATTACKS[] = {
         {-17, -16, -15,   1, 17, 16, 15, -1},
         {-17, -16, -15,   1, 17, 16, 15, -1},
     },
+    PIECE_SCORES[] = {
+        0,
+        100,        // P
+        300,        // N
+        300,        // B
+        500,        // R
+        900,        // Q
+        12800,      // K
+        0,
+        0,
+        100,        // p
+        300,        // n
+        300,        // b
+        500,        // r
+        900,        // q
+        12800,      // k
+    },
+    PROMOTE_SCORES[] = {
+        0,
+        0,          // P
+        200,        // N
+        200,        // B
+        400,        // R
+        800,        // Q
+        11800,      // K
+        0,
+        0,
+        0,          // p
+        200,        // n
+        200,        // b
+        400,        // r
+        800,        // q
+        11800,      // k
+    },
     RAYS[] = {
        17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
         0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
@@ -100,6 +135,7 @@ int ATTACKS[] = {
       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
     };
 
+// extras
 std::map<char, uint8_t> PIECES = {
     {'P', 1},
     {'N', 2},
@@ -117,6 +153,7 @@ std::map<char, uint8_t> PIECES = {
 
 struct Move {
     uint8_t capture;
+    uint8_t depth;
     std::string fen;
     uint8_t flags;
     int     from;
@@ -124,15 +161,18 @@ struct Move {
     uint8_t piece;
     int     ply;
     uint8_t promote;
+    int     score;
     int     to;
 
     Move() {
         capture = 0;
+        depth = 0;
         flags = 0;
         from = EMPTY;
         piece = 0;
         ply = -1;
         promote = 0;
+        score = 0;
         to = EMPTY;
     }
 };
@@ -148,10 +188,10 @@ struct History {
 };
 
 class Chess {
+private:
     // PRIVATE
     //////////
 
-private:
     uint8_t *board;
     int     castling[4];
     int     ep_square;
@@ -160,7 +200,11 @@ private:
     int     half_moves;
     std::vector<History> histories;
     int     kings[2];
+    int     max_depth;
+    int     max_nodes;
     int     move_number;
+    int     nodes;
+    int     sel_depth;
     uint8_t turn;
 
     /**
@@ -217,7 +261,7 @@ private:
     /**
      * Uniquely identify ambiguous moves
      */
-    std::string getDisambiguator(Move &move, std::vector<Move> &moves) {
+    std::string disambiguate(Move &move, std::vector<Move> &moves) {
         int ambiguities = 0,
             from = move.from,
             same_file = 0,
@@ -225,7 +269,7 @@ private:
             to = move.to;
         uint8_t type = TYPE(move.piece);
 
-        for (auto move2 : moves) {
+        for (auto &move2 : moves) {
             int ambig_from = move2.from,
                 ambig_to = move2.to;
 
@@ -251,10 +295,10 @@ private:
             return an.substr((same_file > 0)? 1: 0, 1);
     }
 
+public:
     // PUBLIC
     /////////
 
-public:
     Chess() {
         board = new uint8_t[128];
 
@@ -372,7 +416,18 @@ public:
         kings[0] = EMPTY;
         kings[1] = EMPTY;
         move_number = 1;
+        nodes = 0;
+        sel_depth = 0;
         turn = WHITE;
+    }
+
+    /**
+     * Configure some parameters
+     */
+    void configure(bool frc_, int max_depth_, int max_nodes_) {
+        frc = frc_;
+        max_depth = max_depth_;
+        max_nodes = max_nodes_;
     }
 
     /**
@@ -641,7 +696,7 @@ public:
 
         // filter out illegal moves
         std::vector<Move> legal_moves;
-        for (auto move : moves) {
+        for (auto &move : moves) {
             moveRaw(move, false);
             if (!kingAttacked(us))
                 legal_moves.push_back(move);
@@ -802,7 +857,7 @@ public:
 
         // find an existing match + add the SAN
         if (flags) {
-            for (auto move2 : moves)
+            for (auto &move2 : moves)
                 if (move2.flags & flags) {
                     move2.m = moveToSan(move2, moves);
                     move_obj = move2;
@@ -810,7 +865,7 @@ public:
                 }
         }
         else
-            for (auto move2 : moves) {
+            for (auto &move2 : moves) {
                 if (move.from == move2.from && move.to == move2.to
                         && (!move2.promote || TYPE(move.promote) == move2.promote)) {
                     move2.m = moveToSan(move2, moves);
@@ -948,9 +1003,9 @@ public:
         if (move.flags & BITS_QSIDE_CASTLE)
             return "O-O-O";
 
-        std::string disambiguator = getDisambiguator(move, moves),
-            output;
+        std::string disambiguator = disambiguate(move, moves);
         auto move_type = TYPE(move.piece);
+        std::string output;
 
         if (move_type != PAWN)
             output += PIECE_UPPER[move_type] + disambiguator;
@@ -1082,7 +1137,7 @@ public:
     Move sanToMove(std::string san, std::vector<Move> &moves, bool sloppy) {
         // 1) try exact matching
         auto clean = cleanSan(san);
-        for (auto move : moves)
+        for (auto &move : moves)
             if (clean == cleanSan(moveToSan(move, moves))) {
                 move.m = san;
                 return move;
@@ -1131,7 +1186,7 @@ public:
         // type
         type = TYPE(PIECES[clean[i]]);
 
-        for (auto move : moves) {
+        for (auto &move : moves) {
             if (to == move.to
                     && (!type || type == TYPE(move.piece))
                     && (from_file < 0 || from_file == FILE(move.from))
@@ -1142,6 +1197,95 @@ public:
             }
         }
         return null_move;
+    }
+
+    /**
+     * Basic tree search with mask
+     * @param moves
+     * @param mask moves to search, ex: 01100
+     * @return updated moves
+     */
+    std::vector<Move> search(std::vector<Move> &moves, std::string mask) {
+        nodes = 0;
+        sel_depth = 0;
+
+        int result[2] = {0, 0};
+        if (mask.empty()) {
+            searchMoves(moves, 1, result);
+            return moves;
+        }
+
+        std::vector<Move> masked;
+        int length = std::min(moves.size(), mask.size());
+        for (auto i = 0; i < length; i ++)
+            if (mask[i] != '0')
+                masked.push_back(moves[i]);
+
+        searchMoves(masked, 1, result);
+        return masked;
+    }
+
+    /**
+     * Basic tree search
+     * @param moves
+     * @param depth
+     * @param result
+     */
+    void searchMoves(std::vector<Move> &moves, int depth, int *result) {
+        int best = -99999;
+        int best_depth = depth;
+        float coeff = 15.0f / (15 + depth);
+        auto length = moves.size();
+        bool look_deeper = (depth < max_depth && nodes < max_nodes);
+        int temp[] = {0, 0};
+        int valid = 0;
+
+        nodes += length;
+        if (depth > sel_depth)
+            sel_depth = depth;
+
+        for (auto &move : moves) {
+            move.depth = depth;
+            moveRaw(move, false);
+
+            // invalid move?
+            if (kingAttacked(3))
+                move.score = -99900;
+            else {
+                move.score = int((PIECE_SCORES[move.capture] + PROMOTE_SCORES[move.promote]) * coeff + 0.5f);
+                valid ++;
+
+                // look deeper
+                if (look_deeper) {
+                    auto moves2 = createMoves(frc, false, -1);
+                    searchMoves(moves2, depth + 1, temp);
+                    move.score -= temp[0];
+                    move.depth = temp[1];
+                }
+            }
+
+            undoMove();
+            if (depth >= 3 && move.score > 12800)
+                break;
+        }
+
+        // checkmate?
+        if (!valid && kingAttacked(2)) {
+            best = int(-25600 * coeff + 0.5f);
+            best_depth = depth;
+        }
+        else {
+            for (auto &move : moves) {
+                move.score += int(valid * 0.7 * coeff + 0.5f);
+                if (best < move.score) {
+                    best = move.score;
+                    best_depth = move.depth;
+                }
+            }
+        }
+
+        result[0] = best;
+        result[1] = best_depth;
     }
 
     /**
@@ -1232,11 +1376,19 @@ public:
         return frc;
     }
 
+    int em_nodes() {
+        return nodes;
+    }
+
     uint8_t em_piece(std::string text) {
         if (text.size() != 1)
             return 0;
         auto it = PIECES.find(text.at(0));
         return (it != PIECES.end())? it->second: 0;
+    }
+
+    int em_selDepth() {
+        return sel_depth;
     }
 
     uint8_t em_turn() {
@@ -1248,8 +1400,10 @@ public:
 ///////////////
 
 EMSCRIPTEN_BINDINGS(chess) {
+    // MOVE BINDINGS
     value_object<Move>("Move")
         .field("capture", &Move::capture)
+        .field("depth", &Move::depth)
         .field("fen", &Move::fen)
         .field("flags", &Move::flags)
         .field("from", &Move::from)
@@ -1257,9 +1411,11 @@ EMSCRIPTEN_BINDINGS(chess) {
         .field("piece", &Move::piece)
         .field("ply", &Move::ply)
         .field("promote", &Move::promote)
+        .field("score", &Move::score)
         .field("to", &Move::to)
         ;
 
+    // CHESS BINDINGS
     class_<Chess>("Chess")
         .constructor()
         .function("anToSquare", &Chess::anToSquare)
@@ -1269,6 +1425,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("checked", &Chess::em_checked)
         .function("cleanSan", &Chess::cleanSan)
         .function("clear", &Chess::clear)
+        .function("configure", &Chess::configure)
         .function("currentFen", &Chess::em_fen)
         .function("fen", &Chess::createFen)
         .function("frc", &Chess::em_frc)
@@ -1282,11 +1439,14 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("moves", &Chess::createMoves)
         .function("multiSan", &Chess::multiSan)
         .function("multiUci", &Chess::multiUci)
+        .function("nodes", &Chess::em_nodes)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)
         .function("put", &Chess::put)
         .function("reset", &Chess::reset)
         .function("sanToMove", &Chess::sanToMove)
+        .function("search", &Chess::search)
+        .function("selDepth", &Chess::em_selDepth)
         .function("squareToAn", &Chess::squareToAn)
         .function("turn", &Chess::em_turn)
         .function("undo", &Chess::undoMove)
