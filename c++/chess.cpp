@@ -1254,6 +1254,11 @@ public:
             sel_depth = depth;
 
         for (auto &move : moves) {
+            if (half_moves >= 50) {
+                move.score = 0;
+                break;
+            }
+
             move.depth = depth;
             moveRaw(move, false);
 

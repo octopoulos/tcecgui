@@ -1172,6 +1172,11 @@ var Chess = function(fen_) {
             sel_depth = depth;
 
         for (let move of moves) {
+            if (half_moves >= 50) {
+                move.score = 0;
+                break;
+            }
+
             move.depth = depth;
             moveRaw(move, false);
 
