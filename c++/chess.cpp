@@ -303,6 +303,10 @@ public:
 
     Chess() {
         board = new uint8_t[128];
+        frc = false;
+        max_depth = 4;
+        max_extend = 0;
+        max_nodes = 1e8;
 
         clear();
         load(DEFAULT_POSITION);

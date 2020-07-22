@@ -2196,7 +2196,7 @@ class XBoard {
             return false;
 
         let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WB_LOWER[color]}`],
-            max_extend = max_depth? max_depth + 2: 0,
+            max_extend = max_depth? max_depth + 2 + (max_depth % 2): 0,
             num_worker = this.workers.length;
 
         Assign(reply, {
