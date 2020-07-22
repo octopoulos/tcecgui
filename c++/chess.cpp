@@ -201,6 +201,7 @@ private:
     int     kings[2];
     int     materials[2];
     int     max_depth;
+    int     max_extend;
     int     max_nodes;
     int     move_number;
     int     nodes;
@@ -426,9 +427,10 @@ public:
     /**
      * Configure some parameters
      */
-    void configure(bool frc_, int max_depth_, int max_nodes_) {
+    void configure(bool frc_, int max_depth_, int max_extend_, int max_nodes_) {
         frc = frc_;
         max_depth = max_depth_;
+        max_extend = max_extend_;
         max_nodes = max_nodes_;
     }
 
@@ -1270,7 +1272,7 @@ public:
                 valid ++;
 
                 // look deeper
-                if (look_deeper) {
+                if (look_deeper || (depth < max_extend && move.capture && PIECE_SCORES[move.capture] < PIECE_SCORES[move.piece])) {
                     auto moves2 = createMoves(frc, false, -1);
                     searchMoves(moves2, depth + 1, temp);
 

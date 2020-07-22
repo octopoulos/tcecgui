@@ -43,10 +43,11 @@ let SQUARES_INV = [
  * @param {string} mask
  * @param {boolean} frc
  * @param {number} max_depth
+ * @param {number} max_extend
  * @param {number} max_nodes
  * @returns {[Move, number, number]} best_move, score, depth
  */
-function think(engine, fen, mask, frc, max_depth, max_nodes) {
+function think(engine, fen, mask, frc, max_depth, max_extend, max_nodes) {
     // 1) use the desired engine
     let engine_class = engine_classes[engine];
     if (!engine_class) {
@@ -63,7 +64,7 @@ function think(engine, fen, mask, frc, max_depth, max_nodes) {
 
     // 2) generate all moves + analyse them, using the mask
     chess.load(fen);
-    chess.configure(frc, max_depth, max_nodes);
+    chess.configure(frc, max_depth, max_extend, max_nodes);
 
     let start = Now(true),
         moves = chess.moves(frc, true, -1),
@@ -92,7 +93,7 @@ self.onmessage = e => {
     let data = e.data;
     if (data.func == 'think') {
         let [moves, elapsed, nodes, sel_depth] = think(
-            data.engine, data.fen, data.mask, data.frc, data.max_depth, data.max_nodes);
+            data.engine, data.fen, data.mask, data.frc, data.max_depth, data.max_extend, data.max_nodes);
         self.postMessage({
             elapsed: elapsed,
             fen: data.fen,
