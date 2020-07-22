@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-13
+// @version 2020-07-21
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1449,6 +1449,7 @@ if (typeof exports != 'undefined') {
         Floor: Floor,
         FormatUnit: FormatUnit,
         Keys: Keys,
+        IsArray: IsArray,
         IsObject: IsObject,
         IsString: IsString,
         Lower: Lower,

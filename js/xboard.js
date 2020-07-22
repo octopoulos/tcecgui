@@ -27,7 +27,7 @@ _, A, Abs, add_timeout, Assign, AttrsNS, audiobox,
 C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV, Events, Floor, FormatUnit, From,
 get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame, Round,
-S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, Worker, Y
+S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -1157,21 +1157,22 @@ class XBoard {
 
         this.workers = [];
 
-        for (let id = 0; id < number; id ++) {
-            let worker = new Worker('js/worker.js');
-            this.worker = worker;
+        if (window.Worker)
+            for (let id = 0; id < number; id ++) {
+                let worker = new Worker(`js/worker.js?ts=${Now()}`);
+                this.worker = worker;
 
-            worker.onerror = error => {
-                LS(`worker error:`);
-                LS(error);
-            };
-            worker.onmessage = e => {
-                this.worker_message(e);
-            };
+                worker.onerror = error => {
+                    LS(`worker error:`);
+                    LS(error);
+                };
+                worker.onmessage = e => {
+                    this.worker_message(e);
+                };
 
-            worker.id = id;
-            this.workers.push(worker);
-        }
+                worker.id = id;
+                this.workers.push(worker);
+            }
     }
 
     /**
@@ -1603,6 +1604,7 @@ class XBoard {
                 let is_mate = move.m.slice(-1) == '#';
                 LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
                 play_sound(audiobox, Y.sound_draw);
+                this.play(true);
             }
         }
         this.delayed_picks(true);
@@ -2181,6 +2183,7 @@ class XBoard {
             num_worker = this.workers.length;
 
         Assign(reply, {
+            count: 0,
             lefts: I8(num_worker),
             moves: [],
             moves2: moves,
@@ -2276,45 +2279,55 @@ class XBoard {
             depth = data.depth,
             fen = data.fen,
             id = data.id,
-            move = data.move,
+            moves = data.moves,
             score = data.score,
             suggest = data.suggest;
 
+        // 1) reject if FEN doesn't match
         let reply = this.replies[this.fen];
         if (!reply) {
             LS(`error, no reply for ${this.fen}`);
             return;
         }
-        let moves = reply.moves;
-        reply.lefts[id] = 0;
-        if (move.piece)
-            moves.push(move);
-        reply.nodes += count;
-
-        if (DEV.engine) {
-            if (moves.length == 1)
-                LS(this.fen);
-            LS(`  ${id}${fen == this.fen? '': 'X'} : ${reply.lefts}/${moves.length} : ${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`);
-        }
         if (fen != this.fen)
             return;
 
+        // 2) combine moves
+        let combine = reply.moves,
+            move = moves[0];
+        reply.lefts[id] = 0;
+
+        for (let move of moves) {
+            if (move.piece && move.score > -900)
+                combine.push(move);
+        }
+        reply.nodes += count;
+
+        // still expecting more data?
+        if (DEV.engine) {
+            if (!reply.count)
+                LS(this.fen);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(1): '-').padStart(6)} : ${reply.lefts} : ${combine.length}`);
+        }
+        reply.count ++;
         if (!reply.lefts.every(item => !item))
             return;
 
+        // 3) got all the data
         let elapsed = Now(true) - reply.start,
             nps = (elapsed> 0.001)? `${FormatUnit(reply.nodes / elapsed)}nps`: '-';
 
         // get the best move
-        for (let move of moves)
-            move.score += Random() * 0.1;
-        moves.sort((a, b) => b.score - a.score);
-
-        let best = moves[0];
+        combine.sort((a, b) => b.score - a.score);
+        let best = combine[0];
         if (DEV.engine)
-            LS(moves);
+            LS(combine);
+        if (!best) {
+            LS('no legal move to play');
+            return;
+        }
 
-        // update
+        // 4) update
         if (suggest)
             this.arrow(3, best);
         else {

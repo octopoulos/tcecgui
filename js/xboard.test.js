@@ -241,6 +241,7 @@ live.dual = archive;
 // 6r1/p7/n1k4p/1p3N2/4K1p1/P7/1P6/8 b - - 2 35
 // 8/2k5/8/3q4/n5q1/2q1q3/8/1K6 b - - 34 190
 // k7/2R5/4p3/PQ1p1p2/3P4/2N4q/8/3KN3 w - - 42 73
+// 4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73 => white must find the mate
 
 // set_fen
 [
