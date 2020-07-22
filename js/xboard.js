@@ -25,7 +25,7 @@
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox,
 C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV, Events, Floor, FormatUnit, From,
-get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
+get_fen_ply, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame, Round,
 S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window, Worker, Y
 */
@@ -1516,11 +1516,12 @@ class XBoard {
      * @returns {boolean}
      */
     human_turn() {
-        let play_as = Y.game_play_as;
+        let play_as = Y.game_play_as,
+            ply = get_fen_ply(this.fen);
         if (play_as == 'AI')
             return false;
         else
-            return (play_as == ['White', 'Black'][(1 + this.ply) % 2]);
+            return (play_as == ['White', 'Black'][(1 + ply) % 2]);
     }
 
     /**
@@ -2161,7 +2162,8 @@ class XBoard {
     think(suggest) {
         let chess = this.chess,
             fen = this.fen,
-            color = (1 + this.ply) % 2;
+            ply = get_fen_ply(this.fen),
+            color = (1 + ply) % 2;
 
         // busy thinking => return
         let reply = SetDefault(this.replies, fen, {});
@@ -2178,7 +2180,7 @@ class XBoard {
         if (!num_move)
             return false;
 
-        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WHITE_BLACK[(1 + this.ply) % 2]}`],
+        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WHITE_BLACK[color]}`],
             num_worker = this.workers.length;
 
         Assign(reply, {
@@ -2338,19 +2340,20 @@ class XBoard {
         }
 
         // 4) update
+        let ply = get_fen_ply(fen),
+            color = (1 + ply) % 2,
+            mini = _(`.xcolor${color}`, this.node);
+
+        Hide(`.xcog`, mini);
+        HTML('.xeval', best.score.toFixed(2), mini);
+        HTML(`.xleft`, elapsed.toFixed(1), mini);
+        HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
+        HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
+
         if (suggest)
             this.arrow(3, best);
         else {
-            let color = (1 + this.ply) % 2,
-                mini = _(`.xcolor${color}`, this.node),
-                result = this.chess_move(best, {decorate: true});
-
-            Hide(`.xcog`, mini);
-            HTML('.xeval', best.score.toFixed(2), mini);
-            HTML(`.xleft`, elapsed.toFixed(1), mini);
-            HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
-            HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
-
+            let result = this.chess_move(best, {decorate: true});
             this.new_move(result);
         }
     }
