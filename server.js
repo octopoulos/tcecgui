@@ -665,7 +665,7 @@ function Misc()
          }
          if (path.match(/Eventcrosstable.json/))
          {
-            console.log ("Evant table changed");
+            console.log ("Event table changed");
             io.local.emit('bracket', data);
          }
          if (path.match(/live.json/))
