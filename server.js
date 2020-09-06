@@ -33,6 +33,8 @@ __dirname, console, process, require, setInterval, setTimeout
 
 let Keys = Object.keys;
 
+var chatServer = require("./chat_server");
+
 // var https = require("https");
 var http = require("http");
 // var url = require('url');
@@ -80,7 +82,7 @@ var userCountFactor = 1;
 /* Deltapgn: Configure this to less value for less data */
 var numMovesToSend = 2;
 var liveChartInterval = setInterval(function() { sendlines(); }, 3000);
-let retPgn = {};
+let retPgn = 0;
 const shlib = require("./lib.js");
 let jsonMenuData = 0;
 let frc = 0;
@@ -632,9 +634,15 @@ function Misc()
             //console.log ("Sent full pgn data to connected socket:" + JSON.stringify(delta).length + ",changed" + clientIp + ", from serverXXXX:" + pid);
          }
          console.log('XXXXXX: req came' + lastPgnTime);
-      });
+        });
 
-   });
+        // This needs to get actual IP, will need to experiment with main server to see what works in it.
+        // Also need to experiment in bonus server, might not be same.
+        socket.on('vote', function(data) {
+            data.ip = socket.handshake.headers["x-real-ip"] || socket.request.connection.remoteAddress;
+            chatServer.vote(data);
+        });
+    });
 
    watcherFast.on('change', (path, stats) =>
    {
@@ -838,4 +846,3 @@ function Main()
 }
 
 Main();
-

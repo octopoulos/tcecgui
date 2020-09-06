@@ -154,6 +154,7 @@ let ANALYSIS_URLS = {
     },
     ENGINE_FEATURES = {
         AllieStein: 1 + 4,              // & 1 => NN engine
+        Chat: 256,
         LCZero: 1 + 2,                  // & 2 => Leela variations
         ScorpioNN: 1,
         Stoofvlees: 1 + 8,
@@ -3504,8 +3505,8 @@ function update_pgn(section, data, extras, reset_moves) {
     }
 
     // 5) clock
-    if (section == 'live' && last_move) {
-        let who = 1 - last_move.ply % 2;
+    if (section == 'live' && (last_move || new_game)) {
+        let who = last_move? (1 + last_move.ply) % 2: 0;
         if (!new_game)
             players[who].time = 0;
         start_clock(who, finished, pgn.elapsed || 0);
@@ -3698,6 +3699,8 @@ function start_clock(id, finished, delta) {
     Hide(`.xcolor${1 - id} .xcog`, node);
 
     stop_clock([0, 1]);
+    // handle Chat player
+    main.manual = (!finished && (player.feature & 256));
 
     if (!finished) {
         Assign(player, {

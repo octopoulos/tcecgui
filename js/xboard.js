@@ -27,7 +27,8 @@ _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeou
 CreateSVG,
 DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt, requestAnimationFrame,
-S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window, Worker, Y
+S, SetDefault, Show, Sign, socket, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window,
+Worker, Y
 */
 'use strict';
 
@@ -77,6 +78,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     TIMEOUT_click = 200,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
+    TIMEOUT_vote = 1200,
     WB_LOWER = ['white', 'black'],
     WB_TITLE = ['White', 'Black'];
 
@@ -177,11 +179,11 @@ class XBoard {
         this.locked_obj = null;
         this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
+        this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
         this.next = null;
         this.node = _(this.id);
-
         this.overlay = null;                            // svg objects will be added there
         this.pgn = {};
         this.picked = null;                             // picked piece
@@ -1585,24 +1587,36 @@ class XBoard {
         // fen/ply
         let fen = this.chess_fen();
         move.fen = fen;
-        let ply = get_move_ply(move);
+        let now = Now(true),
+            ply = get_move_ply(move);
 
-        this.set_fen(fen, true);
-        this.clear_high('source target');
-        this.picked = null;
+        // user vote?
+        if (this.main) {
+            let prev_fen = this.moves.length? this.moves[this.moves.length - 1].fen: this.start_fen,
+                uci = this.chess.ucify(move);
+            if ((now - this.move_time) * 1000 > TIMEOUT_vote)
+                socket.emit('vote', {fen: prev_fen, move: uci, time: now});
+            this.arrow(3, move);
+        }
+        else {
+            this.set_fen(fen, true);
+            this.clear_high('source target');
+            this.picked = null;
 
-        // delete some moves?
-        if (ply < this.moves.length) {
-            this.moves = this.moves.slice(0, ply);
-            let node = _(`[data-i="${ply}"]`, this.xmoves);
-            while (node) {
-                let next = node.nextElementSibling;
-                node.remove();
-                node = next;
+            // delete some moves?
+            if (ply < this.moves.length) {
+                this.moves = this.moves.slice(0, ply);
+                let node = _(`[data-i="${ply}"]`, this.xmoves);
+                while (node) {
+                    let next = node.nextElementSibling;
+                    node.remove();
+                    node = next;
+                }
             }
         }
 
         this.add_moves([move]);
+        this.move_time = now;
 
         // maybe finished the game? 50MR / stalemate / win
         if (this.manual) {
@@ -1624,7 +1638,7 @@ class XBoard {
                 play_sound(audiobox, Y.sound_draw);
                 this.play(true);
             }
-        }
+	    }
         this.delayed_picks(true);
     }
 
@@ -1927,6 +1941,7 @@ class XBoard {
         this.fen2 = '';
         this.goal = [-20.5, -1];
         this.grid.fill('');
+        this.move_time = Now(true);
         this.moves.length = 0;
         this.next = null;
         this.ply = 0;
@@ -1939,7 +1954,7 @@ class XBoard {
         if (reset_evals)
             this.evals.length = 0;
 
-        this.set_fen(null);
+        this.set_fen(null, true);
         this.set_last(this.last);
     }
 
