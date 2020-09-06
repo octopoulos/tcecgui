@@ -4,9 +4,9 @@
 //
 /*
 globals
-_, Abs, Assign, C, calculate_feature_q, Chart, Clamp, DEV, fix_move_format, Floor, FormatUnit, FromSeconds,
-get_move_ply, Id, IsObject, Keys, load_library, LS, Min, Pad, Round, SetDefault, Sign, translate_expression, Visible,
-window, xboards, Y
+_, Abs, Assign, C, calculate_feature_q, Chart, Clamp,
+DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, IsObject, Keys,
+load_library, LS, Min, Pad, Round, SetDefault, Sign, translate_expression, Visible, window, xboards, Y
 */
 'use strict';
 

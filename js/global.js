@@ -18,6 +18,7 @@ if (typeof global != 'undefined') {
         {Assign} = req('./common');
     Assign(global, {
         Assign: Assign,
+        location: {},
     });
 }
 // >>
@@ -145,6 +146,7 @@ function fix_move_format(move) {
 /**
  * Get the ply from the FEN
  * @param {string} fen
+ * @returns {number}
  */
 function get_fen_ply(fen) {
     let items = fen.split(' ');

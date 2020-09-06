@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-05
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -12,22 +12,21 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
-ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, cannot_click, change_page, change_setting, change_setting_game, change_theme, changed_hash, changed_section,
-check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, create_url_list, CreateNode, DEFAULTS,
-detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader, From,
-full_scroll, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses,
-hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys,
-KEYS,
-LANGUAGES:true, LINKS, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max,
-merge_settings, Min, navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent,
-parse_dev, PD, PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket,
-resize_game, resume_sleep,
-S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, set_modal_events, SetDefault, Show,
-show_banner, show_popup, show_settings, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game,
-startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
-translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_chart_options, update_debug,
-update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
+cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
+changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
+DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader,
+From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes,
+Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
+Min, navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
+PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game,
+resume_sleep,
+S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, SetDefault, Show, show_banner,
+show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
+THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
+translates:true, Undefined, update_board_theme, update_chart_options, update_debug, update_pgn, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
 virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
 */
@@ -86,6 +85,8 @@ let AD_STYLES = {},
     TIMEOUT_popup = 600,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Same as action_key_no_input, but when the key is up
@@ -153,6 +154,7 @@ function change_setting_special(name, value, no_close) {
             add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
     }
 
+    //
     if (name != 'preset')
         Y.preset = 'custom';
 
@@ -373,21 +375,23 @@ function check_hash_special(dico) {
     check_stream();
 
     // handle a short url
-    let archive_keys = ARCHIVE_KEYS.filter(key => dico[key] != undefined);
+    let archive_keys = ARCHIVE_KEYS.filter(key => dico[key] != undefined),
+        section = Y.x;
     if (archive_keys.length) {
         for (let key of ARCHIVE_KEYS)
             if (dico[key] == undefined)
                 Y[key] = undefined;
-        Y.x = 'archive';
+        section = 'archive';
     }
     else if (!dico.x)
-        Y.x = 'live';
+        section = 'live';
 
-    if (!['archive', 'live'].includes(Y.x))
-        Y.x = 'live';
-    hashes[Y.x] = dico;
+    if (!['archive', 'live'].includes(section))
+        section = 'live';
+    hashes[section] = dico;
+    Y.x = section;
 
-    let is_live = (Y.x == 'live'),
+    let is_live = (section == 'live'),
         parent = Id('tables');
     Class(Id('nav-archive'), 'yellow', !is_live);
     Class(Id('nav-live'), 'red', is_live);
@@ -403,8 +407,8 @@ function check_hash_special(dico) {
     // changed section
     changed_hash();
 
-    if (Y.x != old_x) {
-        old_x = Y.x;
+    if (section != old_x) {
+        old_x = section;
         if (old_x == 'live')
             Y.game = 0;
 
@@ -658,7 +662,7 @@ function init_globals() {
         let now = Now(),
             diff = now - resume_time;
         if (diff * 1000 > TIMEOUT_resume * 3)
-            resume_sleep();
+            resume_sleep(resume_time);
         resume_time = now;
     }, TIMEOUT_resume, true);
 }
@@ -1117,130 +1121,6 @@ function show_live_engines() {
 }
 
 /**
- * Show/hide popup
- * @param {string=} name
- * @param {boolean=} show
- * @param {boolean=} adjust only change its position
- * @param {boolean=} instant popup appears instantly
- * @param {boolean=} overlay dark overlay is used behind the popup
- * @param {string=} setting
- * @param {number[]]=} xy
- */
-function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
-    if (adjust && device.iphone)
-        return;
-    S(Id('overlay'), show && overlay);
-
-    let node = (name == 'about')? Id('popup-about'): Id('modal');
-    if (!node)
-        return;
-
-    if (show || adjust) {
-        let html = '',
-            px = 0,
-            py = 0,
-            win_x = window.innerWidth,
-            win_y = window.innerHeight,
-            x = 0,
-            x2 = 0,
-            y = 0,
-            y2 = 0;
-
-        // create the html
-        switch (name) {
-        case 'about':
-            html = HTML(Id('desc'));
-            px = -50;
-            py = -50;
-            x = win_x / 2;
-            y = win_y / 2;
-            break;
-        case 'options':
-            if (!xy)
-                context_target = null;
-            html = show_settings(setting, xy);
-            break;
-        default:
-            if (name)
-                html = create_url_list(LINKS[name]);
-            break;
-        }
-
-        if (show)
-            HTML(name == 'about'? '#popup-desc': '#modal', html);
-        else
-            name = node.dataset.id;
-
-        Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
-        translate_node(node);
-
-        // align the popup with the target, if any
-        if (adjust && !xy) {
-            let item = node.dataset.xy;
-            if (item)
-                xy = item.split(',').map(item => item * 1);
-        }
-        if (xy) {
-            x = xy[0];
-            y = xy[1];
-            x2 = x;
-            y2 = y;
-        }
-        else if (name && !px) {
-            let target = Id(name);
-            if (target) {
-                let rect = target.getBoundingClientRect();
-                [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
-            }
-        }
-
-        // make sure the popup remains inside the window
-        let height = node.clientHeight,
-            width = node.clientWidth;
-
-        // align left doesn't work => try align right, and if not then center
-        if (x + width > win_x - 20) {
-            if (x2 < win_x - 20 && x2 - width > 0) {
-                px = -100;
-                x = x2;
-            }
-            else {
-                px = -50;
-                x = win_x / 2;
-            }
-        }
-        // same for y
-        if (y + height > win_y) {
-            if (y2 < win_y && y2 - height > 0) {
-                py = -100;
-                y = y2;
-            }
-            else {
-                py = -50;
-                y = win_y / 2;
-            }
-        }
-
-        node.dataset.xy = xy || '';
-        x += full_scroll.x;
-        y += full_scroll.y;
-        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
-    }
-
-    if (!adjust) {
-        if (instant != undefined)
-            Class(node, 'instant', instant);
-        Class(node, 'popup-show popup-enable', !!show);
-
-        // remember which popup it is, so if we click again on the same id => it closes it
-        node.dataset.id = show? name: '';
-
-        set_modal_events(node);
-        Show(node);
-    }
-}
-
-/**
  * Add a drag element to a tab group
  * @param {Node} target
  */
@@ -1423,7 +1303,6 @@ function set_global_events() {
 
     // keys
     Events(window, 'keydown keyup', e => {
-        // LS(`key=${e.key} : code=${e.code} : keycode=${e.keyCode}`);
         let active = document.activeElement,
             code = e.keyCode,
             is_game = true,
@@ -1453,6 +1332,8 @@ function set_global_events() {
             else
                 action_keyup_no_input(code);
             KEYS[code] = 0;
+            if (change_queue)
+                change_setting(change_queue[0], change_queue[1], change_queue[2]);
         }
 
         // prevent some default actions
@@ -1552,6 +1433,21 @@ function set_global_events() {
         });
     });
 
+    // fullscreen scrolling
+    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
+        if (!is_fullscreen())
+            return;
+        touch_handle(e, true);
+    });
+    Events(window, 'wheel', e => {
+        if (!is_fullscreen()) {
+            if (Y.wheel_adjust)
+                add_timeout('adjust', scroll_adjust, TIMEOUT_adjust);
+            return;
+        }
+        wheel_event(e, true);
+    }, {passive: true});
+
     // context menus
     if (!DEV.popup) {
         Keys(CONTEXT_MENUS).forEach(key => {
@@ -1615,21 +1511,6 @@ function set_global_events() {
         });
     }
 
-    // fullscreen scrolling
-    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
-        if (!is_fullscreen())
-            return;
-        touch_handle(e, true);
-    });
-    Events(window, 'wheel', e => {
-        if (!is_fullscreen()) {
-            if (Y.wheel_adjust)
-                add_timeout('adjust', scroll_adjust, TIMEOUT_adjust);
-            return;
-        }
-        wheel_event(e, true);
-    }, {passive: true});
-
     // drag and drop
     Events(window, 'dragstart', e => {
         if (!Y.drag_and_drop)
@@ -1670,7 +1551,7 @@ function set_global_events() {
             let reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onloadend = function() {
-                let node = _('#background');
+                let node = Id('background');
                 node.style.backgroundImage = `url(${reader.result})`;
                 if (!Y.background_opacity)
                     Y.background_opacity = 0.2;

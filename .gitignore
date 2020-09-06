@@ -27,6 +27,7 @@ chart.js
 crash.json
 create_list.js
 crosstable.json
+cutechess_parser.py
 data*.json
 dist/
 dist/js/
