@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-05
 //
 // game board:
 // - 4 rendering modes:
@@ -23,10 +23,10 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, AttrsNS, audiobox,
-C, Chess, Class, clear_timeout, CopyClipboard, CreateNode, CreateSVG, DEV, Events, Floor, FormatUnit, From,
-get_fen_ply, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, Random, RandomInt, requestAnimationFrame, Round,
+_, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode,
+CreateSVG,
+DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt, requestAnimationFrame,
 S, SetDefault, Show, Sign, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
@@ -1151,15 +1151,11 @@ class XBoard {
         if (DEV.engine)
             LS(`threads: ${this.workers.length} => ${number}`);
 
-        for (let worker of this.workers)
-            worker.terminate();
-
-        this.workers = [];
+        this.destroy_workers();
 
         if (window.Worker)
             for (let id = 0; id < number; id ++) {
                 let worker = new Worker(`js/worker.js?ts=${Now()}`);
-                this.worker = worker;
 
                 worker.onerror = error => {
                     LS(`worker error:`);
@@ -1186,6 +1182,16 @@ class XBoard {
         requestAnimationFrame(() => {
             add_timeout(`pick${this.id}`, () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
         });
+    }
+
+    /**
+     * Destroy the web workers
+     * - useful when starting a new game, to make sure no code is running in the threads anymore
+     */
+    destroy_workers() {
+        for (let worker of this.workers)
+            worker.terminate();
+        this.workers = [];
     }
 
     /**
@@ -1276,29 +1282,28 @@ class XBoard {
             });
 
         // PVA => extra events
-        if (this.manual) {
-            // place a picked piece
-            C(this.xsquares, e => {
+        // place a picked piece
+        C(this.xsquares, e => {
+            if (this.manual)
                 this.place(e);
-            });
+        });
 
-            // pick a piece
-            C('.xpieces', e => {
-                if (this.place(e) || !this.pick(e))
-                    return;
+        // pick a piece
+        C('.xpieces', e => {
+            if (!this.manual || this.place(e) || !this.pick(e))
+                return;
 
-                this.clear_high('target', this.picked == null);
-                if (this.picked == null)
-                    return;
+            this.clear_high('target', this.picked == null);
+            if (this.picked == null)
+                return;
 
-                this.chess_load(this.fen);
-                let moves = this.chess_moves(this.frc, true, this.picked);
-                for (let move of moves)
-                    this.add_high(move.to, 'target');
-                if (moves[0])
-                    this.add_high(moves[0].from, 'source');
-            }, this.node);
-        }
+            this.chess_load(this.fen);
+            let moves = this.chess_moves(this.frc, true, this.picked);
+            for (let move of moves)
+                this.add_high(move.to, 'target');
+            if (moves[0])
+                this.add_high(moves[0].from, 'source');
+        }, this.node);
     }
 
     /**
@@ -1556,6 +1561,7 @@ class XBoard {
         else
             fen = START_FEN;
 
+        this.destroy_workers();
         this.reset(true, fen);
         this.replies = {};
 
@@ -1962,6 +1968,11 @@ class XBoard {
         Style('.xoverlay', `height:${frame_size2}px;width:${frame_size2}px`, true, node);
         Style('.xmoves', `max-width:${frame_size}px`, true, node);
         Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
+
+        if (this.name == 'xfen') {
+            border = 0;
+            min_height = 'unset';
+        }
         Style('.xcontain', `left:${border}px;min-height:${min_height}px;top:${border}px`, true, node);
 
         this.size = size;
@@ -2209,7 +2220,7 @@ class XBoard {
             start: Now(true),
         });
 
-        // pure random?
+        // pure random + insta move?
         if (max_depth < 1 || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = moves[id];
@@ -2257,6 +2268,7 @@ class XBoard {
                 max_depth: max_depth,
                 max_extend: max_extend,
                 max_nodes: Y.game_nodes,
+                params: color? '': 'YES',
                 suggest: suggest,
             });
         }
@@ -2321,7 +2333,8 @@ class XBoard {
         // 2) combine moves
         let combine = reply.moves,
             move = moves[0];
-        reply.lefts[id] = 0;
+        if (id >= 0)
+            reply.lefts[id] = 0;
 
         for (let move of moves) {
             if (move.piece && move.score > -900)
@@ -2364,11 +2377,13 @@ class XBoard {
         if (color)
             best.score *= -1;
 
-        Hide(`.xcog`, mini);
-        HTML('.xeval', best.score.toFixed(2), mini);
-        HTML(`.xleft`, elapsed.toFixed(1), mini);
-        HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
-        HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
+        if (id >= 0) {
+            Hide(`.xcog`, mini);
+            HTML('.xeval', best.score.toFixed(2), mini);
+            HTML(`.xleft`, elapsed.toFixed(1), mini);
+            HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
+            HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
+        }
 
         if (suggest)
             this.arrow(3, best);

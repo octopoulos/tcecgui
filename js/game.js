@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-05
 //
 // Game specific code:
 // - control the board, moves
@@ -11,16 +11,15 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
-CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo,
-fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
-global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
-IsArray, IsObject, IsString, Keys, KEYS,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil, change_setting, charts,
+check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls, CopyClipboard,
+create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit,
+From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
 parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
-Resource, restore_history, resume_sleep, Round,
+Resource, restore_history, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -1779,7 +1778,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             Style(overlay, 'opacity:1;transition:opacity 0s');
         }
         else
-            popup_custom('popup-fen', 'fen', e);
+            popup_custom('popup-fen', 'fen', e, null, TEXT(this));
     });
 
     // 6) update shortcuts
@@ -4006,7 +4005,7 @@ function game_action_key(code) {
             if (Visible(Id('modal2')))
                 show_modal(true);
             else
-                resume_sleep();
+                resume_game();
             break;
         // enter, space, x
         case 13:
@@ -4526,8 +4525,9 @@ function opened_table(node, name, tab) {
  * @param {string} name timeout name
  * @param {Event} e
  * @param {string|number} scolor 0, 1, popup
+ * @param {string=} text
  */
-function popup_custom(id, name, e, scolor) {
+function popup_custom(id, name, e, scolor, text) {
     if (e.buttons)
         return;
 
@@ -4563,12 +4563,13 @@ function popup_custom(id, name, e, scolor) {
             HTML(popup, `<verts class="list fastart">${lines.join('')}</verts>`);
         }
         else if (name == 'fen') {
-            let fen = TEXT(e.target),
-                xfen = xboards.xfen;
-            xfen.instant();
-            if (!xfen.set_fen(fen, true))
-                return;
-            Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
+            let xfen = xboards.xfen;
+            if (xfen.fen != text) {
+                xfen.instant();
+                if (!xfen.set_fen(text, true))
+                    return;
+                Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
+            }
         }
 
         // place the popup in a visible area on the screen
@@ -4604,8 +4605,11 @@ function popup_custom(id, name, e, scolor) {
 
 /**
  * Compute woke up
+ * @param {number} resume_time
  */
-function resume_sleep() {
+function resume_sleep(resume_time) {
+    if (DEV.queue)
+        LS(`resume_sleep: ${resume_time}`);
     check_missing_moves();
     show_board_info(Y.x);
 }
