@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-05
+// @version 2020-09-06
 //
 // game board:
 // - 4 rendering modes:
@@ -166,6 +166,7 @@ class XBoard {
         this.evals = [];                                // eval history
         this.fen = '';                                  // current fen
         this.fen2 = '';
+        this.fens = {};                                 // fen counter to detect 3-fold repetition
         this.frc = (this.manual && Y.game_960);         // fischer random
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
@@ -1168,6 +1169,7 @@ class XBoard {
                 };
 
                 worker.id = id;
+                worker.postMessage({dev: DEV, func: 'config'});
                 this.workers.push(worker);
             }
     }
@@ -1458,8 +1460,6 @@ class XBoard {
 
         if (this.hook)
             this.event_hook(this.hook);
-
-        this.create_workers();
     }
 
     /**
@@ -1618,7 +1618,7 @@ class XBoard {
         this.add_moves([move]);
         this.move_time = now;
 
-        // maybe finished the game? 50MR / stalemate / win
+        // maybe finished the game? 50MR / stalemate / win / 3-fold
         if (this.manual) {
             let finished,
                 rule50 = this.fen.split(' ')[4] * 1;
@@ -1632,6 +1632,16 @@ class XBoard {
                     let is_mate = move.m.slice(-1) == '#';
                     LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
                     finished = true;
+                }
+                // 3-fold repetition
+                else {
+                    let prune = fen.split(' ').filter((_, id) => [0, 2, 3].includes(id)).join(' '),
+                        count = (this.fens[prune] || 0) + 1;
+                    this.fens[prune] = count;
+                    if (count >= 3) {
+                        LS('3-fold repetition.');
+                        finished = true;
+                    }
                 }
             }
             if (finished) {
@@ -1939,6 +1949,7 @@ class XBoard {
 
         this.fen = '';
         this.fen2 = '';
+        this.fens = {};
         this.goal = [-20.5, -1];
         this.grid.fill('');
         this.move_time = Now(true);
@@ -2215,12 +2226,36 @@ class XBoard {
 
         this.create_workers();
 
+        // check moves
         chess.load(fen);
-        let moves = this.chess_moves(this.frc, true, -1),
+        let folds = [],
+            moves = this.chess_moves(this.frc, true, -1),
             num_move = moves.length;
         if (!num_move)
             return false;
 
+        // check for 3-fold moves
+        for (let move of moves) {
+            move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
+
+            this.chess.moveRaw(move, true);
+            let fen2 = this.chess.fen(),
+                splits = fen2.split(' '),
+                prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
+                rule50 = splits[4] * 1;
+
+            if (rule50 >= 50 || this.fens[prune] >= 2) {
+                Assign(move, {
+                    depth: 0,
+                    score: -1.5,
+                    special: 1,
+                });
+                folds.push(move);
+            }
+            this.chess.undo();
+        }
+
+        // setup combined reply
         let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WB_LOWER[color]}`],
             max_extend = max_depth? Y[`game_extend_${WB_LOWER[color]}`]: 0,
             num_worker = this.workers.length;
@@ -2245,7 +2280,7 @@ class XBoard {
                 data: {
                     fen: fen,
                     frc: this.frc,
-                    id: -1,
+                    id: -2,
                     moves: [move],
                     nodes: 0,
                     sel_depth: 0,
@@ -2262,17 +2297,33 @@ class XBoard {
             masks.push(I8(num_move));
 
         for (let i = 0; i < num_move; i ++) {
+            if (moves[i].special)
+                continue;
             let id = i % num_worker;
             masks[id][i] = 1;
             has_moves[id] = 1;
         }
+        for (let id = 0; id < num_worker; id ++)
+            if (has_moves[id])
+                reply.lefts[id] = id + 1;
 
         // send messages
+        if (folds.length) {
+            this.worker_message({
+                data: {
+                    fen: fen,
+                    frc: this.frc,
+                    id: -1,
+                    moves: folds,
+                    nodes: 0,
+                    sel_depth: 0,
+                    suggest: suggest,
+                },
+            });
+        }
         for (let id = 0; id < num_worker; id ++) {
             if (!has_moves[id])
                 continue;
-            reply.lefts[id] = id + 1;
-
             this.workers[id].postMessage({
                 engine: Y.game_wasm? 'wasm': 'js',
                 func: 'think',
@@ -2346,15 +2397,13 @@ class XBoard {
             return;
 
         // 2) combine moves
-        let combine = reply.moves,
-            move = moves[0];
+        let combine = reply.moves;
         if (id >= 0)
             reply.lefts[id] = 0;
 
-        for (let move of moves) {
+        for (let move of moves)
             if (move.piece && move.score > -900)
                 combine.push(move);
-        }
 
         reply.nodes += nodes;
         if (sel_depth > reply.sel_depth)
@@ -2362,6 +2411,7 @@ class XBoard {
 
         // still expecting more data?
         if (DEV.engine) {
+            let move = moves[0];
             if (!reply.count)
                 LS(this.fen);
             LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(1): '-').padStart(6)} : ${reply.lefts} : ${combine.length}`);
@@ -2392,7 +2442,7 @@ class XBoard {
         if (color)
             best.score *= -1;
 
-        if (id >= 0) {
+        if (id >= -1) {
             Hide(`.xcog`, mini);
             HTML('.xeval', best.score.toFixed(2), mini);
             HTML(`.xleft`, elapsed.toFixed(1), mini);

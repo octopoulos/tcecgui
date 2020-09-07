@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-06
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200721';
+    VERSION = '20200906';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -240,6 +240,7 @@ function parse_dev() {
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             w: 'wasm',
+            W: 'worker',                // web worker
             y: 'ply',
         },
         text = Y.dev || '';

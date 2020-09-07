@@ -5,7 +5,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility
 -          : 2020-09-06 : make chess engine work again
 -          : 2020-09-06 : fix new bugs
--          : 2020-09-06 : 3-fold repetition
+2020-09-07 : 2020-09-06 : 3-fold repetition
 2020-09-06 : 2020-09-06 : code refactoring
 2020-09-06 : 2020-09-06 : FEN preview only generated when FEN changes
 2020-07-22 : 2020-07-22 : material eval
