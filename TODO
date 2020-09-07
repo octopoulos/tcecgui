@@ -3,8 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 ~          : 2020-07-22 : individual piece mobility
--          : 2020-09-06 : make chess-wasm tests work again
--          : 2020-09-06 : fix new bugs
+2020-09-07 : 2020-09-06 : make chess-wasm tests work again
 2020-09-07 : 2020-09-07 : improved 3-fold
 2020-09-07 : 2020-09-06 : 3-fold repetition
 2020-09-06 : 2020-09-06 : code refactoring

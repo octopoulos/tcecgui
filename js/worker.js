@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-05
+// @version 2020-09-07
 /*
 globals
 Chess, importScripts, LS, Now, Random, self, Undefined

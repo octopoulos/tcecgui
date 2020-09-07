@@ -25,10 +25,11 @@
 globals
 _, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode,
 CreateSVG,
-DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, Id, InsertNodes, IsDigit, IsString, Keys,
+DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString,
+Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt, requestAnimationFrame,
-S, SetDefault, Show, Sign, socket, split_move_string, Style, T, timers, Undefined, update_svg, Upper, Visible, window,
-Worker, Y
+S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
+window, Worker, Y
 */
 'use strict';
 
@@ -58,19 +59,8 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
-    I8 = array => new Int8Array(array),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
-    SQUARES = {
-        a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
-        a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
-        a6:  32, b6:  33, c6:  34, d6:  35, e6:  36, f6:  37, g6:  38, h6:  39,
-        a5:  48, b5:  49, c5:  50, d5:  51, e5:  52, f5:  53, g5:  54, h5:  55,
-        a4:  64, b4:  65, c4:  66, d4:  67, e4:  68, f4:  69, g4:  70, h4:  71,
-        a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
-        a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
-        a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119,
-    },
     SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
@@ -2260,7 +2250,8 @@ class XBoard {
                     let splits2 = this.chess.fen().split(' '),
                         prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
                     if (fen_set.has(prune2)) {
-                        LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
+                        if (DEV.engine)
+                            LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
                         draw = true;
                     }
                     this.chess.undo();
@@ -2278,9 +2269,11 @@ class XBoard {
         }
 
         // setup combined reply
-        let max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${WB_LOWER[color]}`],
-            max_extend = max_depth? Y[`game_extend_${WB_LOWER[color]}`]: 0,
-            num_worker = this.workers.length;
+        let scolor = WB_LOWER[color],
+            max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${scolor}`],
+            max_extend = 0,     // max_depth? Y[`game_extend_${scolor}`]: 0,
+            num_worker = this.workers.length,
+            params = Y[`game_params_${scolor}`];
 
         Assign(reply, {
             count: 0,
@@ -2356,7 +2349,7 @@ class XBoard {
                 max_depth: max_depth,
                 max_extend: max_extend,
                 max_nodes: Y.game_nodes,
-                params: color? '': 'YES',
+                params: params,
                 suggest: suggest,
             });
         }

@@ -23,154 +23,155 @@ if (typeof global != 'undefined') {
 }
 // >>
 
-var Chess = function(fen_) {
-    // defines
-    let BISHOP = 3,
-        BITS_NORMAL = 1,
-        BITS_CAPTURE = 2,
-        BITS_BIG_PAWN = 4,
-        BITS_EP_CAPTURE = 8,
-        BITS_PROMOTION = 16,
-        BITS_KSIDE_CASTLE = 32,
-        BITS_QSIDE_CASTLE = 64,
-        BITS_CASTLE = 32 + 64,
-        BLACK = 1,
-        COLOR = piece => piece >> 3,
-        COLOR_TEXT = 'wb',
-        COLORIZE = (color, type) => ((color == WHITE)? type: (type | 8)),
-        DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        EMPTY = -1,
-        FILE = square => square & 15,
-        I8 = array => new Int8Array(array),
-        I32 = array => new Int32Array(array),
-        KING = 6,
-        KNIGHT = 2,
-        PAWN = 1,
-        PIECE_LOWER = ' pnbrqk  pnbrqk',
-        PIECE_NAMES = ' PNBRQK  pnbrqk',
-        PIECE_UPPER = ' PNBRQK  PNBRQK',
-        QUEEN = 5,
-        RANK = square => square >> 4,
-        ROOK = 4,
-        SQUARE_A8 = 0,
-        SQUARE_H1 = 119,
-        TYPE = piece => piece & 7,
-        U8 = array => new Uint8Array(array),
-        // UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
-        WHITE = 0;
+// defines
+let BISHOP = 3,
+    BITS_NORMAL = 1,
+    BITS_CAPTURE = 2,
+    BITS_BIG_PAWN = 4,
+    BITS_EP_CAPTURE = 8,
+    BITS_PROMOTION = 16,
+    BITS_KSIDE_CASTLE = 32,
+    BITS_QSIDE_CASTLE = 64,
+    BITS_CASTLE = 32 + 64,
+    BLACK = 1,
+    COLOR = piece => piece >> 3,
+    COLOR_TEXT = 'wb',
+    COLORIZE = (color, type) => ((color == WHITE)? type: (type | 8)),
+    DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    EMPTY = -1,
+    FILE = square => square & 15,
+    I8 = array => new Int8Array(array),
+    I32 = array => new Int32Array(array),
+    KING = 6,
+    KNIGHT = 2,
+    PAWN = 1,
+    PIECE_LOWER = ' pnbrqk  pnbrqk',
+    PIECE_NAMES = ' PNBRQK  pnbrqk',
+    PIECE_UPPER = ' PNBRQK  PNBRQK',
+    QUEEN = 5,
+    RANK = square => square >> 4,
+    ROOK = 4,
+    SQUARE_A8 = 0,
+    SQUARE_H1 = 119,
+    TYPE = piece => piece & 7,
+    U8 = array => new Uint8Array(array),
+    // UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
+    WHITE = 0;
 
+// tables
+let ATTACKS = I8([
+       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
+        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
+        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
+        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
+        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
+       24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
+        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
+        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
+        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
+        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
+       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
+    ]),
+    ATTACK_BITS = I8([0, 1, 2, 4, 8, 16, 32]),
+    PAWN_OFFSETS = [
+        I8([-16, -32, -17, -15]),
+        I8([16, 32, 17, 15]),
+    ],
+    PIECE_OFFSETS = [
+        [],
+        [],
+        I8([-18, -33, -31, -14,  18, 33, 31,  14]),
+        I8([-17, -15,  17,  15]),
+        I8([-16,   1,  16,  -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+    ],
+    PIECE_SCORES = I32([
+        0,
+        100,        // P
+        300,        // N
+        300,        // B
+        500,        // R
+        900,        // Q
+        12800,      // K
+        0,
+        0,
+        100,        // p
+        300,        // n
+        300,        // b
+        500,        // r
+        900,        // q
+        12800,      // k
+    ]),
+    PROMOTE_SCORES = I32([
+        0,
+        0,          // P
+        200,        // N
+        200,        // B
+        400,        // R
+        800,        // Q
+        11800,      // K
+        0,
+        0,
+        0,          // p
+        200,        // n
+        200,        // b
+        400,        // r
+        800,        // q
+        11800,      // k
+    ]),
     // https://github.com/jhlywa/chess.js
-    // tables
-    let ATTACKS = I8([
-           20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
-            0, 20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-            0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-            0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-            0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-            24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
-            0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-            0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-            0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-            0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-           20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
-        ]),
-        ATTACK_BITS = I8([0, 1, 2, 4, 8, 16, 32]),
-        PAWN_OFFSETS = [
-            I8([-16, -32, -17, -15]),
-            I8([16, 32, 17, 15]),
-        ],
-        PIECE_OFFSETS = [
-            [],
-            [],
-            I8([-18, -33, -31, -14,  18, 33, 31,  14]),
-            I8([-17, -15,  17,  15]),
-            I8([-16,   1,  16,  -1]),
-            I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
-            I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
-        ],
-        PIECE_SCORES = I32([
-            0,
-            100,        // P
-            300,        // N
-            300,        // B
-            500,        // R
-            900,        // Q
-            12800,      // K
-            0,
-            0,
-            100,        // p
-            300,        // n
-            300,        // b
-            500,        // r
-            900,        // q
-            12800,      // k
-        ]),
-        PROMOTE_SCORES = I32([
-            0,
-            0,          // P
-            200,        // N
-            200,        // B
-            400,        // R
-            800,        // Q
-            11800,      // K
-            0,
-            0,
-            0,          // p
-            200,        // n
-            200,        // b
-            400,        // r
-            800,        // q
-            11800,      // k
-        ]),
-        // https://github.com/jhlywa/chess.js
-        RAYS = I8([
-           17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
-            0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
-            0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
-            0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
-            0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
-            0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
-            0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
-            1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
-            0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
-            0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
-            0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
-            0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
-            0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
-            0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
-          -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
-        ]);
+    RAYS = I8([
+       17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
+        0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
+        0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
+        0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
+        0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
+        0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
+        0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
+        1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
+        0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
+        0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
+        0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
+        0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
+        0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
+        0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
+       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
+    ]);
 
     // extras
     let PIECES = {
-            b: 11,
-            B: 3,
-            k: 14,
-            K: 6,
-            n: 10,
-            N: 2,
-            p: 9,
-            P: 1,
-            q: 13,
-            Q: 5,
-            r: 12,
-            R: 4,
-        },
-        // https://github.com/jhlywa/chess.js
-        SQUARES = {
-            a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
-            a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
-            a6:  32, b6:  33, c6:  34, d6:  35, e6:  36, f6:  37, g6:  38, h6:  39,
-            a5:  48, b5:  49, c5:  50, d5:  51, e5:  52, f5:  53, g5:  54, h5:  55,
-            a4:  64, b4:  65, c4:  66, d4:  67, e4:  68, f4:  69, g4:  70, h4:  71,
-            a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
-            a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
-            a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
-        };
+        b: 11,
+        B: 3,
+        k: 14,
+        K: 6,
+        n: 10,
+        N: 2,
+        p: 9,
+        P: 1,
+        q: 13,
+        Q: 5,
+        r: 12,
+        R: 4,
+    },
+    // https://github.com/jhlywa/chess.js
+    SQUARES = {
+        a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
+        a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
+        a6:  32, b6:  33, c6:  34, d6:  35, e6:  36, f6:  37, g6:  38, h6:  39,
+        a5:  48, b5:  49, c5:  50, d5:  51, e5:  52, f5:  53, g5:  54, h5:  55,
+        a4:  64, b4:  65, c4:  66, d4:  67, e4:  68, f4:  69, g4:  70, h4:  71,
+        a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
+        a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
+        a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
+    };
+
+var Chess = function(fen_) {
+    // https://github.com/jhlywa/chess.js
 
     // PRIVATE
     //////////
@@ -190,7 +191,7 @@ var Chess = function(fen_) {
         mobilities = U8(16),
         move_number = 1,
         nodes = 0,
-        params = '',
+        search_mode = 0,
         sel_depth = 0,
         turn = WHITE;
 
@@ -411,7 +412,9 @@ var Chess = function(fen_) {
         max_depth = max_depth_;
         max_extend = max_extend_;
         max_nodes = max_nodes_;
-        params = params;
+
+        // parse params
+        search_mode = params? 1: 0;
     }
 
     /**
@@ -1184,17 +1187,14 @@ var Chess = function(fen_) {
             sel_depth = depth;
 
         for (let move of moves) {
-            if (half_moves >= 50) {
-                move.score = 0;
-                break;
-            }
-
             move.depth = depth;
             moveRaw(move, false);
 
             // invalid move?
             if (kingAttacked(3))
                 move.score = -99900;
+            else if (half_moves >= 50)
+                move.score = 0;
             else {
                 // let them8 = turn << 3,
                 //     us = turn ^ 1,
@@ -1213,11 +1213,10 @@ var Chess = function(fen_) {
                     // stalemate? good if we're losing, otherwise BAD!
                     if (temp[0] < -80000)
                         move.score = 0;
+                    else if (search_mode)
+                        move.score = -temp[0];
                     else
-                    // else if (params)
                         move.score -= temp[0];
-                    // else
-                    //     move.score = -temp[0];
                     move.depth = temp[1];
                 }
             }
@@ -1234,7 +1233,7 @@ var Chess = function(fen_) {
         }
         else {
             for (let move of moves) {
-                move.score += valid;    // * 2;
+                move.score += valid * 2;
                 if (best < move.score) {
                     best = move.score;
                     best_depth = move.depth;
@@ -1294,15 +1293,15 @@ var Chess = function(fen_) {
 
         // undo castle
         if (move.flags & BITS_CASTLE) {
-                let q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
+            let q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
+                king = kings[us],
+                king_to = (RANK(king) << 4) + (q? 2: 6),
+                rook = castling[us * 2 + q];
 
-                board[king_to] = 0;
-                board[king_to + (q? 1: -1)] = 0;
-                board[king] = COLORIZE(us, KING);
-                board[rook] = COLORIZE(us, ROOK);
+            board[king_to] = 0;
+            board[king_to + (q? 1: -1)] = 0;
+            board[king] = COLORIZE(us, KING);
+            board[rook] = COLORIZE(us, ROOK);
         }
         else {
             if (move.from != move.to) {

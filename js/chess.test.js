@@ -331,6 +331,12 @@ beforeEach(() => {
         false,
         undefined,
     ],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        {capture: 0, depth: 0, fen: '', flags: 0, from: -1, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: -1},
+        false,
+        undefined,
+    ],
 ].forEach(([fen, move, decorate, answer], id) => {
     test(`moveRaw:${id}`, () => {
         chess.load(fen);
@@ -382,6 +388,12 @@ beforeEach(() => {
         ],
     ],
     ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, EMPTY], 14, []],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        [false, true, EMPTY],
+        13,
+        [{capture: 4, depth: 0, fen: '', flags: 18, from: 17, m: '', piece: 1, ply: 0, promote: 5, score: 0, to: 0}],
+    ],
 ].forEach(([fen, [frc, legal, single_square], number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen);
@@ -759,12 +771,12 @@ beforeEach(() => {
 
 // nodes
 [
-    [START_FEN, '', false, 0, 0, 1e8, 20],
-    [START_FEN, '', false, 1, 0, 1e8, 20],
-    [START_FEN, '', false, 2, 0, 1e8, 420],
-    [START_FEN, '', false, 3, 0, 1e8, 9322],
-    [START_FEN, '', false, 3, 4, 1e8, [9322, 11000]],
-    [START_FEN, '', false, 4, 0, 1e8, 207064],
+    [START_FEN, false, '', 0, 0, 1e8, 20],
+    [START_FEN, false, '', 1, 0, 1e8, 20],
+    [START_FEN, false, '', 2, 0, 1e8, 420],
+    [START_FEN, false, '', 3, 0, 1e8, 9322],
+    [START_FEN, false, '', 3, 4, 1e8, [9322, 11000]],
+    [START_FEN, false, '', 4, 0, 1e8, 207064],
 ].forEach(([fen, frc, params, max_depth, max_extend, max_nodes, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
@@ -914,6 +926,13 @@ beforeEach(() => {
 // search
 [
     [
+        '8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96',
+        '',
+        [false, '', 3, 0, 1e8],
+        [],
+        {h1b1: [-4000, -3500], h1h7: [-1500, -1000]},
+    ],
+    [
         'rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8',
         '',
         [false, '', 1, 0, 1000],
@@ -988,8 +1007,9 @@ beforeEach(() => {
         masks.sort((a, b) => b.score - a.score);
 
         let best = masks[0],
+            bests = masks.filter(mask => mask.score <= best.score + 0.001),
             keys = Keys(checks),
-            uci = chess.ucify(best);
+            ucis = new Set(bests.map(mask => chess.ucify(mask)));
 
         if (keys.length) {
             let missing = false,
@@ -998,12 +1018,13 @@ beforeEach(() => {
                 let check = checks[key],
                     value = dico[key];
                 if (key == 1 || key == 2) {
-                    if (!check.includes(uci)) {
-                        missing = key;
+                    let splits = check.split(' ');
+                    if (!splits.some(item => ucis.has(item))) {
+                        missing = check;
                         return;
                     }
                     if (key == 1)
-                        expect(check.includes(uci)).toBeTruthy();
+                        expect(splits.some(item => ucis.has(item))).toBeTruthy();
                     else
                         expect(dico).toHaveProperty(check);
                 }
@@ -1012,12 +1033,16 @@ beforeEach(() => {
                         missing = key;
                         return;
                     }
+                    if (value < check[0] || value > check[1])
+                        LS(dico);
                     expect(value).toBeGreaterThanOrEqual(check[0]);
                     expect(value).toBeLessThanOrEqual(check[1]);
                 }
             });
-            if (missing)
+            if (missing) {
+                LS(`id=${id} : missing=${missing}`);
                 LS(dico);
+            }
         }
 
         if (answer.length) {

@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-07
 // - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -58,7 +58,7 @@ int ATTACKS[] = {
         0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-        24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
+       24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
         0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
@@ -181,6 +181,7 @@ struct History {
     int     half_moves;
     int     kings[2];
     int     materials[2];
+    uint8_t mobilities[16];
     Move    move;
     int     move_number;
     uint8_t turn;
@@ -191,7 +192,7 @@ private:
     // PRIVATE
     //////////
 
-    uint8_t *board;
+    uint8_t board[128];
     int     castling[4];
     int     ep_square;
     std::string fen;
@@ -203,8 +204,10 @@ private:
     int     max_depth;
     int     max_extend;
     int     max_nodes;
+    uint8_t mobilities[16];
     int     move_number;
     int     nodes;
+    int     search_mode;
     int     sel_depth;
     uint8_t turn;
 
@@ -218,6 +221,7 @@ private:
         history.half_moves = half_moves;
         memcpy(&history.kings, &kings, sizeof(kings));
         memcpy(&history.materials, &materials, sizeof(materials));
+        memcpy(&history.mobilities, &mobilities, sizeof(mobilities));
         memcpy(&history.move, &move, sizeof(Move));
         history.move_number = move_number;
         histories.push_back(history);
@@ -226,32 +230,32 @@ private:
     /**
      * Add a move + promote moves
      */
-    void addMove(std::vector<Move> &moves, int from, int to, uint8_t flags) {
+    void addMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags) {
         // pawn promotion?
         int rank = RANK(to);
-        if (TYPE(board[from]) == PAWN && (rank % 7) == 0) {
-            for (uint8_t piece = QUEEN; piece >= KNIGHT; piece --)
-                addSingleMove(moves, from, to, flags | BITS_PROMOTION, piece);
+        if (TYPE(piece) == PAWN && (rank % 7) == 0) {
+            for (uint8_t promote = QUEEN; promote >= KNIGHT; promote --)
+                addSingleMove(moves, piece, from, to, flags | BITS_PROMOTION, promote);
         }
         else
-            addSingleMove(moves, from, to, flags, 0);
+            addSingleMove(moves, piece, from, to, flags, 0);
+
+        mobilities[piece] ++;
     }
 
     /**
      * Add a single move
      */
-    void addSingleMove(std::vector<Move> &moves, int from, int to, uint8_t flags, uint8_t promote) {
-        uint8_t piece = board[from];
+    void addSingleMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags, uint8_t promote) {
         Move move;
         move.flags = flags;
         move.from = from;
         move.piece = piece;
         move.ply = move_number * 2 + turn - 2;
+        move.promote = promote;
         move.to = to;
 
         if (!(flags & BITS_CASTLE)) {
-            if (promote)
-                move.promote = promote;
             if (board[to])
                 move.capture = TYPE(board[to]);
             else if (flags & BITS_EP_CAPTURE)
@@ -302,18 +306,12 @@ public:
     /////////
 
     Chess() {
-        board = new uint8_t[128];
-        frc = false;
-        max_depth = 4;
-        max_extend = 0;
-        max_nodes = 1e8;
-
+        configure(false, "", 4, 0, 1e8);
         clear();
         load(DEFAULT_POSITION);
     }
 
     ~Chess() {
-        DELETE_ARRAY(board);
     }
 
     /**
@@ -412,16 +410,15 @@ public:
      * Clear the board
      */
     void clear() {
-        memset(board, 0, 128 * sizeof(uint8_t));
-        memset(castling, EMPTY, 4 * sizeof(int));
+        memset(board, 0, sizeof(board));
+        memset(castling, EMPTY, sizeof(castling));
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
         histories.clear();
-        kings[0] = EMPTY;
-        kings[1] = EMPTY;
-        materials[0] = 0;
-        materials[1] = 0;
+        memset(kings, EMPTY, sizeof(kings));
+        memset(materials, 0, sizeof(materials));
+        memset(mobilities, 0, sizeof(mobilities));
         move_number = 1;
         nodes = 0;
         sel_depth = 0;
@@ -431,11 +428,14 @@ public:
     /**
      * Configure some parameters
      */
-    void configure(bool frc_, int max_depth_, int max_extend_, int max_nodes_) {
+    void configure(bool frc_, std::string params, int max_depth_, int max_extend_, int max_nodes_) {
         frc = frc_;
         max_depth = max_depth_;
         max_extend = max_extend_;
         max_nodes = max_nodes_;
+
+        // parse params
+        search_mode = params.size()? 1: 0;
     }
 
     /**
@@ -584,9 +584,13 @@ public:
         int first_sq = is_single? single_square: SQUARE_A8,
             last_sq = is_single? single_square: SQUARE_H1;
         std::vector<Move> moves;
-        int second_rank[] = {6, 1};
+        int second_rank = turn? 1: 6;
         uint8_t us = turn,
+            us8 = us << 3,
             them = us ^ 1;
+
+        for (int i = us8; i < us8 + 8; i ++)
+            mobilities[i] = 0;
 
         for (int i = first_sq; i <= last_sq; i ++) {
             // off board
@@ -606,12 +610,12 @@ public:
                 // single square, non-capturing
                 int square = i + offsets[0];
                 if (!board[square]) {
-                    addMove(moves, i, square, BITS_NORMAL);
+                    addMove(moves, piece, i, square, BITS_NORMAL);
 
                     // double square
                     square = i + offsets[1];
-                    if (second_rank[us] == RANK(i) && !board[square])
-                        addMove(moves, i, square, BITS_BIG_PAWN);
+                    if (second_rank == RANK(i) && !board[square])
+                        addMove(moves, piece, i, square, BITS_BIG_PAWN);
                 }
 
                 // pawn captures
@@ -621,9 +625,9 @@ public:
                         continue;
 
                     if (board[square] && COLOR(board[square]) == them)
-                        addMove(moves, i, square, BITS_CAPTURE);
+                        addMove(moves, piece, i, square, BITS_CAPTURE);
                     else if (square == ep_square)
-                        addMove(moves, i, ep_square, BITS_EP_CAPTURE);
+                        addMove(moves, piece, i, ep_square, BITS_EP_CAPTURE);
                 }
             }
             else {
@@ -640,11 +644,11 @@ public:
                             break;
 
                         if (!board[square])
-                            addMove(moves, i, square, BITS_NORMAL);
+                            addMove(moves, piece, i, square, BITS_NORMAL);
                         else {
                             if (COLOR(board[square]) == us)
                                 break;
-                            addMove(moves, i, square, BITS_CAPTURE);
+                            addMove(moves, piece, i, square, BITS_CAPTURE);
                             break;
                         }
 
@@ -694,7 +698,7 @@ public:
 
                 // add castle + detect FRC even if not set
                 if (!error)
-                    addMove(moves, king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
+                    addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
             }
         }
 
@@ -1260,17 +1264,14 @@ public:
             sel_depth = depth;
 
         for (auto &move : moves) {
-            if (half_moves >= 50) {
-                move.score = 0;
-                break;
-            }
-
             move.depth = depth;
             moveRaw(move, false);
 
             // invalid move?
             if (kingAttacked(3))
                 move.score = -99900;
+            else if (half_moves >= 50)
+                move.score = 0;
             else {
                 move.score = materials[turn ^ 1] - materials[turn];
                 valid ++;
@@ -1283,6 +1284,8 @@ public:
                     // stalemate? good if we're losing, otherwise BAD!
                     if (temp[0] < -80000)
                         move.score = 0;
+                    else if (search_mode)
+                        move.score = -temp[0];
                     else
                         move.score -= temp[0];
                     move.depth = temp[1];
@@ -1364,15 +1367,15 @@ public:
 
         // undo castle
         if (move.flags & BITS_CASTLE) {
-                int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
-                    king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
+            int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
+                king = kings[us],
+                king_to = (RANK(king) << 4) + (q? 2: 6),
+                rook = castling[us * 2 + q];
 
-                board[king_to] = 0;
-                board[king_to + (q? 1: -1)] = 0;
-                board[king] = COLORIZE(us, KING);
-                board[rook] = COLORIZE(us, ROOK);
+            board[king_to] = 0;
+            board[king_to + (q? 1: -1)] = 0;
+            board[king] = COLORIZE(us, KING);
+            board[rook] = COLORIZE(us, ROOK);
         }
         else {
             if (move.from != move.to) {
@@ -1416,6 +1419,10 @@ public:
 
     int em_material(uint8_t color) {
         return materials[color];
+    }
+
+    val em_mobilities() {
+        return val(typed_memory_view(16, mobilities));
     }
 
     int em_nodes() {
@@ -1474,6 +1481,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("fen960", &Chess::createFen960)
         .function("load", &Chess::load)
         .function("material", &Chess::em_material)
+        .function("mobilities", &Chess::em_mobilities)
         .function("moveObject", &Chess::moveObject)
         .function("moveRaw", &Chess::moveRaw)
         .function("moveSan", &Chess::moveSan)

@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-05
+// @version 2020-09-07
 //
 // general 3d rendering code
 //
@@ -1415,7 +1415,7 @@ function show_settings(name, xy) {
 
             if (type == 'number')
                 lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
-            else if (type == 'text') {
+            else if (type == 'link') {
                 if (data.text)
                     lines.push(`<input name="${key}" type="text" class="setting" data-t="${data.text}" data-t2="placeholder" value="">`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
@@ -1641,7 +1641,7 @@ function startup_3d() {
     merge_settings({
         general: {
             export_settings: '1',
-            import_settings: [{text: 'Enter JSON data', type: 'text'}, ''],
+            import_settings: [{text: 'Enter JSON data', type: 'link'}, ''],
             language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],
         },

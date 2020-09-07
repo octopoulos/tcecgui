@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-05
+// @version 2020-09-07
 //
 // Game specific code:
 // - control the board, moves
@@ -4150,7 +4150,9 @@ function paste_text(text) {
     text = text.replace(/\s+/g, ' ');
 
     let board = board_target.manual? board_target: xboards.pva;
-    if (!board.set_fen(text, true))
+    if (board.set_fen(text, true))
+        board.reset(true, board.fen);
+    else
         board.add_moves_string(text);
 }
 
