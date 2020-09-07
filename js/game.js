@@ -999,6 +999,8 @@ function calculate_h2h(section, rows) {
 
     // calculate h2h scores
     for (let row of new_rows) {
+        row.id = row._id;
+
         let result = RESULTS[row.result];
         if (result) {
             if (result == 1)
@@ -1477,8 +1479,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // 2) update table data
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
+        is_h2h = (name == 'h2h'),
         is_sched = (name == 'sched'),
         // live cup has wrong Game# too
+        is_h2h_archive = (is_h2h && (section == 'archive' || tour_info[section].cup)),
         is_sched_archive = (is_sched && (section == 'archive' || tour_info[section].cup)),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
@@ -1513,7 +1517,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         // translate row keys + calculate _id and _text
         rows.forEach((row, row_id) => {
             let lines = [];
-            row = Assign({_id: row_id}, ...Keys(row).map(key => {
+            row = Assign({_id: row_id}, ...Keys(row).filter(key => key[0] != '_').map(key => {
                 let value = row[key];
                 if (value)
                     lines.push(value + '');
@@ -1590,7 +1594,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         tour_url = tour_info[section].url;
 
     for (let row of data) {
-        let row_id = row._id;
+        let row_id = Undefined(row.id, row._id);
 
         let vector = columns.map(key => {
             let class_ = '',
@@ -1640,10 +1644,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'game':
             case 'gameno':
-                let game = is_sched_archive? row_id + 1: value;
+                let game = (is_h2h_archive || is_sched_archive)? row_id + 1: value;
                 if (row.moves || row.reason) {
                     value = create_game_link(section, game);
-                    if (is_sched && tour_url)
+                    if ((is_h2h || is_sched) && tour_url)
                         value = `<hori><a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn"><i style="margin-right:1em" data-svg="download"></i></a>${value}</hori>`;
                 }
                 break;
@@ -1721,7 +1725,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
         // create a new row node
         let dico = null;
-        if (is_game || is_sched || name == 'h2h')
+        if (is_h2h || is_game || is_sched)
             dico = {
                 class: `pointer${row_id == active_row? ' active': ''}`,
                 'data-g': row_id + 1,
