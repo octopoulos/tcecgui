@@ -258,6 +258,7 @@ function change_setting_special(name, value, no_close) {
         pva.think(true);
         break;
     case 'game_new_game':
+        pva.frc = Y.game_960;
         pva.new_game();
         break;
     case 'game_think':

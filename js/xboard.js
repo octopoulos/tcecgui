@@ -23,11 +23,11 @@
 //
 /*
 globals
-_, A, Abs, add_timeout, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard, CreateNode,
-CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
+CreateNode, CreateSVG,
 DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString,
 Keys,
-Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt, requestAnimationFrame,
+Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
 window, Worker, Y
 */
@@ -60,6 +60,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
+    ROTATE = (rotate, coord) => (rotate? 7 - coord: coord),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -700,17 +701,11 @@ class XBoard {
 
         let path,
             name = this.name,
-            x1 = dico.from % 16,
-            x2 = dico.to % 16,
-            y1 = dico.from >> 4,
-            y2 = dico.to >> 4;
-
-        if (this.rotate) {
-            x1 = 7 - x1;
-            x2 = 7 - x2;
-            y1 = 7 - y1;
-            y2 = 7 - y2;
-        }
+            rotate = this.rotate,
+            x1 = ROTATE(rotate, dico.from % 16),
+            x2 = ROTATE(rotate, dico.to % 16),
+            y1 = ROTATE(rotate, dico.from >> 4),
+            y2 = ROTATE(rotate, dico.to >> 4);
 
         x1 = 5 + 10 * x1;
         x2 = 5 + 10 * x2;
@@ -1174,7 +1169,7 @@ class XBoard {
             if (!this.manual || !this.human_turn())
                 return;
 
-        requestAnimationFrame(() => {
+        AnimationFrame(() => {
             add_timeout(`pick${this.id}`, () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
         });
     }
@@ -1790,7 +1785,7 @@ class XBoard {
                 let row_name = rotate? i + 1: 8 - i;
 
                 for (let j = 0; j < num_col; j ++) {
-                    let col_name = COLUMN_LETTERS[rotate? 7 - j: j],
+                    let col_name = COLUMN_LETTERS[ROTATE(rotate, j)],
                         even = (i + j) % 2,
                         note_x = '',
                         note_y = '',
@@ -1829,53 +1824,72 @@ class XBoard {
             if (DEV.board)
                 LS(`render_html: num_piece=${this.pieces.length}`);
 
-            let nodes = [],
+            let direct = true,
+                nodes = [],
                 [piece_size, style, transform] = this.get_piece_background(this.size);
 
             Class(this.xpieces, 'smooth', this.smooth);
 
-            // create pieces / adjust their position
+            // a) pieces that must appear should be moved instantly to the right position
             Keys(this.pieces).forEach(char => {
-                let items = this.pieces[char],
-                    offset = -SPRITE_OFFSETS[char] * piece_size;
-
+                let items = this.pieces[char];
                 for (let item of items) {
-                    let [found, index, node] = item,
-                        col = index % 16,
-                        row = index >> 4;
+                    let [found, index, node] = item;
+                    if (!found || !node || node.style.opacity > 0)
+                        continue;
 
-                    if (!node) {
-                        let html = `<div style="${style};background-position-x:${offset}px"></div>`;
-                        node = CreateNode('div', html, {class: 'xpiece'});
-                        nodes.push(node);
-                        item[2] = node;
-                    }
-                    // theme change
-                    else if (dirty & 4)
-                        Style('div', `${style};background-position-x:${offset}px`, true, node);
 
-                    if (found) {
-                        node.dataset.c = row * 16 + col;
-                        if (rotate) {
-                            col = 7 - col;
-                            row = 7 - row;
-                        }
-
-                        let style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
-                            z_index = (node.style.transform == style_transform)? 2: 3;
-
-                        Style(node, `transform:${style_transform};opacity:1;pointer-events:all;z-index:${z_index}`);
-                    }
-                    else
-                        Style(node, 'opacity:0;pointer-events:none');
+                    let col = ROTATE(rotate, index % 16),
+                        row = ROTATE(rotate, index >> 4),
+                        style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
+                    Style(node, `transform:${style_transform};transition:none`);
+                    direct = false;
                 }
             });
 
-            if (DEV.board)
-                LS(this.xpieces);
+            // b) create pieces / adjust their position
+            AnimationFrame(() => {
+                Keys(this.pieces).forEach(char => {
+                    let items = this.pieces[char],
+                        offset = -SPRITE_OFFSETS[char] * piece_size;
 
-            // insert pieces
-            InsertNodes(this.xpieces, nodes);
+                    for (let item of items) {
+                        let [found, index, node] = item,
+                            col = index % 16,
+                            row = index >> 4;
+
+                        if (!node) {
+                            let html = `<div style="${style};background-position-x:${offset}px"></div>`;
+                            node = CreateNode('div', html, {class: 'xpiece'});
+                            nodes.push(node);
+                            item[2] = node;
+                        }
+                        // theme change
+                        else if (dirty & 4)
+                            Style('div', `${style};background-position-x:${offset}px`, true, node);
+
+                        if (found) {
+                            node.dataset.c = row * 16 + col;
+                            col = ROTATE(rotate, col);
+                            row = ROTATE(rotate, row);
+
+                            let style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
+                                z_index = (node.style.transform == style_transform)? 2: 3;
+
+                            Style(node, `transform:${style_transform};opacity:1;pointer-events:all;z-index:${z_index}`);
+                            Style(node, 'transition:none', false);
+                        }
+                        else
+                            Style(node, 'opacity:0;pointer-events:none');
+                    }
+                });
+
+                if (DEV.board)
+                    LS(this.xpieces);
+
+                // insert pieces
+                InsertNodes(this.xpieces, nodes);
+            }, direct);
         }
 
         this.dirty = 0;

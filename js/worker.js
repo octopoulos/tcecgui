@@ -59,7 +59,8 @@ function think(engine, params, fen, mask, frc, max_depth, max_extend, max_nodes)
 
     let chess = engines[engine];
     if (!chess) {
-        LS(`creating "${engine}" engine`);
+        if (DEV.worker)
+            LS(`creating "${engine}" engine`);
         engines[engine] = new engine_class();
         chess = engines[engine];
     }

@@ -21,6 +21,7 @@ ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Titl
 let __PREFIX = '_',
     ANCHORS = {},
     animation,
+    AnimationFrame = (callback, direct) => (direct? callback(): requestAnimationFrame(callback)),
     api = {},
     api_times = {},
     DEFAULTS = {
@@ -1117,7 +1118,7 @@ function render_scroll() {
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
-        animation = requestAnimationFrame(render_scroll);
+        animation = AnimationFrame(render_scroll);
     }
     touch_now = now;
 }
@@ -1425,7 +1426,7 @@ function touch_handle(e, full) {
             scroll_target = drag_target;
             touch_speed = {x: sumx / time, y: sumy / time};
             cancelAnimationFrame(animation);
-            animation = requestAnimationFrame(render_scroll);
+            animation = AnimationFrame(render_scroll);
         }
         // big movement or average duration => prevent click
         if (type != 'mouseleave') {

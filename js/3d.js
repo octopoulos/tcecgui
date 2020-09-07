@@ -7,12 +7,11 @@
 // included after: common, engine, global
 /*
 globals
-_, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class, clear_timeout,
-create_url_list,
+_, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
+clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, HasClass, HTML, Id, Input,
 IsArray, IsString, KEY_TIMES, Keys, KEYS,
 LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, Parent, PD,
-requestAnimationFrame,
 S, save_option, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES, Undefined,
 update_theme, Visible, window, X_SETTINGS, Y
 */
@@ -266,7 +265,7 @@ function init_3d(force) {
     resize_3d();
 
     if (force)
-        requestAnimationFrame(render);
+        AnimationFrame(render);
 }
 
 /**
@@ -627,7 +626,7 @@ function render() {
         stats.end();
 
     if (dirty)
-        requestAnimationFrame(render);
+        AnimationFrame(render);
 }
 
 /**
@@ -640,7 +639,7 @@ function request_render(timer) {
     if (dirty && (!timer || !Number.isFinite(timer)))
         return;
     dirty = 2;
-    requestAnimationFrame(render);
+    AnimationFrame(render);
 }
 
 /**

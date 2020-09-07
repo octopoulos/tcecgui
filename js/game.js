@@ -4149,9 +4149,12 @@ function game_action_keyup(code) {
 function paste_text(text) {
     text = text.replace(/\s+/g, ' ');
 
-    let board = board_target.manual? board_target: xboards.pva;
-    if (board.set_fen(text, true))
-        board.reset(true, board.fen);
+    let board = board_target.manual? board_target: xboards.pva,
+        fen = board.fen;
+    if (board.set_fen(text, true)) {
+        if (board.fen != fen)
+            board.reset(true, board.fen);
+    }
     else
         board.add_moves_string(text);
 }
