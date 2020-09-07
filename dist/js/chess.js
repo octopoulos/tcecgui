@@ -34,7 +34,7 @@
  */
 /*
 globals
-define, exports, LS
+define, exports
 */
 'use strict';
 
@@ -168,7 +168,6 @@ var Chess = function(fen) {
   var header = {};
 
   // if the user passes in a fen string, load it, else default to starting position
-  LS(`Chess: ${fen}`);
   load((fen == undefined)? DEFAULT_POSITION: fen);
 
   function clear() {

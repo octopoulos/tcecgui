@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-06
+// @version 2020-09-07
 //
 // game board:
 // - 4 rendering modes:
@@ -167,6 +167,7 @@ class XBoard {
         this.fen = '';                                  // current fen
         this.fen2 = '';
         this.fens = {};                                 // fen counter to detect 3-fold repetition
+        this.finished = false;
         this.frc = (this.manual && Y.game_960);         // fischer random
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
@@ -1627,6 +1628,9 @@ class XBoard {
                 finished = true;
             }
             else {
+                if (rule50 == 0)
+                    this.fens = {};
+
                 let moves = this.chess_moves(this.frc, true, -1);
                 if (!moves.length) {
                     let is_mate = move.m.slice(-1) == '#';
@@ -1645,6 +1649,7 @@ class XBoard {
                 }
             }
             if (finished) {
+                this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
                 this.play(true);
             }
@@ -1950,6 +1955,7 @@ class XBoard {
         this.fen = '';
         this.fen2 = '';
         this.fens = {};
+        this.finished = false;
         this.goal = [-20.5, -1];
         this.grid.fill('');
         this.move_time = Now(true);
@@ -2212,6 +2218,9 @@ class XBoard {
      * @returns {boolean} true if the AI was able to play
      */
     think(suggest) {
+        if (this.finished)
+            return;
+
         let chess = this.chess,
             fen = this.fen,
             ply = get_fen_ply(this.fen),
@@ -2235,19 +2244,32 @@ class XBoard {
             return false;
 
         // check for 3-fold moves
+        let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
         for (let move of moves) {
-            move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-
-            this.chess.moveRaw(move, true);
-            let fen2 = this.chess.fen(),
-                splits = fen2.split(' '),
+            this.chess.ucify(move);
+            this.chess.moveRaw(move);
+            let splits = this.chess.fen().split(' '),
                 prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
-                rule50 = splits[4] * 1;
+                rule50 = splits[4] * 1,
+                draw = (rule50 >= 50 || fen_set.has(prune));
 
-            if (rule50 >= 50 || this.fens[prune] >= 2) {
+            if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
+                let moves2 = this.chess_moves(this.frc, true, -1);
+                for (let move2 of moves2) {
+                    this.chess.moveRaw(move2);
+                    let splits2 = this.chess.fen().split(' '),
+                        prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
+                    if (fen_set.has(prune2)) {
+                        LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
+                        draw = true;
+                    }
+                    this.chess.undo();
+                }
+            }
+            if (draw) {
                 Assign(move, {
                     depth: 0,
-                    score: -1.5,
+                    score: -2.5,
                     special: 1,
                 });
                 folds.push(move);
@@ -2379,6 +2401,9 @@ class XBoard {
      * @param {Event} e
      */
     worker_message(e) {
+        if (this.finished)
+            return;
+
         let data = e.data,
             fen = data.fen,
             id = data.id,

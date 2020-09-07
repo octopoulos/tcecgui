@@ -219,6 +219,7 @@ function returnPGN(pgnText, generateFens, reqdLength)
    var pgnFull = [];
    var j = 0;
    pgnGameFromPgnText(pgnText);
+   return pgnGame;
 
    if ((reqdLength == undefined) || (!reqdLength))
    {

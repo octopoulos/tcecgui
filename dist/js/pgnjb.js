@@ -332,6 +332,7 @@ function retArg(value)
 }
 
 // // just for debugging and testing ...
+let start_time = Date.now();
 if (argv.filename == undefined)
 {
    console.log ("ERROR: Filename not defined");
@@ -339,7 +340,7 @@ if (argv.filename == undefined)
 }
 
 var seasonFileName = argv.filename;
-var pgnPath = '/var/www/json/archive/';
+var pgnPath = './';  // '/var/www/json/archive/';
 var seasonFileNameFull = pgnPath + seasonFileName;
 const pgn = fs.readFileSync(seasonFileNameFull, "utf-8");
 let games = [];
@@ -379,14 +380,14 @@ for (let i = 0; i < res.length ; i++)
       return;
    }
 
-   if ((force ||
-        (games.length && (games.includes(j)))) ||
-       !fs.existsSync(filename))
-   {
-      console.log ("pgn Converting file:" + filename);
-      const output_json = exports.pgn2json(res[i]);
-      fs.writeFileSync(filename,  output_json);
-   }
+   // if ((force ||
+   //      (games.length && (games.includes(j)))) ||
+   //     !fs.existsSync(filename))
+   // {
+   //    console.log ("pgn Converting file:" + filename);
+   //    const output_json = exports.pgn2json(res[i]);
+   //    fs.writeFileSync(filename,  output_json);
+   // }
 
    if ((force ||
         (games.length && (games.includes(j)))) ||
@@ -397,3 +398,4 @@ for (let i = 0; i < res.length ; i++)
    }
 }
 console.log ("Exiting pgn js");
+console.log((Date.now() - start_time)/1000);
