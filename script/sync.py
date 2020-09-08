@@ -17,7 +17,7 @@ from typing import Any
 
 from PIL import Image, ImageFile
 
-from common import makedirs_safe, read_text_safe, write_text_safe
+from commoner import makedirs_safe, read_text_safe, write_text_safe
 from css_minify import css_minify
 
 

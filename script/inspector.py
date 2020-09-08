@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-05-31
+# @version 2020-08-29
 
 """
 Inspect JS files
@@ -8,12 +8,17 @@ Inspect JS files
 
 import os
 import re
+import sys
 from time import time
 
-from common import read_text_safe
+BASE = os.path.dirname(__file__)
+if BASE not in sys.path:
+    sys.path.append(BASE)
+
+from commoner import read_text_safe
 
 
-BASE = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+BASE = os.path.dirname(os.path.dirname(__file__))
 JS_FOLDER = os.path.join(BASE, 'js')
 
 SKIP_SOURCES = {'all', 'chart', 'tcec'}
@@ -91,10 +96,16 @@ class Inspect:
             elif os.path.isfile(filename):
                 self.analyse_file(filename)
 
+    def go(self):
+        """Run JS inspect + PY inspector
+        """
+        self.analyse_folder(JS_FOLDER)
+        # inspector = Inspector()
+        # self.analyse_project(BASE, 'script')
+
 
 if __name__ == '__main__':
     start = time()
     inspect = Inspect()
-    inspect.analyse_folder(JS_FOLDER)
-    end = time()
-    print(f'\nELAPSED: {end-start:.3f} seconds')
+    inspect.go()
+    print(f'\nELAPSED: {time() - start:.3f} seconds')
