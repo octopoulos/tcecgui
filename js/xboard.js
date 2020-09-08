@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-08
 //
 // game board:
 // - 4 rendering modes:
@@ -10,7 +10,7 @@
 //      + text
 // - games:
 //      + chess
-//      ~ chess960
+//      + chess960
 //      - go (future)
 //
 // included after: common, engine, global, 3d
@@ -25,8 +25,8 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, Events, Floor, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString,
-Keys,
+DEV, Events, Floor, Format, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit,
+IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
 window, Worker, Y
@@ -60,6 +60,14 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
+    MATERIAL_ORDERS = {
+        k: 1,
+        q: 2,
+        r: 3,
+        b: 4,
+        n: 5,
+        p: 6,
+    },
     ROTATE = (rotate, coord) => (rotate? 7 - coord: coord),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
@@ -152,6 +160,7 @@ class XBoard {
         this.colors = ['#eee', '#111'];
         this.coords = {};
         this.delayed_ply = -2;
+        this.depth = 0;                                 // current depth in IT
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
         this.evals = [];                                // eval history
@@ -172,6 +181,7 @@ class XBoard {
         this.locked_obj = null;
         this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
+        this.max_depth = 0;                             // max depth in IT
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -1313,6 +1323,63 @@ class XBoard {
     }
 
     /**
+     * Navigation: end
+     * @returns {boolean}
+     */
+    go_end() {
+        return this.set_ply(this.moves.length - 1, {manual: true});
+    }
+
+    /**
+     * Navigation: next
+     * @returns {boolean}
+     */
+    go_next() {
+        let num_move = this.moves.length,
+            ply = this.ply + 1;
+        while (ply < num_move - 1 && !this.moves[ply])
+            ply ++;
+        let success = this.set_ply(ply, {animate: true, manual: true});
+
+        // next to think
+        if (!success && this.manual && ply >= num_move) {
+            success = this.think();
+            if (success)
+                this.play_mode = 'game';
+        }
+        return success;
+    }
+
+    /**
+     * Navigation: prev
+     * @returns {boolean}
+     */
+    go_prev() {
+        let ply = this.ply - 1,
+            start = this.main_manual? -1: 0;
+        while (ply > start && !this.moves[ply])
+            ply --;
+        return this.set_ply(ply, {animate: true, manual: true});
+    }
+
+    /**
+     * Navigation: start
+     * @returns {boolean}
+     */
+    go_start() {
+        let num_move = this.moves.length,
+            ply = 0;
+        while (ply < num_move - 1 && !this.moves[ply])
+            ply ++;
+
+        // initial board
+        if (!ply && this.main_manual)
+            ply = -1;
+
+        return this.set_ply(ply, {manual: true});
+    }
+
+    /**
      * Hide arrows
      * - for now, only HTML code
      */
@@ -1362,6 +1429,21 @@ class XBoard {
 
         let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
+    }
+
+    /**
+     * Check if it's a human turn
+     * @returns {boolean}
+     */
+    human_turn() {
+        let play_as = Y.game_play_as,
+            ply = get_fen_ply(this.fen);
+        if (play_as == 'AI')
+            return false;
+        else if (play_as == 'Human')
+            return true;
+        else
+            return (play_as == WB_TITLE[(1 + ply) % 2]);
     }
 
     /**
@@ -1449,82 +1531,78 @@ class XBoard {
     }
 
     /**
-     * Navigation: end
-     * @returns {boolean}
-     */
-    go_end() {
-        return this.set_ply(this.moves.length - 1, {manual: true});
-    }
-
-    /**
-     * Navigation: next
-     * @returns {boolean}
-     */
-    go_next() {
-        let num_move = this.moves.length,
-            ply = this.ply + 1;
-        while (ply < num_move - 1 && !this.moves[ply])
-            ply ++;
-        let success = this.set_ply(ply, {animate: true, manual: true});
-
-        // next to think
-        if (!success && this.manual && ply >= num_move) {
-            success = this.think();
-            if (success)
-                this.play_mode = 'game';
-        }
-        return success;
-    }
-
-    /**
-     * Navigation: prev
-     * @returns {boolean}
-     */
-    go_prev() {
-        let ply = this.ply - 1,
-            start = this.main_manual? -1: 0;
-        while (ply > start && !this.moves[ply])
-            ply --;
-        return this.set_ply(ply, {animate: true, manual: true});
-    }
-
-    /**
-     * Navigation: start
-     * @returns {boolean}
-     */
-    go_start() {
-        let num_move = this.moves.length,
-            ply = 0;
-        while (ply < num_move - 1 && !this.moves[ply])
-            ply ++;
-
-        // initial board
-        if (!ply && this.main_manual)
-            ply = -1;
-
-        return this.set_ply(ply, {manual: true});
-    }
-
-    /**
-     * Check if it's a human turn
-     * @returns {boolean}
-     */
-    human_turn() {
-        let play_as = Y.game_play_as,
-            ply = get_fen_ply(this.fen);
-        if (play_as == 'AI')
-            return false;
-        else if (play_as == 'Human')
-            return true;
-        else
-            return (play_as == WB_TITLE[(1 + ply) % 2]);
-    }
-
-    /**
      * Hold the smooth value for 1 render frame
      */
     instant() {
         this.smooth = false;
+    }
+
+    /**
+     * Check if the game is finished
+     * @param {Move} move
+     * @param {string} fen
+     * @param {number} ply
+     * @returns {boolean}
+     */
+    is_finished(move, fen, ply) {
+        // 1) stalemate
+        let moves = this.chess_moves(this.frc, true, -1);
+        if (!moves.length) {
+            let is_mate = move.m.slice(-1) == '#';
+            LS(is_mate? `${WB_TITLE[ply % 2]} mates.`: 'Stalemate.');
+            return true;
+        }
+
+        // 2) 50 move rule
+        let rule50 = this.fen.split(' ')[4] * 1;
+        if (rule50 >= 50) {
+            LS('Fifty move rule.');
+            return true;
+        }
+
+        if (rule50 == 0)
+            this.fens = {};
+
+        // 3) insufficient material
+        let enough = 0,
+            materials = ['', ''];
+        fen.split(' ')[0].split('').map(item => {
+            if ('BNPRQK'.includes(item))
+                materials[0] += item;
+            else if ('bnprqk'.includes(item))
+                materials[1] += item;
+        });
+        for (let i = 0; i < 2; i ++)
+            materials[i] = Lower(materials[i]).split('').sort((a, b) => MATERIAL_ORDERS[a] - MATERIAL_ORDERS[b]);
+
+        for (let material of materials)
+            if (material.some(item => 'prq'.includes(item)))
+                enough ++;
+
+        if (!enough) {
+            for (let i = 0; i < 2; i ++)
+                materials[i] = materials[i].join('');
+
+            for (let material of materials)
+                if (['k', 'kb', 'kn', 'knn'].includes(material))
+                    enough ++;
+
+            if (enough == 2) {
+                LS(`Insufficient material: ${materials.join(' vs ')}.`);
+                return true;
+            }
+        }
+
+        // 4) 3-fold repetition
+        let prune = fen.split(' ').filter((_, id) => [0, 2, 3].includes(id)).join(' '),
+            count = (this.fens[prune] || 0) + 1;
+        this.fens[prune] = count;
+        if (count >= 3) {
+            LS('3-fold repetition.');
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1606,39 +1684,14 @@ class XBoard {
 
         // maybe finished the game? 50MR / stalemate / win / 3-fold
         if (this.manual) {
-            let finished,
-                rule50 = this.fen.split(' ')[4] * 1;
-            if (rule50 >= 50) {
-                LS('Fifty move rule.');
-                finished = true;
-            }
-            else {
-                if (rule50 == 0)
-                    this.fens = {};
-
-                let moves = this.chess_moves(this.frc, true, -1);
-                if (!moves.length) {
-                    let is_mate = move.m.slice(-1) == '#';
-                    LS(`${'BW'[ply % 2]}: ${is_mate? 'I resign': 'Stalemate'}.`);
-                    finished = true;
-                }
-                // 3-fold repetition
-                else {
-                    let prune = fen.split(' ').filter((_, id) => [0, 2, 3].includes(id)).join(' '),
-                        count = (this.fens[prune] || 0) + 1;
-                    this.fens[prune] = count;
-                    if (count >= 3) {
-                        LS('3-fold repetition.');
-                        finished = true;
-                    }
-                }
-            }
+            let finished = this.is_finished(move, fen, ply);
             if (finished) {
                 this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
+                Hide(`.xcog`, this.node);
                 this.play(true);
             }
-	    }
+        }
         this.delayed_picks(true);
     }
 
@@ -2221,14 +2274,17 @@ class XBoard {
     /**
      * Think ...
      * @param {boolean} suggest
+     * @param {number=} step
      * @returns {boolean} true if the AI was able to play
      */
-    think(suggest) {
+    think(suggest, step) {
         if (this.finished)
             return;
 
-        let chess = this.chess,
+        let moves, num_move,
+            chess = this.chess,
             fen = this.fen,
+            folds = [],
             ply = get_fen_ply(this.fen),
             color = (1 + ply) % 2;
 
@@ -2237,72 +2293,90 @@ class XBoard {
         if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
             return true;
 
-        Show(`.xcolor${color} .xcog`, this.node);
+        if (!step) {
+            Show(`.xcolor${color} .xcog`, this.node);
+            this.create_workers();
 
-        this.create_workers();
-
-        // check moves
-        chess.load(fen);
-        let folds = [],
-            moves = this.chess_moves(this.frc, true, -1),
+            // check moves
+            chess.load(fen);
+            moves = this.chess_moves(this.frc, true, -1);
             num_move = moves.length;
-        if (!num_move)
-            return false;
+            if (!num_move)
+                return false;
 
-        // check for 3-fold moves
-        let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
-        for (let move of moves) {
-            this.chess.ucify(move);
-            this.chess.moveRaw(move);
-            let splits = this.chess.fen().split(' '),
-                prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
-                rule50 = splits[4] * 1,
-                draw = (rule50 >= 50 || fen_set.has(prune));
+            // check for 3-fold moves
+            let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
+            for (let move of moves) {
+                this.chess.ucify(move);
+                this.chess.moveRaw(move);
+                let splits = this.chess.fen().split(' '),
+                    prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
+                    rule50 = splits[4] * 1,
+                    draw = (rule50 >= 50 || fen_set.has(prune));
 
-            if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
-                let moves2 = this.chess_moves(this.frc, true, -1);
-                for (let move2 of moves2) {
-                    this.chess.moveRaw(move2);
-                    let splits2 = this.chess.fen().split(' '),
-                        prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
-                    if (fen_set.has(prune2)) {
-                        if (DEV.engine)
-                            LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
-                        draw = true;
+                if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
+                    let moves2 = this.chess_moves(this.frc, true, -1);
+                    for (let move2 of moves2) {
+                        this.chess.moveRaw(move2);
+                        let splits2 = this.chess.fen().split(' '),
+                            prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
+                        if (fen_set.has(prune2)) {
+                            if (DEV.engine)
+                                LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
+                            draw = true;
+                        }
+                        this.chess.undo();
                     }
-                    this.chess.undo();
                 }
+                if (draw) {
+                    Assign(move, {
+                        depth: 0,
+                        score: -2.5,
+                        special: 1,
+                    });
+                    folds.push(move);
+                }
+                this.chess.undo();
             }
-            if (draw) {
-                Assign(move, {
-                    depth: 0,
-                    score: -2.5,
-                    special: 1,
-                });
-                folds.push(move);
-            }
-            this.chess.undo();
+        }
+        else {
+            folds = reply.folds;
+            moves = reply.moves2;
+            num_move = moves.length;
         }
 
         // setup combined reply
-        let scolor = WB_LOWER[color],
+        let now = Now(true),
+            scolor = WB_LOWER[color],
             max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${scolor}`],
             max_extend = 0,     // max_depth? Y[`game_extend_${scolor}`]: 0,
             num_worker = this.workers.length,
-            params = Y[`game_params_${scolor}`];
+            params = Y[`game_options_${scolor}`];
 
         Assign(reply, {
             count: 0,
             lefts: I8(num_worker),
             moves: [],
-            moves2: moves,
             nodes: 0,
             sel_depth: 0,
-            start: Now(true),
+            start: now,
         });
 
+        if (!step) {
+            this.depth = 3;
+            this.max_depth = max_depth;
+            Assign(reply, {
+                all_elapsed: [],
+                all_nodes: [],
+                folds: folds,
+                moves2: moves,
+                nodes2: 0,
+                start2: now,
+            });
+        }
+
         // pure random + insta move?
-        if (max_depth < 1 || num_worker < 1 || num_move < 2) {
+        if (!max_depth || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = moves[id];
             move.depth = 0;
@@ -2362,7 +2436,7 @@ class XBoard {
                 frc: this.frc,
                 id: id,
                 mask: masks[id].join(''),
-                max_depth: max_depth,
+                max_depth: (max_depth < 0)? this.depth: max_depth,
                 max_extend: max_extend,
                 max_nodes: Y.game_nodes,
                 params: params,
@@ -2440,6 +2514,7 @@ class XBoard {
                 combine.push(move);
 
         reply.nodes += nodes;
+        reply.nodes2 += nodes;
         if (sel_depth > reply.sel_depth)
             reply.sel_depth = sel_depth;
 
@@ -2448,15 +2523,17 @@ class XBoard {
             let move = moves[0];
             if (!reply.count)
                 LS(this.fen);
-            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(1): '-').padStart(6)} : ${reply.lefts} : ${combine.length}`);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(2): '-').padStart(7)} : ${reply.lefts} : ${combine.length}`);
         }
         reply.count ++;
         if (!reply.lefts.every(item => !item))
             return;
 
         // 3) got all the data
-        let elapsed = Now(true) - reply.start,
-            nps = (elapsed> 0.001)? `${FormatUnit(reply.nodes / elapsed)}nps`: '-';
+        let now = Now(true),
+            elapsed = now - reply.start,
+            elapsed2 = now - reply.start2,
+            nps = (elapsed2 > 0.001)? `${FormatUnit(reply.nodes2 / elapsed2)}nps`: '-';
 
         // get the best move
         combine.sort((a, b) => b.score - a.score);
@@ -2469,26 +2546,77 @@ class XBoard {
         }
 
         // 4) update
-        let ply = get_fen_ply(fen),
+        let best_score = best.score,
+            is_iterative = this.max_depth < 0,
+            ply = get_fen_ply(fen),
             color = (1 + ply) % 2,
             mini = _(`.xcolor${color}`, this.node);
 
         if (color)
-            best.score *= -1;
+            best_score *= -1;
 
         if (id >= -1) {
-            Hide(`.xcog`, mini);
-            HTML('.xeval', best.score.toFixed(2), mini);
-            HTML(`.xleft`, elapsed.toFixed(1), mini);
-            HTML('.xshort', `<div>${FormatUnit(reply.nodes)}</div><div>${nps}</div>`, mini);
+            HTML('.xeval', best_score.toFixed(2), mini);
+            HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps}</div>`, mini);
             HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
         }
 
-        if (suggest)
-            this.arrow(3, best);
-        else {
-            let result = this.chess_move(best, {decorate: true});
-            this.new_move(result);
+        // arrow suggest
+        if (suggest) {
+            this.arrow(color + 2, best);
+            Hide(`.xcog`, mini);
+            return;
         }
+
+        // 6) iterative thinking?
+        let predict = 0;
+        if (is_iterative) {
+            let all_elapsed = reply.all_elapsed,
+                all_nodes = reply.all_nodes,
+                length = all_nodes.length;
+            all_elapsed.push(elapsed);
+            all_nodes.push(reply.nodes);
+
+            if (length > 0) {
+                let ratio_nodes = all_nodes[length] / all_nodes[length - 1],
+                    extra = elapsed * ratio_nodes;
+
+                predict = elapsed2 + extra;
+                is_iterative = best.score < 200 && (this.depth < 4 || predict < -this.max_depth);
+                if (DEV.engine)
+                    LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
+            }
+        }
+
+        if (is_iterative) {
+            moves = combine.filter(move => move.depth > 0);
+            if (moves.length > 1 && this.depth < 8) {
+                // arrow?
+                if (this.depth >= 3 && predict > 1) {
+                    let arrow = Y.game_arrow;
+                    if (arrow != 'none') {
+                        if (arrow == 'color')
+                            arrow = color;
+                        else if (arrow == 'kibitz')
+                            arrow = color + 2;
+                        else
+                            arrow = arrow.slice(-1) * 1;
+                        this.arrow(arrow, best);
+                    }
+                }
+
+                this.depth ++;
+                this.think(false, 1);
+                return;
+            }
+        }
+
+        // 7) move
+        Hide(`.xcog`, mini);
+        if (id > -1)
+            HTML(`.xleft`, elapsed2.toFixed(1), mini);
+
+        let result = this.chess_move(best, {decorate: true});
+        this.new_move(result);
     }
 }

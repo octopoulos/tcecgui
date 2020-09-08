@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-08
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1809,7 +1809,7 @@ function prepare_settings() {
             wasm: [ON_OFF, 0],
         },
         engine: {
-            material_color: [['invert', 'normal'], 'normal'],
+            material_color: [['inverted', 'normal'], 'normal'],
             mobility: [ON_OFF, 1],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
         },
@@ -1819,7 +1819,7 @@ function prepare_settings() {
             log_auto_start: [ON_OFF, 1],
             log_history: option_number(100, -1, 1000),
             reload_missing: [ON_OFF, 1],
-            rows_per_page: [[10, 20, 50, 100], 10],
+            rows_per_page: [[10, 20, 50, 100, 1000], 10],
             scroll_inertia: option_number(0.95, 0, 0.99, 0.01),
             wheel_adjust: option_number(63, 0, 240),
             wrap: [ON_OFF, 1],
@@ -1833,14 +1833,15 @@ function prepare_settings() {
             board_pva: '',
             game_960: [ON_OFF, 1],
             game_advice: '1',
-            game_depth_black: option_number(4, 0, 5),
-            game_depth_white: option_number(4, 0, 5),
+            game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
+            game_depth_black: option_number(-3, -60, 5),
+            game_depth_white: option_number(-3, -60, 5),
             game_engine: [['Minimax', 'RandomMove'], 'Minimax'],
-            game_every: option_number(600, 100, 5000, 100),
+            game_every: option_number(500, 50, 5000, 50),
             game_new_game: '1',
             game_nodes: option_number(1e9, 0, 1e10),
-            game_params_black: [{type: 'text'}, 'x'],
-            game_params_white: [{type: 'text'}, 'x'],
+            game_options_black: [{type: 'text'}, 'x'],
+            game_options_white: [{type: 'text'}, 'x'],
             game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
             game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),
