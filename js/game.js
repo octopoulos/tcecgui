@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-07
 //
 // Game specific code:
 // - control the board, moves
@@ -11,16 +11,15 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox,
-C, calculate_feature_q, cannot_click, Ceil, change_setting, charts, check_hash, Clamp, Class, clear_timeout,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
-CreateNode, CreateSVG, cube:true, DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo,
-fix_move_format, Floor, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection,
-global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible,
-IsArray, IsObject, IsString, Keys, KEYS,
+_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil, change_setting, charts,
+check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls, CopyClipboard,
+create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit,
+From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
+HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
 parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
-Resource, restore_history, resume_sleep, Round,
+Resource, restore_history, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -76,7 +75,6 @@ let ANALYSIS_URLS = {
             vis: 'archive',
         },
         live: {
-            //manual: true, // CHECK THIS: should not be here, set_voting_status sets this
             count: 'end',
             last: '*',
             main: true,
@@ -156,10 +154,10 @@ let ANALYSIS_URLS = {
     },
     ENGINE_FEATURES = {
         AllieStein: 1 + 4,              // & 1 => NN engine
+        Chat: 256,
         LCZero: 1 + 2,                  // & 2 => Leela variations
         ScorpioNN: 1,
         Stoofvlees: 1 + 8,
-        Chat: 256,
     },
     event_stats = {
         archive: {},
@@ -188,6 +186,23 @@ let ANALYSIS_URLS = {
         tbhits: [1, 1],
         time: [1, 1],
         wdl: [3, 1],
+    },
+    // sort those columns as a number, not string
+    NUMBER_COLUMNS = {
+        _id: 0,
+        black_ev: 99999,
+        elo: 0,
+        game: 0,
+        games: 0,
+        id: 0,
+        losses: 0,
+        moves: 0,
+        points: 0,
+        rank: 0,
+        sb: 0,
+        start: 0,
+        white_ev: 99999,
+        wins: 0,
     },
     old_cup,
     old_width,
@@ -935,13 +950,18 @@ function analyse_crosstable(section, data) {
         abbrevs.forEach((abbrev, id) => {
             let games = results[orders[id]];
             if (games) {
-                let scores = games.Scores.map((game, i) => {
-                    let link = create_game_link(section, game.Game, '', true),
-                        score = game.Result,
-                        sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
-                    return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                let count = 0,
+                    total = 0,
+                    scores = games.Scores.map((game, i) => {
+                        let link = create_game_link(section, game.Game, '', true),
+                            score = game.Result,
+                            sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
+                        count ++;
+                        total += score;
+                        return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
+                cross_row[`x_${abbrev}`] = count? total / count: 0;
             }
         });
         cross_rows.push(cross_row);
@@ -1001,6 +1021,8 @@ function calculate_h2h(section, rows) {
 
     // calculate h2h scores
     for (let row of new_rows) {
+        row.id = row._id;
+
         let result = RESULTS[row.result];
         if (result) {
             if (result == 1)
@@ -1479,8 +1501,11 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // 2) update table data
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
+        is_h2h = (name == 'h2h'),
+        is_same = (section == Y.x),
         is_sched = (name == 'sched'),
         // live cup has wrong Game# too
+        is_h2h_archive = (is_h2h && (section == 'archive' || tour_info[section].cup)),
         is_sched_archive = (is_sched && (section == 'archive' || tour_info[section].cup)),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
@@ -1498,7 +1523,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // reset or append?
     // - except if rows is null
     if (reset) {
-        HTML(body, '');
+        if (is_same)
+            HTML(body, '');
         if (rows) {
             data.length = 0;
             for (let pagin of PAGINATION_PARENTS) {
@@ -1515,7 +1541,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         // translate row keys + calculate _id and _text
         rows.forEach((row, row_id) => {
             let lines = [];
-            row = Assign({_id: row_id}, ...Keys(row).map(key => {
+            row = Assign({_id: row_id}, ...Keys(row).filter(key => key[0] != '_').map(key => {
                 let value = row[key];
                 if (value)
                     lines.push(value + '');
@@ -1530,7 +1556,36 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             calculate_estimates(section, data);
     }
 
-    // 3) handle pagination + filtering
+    // 3) sorting
+    let sort = Y.sort;
+    if (sort) {
+        let reverse;
+        if (sort[0] == '-') {
+            reverse = true;
+            sort = sort.slice(1);
+        }
+
+        let empty = reverse? -1: 1,
+            number_column = NUMBER_COLUMNS[sort],
+            is_number = (number_column != undefined);
+
+        data.sort((a, b) => {
+            let ax = a[sort],
+                bx = b[sort];
+            if (ax == undefined)
+                return empty;
+            if (bx == undefined)
+                return -empty;
+            if (is_number)
+                return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
+            return (ax + '').localeCompare(bx + '');
+        });
+
+        if (reverse)
+            data.reverse();
+    }
+
+    // 4) handle pagination + filtering
     let paginated,
         active_row = -1;
 
@@ -1583,7 +1638,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         data_x[page_key] = page;
     }
 
-    // 4) process all rows => render the HTML
+    // 5) process all rows => render the HTML
     let columns = From(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
@@ -1592,7 +1647,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         tour_url = tour_info[section].url;
 
     for (let row of data) {
-        let row_id = row._id;
+        let row_id = Undefined(row.id, row._id);
 
         let vector = columns.map(key => {
             let class_ = '',
@@ -1642,10 +1697,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'game':
             case 'gameno':
-                let game = is_sched_archive? row_id + 1: value;
+                let game = (is_h2h_archive || is_sched_archive)? row_id + 1: value;
                 if (row.moves || row.reason) {
                     value = create_game_link(section, game);
-                    if (is_sched && tour_url)
+                    if ((is_h2h || is_sched) && tour_url)
                         value = `<hori><a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn"><i style="margin-right:1em" data-svg="download"></i></a>${value}</hori>`;
                 }
                 break;
@@ -1723,7 +1778,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
         // create a new row node
         let dico = null;
-        if (is_game || is_sched || name == 'h2h')
+        if (is_h2h || is_game || is_sched)
             dico = {
                 class: `pointer${row_id == active_row? ' active': ''}`,
                 'data-g': row_id + 1,
@@ -1733,59 +1788,82 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         nodes.push(node);
     }
 
-    InsertNodes(body, nodes);
-    update_svg(table);
-    translate_node(table);
+    // 6) add events
+    if (is_same) {
+        InsertNodes(body, nodes);
+        update_svg(table);
+        translate_node(table);
 
-    // 5) add events
-    if (name == 'season')
-        set_season_events();
+        if (name == 'season')
+            set_season_events();
 
-    // download game
-    C('a[href]', function(e) {
-        if (!this.href.includes('#'))
-            SP(e);
-    });
-    // open game
-    C('[data-g]', function(e) {
-        if (Parent(e.target, {class_: 'fen', self: true}))
-            return;
-        if (cannot_click())
-            return;
+        // download game
+        C('a[href]', function(e) {
+            if (!this.href.includes('#'))
+                SP(e);
+        });
+        // open game
+        C('[data-g]', function(e) {
+            if (Parent(e.target, {class_: 'fen', self: true}))
+                return;
+            if (cannot_click())
+                return;
 
-        if (this.tagName == 'TR') {
-            Class('tr.active', '-active', true, table);
-            Class(this, 'active');
-        }
-        let game = this.dataset.g * 1;
-        Y.scroll = '#overview';
-        if (section == 'archive') {
-            save_option('game', game);
-            open_game();
-        }
-        // make sure the game is over
-        else if (_('a.game[href]', this))
-            location.hash = create_game_link(section, game, '', true);
-    }, table);
+            if (this.tagName == 'TR') {
+                Class('tr.active', '-active', true, table);
+                Class(this, 'active');
+            }
+            let game = this.dataset.g * 1;
+            Y.scroll = '#overview';
+            if (section == 'archive') {
+                save_option('game', game);
+                open_game();
+            }
+            // make sure the game is over
+            else if (_('a.game[href]', this))
+                location.hash = create_game_link(section, game, '', true);
+        }, table);
 
-    // fen preview
-    Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
-        if (e.type == 'click') {
-            CopyClipboard(TEXT(this));
-            let overlay = xboards.xfen.overlay;
-            HTML(overlay,
-                '<vert class="fcenter facenter h100">'
-                    + `<div class="xcopy">${translate_default('COPIED')}</div>`
-                + '</vert>'
-            );
-            Style(overlay, 'opacity:1;transition:opacity 0s');
-        }
-        else
-            popup_custom('popup-fen', 'fen', e);
-    });
+        // fen preview
+        Events('td.fen', '!click mouseenter mousemove mouseleave', function(e) {
+            if (e.type == 'click') {
+                CopyClipboard(TEXT(this));
+                let overlay = xboards.xfen.overlay;
+                HTML(overlay,
+                    '<vert class="fcenter facenter h100">'
+                        + `<div class="xcopy">${translate_default('COPIED')}</div>`
+                    + '</vert>'
+                );
+                Style(overlay, 'opacity:1;transition:opacity 0s');
+            }
+            else
+                popup_custom('popup-fen', 'fen', e, null, TEXT(this));
+        });
 
-    // 6) update shortcuts
-    if (parent == 'table') {
+        // sorting
+        C('th', function() {
+            let column = this.dataset.x,
+                first = is_h2h? 'id': '_id',
+                sort = Y.sort;
+
+            if (name == 'cross' && column.length == 2) {
+                column = `x_${column}`;
+                if (!sort.includes(column))
+                    sort = column;
+            }
+
+            if (column == columns[0])
+                column = first;
+            if (!sort && column == first)
+                sort = first;
+            Y.sort = (sort == column)? `-${column}`: column;
+
+            update_table(section, name);
+        }, table);
+    }
+
+    // 7) update shortcuts
+    if (parent == 'table' && !Y.sort) {
         for (let id = 1; id <= 2; id ++) {
             // shortcut matches this table?
             let key = `shortcut_${id}`;
@@ -1798,8 +1876,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }
     }
 
-    // 7) create another table?
-    if (!is_shortcut && is_sched)
+    // 8) create another table?
+    if (!is_shortcut && is_sched && !Y.sort)
         add_queue(section, parent);
 }
 
@@ -3508,7 +3586,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
     // 5) clock
     if (section == 'live' && (last_move || new_game)) {
-        let who = last_move ? (1 + last_move.ply) % 2 : 0;
+        let who = last_move? (1 + last_move.ply) % 2: 0;
         if (!new_game)
             players[who].time = 0;
         start_clock(who, finished, pgn.elapsed || 0);
@@ -4010,7 +4088,7 @@ function game_action_key(code) {
             if (Visible(Id('modal2')))
                 show_modal(true);
             else
-                resume_sleep();
+                resume_game();
             break;
         // enter, space, x
         case 13:
@@ -4151,8 +4229,13 @@ function game_action_keyup(code) {
 function paste_text(text) {
     text = text.replace(/\s+/g, ' ');
 
-    let board = board_target.manual? board_target: xboards.pva;
-    if (!board.set_fen(text, true))
+    let board = board_target.manual? board_target: xboards.pva,
+        fen = board.fen;
+    if (board.set_fen(text, true)) {
+        if (board.fen != fen)
+            board.reset(true, board.fen);
+    }
+    else
         board.add_moves_string(text);
 }
 
@@ -4473,6 +4556,8 @@ function open_table(sel) {
  * @param {Node} tab
  */
 function opened_table(node, name, tab) {
+    Y.sort = '';
+
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = _('canvas', node),
@@ -4530,8 +4615,9 @@ function opened_table(node, name, tab) {
  * @param {string} name timeout name
  * @param {Event} e
  * @param {string|number} scolor 0, 1, popup
+ * @param {string=} text
  */
-function popup_custom(id, name, e, scolor) {
+function popup_custom(id, name, e, scolor, text) {
     if (e.buttons)
         return;
 
@@ -4567,12 +4653,13 @@ function popup_custom(id, name, e, scolor) {
             HTML(popup, `<verts class="list fastart">${lines.join('')}</verts>`);
         }
         else if (name == 'fen') {
-            let fen = TEXT(e.target),
-                xfen = xboards.xfen;
-            xfen.instant();
-            if (!xfen.set_fen(fen, true))
-                return;
-            Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
+            let xfen = xboards.xfen;
+            if (xfen.fen != text) {
+                xfen.instant();
+                if (!xfen.set_fen(text, true))
+                    return;
+                Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
+            }
         }
 
         // place the popup in a visible area on the screen
@@ -4601,15 +4688,22 @@ function popup_custom(id, name, e, scolor) {
         clear_timeout(`popup-${name}`);
         Class(popup, 'popup-enable');
         Show(popup);
+        Style(popup, 'z-index:-1', false);
     }
     else
-        add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 300);
+        add_timeout(`popup-${name}`, () => {
+            Class(popup, '-popup-enable');
+            Style(popup, 'z-index:-1');
+        }, 300);
 }
 
 /**
  * Compute woke up
+ * @param {number} resume_time
  */
-function resume_sleep() {
+function resume_sleep(resume_time) {
+    if (DEV.queue)
+        LS(`resume_sleep: ${resume_time}`);
     check_missing_moves();
     show_board_info(Y.x);
 }

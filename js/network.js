@@ -1,15 +1,16 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-20
+// @version 2020-09-05
 //
 // all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode, DEV, From,
-HasClass, Hide, HOST, HTML, Id, InsertNodes, io, LOCALHOST, location, LS, S, save_option, set_viewers, Show, TIMEOUTS,
-update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, Y
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode,
+DEV, From, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
+LOCALHOST, LS, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval, update_pgn,
+update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
 
@@ -18,7 +19,6 @@ let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tce
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
 let prev_room = 0,
-    socket,
     socket_data = {
         archive: {},
         live: {},

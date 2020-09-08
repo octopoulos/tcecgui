@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-08-16
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,9 +9,9 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs,
-cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode, DefaultFloat,
-DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject, IsString, Keys,
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject,
+IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
 requestAnimationFrame, Resource,
 ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, window
@@ -21,6 +21,7 @@ ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Titl
 let __PREFIX = '_',
     ANCHORS = {},
     animation,
+    AnimationFrame = (callback, direct) => (direct? callback(): requestAnimationFrame(callback)),
     api = {},
     api_times = {},
     DEFAULTS = {
@@ -56,11 +57,15 @@ let __PREFIX = '_',
         preset: 1,
     },
     ON_OFF = ['on', 'off'],
+    ping = 0,
+    pong = 0,
     QUERY_KEYS = {
         '': '?',
         hash: '#',
     },
     scroll_target,
+    socket,
+    socket_fail = 0,
     STATE_KEYS = {},
     THEMES = [''],
     TIMEOUT_adjust = 250,
@@ -418,6 +423,18 @@ function merge_settings(x_settings) {
             guess_types(settings, keys);
         }
     });
+}
+
+/**
+ * Utility for creating settings
+ * @param {number} def
+ * @param {number} min
+ * @param {number} max
+ * @param {number=} step
+ * @returns {[Object, number]}
+ */
+function option_number(def, min, max, step=1) {
+    return [{max: max, min: min, step: step, type: 'number'}, def];
 }
 
 /**
@@ -1101,7 +1118,7 @@ function render_scroll() {
     if (Abs(touch_speed.x) > 0.03 || Abs(touch_speed.y) > 0.03) {
         touch_speed.x *= ratio;
         touch_speed.y *= ratio;
-        animation = requestAnimationFrame(render_scroll);
+        animation = AnimationFrame(render_scroll);
     }
     touch_now = now;
 }
@@ -1409,7 +1426,7 @@ function touch_handle(e, full) {
             scroll_target = drag_target;
             touch_speed = {x: sumx / time, y: sumy / time};
             cancelAnimationFrame(animation);
-            animation = requestAnimationFrame(render_scroll);
+            animation = AnimationFrame(render_scroll);
         }
         // big movement or average duration => prevent click
         if (type != 'mouseleave') {

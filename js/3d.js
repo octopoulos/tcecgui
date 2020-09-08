@@ -1,18 +1,19 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-16
+// @version 2020-09-07
 //
 // general 3d rendering code
 //
 // included after: common, engine, global
 /*
 globals
-_, Abs, add_timeout, api_translate_get, Assign, Attrs, Audio,
-C, CameraControls, cannot_click, Class, clear_timeout, DefaultInt, DEFAULTS, DEV, document, done_touch, Events, Exp,
-Format, HasClass, HTML, Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD, requestAnimationFrame,
-S, save_option, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, Undefined, update_theme,
-Visible, window, X_SETTINGS, Y
+_, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
+clear_timeout, create_url_list,
+DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, HasClass, HTML, Id, Input,
+IsArray, IsString, KEY_TIMES, Keys, KEYS,
+LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, Parent, PD,
+S, save_option, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES, Undefined,
+update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -66,6 +67,7 @@ let audiobox = {
             pos: [0, 0, 0],
         },
     },
+    change_queue,
     clock,
     clock2,
     context_areas = {},
@@ -263,7 +265,7 @@ function init_3d(force) {
     resize_3d();
 
     if (force)
-        requestAnimationFrame(render);
+        AnimationFrame(render);
 }
 
 /**
@@ -624,7 +626,7 @@ function render() {
         stats.end();
 
     if (dirty)
-        requestAnimationFrame(render);
+        AnimationFrame(render);
 }
 
 /**
@@ -637,7 +639,7 @@ function request_render(timer) {
     if (dirty && (!timer || !Number.isFinite(timer)))
         return;
     dirty = 2;
-    requestAnimationFrame(render);
+    AnimationFrame(render);
 }
 
 /**
@@ -1046,11 +1048,18 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
 function change_setting(name, value, no_close) {
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
-        if (!isNaN(value))
+        if (TYPES[name] == 'i' && !isNaN(value))
             value *= 1;
         if (NO_IMPORTS[name] != 2)
             save_option(name, value);
     }
+
+    // holding down a key => skip
+    if (KEYS[38] || KEYS[40]) {
+        change_queue = [name, value, no_close];
+        return;
+    }
+    change_queue = null;
 
     if (virtual_change_setting_special && virtual_change_setting_special(name, value, no_close))
         return;
@@ -1060,7 +1069,7 @@ function change_setting(name, value, no_close) {
         if (value == 'eng' || translates._lan == value)
             translate_node('body');
         else if (value != 'eng')
-            add_timeout('language', api_translate_get, 100);
+            api_translate_get();
         break;
     case 'theme':
         update_theme([value]);
@@ -1113,18 +1122,6 @@ function get_drop_id(target) {
 }
 
 /**
- * Utility for creating settings
- * @param {number} def
- * @param {number} min
- * @param {number} max
- * @param {number=} step
- * @returns {[Object, number]}
- */
-function option_number(def, min, max, step=1) {
-    return [{max: max, min: min, step: step, type: 'number'}, def];
-}
-
-/**
  * Close the modal and resume the game
  */
 function resume_game() {
@@ -1173,6 +1170,133 @@ function show_modal(show, text, title, name) {
         virtual_show_modal_special(show);
 
     modal_name = name;
+}
+
+/**
+ * Show/hide popup
+ * @param {string=} name
+ * @param {boolean|string=} show
+ * @param {boolean=} adjust only change its position
+ * @param {boolean=} instant popup appears instantly
+ * @param {boolean=} overlay dark overlay is used behind the popup
+ * @param {string=} setting
+ * @param {number[]]=} xy
+ */
+function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
+    if (adjust && device.iphone)
+        return;
+
+    let node = (name == 'about')? Id('popup-about'): Id('modal');
+    if (!node)
+        return;
+
+    if (show == 'toggle')
+        show = (node.dataset.id != name || !HasClass(node, 'popup-show'));
+    S(Id('overlay'), show && overlay);
+
+    if (show || adjust) {
+        let html = '',
+            px = 0,
+            py = 0,
+            win_x = window.innerWidth,
+            win_y = window.innerHeight,
+            x = 0,
+            x2 = 0,
+            y = 0,
+            y2 = 0;
+
+        // create the html
+        switch (name) {
+        case 'about':
+            html = HTML(Id('desc'));
+            px = -50;
+            py = -50;
+            x = win_x / 2;
+            y = win_y / 2;
+            break;
+        case 'options':
+            if (!xy)
+                context_target = null;
+            html = show_settings(setting, xy);
+            break;
+        default:
+            if (name)
+                html = create_url_list(LINKS[name]);
+            break;
+        }
+
+        if (show)
+            HTML(name == 'about'? '#popup-desc': '#modal', html);
+        else
+            name = node.dataset.id;
+
+        Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
+        translate_node(node);
+
+        // align the popup with the target, if any
+        if (adjust && !xy) {
+            let item = node.dataset.xy;
+            if (item)
+                xy = item.split(',').map(item => item * 1);
+        }
+        if (xy) {
+            x = xy[0];
+            y = xy[1];
+            x2 = x;
+            y2 = y;
+        }
+        else if (name && !px) {
+            let target = Id(name);
+            if (target) {
+                let rect = target.getBoundingClientRect();
+                [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
+            }
+        }
+
+        // make sure the popup remains inside the window
+        let height = node.clientHeight,
+            width = node.clientWidth;
+
+        // align left doesn't work => try align right, and if not then center
+        if (x + width > win_x - 20) {
+            if (x2 < win_x - 20 && x2 - width > 0) {
+                px = -100;
+                x = x2;
+            }
+            else {
+                px = -50;
+                x = win_x / 2;
+            }
+        }
+        // same for y
+        if (y + height > win_y) {
+            if (y2 < win_y && y2 - height > 0) {
+                py = -100;
+                y = y2;
+            }
+            else {
+                py = -50;
+                y = win_y / 2;
+            }
+        }
+
+        node.dataset.xy = xy || '';
+        x += full_scroll.x;
+        y += full_scroll.y;
+        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
+    }
+
+    if (!adjust) {
+        if (instant != undefined)
+            Class(node, 'instant', instant);
+        Class(node, 'popup-show popup-enable', !!show);
+
+        // remember which popup it is, so if we click again on the same id => it closes it
+        node.dataset.id = show? name: '';
+
+        set_modal_events(node);
+        Show(node);
+    }
 }
 
 /**
@@ -1290,7 +1414,7 @@ function show_settings(name, xy) {
 
             if (type == 'number')
                 lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
-            else if (type == 'text') {
+            else if (type == 'link') {
                 if (data.text)
                     lines.push(`<input name="${key}" type="text" class="setting" data-t="${data.text}" data-t2="placeholder" value="">`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
@@ -1516,7 +1640,7 @@ function startup_3d() {
     merge_settings({
         general: {
             export_settings: '1',
-            import_settings: [{text: 'Enter JSON data', type: 'text'}, ''],
+            import_settings: [{text: 'Enter JSON data', type: 'link'}, ''],
             language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],
         },

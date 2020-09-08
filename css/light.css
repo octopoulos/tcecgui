@@ -105,7 +105,8 @@ verts {
 a,
 img,
 .noselect,
-.options {
+.options,
+#tables th {
     -webkit-user-select: none;
     -webkit-user-drag: none;
     user-select: none;
@@ -875,6 +876,9 @@ grid {
 .stats-title {
     color: #000;
     font-weight: 500;
+}
+#tables th {
+    cursor: pointer;
 }
 
 /* engines */

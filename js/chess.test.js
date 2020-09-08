@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-07
 //
 /*
 globals
@@ -82,6 +82,7 @@ beforeEach(() => {
 ].forEach(([fen, answer], id) => {
     test(`castling:${id}`, () => {
         chess.load(fen);
+        answer = new Int32Array(answer);
         expect(chess.castling()).toEqual(answer);
     });
 });
@@ -264,6 +265,19 @@ beforeEach(() => {
     });
 });
 
+// mobilities
+[
+    ['8/8/8/8/8/8/8/8 w - - 0 1', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+    [START_FEN, [0, 16, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+].forEach(([fen, answer], id) => {
+    test(`mobilities:${id}`, () => {
+        chess.load(fen);
+        chess.moves(false, false, EMPTY);
+        answer = new Uint8Array(answer);
+        expect(chess.mobilities()).toEqual(answer);
+    });
+});
+
 // moveObject
 [
     [
@@ -317,6 +331,12 @@ beforeEach(() => {
         false,
         undefined,
     ],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        {capture: 0, depth: 0, fen: '', flags: 0, from: -1, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: -1},
+        false,
+        undefined,
+    ],
 ].forEach(([fen, move, decorate, answer], id) => {
     test(`moveRaw:${id}`, () => {
         chess.load(fen);
@@ -366,6 +386,13 @@ beforeEach(() => {
             {capture: 0, depth: 0, fen: '', flags: 32, from: 115, m: '', piece: 6, ply: 38, promote: 0, score: 0, to: 119},
             {capture: 0, depth: 0, fen: '', flags: 64, from: 115, m: '', piece: 6, ply: 38, promote: 0, score: 0, to: 113},
         ],
+    ],
+    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, EMPTY], 14, []],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        [false, true, EMPTY],
+        13,
+        [{capture: 4, depth: 0, fen: '', flags: 18, from: 17, m: '', piece: 1, ply: 0, promote: 5, score: 0, to: 0}],
     ],
 ].forEach(([fen, [frc, legal, single_square], number, answer], id) => {
     test(`moves:${id}`, () => {
@@ -744,19 +771,25 @@ beforeEach(() => {
 
 // nodes
 [
-    [START_FEN, false, 0, 0, 1e8, 20],
-    [START_FEN, false, 1, 0, 1e8, 20],
-    [START_FEN, false, 2, 0, 1e8, 420],
-    [START_FEN, false, 3, 0, 1e8, 9322],
-    [START_FEN, false, 3, 4, 1e8, 9665],
-    [START_FEN, false, 4, 0, 1e8, 207064],
-].forEach(([fen, frc, max_depth, max_extend, max_nodes, answer], id) => {
+    [START_FEN, false, '', 0, 0, 1e8, 20],
+    [START_FEN, false, '', 1, 0, 1e8, 20],
+    [START_FEN, false, '', 2, 0, 1e8, 420],
+    [START_FEN, false, '', 3, 0, 1e8, 9322],
+    [START_FEN, false, '', 3, 4, 1e8, [9322, 11000]],
+    [START_FEN, false, '', 4, 0, 1e8, 207064],
+].forEach(([fen, frc, params, max_depth, max_extend, max_nodes, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
-        chess.configure(frc, max_depth, max_extend, max_nodes);
+        chess.configure(frc, params, max_depth, max_extend, max_nodes);
         let moves = chess.moves(frc, true, EMPTY);
         chess.search(moves, '');
-        expect(chess.nodes()).toEqual(answer);
+        let nodes = chess.nodes();
+        if (IsArray(answer)) {
+            expect(nodes).toBeGreaterThanOrEqual(answer[0]);
+            expect(nodes).toBeLessThanOrEqual(answer[1]);
+        }
+        else
+            expect(nodes).toEqual(answer);
     });
 });
 
@@ -893,65 +926,79 @@ beforeEach(() => {
 // search
 [
     [
+        '8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96',
+        '',
+        [false, '', 3, 0, 1e8],
+        [],
+        {h1b1: [-4000, -3500], h1h7: [-1500, -1000]},
+    ],
+    [
+        'rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8',
+        '',
+        [false, '', 1, 0, 1000],
+        [],
+        {2: 'e1g1'},
+    ],
+    [
         'r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16',
         '',
-        [false, 1, 0, 1000],
+        [false, '', 1, 0, 1000],
         [],
         {1: 'e1f2'},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 1, 0, 1e8],
+        [false, '', 1, 0, 1e8],
         [600, 700, 1],
         {},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 2, 0, 1e8],
+        [false, '', 2, 0, 1e8],
         [43500, 44500, 2],
         {1: 'g5e6 h7f7'},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 3, 0, 1e8],
+        [false, '', 3, 0, 1e8],
         [43500, 44500, 2],
         {1: 'g5e6 h7f7'},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '',
-        [false, 1, 0, 1e8],
+        [false, '', 1, 0, 1e8],
         [750, 900, 1],
         {},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '1000000000000000000000000',
-        [false, 1, 0, 1e8],
+        [false, '', 1, 0, 1e8],
         [-150, -50, 1],
         {},
     ],
     [
         '4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42',
         '',
-        [false, 4, 0, 1e8],
+        [false, '', 4, 0, 1e8],
         [],
         {e4f6: [0, 80], g3g5: [11500, 12500]},
     ],
     [
         '7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47',
         '',
-        [false, 4, 0, 1e8],
+        [false, '', 4, 0, 1e8],
         [],
-        {1: 'd3d8', b5c4: [0, 80], c7f7: [0, 80]},
+        {1: 'd3d8', b5c4: [0, 120], c7f7: [0, 120]},
     ],
-].forEach(([fen, mask, [frc, max_depth, max_extend, max_nodes], answer, checks], id) => {
+].forEach(([fen, mask, [frc, params, max_depth, max_extend, max_nodes], answer, checks], id) => {
     test(`search:${id}`, () => {
         chess.load(fen);
-        chess.configure(frc, max_depth, max_extend, max_nodes);
+        chess.configure(frc, params, max_depth, max_extend, max_nodes);
         let moves = chess.moves(frc, true, EMPTY),
             masks = chess.search(moves, mask);
 
@@ -960,8 +1007,9 @@ beforeEach(() => {
         masks.sort((a, b) => b.score - a.score);
 
         let best = masks[0],
+            bests = masks.filter(mask => mask.score <= best.score + 0.001),
             keys = Keys(checks),
-            uci = chess.ucify(best);
+            ucis = new Set(bests.map(mask => chess.ucify(mask)));
 
         if (keys.length) {
             let missing = false,
@@ -969,24 +1017,32 @@ beforeEach(() => {
             keys.forEach(key => {
                 let check = checks[key],
                     value = dico[key];
-                if (key == 1) {
-                    if (!check.includes(uci)) {
-                        missing = key;
+                if (key == 1 || key == 2) {
+                    let splits = check.split(' ');
+                    if (!splits.some(item => ucis.has(item))) {
+                        missing = check;
                         return;
                     }
-                    expect(check.includes(uci)).toBeTruthy();
+                    if (key == 1)
+                        expect(splits.some(item => ucis.has(item))).toBeTruthy();
+                    else
+                        expect(dico).toHaveProperty(check);
                 }
                 else {
                     if (value == undefined) {
                         missing = key;
                         return;
                     }
+                    if (value < check[0] || value > check[1])
+                        LS(dico);
                     expect(value).toBeGreaterThanOrEqual(check[0]);
                     expect(value).toBeLessThanOrEqual(check[1]);
                 }
             });
-            if (missing)
+            if (missing) {
+                LS(`id=${id} : missing=${missing}`);
                 LS(dico);
+            }
         }
 
         if (answer.length) {

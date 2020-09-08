@@ -1,9 +1,9 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-07
 /*
 globals
-Assign, Chess, FormatUnit, HTML, importScripts, Keys, LS, Now, Random, self, Undefined
+Chess, importScripts, LS, Now, Random, self, Undefined
 */
 'use strict';
 
@@ -11,7 +11,8 @@ importScripts('common.js');
 importScripts('chess.js');
 importScripts('chess-wasm.js');
 
-let engine_classes = {
+let DEV = {},
+    engine_classes = {
         js: Chess,
     },
     engines = {};
@@ -39,15 +40,16 @@ let SQUARES_INV = [
 /**
  * Think ...
  * @param {string} engine
+ * @param {string} params
  * @param {string} fen
- * @param {string} mask
  * @param {boolean} frc
+ * @param {string} mask
  * @param {number} max_depth
  * @param {number} max_extend
  * @param {number} max_nodes
  * @returns {[Move, number, number]} best_move, score, depth
  */
-function think(engine, fen, mask, frc, max_depth, max_extend, max_nodes) {
+function think(engine, params, fen, mask, frc, max_depth, max_extend, max_nodes) {
     // 1) use the desired engine
     let engine_class = engine_classes[engine];
     if (!engine_class) {
@@ -57,14 +59,15 @@ function think(engine, fen, mask, frc, max_depth, max_extend, max_nodes) {
 
     let chess = engines[engine];
     if (!chess) {
-        LS(`creating "${engine}" engine`);
+        if (DEV.worker)
+            LS(`creating "${engine}" engine`);
         engines[engine] = new engine_class();
         chess = engines[engine];
     }
 
     // 2) generate all moves + analyse them, using the mask
     chess.load(fen);
-    chess.configure(frc, max_depth, max_extend, max_nodes);
+    chess.configure(frc, params, max_depth, max_extend, max_nodes);
 
     let start = Now(true),
         moves = chess.moves(frc, true, -1),
@@ -87,13 +90,24 @@ function think(engine, fen, mask, frc, max_depth, max_extend, max_nodes) {
 ////////////////
 
 self.onconnect = () => {
+    // LS('worker connect');
 };
 
 self.onmessage = e => {
-    let data = e.data;
-    if (data.func == 'think') {
+    let data = e.data,
+        func = data.func;
+
+    if (func == 'config') {
+        if (data.dev)
+            DEV = data.dev;
+    }
+    if (DEV.worker) {
+        LS('worker got message:');
+        LS(e);
+    }
+    if (func == 'think') {
         let [moves, elapsed, nodes, sel_depth] = think(
-            data.engine, data.fen, data.mask, data.frc, data.max_depth, data.max_extend, data.max_nodes);
+            data.engine, data.params, data.fen, data.mask, data.frc, data.max_depth, data.max_extend, data.max_nodes);
         self.postMessage({
             elapsed: elapsed,
             fen: data.fen,

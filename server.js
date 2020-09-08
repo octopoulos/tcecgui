@@ -634,18 +634,15 @@ function Misc()
             //console.log ("Sent full pgn data to connected socket:" + JSON.stringify(delta).length + ",changed" + clientIp + ", from serverXXXX:" + pid);
          }
          console.log('XXXXXX: req came' + lastPgnTime);
-      });
+        });
 
-      // CHECK THIS: this needs to get actual IP, will need to experiment with main server to see what works in it.
-      // Also need to experiment in bonus server, might not be same.
-      socket.on('vote', function(data)
-      {
-          //console.log('vote, socket: ' + JSON.stringify(socket.request));
-	  //data.ip = socket.request.connection.remoteAddress;
-	  data.ip = socket.handshake.headers["x-real-ip"] || socket.request.connection.remoteAddress;
-	  chatServer.vote(data);
-      });
-   });
+        // This needs to get actual IP, will need to experiment with main server to see what works in it.
+        // Also need to experiment in bonus server, might not be same.
+        socket.on('vote', function(data) {
+            data.ip = socket.handshake.headers["x-real-ip"] || socket.request.connection.remoteAddress;
+            chatServer.vote(data);
+        });
+    });
 
    watcherFast.on('change', (path, stats) =>
    {
@@ -676,7 +673,7 @@ function Misc()
          }
          if (path.match(/Eventcrosstable.json/))
          {
-            console.log ("Evant table changed");
+            console.log ("Event table changed");
             io.local.emit('bracket', data);
          }
          if (path.match(/live.json/))

@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-06
 //
 // global variables/functions shared across multiple js files
 //
@@ -18,6 +18,7 @@ if (typeof global != 'undefined') {
         {Assign} = req('./common');
     Assign(global, {
         Assign: Assign,
+        location: {},
     });
 }
 // >>
@@ -39,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200721';
+    VERSION = '20200906';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -145,6 +146,7 @@ function fix_move_format(move) {
 /**
  * Get the ply from the FEN
  * @param {string} fen
+ * @returns {number}
  */
 function get_fen_ply(fen) {
     let items = fen.split(' ');
@@ -238,6 +240,7 @@ function parse_dev() {
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             w: 'wasm',
+            W: 'worker',                // web worker
             y: 'ply',
         },
         text = Y.dev || '';

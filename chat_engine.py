@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-#@authors Aloril <aloril@iki.fi>, octopoulo <polluxyz@gmail.com>
+# @authors Aloril <aloril@iki.fi>, octopoulo <polluxyz@gmail.com>
+
 import json
 import os
 from random import choice
