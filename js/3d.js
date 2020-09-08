@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-08
 //
 // general 3d rendering code
 //
@@ -338,14 +338,6 @@ function interpolate_store(part) {
         part.pos2.copy(part.position);
     if (part.quat2)
         part.quat2.copy(part.quaternion);
-}
-
-/**
- * Check if the overlay is visible
- * @returns {boolean}
- */
-function is_overlay_visible() {
-    return Visible(Id('overlay'));
 }
 
 /**
@@ -1122,6 +1114,14 @@ function get_drop_id(target) {
 }
 
 /**
+ * Check if the overlay is visible
+ * @returns {boolean}
+ */
+function is_overlay_visible() {
+    return Visible(Id('overlay'));
+}
+
+/**
  * Close the modal and resume the game
  */
 function resume_game() {
@@ -1182,7 +1182,7 @@ function show_modal(show, text, title, name) {
  * @param {string=} setting
  * @param {number[]]=} xy
  */
-function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={}) {
+function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, overlay, setting, xy}={}) {
     if (adjust && device.iphone)
         return;
 
@@ -1195,8 +1195,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
     S(Id('overlay'), show && overlay);
 
     if (show || adjust) {
-        let html = '',
-            px = 0,
+        let px = 0,
             py = 0,
             win_x = window.innerWidth,
             win_y = window.innerHeight,
@@ -1213,6 +1212,8 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             py = -50;
             x = win_x / 2;
             y = win_y / 2;
+            break;
+        case 'custom':
             break;
         case 'options':
             if (!xy)
@@ -1269,7 +1270,7 @@ function show_popup(name, show, {adjust, instant=true, overlay, setting, xy}={})
             }
         }
         // same for y
-        if (y + height > win_y) {
+        if (y + height + margin_y > win_y) {
             if (y2 < win_y && y2 - height > 0) {
                 py = -100;
                 y = y2;
@@ -1311,6 +1312,7 @@ function show_settings(name, xy) {
         settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
         keys = Keys(settings),
         prefix = settings._prefix,
+        simple = settings._simple,
         split = settings._split,
         suffix = settings._suffix;
 
@@ -1332,10 +1334,12 @@ function show_settings(name, xy) {
         keys = new_keys;
     }
 
-    if (parent_id)
-        lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
-    else if (name)
-        lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+    if (!simple) {
+        if (parent_id)
+            lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
+        else if (name)
+            lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+    }
 
     keys.forEach(key => {
         // separator
@@ -1438,18 +1442,20 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    if (parent_id) {
-        let context_area = context_areas[parent_id] || {};
-        lines.push(
-            `<hori class="span">`
-                + `<div class="item2" data-set="-1" data-t="ok"></div>`
-                + `<div class="item2${context_area[1]? ' active': ''}" data-t="join next"></div>`
-                + `<div class="item2" data-t="hide"></div>`
-            + '</hori>'
-        );
+    if (!simple) {
+        if (parent_id) {
+            let context_area = context_areas[parent_id] || {};
+            lines.push(
+                `<hori class="span">`
+                    + `<div class="item2" data-set="-1" data-t="ok"></div>`
+                    + `<div class="item2${context_area[1]? ' active': ''}" data-t="join next"></div>`
+                    + `<div class="item2" data-t="hide"></div>`
+                + '</hori>'
+            );
+        }
+        else if (name)
+            lines.push(`<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
     }
-    else if (name)
-        lines.push(`<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
 
     lines.push('</grid>');
     return lines.join('');
