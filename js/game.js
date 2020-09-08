@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-08
 //
 // Game specific code:
 // - control the board, moves
@@ -191,6 +191,7 @@ let ANALYSIS_URLS = {
     NUMBER_COLUMNS = {
         _id: 0,
         black_ev: 99999,
+        diff: 0,
         elo: 0,
         game: 0,
         games: 0,
@@ -3076,7 +3077,7 @@ function update_materials(move) {
     }
 
     // parse the material
-    let invert = (Y.material_color == 'invert')? 1: 0,
+    let invert = (Y.material_color == 'inverted')? 1: 0,
         is_string = IsString(material),
         size = 28,
         [piece_size, style] = xboards.live.get_piece_background(size),
@@ -4267,7 +4268,8 @@ function random_position() {
  * @param {*} value
  */
 function change_setting_game(name, value) {
-    let prefix = name.split('_')[0],
+    let update_tab,
+        prefix = name.split('_')[0],
         section = Y.x,
         main = xboards[section];
 
@@ -4290,6 +4292,9 @@ function change_setting_game(name, value) {
     case 'material_color':
         update_materials(main.moves[main.ply]);
         break;
+    case 'rows_per_page':
+        update_tab = true;
+        break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
             let board = xboards[key];
@@ -4311,9 +4316,13 @@ function change_setting_game(name, value) {
         redraw_arrows();
         break;
     case 'wrap':
-        update_table(section, get_active_tab('table')[0], null, 'table');
+        update_tab = true;
         break;
     }
+
+    // update the current tab
+    if (update_tab)
+        update_table(section, get_active_tab('table')[0], null, 'table');
 }
 
 /**
