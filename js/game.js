@@ -1557,33 +1557,30 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 3) sorting
-    let sort = Y.sort;
-    if (sort) {
-        let reverse;
-        if (sort[0] == '-') {
-            reverse = true;
-            sort = sort.slice(1);
-        }
-
-        let empty = reverse? -1: 1,
-            number_column = NUMBER_COLUMNS[sort],
-            is_number = (number_column != undefined);
-
-        data.sort((a, b) => {
-            let ax = a[sort],
-                bx = b[sort];
-            if (ax == undefined)
-                return empty;
-            if (bx == undefined)
-                return -empty;
-            if (is_number)
-                return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
-            return (ax + '').localeCompare(bx + '');
-        });
-
-        if (reverse)
-            data.reverse();
+    let reverse,
+        sort = Y.sort || (is_h2h? 'id': '_id');
+    if (sort[0] == '-') {
+        reverse = true;
+        sort = sort.slice(1);
     }
+
+    let empty = reverse? -1: 1,
+        number_column = NUMBER_COLUMNS[sort],
+        is_number = (number_column != undefined);
+
+    data.sort((a, b) => {
+        let ax = a[sort],
+            bx = b[sort];
+        if (ax == undefined)
+            return empty;
+        if (bx == undefined)
+            return -empty;
+        if (is_number)
+            return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
+        return (ax + '').localeCompare(bx + '');
+    });
+    if (reverse)
+        data.reverse();
 
     // 4) handle pagination + filtering
     let paginated,
@@ -1612,7 +1609,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             else
                 for (let row of data) {
                     if (!row.moves) {
-                        active_row = row._id;
+                        active_row = Undefined(row.id, row._id);
                         break;
                     }
                 }

@@ -68,8 +68,11 @@ NEED_GZIPS = {
     '4d_.js',
     'ammo.wasm.js',
     'ammo.wasm.wasm',
+    'bul.json',
     'chart_.js',
     'chart.min.js',
+    'chess-wasm.js',
+    'chess-wasm.wasm',
     'dark.css',
     'dark-archive.css',
     'draco_decoder.js',
@@ -81,9 +84,11 @@ NEED_GZIPS = {
     'light-archive.css',
     'manifest.json',
     'pieces-draco.glb',
+    'pol.json',
     'rus.json',
     'sea.css',
     'sea-archive.css',
+    'spa.json',
     'ukr.json',
 }
 
