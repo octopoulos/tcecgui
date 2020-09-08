@@ -3,6 +3,7 @@ TODO
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 ~          : 2020-07-22 : individual piece mobility
+-          : 2020-09-08 : show game timer
 2020-09-08 : 2020-09-08 : diff sorting + improved rows_per_page
 2020-09-08 : 2020-09-08 : iterative thinking
 2020-09-07 : 2020-09-07 : table column sorting
@@ -391,12 +392,13 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
 medium:
--          : 2020-05-23 : dynamic pagination and search nodes
 low:
 ~          : 2020-04-13 : add 3d board
 -          : 2020-06-20 : parse live log
-lowest:
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
+lowest:
+-          : 2020-05-23 : dynamic pagination and search nodes
+-          : 2020-09-08 : remove socket.io
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
