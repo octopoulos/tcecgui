@@ -1515,8 +1515,19 @@ function create_url_list(dico) {
     if (!dico)
         return '';
 
-    let html = Keys(dico).map(key => {
+    let is_grid,
+        html = Keys(dico).map(key => {
         let value = dico[key];
+
+        // grid?
+        if (key[0] == '_') {
+            let lines = is_grid? ['</grid>']: [];
+            if (value)
+                lines.push(`<grid class="w100" style="grid-template-columns:repeat(${value}, 1fr)">`);
+            is_grid = !!value;
+            return lines.join('');
+        }
+
         if (!IsString(value))
             return '<hr>';
 
@@ -1527,6 +1538,9 @@ function create_url_list(dico) {
             value = `${HOST}/${value}`;
         return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
     }).join('');
+
+    if (is_grid)
+        html += '</grid>';
 
     return `<vert class="fastart">${html}</vert>`;
 }
