@@ -187,6 +187,23 @@ let ANALYSIS_URLS = {
         time: [1, 1],
         wdl: [3, 1],
     },
+    // sort those columns as a number, not string
+    NUMBER_COLUMNS = {
+        _id: 0,
+        black_ev: 99999,
+        elo: 0,
+        game: 0,
+        games: 0,
+        id: 0,
+        losses: 0,
+        moves: 0,
+        points: 0,
+        rank: 0,
+        sb: 0,
+        start: 0,
+        white_ev: 99999,
+        wins: 0,
+    },
     old_cup,
     old_width,
     PAGINATION_PARENTS = ['quick', 'table'],
@@ -1480,6 +1497,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     let data_x = SetDefault(table_data[section], name, {data: []}),
         data = data_x.data,
         is_h2h = (name == 'h2h'),
+        is_same = (section == Y.x),
         is_sched = (name == 'sched'),
         // live cup has wrong Game# too
         is_h2h_archive = (is_h2h && (section == 'archive' || tour_info[section].cup)),
@@ -1500,7 +1518,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // reset or append?
     // - except if rows is null
     if (reset) {
-        HTML(body, '');
+        if (is_same)
+            HTML(body, '');
         if (rows) {
             data.length = 0;
             for (let pagin of PAGINATION_PARENTS) {
@@ -1532,7 +1551,36 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             calculate_estimates(section, data);
     }
 
-    // 3) handle pagination + filtering
+    // 3) sorting
+    let sort = Y.sort;
+    if (sort) {
+        let reverse;
+        if (sort[0] == '-') {
+            reverse = true;
+            sort = sort.slice(1);
+        }
+
+        let empty = reverse? -1: 1,
+            number_column = NUMBER_COLUMNS[sort],
+            is_number = (number_column != undefined);
+
+        data.sort((a, b) => {
+            let ax = a[sort],
+                bx = b[sort];
+            if (ax == undefined)
+                return empty;
+            if (bx == undefined)
+                return -empty;
+            if (is_number)
+                return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
+            return (ax + '').localeCompare(bx + '');
+        });
+
+        if (reverse)
+            data.reverse();
+    }
+
+    // 4) handle pagination + filtering
     let paginated,
         active_row = -1;
 
@@ -1585,7 +1633,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         data_x[page_key] = page;
     }
 
-    // 4) process all rows => render the HTML
+    // 5) process all rows => render the HTML
     let columns = From(A('th', table)).map(node => node.dataset.x),
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
@@ -1735,59 +1783,76 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         nodes.push(node);
     }
 
-    InsertNodes(body, nodes);
-    update_svg(table);
-    translate_node(table);
+    // 6) add events
+    if (is_same) {
+        InsertNodes(body, nodes);
+        update_svg(table);
+        translate_node(table);
 
-    // 5) add events
-    if (name == 'season')
-        set_season_events();
+        if (name == 'season')
+            set_season_events();
 
-    // download game
-    C('a[href]', function(e) {
-        if (!this.href.includes('#'))
-            SP(e);
-    });
-    // open game
-    C('[data-g]', function(e) {
-        if (Parent(e.target, {class_: 'fen', self: true}))
-            return;
-        if (cannot_click())
-            return;
+        // download game
+        C('a[href]', function(e) {
+            if (!this.href.includes('#'))
+                SP(e);
+        });
+        // open game
+        C('[data-g]', function(e) {
+            if (Parent(e.target, {class_: 'fen', self: true}))
+                return;
+            if (cannot_click())
+                return;
 
-        if (this.tagName == 'TR') {
-            Class('tr.active', '-active', true, table);
-            Class(this, 'active');
-        }
-        let game = this.dataset.g * 1;
-        Y.scroll = '#overview';
-        if (section == 'archive') {
-            save_option('game', game);
-            open_game();
-        }
-        // make sure the game is over
-        else if (_('a.game[href]', this))
-            location.hash = create_game_link(section, game, '', true);
-    }, table);
+            if (this.tagName == 'TR') {
+                Class('tr.active', '-active', true, table);
+                Class(this, 'active');
+            }
+            let game = this.dataset.g * 1;
+            Y.scroll = '#overview';
+            if (section == 'archive') {
+                save_option('game', game);
+                open_game();
+            }
+            // make sure the game is over
+            else if (_('a.game[href]', this))
+                location.hash = create_game_link(section, game, '', true);
+        }, table);
 
-    // fen preview
-    Events('td.fen', 'click mouseenter mousemove mouseleave', function(e) {
-        if (e.type == 'click') {
-            CopyClipboard(TEXT(this));
-            let overlay = xboards.xfen.overlay;
-            HTML(overlay,
-                '<vert class="fcenter facenter h100">'
-                    + `<div class="xcopy">${translate_default('COPIED')}</div>`
-                + '</vert>'
-            );
-            Style(overlay, 'opacity:1;transition:opacity 0s');
-        }
-        else
-            popup_custom('popup-fen', 'fen', e, null, TEXT(this));
-    });
+        // fen preview
+        Events('td.fen', '!click mouseenter mousemove mouseleave', function(e) {
+            if (e.type == 'click') {
+                CopyClipboard(TEXT(this));
+                let overlay = xboards.xfen.overlay;
+                HTML(overlay,
+                    '<vert class="fcenter facenter h100">'
+                        + `<div class="xcopy">${translate_default('COPIED')}</div>`
+                    + '</vert>'
+                );
+                Style(overlay, 'opacity:1;transition:opacity 0s');
+            }
+            else
+                popup_custom('popup-fen', 'fen', e, null, TEXT(this));
+        });
 
-    // 6) update shortcuts
-    if (parent == 'table') {
+        // sorting
+        C('th', function() {
+            let column = this.dataset.x,
+                first = is_h2h? 'id': '_id',
+                sort = Y.sort;
+
+            if (column == columns[0])
+                column = first;
+            if (!sort && column == first)
+                Y.sort = `-${first}`;
+            else
+                Y.sort = (sort == column)? `-${column}`: column;
+            update_table(section, name);
+        }, table);
+    }
+
+    // 7) update shortcuts
+    if (parent == 'table' && !Y.sort) {
         for (let id = 1; id <= 2; id ++) {
             // shortcut matches this table?
             let key = `shortcut_${id}`;
@@ -1800,8 +1865,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }
     }
 
-    // 7) create another table?
-    if (!is_shortcut && is_sched)
+    // 8) create another table?
+    if (!is_shortcut && is_sched && !Y.sort)
         add_queue(section, parent);
 }
 
@@ -4480,6 +4545,8 @@ function open_table(sel) {
  * @param {Node} tab
  */
 function opened_table(node, name, tab) {
+    Y.sort = '';
+
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = _('canvas', node),
@@ -4610,9 +4677,13 @@ function popup_custom(id, name, e, scolor, text) {
         clear_timeout(`popup-${name}`);
         Class(popup, 'popup-enable');
         Show(popup);
+        Style(popup, 'z-index:-1', false);
     }
     else
-        add_timeout(`popup-${name}`, () => {Class(popup, '-popup-enable');}, 300);
+        add_timeout(`popup-${name}`, () => {
+            Class(popup, '-popup-enable');
+            Style(popup, 'z-index:-1');
+        }, 300);
 }
 
 /**
