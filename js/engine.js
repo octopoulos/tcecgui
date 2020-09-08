@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-08-16
+// @version 2020-09-08
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1547,7 +1547,7 @@ function api_translate_get(force) {
         }
 
     // 2) call the API
-    Resource(`translate/${Y.language}.json`, (code, data) => {
+    Resource(`translate/${Y.language}.json?ts=${Now(true)}`, (code, data) => {
         if (code != 200)
             return;
         translates = data;
