@@ -950,13 +950,18 @@ function analyse_crosstable(section, data) {
         abbrevs.forEach((abbrev, id) => {
             let games = results[orders[id]];
             if (games) {
-                let scores = games.Scores.map((game, i) => {
-                    let link = create_game_link(section, game.Game, '', true),
-                        score = game.Result,
-                        sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
-                    return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                let count = 0,
+                    total = 0,
+                    scores = games.Scores.map((game, i) => {
+                        let link = create_game_link(section, game.Game, '', true),
+                            score = game.Result,
+                            sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
+                        count ++;
+                        total += score;
+                        return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
+                cross_row[`x_${abbrev}`] = count? total / count: 0;
             }
         });
         cross_rows.push(cross_row);
@@ -1841,12 +1846,18 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 first = is_h2h? 'id': '_id',
                 sort = Y.sort;
 
+            if (name == 'cross' && column.length == 2) {
+                column = `x_${column}`;
+                if (!sort.includes(column))
+                    sort = column;
+            }
+
             if (column == columns[0])
                 column = first;
             if (!sort && column == first)
-                Y.sort = `-${first}`;
-            else
-                Y.sort = (sort == column)? `-${column}`: column;
+                sort = first;
+            Y.sort = (sort == column)? `-${column}`: column;
+
             update_table(section, name);
         }, table);
     }
