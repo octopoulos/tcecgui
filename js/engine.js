@@ -9,12 +9,13 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Clamp, clearInterval, clearTimeout, CreateNode,
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, clearInterval, clearTimeout, CreateNode,
 DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject,
 IsString, Keys,
-LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, PD, QueryString,
+LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, QueryString,
 requestAnimationFrame, Resource,
-ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, window
+ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, WebSocket,
+window
 */
 'use strict';
 
@@ -70,7 +71,7 @@ let __PREFIX = '_',
     THEMES = [''],
     TIMEOUT_adjust = 250,
     TIMEOUT_touch = 0.5,
-    TIMEOUT_translate = 3600 * 24,
+    TIMEOUT_translate = 3600 * 2,
     timers = {},
     touch_done = 0,                                     // time when the touch was released
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
@@ -93,6 +94,7 @@ let __PREFIX = '_',
     virtual_reset_settings_special,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
+    WS = WebSocket,
     X_SETTINGS = {},
     Y = {},                                             // params
     y_index = -1,
@@ -224,17 +226,10 @@ function get_int(name, def) {
  * @returns {Object}
  */
 function get_object(name, def) {
-    let result,
-        text = get_string(name);
+    let text = get_string(name);
     if (!text)
         return def;
-    try {
-        result = JSON.parse(text);
-    }
-    catch(error) {
-        result = def;
-    }
-    return result;
+    return ParseJSON(text, def);
 }
 
 /**
@@ -548,7 +543,7 @@ function resize_text(text, resize)
         len *= 3/2;
 
     if (len > resize)
-        text = `<span style="font-size:80%">${text}</span>`;
+        text = `<span class="resize">${text}</span>`;
     return text;
 }
 
@@ -695,21 +690,23 @@ function create_svg_icon(name) {
 
 /**
  * Fill a combo filter
- * @param {string} letter, ex: m=mode, v=view ... or a selector
+ * @param {string} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
  * @param {string[]} values list of values for the combo, default to [DEFAULTS[letter]]
  * @param {string=} select the value to be selected, default to Y[letter]
  * @param {Object=} dico used to name the values, ex: 01 => cheater
  * @param {boolean=} no_translate don't translate the options
- * @returns {string} the selected value
+ * @returns {string} the selected value, or the HTML
  */
 function fill_combo(letter, values, select, dico, no_translate)
 {
     dico = Undefined(dico, {});
 
-    if (values == null)
-        values = [DEFAULTS[letter]];
-    if (select == null)
-        select = Y[letter];
+    if (letter != null) {
+        if (values == null)
+            values = [DEFAULTS[letter]];
+        if (select == null)
+            select = Y[letter];
+    }
 
     let found = 'all',
         group = false,
@@ -756,6 +753,9 @@ function fill_combo(letter, values, select, dico, no_translate)
     }
     if (group)
         lines.push('</optgroup>');
+
+    if (letter == null)
+        return lines.join('');
 
     // set the HTML: 1 letter => #co+letter, otherwise letter is a selector
     if (letter) {
@@ -821,7 +821,7 @@ function set_combo_value(letter, value, save=true) {
  * @param {function=} callback
  * @param {number=} version CSS version, use Now() to force reload
  */
-function update_theme(themes, callback, version=15) {
+function update_theme(themes, callback, version=1) {
     let parent = Id('extra-style');
     if (!parent)
         return;
@@ -1537,25 +1537,39 @@ function create_url_list(dico) {
 /**
  * Get translations
  * @param {boolean=} force
+ * @param {function=} callback
  */
-function api_translate_get(force) {
+function api_translate_get(force, callback) {
+    function _done(data) {
+        if (data) {
+            translates = data;
+            api_times.translate = Now(true);
+            save_storage('trans', translates);
+            save_storage('times', api_times);
+        }
+        translate_node('body');
+        if (callback)
+            callback();
+    }
+
     // 1) cached?
+    let language = Y.language,
+        now = Now();
     if (!force)
-        if (Y.language == 'eng' || (translates._lan == Y.language && Now() < (api_times.translate || 0) + TIMEOUT_translate)) {
-            translate_node('body');
+        if (language == 'eng' || (translates._lan == language && now < (api_times.translate || 0) + TIMEOUT_translate)) {
+            _done();
             return;
         }
 
     // 2) call the API
-    Resource(`translate/${Y.language}.json?ts=${Now(true)}`, (code, data) => {
-        if (code != 200)
-            return;
-        translates = data;
-        api_times.translate = Now(true);
-        save_storage('trans', translates);
-        save_storage('times', api_times);
-        translate_node('body');
-    });
+    if (language == 'eng')
+        _done({});
+    else
+        Resource(`translate/${language}.json?v=${Ceil(now / TIMEOUT_translate)}`, (code, data) => {
+            if (code != 200)
+                return;
+            _done(data);
+        });
 }
 
 // EVENTS

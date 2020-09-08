@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-08-26
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1172,6 +1172,23 @@ function HashText(text) {
 }
 
 /**
+ * Convert a HEX color to RGB(A)
+ * @param {string} color
+ * @param {boolean=} get_string
+ * @param {number=} alpha
+ * @returns {string|number[]}
+ */
+function Hex2RGB(color, get_string, alpha) {
+    let off = (color[0] == '#')? 1: 0,
+        rgb = [0, 2, 4].map(i => parseInt(color.slice(off + i, off + i + 2), 16));
+
+    if (!get_string)
+        return rgb;
+
+    return (alpha == undefined)? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`: `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+}
+
+/**
  * Check if an email is invalid
  * @param {string} email
  * @returns {boolean}
@@ -1247,6 +1264,23 @@ function Now(as_float) {
  */
 function Pad(value, size=2, pad='00') {
     return (pad + value).slice(-size);
+}
+
+/**
+ * Try to parse JSON data
+ * @param {string} text
+ * @param {Object=} def
+ * @returns {Object}
+ */
+function ParseJSON(text, def) {
+    let json;
+    try {
+        json = JSON.parse(text);
+    }
+    catch (e) {
+        json = def;
+    }
+    return json;
 }
 
 /**
@@ -1330,6 +1364,7 @@ function RandomSpread(range) {
  * @param {function} callback (status, text, xhr)
  * @param {*=} content
  * @param {string=} form add the content to a new FormData
+ * @param {Object=} headers
  * @param {string=} method GET, POST
  * @param {string=} type arraybuffer, blob, document, json, text
  * @example
@@ -1340,7 +1375,7 @@ function RandomSpread(range) {
  *     LS(result)}, JSON.stringify({user: 'David'}
  * ), {method: 'POST'})
  */
-function Resource(url, callback, {content=null, form, method='GET', type='json'}={}) {
+function Resource(url, callback, {content=null, form, headers={}, method='GET', type='json'}={}) {
     let xhr = new XMLHttpRequest();
     if (type)
         xhr.responseType = type;
@@ -1350,7 +1385,13 @@ function Resource(url, callback, {content=null, form, method='GET', type='json'}
         callback(xhr.status, xhr.response, xhr);
     };
     xhr.open(method, url, true);
-    xhr.setRequestHeader('content-type', 'application/json;charset=UTF-8');
+
+    // headers
+    headers = {...{'content-type': 'application/json'}, ...headers};
+    Keys(headers).forEach(key => {
+        xhr.setRequestHeader(key, headers[key]);
+    });
+
     if (form) {
         let form_data = new FormData();
         form_data.append(form, content);
@@ -1444,12 +1485,25 @@ function Undefined(value, def) {
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
         Assign: Assign,
+        Clamp: Clamp,
+        Contain: Contain,
+        DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
         DEV: {},
         Floor: Floor,
+        Format: Format,
+        FormatFloat: FormatFloat,
         FormatUnit: FormatUnit,
+        FromSeconds: FromSeconds,
+        FromTimestamp: FromTimestamp,
+        HashText: HashText,
+        Hex2RGB: Hex2RGB,
         Keys: Keys,
+        InvalidEmail: InvalidEmail,
+        InvalidPhone: InvalidPhone,
         IsArray: IsArray,
+        IsDigit: IsDigit,
+        IsFloat: IsFloat,
         IsObject: IsObject,
         IsString: IsString,
         Lower: Lower,
@@ -1458,8 +1512,13 @@ if (typeof exports != 'undefined') {
         Min: Min,
         Now: Now,
         Pad: Pad,
+        ParseJSON: ParseJSON,
+        QueryString: QueryString,
         Round: Round,
         SetDefault: SetDefault,
+        Split: Split,
+        Stringify: Stringify,
+        Title: Title,
         Undefined: Undefined,
     });
 }

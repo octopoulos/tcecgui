@@ -1,27 +1,18 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-04
+// @version 2020-08-26
 //
 /*
 globals
-__dirname, expect, require, test
+expect, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/common+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-], OUTPUT_MODULE, 'IsFloat IsObject IsString');
-
 let {
     Clamp, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, QueryString, SetDefault, Split, Stringify,
-    Title, Undefined,
-} = require(OUTPUT_MODULE);
+    Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, QueryString, SetDefault,
+    Split, Stringify, Title, Undefined,
+} = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -176,6 +167,21 @@ let {
     });
 });
 
+// Hex2RGB
+[
+    ['000000', undefined, undefined, [0, 0, 0]],
+    ['#000000', undefined, undefined, [0, 0, 0]],
+    ['#87ceeb', undefined, undefined, [135, 206, 235]],
+    ['#87ceeb', true, undefined, 'rgb(135,206,235)'],
+    ['#87ceeb', undefined, 1, [135, 206, 235]],
+    ['#87ceeb', true, 1, 'rgba(135,206,235,1)'],
+    ['#87ceeb', true, 0.5, 'rgba(135,206,235,0.5)'],
+].forEach(([color, get_string, alpha, answer], id) => {
+    test(`Hex2RGB:${id}`, () => {
+        expect(Hex2RGB(color, get_string, alpha)).toEqual(answer);
+    });
+});
+
 // InvalidEmail
 [
     ['hello@mail.com', false],
@@ -277,6 +283,18 @@ let {
     });
 });
 
+// ParseJSON
+[
+    ['', undefined, undefined],
+    ['', 0, 0],
+    ['[]', undefined, []],
+    ['{"key":"record_get"}', undefined, {key: 'record_get'}],
+].forEach(([text, def, answer], id) => {
+    test(`ParseJSON:${id}`, () => {
+        expect(ParseJSON(text, def)).toEqual(answer);
+    });
+});
+
 // QueryString
 [
     [{query: 'q=query&lan=eng'}, {lan: 'eng', q: 'query'}],
@@ -289,6 +307,19 @@ let {
         'class=phantom&game=wipeout%20x&mode=speed%20lap',
     ],
     [{query: 'season=18&div=l3&game=1', string: true}, 'div=l3&game=1&season=18'],
+    [
+        {
+            key: null,
+            replace: {
+                class: 'flash', game: 'wipeout x', mode: 'speed lap', name: 'Connavar', physics: '2197',
+                section: 'play', session: '85994ad8-a86d-408d-aeea-df1975ef2e34', time: 5265, track: 'korodera',
+                user: 'Connavar',
+            },
+            string: true,
+        },
+        'class=flash&game=wipeout%20x&mode=speed%20lap&name=Connavar&physics=2197&section=play'
+        + '&session=85994ad8-a86d-408d-aeea-df1975ef2e34&time=5265&track=korodera&user=Connavar',
+    ],
 ].forEach(([dico, answer], id) => {
     test(`QueryString:${id}`, () => {
         expect(QueryString(dico)).toEqual(answer);
