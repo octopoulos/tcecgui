@@ -2192,6 +2192,8 @@ class XBoard {
         if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
+
+        this.finished = false;
         return move;
     }
 

@@ -255,6 +255,7 @@ function change_setting_special(name, value, no_close) {
         pva.delayed_picks();
         break;
     case 'game_advice':
+        pva.finished = false;
         pva.think(true);
         break;
     case 'game_new_game':
@@ -262,6 +263,7 @@ function change_setting_special(name, value, no_close) {
         pva.new_game();
         break;
     case 'game_think':
+        pva.finished = false;
         pva.think();
         break;
     case 'graph_color_0':
@@ -1837,8 +1839,8 @@ function prepare_settings() {
             game_every: option_number(600, 100, 5000, 100),
             game_new_game: '1',
             game_nodes: option_number(1e9, 0, 1e10),
-            game_params_black: [{type: 'text'}, ''],
-            game_params_white: [{type: 'text'}, ''],
+            game_params_black: [{type: 'text'}, 'x'],
+            game_params_white: [{type: 'text'}, 'x'],
             game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
             game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),
