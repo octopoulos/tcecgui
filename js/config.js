@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-11
+// @version 2020-09-08
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -51,6 +51,8 @@ function startup_config() {
             'Super Final 14 by GM Sadler.pdf': 'articles/Sufi_14_-_Sadler.pdf',
             // separator
             'a': 0,
+            // grid of 2 columns
+            '_a1': 2,
             'TCEC_18.pdf': 'articles/TCEC_18.pdf',
             'TCEC_17.pdf': 'articles/TCEC_17.pdf',
             'TCEC_16.pdf': 'articles/TCEC_16.pdf',
@@ -60,6 +62,8 @@ function startup_config() {
             'TCEC_12.pdf': 'articles/TCEC_12.pdf',
             'TCEC_11.pdf': 'articles/TCEC_11.pdf',
             'TCEC_10.pdf': 'articles/TCEC_10.pdf',
+            // end the grid
+            '_a2': 0,
             // again
             'b': 0,
             'TCEC_Cup_6.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_6.pdf',
