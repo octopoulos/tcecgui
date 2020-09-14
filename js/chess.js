@@ -40,12 +40,6 @@ let BISHOP = 3,
     COLORIZE = (color, type) => ((color == WHITE)? type: (type | 8)),
     DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     EMPTY = -1,
-    EVAL_MODES = {
-        'hce': 2,
-        'mat': 1,
-        'nn': 3,
-        'null': 0,
-    },
     F32 = array => new Float32Array(array),
     FILE = square => square & 15,
     I8 = array => new Int8Array(array),
@@ -59,12 +53,6 @@ let BISHOP = 3,
     QUEEN = 5,
     RANK = square => square >> 4,
     ROOK = 4,
-    SEARCH_MODES = {
-        'ab': 2,
-        'mm': 1,
-        'rnd': 0,
-    },
-    SECOND_RANKS = [6, 1],
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
     TYPE = piece => piece & 7,
@@ -91,24 +79,6 @@ let ATTACKS = I8([
        20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
     ]),
     ATTACK_BITS = I8([0, 1, 2, 4, 8, 16, 32]),
-    MOBILITY_SCORES = F32([
-        0,
-        1,          // P
-        6,          // N
-        3,          // B
-        3,          // R
-        0.3,        // Q
-        0,          // K
-        0,
-        0,
-        1,          // p
-        6,          // n
-        3,          // b
-        3,          // r
-        0.3,        // q
-        0,          // k
-        0,
-    ]),
     PAWN_OFFSETS = [
         I8([-16, -32, -17, -15]),
         I8([16, 32, 17, 15]),
@@ -158,7 +128,6 @@ let ATTACKS = I8([
         11800,      // k
         0,
     ]),
-    // https://github.com/jhlywa/chess.js
     RAYS = I8([
        17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
         0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
@@ -175,10 +144,36 @@ let ATTACKS = I8([
         0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
         0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
        -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
+    ]),
+    SECOND_RANKS = I8([6, 1]);
+
+let MOBILITY_SCORES = F32([
+        0,
+        1,          // P
+        6,          // N
+        3,          // B
+        3,          // R
+        0.3,        // Q
+        0,          // K
+        0,
+        0,
+        1,          // p
+        6,          // n
+        3,          // b
+        3,          // r
+        0.3,        // q
+        0,          // k
+        0,
     ]);
 
-    // extras
-    let PIECES = {
+// extras
+let EVAL_MODES = {
+        'hce': 2,
+        'mat': 1,
+        'nn': 3,
+        'null': 0,
+    },
+    PIECES = {
         b: 11,
         B: 3,
         k: 14,
@@ -192,7 +187,11 @@ let ATTACKS = I8([
         r: 12,
         R: 4,
     },
-    // https://github.com/jhlywa/chess.js
+    SEARCH_MODES = {
+        'ab': 2,
+        'mm': 1,
+        'rnd': 0,
+    },
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
         a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
@@ -257,7 +256,7 @@ var Chess = function(fen_) {
         // pawn promotion?
         let rank = RANK(to);
         if (TYPE(piece) == PAWN && (rank % 7) == 0) {
-            for (let promote of [QUEEN, ROOK, BISHOP, KNIGHT])
+            for (let promote = QUEEN; promote >= KNIGHT; promote --)
                 addSingleMove(moves, piece, from, to, flags | BITS_PROMOTION, promote);
         }
         else
@@ -274,6 +273,7 @@ var Chess = function(fen_) {
                 capture: 0,
                 flags: flags,
                 from: from,
+                m: '',
                 piece: piece,
                 promote: promote,
                 to: to,
@@ -334,12 +334,17 @@ var Chess = function(fen_) {
 
     /**
      * Convert AN to square
+     * - 'a' = 97
+     * - '8' = 56
      * @param {string} an c2
      * @returns {number} 98
      */
     function anToSquare(an) {
-        let square = SQUARES[an];
-        return (square == undefined)? EMPTY: square;
+        if (an.length < 2)
+            return EMPTY;
+        let file = an[0].charCodeAt(0) - 97,
+            rank = 56 - an[1].charCodeAt(0);
+        return file + (rank << 4);
     }
 
     /**
@@ -436,39 +441,54 @@ var Chess = function(fen_) {
 
     /**
      * Configure parameters
+     * @param {boolean} frc_
+     * @param {string} options
+     * @param {number} depth
      */
-    function configure(frc_, params) {
+    function configure(frc_, options, depth) {
         eval_mode = 0;
         frc = frc_;
-        max_depth = 4;
+        if (depth >= 0)
+            max_depth = depth;
         max_extend = 0;
         max_nodes = 1e9;
         max_time = 0;
         search_mode = 0;
 
-        for (let param of params.split(' ')) {
-            let items = param.split('=');
-            if (items.length < 2)
+        // parse the line
+        for (let option of options.split(' ')) {
+            if (option.length < 3 || option[1] != '=')
                 continue;
-            let value = items[1];
-            switch (items[0]) {
+            let left = option[0],
+                right = option.slice(2),
+                value = right * 1;
+            switch (left) {
             case 'd':
-                max_depth = +value;
+                if (value >= 0)
+                    max_depth = value;
+                else if (value < 0)
+                    max_time = -value;
                 break;
-            case 'd2':
-                max_extend = +value;
+            case 'D':
+                max_extend = value;
                 break;
-            case 'e':
-                eval_mode = Undefined(EVAL_MODES[value], 1);
+            case 'e': {
+                    let eit = EVAL_MODES[right];
+                    if (eit != undefined)
+                        eval_mode = eit;
+                }
                 break;
             case 'n':
-                max_nodes = +value;
+                max_nodes = value;
                 break;
-            case 's':
-                search_mode = Undefined(SEARCH_MODES[value], 1);
+            case 's': {
+                    let sit = SEARCH_MODES[right];
+                    if (sit != undefined)
+                        search_mode = sit;
+                }
                 break;
             case 't':
-                max_time = +value;
+                max_time = value;
                 break;
             }
         }
@@ -479,8 +499,7 @@ var Chess = function(fen_) {
      * @returns {number[]}
      */
     function countMobilities() {
-        let attacks = U8(16),
-            mobilities = U8(16);
+        mobilities.fill(0);
 
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
@@ -552,8 +571,6 @@ var Chess = function(fen_) {
                 }
             }
         }
-
-        return mobilities;
     }
 
     /**
@@ -812,11 +829,27 @@ var Chess = function(fen_) {
 
         // filter out illegal moves
         return moves.filter(move => {
-            moveRaw(move, false);
+            moveRaw(move);
             let is_legal = !kingAttacked(us);
             undoMove();
             return is_legal;
         });
+    }
+
+    /**
+     * Decorate the SAN with + or #
+     * @param {Move} move
+     * @returns {string}
+     */
+    function decorateMove(move) {
+        let text = move.m,
+            last = text.slice(-1);
+        if (!'+#'.includes(last) && kingAttacked(turn)) {
+            let moves = createMoves(frc, true, EMPTY);
+            text += moves.length? '+': '#';
+            move.m = text;
+        }
+        return text;
     }
 
     /**
@@ -831,7 +864,7 @@ var Chess = function(fen_) {
         if (search_mode) {
             let count0 = 0,
                 count1 = 0;
-                // mobilities = countMobilities();
+                // countMobilities();
             for (let i = 1; i < 7; i ++)
                 count0 += mobilities[i] * MOBILITY_SCORES[i];
             for (let i = 9; i < 15; i ++)
@@ -977,8 +1010,11 @@ var Chess = function(fen_) {
             }
 
         // no suitable move?
-        if (move_obj.piece)
-            moveRaw(move_obj, decorate);
+        if (move_obj.piece) {
+            moveRaw(move_obj);
+            if (decorate)
+                decorateMove(move_obj);
+        }
         return move_obj;
     }
 
@@ -986,9 +1022,8 @@ var Chess = function(fen_) {
      * Make a raw move, no verification is being performed
      * https://github.com/jhlywa/chess.js
      * @param {Object} move
-     * @param {boolean} decorate add + # decorators
      */
-    function moveRaw(move, decorate) {
+    function moveRaw(move) {
         let us = turn,
             them = us ^ 1;
 
@@ -1040,6 +1075,7 @@ var Chess = function(fen_) {
                     else if (move_to == castling[them * 2 + 1])
                         castling[them * 2 + 1] = EMPTY;
                 }
+                half_moves = 0;
             }
 
             // remove castling if we move a rook
@@ -1064,22 +1100,11 @@ var Chess = function(fen_) {
                 }
                 half_moves = 0;
             }
-            else if (flags & BITS_CAPTURE)
-                half_moves = 0;
         }
 
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
-
-        // decorate the SAN with + or #
-        if (decorate) {
-            let last = move.m.slice(-1);
-            if (!'+#'.includes(last) && kingAttacked(turn)) {
-                let moves = createMoves(frc, true, EMPTY);
-                move.m += moves.length? '+': '#';
-            }
-        }
     }
 
     /**
@@ -1093,8 +1118,11 @@ var Chess = function(fen_) {
     function moveSan(text, frc, decorate, sloppy) {
         let moves = createMoves(frc, true, EMPTY),
             move = sanToMove(text, moves, sloppy);
-        if (move.piece)
-            moveRaw(move, decorate);
+        if (move.piece) {
+            moveRaw(move);
+            if (decorate)
+                decorateMove(move);
+        }
         return move;
     }
 
@@ -1169,9 +1197,10 @@ var Chess = function(fen_) {
                 move = sanToMove(text, moves, sloppy);
             if (!move.piece)
                 break;
-            moveRaw(move, false);
+            moveRaw(move);
             move.fen = createFen();
             move.ply = move_number * 2 - 3 + turn;
+            move.score = 0;
             result.push(move);
         }
         return result;
@@ -1194,6 +1223,7 @@ var Chess = function(fen_) {
             if (move.piece) {
                 move.fen = createFen();
                 move.ply = move_number * 2 - 3 + turn;
+                move.score = 0;
                 result.push(move);
             }
         }
@@ -1204,14 +1234,15 @@ var Chess = function(fen_) {
      * Get params
      */
     function params() {
-        return [
-            max_depth,
-            eval_mode,
-            max_extend,
-            max_nodes,
-            search_mode,
-            max_time,
+        let result = [
+            max_depth,          // 0
+            eval_mode,          // 1
+            max_extend,         // 2
+            max_nodes,          // 3
+            search_mode,        // 4
+            max_time,           // 5
         ];
+        return result;
     }
 
     /**
@@ -1271,7 +1302,15 @@ var Chess = function(fen_) {
             }
 
         // 2) try sloppy matching
-        let null_move = {};
+        let null_move = {
+            capture: 0,
+            flags: 0,
+            from: 0,
+            m: '',
+            piece: 0,
+            promote: 0,
+            to: 0,
+        };
         if (!sloppy)
             return null_move;
 
@@ -1337,13 +1376,16 @@ var Chess = function(fen_) {
         nodes = 0;
         sel_depth = 0;
 
-        let masked = [];
-        moves.forEach((move, id) => {
-            if (!mask || mask[id] != '0') {
-                move.score = searchMoves([move], 1, max_depth);
-                masked.push(move);
+        let masked = [],
+            num_mask = mask.length,
+            num_move = moves.length;
+        for (let i = 0; i < num_move; i ++)
+            if (!num_mask || (i < num_mask && mask[i] != '0')) {
+                let one = [moves[i]];
+                moves[i].score = searchMoves(one, 1, max_depth);
+                masked.push(moves[i]);
             }
-        });
+
         return masked;
     }
 
@@ -1365,7 +1407,7 @@ var Chess = function(fen_) {
             sel_depth = depth;
 
         for (let move of moves) {
-            moveRaw(move, false);
+            moveRaw(move);
             let score;
 
             // invalid move?
@@ -1411,6 +1453,8 @@ var Chess = function(fen_) {
 
     /**
      * Convert a square number to an algebraic notation
+     * - 'a' = 97
+     * - '8' = 56
      * @param {number} square 112
      * @param {boolean=} check check the boundaries
      * @returns {string} a1
@@ -1420,7 +1464,10 @@ var Chess = function(fen_) {
             rank = RANK(square);
         if (check && (file < 0 || file > 7 || rank < 0 || rank > 7))
             return "";
-        return `${'abcdefghij'[file] || '?'}${'87654321'[rank] || '?'}`;
+        let text = '';
+        text += String.fromCharCode(97 + file);
+        text += String.fromCharCode(56 - rank);
+        return text;
     }
 
     /**
@@ -1497,12 +1544,13 @@ var Chess = function(fen_) {
         clear: clear,
         configure: configure,
         currentFen: () => fen,
+        decorate: decorateMove,
         fen: createFen,
         fen960: createFen960,
         frc: () => frc,
         load: load,
         material: color => materials[color],
-        mobilities: countMobilities,
+        mobilities: () => {countMobilities(); return mobilities;},
         moveObject: moveObject,
         moveRaw: moveRaw,
         moveSan: moveSan,

@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-12
 // - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -9,6 +9,7 @@
 #include <emscripten/val.h>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <stdio.h>
 
 using namespace emscripten;
@@ -131,9 +132,36 @@ int ATTACKS[] = {
         0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
         0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
+    },
+    SECOND_RANKS[] = {6, 1};
+
+float
+    MOBILITY_SCORES[] = {
+        0,
+        1,          // P
+        6,          // N
+        3,          // B
+        3,          // R
+        0.3,        // Q
+        0,          // K
+        0,
+        0,
+        1,          // p
+        6,          // n
+        3,          // b
+        3,          // r
+        0.3,        // q
+        0,          // k
+        0,
     };
 
 // extras
+std::map<std::string, uint8_t> EVAL_MODES = {
+    {"hce", 2},
+    {"mat", 1},
+    {"nn", 3},
+    {"null", 0},
+};
 std::map<char, uint8_t> PIECES = {
     {'P', 1},
     {'N', 2},
@@ -148,30 +176,45 @@ std::map<char, uint8_t> PIECES = {
     {'q', 13},
     {'k', 14},
 };
+std::map<std::string, uint8_t> SEARCH_MODES = {
+    {"ab", 2},
+    {"mm", 1},
+    {"rnd", 0},
+};
+
 
 struct Move {
     uint8_t capture;
-    uint8_t depth;
-    std::string fen;
     uint8_t flags;
-    int     from;
+    uint8_t from;
     std::string m;          // san
     uint8_t piece;
-    int     ply;
     uint8_t promote;
-    int     score;
-    int     to;
+    uint8_t to;
 
     Move() {
         capture = 0;
-        depth = 0;
         flags = 0;
-        from = EMPTY;
+        from = 0;
         piece = 0;
-        ply = -1;
         promote = 0;
+        to = 0;
+    }
+};
+
+struct MoveText: Move {
+    std::string fen;
+    int     ply;
+    int     score;
+
+    MoveText(): Move() {
+        ply = -1;
         score = 0;
-        to = EMPTY;
+    }
+    MoveText(const Move &move) {
+        memcpy(this, &move, sizeof(Move));
+        ply = -1;
+        score = 0;
     }
 };
 
@@ -195,6 +238,7 @@ private:
     uint8_t board[128];
     int     castling[4];
     int     ep_square;
+    uint8_t eval_mode;                      // 0:null, 1:mat, 2:hc2, 3:nn
     std::string fen;
     bool    frc;
     int     half_moves;
@@ -204,10 +248,11 @@ private:
     int     max_depth;
     int     max_extend;
     int     max_nodes;
+    int     max_time;
     uint8_t mobilities[16];
     int     move_number;
     int     nodes;
-    int     search_mode;
+    int     search_mode;                    // 0:minimax, 1:alpha-beta
     int     sel_depth;
     uint8_t turn;
 
@@ -221,7 +266,6 @@ private:
         history.half_moves = half_moves;
         memcpy(&history.kings, &kings, sizeof(kings));
         memcpy(&history.materials, &materials, sizeof(materials));
-        memcpy(&history.mobilities, &mobilities, sizeof(mobilities));
         memcpy(&history.move, &move, sizeof(Move));
         history.move_number = move_number;
         histories.push_back(history);
@@ -251,7 +295,6 @@ private:
         move.flags = flags;
         move.from = from;
         move.piece = piece;
-        move.ply = move_number * 2 + turn - 2;
         move.promote = promote;
         move.to = to;
 
@@ -306,7 +349,7 @@ public:
     /////////
 
     Chess() {
-        configure(false, "", 4, 0, 1e8);
+        configure(false, "", 4);
         clear();
         load(DEFAULT_POSITION);
     }
@@ -316,10 +359,14 @@ public:
 
     /**
      * Convert AN to square
+     * - 'a' = 97
+     * - '8' = 56
      * @param an c2
      * @return 98
      */
     int anToSquare(std::string an) {
+        if (an.size() < 2)
+            return EMPTY;
         int file = an[0] - 'a',
             rank = '8' - an[1];
         return file + (rank << 4);
@@ -428,14 +475,135 @@ public:
     /**
      * Configure some parameters
      */
-    void configure(bool frc_, std::string params, int max_depth_, int max_extend_, int max_nodes_) {
+    void configure(bool frc_, std::string options, int depth) {
+        eval_mode = 0;
         frc = frc_;
-        max_depth = max_depth_;
-        max_extend = max_extend_;
-        max_nodes = max_nodes_;
+        if (depth >= 0)
+            max_depth = depth;
+        max_extend = 0;
+        max_nodes = 1e9;
+        max_time = 0;
+        search_mode = 0;
 
-        // parse params
-        search_mode = params.size()? 1: 0;
+        // parse the line
+        std::regex re("\\s+");
+        std::sregex_token_iterator it(options.begin(), options.end(), re, -1);
+        std::sregex_token_iterator reg_end;
+        for (; it != reg_end; it ++) {
+            auto option = it->str();
+            if (option.size() < 3 || option.at(1) != '=')
+                continue;
+            auto left = option.at(0);
+            auto right = option.substr(2);
+            auto value = std::atoi(right.c_str());
+            switch (left) {
+            case 'd':
+                if (value >= 0)
+                    max_depth = value;
+                else if (value < 0)
+                    max_time = -value;
+                break;
+            case 'D':
+                max_extend = value;
+                break;
+            case 'e': {
+                    auto eit = EVAL_MODES.find(right);
+                    if (eit != EVAL_MODES.end())
+                        eval_mode = eit->second;
+                }
+                break;
+            case 'n':
+                max_nodes = value;
+                break;
+            case 's': {
+                    auto sit = SEARCH_MODES.find(right);
+                    if (sit != SEARCH_MODES.end())
+                        search_mode = sit->second;
+                }
+                break;
+            case 't':
+                max_time = value;
+                break;
+            }
+        }
+    }
+
+    /**
+     * Count the piece mobilities
+     */
+    void countMobilities() {
+        memset(mobilities, 0, sizeof(mobilities));
+
+        for (int i = SQUARE_A8; i <= SQUARE_H1; i ++) {
+            // off board
+            if (i & 0x88) {
+                i += 7;
+                continue;
+            }
+
+            auto piece = board[i];
+            if (!piece)
+                continue;
+
+            auto piece_type = TYPE(piece),
+                us = COLOR(piece),
+                them = us ^ 1;
+
+            if (piece_type == PAWN) {
+                int *offsets = PAWN_OFFSETS[us];
+
+                // single square, non-capturing
+                int square = i + offsets[0];
+                if (!board[square]) {
+                    mobilities[piece] ++;
+
+                    // double square
+                    square = i + offsets[1];
+                    if (SECOND_RANKS[us] == RANK(i) && !board[square])
+                        mobilities[piece] ++;
+                }
+
+                // pawn captures
+                for (int j = 2; j < 4; j ++) {
+                    square = i + offsets[j];
+                    if (square & 0x88)
+                        continue;
+
+                    if (board[square] && COLOR(board[square]) == them)
+                        mobilities[piece] ++;
+                    else if (square == ep_square)
+                        mobilities[piece] ++;
+                }
+            }
+            else {
+                int *offsets = PIECE_OFFSETS[piece_type];
+                for (int j = 0; j < 8; j ++) {
+                    int offset = offsets[j],
+                        square = i;
+                    if (!offset)
+                        break;
+
+                    while (true) {
+                        square += offset;
+                        if (square & 0x88)
+                            break;
+
+                        if (!board[square])
+                            mobilities[piece] ++;
+                        else {
+                            if (COLOR(board[square]) == us)
+                                break;
+                            mobilities[piece] ++;
+                            break;
+                        }
+
+                        // break if knight or king
+                        if (piece_type == KING || piece_type == KNIGHT)
+                            break;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -584,7 +752,7 @@ public:
         int first_sq = is_single? single_square: SQUARE_A8,
             last_sq = is_single? single_square: SQUARE_H1;
         std::vector<Move> moves;
-        int second_rank = turn? 1: 6;
+        int second_rank = SECOND_RANKS[turn];
         uint8_t us = turn,
             us8 = us << 3,
             them = us ^ 1;
@@ -709,12 +877,50 @@ public:
         // filter out illegal moves
         std::vector<Move> legal_moves;
         for (auto &move : moves) {
-            moveRaw(move, false);
+            moveRaw(move);
             if (!kingAttacked(us))
                 legal_moves.push_back(move);
             undoMove();
         }
         return legal_moves;
+    }
+
+    /**
+     * Decorate the SAN with + or #
+     */
+    std::string decorateMove(Move &move) {
+        auto text = move.m;
+        char last = text[text.size() - 1];
+        if (last != '+' && last != '#' && kingAttacked(turn)) {
+            auto moves = createMoves(frc, true, EMPTY);
+            text += moves.size()? '+': '#';
+            move.m = text;
+        }
+        return text;
+    }
+
+    /**
+     * Evaluate the current position
+     */
+    int evaluate() {
+        uint8_t us = turn ^ 1,
+            them = turn;
+        auto score = materials[us] - materials[them];
+
+        if (search_mode) {
+            auto count0 = 0,
+                count1 = 0;
+                // countMobilities();
+            for (auto i = 1; i < 7; i ++)
+                count0 += mobilities[i] * MOBILITY_SCORES[i];
+            for (auto i = 9; i < 15; i ++)
+                count1 += mobilities[i] * MOBILITY_SCORES[i];
+            if (us)
+                score += count1 - count0;
+            else
+                score += count0 - count1;
+        }
+        return score;
     }
 
     /**
@@ -857,7 +1063,7 @@ public:
     Move moveObject(Move &move, bool frc, bool decorate) {
         uint8_t flags = 0;
         Move move_obj;
-        auto moves = createMoves(frc, true, EMPTY);     // move.from);
+        auto moves = createMoves(frc, true, EMPTY);
 
         // FRC castle?
         if (frc && move.from == kings[turn]) {
@@ -887,17 +1093,18 @@ public:
             }
 
         // no suitable move?
-        if (move_obj.piece)
-            moveRaw(move_obj, decorate);
+        if (move_obj.piece) {
+            moveRaw(move_obj);
+            if (decorate)
+                decorateMove(move_obj);
+        }
         return move_obj;
     }
 
     /**
      * Make a raw move, no verification is being performed
-     * @param move
-     * @param decorate add + # decorators
      */
-    void moveRaw(Move &move, bool decorate) {
+    void moveRaw(Move &move) {
         uint8_t us = turn,
             them = us ^ 1;
 
@@ -949,6 +1156,7 @@ public:
                     else if (move_to == castling[them * 2 + 1])
                         castling[them * 2 + 1] = EMPTY;
                 }
+                half_moves = 0;
             }
 
             // remove castling if we move a rook
@@ -973,22 +1181,11 @@ public:
                 }
                 half_moves = 0;
             }
-            else if (flags & BITS_CAPTURE)
-                half_moves = 0;
         }
 
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
-
-        // decorate the SAN with + or #
-        if (decorate) {
-            char last = move.m[move.m.size() - 1];
-            if (last != '+' && last != '#' && kingAttacked(turn)) {
-                auto moves = createMoves(frc, true, EMPTY);
-                move.m += moves.size()? '+': '#';
-            }
-        }
     }
 
     /**
@@ -1001,8 +1198,11 @@ public:
     Move moveSan(std::string text, bool frc, bool decorate, bool sloppy) {
         auto moves = createMoves(frc, true, EMPTY);
         Move move = sanToMove(text, moves, sloppy);
-        if (move.piece)
-            moveRaw(move, decorate);
+        if (move.piece) {
+            moveRaw(move);
+            if (decorate)
+                decorateMove(move);
+        }
         return move;
     }
 
@@ -1063,8 +1263,8 @@ public:
      * @param frc Fisher Random Chess
      * @param sloppy allow sloppy parser
      */
-    std::vector<Move> multiSan(std::string multi, bool frc, bool sloppy) {
-        std::vector<Move> result;
+    std::vector<MoveText> multiSan(std::string multi, bool frc, bool sloppy) {
+        std::vector<MoveText> result;
         int prev = 0,
             size = multi.size();
         for (int i = 0; i <= size; i ++) {
@@ -1077,9 +1277,11 @@ public:
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
-                moveRaw(move, false);
-                move.fen = createFen();
-                result.push_back(move);
+                moveRaw(move);
+                MoveText move_obj = move;
+                move_obj.fen = createFen();
+                move_obj.ply = move_number * 2 - 3 + turn;
+                result.push_back(move_obj);
             }
             prev = i + 1;
         }
@@ -1091,8 +1293,8 @@ public:
      * @param text c2c4 a7a8a ...
      * @param frc Fisher Random Chess
      */
-    std::vector<Move> multiUci(std::string multi, bool frc) {
-        std::vector<Move> result;
+    std::vector<MoveText> multiUci(std::string multi, bool frc) {
+        std::vector<MoveText> result;
         int prev = 0,
             size = multi.size();
         for (int i = 0; i <= size; i ++) {
@@ -1103,12 +1305,29 @@ public:
                 auto text = multi.substr(prev, i - prev);
                 auto move = moveUci(text, frc, true);
                 if (move.piece) {
-                    move.fen = createFen();
-                    result.push_back(move);
+                    MoveText move_obj = move;
+                    move_obj.fen = createFen();
+                    move_obj.ply = move_number * 2 - 3 + turn;
+                    result.push_back(move_obj);
                 }
             }
             prev = i + 1;
         }
+        return result;
+    }
+
+    /**
+     * Get params
+     */
+    std::vector<int> params() {
+        std::vector<int> result = {
+            max_depth,          // 0
+            eval_mode,          // 1
+            max_extend,         // 2
+            max_nodes,          // 3
+            search_mode,        // 4
+            max_time,           // 5
+        };
         return result;
     }
 
@@ -1225,23 +1444,23 @@ public:
      * @param mask moves to search, ex: 01100
      * @return updated moves
      */
-    std::vector<Move> search(std::vector<Move> &moves, std::string mask) {
+    std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
         nodes = 0;
         sel_depth = 0;
 
-        int result[2] = {0, 0};
-        if (mask.empty()) {
-            searchMoves(moves, 1, result);
-            return moves;
-        }
+        std::vector<MoveText> masked;
+        int num_mask = mask.size(),
+            num_move = moves.size();
+        for (auto i = 0; i < num_move; i ++)
+            if (!num_mask || (i < num_mask && mask[i] != '0')) {
+                std::vector<Move> one;
+                one.push_back(moves[i]);
+                auto score = searchMoves(one, 1, max_depth);
+                MoveText move_obj = moves[i];
+                move_obj.score = score;
+                masked.push_back(move_obj);
+            }
 
-        std::vector<Move> masked;
-        int length = std::min(moves.size(), mask.size());
-        for (auto i = 0; i < length; i ++)
-            if (mask[i] != '0')
-                masked.push_back(moves[i]);
-
-        searchMoves(masked, 1, result);
         return masked;
     }
 
@@ -1251,12 +1470,10 @@ public:
      * @param depth
      * @param result
      */
-    void searchMoves(std::vector<Move> &moves, int depth, int *result) {
+    float searchMoves(std::vector<Move> &moves, int depth, int final_depth) {
         int best = -99999;
-        int best_depth = depth;
         auto length = moves.size();
         bool look_deeper = (depth < max_depth && nodes < max_nodes);
-        int temp[] = {0, 0};
         int valid = 0;
 
         nodes += length;
@@ -1264,60 +1481,54 @@ public:
             sel_depth = depth;
 
         for (auto &move : moves) {
-            move.depth = depth;
-            moveRaw(move, false);
+            moveRaw(move);
+            float score;
 
             // invalid move?
             if (kingAttacked(3))
-                move.score = -99900;
-            else if (half_moves >= 50)
-                move.score = 0;
+                score = -99900;
+            else if (half_moves >= 50) {
+                score = 0;
+                valid ++;
+            }
             else {
-                move.score = materials[turn ^ 1] - materials[turn];
                 valid ++;
 
                 // look deeper
                 if (look_deeper || (depth < max_extend && move.capture)) {
                     auto moves2 = createMoves(frc, false, -1);
-                    searchMoves(moves2, depth + 1, temp);
+                    auto score2 = searchMoves(moves2, depth + 1, final_depth);
 
                     // stalemate? good if we're losing, otherwise BAD!
-                    if (temp[0] < -80000)
-                        move.score = 0;
-                    else if (search_mode)
-                        move.score = -temp[0];
+                    if (score2 < -80000)
+                        score = 0;
                     else
-                        move.score -= temp[0];
-                    move.depth = temp[1];
+                        score = - score2;
                 }
+                else
+                    score = evaluate();
             }
 
+            if (best < score)
+                best = score;
+
             undoMove();
-            if (depth >= 3 && move.score > 20000)
+            if (depth >= 3 && score > 20000)
                 break;
         }
 
         // checkmate?
-        if (!valid && kingAttacked(2)) {
+        if (!valid && kingAttacked(2))
             best = -51200 + depth * 4000;
-            best_depth = depth;
-        }
-        else {
-            for (auto &move : moves) {
-                move.score += valid * 2;
-                if (best < move.score) {
-                    best = move.score;
-                    best_depth = move.depth;
-                }
-            }
-        }
-
-        result[0] = best;
-        result[1] = best_depth;
+        else
+            best += valid * 0.2;
+        return best;
     }
 
     /**
      * Convert a square number to an algebraic notation
+     * - 'a' = 97
+     * - '8' = 56
      * @param square 112
      * @param check check the boundaries
      * @return a1
@@ -1422,6 +1633,7 @@ public:
     }
 
     val em_mobilities() {
+        countMobilities();
         return val(typed_memory_view(16, mobilities));
     }
 
@@ -1452,21 +1664,32 @@ EMSCRIPTEN_BINDINGS(chess) {
     // MOVE BINDINGS
     value_object<Move>("Move")
         .field("capture", &Move::capture)
-        .field("depth", &Move::depth)
-        .field("fen", &Move::fen)
         .field("flags", &Move::flags)
         .field("from", &Move::from)
-        .field("m", &Move::m)
+        .field("m", &MoveText::m)
         .field("piece", &Move::piece)
-        .field("ply", &Move::ply)
         .field("promote", &Move::promote)
-        .field("score", &Move::score)
         .field("to", &Move::to)
+        ;
+
+    value_object<MoveText>("MoveText")
+        .field("capture", &MoveText::capture)
+        .field("flags", &MoveText::flags)
+        .field("from", &MoveText::from)
+        .field("m", &MoveText::m)
+        .field("piece", &MoveText::piece)
+        .field("promote", &MoveText::promote)
+        .field("to", &MoveText::to)
+        //
+        .field("fen", &MoveText::fen)
+        .field("ply", &MoveText::ply)
+        .field("score", &MoveText::score)
         ;
 
     // CHESS BINDINGS
     class_<Chess>("Chess")
         .constructor()
+        //
         .function("anToSquare", &Chess::anToSquare)
         .function("attacked", &Chess::attacked)
         .function("board", &Chess::em_board)
@@ -1476,6 +1699,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("clear", &Chess::clear)
         .function("configure", &Chess::configure)
         .function("currentFen", &Chess::em_fen)
+        .function("decorate", &Chess::decorateMove)
         .function("fen", &Chess::createFen)
         .function("frc", &Chess::em_frc)
         .function("fen960", &Chess::createFen960)
@@ -1491,6 +1715,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("multiSan", &Chess::multiSan)
         .function("multiUci", &Chess::multiUci)
         .function("nodes", &Chess::em_nodes)
+        .function("params", &Chess::params)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)
         .function("put", &Chess::put)
@@ -1506,4 +1731,5 @@ EMSCRIPTEN_BINDINGS(chess) {
 
     register_vector<int>("vector<int>");
     register_vector<Move>("vector<Move>");
+    register_vector<MoveText>("vector<MoveText>");
 }

@@ -36,7 +36,7 @@ let AD_STYLES = {},
     CHAMPIONS = [],
     CONFIGURE_KEYS = {
         d: 1,
-        d2: 1,
+        D: 1,
         e: 1,
         n: 1,
         s: 1,
@@ -160,12 +160,12 @@ function change_setting_special(name, value, no_close) {
     if (!name)
         return false;
 
-    // close contextual popup if we used a SELECT
-    // if (!no_close) {
-    //     let modal = Id('modal');
-    //     if (modal && modal.dataset.xy)
-    //         add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
-    // }
+    // close contextual popup?
+    if (!no_close) {
+        let modal = Id('modal');
+        if (modal && modal.dataset.xy)
+            add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
+    }
 
     //
     if (name != 'preset')
@@ -1891,8 +1891,8 @@ function prepare_settings() {
             game_evaluation: [['null', 'mat', 'hce', 'nn'], 'mat'],
             game_every: option_number(500, 50, 5000, 50),
             game_new_game: '1',
-            game_options_black: [{type: 'text'}, 'x'],
-            game_options_white: [{type: 'text'}, 'x'],
+            game_options_black: [{type: 'text'}, 'd=-4 e=mat s=mm'],
+            game_options_white: [{type: 'text'}, 'd=-4 e=mat s=mm'],
             game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
             game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'Minimax'],
             game_think: '1',

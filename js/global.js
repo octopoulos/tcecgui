@@ -309,8 +309,8 @@ function reset_old_settings() {
             save_option('scroll_inertia', 0.95);
     if (version < '20200912') {
         save_option('game_depth', -4);
-        save_option('game_option_black', 'd=-4 e=mat s=mm');
-        save_option('game_option_white', 'd=-4 e=mat s=mm');
+        save_option('game_options_black', 'd=-4 e=mat s=mm');
+        save_option('game_options_white', 'd=-4 e=mat s=mm');
     }
 
     LS(`version: ${version} => ${VERSION}`);

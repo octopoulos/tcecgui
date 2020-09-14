@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-11
+// @version 2020-09-12
 //
 // general 3d rendering code
 //
@@ -1566,13 +1566,13 @@ function set_modal_events(parent) {
             case 'INPUT':
                 if (next.type == 'checkbox') {
                     next.checked = !next.checked;
-                    change_setting(next.name, next.checked * 1);
+                    change_setting(next.name, next.checked * 1, true);
                 }
                 break;
             case 'SELECT':
                 if (next.options.length == 2) {
                     next.selectedIndex ^= 1;
-                    change_setting(next.name, next.value);
+                    change_setting(next.name, next.value, true);
                 }
                 break;
             }
@@ -1607,18 +1607,18 @@ function set_modal_events(parent) {
     // inputs
     Events('input, select', 'change', function() {
         done_touch();
-        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, this.tagName == 'INPUT');
+        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, true);
     }, {}, parent);
     //
     Input('input, select', function() {
         done_touch();
-        change_setting(undefined, undefined, this.tagName == 'INPUT');
+        change_setting(undefined, undefined, true);
     }, parent);
     //
     C('input, select', function() {
         if (cannot_click())
             return;
-        change_setting(undefined, undefined, this.tagName == 'INPUT');
+        change_setting(undefined, undefined, true);
     }, parent);
     //
     C('div[name]', function() {

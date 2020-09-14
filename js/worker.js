@@ -104,8 +104,8 @@ self.onmessage = e => {
 
     // 1) create the chess engine
     let chess = create_chess(data.engine);
-    if (data.params)
-        chess.configure(data.frc, data.params);
+    if (data.options)
+        chess.configure(data.frc, data.options, data.depth);
 
     // 2) handle the messages
     if (func == 'config') {

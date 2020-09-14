@@ -5,8 +5,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility
 -          : 2020-09-08 : show game timer
 -          : 2020-09-13 : add alpha beta in chess.cpp
--          : 2020-09-13 : configure engine options in chess.cpp
 -          : 2020-09-13 : add alpha beta in chess.js
+2020-09-13 : 2020-09-13 : configure engine options in chess.cpp
 2020-09-13 : 2020-09-13 : configure engine options in chess.js
 2020-09-08 : 2020-09-08 : multi columns in LINKS
 2020-09-08 : 2020-09-08 : diff sorting + improved rows_per_page

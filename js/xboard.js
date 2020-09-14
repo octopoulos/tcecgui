@@ -2181,8 +2181,10 @@ class XBoard {
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
-            if (manual && this.hook)
+            if (manual && this.hook) {
                 this.hook(this, 'ply', {ply: -1});
+                this.stop_think();
+            }
             return {};
         }
 
@@ -2319,9 +2321,9 @@ class XBoard {
             // check for 3-fold moves
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
             for (let move of moves) {
-                this.chess.ucify(move);
-                this.chess.moveRaw(move);
-                let splits = this.chess.fen().split(' '),
+                chess.ucify(move);
+                chess.moveRaw(move);
+                let splits = chess.fen().split(' '),
                     prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
                     rule50 = splits[4] * 1,
                     draw = (rule50 >= 50 || fen_set.has(prune));
@@ -2329,15 +2331,15 @@ class XBoard {
                 if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
                     let moves2 = this.chess_moves(this.frc, true, -1);
                     for (let move2 of moves2) {
-                        this.chess.moveRaw(move2);
-                        let splits2 = this.chess.fen().split(' '),
+                        chess.moveRaw(move2);
+                        let splits2 = chess.fen().split(' '),
                             prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
                         if (fen_set.has(prune2)) {
                             if (DEV.engine)
-                                LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
+                                LS(`DRAW WITH ${move.m} THEN ${chess.ucify(move2)}`);
                             draw = true;
                         }
-                        this.chess.undo();
+                        chess.undo();
                     }
                 }
                 if (draw) {
@@ -2348,7 +2350,7 @@ class XBoard {
                     });
                     folds.push(move);
                 }
-                this.chess.undo();
+                chess.undo();
             }
         }
         else {
@@ -2360,10 +2362,12 @@ class XBoard {
         // setup combined reply
         let now = Now(true),
             scolor = WB_LOWER[color],
-            // TODO: change this, search could be configured per color
-            max_depth = (Y.game_search == 'RandomMove')? 0: Y[`game_depth`],
             num_worker = this.workers.length,
-            params = Y[`game_options_${scolor}`];
+            options = Y[`game_options_${scolor}`];
+
+        chess.configure(this.frc, options);
+        let params = chess.params(),
+            max_depth = (params[4] == 0)? 0: (params[5]? -params[5]: params[0]);
 
         Assign(reply, {
             count: 0,
@@ -2442,14 +2446,14 @@ class XBoard {
             if (!has_moves[id])
                 continue;
             this.workers[id].postMessage({
+                depth: (max_depth < 0)? this.depth: max_depth,
                 engine: Y.game_wasm? 'wasm': 'js',
                 func: 'think',
                 fen: fen,
                 frc: this.frc,
                 id: id,
                 mask: masks[id].join(''),
-                max_depth: (max_depth < 0)? this.depth: max_depth,
-                params: params,
+                options: options,
                 search: Y.search,
                 suggest: suggest,
             });

@@ -27,9 +27,9 @@ beforeEach(() => {
 [
     ['a8', 0],
     ['h8', 7],
-    ['i8', -1],
+    ['i8', 8],
     ['d5', 51],
-    ['a0', -1],
+    ['a0', 128],
     ['a1', 112],
     ['h1', 119],
 ].forEach(([an, answer], id) => {
@@ -102,13 +102,13 @@ beforeEach(() => {
     ['rnbqkbnr/pp2pppp/3p4/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 3', null, 3, true],
     [
         'rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2',
-        {capture: 0, depth: 0, fen: '', flags: 1, from: 19, m: '', piece: 9, ply: 3, promote: 0, score: 0, to: 35},
+        {capture: 0, flags: 1, from: 19, m: '', piece: 9, promote: 0, to: 35},
         2,
         false,
     ],
     [
         'rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2',
-        {capture: 0, depth: 0, fen: '', flags: 1, from: 19, m: '', piece: 9, ply: 3, promote: 0, score: 0, to: 35},
+        {capture: 0, flags: 1, from: 19, m: '', piece: 9, promote: 0, to: 35},
         3,
         true,
     ],
@@ -116,7 +116,7 @@ beforeEach(() => {
     test(`checked:${id}`, () => {
         chess.load(fen);
         if (move)
-            chess.moveRaw(move, false);
+            chess.moveRaw(move);
         expect(chess.checked(color)).toEqual(answer);
     });
 });
@@ -148,12 +148,16 @@ beforeEach(() => {
 
 // configure
 [
-    [false, 'd=5', [5, 0, 0, 1e9, 0, 0]],
-    [false, 'd=5 d2=7 e=nn n=1000 s=ab t=30', [5, 3, 7, 1000, 2, 30]],
-].forEach(([frc, params, answer], id) => {
+    [false, 'd=5', 4, [5, 0, 0, 1e9, 0, 0]],
+    [false, 'd=-5', 4, [4, 0, 0, 1e9, 0, 5]],
+    [false, 'd=5 D=7 e=nn n=1000 s=ab t=30', 4, [5, 3, 7, 1000, 2, 30]],
+].forEach(([frc, options, depth, answer], id) => {
     test(`configure:${id}`, () => {
-        chess.configure(frc, params);
-        expect(chess.params()).toEqual(answer);
+        chess.configure(frc, options, depth);
+        let params = chess.params();
+        if (params.size)
+            params = new Array(params.size()).fill(0).map((_, id) => params.get(id));
+        expect(params).toEqual(answer);
     });
 });
 
@@ -168,6 +172,25 @@ beforeEach(() => {
     test(`currentFen:${id}`, () => {
         chess.load(fen);
         expect(chess.currentFen()).toEqual(Undefined(answer, fen));
+    });
+});
+
+// decorate
+[
+    [
+        '8/5Np1/3k4/p2p4/6P1/7P/1Pn2K2/8 b - - 6 47',
+        {capture: 0, flags: 1, from: 54, m: 'Nf7', piece: 2, promote: 0, to: 21},
+        'Nf7+',
+    ],
+    [
+        '3r2r1/pp3p1k/8/7P/4q2K/1P5P/P7/3R4 w - - 0 30',
+        {capture: 4, flags: 2, from: 85, m: 'Qxe4', piece: 13, promote: 0, to: 68},
+        'Qxe4#',
+    ],
+].forEach(([fen, move, answer], id) => {
+    test(`decorate:${id}`, () => {
+        chess.load(fen);
+        expect(chess.decorate(move)).toEqual(answer);
     });
 });
 
@@ -205,6 +228,8 @@ beforeEach(() => {
         ['e4'],
         'rknrbqnb/pppppppp/8/8/4P3/8/PPPP1PPP/RKNRBQNB b DAda e3 0 1',
     ],
+    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', ['Rxa6'], '8/2pk4/R2p4/8/1P6/1KP4r/8/8 b - - 0 80'],
+    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', ['Rxa6', 'd5'], '8/2pk4/R7/3p4/1P6/1KP4r/8/8 w - - 0 81'],
 ].forEach(([fen, moves, answer], id) => {
     test(`fen:${id}`, () => {
         chess.load(fen);
@@ -338,20 +363,18 @@ beforeEach(() => {
     [
         START_FEN,
         {capture: 0, depth: 0, fen: '', flags: 4, from: 97, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 65},
-        false,
         undefined,
     ],
     [
         'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        {capture: 0, depth: 0, fen: '', flags: 0, from: -1, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: -1},
-        false,
+        {capture: 0, depth: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: 0},
         undefined,
     ],
-].forEach(([fen, move, decorate, answer], id) => {
+].forEach(([fen, move, answer], id) => {
     test(`moveRaw:${id}`, () => {
         chess.load(fen);
         let old = {...move};
-        chess.moveRaw(move, decorate);
+        chess.moveRaw(move);
         expect(move).toEqual(Undefined(answer, old));
     });
 });
@@ -370,13 +393,13 @@ beforeEach(() => {
         '4k2r/7p/8/8/8/8/7P/4K2R w Kk - 0 20',
         [false, false, EMPTY],
         10,
-        [{capture: 0, flags: 32, from: 116, piece: 6, promote: 0, to: 118}],
+        [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         [false, false, EMPTY],
         25,
-        [{capture: 0, flags: 32, from: 116, piece: 6, promote: 0, to: 118}],
+        [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', [false, false, EMPTY], 47, []],
     [
@@ -384,7 +407,7 @@ beforeEach(() => {
         [true, false, EMPTY],
         47,
         [
-            {capture: 0, flags: 32, from: 115, piece: 6, promote: 0, to: 119},
+            {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
         ],
     ],
     ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', [false, false, EMPTY], 36, []],
@@ -393,8 +416,8 @@ beforeEach(() => {
         [false, false, EMPTY],
         48,
         [
-            {capture: 0, flags: 32, from: 115, piece: 6, promote: 0, to: 119},
-            {capture: 0, flags: 64, from: 115, piece: 6, promote: 0, to: 113},
+            {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
+            {capture: 0, flags: 64, from: 115, m: '', piece: 6, promote: 0, to: 113},
         ],
     ],
     ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, EMPTY], 14, []],
@@ -402,7 +425,7 @@ beforeEach(() => {
         'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
         [false, true, EMPTY],
         13,
-        [{capture: 4, flags: 18, from: 17, piece: 1, promote: 5, to: 0}],
+        [{capture: 4, flags: 18, from: 17, m: '', piece: 1, promote: 5, to: 0}],
     ],
 ].forEach(([fen, [frc, legal, single_square], number, answer], id) => {
     test(`moves:${id}`, () => {
@@ -422,7 +445,7 @@ beforeEach(() => {
         START_FEN,
         'd5',
         [false, false, false],
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         START_FEN,
@@ -434,7 +457,7 @@ beforeEach(() => {
         START_FEN,
         'b2b4',
         [false, false, false],
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
@@ -500,7 +523,7 @@ beforeEach(() => {
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         [false, false, false],
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
@@ -641,6 +664,7 @@ beforeEach(() => {
                 piece: 1,
                 ply: 0,
                 promote: 0,
+                score: 0,
                 to: 67,
             },
             {
@@ -652,6 +676,7 @@ beforeEach(() => {
                 piece: 9,
                 ply: 1,
                 promote: 0,
+                score: 0,
                 to: 51,
             },
             {
@@ -663,6 +688,7 @@ beforeEach(() => {
                 piece: 1,
                 ply: 2,
                 promote: 0,
+                score: 0,
                 to: 66,
             },
         ],
@@ -706,6 +732,7 @@ beforeEach(() => {
                 piece: 1,
                 ply: 0,
                 promote: 0,
+                score: 0,
                 to: 67,
               },
               {
@@ -717,6 +744,7 @@ beforeEach(() => {
                 piece: 9,
                 ply: 1,
                 promote: 0,
+                score: 0,
                 to: 51,
               },
               {
@@ -728,6 +756,7 @@ beforeEach(() => {
                 piece: 1,
                 ply: 2,
                 promote: 0,
+                score: 0,
                 to: 66,
               },
         ],
@@ -767,16 +796,18 @@ beforeEach(() => {
 
 // nodes
 [
-    [START_FEN, false, 'd=0 n=1e8', 20],
-    [START_FEN, false, 'd=1 n=1e8', 20],
-    [START_FEN, false, 'd=2 n=1e8', 420],
-    [START_FEN, false, 'd=3 n=1e8', 9322],
-    [START_FEN, false, 'd=3 e=4 n=1e8', [9322, 11000]],
-    [START_FEN, false, 'd=4 n=1e8', 207064],
-].forEach(([fen, frc, params, answer], id) => {
+    [START_FEN, false, 'd=0', 4, 20],
+    [START_FEN, false, '', 0, 20],
+    [START_FEN, false, 'd=1', 4, 20],
+    [START_FEN, false, 'd=2', 4, 420],
+    [START_FEN, false, 'n=100000', 2, 420],
+    [START_FEN, false, 'd=3', 4, 9322],
+    [START_FEN, false, 'd=3 e=4', 4, [9322, 11000]],
+    [START_FEN, false, 'd=4', 4, 207064],
+].forEach(([fen, frc, options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
-        chess.configure(frc, params);
+        chess.configure(frc, options, depth);
         let moves = chess.moves(frc, true, EMPTY);
         chess.search(moves, '');
         let nodes = chess.nodes();
@@ -791,11 +822,14 @@ beforeEach(() => {
 
 // params
 [
-    [false, 'd=5', [5, 0, 0, 1e9, 0, 0]],
-].forEach(([frc, params, answer], id) => {
+    [false, 'd=5', 0, [5, 0, 0, 1e9, 0, 0]],
+].forEach(([frc, options, depth, answer], id) => {
     test(`params:${id}`, () => {
-        chess.configure(frc, params);
-        expect(chess.params()).toEqual(answer);
+        chess.configure(frc, options, depth);
+        let params = chess.params();
+        if (params.size)
+            params = new Array(params.size()).fill(0).map((_, id) => params.get(id));
+        expect(params).toEqual(answer);
     });
 });
 
@@ -894,7 +928,7 @@ beforeEach(() => {
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
         'Nge7',
         false,
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         'r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4',
@@ -906,7 +940,7 @@ beforeEach(() => {
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'd8=q',
         false,
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
@@ -918,7 +952,7 @@ beforeEach(() => {
         'r1b2r1k/p2P1p1p/3NP1p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 w - - 0 26',
         'Rd1',
         false,
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
 ].forEach(([fen, san, sloppy, answer], id) => {
     test(`sanToMove:${id}`, () => {
@@ -934,91 +968,91 @@ beforeEach(() => {
     [
         '7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107',
         '',
-        [false, 'd=3'],
+        [false, 'd=3', 0],
         [],
         {a2a2: [150, 250], d7d8: [-50, 50]},
     ],
     [
         'rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq - 0 10',
         '',
-        [false, 'd=3'],
+        [false, '', 3],
         [],
         {b3c1: [-50, 50], b3c5: [-50, 50], b3d2: [-50, 50]},
     ],
     [
         '8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96',
         '',
-        [false, 'd=3'],
+        [false, '', 3],
         [],
         {h1b1: [-1600, -1400], h1h7: [-550, -450]},
     ],
     [
         'rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8',
         '',
-        [false, 'd=1'],
+        [false, 'd=1', 4],
         [],
         {2: 'e1g1'},
     ],
     [
         'r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16',
         '',
-        [false, 'd=1'],
+        [false, 'd=1', 4],
         [],
         {1: 'e1f2'},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 'd=1'],
+        [false, 'd=1', 4],
         [600, 700],
         {},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 'd=2'],
+        [false, 'd=2', 4],
         [43000, 44000],
         {1: 'g5e6 h7f7'},
     ],
     [
         '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
         '',
-        [false, 'd=3'],
+        [false, 'd=3', 4],
         [43000, 44000],
         {1: 'g5e6 h7f7'},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '',
-        [false, 'd=1'],
+        [false, 'd=1', 4],
         [750, 900],
         {},
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
         '1000000000000000000000000',
-        [false, 'd=1'],
+        [false, 'd=1', 4],
         [-150, -50],
         {},
     ],
     [
         '4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42',
         '',
-        [false, '', 4, 0, 1e8],
+        [false, '', 4],
         [],
         {e4f6: [0, 80], g3g5: [3000, 3500]},
     ],
     [
         '7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47',
         '',
-        [false, '', 4, 0, 1e8],
+        [false, '', 4],
         [],
         {1: 'd3d8', b5c4: [0, 120], c7f7: [0, 120]},
     ],
-].forEach(([fen, mask, [frc, params], answer, checks], id) => {
+].forEach(([fen, mask, [frc, options, depth], answer, checks], id) => {
     test(`search:${id}`, () => {
         chess.load(fen);
-        chess.configure(frc, params);
+        chess.configure(frc, options, depth);
         let moves = chess.moves(frc, true, EMPTY),
             masks = chess.search(moves, mask);
 
@@ -1079,7 +1113,7 @@ beforeEach(() => {
     [8, false, 'i8'],
     [8, true, ''],
     [51, false, 'd5'],
-    [111, false, '?2'],
+    [111, false, 'p2'],
     [111, true, ''],
     [112, false, 'a1'],
     [119, false, 'h1'],
@@ -1152,7 +1186,7 @@ beforeEach(() => {
                 chess.moveSan(move, frc, false, false);
         }
         else
-            chess.moveRaw(moves, false);
+            chess.moveRaw(moves);
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);
