@@ -1888,7 +1888,7 @@ function prepare_settings() {
             game_advice: '1',
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
             game_depth: option_number(-3, -60, 5),
-            game_evaluation: [['null', 'mat', 'hce', 'nn'], 'mat'],
+            game_evaluation: [['null', 'mat', 'mob', 'hce', 'nn'], 'mat'],
             game_every: option_number(500, 50, 5000, 50),
             game_new_game: '1',
             game_options_black: [{type: 'text'}, 'd=-4 e=mat s=mm'],

@@ -157,9 +157,9 @@ float
 
 // extras
 std::map<std::string, uint8_t> EVAL_MODES = {
-    {"hce", 2},
+    {"hce", 1 + 2},
     {"mat", 1},
-    {"nn", 3},
+    {"nn", 1 + 2 + 4},
     {"null", 0},
 };
 std::map<char, uint8_t> PIECES = {
@@ -238,7 +238,7 @@ private:
     uint8_t board[128];
     int     castling[4];
     int     ep_square;
-    uint8_t eval_mode;                      // 0:null, 1:mat, 2:hc2, 3:nn
+    uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &3:nn
     std::string fen;
     bool    frc;
     int     half_moves;
@@ -476,7 +476,7 @@ public:
      * Configure some parameters
      */
     void configure(bool frc_, std::string options, int depth) {
-        eval_mode = 0;
+        eval_mode = 1;
         frc = frc_;
         if (depth >= 0)
             max_depth = depth;
@@ -1455,7 +1455,7 @@ public:
             if (!num_mask || (i < num_mask && mask[i] != '0')) {
                 std::vector<Move> one;
                 one.push_back(moves[i]);
-                auto score = searchMoves(one, 1, max_depth);
+                auto score = searchMoves(one, max_depth - 1);
                 MoveText move_obj = moves[i];
                 move_obj.score = score;
                 masked.push_back(move_obj);
@@ -1468,17 +1468,16 @@ public:
      * Basic tree search
      * @param moves
      * @param depth
-     * @param result
      */
-    float searchMoves(std::vector<Move> &moves, int depth, int final_depth) {
+    float searchMoves(std::vector<Move> &moves, int depth) {
         int best = -99999;
         auto length = moves.size();
-        bool look_deeper = (depth < max_depth && nodes < max_nodes);
+        bool look_deeper = (depth > 0 && nodes < max_nodes);
         int valid = 0;
 
         nodes += length;
-        if (depth > sel_depth)
-            sel_depth = depth;
+        // if (-depth > sel_depth)
+        //     sel_depth = -depth;
 
         for (auto &move : moves) {
             moveRaw(move);
@@ -1495,15 +1494,15 @@ public:
                 valid ++;
 
                 // look deeper
-                if (look_deeper || (depth < max_extend && move.capture)) {
+                if (look_deeper) {  // || (depth < max_extend && move.capture)) {
                     auto moves2 = createMoves(frc, false, -1);
-                    auto score2 = searchMoves(moves2, depth + 1, final_depth);
+                    auto score2 = searchMoves(moves2, depth - 1);
 
                     // stalemate? good if we're losing, otherwise BAD!
                     if (score2 < -80000)
                         score = 0;
                     else
-                        score = - score2;
+                        score = -score2;
                 }
                 else
                     score = evaluate();
@@ -1513,13 +1512,13 @@ public:
                 best = score;
 
             undoMove();
-            if (depth >= 3 && score > 20000)
+            if ((max_depth - depth) >= 3 && score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2))
-            best = -51200 + depth * 4000;
+            best = -51200 + (max_depth - depth) * 4000;
         else
             best += valid * 0.2;
         return best;

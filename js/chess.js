@@ -168,9 +168,10 @@ let MOBILITY_SCORES = F32([
 
 // extras
 let EVAL_MODES = {
-        'hce': 2,
+        'hce': 1 + 2,
         'mat': 1,
-        'nn': 3,
+        'mob': 2,
+        'nn': 1 + 2 + 4,
         'null': 0,
     },
     PIECES = {
@@ -212,7 +213,7 @@ var Chess = function(fen_) {
     let board = U8(128),
         castling = I32(4).fill(EMPTY),
         ep_square = EMPTY,
-        eval_mode = 0,                      // 0:null, 1:mat, 2:hc2, 3:nn
+        eval_mode = 1,                      // 0:null, &1:mat, &2:hc2, &3:nn
         fen = '',
         frc = false,
         half_moves = 0,
@@ -446,7 +447,7 @@ var Chess = function(fen_) {
      * @param {number} depth
      */
     function configure(frc_, options, depth) {
-        eval_mode = 0;
+        eval_mode = 1;
         frc = frc_;
         if (depth >= 0)
             max_depth = depth;
@@ -854,14 +855,18 @@ var Chess = function(fen_) {
 
     /**
      * Evaluate the current position
+     * - eval_mode: 0:null, 1:mat, 2:hc2, 4:nn
      * @returns {number}
      */
     function evaluate() {
-        let us = turn ^ 1,
+        let score = 0,
+            us = turn ^ 1,
             them = turn;
-        let score = materials[us] - materials[them];
 
-        if (search_mode) {
+        if (eval_mode & 1)
+            score = materials[us] - materials[them];
+
+        if (eval_mode & 2) {
             let count0 = 0,
                 count1 = 0;
                 // countMobilities();
@@ -1382,7 +1387,7 @@ var Chess = function(fen_) {
         for (let i = 0; i < num_move; i ++)
             if (!num_mask || (i < num_mask && mask[i] != '0')) {
                 let one = [moves[i]];
-                moves[i].score = searchMoves(one, 1, max_depth);
+                moves[i].score = searchMoves(one, max_depth - 1);
                 masked.push(moves[i]);
             }
 
@@ -1392,19 +1397,18 @@ var Chess = function(fen_) {
     /**
      * Basic tree search
      * @param {Move[]} moves
-     * @param {number} depth
-     * @param {number} final_depth
+     * @param {number} beta
      * @returns {number}
      */
-    function searchMoves(moves, depth, final_depth) {
+    function searchMoves(moves, depth) {
         let best = -99999,
             length = moves.length,
-            look_deeper = (depth < final_depth && nodes < max_nodes),
+            look_deeper = (depth > 0 && nodes < max_nodes),
             valid = 0;
 
         nodes += length;
-        if (depth > sel_depth)
-            sel_depth = depth;
+        // if (-depth > sel_depth)
+        //     sel_depth = -depth;
 
         for (let move of moves) {
             moveRaw(move);
@@ -1421,9 +1425,9 @@ var Chess = function(fen_) {
                 valid ++;
 
                 // look deeper
-                if (look_deeper || (depth < max_extend && move.capture)) {
+                if (look_deeper) {  // || (depth < max_extend && move.capture)) {
                     let moves2 = createMoves(frc, false, -1),
-                        score2 = searchMoves(moves2, depth + 1, final_depth);
+                        score2 = searchMoves(moves2, depth - 1);
 
                     // stalemate? good if we're losing, otherwise BAD!
                     if (score2 < -80000)
@@ -1439,13 +1443,13 @@ var Chess = function(fen_) {
                 best = score;
 
             undoMove();
-            if (depth >= 3 && score > 20000)
+            if ((max_depth - depth) >= 3 && score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2))
-            best = -51200 + depth * 4000;
+            best = -51200 + (max_depth - depth) * 4000;
         else
             best += valid * 0.2;
         return best;

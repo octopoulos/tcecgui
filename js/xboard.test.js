@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-09-12
 //
 /*
 globals
@@ -116,7 +116,7 @@ live.dual = archive;
 
 // chess_move
 [
-    [START_FEN, 'd5', undefined, {}],
+    [START_FEN, 'd5', undefined, {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0}],
     [
         START_FEN,
         'd4',
@@ -181,7 +181,7 @@ live.dual = archive;
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
         'O-O-O',
         {frc: true},
-        {},
+        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
     ],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',

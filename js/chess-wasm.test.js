@@ -152,9 +152,9 @@ beforeEach(() => {
 
 // configure
 [
-    [false, 'd=5', 4, [5, 0, 0, 1e9, 0, 0]],
-    [false, 'd=-5', 4, [4, 0, 0, 1e9, 0, 5]],
-    [false, 'd=5 D=7 e=nn n=1000 s=ab t=30', 4, [5, 3, 7, 1000, 2, 30]],
+    [false, 'd=5', 4, [5, 1, 0, 1e9, 0, 0]],
+    [false, 'd=-5', 4, [4, 1, 0, 1e9, 0, 5]],
+    [false, 'd=5 D=14 e=nn n=1000 s=ab t=30', 4, [5, 7, 14, 1000, 2, 30]],
 ].forEach(([frc, options, depth, answer], id) => {
     test(`configure:${id}`, () => {
         chess.configure(frc, options, depth);
@@ -826,7 +826,7 @@ beforeEach(() => {
 
 // params
 [
-    [false, 'd=5', 0, [5, 0, 0, 1e9, 0, 0]],
+    [false, 'd=5', 0, [5, 1, 0, 1e9, 0, 0]],
 ].forEach(([frc, options, depth, answer], id) => {
     test(`params:${id}`, () => {
         chess.configure(frc, options, depth);
