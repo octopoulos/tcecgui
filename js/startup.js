@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-12
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -28,12 +28,20 @@ THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle
 translates:true, Undefined, update_board_theme, update_chart_options, update_debug, update_pgn, update_theme,
 update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
-virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
 let AD_STYLES = {},
     CHAMPIONS = [],
+    CONFIGURE_KEYS = {
+        d: 1,
+        d2: 1,
+        e: 1,
+        n: 1,
+        s: 1,
+        t: 1,
+    },
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
@@ -70,6 +78,11 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
+    SEARCHES = {
+        AlphaBeta: 'ab',
+        Minimax: 'mm',
+        RandomMove: 'rnd',
+    },
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -148,11 +161,11 @@ function change_setting_special(name, value, no_close) {
         return false;
 
     // close contextual popup if we used a SELECT
-    if (!no_close) {
-        let modal = Id('modal');
-        if (modal && modal.dataset.xy)
-            add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
-    }
+    // if (!no_close) {
+    //     let modal = Id('modal');
+    //     if (modal && modal.dataset.xy)
+    //         add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
+    // }
 
     //
     if (name != 'preset')
@@ -258,9 +271,18 @@ function change_setting_special(name, value, no_close) {
         pva.finished = false;
         pva.think(true);
         break;
+    case 'game_depth':
+        configure('d', value);
+        break;
+    case 'game_evaluation':
+        configure('e', value);
+        break;
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
+        break;
+    case 'game_search':
+        configure('s', SEARCHES[value]);
         break;
     case 'game_think':
         pva.finished = false;
@@ -457,6 +479,37 @@ function close_popups() {
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(Id('modal'), '');
+}
+
+/**
+ * Create the player options
+ * @param {string} name
+ * @param {number|string} value
+ * @param {string=} only_color only process this color
+ */
+function configure(name, value, only_color) {
+    for (let scolor of WB_LOWER) {
+        if (only_color && scolor != only_color)
+            continue;
+
+        // create the dico
+        let key = `game_options_${scolor}`,
+            options = Y[key].split(' '),
+            result = {};
+        for (let option of options) {
+            let items = option.split('=');
+            if (items.length < 2 || !CONFIGURE_KEYS[items[0]])
+                continue;
+            result[items[0]] = items[1];
+        }
+        result[name] = value;
+
+        // create the command line
+        save_option(key, Keys(result).sort().map(key => `${key}=${result[key]}`).join(' '));
+        let node = _(`input[name="${key}"]`);
+        if (node)
+            node.value = Y[key];
+    }
 }
 
 /**
@@ -1834,15 +1887,14 @@ function prepare_settings() {
             game_960: [ON_OFF, 1],
             game_advice: '1',
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
-            game_depth_black: option_number(-3, -60, 5),
-            game_depth_white: option_number(-3, -60, 5),
-            game_engine: [['Minimax', 'RandomMove'], 'Minimax'],
+            game_depth: option_number(-3, -60, 5),
+            game_evaluation: [['null', 'mat', 'hce', 'nn'], 'mat'],
             game_every: option_number(500, 50, 5000, 50),
             game_new_game: '1',
-            game_nodes: option_number(1e9, 0, 1e10),
             game_options_black: [{type: 'text'}, 'x'],
             game_options_white: [{type: 'text'}, 'x'],
             game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
+            game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'Minimax'],
             game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),
             game_wasm: [ON_OFF, 1],

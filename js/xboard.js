@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-12
 //
 // game board:
 // - 4 rendering modes:
@@ -199,6 +199,7 @@ class XBoard {
         this.real = null;                               // pointer to a board with the real moves
         this.replies = {};                              // worker replies
         this.seen = 0;                                  // last seen move -> used to show the counter
+        this.shared = null;
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
         this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
@@ -1151,23 +1152,26 @@ class XBoard {
             LS(`threads: ${this.workers.length} => ${number}`);
 
         this.destroy_workers();
+        if (!window.Worker)
+            return;
 
-        if (window.Worker)
-            for (let id = 0; id < number; id ++) {
-                let worker = new Worker(`js/worker.js?ts=${Now()}`);
+        this.shared = new SharedArrayBuffer(1);
 
-                worker.onerror = error => {
-                    LS(`worker error:`);
-                    LS(error);
-                };
-                worker.onmessage = e => {
-                    this.worker_message(e);
-                };
+        for (let id = 0; id < number; id ++) {
+            let worker = new Worker(`js/worker.js?ts=${Now()}`);
 
-                worker.id = id;
-                worker.postMessage({dev: DEV, func: 'config'});
-                this.workers.push(worker);
-            }
+            worker.onerror = error => {
+                LS(`worker error:`);
+                LS(error);
+            };
+            worker.onmessage = e => {
+                this.worker_message(e);
+            };
+
+            worker.id = id;
+            worker.postMessage({dev: DEV, func: 'config'});
+            this.workers.push(worker);
+        }
     }
 
     /**
@@ -1629,7 +1633,6 @@ class XBoard {
 
         this.destroy_workers();
         this.reset(true, fen);
-        this.replies = {};
 
         if (play_as != 'AI')
             this.rotate = (play_as == WB_TITLE[1]);
@@ -2246,7 +2249,8 @@ class XBoard {
             animate = true;
         this.animate(move, animate);
 
-        this.finished = false;
+        if (manual)
+            this.stop_think();
         return move;
     }
 
@@ -2269,6 +2273,14 @@ class XBoard {
             this.add_high(from, 'turn');
 
         this.fen2 = this.fen;
+    }
+
+    /**
+     * Stop thinking
+     */
+    stop_think() {
+        this.destroy_workers();
+        this.finished = false;
     }
 
     /**
@@ -2348,8 +2360,8 @@ class XBoard {
         // setup combined reply
         let now = Now(true),
             scolor = WB_LOWER[color],
-            max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${scolor}`],
-            max_extend = 0,     // max_depth? Y[`game_extend_${scolor}`]: 0,
+            // TODO: change this, search could be configured per color
+            max_depth = (Y.game_search == 'RandomMove')? 0: Y[`game_depth`],
             num_worker = this.workers.length,
             params = Y[`game_options_${scolor}`];
 
@@ -2437,9 +2449,8 @@ class XBoard {
                 id: id,
                 mask: masks[id].join(''),
                 max_depth: (max_depth < 0)? this.depth: max_depth,
-                max_extend: max_extend,
-                max_nodes: Y.game_nodes,
                 params: params,
+                search: Y.search,
                 suggest: suggest,
             });
         }
@@ -2538,8 +2549,6 @@ class XBoard {
         // get the best move
         combine.sort((a, b) => b.score - a.score);
         let best = combine[0];
-        if (DEV.engine)
-            LS(combine);
         if (!best) {
             LS('no legal move to play');
             return;
@@ -2558,14 +2567,7 @@ class XBoard {
         if (id >= -1) {
             HTML('.xeval', best_score.toFixed(2), mini);
             HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps}</div>`, mini);
-            HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
-        }
-
-        // arrow suggest
-        if (suggest) {
-            this.arrow(color + 2, best);
-            Hide(`.xcog`, mini);
-            return;
+            HTML(`.xtime`, `${reply.sel_depth}/${reply.sel_depth}`, mini);
         }
 
         // 6) iterative thinking?
@@ -2589,7 +2591,7 @@ class XBoard {
         }
 
         if (is_iterative) {
-            moves = combine.filter(move => move.depth > 0);
+            moves = combine.filter(move => !move.special);
             if (moves.length > 1 && this.depth < 8) {
                 // arrow?
                 if (this.depth >= 3 && predict > 1) {
@@ -2606,9 +2608,19 @@ class XBoard {
                 }
 
                 this.depth ++;
-                this.think(false, 1);
+                this.think(suggest, 1);
                 return;
             }
+        }
+
+        if (DEV.engine)
+            LS(combine);
+
+        // arrow suggest
+        if (suggest) {
+            this.arrow(color + 2, best);
+            Hide(`.xcog`, mini);
+            return;
         }
 
         // 7) move

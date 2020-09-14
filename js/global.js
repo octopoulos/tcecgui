@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-12
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200908';
+    VERSION = '20200911';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -307,9 +307,10 @@ function reset_old_settings() {
     if (version < '20200605')
         if (Y.scroll_inertia < 0.95)
             save_option('scroll_inertia', 0.95);
-    if (version < '20200908') {
-        save_option('game_depth_black', -4);
-        save_option('game_depth_white', -4);
+    if (version < '20200912') {
+        save_option('game_depth', -4);
+        save_option('game_option_black', 'd=-4 e=mat s=mm');
+        save_option('game_option_white', 'd=-4 e=mat s=mm');
     }
 
     LS(`version: ${version} => ${VERSION}`);

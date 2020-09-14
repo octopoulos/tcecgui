@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-12
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1063,7 +1063,12 @@ function add_move(change, stamp, ratio_x=1, ratio_y=1) {
  * @returns {boolean}
  */
 function cannot_click() {
-    return (Now(true) < touch_done + TIMEOUT_touch);
+    if (Now(true) < touch_done + TIMEOUT_touch)
+        return true;
+    let active = document.activeElement;
+    if (active && {INPUT: 1, TEXTAREA: 1}[active.tagName])
+        return true;
+    return false;
 }
 
 /**

@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-11
 //
 // general 3d rendering code
 //
@@ -1177,7 +1177,9 @@ function show_modal(show, text, title, name) {
  * @param {string=} name
  * @param {boolean|string=} show
  * @param {boolean=} adjust only change its position
+ * @param {string=} html
  * @param {boolean=} instant popup appears instantly
+ * @param {number=} margin_y
  * @param {boolean=} overlay dark overlay is used behind the popup
  * @param {string=} setting
  * @param {number[]]=} xy
