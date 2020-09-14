@@ -36,7 +36,6 @@ let AD_STYLES = {},
     CHAMPIONS = [],
     CONFIGURE_KEYS = {
         d: 1,
-        D: 1,
         e: 1,
         n: 1,
         s: 1,

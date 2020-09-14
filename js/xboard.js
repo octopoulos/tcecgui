@@ -2367,7 +2367,7 @@ class XBoard {
 
         chess.configure(this.frc, options);
         let params = chess.params(),
-            max_depth = (params[4] == 0)? 0: (params[5]? -params[5]: params[0]);
+            max_depth = (params[3] == 0)? 0: (params[4]? -params[4]: params[0]);
 
         Assign(reply, {
             count: 0,
@@ -2415,13 +2415,13 @@ class XBoard {
         let has_moves = {},
             masks = [];
         for (let i = 0; i < num_worker; i ++)
-            masks.push(I8(num_move));
+            masks.push([]);
 
         for (let i = 0; i < num_move; i ++) {
             if (moves[i].special)
                 continue;
             let id = i % num_worker;
-            masks[id][i] = 1;
+            masks[id].push(chess.ucify(moves[i]));
             has_moves[id] = 1;
         }
         for (let id = 0; id < num_worker; id ++)
@@ -2452,7 +2452,7 @@ class XBoard {
                 fen: fen,
                 frc: this.frc,
                 id: id,
-                mask: masks[id].join(''),
+                mask: masks[id].join(' '),
                 options: options,
                 search: Y.search,
                 suggest: suggest,

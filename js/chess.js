@@ -83,6 +83,42 @@ let ATTACKS = I8([
         I8([-16, -32, -17, -15]),
         I8([16, 32, 17, 15]),
     ],
+    PIECE_CAPTURES = I32([
+        0,
+        20100,      // P
+        20300,      // N
+        20300,      // B
+        20500,      // R
+        20900,      // Q
+        32800,      // K
+        0,
+        0,
+        20100,      // p
+        20300,      // n
+        20300,      // b
+        20500,      // r
+        20900,      // q
+        32800,      // k
+        0,
+    ]),
+    PIECE_ORDERS = I8([
+        0,
+        4,          // P
+        1,          // N
+        1,          // B
+        2,          // R
+        3,          // Q
+        5,          // K
+        0,
+        0,
+        4,          // p
+        1,          // n
+        1,          // b
+        2,          // r
+        3,          // q
+        5,          // k
+        0,
+    ]),
     PIECE_OFFSETS = [
         [],
         [],
@@ -221,7 +257,6 @@ var Chess = function(fen_) {
         kings = I32(2).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
-        max_extend = 0,
         max_nodes = 1e9,
         max_time = 60,
         mobilities = U8(16),
@@ -451,7 +486,6 @@ var Chess = function(fen_) {
         frc = frc_;
         if (depth >= 0)
             max_depth = depth;
-        max_extend = 0;
         max_nodes = 1e9;
         max_time = 0;
         search_mode = 0;
@@ -469,9 +503,6 @@ var Chess = function(fen_) {
                     max_depth = value;
                 else if (value < 0)
                     max_time = -value;
-                break;
-            case 'D':
-                max_extend = value;
                 break;
             case 'e': {
                     let eit = EVAL_MODES[right];
@@ -824,11 +855,16 @@ var Chess = function(fen_) {
             }
         }
 
+        // move ordering for alpha-beta
+        if (search_mode == 2)
+            orderMoves(moves);
+
         // return pseudo-legal moves
         if (!legal)
             return moves;
 
         // filter out illegal moves
+        // TODO: improve this
         return moves.filter(move => {
             moveRaw(move);
             let is_legal = !kingAttacked(us);
@@ -1236,13 +1272,40 @@ var Chess = function(fen_) {
     }
 
     /**
+     * Move ordering for alpha-beta
+     * - captures
+     * - castle
+     * - nb/r/q/r/p
+     * @param {Move[]} moves
+     */
+    function orderMoves(moves) {
+        moves.sort((a, b) => {
+            if (a.capture || b.capture)
+                return (PIECE_CAPTURES[b.capture] - PIECE_CAPTURES[a.capture]) * 10 + PIECE_SCORES[a.piece] - PIECE_SCORES[b.piece];
+            let castle = !!(b.flags & BITS_CASTLE) - !!(a.flags & BITS_CASTLE);
+            if (castle)
+                return castle;
+            if (a.promote || b.promote)
+                return b.promote - a.promote;
+            let aorder = PIECE_ORDERS[a.piece],
+                border = PIECE_ORDERS[b.piece];
+            if (aorder == border) {
+                // more advanced pawn => higher priority
+                if (aorder == 4)
+                    return COLOR(a.piece)? RANK(b.to) - RANK(a.to): RANK(a.to) - RANK(b.to);
+                return 0;
+            }
+            return aorder - border;
+        });
+    }
+
+    /**
      * Get params
      */
     function params() {
         let result = [
             max_depth,          // 0
             eval_mode,          // 1
-            max_extend,         // 2
             max_nodes,          // 3
             search_mode,        // 4
             max_time,           // 5
@@ -1374,41 +1437,41 @@ var Chess = function(fen_) {
      * Basic tree search with mask
      * https://www.chessprogramming.org/Principal_Variation_Search
      * @param {Move[]} moves
-     * @param {string} mask moves to search, ex: 01100
+     * @param {string} mask moves to search, ex: 'b8c6 b8a6 g8h6'
      * @returns {Move[]} updated moves
      */
     function search(moves, mask) {
         nodes = 0;
         sel_depth = 0;
 
-        let masked = [],
-            num_mask = mask.length,
-            num_move = moves.length;
-        for (let i = 0; i < num_move; i ++)
-            if (!num_mask || (i < num_mask && mask[i] != '0')) {
-                let one = [moves[i]];
-                moves[i].score = searchMoves(one, max_depth - 1);
-                masked.push(moves[i]);
+        let masked = [];
+        for (let move of moves) {
+            let uci = ucify(move);
+            if (!mask || mask.includes(uci)) {
+                let one = [move];
+                move.score = searchMoves(one, max_depth - 1, -99999, 99999);
+                masked.push(move);
             }
-
+        }
         return masked;
     }
 
     /**
      * Basic tree search
      * @param {Move[]} moves
+     * @param {number} depth
+     * @param {number} alpha
      * @param {number} beta
      * @returns {number}
      */
-    function searchMoves(moves, depth) {
+    function searchMoves(moves, depth, alpha, beta) {
         let best = -99999,
             length = moves.length,
             look_deeper = (depth > 0 && nodes < max_nodes),
             valid = 0;
 
-        nodes += length;
-        // if (-depth > sel_depth)
-        //     sel_depth = -depth;
+        if (max_depth - depth > sel_depth)
+            sel_depth = max_depth - depth;
 
         for (let move of moves) {
             moveRaw(move);
@@ -1425,21 +1488,27 @@ var Chess = function(fen_) {
                 valid ++;
 
                 // look deeper
-                if (look_deeper) {  // || (depth < max_extend && move.capture)) {
-                    let moves2 = createMoves(frc, false, -1),
-                        score2 = searchMoves(moves2, depth - 1);
+                if (look_deeper) {
+                    let moves2 = createMoves(frc, false, -1);
+                    score = -searchMoves(moves2, depth - 1, -beta, -alpha);
 
                     // stalemate? good if we're losing, otherwise BAD!
-                    if (score2 < -80000)
+                    if (score > 80000)
                         score = 0;
-                    else
-                        score = -score2;
+                    if (search_mode == 2 && score >= beta) {
+                        undoMove();
+                        return beta;
+                    }
+                    if (score > alpha)
+                        alpha = score;
                 }
-                else
+                else {
                     score = evaluate();
+                    nodes ++;
+                }
             }
 
-            if (best < score)
+            if (score > best)
                 best = score;
 
             undoMove();
@@ -1564,6 +1633,7 @@ var Chess = function(fen_) {
         multiSan: multiSan,
         multiUci: multiUci,
         nodes: () => nodes,
+        order: orderMoves,
         params: params,
         piece: text => PIECES[text] || 0,
         print: print,
