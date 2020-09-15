@@ -1520,29 +1520,42 @@ function create_url_list(dico) {
     if (!dico)
         return '';
 
-    let is_grid,
+    let ext, is_grid,
         html = Keys(dico).map(key => {
-        let value = dico[key];
+            let data = '',
+                text = '',
+                value = dico[key];
 
-        // grid?
-        if (key[0] == '_') {
-            let lines = is_grid? ['</grid>']: [];
-            if (value)
-                lines.push(`<grid class="w100" style="grid-template-columns:repeat(${value}, 1fr)">`);
-            is_grid = !!value;
-            return lines.join('');
-        }
+            // grid?
+            if (key[0] == '_') {
+                if (key == '_ext') {
+                    ext = value;
+                    return '';
+                }
 
-        if (!IsString(value))
-            return '<hr>';
+                let lines = is_grid? ['</grid>']: [];
+                if (value)
+                    lines.push(`<grid class="w100" style="grid-template-columns:repeat(${value}, 1fr)">`);
+                is_grid = !!value;
+                return lines.join('');
+            }
 
-        if (!value)
-            return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
+            if (!IsString(value))
+                return '<hr>';
 
-        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
-            value = `${HOST}/${value}`;
-        return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
-    }).join('');
+            if (!value)
+                return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
+
+            if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
+                value = `${HOST}/${value}`;
+
+            if (ext && key.includes(ext))
+                text = key.replace(ext, `<i class="ext">${ext}</i>`);
+            else
+                data = ` data-t="${key}"`;
+
+            return `<a class="item" href="${value}" target="_blank"${data}>${text}</a>`;
+        }).join('');
 
     if (is_grid)
         html += '</grid>';

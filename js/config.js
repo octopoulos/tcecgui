@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-12
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -44,6 +44,7 @@ function startup_config() {
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'
     LINKS = {
         articles: {
+            '_ext': '.pdf',
             'Super Final 18 by GM Sadler.pdf': 'articles/Sufi_18_-_Sadler.pdf',
             'Super Final 17 by GM Sadler.pdf': 'articles/Sufi_17_-_Sadler.pdf',
             'Super Final 16 by GM Sadler.pdf': 'articles/Sufi_16_-_Sadler.pdf',
@@ -66,12 +67,14 @@ function startup_config() {
             '_a2': 0,
             // again
             'b': 0,
+            '_b1': 2,
             'TCEC_Cup_6.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_6.pdf',
             'TCEC_Cup_5.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_5.pdf',
             'TCEC_Cup_4.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_4.pdf',
             'TCEC_Cup_3.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_3.pdf',
             'TCEC_Cup_2.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_2.pdf',
             'TCEC_Cup_1.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_1.pdf',
+            '_b2': 0,
         },
         download: {
             Crosstable: 'crosstable.json',
