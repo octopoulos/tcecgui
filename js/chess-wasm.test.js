@@ -152,9 +152,9 @@ beforeEach(() => {
 
 // configure
 [
-    [false, 'd=5', 4, [5, 1, 0, 1e9, 0, 0]],
-    [false, 'd=-5', 4, [4, 1, 0, 1e9, 0, 5]],
-    [false, 'd=5 D=14 e=nn n=1000 s=ab t=30', 4, [5, 7, 14, 1000, 2, 30]],
+    [false, 'd=5', 4, [5, 1, 1e9, 0, 0]],
+    [false, 'd=-5', 4, [4, 1, 1e9, 0, 5]],
+    [false, 'd=5  e=nn n=1000 s=ab t=30', 4, [5, 7, 1000, 2, 30]],
 ].forEach(([frc, options, depth, answer], id) => {
     test(`configure:${id}`, () => {
         chess.configure(frc, options, depth);
@@ -803,11 +803,14 @@ beforeEach(() => {
     [START_FEN, false, 'd=0', 4, 20],
     [START_FEN, false, '', 0, 20],
     [START_FEN, false, 'd=1', 4, 20],
-    [START_FEN, false, 'd=2', 4, 420],
-    [START_FEN, false, 'n=100000', 2, 420],
-    [START_FEN, false, 'd=3', 4, 9322],
-    [START_FEN, false, 'd=3 e=4', 4, [9322, 11000]],
-    [START_FEN, false, 'd=4', 4, 207064],
+    [START_FEN, false, 'd=2', 4, 400],
+    [START_FEN, false, 'n=100000', 2, 400],
+    [START_FEN, false, 'd=3', 4, 8902],
+    [START_FEN, false, 'd=3 e=4', 4, 8902],
+    [START_FEN, false, 'd=4 s=mm', 4, 197281],
+    [START_FEN, false, 'd=4 s=ab', 4, [186432, 186836]],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=mm', 4, 403873],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=ab', 4, [118710, 119332]],
 ].forEach(([fen, frc, options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
@@ -824,9 +827,44 @@ beforeEach(() => {
     });
 });
 
+// order
+[
+    [
+        'bn2r1rn/p2pk1p1/1p1p1pp1/1q6/1PP1P1B1/3P4/6RP/4RK1N w E - 0 18',
+        [true, '', 4],
+        'c4b5 g4d7 f1e1 g4f5 g4e6 g4h5 g4h3 g4f3 g4e2 g4d1 h1f2 h1g3 g2g3 g2g1 g2f2 g2e2 g2d2 g2c2 g2b2 g2a2 e1e2 e1e3 e1d1 e1c1 e1b1 e1a1 c4c5 e4e5 d3d4 h2h4 h2h3 f1e2 f1f2 f1g1',
+    ],
+    [
+        'Qbk1r1b1/1p3p1p/2p1p3/5P2/6q1/B7/PPKn3P/NBR1R3 w - - 1 22',
+        [true, '', 4],
+        'a8b8 f5e6 e1e6 a8b7 c2d2 a3b4 a3c5 a3d6 a3e7 a3f8 a1b3 c1d1 e1e2 e1e3 e1e4 e1e5 e1f1 e1g1 e1h1 e1d1 a8a7 a8a6 a8a5 a8a4 f5f6 b2b4 h2h4 b2b3 h2h3 c2c3 c2d3',
+    ],
+    [
+        '3r4/2p2k2/6p1/2p5/4N2p/PP2N3/2P2PK1/2R5 b - - 3 35',
+        [true, '', 4],
+        'd8e8 d8f8 d8g8 d8h8 d8d7 d8d6 d8d5 d8d4 d8d3 d8d2 d8d1 d8c8 d8b8 d8a8 h4h3 c5c4 g6g5 c7c6 f7e8 f7f8 f7g8 f7g7 f7e6 f7e7',
+    ],
+    [
+        '8/1PP5/4k3/8/6Pp/4pK2/8/8 w - - 0 47',
+        [true, '', 4],
+        'f3e3 b7b8q c7c8q b7b8r c7c8r b7b8b c7c8b b7b8n c7c8n g4g5 f3e4 f3f4 f3g2 f3e2',
+    ],
+].forEach(([fen, [frc, options, depth], answer], id) => {
+    test(`order:${id}`, () => {
+        chess.load(fen);
+        chess.configure(frc, options, depth);
+        let moves = chess.moves(frc, true, EMPTY);
+        chess.order(moves);
+        if (moves.size)
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        moves = moves.map(move => chess.ucify(move)).join(' ');
+        expect(moves).toEqual(answer);
+    });
+});
+
 // params
 [
-    [false, 'd=5', 0, [5, 1, 0, 1e9, 0, 0]],
+    [false, 'd=5', 0, [5, 1, 1e9, 0, 0]],
 ].forEach(([frc, options, depth, answer], id) => {
     test(`params:${id}`, () => {
         chess.configure(frc, options, depth);
@@ -974,7 +1012,7 @@ beforeEach(() => {
         '',
         [false, 'd=3', 0],
         [],
-        {a2a2: [150, 250], d7d8: [-50, 50]},
+        {a2a3: [100, 150], d7d8: [-50, 50]},
     ],
     [
         'rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq - 0 10',
@@ -1034,9 +1072,16 @@ beforeEach(() => {
     ],
     [
         'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
-        '1000000000000000000000000',
-        [false, 'd=1', 4],
+        'b8c6',
+        [false, '', 1],
         [-150, -50],
+        {},
+    ],
+    [
+        'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
+        'b8c6',
+        [false, '', 2],
+        [-650, -550],
         {},
     ],
     [

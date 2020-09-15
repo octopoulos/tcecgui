@@ -5,7 +5,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility
 -          : 2020-09-08 : show game timer
 -          : 2020-09-14 : fast legal calculation => pinned pieces
--          : 2020-09-13 : add alpha beta in chess.cpp
+2020-09-14 : 2020-09-13 : add alpha beta in chess.cpp
 2020-09-14 : 2020-09-13 : add alpha beta in chess.js
 2020-09-14 : 2020-09-14 : use depth left instead of max_depth
 2020-09-13 : 2020-09-13 : configure engine options in chess.cpp

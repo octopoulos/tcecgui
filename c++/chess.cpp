@@ -7,6 +7,7 @@
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <regex>
@@ -73,6 +74,25 @@ int ATTACKS[] = {
         {-16, -32, -17, -15},
         {16, 32, 17, 15},
     },
+    // move ordering
+    PIECE_CAPTURES[] = {
+        0,
+        20100,      // P
+        20300,      // N
+        20300,      // B
+        20500,      // R
+        20900,      // Q
+        32800,      // K
+        0,
+        0,
+        20100,      // p
+        20300,      // n
+        20300,      // b
+        20500,      // r
+        20900,      // q
+        32800,      // k
+        0,
+    },
     PIECE_OFFSETS[7][8] = {
         {  0,   0,   0,   0,  0,  0,  0,  0},
         {  0,   0,   0,   0,  0,  0,  0,  0},
@@ -82,6 +102,26 @@ int ATTACKS[] = {
         {-17, -16, -15,   1, 17, 16, 15, -1},
         {-17, -16, -15,   1, 17, 16, 15, -1},
     },
+    // move ordering
+    PIECE_ORDERS[] = {
+        0,
+        4,          // P
+        1,          // N
+        1,          // B
+        2,          // R
+        3,          // Q
+        5,          // K
+        0,
+        0,
+        4,          // p
+        1,          // n
+        1,          // b
+        2,          // r
+        3,          // q
+        5,          // k
+        0,
+    },
+    // material eval
     PIECE_SCORES[] = {
         0,
         100,        // P
@@ -98,6 +138,7 @@ int ATTACKS[] = {
         500,        // r
         900,        // q
         12800,      // k
+        0,
     },
     PROMOTE_SCORES[] = {
         0,
@@ -115,6 +156,7 @@ int ATTACKS[] = {
         400,        // r
         800,        // q
         11800,      // k
+        0,
     },
     RAYS[] = {
        17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
@@ -182,6 +224,7 @@ std::map<std::string, uint8_t> SEARCH_MODES = {
     {"rnd", 0},
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Move {
     uint8_t capture;
@@ -199,6 +242,14 @@ struct Move {
         piece = 0;
         promote = 0;
         to = 0;
+    }
+    Move(uint8_t capture_, uint8_t flags_, uint8_t from_, uint8_t piece_, uint8_t promote_, uint8_t to_) {
+        capture = capture_;
+        flags = flags_;
+        from = from_;
+        piece = piece_;
+        promote = promote_;
+        to = to_;
     }
 };
 
@@ -230,6 +281,9 @@ struct History {
     uint8_t turn;
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// chess class
 class Chess {
 private:
     // PRIVATE
@@ -246,7 +300,6 @@ private:
     int     kings[2];
     int     materials[2];
     int     max_depth;
-    int     max_extend;
     int     max_nodes;
     int     max_time;
     uint8_t mobilities[16];
@@ -291,20 +344,40 @@ private:
      * Add a single move
      */
     void addSingleMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags, uint8_t promote) {
-        Move move;
-        move.flags = flags;
-        move.from = from;
-        move.piece = piece;
-        move.promote = promote;
-        move.to = to;
-
+        auto capture = 0;
         if (!(flags & BITS_CASTLE)) {
             if (board[to])
-                move.capture = TYPE(board[to]);
+                capture = TYPE(board[to]);
             else if (flags & BITS_EP_CAPTURE)
-                move.capture = PAWN;
+                capture = PAWN;
         }
+        Move move(capture, flags, from, piece, promote, to);
         moves.push_back(move);
+    }
+
+    /**
+     * Move ordering for alpha-beta
+     * - captures
+     * - castle
+     * - nb/r/q/r/p
+     */
+    static bool compareMoves(const Move &a, const Move &b) {
+        if (a.capture || b.capture)
+            return (PIECE_CAPTURES[b.capture] - PIECE_CAPTURES[a.capture]) * 10 + PIECE_SCORES[a.piece] - PIECE_SCORES[b.piece] < 0;
+        auto castle = !!(b.flags & BITS_CASTLE) - !!(a.flags & BITS_CASTLE);
+        if (castle)
+            return castle < 0;
+        if (a.promote || b.promote)
+            return b.promote < a.promote;
+        auto aorder = PIECE_ORDERS[a.piece],
+            border = PIECE_ORDERS[b.piece];
+        if (aorder == border) {
+            // more advanced pawn => higher priority
+            if (aorder == 4)
+                return COLOR(a.piece)? (RANK(b.to) < RANK(a.to)): (RANK(a.to) < RANK(b.to));
+            return 0;
+        }
+        return aorder < border;
     }
 
     /**
@@ -399,37 +472,38 @@ public:
                 index = difference + 119;
             auto piece_type = TYPE(piece);
 
-            if (ATTACKS[index] & ATTACK_BITS[piece_type]) {
-                // pawn
-                if (piece_type == PAWN) {
-                    if (difference > 0) {
-                        if (piece_color == WHITE)
-                            return true;
-                    }
-                    else if (piece_color == BLACK)
+            if (!(ATTACKS[index] & ATTACK_BITS[piece_type]))
+                continue;
+
+            // knight + king
+            if (piece_type == KING || piece_type == KNIGHT)
+                return true;
+
+            // pawn
+            if (piece_type == PAWN) {
+                if (difference > 0) {
+                    if (piece_color == WHITE)
                         return true;
-                    continue;
                 }
-
-                // knight + king
-                if (piece_type == KING || piece_type == KNIGHT)
+                else if (piece_color == BLACK)
                     return true;
-
-                // others => cannot be blocked
-                bool blocked = false;
-                int offset = RAYS[index],
-                    j = i + offset;
-
-                while (j != square) {
-                    if (board[j]) {
-                        blocked = true;
-                        break;
-                    }
-                    j += offset;
-                }
-                if (!blocked)
-                    return true;
+                continue;
             }
+
+            // others => cannot be blocked
+            bool blocked = false;
+            int offset = RAYS[index],
+                j = i + offset;
+
+            while (j != square) {
+                if (board[j]) {
+                    blocked = true;
+                    break;
+                }
+                j += offset;
+            }
+            if (!blocked)
+                return true;
         }
 
         return false;
@@ -473,14 +547,13 @@ public:
     }
 
     /**
-     * Configure some parameters
+     * Configure parameters
      */
     void configure(bool frc_, std::string options, int depth) {
         eval_mode = 1;
         frc = frc_;
         if (depth >= 0)
             max_depth = depth;
-        max_extend = 0;
         max_nodes = 1e9;
         max_time = 0;
         search_mode = 0;
@@ -502,9 +575,6 @@ public:
                     max_depth = value;
                 else if (value < 0)
                     max_time = -value;
-                break;
-            case 'D':
-                max_extend = value;
                 break;
             case 'e': {
                     auto eit = EVAL_MODES.find(right);
@@ -870,11 +940,16 @@ public:
             }
         }
 
+        // move ordering for alpha-beta
+        if (search_mode == 2)
+            orderMoves(moves);
+
         // return pseudo-legal moves
         if (!legal)
             return moves;
 
         // filter out illegal moves
+        // TODO: improve this
         std::vector<Move> legal_moves;
         for (auto &move : moves) {
             moveRaw(move);
@@ -902,12 +977,15 @@ public:
     /**
      * Evaluate the current position
      */
-    int evaluate() {
+    float evaluate() {
+        float score = 0;
         uint8_t us = turn ^ 1,
             them = turn;
-        auto score = materials[us] - materials[them];
 
-        if (search_mode) {
+        if (eval_mode & 1)
+            score = materials[us] - materials[them];
+
+        if (eval_mode & 2) {
             auto count0 = 0,
                 count1 = 0;
                 // countMobilities();
@@ -1281,6 +1359,7 @@ public:
                 MoveText move_obj = move;
                 move_obj.fen = createFen();
                 move_obj.ply = move_number * 2 - 3 + turn;
+                move_obj.score = 0;
                 result.push_back(move_obj);
             }
             prev = i + 1;
@@ -1308,6 +1387,7 @@ public:
                     MoveText move_obj = move;
                     move_obj.fen = createFen();
                     move_obj.ply = move_number * 2 - 3 + turn;
+                    move_obj.score = 0;
                     result.push_back(move_obj);
                 }
             }
@@ -1317,16 +1397,25 @@ public:
     }
 
     /**
+     * Move ordering for alpha-beta
+     * - captures
+     * - castle
+     * - nb/r/q/r/p
+     */
+    void orderMoves(std::vector<Move> &moves) {
+        std::stable_sort(moves.begin(), moves.end(), compareMoves);
+    }
+
+    /**
      * Get params
      */
     std::vector<int> params() {
         std::vector<int> result = {
             max_depth,          // 0
             eval_mode,          // 1
-            max_extend,         // 2
-            max_nodes,          // 3
-            search_mode,        // 4
-            max_time,           // 5
+            max_nodes,          // 2
+            search_mode,        // 3
+            max_time,           // 4
         };
         return result;
     }
@@ -1440,27 +1529,29 @@ public:
 
     /**
      * Basic tree search with mask
+     * https://www.chessprogramming.org/Principal_Variation_Search
      * @param moves
-     * @param mask moves to search, ex: 01100
+     * @param mask moves to search, ex: 'b8c6 b8a6 g8h6'
      * @return updated moves
      */
     std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
         nodes = 0;
         sel_depth = 0;
 
+        auto empty = !mask.size();
         std::vector<MoveText> masked;
-        int num_mask = mask.size(),
-            num_move = moves.size();
-        for (auto i = 0; i < num_move; i ++)
-            if (!num_mask || (i < num_mask && mask[i] != '0')) {
+
+        for (auto &move : moves) {
+            auto uci = ucify(move);
+            if (empty || mask.find(uci) != std::string::npos) {
                 std::vector<Move> one;
-                one.push_back(moves[i]);
-                auto score = searchMoves(one, max_depth - 1);
-                MoveText move_obj = moves[i];
+                one.push_back(move);
+                auto score = searchMoves(one, max_depth - 1, -99999, 99999);
+                MoveText move_obj = move;
                 move_obj.score = score;
                 masked.push_back(move_obj);
             }
-
+        }
         return masked;
     }
 
@@ -1468,16 +1559,16 @@ public:
      * Basic tree search
      * @param moves
      * @param depth
+     * @param alpha
+     * @param beta
      */
-    float searchMoves(std::vector<Move> &moves, int depth) {
-        int best = -99999;
-        auto length = moves.size();
+    float searchMoves(std::vector<Move> &moves, int depth, float alpha, float beta) {
+        float best = -99999;
         bool look_deeper = (depth > 0 && nodes < max_nodes);
         int valid = 0;
 
-        nodes += length;
-        // if (-depth > sel_depth)
-        //     sel_depth = -depth;
+        if (max_depth - depth > sel_depth)
+            sel_depth = max_depth - depth;
 
         for (auto &move : moves) {
             moveRaw(move);
@@ -1494,21 +1585,27 @@ public:
                 valid ++;
 
                 // look deeper
-                if (look_deeper) {  // || (depth < max_extend && move.capture)) {
+                if (look_deeper) {
                     auto moves2 = createMoves(frc, false, -1);
-                    auto score2 = searchMoves(moves2, depth - 1);
+                    score = -searchMoves(moves2, depth - 1, -beta, -alpha);
 
                     // stalemate? good if we're losing, otherwise BAD!
-                    if (score2 < -80000)
+                    if (score > 80000)
                         score = 0;
-                    else
-                        score = -score2;
+                    if (search_mode == 2 && score >= beta) {
+                        undoMove();
+                        return beta;
+                    }
+                    if (score > alpha)
+                        alpha = score;
                 }
-                else
+                else {
                     score = evaluate();
+                    nodes ++;
+                }
             }
 
-            if (best < score)
+            if (score > best)
                 best = score;
 
             undoMove();
@@ -1714,6 +1811,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("multiSan", &Chess::multiSan)
         .function("multiUci", &Chess::multiUci)
         .function("nodes", &Chess::em_nodes)
+        .function("order", &Chess::orderMoves)
         .function("params", &Chess::params)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)

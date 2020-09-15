@@ -83,6 +83,7 @@ let ATTACKS = I8([
         I8([-16, -32, -17, -15]),
         I8([16, 32, 17, 15]),
     ],
+    // move ordering
     PIECE_CAPTURES = I32([
         0,
         20100,      // P
@@ -101,6 +102,16 @@ let ATTACKS = I8([
         32800,      // k
         0,
     ]),
+    PIECE_OFFSETS = [
+        [],
+        [],
+        I8([-18, -33, -31, -14,  18, 33, 31,  14]),
+        I8([-17, -15,  17,  15]),
+        I8([-16,   1,  16,  -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+    ],
+    // move ordering
     PIECE_ORDERS = I8([
         0,
         4,          // P
@@ -119,15 +130,7 @@ let ATTACKS = I8([
         5,          // k
         0,
     ]),
-    PIECE_OFFSETS = [
-        [],
-        [],
-        I8([-18, -33, -31, -14,  18, 33, 31,  14]),
-        I8([-17, -15,  17,  15]),
-        I8([-16,   1,  16,  -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
-    ],
+    // material eval
     PIECE_SCORES = I32([
         0,
         100,        // P
@@ -240,9 +243,10 @@ let EVAL_MODES = {
         a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
     };
 
-var Chess = function(fen_) {
-    // https://github.com/jhlywa/chess.js
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// chess class
+var Chess = function(fen_) {
     // PRIVATE
     //////////
 
@@ -265,9 +269,6 @@ var Chess = function(fen_) {
         search_mode = 0,                    // 0:minimax, 1:alpha-beta
         sel_depth = 0,
         turn = WHITE;
-
-    // if the user passes in a fen string, load it, else default to starting position
-    load(fen_ || DEFAULT_POSITION);
 
     /**
      * Add a move to the history
@@ -305,23 +306,47 @@ var Chess = function(fen_) {
      * Add a single move
      */
     function addSingleMove(moves, piece, from, to, flags, promote) {
-        let move = {
-                capture: 0,
-                flags: flags,
-                from: from,
-                m: '',
-                piece: piece,
-                promote: promote,
-                to: to,
-            };
-
+        let capture = 0;
         if (!(flags & BITS_CASTLE)) {
             if (board[to])
-                move.capture = TYPE(board[to]);
+                capture = TYPE(board[to]);
             else if (flags & BITS_EP_CAPTURE)
-                move.capture = PAWN;
+                capture = PAWN;
         }
-        moves.push(move);
+        moves.push({
+            capture: capture,
+            flags: flags,
+            from: from,
+            m: '',
+            piece: piece,
+            promote: promote,
+            to: to,
+        });
+    }
+
+    /**
+     * Move ordering for alpha-beta
+     * - captures
+     * - castle
+     * - nb/r/q/r/p
+     */
+    function compareMoves(a, b) {
+        if (a.capture || b.capture)
+            return (PIECE_CAPTURES[b.capture] - PIECE_CAPTURES[a.capture]) * 10 + PIECE_SCORES[a.piece] - PIECE_SCORES[b.piece];
+        let castle = !!(b.flags & BITS_CASTLE) - !!(a.flags & BITS_CASTLE);
+        if (castle)
+            return castle;
+        if (a.promote || b.promote)
+            return b.promote - a.promote;
+        let aorder = PIECE_ORDERS[a.piece],
+            border = PIECE_ORDERS[b.piece];
+        if (aorder == border) {
+            // more advanced pawn => higher priority
+            if (aorder == 4)
+                return COLOR(a.piece)? (RANK(b.to) - RANK(a.to)): (RANK(a.to) - RANK(b.to));
+            return 0;
+        }
+        return aorder - border;
     }
 
     /**
@@ -1279,24 +1304,7 @@ var Chess = function(fen_) {
      * @param {Move[]} moves
      */
     function orderMoves(moves) {
-        moves.sort((a, b) => {
-            if (a.capture || b.capture)
-                return (PIECE_CAPTURES[b.capture] - PIECE_CAPTURES[a.capture]) * 10 + PIECE_SCORES[a.piece] - PIECE_SCORES[b.piece];
-            let castle = !!(b.flags & BITS_CASTLE) - !!(a.flags & BITS_CASTLE);
-            if (castle)
-                return castle;
-            if (a.promote || b.promote)
-                return b.promote - a.promote;
-            let aorder = PIECE_ORDERS[a.piece],
-                border = PIECE_ORDERS[b.piece];
-            if (aorder == border) {
-                // more advanced pawn => higher priority
-                if (aorder == 4)
-                    return COLOR(a.piece)? RANK(b.to) - RANK(a.to): RANK(a.to) - RANK(b.to);
-                return 0;
-            }
-            return aorder - border;
-        });
+        moves.sort(compareMoves);
     }
 
     /**
@@ -1306,9 +1314,9 @@ var Chess = function(fen_) {
         let result = [
             max_depth,          // 0
             eval_mode,          // 1
-            max_nodes,          // 3
-            search_mode,        // 4
-            max_time,           // 5
+            max_nodes,          // 2
+            search_mode,        // 3
+            max_time,           // 4
         ];
         return result;
     }
@@ -1444,10 +1452,12 @@ var Chess = function(fen_) {
         nodes = 0;
         sel_depth = 0;
 
-        let masked = [];
+        let empty = !mask,
+            masked = [];
+
         for (let move of moves) {
             let uci = ucify(move);
-            if (!mask || mask.includes(uci)) {
+            if (empty || mask.includes(uci)) {
                 let one = [move];
                 move.score = searchMoves(one, max_depth - 1, -99999, 99999);
                 masked.push(move);
@@ -1466,7 +1476,6 @@ var Chess = function(fen_) {
      */
     function searchMoves(moves, depth, alpha, beta) {
         let best = -99999,
-            length = moves.length,
             look_deeper = (depth > 0 && nodes < max_nodes),
             valid = 0;
 
@@ -1601,6 +1610,9 @@ var Chess = function(fen_) {
             }
         }
     }
+
+    // if the user passes in a fen string, load it, else default to starting position
+    load(fen_ || DEFAULT_POSITION);
 
     // BINDING CODE
     ///////////////

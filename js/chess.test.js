@@ -804,9 +804,9 @@ beforeEach(() => {
     [START_FEN, false, 'd=3', 4, 8902],
     [START_FEN, false, 'd=3 e=4', 4, 8902],
     [START_FEN, false, 'd=4 s=mm', 4, 197281],
-    [START_FEN, false, 'd=4 s=ab', 4, 186432],
+    [START_FEN, false, 'd=4 s=ab', 4, [186432, 186836]],
     ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=mm', 4, 403873],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=ab', 4, 118710],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=ab', 4, [118710, 119332]],
 ].forEach(([fen, frc, options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
@@ -851,6 +851,8 @@ beforeEach(() => {
         chess.configure(frc, options, depth);
         let moves = chess.moves(frc, true, EMPTY);
         chess.order(moves);
+        if (moves.size)
+            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         moves = moves.map(move => chess.ucify(move)).join(' ');
         expect(moves).toEqual(answer);
     });
@@ -1143,8 +1145,6 @@ beforeEach(() => {
         }
 
         if (answer.length) {
-            if (!best)
-                LS(masks);
             expect(best.score).toBeGreaterThanOrEqual(answer[0]);
             expect(best.score).toBeLessThanOrEqual(answer[1]);
         }
