@@ -24,6 +24,7 @@ c++/*.js
 c++/*.wasm
 c++/shared*
 chart.js
+coverage/
 crash.json
 create_list.js
 crosstable.json

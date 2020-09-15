@@ -31,7 +31,7 @@ using namespace emscripten;
 #define BLACK 1
 #define COLOR(piece) (piece >> 3)
 #define COLOR_TEXT(color) ((color == 0)? 'w': 'b')
-#define COLORIZE(color, type) ((color == 0)? type: (type | 8))
+#define COLORIZE(color, type) (type + (color << 3))
 #define DEFAULT_POSITION "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define EMPTY -1
 #define FILE(square) (square & 15)
@@ -174,8 +174,7 @@ int ATTACKS[] = {
         0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
         0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
-    },
-    SECOND_RANKS[] = {6, 1};
+    };
 
 float
     MOBILITY_SCORES[] = {
@@ -234,23 +233,6 @@ struct Move {
     uint8_t piece;
     uint8_t promote;
     uint8_t to;
-
-    Move() {
-        capture = 0;
-        flags = 0;
-        from = 0;
-        piece = 0;
-        promote = 0;
-        to = 0;
-    }
-    Move(uint8_t capture_, uint8_t flags_, uint8_t from_, uint8_t piece_, uint8_t promote_, uint8_t to_) {
-        capture = capture_;
-        flags = flags_;
-        from = from_;
-        piece = piece_;
-        promote = promote_;
-        to = to_;
-    }
 };
 
 struct MoveText: Move {
@@ -258,10 +240,7 @@ struct MoveText: Move {
     int     ply;
     int     score;
 
-    MoveText(): Move() {
-        ply = -1;
-        score = 0;
-    }
+    MoveText(): Move() {}
     MoveText(const Move &move) {
         memcpy(this, &move, sizeof(Move));
         ply = -1;
@@ -269,17 +248,15 @@ struct MoveText: Move {
     }
 };
 
-struct History {
+struct State {
     int     castling[4];
     int     ep_square;
     int     half_moves;
     int     kings[2];
-    int     materials[2];
-    uint8_t mobilities[16];
     Move    move;
-    int     move_number;
-    uint8_t turn;
 };
+
+Move NULL_MOVE = {0, 0, 0, "", 0, 0, 0};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -296,7 +273,7 @@ private:
     std::string fen;
     bool    frc;
     int     half_moves;
-    std::vector<History> histories;
+    int     idepth;
     int     kings[2];
     int     materials[2];
     int     max_depth;
@@ -305,24 +282,11 @@ private:
     uint8_t mobilities[16];
     int     move_number;
     int     nodes;
+    int     ply;
+    std::vector<State> ply_states;
     int     search_mode;                    // 0:minimax, 1:alpha-beta
     int     sel_depth;
     uint8_t turn;
-
-    /**
-     * Add a move to the history
-     */
-    void addHistory(Move &move) {
-        History history;
-        memcpy(&history.castling, &castling, sizeof(castling));
-        history.ep_square = ep_square;
-        history.half_moves = half_moves;
-        memcpy(&history.kings, &kings, sizeof(kings));
-        memcpy(&history.materials, &materials, sizeof(materials));
-        memcpy(&history.move, &move, sizeof(Move));
-        history.move_number = move_number;
-        histories.push_back(history);
-    }
 
     /**
      * Add a move + promote moves
@@ -343,16 +307,30 @@ private:
     /**
      * Add a single move
      */
-    void addSingleMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags, uint8_t promote) {
-        auto capture = 0;
+    void addSingleMove(std::vector<Move> &moves, uint8_t piece, uint8_t from, uint8_t to, uint8_t flags, uint8_t promote) {
+        uint8_t capture = 0;
         if (!(flags & BITS_CASTLE)) {
             if (board[to])
                 capture = TYPE(board[to]);
             else if (flags & BITS_EP_CAPTURE)
                 capture = PAWN;
         }
-        Move move(capture, flags, from, piece, promote, to);
-        moves.push_back(move);
+        moves.push_back({capture, flags, from, "", piece, promote, to});
+    }
+
+    /**
+     * Add a ply state
+     */
+    void addState(Move &move) {
+        for (auto i = ply_states.size(); i < ply + 2; i ++)
+            ply_states.emplace_back();
+
+        auto &state = ply_states[ply + 1];
+        memcpy(state.castling, castling, sizeof(castling));
+        state.ep_square = ep_square;
+        state.half_moves = half_moves;
+        memcpy(state.kings, kings, sizeof(kings));
+        memcpy(&state.move, &move, sizeof(Move));
     }
 
     /**
@@ -426,7 +404,6 @@ public:
         clear();
         load(DEFAULT_POSITION);
     }
-
     ~Chess() {
     }
 
@@ -437,7 +414,7 @@ public:
      * @param an c2
      * @return 98
      */
-    int anToSquare(std::string an) {
+    uint8_t anToSquare(std::string an) {
         if (an.size() < 2)
             return EMPTY;
         int file = an[0] - 'a',
@@ -536,12 +513,14 @@ public:
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
-        histories.clear();
+        idepth = 0;
         memset(kings, EMPTY, sizeof(kings));
         memset(materials, 0, sizeof(materials));
         memset(mobilities, 0, sizeof(mobilities));
         move_number = 1;
         nodes = 0;
+        ply = -1;
+        ply_states.clear();
         sel_depth = 0;
         turn = WHITE;
     }
@@ -629,7 +608,7 @@ public:
 
                     // double square
                     square = i + offsets[1];
-                    if (SECOND_RANKS[us] == RANK(i) && !board[square])
+                    if (6 - us * 5 == RANK(i) && !board[square])
                         mobilities[piece] ++;
                 }
 
@@ -822,7 +801,7 @@ public:
         int first_sq = is_single? single_square: SQUARE_A8,
             last_sq = is_single? single_square: SQUARE_H1;
         std::vector<Move> moves;
-        int second_rank = SECOND_RANKS[turn];
+        int second_rank = 6 - turn * 5;
         uint8_t us = turn,
             us8 = us << 3,
             them = us ^ 1;
@@ -905,14 +884,14 @@ public:
 
             // q=0: king side, q=1: queen side
             for (auto q = 0; q < 2; q ++) {
-                auto rook = castling[us * 2 + q];
+                auto rook = castling[(us << 1) + q];
                 if (rook == EMPTY)
                     continue;
 
                 int error = false,
                     flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
-                    king_to = pos0 + (q? 2: 6),
-                    rook_to = king_to + (q? 1: -1),
+                    king_to = pos0 + 6 - (q << 2),
+                    rook_to = king_to - 1 + (q << 1),
                     max_king = std::max(king, king_to),
                     min_king = std::min(king, king_to),
                     max_path = std::max(max_king, std::max(rook, rook_to)),
@@ -954,7 +933,7 @@ public:
         for (auto &move : moves) {
             moveRaw(move);
             if (!kingAttacked(us))
-                legal_moves.push_back(move);
+                legal_moves.push_back(std::move(move));
             undoMove();
         }
         return legal_moves;
@@ -1081,6 +1060,7 @@ public:
         ep_square = (ep == "-")? EMPTY: anToSquare(ep);
         half_moves = half;
         move_number = move;
+        ply = move_number * 2 - 3 + turn;
 
         bool start = (!turn && move_number == 1);
         if (start)
@@ -1187,7 +1167,7 @@ public:
             them = us ^ 1;
 
         // not smart to do it for every move
-        addHistory(move);
+        addState(move);
 
         int capture = move.capture,
             flags = move.flags,
@@ -1204,19 +1184,19 @@ public:
             if (is_castle) {
                 int q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
                     king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
+                    king_to = (RANK(king) << 4) + 6 - (q << 2),
+                    rook = castling[(us << 1) + q];
 
                 board[king] = 0;
                 board[rook] = 0;
                 board[king_to] = COLORIZE(us, KING);
-                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                board[king_to - 1 + (q << 1)] = COLORIZE(us, ROOK);
                 move_to = king_to;
             }
 
             kings[us] = move_to;
-            castling[us * 2] = EMPTY;
-            castling[us * 2 + 1] = EMPTY;
+            castling[us << 1] = EMPTY;
+            castling[(us << 1) + 1] = EMPTY;
         }
 
         if (!is_castle) {
@@ -1229,29 +1209,29 @@ public:
             if (capture) {
                 materials[them] -= PIECE_SCORES[capture];
                 if (capture == ROOK) {
-                    if (move_to == castling[them * 2])
-                        castling[them * 2] = EMPTY;
-                    else if (move_to == castling[them * 2 + 1])
-                        castling[them * 2 + 1] = EMPTY;
+                    if (move_to == castling[them << 1])
+                        castling[them << 1] = EMPTY;
+                    else if (move_to == castling[(them << 1) + 1])
+                        castling[(them << 1) + 1] = EMPTY;
                 }
                 half_moves = 0;
             }
 
             // remove castling if we move a rook
             if (move_type == ROOK) {
-                if (move_from == castling[us * 2])
-                    castling[us * 2] = EMPTY;
-                else if (move_from == castling[us * 2 + 1])
-                    castling[us * 2 + 1] = EMPTY;
+                if (move_from == castling[us << 1])
+                    castling[us << 1] = EMPTY;
+                else if (move_from == castling[(us << 1) + 1])
+                    castling[(us << 1) + 1] = EMPTY;
             }
             // pawn + update 50MR
             else if (move_type == PAWN) {
                 // pawn moves 2 squares
                 if (flags & BITS_BIG_PAWN)
-                    ep_square = move_to + (turn == BLACK? -16: 16);
+                    ep_square = move_to + 16 - (turn << 5);
                 else {
                     if (flags & BITS_EP_CAPTURE)
-                        board[move_to + (turn == BLACK? -16: 16)] = 0;
+                        board[move_to + 16 - (turn << 5)] = 0;
                     if (flags & BITS_PROMOTION) {
                         board[move_to] = COLORIZE(us, move.promote);
                         materials[us] += PROMOTE_SCORES[move.promote];
@@ -1261,6 +1241,7 @@ public:
             }
         }
 
+        ply ++;
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
@@ -1328,10 +1309,7 @@ public:
      * @param decorate add + # decorators
      */
     Move moveUci(std::string text, bool frc, bool decorate) {
-        Move move;
-        move.from = anToSquare(text.substr(0, 2));
-        move.promote = PIECES[text[4]];
-        move.to = anToSquare(text.substr(2, 2));
+        Move move = {0, 0, anToSquare(text.substr(0, 2)), "", 0, PIECES[text[4]], anToSquare(text.substr(2, 2))};
         return moveObject(move, frc, decorate);
     }
 
@@ -1358,9 +1336,9 @@ public:
                 moveRaw(move);
                 MoveText move_obj = move;
                 move_obj.fen = createFen();
-                move_obj.ply = move_number * 2 - 3 + turn;
+                move_obj.ply = ply;
                 move_obj.score = 0;
-                result.push_back(move_obj);
+                result.emplace_back(move_obj);
             }
             prev = i + 1;
         }
@@ -1386,9 +1364,9 @@ public:
                 if (move.piece) {
                     MoveText move_obj = move;
                     move_obj.fen = createFen();
-                    move_obj.ply = move_number * 2 - 3 + turn;
+                    move_obj.ply = ply;
                     move_obj.score = 0;
-                    result.push_back(move_obj);
+                    result.emplace_back(move_obj);
                 }
             }
             prev = i + 1;
@@ -1472,9 +1450,8 @@ public:
             }
 
         // 2) try sloppy matching
-        Move null_move;
         if (!sloppy)
-            return null_move;
+            return NULL_MOVE;
 
         int from_file = -1,
             from_rank = -1,
@@ -1484,7 +1461,7 @@ public:
             type = 0;
 
         if (i < 2)
-            return null_move;
+            return NULL_MOVE;
 
         // analyse backwards
         if (strchr("bnrqBNRQ", clean[i])) {
@@ -1493,10 +1470,10 @@ public:
         }
         // to
         if (clean[i] < '1' || clean[i] > '8')
-            return null_move;
+            return NULL_MOVE;
         i --;
         if (clean[i] < 'a' || clean[i] > 'j')
-            return null_move;
+            return NULL_MOVE;
         to = clean[i] - 'a' + (('8' - clean[i + 1]) << 4);
         i --;
         //
@@ -1524,7 +1501,7 @@ public:
                 return move;
             }
         }
-        return null_move;
+        return NULL_MOVE;
     }
 
     /**
@@ -1549,7 +1526,7 @@ public:
                 auto score = searchMoves(one, max_depth - 1, -99999, 99999);
                 MoveText move_obj = move;
                 move_obj.score = score;
-                masked.push_back(move_obj);
+                masked.emplace_back(move_obj);
             }
         }
         return masked;
@@ -1567,8 +1544,9 @@ public:
         bool look_deeper = (depth > 0 && nodes < max_nodes);
         int valid = 0;
 
-        if (max_depth - depth > sel_depth)
-            sel_depth = max_depth - depth;
+        idepth = max_depth - depth;
+        if (idepth > sel_depth)
+            sel_depth = idepth;
 
         for (auto &move : moves) {
             moveRaw(move);
@@ -1609,13 +1587,13 @@ public:
                 best = score;
 
             undoMove();
-            if ((max_depth - depth) >= 3 && score > 20000)
+            if (idepth >= 3 && score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2))
-            best = -51200 + (max_depth - depth) * 4000;
+            best = -51200 + idepth * 4000;
         else
             best += valid * 0.2;
         return best;
@@ -1656,18 +1634,20 @@ public:
      * Undo a move
      */
     void undoMove() {
-        if (histories.empty())
+        if (ply < 0)
             return;
-        History &old = histories.back();
 
-        Move &move = old.move;
-        memcpy(castling, &old.castling, sizeof(castling));
-        ep_square = old.ep_square;
-        half_moves = old.half_moves;
-        memcpy(&kings, &old.kings, sizeof(kings));
-        memcpy(&materials, &old.materials, sizeof(materials));
-        move_number = old.move_number;
+        auto &state = ply_states[ply];
+        memcpy(castling, state.castling, sizeof(castling));
+        ep_square = state.ep_square;
+        half_moves = state.half_moves;
+        memcpy(kings, state.kings, sizeof(kings));
+        Move &move = state.move;
+
         turn ^= 1;
+        if (turn == BLACK)
+            move_number --;
+        ply --;
 
         uint8_t us = turn,
             them = turn ^ 1;
@@ -1676,11 +1656,11 @@ public:
         if (move.flags & BITS_CASTLE) {
             int q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
                 king = kings[us],
-                king_to = (RANK(king) << 4) + (q? 2: 6),
-                rook = castling[us * 2 + q];
+                king_to = (RANK(king) << 4) + 6 - (q << 2),
+                rook = castling[(us << 1) + q];
 
             board[king_to] = 0;
-            board[king_to + (q? 1: -1)] = 0;
+            board[king_to - 1 + (q << 1)] = 0;
             board[king] = COLORIZE(us, KING);
             board[rook] = COLORIZE(us, ROOK);
         }
@@ -1690,15 +1670,17 @@ public:
                 board[move.to] = 0;
             }
 
-            if (move.flags & BITS_CAPTURE)
+            if (move.flags & BITS_CAPTURE) {
                 board[move.to] = COLORIZE(them, move.capture);
-            else if (move.flags & BITS_EP_CAPTURE) {
-                int index = move.to + (us == BLACK? -16: 16);
-                board[index] = COLORIZE(them, PAWN);
+                materials[them] += PIECE_SCORES[move.capture];
             }
+            else if (move.flags & BITS_EP_CAPTURE) {
+                board[move.to + 16 - (us << 5)] = COLORIZE(them, PAWN);
+                materials[them] += PIECE_SCORES[PAWN];
+            }
+            if (move.promote)
+                materials[us] -= PROMOTE_SCORES[move.promote];
         }
-
-        histories.pop_back();
     }
 
     // EMSCRIPTEN INTERFACES

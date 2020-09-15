@@ -5,20 +5,21 @@
 // - FRC support
 /*
 globals
-Assign, exports, Floor, global, Lower, Max, Min, require, Undefined
+Assign, exports, Floor, global, Lower, Max, Min, require, SetDefault, Undefined
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, Floor, Lower, Max, Min, Undefined} = req('./common');
+        {Assign, Floor, Lower, Max, Min, SetDefault, Undefined} = req('./common');
     Assign(global, {
         Assign: Assign,
         Floor: Floor,
         Lower: Lower,
         Max: Max,
         Min: Min,
+        SetDefault: SetDefault,
         Undefined: Undefined,
     });
 }
@@ -37,7 +38,7 @@ let BISHOP = 3,
     BLACK = 1,
     COLOR = piece => piece >> 3,
     COLOR_TEXT = 'wb',
-    COLORIZE = (color, type) => ((color == WHITE)? type: (type | 8)),
+    COLORIZE = (color, type) => (type + (color << 3)),
     DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     EMPTY = -1,
     F32 = array => new Float32Array(array),
@@ -183,8 +184,7 @@ let ATTACKS = I8([
         0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
         0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
        -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
-    ]),
-    SECOND_RANKS = I8([6, 1]);
+    ]);
 
 let MOBILITY_SCORES = F32([
         0,
@@ -243,6 +243,16 @@ let EVAL_MODES = {
         a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
     };
 
+let NULL_MOVE = {
+    capture: 0,
+    flags: 0,
+    from: 0,
+    m: '',
+    piece: 0,
+    promote: 0,
+    to: 0,
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // chess class
@@ -257,7 +267,7 @@ var Chess = function(fen_) {
         fen = '',
         frc = false,
         half_moves = 0,
-        histories = [],
+        idepth = 0,                         // positive depth = max_depth - depth
         kings = I32(2).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
@@ -266,25 +276,11 @@ var Chess = function(fen_) {
         mobilities = U8(16),
         move_number = 1,
         nodes = 0,
+        ply = -1,
+        ply_states = [],
         search_mode = 0,                    // 0:minimax, 1:alpha-beta
         sel_depth = 0,
         turn = WHITE;
-
-    /**
-     * Add a move to the history
-     * @param {Object} move
-     */
-    function addHistory(move) {
-        histories.push({
-            castling: [...castling],
-            ep_square: ep_square,
-            half_moves: half_moves,
-            kings: [...kings],
-            materials: [...materials],
-            move: move,
-            move_number: move_number,
-        });
-    }
 
     /**
      * Add a move + promote moves
@@ -322,6 +318,19 @@ var Chess = function(fen_) {
             promote: promote,
             to: to,
         });
+    }
+
+    /**
+     * Add a ply state
+     * @param {Object} move
+     */
+    function addState(move) {
+        let state = SetDefault(ply_states, ply + 1, []);
+        state[0] = castling.slice();
+        state[1] = ep_square;
+        state[2] = half_moves;
+        state[3] = kings.slice();
+        state[4] = move;
     }
 
     /**
@@ -490,12 +499,14 @@ var Chess = function(fen_) {
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
-        histories.length = 0;
+        idepth = 0;
         kings.fill(EMPTY);
         materials.fill(0);
         mobilities.fill(0);
         move_number = 1;
         nodes = 0;
+        ply = -1;
+        ply_states.length = 0;
         sel_depth = 0;
         turn = WHITE;
     }
@@ -583,7 +594,7 @@ var Chess = function(fen_) {
 
                     // double square
                     square = i + offsets[1];
-                    if (SECOND_RANKS[us] == RANK(i) && !board[square])
+                    if (6 - us * 5 == RANK(i) && !board[square])
                         mobilities[piece] ++;
                 }
 
@@ -762,7 +773,7 @@ var Chess = function(fen_) {
             first_sq = is_single? single_square: SQUARE_A8,
             last_sq = is_single? single_square: SQUARE_H1,
             moves = [],
-            second_rank = SECOND_RANKS[turn],
+            second_rank = 6 - turn * 5,
             us = turn,
             us8 = us << 3,
             them = us ^ 1;
@@ -845,14 +856,14 @@ var Chess = function(fen_) {
 
             // q=0: king side, q=1: queen side
             for (let q = 0; q < 2; q ++) {
-                let rook = castling[us * 2 + q];
+                let rook = castling[(us << 1) + q];
                 if (rook == EMPTY)
                     continue;
 
                 let error = false,
                     flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
-                    king_to = pos0 + (q? 2: 6),
-                    rook_to = king_to + (q? 1: -1),
+                    king_to = pos0 + 6 - (q << 2),
+                    rook_to = king_to - 1 + (q << 1),
                     max_king = Max(king, king_to),
                     min_king = Min(king, king_to),
                     max_path = Max(max_king, rook, rook_to),
@@ -985,6 +996,7 @@ var Chess = function(fen_) {
         ep_square = anToSquare(tokens[3]);
         half_moves = parseInt(tokens[4], 10);
         move_number = parseInt(tokens[5], 10);
+        ply = move_number * 2 - 3 + turn;
 
         let start = (!turn && move_number == 1);
         if (start)
@@ -1094,7 +1106,7 @@ var Chess = function(fen_) {
             them = us ^ 1;
 
         // not smart to do it for every move
-        addHistory(move);
+        addState(move);
 
         let capture = move.capture,
             flags = move.flags,
@@ -1111,19 +1123,19 @@ var Chess = function(fen_) {
             if (is_castle) {
                 let q = (flags & BITS_QSIDE_CASTLE)? 1: 0,
                     king = kings[us],
-                    king_to = (RANK(king) << 4) + (q? 2: 6),
-                    rook = castling[us * 2 + q];
+                    king_to = (RANK(king) << 4) + 6 - (q << 2),
+                    rook = castling[(us << 1) + q];
 
                 board[king] = 0;
                 board[rook] = 0;
                 board[king_to] = COLORIZE(us, KING);
-                board[king_to + (q? 1: -1)] = COLORIZE(us, ROOK);
+                board[king_to - 1 + (q << 1)] = COLORIZE(us, ROOK);
                 move_to = king_to;
             }
 
             kings[us] = move_to;
-            castling[us * 2] = EMPTY;
-            castling[us * 2 + 1] = EMPTY;
+            castling[us << 1] = EMPTY;
+            castling[(us << 1) + 1] = EMPTY;
         }
 
         if (!is_castle) {
@@ -1136,29 +1148,29 @@ var Chess = function(fen_) {
             if (capture) {
                 materials[them] -= PIECE_SCORES[capture];
                 if (capture == ROOK) {
-                    if (move_to == castling[them * 2])
-                        castling[them * 2] = EMPTY;
-                    else if (move_to == castling[them * 2 + 1])
-                        castling[them * 2 + 1] = EMPTY;
+                    if (move_to == castling[them << 1])
+                        castling[them << 1] = EMPTY;
+                    else if (move_to == castling[(them << 1) + 1])
+                        castling[(them << 1) + 1] = EMPTY;
                 }
                 half_moves = 0;
             }
 
             // remove castling if we move a rook
             if (move_type == ROOK) {
-                if (move_from == castling[us * 2])
-                    castling[us * 2] = EMPTY;
-                else if (move_from == castling[us * 2 + 1])
-                    castling[us * 2 + 1] = EMPTY;
+                if (move_from == castling[us << 1])
+                    castling[us << 1] = EMPTY;
+                else if (move_from == castling[(us << 1) + 1])
+                    castling[(us << 1) + 1] = EMPTY;
             }
             // pawn + update 50MR
             else if (move_type == PAWN) {
                 // pawn moves 2 squares
                 if (flags & BITS_BIG_PAWN)
-                    ep_square = move_to + (turn == BLACK? -16: 16);
+                    ep_square = move_to + 16 - (turn << 5);
                 else {
                     if (flags & BITS_EP_CAPTURE)
-                        board[move_to + (turn == BLACK? -16: 16)] = 0;
+                        board[move_to + 16 - (turn << 5)] = 0;
                     if (flags & BITS_PROMOTION) {
                         board[move_to] = COLORIZE(us, move.promote);
                         materials[us] += PROMOTE_SCORES[move.promote];
@@ -1168,6 +1180,7 @@ var Chess = function(fen_) {
             }
         }
 
+        ply ++;
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
@@ -1265,7 +1278,7 @@ var Chess = function(fen_) {
                 break;
             moveRaw(move);
             move.fen = createFen();
-            move.ply = move_number * 2 - 3 + turn;
+            move.ply = ply;
             move.score = 0;
             result.push(move);
         }
@@ -1288,7 +1301,7 @@ var Chess = function(fen_) {
             let move = moveUci(text, frc, true);
             if (move.piece) {
                 move.fen = createFen();
-                move.ply = move_number * 2 - 3 + turn;
+                move.ply = ply;
                 move.score = 0;
                 result.push(move);
             }
@@ -1378,17 +1391,8 @@ var Chess = function(fen_) {
             }
 
         // 2) try sloppy matching
-        let null_move = {
-            capture: 0,
-            flags: 0,
-            from: 0,
-            m: '',
-            piece: 0,
-            promote: 0,
-            to: 0,
-        };
         if (!sloppy)
-            return null_move;
+            return NULL_MOVE;
 
         let from_file = -1,
             from_rank = -1,
@@ -1398,7 +1402,7 @@ var Chess = function(fen_) {
             type = 0;
 
         if (i < 2)
-            return null_move;
+            return NULL_MOVE;
 
         // analyse backwards
         if ('bnrqBNRQ'.includes(clean[i])) {
@@ -1407,10 +1411,10 @@ var Chess = function(fen_) {
         }
         // to
         if (!'12345678'.includes(clean[i]))
-            return null_move;
+            return NULL_MOVE;
         i --;
         if (!'abcdefghij'.includes(clean[i]))
-            return null_move;
+            return NULL_MOVE;
         to = 'abcdefghij'.indexOf(clean[i]) + ('87654321'.indexOf(clean[i + 1]) << 4);
         i --;
         //
@@ -1438,7 +1442,7 @@ var Chess = function(fen_) {
                 return move;
             }
         }
-        return null_move;
+        return NULL_MOVE;
     }
 
     /**
@@ -1479,8 +1483,9 @@ var Chess = function(fen_) {
             look_deeper = (depth > 0 && nodes < max_nodes),
             valid = 0;
 
-        if (max_depth - depth > sel_depth)
-            sel_depth = max_depth - depth;
+        idepth = max_depth - depth;
+        if (idepth > sel_depth)
+            sel_depth = idepth;
 
         for (let move of moves) {
             moveRaw(move);
@@ -1521,13 +1526,13 @@ var Chess = function(fen_) {
                 best = score;
 
             undoMove();
-            if ((max_depth - depth) >= 3 && score > 20000)
+            if (idepth >= 3 && score > 20000)
                 break;
         }
 
         // checkmate?
         if (!valid && kingAttacked(2))
-            best = -51200 + (max_depth - depth) * 4000;
+            best = -51200 + idepth * 4000;
         else
             best += valid * 0.2;
         return best;
@@ -1568,18 +1573,17 @@ var Chess = function(fen_) {
      * Undo a move
      */
     function undoMove() {
-        if (!histories.length)
+        if (ply < 0)
             return;
-        let old = histories.pop();
 
-        let move = old.move;
-        castling = old.castling;
-        ep_square = old.ep_square;
-        half_moves = old.half_moves;
-        kings = old.kings;
-        materials = old.materials;
-        move_number = old.move_number;
+        let move,
+            state = ply_states[ply];
+        [castling, ep_square, half_moves, kings, move] = state;
+
         turn ^= 1;
+        if (turn == BLACK)
+            move_number --;
+        ply --;
 
         let us = turn,
             them = turn ^ 1;
@@ -1588,11 +1592,11 @@ var Chess = function(fen_) {
         if (move.flags & BITS_CASTLE) {
             let q = (move.flags & BITS_QSIDE_CASTLE)? 1: 0,
                 king = kings[us],
-                king_to = (RANK(king) << 4) + (q? 2: 6),
-                rook = castling[us * 2 + q];
+                king_to = (RANK(king) << 4) + 6 - (q << 2),
+                rook = castling[(us << 1) + q];
 
             board[king_to] = 0;
-            board[king_to + (q? 1: -1)] = 0;
+            board[king_to - 1 + (q << 1)] = 0;
             board[king] = COLORIZE(us, KING);
             board[rook] = COLORIZE(us, ROOK);
         }
@@ -1602,12 +1606,16 @@ var Chess = function(fen_) {
                 board[move.to] = 0;
             }
 
-            if (move.flags & BITS_CAPTURE)
+            if (move.flags & BITS_CAPTURE) {
                 board[move.to] = COLORIZE(them, move.capture);
-            else if (move.flags & BITS_EP_CAPTURE) {
-                let index = move.to + (us == BLACK? -16: 16);
-                board[index] = COLORIZE(them, PAWN);
+                materials[them] += PIECE_SCORES[move.capture];
             }
+            else if (move.flags & BITS_EP_CAPTURE) {
+                board[move.to + 16 - (us << 5)] = COLORIZE(them, PAWN);
+                materials[them] += PIECE_SCORES[PAWN];
+            }
+            if (move.promote)
+                materials[us] -= PROMOTE_SCORES[move.promote];
         }
     }
 

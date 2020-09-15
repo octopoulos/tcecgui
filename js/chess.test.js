@@ -1004,6 +1004,27 @@ beforeEach(() => {
 // search
 [
     [
+        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
+        '',
+        [false, 'd=-4 e=hce s=mm', 4],
+        [],
+        {g5d2: [-250, -200], g5e5: [-150, -50], f2f3: [-1150, -1100], h2h4: [-1150, -1100]},
+    ],
+    [
+        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
+        '',
+        [false, 'd=-4 e=hce s=ab', 4],
+        [],
+        {g5d2: [-250, -200], g5e5: [-150, -50], f2f3: [-1150, -1100], h2h4: [-1150, -1100]},
+    ],
+    [
+        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
+        '',
+        [false, 'd=-4 e=hce s=ab', 5],
+        [],
+        {g5d2: [-50, 0], g5e5: [100, 150], f2f3: [-1120, -1070], h2h4: [-720, -670]},
+    ],
+    [
         '7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107',
         '',
         [false, 'd=3', 0],
@@ -1202,13 +1223,14 @@ beforeEach(() => {
 // undo
 [
     [START_FEN, ['e4'], false, 1, ''],
+    [START_FEN, [], false, 1, ''],
     [START_FEN, ['e4', 'e5'], false, 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'],
     [START_FEN, ['e4', 'e5'], false, 2, ''],
     ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', ['O-O'], false, 1, ''],
     ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', ['O-O'], false, 1, ''],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O'], true, 1, ''],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', ['O-O-O'], true, 1, ''],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Qq - 1 11', ['O-O-O'], true, 1, ''],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', ['O-O'], true, 1, ''],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', ['O-O-O'], true, 1, ''],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', ['O-O-O'], true, 1, ''],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flags: 1, from: 65, m: '', piece: 14, ply: 215, promote: 0, score: 0, to: 48},
@@ -1223,9 +1245,24 @@ beforeEach(() => {
         1,
         '',
     ],
+    [
+        'r1b1kb1r/p1pp1ppp/1p2pn2/7q/1nPPP3/BP1B1N1P/P4PP1/RN1Q1RK1 b ha - 2 10',
+        ['Nxd3', 'Bxf8', 'Nb2', 'Qc2', 'Rxf8', 'Qxb2', 'Nxe4'],
+        false,
+        7,
+        '',
+    ],
+    [
+        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17',
+        ['gxh3+'],
+        false,
+        1,
+        '',
+    ],
 ].forEach(([fen, moves, frc, steps, answer], id) => {
     test(`undo:${id}`, () => {
         chess.load(fen);
+        let materials = [chess.material(0), chess.material(1)];
         if (IsArray(moves)) {
             for (let move of moves)
                 chess.moveSan(move, frc, false, false);
@@ -1235,6 +1272,10 @@ beforeEach(() => {
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);
+        if (!answer) {
+            expect(chess.material(0)).toEqual(materials[0]);
+            expect(chess.material(1)).toEqual(materials[1]);
+        }
     });
 });
 });
