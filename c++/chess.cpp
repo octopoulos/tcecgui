@@ -1,7 +1,7 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2020-09-12
-// - wasm implementation, 25x faster than original, and 1.3x faster than fast chess.js
+// - wasm implementation, 25x faster than original, and 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
 
@@ -200,8 +200,10 @@ float
 std::map<std::string, uint8_t> EVAL_MODES = {
     {"hce", 1 + 2},
     {"mat", 1},
-    {"nn", 1 + 2 + 4},
+    {"mob", 2},
+    {"nn", 1 + 2 + 8},
     {"null", 0},
+    {"qui", 1 + 2 + 4},
 };
 std::map<char, uint8_t> PIECES = {
     {'P', 1},
@@ -266,10 +268,11 @@ private:
     // PRIVATE
     //////////
 
+    int     avg_depth;
     uint8_t board[128];
     int     castling[4];
     int     ep_square;
-    uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &3:nn
+    uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     bool    frc;
     int     half_moves;
@@ -508,6 +511,7 @@ public:
      * Clear the board
      */
     void clear() {
+        avg_depth = 0;
         memset(board, 0, sizeof(board));
         memset(castling, EMPTY, sizeof(castling));
         ep_square = EMPTY;
@@ -793,13 +797,10 @@ public:
      * Create the moves
      * @param frc Fisher Random Chess
      * @param legal only consider legal moves
-     * @param single_square calculate moves from a specific square
+     * @param only_capture
      * @return moves
      */
-    std::vector<Move> createMoves(bool frc, bool legal, int single_square) {
-        bool is_single = (single_square != EMPTY);
-        int first_sq = is_single? single_square: SQUARE_A8,
-            last_sq = is_single? single_square: SQUARE_H1;
+    std::vector<Move> createMoves(bool frc, bool legal, bool only_capture) {
         std::vector<Move> moves;
         int second_rank = 6 - turn * 5;
         uint8_t us = turn,
@@ -809,7 +810,7 @@ public:
         for (int i = us8; i < us8 + 8; i ++)
             mobilities[i] = 0;
 
-        for (int i = first_sq; i <= last_sq; i ++) {
+        for (int i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
             if (i & 0x88) {
                 i += 7;
@@ -825,19 +826,21 @@ public:
                 int *offsets = PAWN_OFFSETS[us];
 
                 // single square, non-capturing
-                int square = i + offsets[0];
-                if (!board[square]) {
-                    addMove(moves, piece, i, square, BITS_NORMAL);
+                if (!only_capture) {
+                    auto square = i + offsets[0];
+                    if (!board[square]) {
+                        addMove(moves, piece, i, square, BITS_NORMAL);
 
-                    // double square
-                    square = i + offsets[1];
-                    if (second_rank == RANK(i) && !board[square])
-                        addMove(moves, piece, i, square, BITS_BIG_PAWN);
+                        // double square
+                        square = i + offsets[1];
+                        if (second_rank == RANK(i) && !board[square])
+                            addMove(moves, piece, i, square, BITS_BIG_PAWN);
+                    }
                 }
 
                 // pawn captures
                 for (int j = 2; j < 4; j ++) {
-                    square = i + offsets[j];
+                    auto square = i + offsets[j];
                     if (square & 0x88)
                         continue;
 
@@ -860,8 +863,10 @@ public:
                         if (square & 0x88)
                             break;
 
-                        if (!board[square])
-                            addMove(moves, piece, i, square, BITS_NORMAL);
+                        if (!board[square]) {
+                            if (!only_capture)
+                                addMove(moves, piece, i, square, BITS_NORMAL);
+                        }
                         else {
                             if (COLOR(board[square]) == us)
                                 break;
@@ -878,44 +883,46 @@ public:
         }
 
         // castling
-        int king = kings[us];
-        if (king != EMPTY && (!is_single || single_square == king)) {
-            auto pos0 = RANK(king) << 4;
+        if (!only_capture) {
+            int king = kings[us];
+            if (king != EMPTY) {
+                auto pos0 = RANK(king) << 4;
 
-            // q=0: king side, q=1: queen side
-            for (auto q = 0; q < 2; q ++) {
-                auto rook = castling[(us << 1) + q];
-                if (rook == EMPTY)
-                    continue;
+                // q=0: king side, q=1: queen side
+                for (auto q = 0; q < 2; q ++) {
+                    auto rook = castling[(us << 1) + q];
+                    if (rook == EMPTY)
+                        continue;
 
-                int error = false,
-                    flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
-                    king_to = pos0 + 6 - (q << 2),
-                    rook_to = king_to - 1 + (q << 1),
-                    max_king = std::max(king, king_to),
-                    min_king = std::min(king, king_to),
-                    max_path = std::max(max_king, std::max(rook, rook_to)),
-                    min_path = std::min(min_king, std::min(rook, rook_to));
+                    int error = false,
+                        flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
+                        king_to = pos0 + 6 - (q << 2),
+                        rook_to = king_to - 1 + (q << 1),
+                        max_king = std::max(king, king_to),
+                        min_king = std::min(king, king_to),
+                        max_path = std::max(max_king, std::max(rook, rook_to)),
+                        min_path = std::min(min_king, std::min(rook, rook_to));
 
-                // check that all squares are empty along the path
-                for (auto j = min_path; j <= max_path; j ++)
-                    if (j != king && j != rook && board[j]) {
-                        error = true;
-                        break;
-                    }
-                if (error)
-                    continue;
+                    // check that all squares are empty along the path
+                    for (auto j = min_path; j <= max_path; j ++)
+                        if (j != king && j != rook && board[j]) {
+                            error = true;
+                            break;
+                        }
+                    if (error)
+                        continue;
 
-                // check that the king is not attacked
-                for (auto j = min_king; j <= max_king; j ++)
-                    if (attacked(them, j)) {
-                        error = true;
-                        break;
-                    }
+                    // check that the king is not attacked
+                    for (auto j = min_king; j <= max_king; j ++)
+                        if (attacked(them, j)) {
+                            error = true;
+                            break;
+                        }
 
-                // add castle + detect FRC even if not set
-                if (!error)
-                    addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
+                    // add castle + detect FRC even if not set
+                    if (!error)
+                        addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
+                }
             }
         }
 
@@ -946,7 +953,7 @@ public:
         auto text = move.m;
         char last = text[text.size() - 1];
         if (last != '+' && last != '#' && kingAttacked(turn)) {
-            auto moves = createMoves(frc, true, EMPTY);
+            auto moves = createMoves(frc, true, false);
             text += moves.size()? '+': '#';
             move.m = text;
         }
@@ -955,6 +962,7 @@ public:
 
     /**
      * Evaluate the current position
+     * - eval_mode: 0:null, 1:mat, 2:hc2, &4:qui, 8:nn
      */
     float evaluate() {
         float score = 0;
@@ -1117,11 +1125,10 @@ public:
      * @param frc Fisher Random Chess
      * @param decorate add + # decorators
      */
-
     Move moveObject(Move &move, bool frc, bool decorate) {
         uint8_t flags = 0;
         Move move_obj;
-        auto moves = createMoves(frc, true, EMPTY);
+        auto moves = createMoves(frc, true, false);
 
         // FRC castle?
         if (frc && move.from == kings[turn]) {
@@ -1255,7 +1262,7 @@ public:
      * @param sloppy allow sloppy parser
      */
     Move moveSan(std::string text, bool frc, bool decorate, bool sloppy) {
-        auto moves = createMoves(frc, true, EMPTY);
+        auto moves = createMoves(frc, true, false);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece) {
             moveRaw(move);
@@ -1329,7 +1336,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto moves = createMoves(frc, true, EMPTY);
+                auto moves = createMoves(frc, true, false);
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
@@ -1512,6 +1519,7 @@ public:
      * @return updated moves
      */
     std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
+        avg_depth = 0;
         nodes = 0;
         sel_depth = 0;
 
@@ -1545,8 +1553,8 @@ public:
         int valid = 0;
 
         idepth = max_depth - depth;
-        if (idepth > sel_depth)
-            sel_depth = idepth;
+        if (idepth > avg_depth)
+            avg_depth = idepth;
 
         for (auto &move : moves) {
             moveRaw(move);
@@ -1564,7 +1572,7 @@ public:
 
                 // look deeper
                 if (look_deeper) {
-                    auto moves2 = createMoves(frc, false, -1);
+                    auto moves2 = createMoves(frc, false, false);
                     score = -searchMoves(moves2, depth - 1, -beta, -alpha);
 
                     // stalemate? good if we're losing, otherwise BAD!
@@ -1686,6 +1694,10 @@ public:
     // EMSCRIPTEN INTERFACES
     ////////////////////////
 
+    int em_avgDepth() {
+        return avg_depth;
+    }
+
     val em_board() {
         return val(typed_memory_view(128, board));
     }
@@ -1733,6 +1745,10 @@ public:
     uint8_t em_turn() {
         return turn;
     }
+
+    std::string em_version() {
+        return "20200915";
+    }
 };
 
 // BINDING CODE
@@ -1770,6 +1786,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         //
         .function("anToSquare", &Chess::anToSquare)
         .function("attacked", &Chess::attacked)
+        .function("avgDepth", &Chess::em_avgDepth)
         .function("board", &Chess::em_board)
         .function("castling", &Chess::em_castling)
         .function("checked", &Chess::em_checked)
@@ -1806,6 +1823,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("turn", &Chess::em_turn)
         .function("ucify", &Chess::ucify)
         .function("undo", &Chess::undoMove)
+        .function("version", &Chess::em_version)
         ;
 
     register_vector<int>("vector<int>");

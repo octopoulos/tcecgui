@@ -74,7 +74,7 @@ function think(engine, fen, mask, frc) {
     chess.load(fen);
 
     let start = Now(true),
-        moves = chess.moves(frc, true, -1),
+        moves = chess.moves(frc, true, false),
         masks = chess.search(moves, mask),
         elapsed = Now(true) - start;
 
@@ -88,7 +88,7 @@ function think(engine, fen, mask, frc) {
         move.score = Undefined(move.score, 0) / 100 + Random() * 0.1;
     }
     masks.sort((a, b) => b.score - a.score);
-    return [masks, elapsed, chess.nodes(), chess.selDepth()];
+    return [masks, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];
 }
 
 // COMMUNICATION
@@ -117,8 +117,9 @@ self.onmessage = e => {
         LS(e);
     }
     if (func == 'think') {
-        let [moves, elapsed, nodes, sel_depth] = think(data.engine, data.fen, data.mask, data.frc);
+        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.mask, data.frc);
         self.postMessage({
+            avg_depth: avg_depth,
             elapsed: elapsed,
             fen: data.fen,
             id: data.id,

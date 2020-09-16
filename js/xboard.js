@@ -985,9 +985,11 @@ class XBoard {
      * @returns {Object[]}
      */
     chess_moves(frc, legal, single_square) {
-        let moves = this.chess.moves(frc, legal, single_square);
+        let moves = this.chess.moves(frc, legal, false);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        if (single_square != -1)
+            moves = moves.filter(move => move.from == single_square);
         return moves;
     }
 
@@ -2221,7 +2223,7 @@ class XBoard {
         if (can_source && can_moves) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
-                text = Undefined(move.m, '???'),
+                text = move.m || '???',
                 last = text.slice(-1),
                 sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
 
@@ -2365,11 +2367,12 @@ class XBoard {
             num_worker = this.workers.length,
             options = Y[`game_options_${scolor}`];
 
-        chess.configure(this.frc, options);
+        chess.configure(this.frc, options, -1);
         let params = chess.params(),
             max_depth = (params[3] == 0)? 0: (params[4]? -params[4]: params[0]);
 
         Assign(reply, {
+            avg_depth: 0,
             count: 0,
             lefts: I8(num_worker),
             moves: [],
@@ -2399,6 +2402,7 @@ class XBoard {
             move.score = 0;
             this.worker_message({
                 data: {
+                    avg_depth: 0,
                     fen: fen,
                     frc: this.frc,
                     id: -2,
@@ -2432,6 +2436,7 @@ class XBoard {
         if (folds.length) {
             this.worker_message({
                 data: {
+                    avg_depth: 0,
                     fen: fen,
                     frc: this.frc,
                     id: -1,
@@ -2503,6 +2508,7 @@ class XBoard {
             return;
 
         let data = e.data,
+            avg_depth = data.avg_depth,
             fen = data.fen,
             id = data.id,
             moves = data.moves,
@@ -2530,6 +2536,8 @@ class XBoard {
 
         reply.nodes += nodes;
         reply.nodes2 += nodes;
+        if (avg_depth > reply.avg_depth)
+            reply.avg_depth = avg_depth;
         if (sel_depth > reply.sel_depth)
             reply.sel_depth = sel_depth;
 
@@ -2571,7 +2579,7 @@ class XBoard {
         if (id >= -1) {
             HTML('.xeval', best_score.toFixed(2), mini);
             HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps}</div>`, mini);
-            HTML(`.xtime`, `${reply.sel_depth}/${reply.sel_depth}`, mini);
+            HTML(`.xtime`, `${reply.avg_depth}/${reply.sel_depth}`, mini);
         }
 
         // 6) iterative thinking?

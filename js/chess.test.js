@@ -13,7 +13,6 @@ let {Chess} = require('./chess.js'),
     {get_move_ply} = require('./global');
 
 let chess = new Chess(),
-    EMPTY = -1,
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +149,8 @@ beforeEach(() => {
 [
     [false, 'd=5', 4, [5, 1, 1e9, 0, 0]],
     [false, 'd=-5', 4, [4, 1, 1e9, 0, 5]],
-    [false, 'd=5  e=nn n=1000 s=ab t=30', 4, [5, 7, 1000, 2, 30]],
+    [false, 'd=8 e=nn n=1000 s=ab t=30', 4, [8, 11, 1000, 2, 30]],
+    [false, 'e=qui', -1, [8, 7, 1e9, 0, 0]],
 ].forEach(([frc, options, depth, answer], id) => {
     test(`configure:${id}`, () => {
         chess.configure(frc, options, depth);
@@ -381,56 +381,57 @@ beforeEach(() => {
 
 // moves
 [
-    [START_FEN, [false, false, EMPTY], 20, []],
-    ['7k/8/8/8/8/8/8/K7 w - - 0 1', [false, false, EMPTY], 3, []],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, false, EMPTY], 3, []],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, true, EMPTY], 2, []],
-    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', [false, false, EMPTY], 8, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', [false, false, EMPTY], 30, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, false, EMPTY], 8, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, true, EMPTY], 2, []],
+    [START_FEN, [false, false, false], 20, []],
+    [START_FEN, [false, false, true], 0, []],
+    ['7k/8/8/8/8/8/8/K7 w - - 0 1', [false, false, false], 3, []],
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, false, false], 3, []],
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, true, false], 2, []],
+    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', [false, false, false], 8, []],
+    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', [false, false, false], 30, []],
+    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, false, false], 8, []],
+    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, true, false], 2, []],
     [
         '4k2r/7p/8/8/8/8/7P/4K2R w Kk - 0 20',
-        [false, false, EMPTY],
+        [false, false, false],
         10,
         [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        [false, false, EMPTY],
+        [false, false, false],
         25,
         [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', [false, false, EMPTY], 47, []],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', [false, false, false], 47, []],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        [true, false, EMPTY],
+        [true, false, false],
         47,
         [
             {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
         ],
     ],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', [false, false, EMPTY], 36, []],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', [false, false, false], 36, []],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',
-        [false, false, EMPTY],
+        [false, false, false],
         48,
         [
             {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
             {capture: 0, flags: 64, from: 115, m: '', piece: 6, promote: 0, to: 113},
         ],
     ],
-    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, EMPTY], 14, []],
+    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, false], 14, []],
     [
         'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        [false, true, EMPTY],
+        [false, true, false],
         13,
         [{capture: 4, flags: 18, from: 17, m: '', piece: 1, promote: 5, to: 0}],
     ],
-].forEach(([fen, [frc, legal, single_square], number, answer], id) => {
+].forEach(([fen, [frc, legal, only_capture], number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen);
-        let moves = chess.moves(frc, legal, single_square);
+        let moves = chess.moves(frc, legal, only_capture);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         expect(moves.length).toEqual(number);
@@ -799,19 +800,19 @@ beforeEach(() => {
     [START_FEN, false, 'd=0', 4, 20],
     [START_FEN, false, '', 0, 20],
     [START_FEN, false, 'd=1', 4, 20],
-    [START_FEN, false, 'd=2', 4, 400],
-    [START_FEN, false, 'n=100000', 2, 400],
-    [START_FEN, false, 'd=3', 4, 8902],
-    [START_FEN, false, 'd=3 e=4', 4, 8902],
-    [START_FEN, false, 'd=4 s=mm', 4, 197281],
-    [START_FEN, false, 'd=4 s=ab', 4, [186432, 186836]],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=mm', 4, 403873],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=ab', 4, [118710, 119332]],
+    [START_FEN, false, 'd=2', 4, 420],
+    [START_FEN, false, 'n=100000', 2, 420],
+    [START_FEN, false, 'd=3', 4, 9322],
+    [START_FEN, false, 'd=3 e=4', 4, 9322],
+    [START_FEN, false, 'd=4 s=mm', 4, 207064],
+    [START_FEN, false, 'd=4 s=ab', 4, 195718],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=mm', 4, 450260],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', false, 's=ab', 4, 133272],
 ].forEach(([fen, frc, options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.load(fen);
         chess.configure(frc, options, depth);
-        let moves = chess.moves(frc, true, EMPTY);
+        let moves = chess.moves(frc, true, false);
         chess.search(moves, '');
         let nodes = chess.nodes();
         if (IsArray(answer)) {
@@ -849,7 +850,7 @@ beforeEach(() => {
     test(`order:${id}`, () => {
         chess.load(fen);
         chess.configure(frc, options, depth);
-        let moves = chess.moves(frc, true, EMPTY);
+        let moves = chess.moves(frc, true, false);
         chess.order(moves);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
@@ -995,7 +996,7 @@ beforeEach(() => {
 ].forEach(([fen, san, sloppy, answer], id) => {
     test(`sanToMove:${id}`, () => {
         chess.load(fen);
-        let moves = chess.moves(false, true, EMPTY),
+        let moves = chess.moves(false, true, false),
             move = chess.sanToMove(san, moves, sloppy);
         expect(move).toEqual(answer);
     });
@@ -1003,6 +1004,48 @@ beforeEach(() => {
 
 // search
 [
+    [
+        '1nbqkb1r/r1pp1p1p/p3p3/3nP1p1/6P1/P2p1P2/1P2B2P/RNBQK1NR w k - 0 12',
+        '',
+        [false, 'd=2 e=qui q=2 s=ab', -1],
+        [],
+        {},
+    ],
+    [
+        'r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28',
+        'e1e4',
+        [false, 'd=2 e=qui q=1 s=ab', -1],
+        [-1450, -1400],
+        {},
+    ],
+    [
+        '1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11',
+        'c3b5',
+        [false, 'd=2 e=qui q=2 s=ab', -1],
+        [],
+        {c3b5: [-500, -450]},
+    ],
+    [
+        'rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3',
+        'e2e4',
+        [false, 'd=3 e=qui q=1 s=ab', -1],
+        [-550, -500],
+        {},
+    ],
+    [
+        'rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7',
+        'd3h7',
+        [false, 'd=1 e=qui q=1 s=mm', -1],
+        [-550, -500],
+        {},
+    ],
+    [
+        'rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4',
+        'd2g5',
+        [false, 'd=3 e=qui q=1 s=ab', -1],
+        [-750, -700],
+        {},
+    ],
     [
         'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
         '',
@@ -1119,7 +1162,7 @@ beforeEach(() => {
     test(`search:${id}`, () => {
         chess.load(fen);
         chess.configure(frc, options, depth);
-        let moves = chess.moves(frc, true, EMPTY),
+        let moves = chess.moves(frc, true, false),
             masks = chess.search(moves, mask);
 
         if (masks.size)
@@ -1276,6 +1319,15 @@ beforeEach(() => {
             expect(chess.material(0)).toEqual(materials[0]);
             expect(chess.material(1)).toEqual(materials[1]);
         }
+    });
+});
+
+// version
+[
+    '20200915',
+].forEach((answer, id) => {
+    test(`version:${id}`, () => {
+        expect(chess.version()).toEqual(answer);
     });
 });
 });
