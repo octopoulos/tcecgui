@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-15
 // - fast javascript implementation, 20x faster than original
 // - FRC support
 /*
@@ -62,25 +62,7 @@ let BISHOP = 3,
     WHITE = 0;
 
 // tables
-let ATTACKS = I8([
-       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
-        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-       24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
-        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
-    ]),
-    ATTACK_BITS = I8([0, 1, 2, 4, 8, 16, 32]),
-    PAWN_OFFSETS = [
+let PAWN_OFFSETS = [
         I8([-16, -32, -17, -15]),
         I8([16, 32, 17, 15]),
     ],
@@ -167,23 +149,6 @@ let ATTACKS = I8([
         800,        // q
         11800,      // k
         0,
-    ]),
-    RAYS = I8([
-       17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
-        0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
-        0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
-        0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
-        0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
-        1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
-        0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
-        0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
-        0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
-        0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
-       -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
     ]);
 
 let MOBILITY_SCORES = F32([
@@ -279,6 +244,7 @@ var Chess = function(fen_) {
         mobilities = U8(16),
         move_number = 1,
         nodes = 0,
+        pins = U8(128),
         ply = -1,
         ply_states = [],
         search_mode = 0,                    // 0:minimax, 1:alpha-beta
@@ -286,25 +252,9 @@ var Chess = function(fen_) {
         turn = WHITE;
 
     /**
-     * Add a move + promote moves
-     */
-    function addMove(moves, piece, from, to, flags, value) {
-        // pawn promotion?
-        let rank = RANK(to);
-        if (TYPE(piece) == PAWN && (rank % 7) == 0) {
-            for (let promote = QUEEN; promote >= KNIGHT; promote --)
-                addSingleMove(moves, piece, from, to, flags | BITS_PROMOTION, promote, value);
-        }
-        else
-            addSingleMove(moves, piece, from, to, flags, 0, value);
-
-        mobilities[piece] ++;
-    }
-
-    /**
      * Add a single move
      */
-    function addSingleMove(moves, piece, from, to, flags, promote, value) {
+    function addMove(moves, piece, from, to, flags, promote, value) {
         let capture = 0;
         if (!(flags & BITS_CASTLE)) {
             if (value)
@@ -321,6 +271,23 @@ var Chess = function(fen_) {
             promote: promote,
             to: to,
         });
+
+        if (!promote)
+            mobilities[piece] ++;
+    }
+
+    /**
+     * Add a pawn move + promote moves
+     */
+    function addPawnMove(moves, piece, from, to, flags, value) {
+        let rank = RANK(to);
+        if (rank % 7 == 0) {
+            for (let promote = QUEEN; promote >= KNIGHT; promote --)
+                addMove(moves, piece, from, to, flags | BITS_PROMOTION, promote, value);
+            mobilities[piece] ++;
+        }
+        else
+            addMove(moves, piece, from, to, flags, 0, value);
     }
 
     /**
@@ -442,58 +409,51 @@ var Chess = function(fen_) {
      * @returns {boolean} true if the square is attacked
      */
     function attacked(color, square) {
-        for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
-            // off board
-            if (i & 0x88) {
-                i += 7;
+        // knight
+        let target = COLORIZE(color, KNIGHT);
+        for (let offset of PIECE_OFFSETS[KNIGHT]) {
+            let pos = square + offset;
+            if (pos & 0x88)
                 continue;
-            }
-
-            // if empty square or wrong color
-            let piece = board[i];
-            if (!piece)
-                continue;
-
-            let piece_color = COLOR(piece);
-            if (piece_color != color)
-                continue;
-
-            let difference = i - square,
-                index = difference + 119,
-                piece_type = TYPE(piece);
-
-            if (!(ATTACKS[index] & ATTACK_BITS[piece_type]))
-                continue;
-
-            // knight + king
-            if (piece_type == KING || piece_type == KNIGHT)
+            if (board[pos] == target)
                 return true;
+        }
 
-            // pawn
-            if (piece_type == PAWN) {
-                if (difference > 0) {
-                    if (piece_color == WHITE)
-                        return true;
-                }
-                else if (piece_color == BLACK)
-                    return true;
-                continue;
-            }
+        // bishop + pawn + rook + queen
+        let offsets = PIECE_OFFSETS[QUEEN];
+        for (let j = 0; j < 8; j ++) {
+            let offset = offsets[j],
+                pos = square,
+                target = BISHOP + (j & 1);
 
-            // others => cannot be blocked
-            let blocked,
-                offset = RAYS[index],
-                j = i + offset;
-
-            while (j != square) {
-                if (board[j]) {
-                    blocked = true;
+            for (let k = 0; ; k ++) {
+                pos += offset;
+                if (pos & 0x88)
                     break;
+
+                let value = board[pos];
+                if (!value)
+                    continue;
+                if (COLOR(value) != color)
+                    break;
+
+                let piece_type = TYPE(value);
+                if (piece_type == QUEEN || piece_type == target)
+                    return true;
+                if (k == 0) {
+                    if (piece_type == KING)
+                        return true;
+                    if (target == BISHOP && piece_type == PAWN) {
+                        if (j < 4) {
+                            if (color == BLACK)
+                                return true;
+                        }
+                        else if (color == WHITE)
+                            return true;
+                    }
                 }
-                j += offset;
+                break;
             }
-            if (!blocked)
-                return true;
         }
 
         return false;
@@ -787,11 +747,10 @@ var Chess = function(fen_) {
     /**
      * Create the moves
      * @param {boolen} frc Fisher Random Chess
-     * @param {boolean} legal only consider legal moves
      * @param {boolean} only_capture
      * @returns {Object[]} moves
      */
-    function createMoves(frc, legal, only_capture) {
+    function createMoves(frc, only_capture) {
         let moves = [],
             second_rank = 6 - turn * 5,
             us = turn,
@@ -801,6 +760,57 @@ var Chess = function(fen_) {
         for (let i = us8; i < us8 + 8; i ++)
             mobilities[i] = 0;
 
+        // 1) find pinned pieces
+        pins.fill(0);
+
+        let king = kings[us],
+            offsets = PIECE_OFFSETS[QUEEN];
+        for (let j = 0; j < 8; j ++) {
+            let offset = offsets[j],
+                first = king + offset,
+                pin = 0,                    // doesn't need to be EMPTY because square 0 can never be pinned
+                square = king,
+                target = BISHOP + (j & 1);
+
+            for (let k = 0; ; k ++) {
+                square += offset;
+                if (square & 0x88)
+                    break;
+
+                let value = board[square];
+                // console.log(`target=${target} : j=${j} : k=${k} : ${squareToAn(square)}=${value} : ${pin} : ${COLOR(value) == us}`);
+                if (!value)
+                    continue;
+
+                if (COLOR(value) == us) {
+                    if (pin)
+                        break;
+                    pin = square;
+                }
+                else {
+                    let piece_type = TYPE(value);
+                    if (k == 1 && piece_type == KING) {
+                        // console.log(`KING vs KING: ${squareToAn(first)}`);
+                        pins[first] |= 2;
+                    }
+                    else if (piece_type == QUEEN || piece_type == target) {
+                        if (pin) {
+                            // console.log(`PINNED PIECE: ${piece_type} at ${squareToAn(pin)}`);
+                            pins[pin] |= 1;
+                        }
+                        else if (k > 0) {
+                            // console.log(`KING STILL CHECKED: ${squareToAn(first)}`);
+                            pins[first] |= 2;
+                        }
+                        // else
+                            // console.log(`OK: ${piece_type} at ${squareToAn(square)}`);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // 2) collect all moves
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
             if (i & 0x88) {
@@ -809,10 +819,11 @@ var Chess = function(fen_) {
             }
 
             let piece = board[i];
-            if (!piece || COLOR(piece) != us)
+            if (!piece || COLOR(piece) != us || pins[i])
                 continue;
 
             let piece_type = TYPE(piece);
+            // pawn
             if (piece_type == PAWN) {
                 let offsets = PAWN_OFFSETS[us];
 
@@ -820,12 +831,12 @@ var Chess = function(fen_) {
                 if (!only_capture) {
                     let square = i + offsets[0];
                     if (!board[square]) {
-                        addMove(moves, piece, i, square, BITS_NORMAL, 0);
+                        addPawnMove(moves, piece, i, square, BITS_NORMAL, 0);
 
                         // double square
                         square = i + offsets[1];
                         if (second_rank == RANK(i) && !board[square])
-                            addMove(moves, piece, i, square, BITS_BIG_PAWN, 0);
+                            addMove(moves, piece, i, square, BITS_BIG_PAWN, 0, 0);
                     }
                 }
 
@@ -837,11 +848,43 @@ var Chess = function(fen_) {
                     let value = board[square];
 
                     if (value && COLOR(value) == them)
-                        addMove(moves, piece, i, square, BITS_CAPTURE, value);
+                        addPawnMove(moves, piece, i, square, BITS_CAPTURE, value);
                     else if (square == ep_square)
-                        addMove(moves, piece, i, ep_square, BITS_EP_CAPTURE, value);
+                        addPawnMove(moves, piece, i, ep_square, BITS_EP_CAPTURE, value);
                 }
             }
+            // king
+            else if (piece_type == KING) {
+                let offsets = PIECE_OFFSETS[KING];
+                for (let j = 0; j < 8; j ++) {
+                    let square = i + offsets[j];
+                    if (square & 0x88)
+                        continue;
+
+                    // already in check + moving towards bishop/rook/queen? (found while finding pins)
+                    if (pins[square]) {
+                        // console.log(`DETECTED INVALID AT ${squareToAn(square)}`);
+                        continue;
+                    }
+
+                    let value = board[square];
+                    if (!value) {
+                        if (!only_capture) {
+                            board[i] = 0;
+                            if (!attacked(them, square))
+                                addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
+                            board[i] = piece;
+                        }
+                    }
+                    else if (COLOR(value) != us) {
+                        board[i] = 0;
+                        if (!attacked(them, square))
+                            addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
+                        board[i] = piece;
+                    }
+                }
+            }
+            // other pieces
             else {
                 let offsets = PIECE_OFFSETS[piece_type];
                 for (let j = 0; j < 8; j ++) {
@@ -858,12 +901,12 @@ var Chess = function(fen_) {
 
                         if (!value) {
                             if (!only_capture)
-                                addMove(moves, piece, i, square, BITS_NORMAL, 0);
+                                addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
                         }
                         else {
                             if (COLOR(value) == us)
                                 break;
-                            addMove(moves, piece, i, square, BITS_CAPTURE, value);
+                            addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
                             break;
                         }
 
@@ -914,7 +957,7 @@ var Chess = function(fen_) {
 
                     // add castle + detect FRC even if not set
                     if (!error)
-                        addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags, 0);
+                        addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags, 0, 0);
                 }
             }
         }
@@ -922,19 +965,7 @@ var Chess = function(fen_) {
         // move ordering for alpha-beta
         if (search_mode == 2)
             orderMoves(moves);
-
-        // return pseudo-legal moves
-        if (!legal)
-            return moves;
-
-        // filter out illegal moves
-        // TODO: improve this
-        return moves.filter(move => {
-            moveRaw(move);
-            let is_legal = !kingAttacked(us);
-            undoMove();
-            return is_legal;
-        });
+        return moves;
     }
 
     /**
@@ -946,7 +977,7 @@ var Chess = function(fen_) {
         let text = move.m,
             last = text.slice(-1);
         if (!'+#'.includes(last) && kingAttacked(turn)) {
-            let moves = createMoves(frc, true, false);
+            let moves = createMoves(frc, false);
             text += moves.length? '+': '#';
             move.m = text;
         }
@@ -1086,7 +1117,7 @@ var Chess = function(fen_) {
     function moveObject(move, frc, decorate) {
         let flags = 0,
             move_obj = {},
-            moves = createMoves(frc, true, false);
+            moves = createMoves(frc, false);
 
         // FRC castle?
         if (frc && move.from == kings[turn]) {
@@ -1126,7 +1157,6 @@ var Chess = function(fen_) {
 
     /**
      * Make a raw move, no verification is being performed
-     * https://github.com/jhlywa/chess.js
      * @param {Object} move
      */
     function moveRaw(move) {
@@ -1223,7 +1253,7 @@ var Chess = function(fen_) {
      * @returns {Object}
      */
     function moveSan(text, frc, decorate, sloppy) {
-        let moves = createMoves(frc, true, false),
+        let moves = createMoves(frc, false),
             move = sanToMove(text, moves, sloppy);
         if (move.piece) {
             moveRaw(move);
@@ -1300,7 +1330,7 @@ var Chess = function(fen_) {
             if ('0123456789'.includes(text[0]))
                 continue;
 
-            let moves = createMoves(frc, true, false),
+            let moves = createMoves(frc, false),
                 move = sanToMove(text, moves, sloppy);
             if (!move.piece)
                 break;
@@ -1532,6 +1562,7 @@ var Chess = function(fen_) {
 
             // invalid move?
             if (kingAttacked(3)) {
+                console.log('DAMMIT!!!');
                 undoMove();
                 continue;
             }
@@ -1556,7 +1587,7 @@ var Chess = function(fen_) {
                         }
                         quiesce = true;
                     }
-                    let moves2 = createMoves(frc, quiesce? true: false, quiesce);
+                    let moves2 = createMoves(frc, quiesce);
                     if (!moves2.length && quiesce) {
                         if (search_mode != 2)
                             score = evaluate();

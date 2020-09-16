@@ -39,18 +39,41 @@ beforeEach(() => {
 
 // attacked
 [
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', 0, 97, true],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', 1, 97, true],
-    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', 1, 97, true],
-    ['8/8/8/8/8/2k5/1K6/8 b - - 1 1', 0, 82, true],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 1, 37, true],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 1, 39, false],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 0, 53, true],
-    ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', 1, 97, false],
-    ['2r3k1/7p/4pQpP/1R2P3/3P1P2/PR6/1Kq5/8 w - - 1 43', 1, 97, true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 0, 'a1', false],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 0, 'b4', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 0, 'e3', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 0, 'g4', false],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 0, 'h1', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'a2', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'a5', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'a8', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'b4', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'd4', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'd5', true],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'e3', false],
+    ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'h8', true],
 ].forEach(([fen, color, square, answer], id) => {
     test(`attacked:${id}`, () => {
         chess.load(fen);
+        if (IsString(square))
+            square = chess.anToSquare(square);
+
+        // 80000000 ops in 9969 s =>  8,024,877.119069114 ops/s
+        // 80000000 ops in 3092 s => 25,873,221.216041397 ops/s
+        let start = Date.now();
+        for (let i = 0; i < 1e7; i ++) {
+            chess.attacked(color, 48);
+            chess.attacked(color, 49);
+            chess.attacked(color, 50);
+            chess.attacked(color, 51);
+            chess.attacked(color, 52);
+            chess.attacked(color, 53);
+            chess.attacked(color, 54);
+            chess.attacked(color, 55);
+        }
+        start = Date.now() - start;
+        LS(`${1e7 * 8} ops in ${start} s => ${1e7 * 8 / start * 1000} ops/s`);
+
         expect(chess.attacked(color, square)).toEqual(answer);
     });
 });
@@ -381,31 +404,39 @@ beforeEach(() => {
 
 // moves
 [
-    [START_FEN, [false, false, false], 20, []],
-    [START_FEN, [false, false, true], 0, []],
-    ['7k/8/8/8/8/8/8/K7 w - - 0 1', [false, false, false], 3, []],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, false, false], 3, []],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, true, false], 2, []],
-    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', [false, false, false], 8, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', [false, false, false], 30, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, false, false], 8, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, true, false], 2, []],
+    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, false], 14, []],
+    ['7k/8/8/8/8/8/8/K7 w - - 0 1', [false, false], 3, []],
+    ['8/6B1/2R5/8/8/2k5/8/K7 b - - 0 1', [false, false], 4, []],
+    ['8/8/2R5/8/8/2k5/8/K7 b - - 0 1', [false, false], 5, []],
+    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', [false, false], 8, []],
+    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', [false, false], 2, []],
+    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', [false, false], 29, []],
+    ['8/8/8/8/3k4/2q5/1b6/K7 w - - 0 1', [false, false], 2, []],
+    ['8/8/8/8/8/2k5/1b6/K7 w - - 0 1', [false, false], 2, []],
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', [false, false], 2, []],
+    ['r1b1k1n1/pp2pp2/3p2p1/3P4/2P4b/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', [false, false], 23, []],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4q/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', [false, false], 23, []],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4r/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', [false, false], 28, []],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', [false, false], 21, []],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', [false, true], 0, []],
+    [START_FEN, [false, false], 20, []],
+    [START_FEN, [false, true], 0, []],
     [
         '4k2r/7p/8/8/8/8/7P/4K2R w Kk - 0 20',
-        [false, false, false],
+        [false, false],
         10,
         [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        [false, false, false],
+        [false, false],
         25,
         [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
     ],
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', [false, false, false], 47, []],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        [true, false, false],
+        [true, false],
         47,
         [
             {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
@@ -414,24 +445,23 @@ beforeEach(() => {
     ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', [false, false, false], 36, []],
     [
         '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',
-        [false, false, false],
+        [false, false],
         48,
         [
             {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
             {capture: 0, flags: 64, from: 115, m: '', piece: 6, promote: 0, to: 113},
         ],
     ],
-    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', [true, true, false], 14, []],
     [
         'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        [false, true, false],
+        [false, false],
         13,
         [{capture: 4, flags: 18, from: 17, m: '', piece: 1, promote: 5, to: 0}],
     ],
-].forEach(([fen, [frc, legal, only_capture], number, answer], id) => {
+].forEach(([fen, [frc, only_capture], number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen);
-        let moves = chess.moves(frc, legal, only_capture);
+        let moves = chess.moves(frc, only_capture);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         expect(moves.length).toEqual(number);

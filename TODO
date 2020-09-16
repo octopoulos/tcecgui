@@ -5,7 +5,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility
 -          : 2020-09-08 : show game timer
 ~          : 2020-09-14 : ply_moves <= moves
-~          : 2020-09-14 : fast legal calculation => pinned pieces
+~          : 2020-09-14 : calculate pinned pieces + only allow legal moves
+2020-09-16 : 2020-09-16 : 3x faster attacked
 2020-09-15 : 2020-09-14 : quiescense search alpha
 2020-09-15 : 2020-09-14 : ply_states <= histories
 2020-09-14 : 2020-09-14 : improved articles layout on iphone 4
