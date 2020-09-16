@@ -763,7 +763,8 @@ var Chess = function(fen_) {
         // 1) find pinned pieces
         pins.fill(0);
 
-        let king = kings[us],
+        let checked,
+            king = kings[us],
             offsets = PIECE_OFFSETS[QUEEN];
         for (let j = 0; j < 8; j ++) {
             let offset = offsets[j],
@@ -800,6 +801,7 @@ var Chess = function(fen_) {
                         }
                         else if (k > 0) {
                             // console.log(`KING STILL CHECKED: ${squareToAn(first)}`);
+                            checked = true;
                             pins[first] |= 2;
                         }
                         // else
@@ -810,7 +812,50 @@ var Chess = function(fen_) {
             }
         }
 
-        // 2) collect all moves
+        // 2) collect king moves
+        let freedom = 0,
+            piece = board[king];
+
+        for (let offset of PIECE_OFFSETS[KING]) {
+            let square = king + offset;
+            if (square & 0x88)
+                continue;
+
+            // already in check + moving towards bishop/rook/queen? (found while finding pins)
+            if (pins[square]) {
+                // console.log(`DETECTED INVALID at ${squareToAn(square)}`);
+                continue;
+            }
+
+            let value = board[square];
+            if (!value) {
+                if (!only_capture) {
+                    board[king] = 0;
+                    // console.log(`ATTACKED? ${them} : ${squareToAn(square)} = ${attacked(them, square)}`);
+                    if (!attacked(them, square)) {
+                        addMove(moves, piece, king, square, BITS_NORMAL, 0, 0);
+                        freedom ++;
+                    }
+                    board[king] = piece;
+                }
+            }
+            else if (COLOR(value) != us) {
+                board[king] = 0;
+                // console.log(`ATTACKED? ${them} : ${squareToAn(square)} = ${attacked(them, square)}`);
+                if (!attacked(them, square)) {
+                    addMove(moves, piece, king, square, BITS_CAPTURE, 0, value);
+                    freedom ++;
+                }
+                board[king] = piece;
+            }
+        }
+
+        // check mate?
+        if (!freedom && (checked || attacked(them, king)))
+            return [];
+
+        // 3) collect non king moves
+        pins[king] |= 4;
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
             if (i & 0x88) {
@@ -819,7 +864,7 @@ var Chess = function(fen_) {
             }
 
             let piece = board[i];
-            if (!piece || COLOR(piece) != us || pins[i])
+            if (!piece || pins[i] || COLOR(piece) != us)
                 continue;
 
             let piece_type = TYPE(piece);
@@ -851,37 +896,6 @@ var Chess = function(fen_) {
                         addPawnMove(moves, piece, i, square, BITS_CAPTURE, value);
                     else if (square == ep_square)
                         addPawnMove(moves, piece, i, ep_square, BITS_EP_CAPTURE, value);
-                }
-            }
-            // king
-            else if (piece_type == KING) {
-                let offsets = PIECE_OFFSETS[KING];
-                for (let j = 0; j < 8; j ++) {
-                    let square = i + offsets[j];
-                    if (square & 0x88)
-                        continue;
-
-                    // already in check + moving towards bishop/rook/queen? (found while finding pins)
-                    if (pins[square]) {
-                        // console.log(`DETECTED INVALID AT ${squareToAn(square)}`);
-                        continue;
-                    }
-
-                    let value = board[square];
-                    if (!value) {
-                        if (!only_capture) {
-                            board[i] = 0;
-                            if (!attacked(them, square))
-                                addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
-                            board[i] = piece;
-                        }
-                    }
-                    else if (COLOR(value) != us) {
-                        board[i] = 0;
-                        if (!attacked(them, square))
-                            addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
-                        board[i] = piece;
-                    }
                 }
             }
             // other pieces
@@ -918,7 +932,7 @@ var Chess = function(fen_) {
             }
         }
 
-        // castling
+        // 4) castling
         if (!only_capture) {
             let king = kings[us];
             if (king != EMPTY) {
@@ -978,6 +992,8 @@ var Chess = function(fen_) {
             last = text.slice(-1);
         if (!'+#'.includes(last) && kingAttacked(turn)) {
             let moves = createMoves(frc, false);
+            // console.log(createFen());
+            // console.log(moves);
             text += moves.length? '+': '#';
             move.m = text;
         }
@@ -1562,7 +1578,7 @@ var Chess = function(fen_) {
 
             // invalid move?
             if (kingAttacked(3)) {
-                console.log('DAMMIT!!!');
+                // console.log('DAMMIT!!!');
                 undoMove();
                 continue;
             }
