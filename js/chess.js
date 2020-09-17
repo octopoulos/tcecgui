@@ -245,13 +245,14 @@ var Chess = function(fen_) {
     let avg_depth = 0,
         board = U8(128),
         castling = I32(4).fill(EMPTY),
+        cur_ply = -1,
         ep_square = EMPTY,
         eval_mode = 1,                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
         fen = '',
         frc = false,
         half_moves = 0,
         idepth = 0,                         // positive depth = max_depth - depth
-        interpose = U8(8),                  // check path, can interpose a piece there
+        interpose = U8(128),                // check path, can interpose a piece there
         kings = I32(2).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
@@ -491,13 +492,11 @@ var Chess = function(fen_) {
      */
     function moveList() {
         let lines = [];
-        for (let i = ply ; i >= 0; i --) {
+        for (let i = cur_ply; i <= ply; i ++) {
             let state = ply_states[i];
-            if (!state)
-                break;
             lines.push(ucify(state[4]));
         }
-        return lines.reverse().join(' ');
+        return lines.join(' ');
     }
 
     /**
@@ -641,6 +640,7 @@ var Chess = function(fen_) {
         avg_depth = 0;
         board.fill(0);
         castling.fill(EMPTY);
+        cur_ply = -1;
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
@@ -928,7 +928,7 @@ var Chess = function(fen_) {
 
         // 1) find pinned pieces + check positions/paths
         // \: 1, |:2, /:4, _:8
-        interpose.fill(255);
+        interpose.fill(0);
         pins.fill(0);
 
         let checks = 0,
@@ -946,7 +946,7 @@ var Chess = function(fen_) {
                 continue;
             if (board[square] == target) {
                 checks ++;
-                interpose[0] = square;
+                interpose[square] = 1;
                 inter = 1;
             }
         }
@@ -973,16 +973,16 @@ var Chess = function(fen_) {
                 else {
                     let piece_type = TYPE(value);
                     if (piece_type == QUEEN || piece_type == target) {
-                        interpose[0] = square;
+                        interpose[square] = 1;
                         inter = 1;
                         checks ++;
                     }
                     else if (target == BISHOP && piece_type == PAWN) {
                         if ((j < 4 && them == BLACK) || (j >= 4 && them == WHITE)) {
-                            interpose[0] = square;
+                            interpose[square] = 1;
                             inter = 1;
                             if (ep_square) {
-                                // not interpose[1] because only pawns can take this square
+                                // not interpose[] because only pawns can take this square
                                 // ex: 8/5p2/8/2k3P1/1P6/8/4K3/n7 b - b3 0 4
                                 interpose_ep = ep_square;
                                 inter ++;
@@ -1019,7 +1019,7 @@ var Chess = function(fen_) {
                         else {
                             if (!checks) {
                                 for (let i = 0, square2 = square; i <= k; i ++, square2 -= offset)
-                                    interpose[i] = square2;
+                                    interpose[square2] = 1;
                                 inter = k + 1;
                             }
                             checks ++;
@@ -1093,13 +1093,13 @@ var Chess = function(fen_) {
                 if (!only_capture && !(pin & (1 + 4 + 8))) {
                     let square = i + offsets[1];
                     if (!board[square]) {
-                        if (!inter || interpose.includes(square))
+                        if (!inter || interpose[square])
                             addPawnMove(moves, piece, i, square, BITS_NORMAL, 0);
 
                         // double square
                         square += offsets[1];
                         if (second_rank == RANK(i) && !board[square])
-                            if (!inter || interpose.includes(square))
+                            if (!inter || interpose[square])
                                 addMove(moves, piece, i, square, BITS_BIG_PAWN, 0, 0);
                     }
                 }
@@ -1111,7 +1111,7 @@ var Chess = function(fen_) {
                     let square = i + offsets[j];
                     if (square & 0x88)
                         continue;
-                    if (inter && interpose_ep != square && !interpose.includes(square))
+                    if (inter && interpose_ep != square && !interpose[square])
                         continue;
                     let value = board[square];
 
@@ -1153,13 +1153,13 @@ var Chess = function(fen_) {
                         let value = board[square];
 
                         if (!value) {
-                            if (!only_capture && (!inter || interpose.includes(square)))
+                            if (!only_capture && (!inter || interpose[square]))
                                 addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
                         }
                         else {
                             if (COLOR(value) == us)
                                 break;
-                            if (!inter || interpose.includes(square))
+                            if (!inter || interpose[square])
                                 addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
                             break;
                         }
@@ -1309,6 +1309,7 @@ var Chess = function(fen_) {
         half_moves = DefaultInt(tokens[4], 0);
         move_number = DefaultInt(tokens[5], 1);
         ply = move_number * 2 - 3 + turn;
+        cur_ply = ply;
 
         let start = (!turn && move_number == 1);
         if (start)
@@ -1915,9 +1916,9 @@ var Chess = function(fen_) {
     // CHESS BINDINGS
     return {
         //
-        avgDepth: () => avg_depth,
         anToSquare: anToSquare,
         attacked: attacked,
+        avgDepth: () => avg_depth,
         board: () => board,
         castling: () => castling,
         checked: color => kingAttacked(color),
@@ -1935,10 +1936,10 @@ var Chess = function(fen_) {
         mobilities: () => {countMobilities(); return mobilities;},
         moveObject: moveObject,
         moveRaw: moveRaw,
+        moves: createMoves,
         moveSan: moveSan,
         moveToSan: moveToSan,
         moveUci: moveUci,
-        moves: createMoves,
         multiSan: multiSan,
         multiUci: multiUci,
         nodes: () => nodes,

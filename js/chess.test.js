@@ -856,6 +856,8 @@ beforeEach(() => {
         chess.search(moves, '');
         let nodes = chess.nodes();
         if (IsString(answer)) {
+            if (moves.size)
+                moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
             let text = moves.map(move => chess.ucify(move)).sort().join(' ');
             expect(text).toEqual(answer);
         }
@@ -1051,7 +1053,7 @@ beforeEach(() => {
 ].forEach(([fen, answer], id) => {
     test(`print:${id}`, () => {
         chess.load(fen);
-        expect(chess.print()).toEqual(answer);
+        expect(chess.print(false)).toEqual(answer);
     });
 });
 

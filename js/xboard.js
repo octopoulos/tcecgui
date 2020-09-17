@@ -2341,7 +2341,7 @@ class XBoard {
                 if (draw) {
                     Assign(move, {
                         depth: 0,
-                        score: -2.5,
+                        score: -1,
                         special: 1,
                     });
                     folds.push(move);

@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-16
 // - wasm implementation, 25x faster than original, and 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -15,6 +15,7 @@
 
 using namespace emscripten;
 
+// specific
 #define DELETE(x) {if (x) delete x; x = nullptr;}
 #define DELETE_ARRAY(x) {if (x) delete [] x; x = nullptr;}
 
@@ -52,27 +53,9 @@ using namespace emscripten;
 #define WHITE 0
 
 // tables
-int ATTACKS[] = {
-       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20, 0,
-        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-       24,24,24,24,24,24,56, 0,56,24,24,24,24,24,24, 0,
-        0, 0, 0, 0, 0, 2,53,56,53, 2, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,20, 2,24, 2,20, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0,20, 0, 0,24, 0, 0,20, 0, 0, 0, 0, 0,
-        0, 0, 0,20, 0, 0, 0,24, 0, 0, 0,20, 0, 0, 0, 0,
-        0, 0,20, 0, 0, 0, 0,24, 0, 0, 0, 0,20, 0, 0, 0,
-        0,20, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0,20, 0, 0,
-       20, 0, 0, 0, 0, 0, 0,24, 0, 0, 0, 0, 0, 0,20,
-    },
-    ATTACK_BITS[] = {0, 1, 2, 4, 8, 16, 32},
-    PAWN_OFFSETS[2][4] = {
-        {-16, -32, -17, -15},
-        {16, 32, 17, 15},
+int PAWN_OFFSETS[2][3] = {
+        {-17, -16, -15},
+        {17, 16, 15},
     },
     // move ordering
     PIECE_CAPTURES[] = {
@@ -92,6 +75,16 @@ int ATTACKS[] = {
         20900,      // q
         32800,      // k
         0,
+    },
+    // for move generation
+    PIECE_DIRS[7][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {1, 4, 1, 4, 0, 0, 0, 0},
+        {2, 8, 2, 8, 0, 0, 0, 0},
+        {1, 2, 4, 8, 1, 2, 4, 8},
+        {1, 2, 4, 8, 1, 2, 4, 8},
     },
     PIECE_OFFSETS[7][8] = {
         {  0,   0,   0,   0,  0,  0,  0,  0},
@@ -157,23 +150,6 @@ int ATTACKS[] = {
         800,        // q
         11800,      // k
         0,
-    },
-    RAYS[] = {
-       17,  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0, 15, 0,
-        0, 17,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0, 15,  0, 0,
-        0,  0, 17,  0,  0,  0,  0, 16,  0,  0,  0,  0, 15,  0,  0, 0,
-        0,  0,  0, 17,  0,  0,  0, 16,  0,  0,  0, 15,  0,  0,  0, 0,
-        0,  0,  0,  0, 17,  0,  0, 16,  0,  0, 15,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0, 17,  0, 16,  0, 15,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0,  0, 17, 16, 15,  0,  0,  0,  0,  0,  0, 0,
-        1,  1,  1,  1,  1,  1,  1,  0, -1, -1,  -1,-1, -1, -1, -1, 0,
-        0,  0,  0,  0,  0,  0,-15,-16,-17,  0,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,  0,-15,  0,-16,  0,-17,  0,  0,  0,  0,  0, 0,
-        0,  0,  0,  0,-15,  0,  0,-16,  0,  0,-17,  0,  0,  0,  0, 0,
-        0,  0,  0,-15,  0,  0,  0,-16,  0,  0,  0,-17,  0,  0,  0, 0,
-        0,  0,-15,  0,  0,  0,  0,-16,  0,  0,  0,  0,-17,  0,  0, 0,
-        0,-15,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,-17,  0, 0,
-      -15,  0,  0,  0,  0,  0,  0,-16,  0,  0,  0,  0,  0,  0,-17,
     };
 
 float
@@ -205,6 +181,7 @@ std::map<std::string, uint8_t> EVAL_MODES = {
     {"null", 0},
     {"qui", 1 + 2 + 4},
 };
+// piece names for print
 std::map<char, uint8_t> PIECES = {
     {'P', 1},
     {'N', 2},
@@ -271,54 +248,67 @@ private:
     int     avg_depth;
     uint8_t board[128];
     int     castling[4];
+    int     cur_ply;
     int     ep_square;
     uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     bool    frc;
     int     half_moves;
-    int     idepth;
+    int     idepth;                         // positive depth = max_depth - depth
+    uint8_t interpose[128];                 // check path, can interpose a piece there
     int     kings[2];
     int     materials[2];
     int     max_depth;
     int     max_nodes;
+    int     max_quiesce;
     int     max_time;
     uint8_t mobilities[16];
     int     move_number;
     int     nodes;
+    uint8_t pins[128];
     int     ply;
     std::vector<State> ply_states;
-    int     search_mode;                    // 0:minimax, 1:alpha-beta
+    int     search_mode;                    // 1:minimax, 2:alpha-beta
     int     sel_depth;
     uint8_t turn;
 
     /**
-     * Add a move + promote moves
-     */
-    void addMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags) {
-        // pawn promotion?
-        int rank = RANK(to);
-        if (TYPE(piece) == PAWN && (rank % 7) == 0) {
-            for (uint8_t promote = QUEEN; promote >= KNIGHT; promote --)
-                addSingleMove(moves, piece, from, to, flags | BITS_PROMOTION, promote);
-        }
-        else
-            addSingleMove(moves, piece, from, to, flags, 0);
-
-        mobilities[piece] ++;
-    }
-
-    /**
      * Add a single move
      */
-    void addSingleMove(std::vector<Move> &moves, uint8_t piece, uint8_t from, uint8_t to, uint8_t flags, uint8_t promote) {
+    void addMove(std::vector<Move> &moves, uint8_t piece, uint8_t from, uint8_t to, uint8_t flags, uint8_t promote, uint8_t value) {
         uint8_t capture = 0;
         if (!(flags & BITS_CASTLE)) {
-            if (board[to])
-                capture = TYPE(board[to]);
+            if (value)
+                capture = TYPE(value);
             else if (flags & BITS_EP_CAPTURE)
                 capture = PAWN;
         }
-        moves.push_back({capture, flags, from, "", piece, promote, to});
+        moves.push_back({
+            capture,
+            flags,
+            from,
+            "",
+            piece,
+            promote,
+            to,
+        });
+
+        if (!promote)
+            mobilities[piece] ++;
+    }
+
+    /**
+     * Add a pawn move + promote moves
+     */
+    void addPawnMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags, uint8_t value) {
+        int rank = RANK(to);
+        if ((rank % 7) == 0) {
+            for (uint8_t promote = QUEEN; promote >= KNIGHT; promote --)
+                addMove(moves, piece, from, to, flags | BITS_PROMOTION, promote, value);
+            mobilities[piece] ++;
+        }
+        else
+            addMove(moves, piece, from, to, flags, 0, value);
     }
 
     /**
@@ -334,6 +324,54 @@ private:
         state.half_moves = half_moves;
         memcpy(state.kings, kings, sizeof(kings));
         memcpy(&state.move, &move, sizeof(Move));
+    }
+
+    /**
+     * Alpha beta tree search
+     */
+    int alphaBeta(int depth, int alpha, int beta) {
+        if (depth <= 0) {
+            nodes ++;
+            return (eval_mode & 4)? quiesce(max_quiesce, alpha, beta): evaluate();
+        }
+
+        // setup
+        int best = -99999;
+
+        idepth = max_depth + 1 - depth;
+        if (idepth > avg_depth)
+            avg_depth = idepth;
+
+        // check all moves
+        auto moves = createMoves(frc, false);
+        auto num_move = moves.size();
+
+        // mat + stalemate
+        if (!num_move) {
+            if (kingAttacked(2))
+                best = -51200 + idepth * 4000;
+            else
+                best = 0;
+        }
+        else {
+            for (auto &move : moves) {
+                moveRaw(move);
+                auto score = -alphaBeta(depth - 1, -beta, -alpha);
+                undoMove();
+                if (score >= beta)
+                    return beta;
+                if (score > best) {
+                    best = score;
+                    if (score > alpha)
+                        alpha = score;
+                }
+
+                // checkmate found
+                if (idepth >= 3 && score > 20000)
+                    break;
+            }
+        }
+        return best;
     }
 
     /**
@@ -398,6 +436,117 @@ private:
             return an.substr((same_file > 0)? 1: 0, 1);
     }
 
+    /**
+     * Mini max tree search
+     */
+    int miniMax(int depth) {
+        if (depth <= 0) {
+            nodes ++;
+            return evaluate();
+        }
+
+        // setup
+        int best = -99999;
+
+        idepth = max_depth + 1 - depth;
+        if (idepth > avg_depth)
+            avg_depth = idepth;
+
+        // check all moves
+        auto moves = createMoves(frc, false);
+        auto num_move = moves.size();
+
+        // mat + stalemate
+        if (!num_move) {
+            if (kingAttacked(2))
+                best = -51200 + idepth * 4000;
+            else
+                best = 0;
+        }
+        else {
+            for (auto &move : moves) {
+                moveRaw(move);
+                auto score = -miniMax(depth - 1);
+                undoMove();
+
+                if (score > best)
+                    best = score;
+
+                // checkmate found
+                if (idepth >= 3 && score > 20000)
+                    break;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Get the move list
+     */
+    std::string moveList() {
+        std::string text;
+        for (auto i = cur_ply ; i <= ply; i ++) {
+            auto state = ply_states[i];
+            if (text.size())
+                text += " ";
+            text += ucify(state.move);
+        }
+        return text;
+    }
+
+    /**
+     * Null search, used by perft
+     */
+    void nullSearch(int depth) {
+        if (depth <= 0) {
+            nodes ++;
+            return;
+        }
+
+        auto moves = createMoves(frc, false);
+        // speed-up
+        if (depth <= 1) {
+            nodes += moves.size();
+            return;
+        }
+        for (auto &move : moves) {
+            moveRaw(move);
+            nullSearch(depth - 1);
+            undoMove();
+        }
+    }
+
+    /**
+     * Quiescence search
+     * https://www.chessprogramming.org/Quiescence_Search
+     */
+    int quiesce(int depth, int alpha, int beta) {
+        auto stand = evaluate();
+        if (depth <= 0)
+            return stand;
+        if (stand >= beta)
+            return beta;
+        if (stand > alpha)
+            alpha = stand;
+
+        idepth = max_quiesce + 1 - depth;
+        if (idepth > sel_depth)
+            sel_depth = idepth;
+
+        auto moves = createMoves(frc, true);
+        for (auto &move : moves) {
+            moveRaw(move);
+            auto score = -quiesce(depth - 1, -beta, -alpha);
+            undoMove();
+
+            if (score >= beta)
+                return beta;
+            if (score > alpha)
+                alpha = score;
+        }
+        return alpha;
+    }
+
 public:
     // PUBLIC
     /////////
@@ -432,58 +581,47 @@ public:
      * @return true if the square is attacked
      */
     bool attacked(uint8_t color, int square) {
-        for (int i = SQUARE_A8; i <= SQUARE_H1; i ++) {
-            // off board
-            if (i & 0x88) {
-                i += 7;
+        // knight
+        auto target = COLORIZE(color, KNIGHT);
+        for (auto offset : PIECE_OFFSETS[KNIGHT]) {
+            auto pos = square + offset;
+            if (pos & 0x88)
                 continue;
-            }
-
-            // if empty square or wrong color
-            auto piece = board[i];
-            if (!piece)
-                continue;
-
-            auto piece_color = COLOR(piece);
-            if (piece_color != color)
-                continue;
-
-            int difference = i - square,
-                index = difference + 119;
-            auto piece_type = TYPE(piece);
-
-            if (!(ATTACKS[index] & ATTACK_BITS[piece_type]))
-                continue;
-
-            // knight + king
-            if (piece_type == KING || piece_type == KNIGHT)
+            if (board[pos] == target)
                 return true;
+        }
 
-            // pawn
-            if (piece_type == PAWN) {
-                if (difference > 0) {
-                    if (piece_color == WHITE)
-                        return true;
-                }
-                else if (piece_color == BLACK)
-                    return true;
-                continue;
-            }
+        // bishop + pawn + rook + queen
+        auto offsets = PIECE_OFFSETS[QUEEN];
+        for (int j = 0; j < 8; j ++) {
+            auto offset = offsets[j],
+                pos = square,
+                target = BISHOP + (j & 1);
 
-            // others => cannot be blocked
-            bool blocked = false;
-            int offset = RAYS[index],
-                j = i + offset;
-
-            while (j != square) {
-                if (board[j]) {
-                    blocked = true;
+            for (auto k = 0; ; k ++) {
+                pos += offset;
+                if (pos & 0x88)
                     break;
+
+                auto value = board[pos];
+                if (!value)
+                    continue;
+                if (COLOR(value) != color)
+                    break;
+
+                auto piece_type = TYPE(value);
+                if (piece_type == QUEEN || piece_type == target)
+                    return true;
+                if (k == 0) {
+                    if (piece_type == KING)
+                        return true;
+                    if (target == BISHOP && piece_type == PAWN) {
+                        if (color == ((j < 4)? BLACK: WHITE))
+                            return true;
+                    }
                 }
-                j += offset;
+                break;
             }
-            if (!blocked)
-                return true;
         }
 
         return false;
@@ -514,6 +652,7 @@ public:
         avg_depth = 0;
         memset(board, 0, sizeof(board));
         memset(castling, EMPTY, sizeof(castling));
+        cur_ply = -1;
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
@@ -538,6 +677,7 @@ public:
         if (depth >= 0)
             max_depth = depth;
         max_nodes = 1e9;
+        max_quiesce = 5;
         max_time = 0;
         search_mode = 0;
 
@@ -567,6 +707,9 @@ public:
                 break;
             case 'n':
                 max_nodes = value;
+                break;
+            case 'q':
+                max_quiesce = value;
                 break;
             case 's': {
                     auto sit = SEARCH_MODES.find(right);
@@ -796,81 +939,254 @@ public:
     /**
      * Create the moves
      * @param frc Fisher Random Chess
-     * @param legal only consider legal moves
      * @param only_capture
      * @return moves
      */
-    std::vector<Move> createMoves(bool frc, bool legal, bool only_capture) {
+    std::vector<Move> createMoves(bool frc,  bool only_capture) {
         std::vector<Move> moves;
-        int second_rank = 6 - turn * 5;
+        auto second_rank = 6 - turn * 5;
         uint8_t us = turn,
             us8 = us << 3,
             them = us ^ 1;
 
-        for (int i = us8; i < us8 + 8; i ++)
+        for (auto i = us8; i < us8 + 8; i ++)
             mobilities[i] = 0;
 
-        for (int i = SQUARE_A8; i <= SQUARE_H1; i ++) {
+        // 1) find pinned pieces + check positions/paths
+        // \: 1, |:2, /:4, _:8
+        memset(interpose, 0, sizeof(interpose));
+        memset(pins, 0, sizeof(pins));
+
+        auto checks = 0;
+        auto dirs = PIECE_DIRS[QUEEN];
+        auto inter = 0,
+            interpose_ep = EMPTY,
+            king = kings[us];
+        auto offsets = PIECE_OFFSETS[QUEEN];
+
+        // 1.a) check knight
+        auto target = COLORIZE(them, KNIGHT);
+        for (auto offset : PIECE_OFFSETS[KNIGHT]) {
+            auto square = king + offset;
+            if (square & 0x88)
+                continue;
+            if (board[square] == target) {
+                checks ++;
+                interpose[square] = 1;
+                inter = 1;
+            }
+        }
+
+        // 1.b) check 8 directions => pawn/bishop/rook/queen
+        for (auto j = 0; j < 8; j ++) {
+            auto offset = offsets[j],
+                first = king + offset,
+                pin = 0,                    // no need to be EMPTY because square 0 can never be pinned
+                square = first,
+                target = BISHOP + (j & 1);
+
+            // a) 1 square away
+            if (square & 0x88)
+                continue;
+
+            auto value = board[square];
+            if (value) {
+                if (COLOR(value) == us) {
+                    if (pin)
+                        continue;
+                    pin = square;
+                }
+                else {
+                    auto piece_type = TYPE(value);
+                    if (piece_type == QUEEN || piece_type == target) {
+                        interpose[square] = 1;
+                        inter = 1;
+                        checks ++;
+                    }
+                    else if (target == BISHOP && piece_type == PAWN) {
+                        if ((j < 4 && them == BLACK) || (j >= 4 && them == WHITE)) {
+                            interpose[square] = 1;
+                            inter = 1;
+                            if (ep_square) {
+                                // not interpose[] because only pawns can take this square
+                                // ex: 8/5p2/8/2k3P1/1P6/8/4K3/n7 b - b3 0 4
+                                interpose_ep = ep_square;
+                                inter ++;
+                            }
+                            checks ++;
+                        }
+                    }
+                    continue;
+                }
+            }
+
+            // b) 2+ squares away
+            for (auto k = 1; ; k ++) {
+                square += offset;
+                if (square & 0x88)
+                    break;
+
+                auto value = board[square];
+                if (!value)
+                    continue;
+
+                if (COLOR(value) == us) {
+                    if (pin)
+                        break;
+                    pin = square;
+                }
+                else {
+                    auto piece_type = TYPE(value);
+                    if (k == 1 && piece_type == KING)
+                        pins[first] |= 16;
+                    else if (piece_type == QUEEN || piece_type == target) {
+                        if (pin)
+                            pins[pin] |= dirs[j];
+                        else {
+                            if (!checks) {
+                                for (auto i = 0, square2 = square; i <= k; i ++, square2 -= offset)
+                                    interpose[square2] = 1;
+                                inter = k + 1;
+                            }
+                            checks ++;
+                            pins[first] |= 16;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        // LS(`checks=${checks} : inter=${inter} : interpose=${From(interpose).map(x => squareToAn(x)).join(' ')}`);
+        // LS(From(pins).map((pin, id) => [pin, id]).filter(pin => pin[0]).map(pin => `${squareToAn(pin[1])}:${pin[0]}`).join(' '));
+
+        // 2) collect king moves
+        auto piece = board[king];
+        for (auto offset : PIECE_OFFSETS[KING]) {
+            auto square = king + offset;
+            if (square & 0x88)
+                continue;
+
+            // already in check + moving towards bishop/rook/queen? (found while finding pins)
+            if (pins[square] & 16)
+                continue;
+
+            auto value = board[square];
+            if (!value) {
+                if (!only_capture) {
+                    board[king] = 0;
+                    if (!attacked(them, square))
+                        addMove(moves, piece, king, square, BITS_NORMAL, 0, 0);
+                    board[king] = piece;
+                }
+            }
+            else if (COLOR(value) != us) {
+                board[king] = 0;
+                if (!attacked(them, square))
+                    addMove(moves, piece, king, square, BITS_CAPTURE, 0, value);
+                board[king] = piece;
+            }
+        }
+
+        // 2+ checks => king must escape, other pieces cannot help
+        if (checks > 1) {
+            if (search_mode == 2)
+                orderMoves(moves);
+            return moves;
+        }
+
+        // 3) collect non king moves
+        // - if king is attacked, then the piece must capture the attacker or interpose itself
+        pins[king] |= 32;
+        for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
             if (i & 0x88) {
                 i += 7;
                 continue;
             }
 
-            auto piece = board[i];
-            if (!piece || COLOR(piece) != us)
+            auto piece = board[i],
+                pin = pins[i];
+            if (!piece || (pin & 32) || COLOR(piece) != us)
                 continue;
+            pin &= 15;
 
             auto piece_type = TYPE(piece);
+            // pawn
             if (piece_type == PAWN) {
-                int *offsets = PAWN_OFFSETS[us];
+                auto offsets = PAWN_OFFSETS[us];
 
                 // single square, non-capturing
-                if (!only_capture) {
-                    auto square = i + offsets[0];
+                if (!only_capture && !(pin & (1 + 4 + 8))) {
+                    auto square = i + offsets[1];
                     if (!board[square]) {
-                        addMove(moves, piece, i, square, BITS_NORMAL);
+                        if (!inter || interpose[square])
+                            addPawnMove(moves, piece, i, square, BITS_NORMAL, 0);
 
                         // double square
-                        square = i + offsets[1];
+                        square += offsets[1];
                         if (second_rank == RANK(i) && !board[square])
-                            addMove(moves, piece, i, square, BITS_BIG_PAWN);
+                            if (!inter || interpose[square])
+                                addMove(moves, piece, i, square, BITS_BIG_PAWN, 0, 0);
                     }
                 }
 
                 // pawn captures
-                for (int j = 2; j < 4; j ++) {
+                for (auto j = 0; j < 3; j += 2) {
+                    if (pin && !(pin & (1 << j)))
+                        continue;
                     auto square = i + offsets[j];
                     if (square & 0x88)
                         continue;
+                    if (inter && interpose_ep != square && !interpose[square])
+                        continue;
+                    auto value = board[square];
 
-                    if (board[square] && COLOR(board[square]) == them)
-                        addMove(moves, piece, i, square, BITS_CAPTURE);
-                    else if (square == ep_square)
-                        addMove(moves, piece, i, ep_square, BITS_EP_CAPTURE);
+                    if (value && COLOR(value) == them)
+                        addPawnMove(moves, piece, i, square, BITS_CAPTURE, value);
+                    // en passant can be tricky:
+                    // - 3k4/8/8/K1Pp3r/8/8/8/8 w - d6 0 2
+                    // - b2k4/8/2P5/3p4/8/5K2/8/8 w - d6 0 2
+                    else if (square == ep_square) {
+                        auto square2 = square + 16 - (us << 5);
+                        board[square2] = 0;
+                        board[square] = board[i];
+                        board[i] = 0;
+                        if (!attacked(them, king))
+                            addPawnMove(moves, piece, i, square, BITS_EP_CAPTURE, value);
+                        board[i] = board[square];
+                        board[square] = 0;
+                        board[square2] = COLORIZE(them, PAWN);
+                    }
                 }
             }
-            else {
-                int *offsets = PIECE_OFFSETS[piece_type];
-                for (int j = 0; j < 8; j ++) {
-                    int offset = offsets[j],
+            // other pieces
+            // TODO: separate by piece_type?
+            else if (piece_type != KNIGHT || !pin) {
+                auto dirs = PIECE_DIRS[piece_type],
+                    offsets = PIECE_OFFSETS[piece_type];
+                for (auto j = 0; j < 8; j ++) {
+                    auto offset = offsets[j],
                         square = i;
                     if (!offset)
                         break;
+                    if (pin && !(pin & dirs[j]))
+                        continue;
 
                     while (true) {
                         square += offset;
                         if (square & 0x88)
                             break;
+                        auto value = board[square];
 
-                        if (!board[square]) {
-                            if (!only_capture)
-                                addMove(moves, piece, i, square, BITS_NORMAL);
+                        if (!value) {
+                            if (!only_capture && (!inter || interpose[square]))
+                                addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
                         }
                         else {
-                            if (COLOR(board[square]) == us)
+                            if (COLOR(value) == us)
                                 break;
-                            addMove(moves, piece, i, square, BITS_CAPTURE);
+                            if (!inter || interpose[square])
+                                addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
                             break;
                         }
 
@@ -882,9 +1198,9 @@ public:
             }
         }
 
-        // castling
-        if (!only_capture) {
-            int king = kings[us];
+        // 4) castling
+        if (!inter && !only_capture) {
+            auto king = kings[us];
             if (king != EMPTY) {
                 auto pos0 = RANK(king) << 4;
 
@@ -921,7 +1237,7 @@ public:
 
                     // add castle + detect FRC even if not set
                     if (!error)
-                        addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags);
+                        addMove(moves, COLORIZE(us, KING), king, (frc || FILE(king) != 4 || FILE(rook) % 7)? rook: king_to, flags, 0, 0);
                 }
             }
         }
@@ -929,21 +1245,7 @@ public:
         // move ordering for alpha-beta
         if (search_mode == 2)
             orderMoves(moves);
-
-        // return pseudo-legal moves
-        if (!legal)
-            return moves;
-
-        // filter out illegal moves
-        // TODO: improve this
-        std::vector<Move> legal_moves;
-        for (auto &move : moves) {
-            moveRaw(move);
-            if (!kingAttacked(us))
-                legal_moves.push_back(std::move(move));
-            undoMove();
-        }
-        return legal_moves;
+        return moves;
     }
 
     /**
@@ -953,7 +1255,7 @@ public:
         auto text = move.m;
         char last = text[text.size() - 1];
         if (last != '+' && last != '#' && kingAttacked(turn)) {
-            auto moves = createMoves(frc, true, false);
+            auto moves = createMoves(frc, false);
             text += moves.size()? '+': '#';
             move.m = text;
         }
@@ -964,13 +1266,13 @@ public:
      * Evaluate the current position
      * - eval_mode: 0:null, 1:mat, 2:hc2, &4:qui, 8:nn
      */
-    float evaluate() {
-        float score = 0;
-        uint8_t us = turn ^ 1,
-            them = turn;
+    int evaluate() {
+        if (half_moves >= 50)
+            return 0;
+        int score = 0;
 
         if (eval_mode & 1)
-            score = materials[us] - materials[them];
+            score = materials[WHITE] - materials[BLACK];
 
         if (eval_mode & 2) {
             auto count0 = 0,
@@ -980,12 +1282,10 @@ public:
                 count0 += mobilities[i] * MOBILITY_SCORES[i];
             for (auto i = 9; i < 15; i ++)
                 count1 += mobilities[i] * MOBILITY_SCORES[i];
-            if (us)
-                score += count1 - count0;
-            else
-                score += count0 - count1;
+            score += count0 - count1;
         }
-        return score;
+
+        return score * (1 - (turn << 1));
     }
 
     /**
@@ -1067,8 +1367,9 @@ public:
 
         ep_square = (ep == "-")? EMPTY: anToSquare(ep);
         half_moves = half;
-        move_number = move;
+        move_number = std::max(move, 1);
         ply = move_number * 2 - 3 + turn;
+        cur_ply = ply;
 
         bool start = (!turn && move_number == 1);
         if (start)
@@ -1128,7 +1429,7 @@ public:
     Move moveObject(Move &move, bool frc, bool decorate) {
         uint8_t flags = 0;
         Move move_obj;
-        auto moves = createMoves(frc, true, false);
+        auto moves = createMoves(frc, false);
 
         // FRC castle?
         if (frc && move.from == kings[turn]) {
@@ -1262,7 +1563,7 @@ public:
      * @param sloppy allow sloppy parser
      */
     Move moveSan(std::string text, bool frc, bool decorate, bool sloppy) {
-        auto moves = createMoves(frc, true, false);
+        auto moves = createMoves(frc, false);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece) {
             moveRaw(move);
@@ -1316,7 +1617,15 @@ public:
      * @param decorate add + # decorators
      */
     Move moveUci(std::string text, bool frc, bool decorate) {
-        Move move = {0, 0, anToSquare(text.substr(0, 2)), "", 0, PIECES[text[4]], anToSquare(text.substr(2, 2))};
+        Move move = {
+            0,
+            0,
+            anToSquare(text.substr(0, 2)),
+            "",
+            0,
+            PIECES[text[4]],
+            anToSquare(text.substr(2, 2)),
+        };
         return moveObject(move, frc, decorate);
     }
 
@@ -1336,7 +1645,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto moves = createMoves(frc, true, false);
+                auto moves = createMoves(frc, false);
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
@@ -1406,9 +1715,44 @@ public:
     }
 
     /**
+     * Perform perft and divide
+     * @param {string} fen
+     * @param {number} depth
+     * @returns {string}
+     */
+    std::string perft(std::string fen, int depth) {
+        load(fen);
+        auto moves = createMoves(false, false);
+        std::vector<std::string> lines;
+        lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
+
+        for (auto &move : moves) {
+            moveRaw(move);
+            auto prev = nodes;
+            nullSearch(depth - 1);
+            auto delta = nodes - prev;
+            lines.push_back(ucify(move) + ":" + std::to_string(delta));
+            prev = nodes;
+            undoMove();
+        }
+
+        if (depth > 1)
+            lines.push_back(std::to_string(depth) + "=" + std::to_string(nodes));
+        std::sort(lines.begin(), lines.end());
+
+        std::string result;
+        for (auto &line : lines) {
+            if (result.size())
+                result += " ";
+            result += line;
+        }
+        return result;
+    }
+
+    /**
      * Print the board
      */
-    std::string print() {
+    std::string print(bool console) {
         std::string text;
         for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
@@ -1419,6 +1763,8 @@ public:
             }
             text += PIECE_NAMES[board[i]];
         }
+        if (console)
+            std::cout << text;
         return text;
     }
 
@@ -1528,83 +1874,25 @@ public:
 
         for (auto &move : moves) {
             auto uci = ucify(move);
-            if (empty || mask.find(uci) != std::string::npos) {
-                std::vector<Move> one;
-                one.push_back(move);
-                auto score = searchMoves(one, max_depth - 1, -99999, 99999);
-                MoveText move_obj = move;
-                move_obj.score = score;
-                masked.emplace_back(move_obj);
+            if (!empty && mask.find(uci) == std::string::npos)
+                continue;
+
+            int score = 0;
+
+            if (max_depth > 0) {
+                moveRaw(move);
+                if (search_mode == 1)
+                    score = -miniMax(max_depth - 1);
+                else
+                    score = -alphaBeta(max_depth - 1, -99999, 99999);
+                undoMove();
             }
+
+            MoveText move_obj = move;
+            move_obj.score = score;
+            masked.emplace_back(move_obj);
         }
         return masked;
-    }
-
-    /**
-     * Basic tree search
-     * @param moves
-     * @param depth
-     * @param alpha
-     * @param beta
-     */
-    float searchMoves(std::vector<Move> &moves, int depth, float alpha, float beta) {
-        float best = -99999;
-        bool look_deeper = (depth > 0 && nodes < max_nodes);
-        int valid = 0;
-
-        idepth = max_depth - depth;
-        if (idepth > avg_depth)
-            avg_depth = idepth;
-
-        for (auto &move : moves) {
-            moveRaw(move);
-            float score;
-
-            // invalid move?
-            if (kingAttacked(3))
-                score = -99900;
-            else if (half_moves >= 50) {
-                score = 0;
-                valid ++;
-            }
-            else {
-                valid ++;
-
-                // look deeper
-                if (look_deeper) {
-                    auto moves2 = createMoves(frc, false, false);
-                    score = -searchMoves(moves2, depth - 1, -beta, -alpha);
-
-                    // stalemate? good if we're losing, otherwise BAD!
-                    if (score > 80000)
-                        score = 0;
-                    if (search_mode == 2 && score >= beta) {
-                        undoMove();
-                        return beta;
-                    }
-                    if (score > alpha)
-                        alpha = score;
-                }
-                else {
-                    score = evaluate();
-                    nodes ++;
-                }
-            }
-
-            if (score > best)
-                best = score;
-
-            undoMove();
-            if (idepth >= 3 && score > 20000)
-                break;
-        }
-
-        // checkmate?
-        if (!valid && kingAttacked(2))
-            best = -51200 + idepth * 4000;
-        else
-            best += valid * 0.2;
-        return best;
     }
 
     /**
@@ -1739,7 +2027,7 @@ public:
     }
 
     int em_selDepth() {
-        return sel_depth;
+        return avg_depth + sel_depth;
     }
 
     uint8_t em_turn() {
@@ -1747,7 +2035,7 @@ public:
     }
 
     std::string em_version() {
-        return "20200915";
+        return "20200916";
     }
 };
 
@@ -1795,23 +2083,25 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("configure", &Chess::configure)
         .function("currentFen", &Chess::em_fen)
         .function("decorate", &Chess::decorateMove)
+        .function("evaluate", &Chess::evaluate)
         .function("fen", &Chess::createFen)
-        .function("frc", &Chess::em_frc)
         .function("fen960", &Chess::createFen960)
+        .function("frc", &Chess::em_frc)
         .function("load", &Chess::load)
         .function("material", &Chess::em_material)
         .function("mobilities", &Chess::em_mobilities)
         .function("moveObject", &Chess::moveObject)
         .function("moveRaw", &Chess::moveRaw)
+        .function("moves", &Chess::createMoves)
         .function("moveSan", &Chess::moveSan)
         .function("moveToSan", &Chess::moveToSan)
         .function("moveUci", &Chess::moveUci)
-        .function("moves", &Chess::createMoves)
         .function("multiSan", &Chess::multiSan)
         .function("multiUci", &Chess::multiUci)
         .function("nodes", &Chess::em_nodes)
         .function("order", &Chess::orderMoves)
         .function("params", &Chess::params)
+        .function("perft", &Chess::perft)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)
         .function("put", &Chess::put)

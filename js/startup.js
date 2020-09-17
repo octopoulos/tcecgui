@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-16
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1887,7 +1887,7 @@ function prepare_settings() {
             game_960: [ON_OFF, 1],
             game_advice: '1',
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
-            game_depth: option_number(-4, -60, 5),
+            game_depth: option_number(-4, -120, 6),
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'qui', 'nn'], 'hce'],
             game_every: option_number(500, 50, 5000, 50),
             game_new_game: '1',
