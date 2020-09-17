@@ -269,6 +269,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'game_advice':
         pva.finished = false;
+        pva.set_ai(false);
         pva.think(true);
         break;
     case 'game_depth':
@@ -286,6 +287,7 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'game_think':
         pva.finished = false;
+        pva.set_ai(true);
         pva.think();
         break;
     case 'graph_color_0':
@@ -1893,7 +1895,6 @@ function prepare_settings() {
             game_new_game: '1',
             game_options_black: [{type: 'text'}, 'd=-4 e=hce s=ab'],
             game_options_white: [{type: 'text'}, 'd=-4 e=hce s=ab'],
-            game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
             game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
             game_think: '1',
             game_threads: option_number(Max(1, cores / 2), 0, cores),

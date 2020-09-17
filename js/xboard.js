@@ -26,7 +26,8 @@ window, Worker, Y
 */
 'use strict';
 
-let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
+let AI = 'ai',
+    COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     CONSOLE_NULL = {
         console: 1,
         null: 1,
@@ -52,6 +53,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
+    HUMAN = 'human',
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -186,7 +188,7 @@ class XBoard {
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
-        this.ply = 0;                                   // current ply
+        this.ply = -1;                                  // current ply
         this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
@@ -630,7 +632,7 @@ class XBoard {
      * @param {boolean} animate false => remove highlights
      */
     animate_html(move, animate) {
-        this.clear_high('source target');
+        this.clear_high('source target', false);
 
         let prev = this.move2;
         if (prev) {
@@ -999,7 +1001,6 @@ class XBoard {
             Class('.source', '-source', true, this.xpieces);
         if (restore)
             Style('.source', `background:${Y.turn_color};opacity:${Y.turn_opacity}`, true, this.xsquares);
-        this.fen2 = '';
     }
 
     /**
@@ -1175,9 +1176,10 @@ class XBoard {
      * @param {boolean} is_delay
      */
     delayed_picks(is_delay) {
-        if (timers.click_play)
-            if (!this.manual || !this.human_turn())
-                return;
+        if (!this.manual)
+            return;
+        if (timers.click_play && this.is_ai())
+            return;
 
         AnimationFrame(() => {
             add_timeout(`pick${this.id}`, () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
@@ -1343,6 +1345,7 @@ class XBoard {
 
         // next to think
         if (!success && this.manual && ply >= num_move) {
+            this.set_ai(true);
             success = this.think();
             if (success)
                 this.play_mode = 'game';
@@ -1359,7 +1362,9 @@ class XBoard {
             start = this.main_manual? -1: 0;
         while (ply > start && !this.moves[ply])
             ply --;
-        return this.set_ply(ply, {animate: true, manual: true});
+        let move = this.set_ply(ply, {animate: true, manual: true});
+        this.set_ai(false);
+        return move;
     }
 
     /**
@@ -1429,21 +1434,6 @@ class XBoard {
 
         let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
         add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
-    }
-
-    /**
-     * Check if it's a human turn
-     * @returns {boolean}
-     */
-    human_turn() {
-        let play_as = Y.game_play_as,
-            ply = get_fen_ply(this.fen);
-        if (play_as == 'AI')
-            return false;
-        else if (play_as == 'Human')
-            return true;
-        else
-            return (play_as == WB_TITLE[(1 + ply) % 2]);
     }
 
     /**
@@ -1538,6 +1528,13 @@ class XBoard {
     }
 
     /**
+     * Is it the AI turn to play?
+     */
+    is_ai() {
+        return (this.players[(1 + this.ply) % 2].name == AI);
+    }
+
+    /**
      * Check if the game is finished
      * @param {Move} move
      * @param {string} fen
@@ -1609,8 +1606,10 @@ class XBoard {
      * Maybe play the move as AI
      */
     maybe_play() {
-        if (!this.human_turn())
+        if (this.is_ai()) {
+            this.delayed_picks(true);
             add_timeout('think', () => {this.think();}, TIMEOUT_think);
+        }
     }
 
     /**
@@ -1618,7 +1617,7 @@ class XBoard {
      */
     new_game() {
         let fen,
-            play_as = Y.game_play_as;
+            players = this.players;
 
         if (this.frc) {
             let index = RandomInt(960);
@@ -1630,16 +1629,14 @@ class XBoard {
         this.destroy_workers();
         this.reset(true, fen);
 
-        if (play_as != 'AI')
-            this.rotate = (play_as == WB_TITLE[1]);
+        // rotate if human is black
+        if (players[0].name != players[1].name)
+            this.rotate = (players[1].name != AI);
 
         this.instant();
         this.render(7);
         this.chess_fen(fen);
-
-        this.play(play_as != 'AI');
         this.maybe_play();
-        this.delayed_picks(true);
     }
 
     /**
@@ -1663,7 +1660,7 @@ class XBoard {
         }
         else {
             this.set_fen(fen, true);
-            this.clear_high('source target');
+            this.clear_high('source target', false);
             this.picked = null;
 
             // delete some moves?
@@ -1691,7 +1688,7 @@ class XBoard {
                 this.play(true);
             }
         }
-        this.delayed_picks(true);
+        this.maybe_play();
     }
 
     /**
@@ -1758,8 +1755,8 @@ class XBoard {
             return false;
 
         // 3) update
+        this.set_ai(false);
         this.new_move(move);
-        this.maybe_play();
     }
 
     /**
@@ -2069,6 +2066,14 @@ class XBoard {
     }
 
     /**
+     * Set the current player AI or HUMAN
+     * @param {boolean} ai
+     */
+    set_ai(ai) {
+        this.players[(1 + this.ply) % 2].name = ai? AI: HUMAN;
+    }
+
+    /**
      * Set a delayed ply
      * @param {number} ply
      */
@@ -2260,13 +2265,16 @@ class XBoard {
             return;
         if (this.fen == this.fen2)
             return;
+        if (this.is_ai())
+            return;
 
+        let fen2 = this.fen2;
         this.chess_load(this.fen);
 
         let moves = this.chess_moves(this.frc),
             froms = new Set(moves.map(move => move.from));
 
-        this.clear_high('source target');
+        this.clear_high('source target', false);
         for (let from of froms)
             this.add_high(from, 'turn');
 

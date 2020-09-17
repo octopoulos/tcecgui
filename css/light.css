@@ -164,6 +164,23 @@ i {
     font-style: normal;
     line-height: 0;
 }
+input,
+select {
+    border: 1px solid #bbb;
+    border-radius: 1px;
+    height: 24px;
+    padding: 0.2em;
+    width: calc(100% - 0.5em);
+}
+input:hover,
+select:hover {
+    border: 1px solid #aaa;
+}
+input[type="checkbox"] {
+    margin: 0.5em;
+    transform: scale(1.35);
+    width: auto;
+}
 label {
     cursor: pointer;
 }
@@ -362,16 +379,6 @@ grid {
 }
 #modal a.off {
     color: #f00;
-}
-#modal input,
-#modal select {
-    padding: 0.2em;
-    width: calc(100% - 0.5em);
-}
-#modal input[type="checkbox"] {
-    margin: 0.5em;
-    transform: scale(1.35);
-    width: auto;
 }
 #popup-about {
     min-height: 50vh;

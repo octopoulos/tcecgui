@@ -8,6 +8,16 @@ html {
     background: #333;
     color: #fff;
 }
+input,
+select {
+    background: #222;
+    border: 1px solid #666;
+    color: #fff;
+}
+input:hover,
+select:hover {
+    border: 1px solid #777;
+}
 .popup {
     background: rgba(30, 30, 30, 0.98);
 }
