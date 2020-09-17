@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-08-26
+// @version 2020-09-16
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1494,6 +1494,7 @@ if (typeof exports != 'undefined') {
         Format: Format,
         FormatFloat: FormatFloat,
         FormatUnit: FormatUnit,
+        From: From,
         FromSeconds: FromSeconds,
         FromTimestamp: FromTimestamp,
         HashText: HashText,
