@@ -200,6 +200,21 @@ beforeEach(() => {
     });
 });
 
+// evaluate
+[
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1', 'e=null', 0],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1', 'e=mat', -100],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1', 'e=mob', 16],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1', 'e=hce', -84],
+].forEach(([fen, options, answer], id) => {
+    test(`evaluate:${id}`, () => {
+        chess.load(fen);
+        chess.configure(false, options, 1);
+        chess.mobilities();
+        expect(chess.evaluate()).toBeCloseTo(answer, 1);
+    });
+});
+
 // fen
 [
     [
@@ -261,6 +276,7 @@ beforeEach(() => {
 
 // load
 [
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -', [], undefined, START_FEN],
     [START_FEN, [], undefined, START_FEN],
     [START_FEN, ['d5'], undefined, START_FEN],
     [START_FEN, ['d4'], undefined, 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
@@ -820,14 +836,14 @@ beforeEach(() => {
     [START_FEN, [], 's=mm', 2, 400],
     [START_FEN, [], 's=mm', 1, 20],
     [START_FEN, [], 's=mm', 0, 0],
-    [START_FEN, [], 's=ab', 5, 28413],
-    [START_FEN, [], 's=ab', 4, 10128],
-    [START_FEN, [], 's=ab', 3, 859],
+    [START_FEN, [], 's=ab', 5, 43794],
+    [START_FEN, [], 's=ab', 4, 10777],
+    [START_FEN, [], 's=ab', 3, 825],
     [START_FEN, [], 's=ab', 2, 400],
     [START_FEN, [], 's=ab', 1, 20],
     [START_FEN, [], 's=ab', 0, 0],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=mm', 4, 18367],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 52318],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=mm', 4, 403873],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 19180],
 ].forEach(([fen, [frc, only_capture], options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         if (!frc)
@@ -936,7 +952,7 @@ beforeEach(() => {
     ['3rk2r/p1B4p/8/8/1pp1p3/8/P1b4P/R2K3R w k - 4 3', 1, '1=4 d1c1:1 d1c2:1 d1e1:1 d1e2:1'],
 
     // roce:good
-    // ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 6, 8031647685],     // SLOW
+    // ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 6, 8031647685],     // SLOW ??
     // ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 5, 193690690],      // slow
     // ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 4, 4085603],        // ok
     ['r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 3, 97862],
@@ -952,7 +968,7 @@ beforeEach(() => {
     ['n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1', 1, 24],
 
     // numpty: 1
-    // [START_FEN, 7, 3195901860],
+    // [START_FEN, 7, 3195901860],  // ??
     // [START_FEN, 6, 119060324],
     [START_FEN, 5, 4865609],
     [START_FEN, 4, 197281],
@@ -1139,164 +1155,35 @@ beforeEach(() => {
 
 // search
 [
-    [
-        '1nbqkb1r/r1pp1p1p/p3p3/3nP1p1/6P1/P2p1P2/1P2B2P/RNBQK1NR w k - 0 12',
-        '',
-        [false, 'd=2 e=qui q=2 s=ab', -1],
-        [],
-        {},
-    ],
-    [
-        'r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28',
-        'e1e4',
-        [false, 'd=2 e=qui q=1 s=ab', -1],
-        [-1450, -1400],
-        {},
-    ],
-    [
-        '1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11',
-        'c3b5',
-        [false, 'd=2 e=qui q=2 s=ab', -1],
-        [],
-        {c3b5: [-500, -450]},
-    ],
-    [
-        'rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3',
-        'e2e4',
-        [false, 'd=3 e=qui q=1 s=ab', -1],
-        [-550, -500],
-        {},
-    ],
-    [
-        'rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7',
-        'd3h7',
-        [false, 'd=1 e=qui q=1 s=mm', -1],
-        [-550, -500],
-        {},
-    ],
-    [
-        'rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4',
-        'd2g5',
-        [false, 'd=3 e=qui q=1 s=ab', -1],
-        [-750, -700],
-        {},
-    ],
-    [
-        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
-        '',
-        [false, 'd=-4 e=hce s=mm', 4],
-        [],
-        {g5d2: [-250, -200], g5e5: [-150, -50], f2f3: [-1150, -1100], h2h4: [-1150, -1100]},
-    ],
-    [
-        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
-        '',
-        [false, 'd=-4 e=hce s=ab', 4],
-        [],
-        {g5d2: [-250, -200], g5e5: [-150, -50], f2f3: [-1150, -1100], h2h4: [-1150, -1100]},
-    ],
-    [
-        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h - 2 17',
-        '',
-        [false, 'd=-4 e=hce s=ab', 5],
-        [],
-        {g5d2: [-50, 0], g5e5: [100, 150], f2f3: [-1120, -1070], h2h4: [-720, -670]},
-    ],
-    [
-        '7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107',
-        '',
-        [false, 'd=3', 0],
-        [],
-        {a2a3: [100, 150], d7d8: [-50, 50]},
-    ],
-    [
-        'rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq - 0 10',
-        '',
-        [false, '', 3],
-        [],
-        {b3c1: [-50, 50], b3c5: [-50, 50], b3d2: [-50, 50]},
-    ],
-    [
-        '8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96',
-        '',
-        [false, '', 3],
-        [],
-        {h1b1: [-1600, -1400], h1h7: [-550, -450]},
-    ],
-    [
-        'rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8',
-        '',
-        [false, 'd=1', 4],
-        [],
-        {2: 'e1g1'},
-    ],
-    [
-        'r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16',
-        '',
-        [false, 'd=1', 4],
-        [],
-        {1: 'e1f2'},
-    ],
-    [
-        '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
-        '',
-        [false, 'd=1', 4],
-        [600, 700],
-        {},
-    ],
-    [
-        '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
-        '',
-        [false, 'd=2', 4],
-        [43000, 44000],
-        {1: 'g5e6 h7f7'},
-    ],
-    [
-        '4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73',
-        '',
-        [false, 'd=3', 4],
-        [43000, 44000],
-        {1: 'g5e6 h7f7'},
-    ],
-    [
-        'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
-        '',
-        [false, 'd=1', 4],
-        [750, 900],
-        {},
-    ],
-    [
-        'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
-        'b8c6',
-        [false, '', 1],
-        [-150, -50],
-        {},
-    ],
-    [
-        'rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5',
-        'b8c6',
-        [false, '', 2],
-        [-650, -550],
-        {},
-    ],
-    [
-        '4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42',
-        '',
-        [false, '', 4],
-        [],
-        {e4f6: [0, 80], g3g5: [3000, 3500]},
-    ],
-    [
-        '7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47',
-        '',
-        [false, '', 4],
-        [],
-        {1: 'd3d8', b5c4: [0, 120], c7f7: [0, 120]},
-    ],
-].forEach(([fen, mask, [frc, options, depth], answer, checks], id) => {
+    ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=qui q=2 s=ab', -790, {}],
+    ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 3000}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 650, {}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 43200, {1: 'g5e6 h7f7'}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 43200, {1: 'g5e6 h7f7'}],
+    ['7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47', '', '', [], {1: 'd3d8', b5c4: 50, c7f7: 50}],
+    ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 110, d7d8: 320, d7h7: -695}],
+    ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 43200}],
+    ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -1500, h1h7: -500}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=-4 e=hce s=ab', [], {g5d2: -220, h2h4: -1090}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=-4 e=hce s=mm', [], {g5d2: -220, h2h4: -1120}],
+    ['r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16', '', 1, [], {1: 'e1f2'}],
+    ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -797, e1e4: -1350}],
+    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=qui q=1 s=ab', -540, {}],
+    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=qui q=1 s=mm', 360, {}],
+    ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=qui q=1 s=ab', -630, {}],
+    ['rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq -', '', 3, [], {b3c1: 0, b3c5: 0, b3d2: 0}],
+    ['rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8', '', 1, [], {2: 'e1g1'}],
+    ['rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4', 'd2g5', 'd=3 e=qui q=1 s=ab', -720, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', '', 1, 800, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 1, -100, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 2, -600, {}],
+].forEach(([fen, mask, config, answer, checks], id) => {
     test(`search:${id}`, () => {
         chess.load(fen);
+        let [frc, options, depth] =
+            (IsString(config)? [false, config, 4]: (Number.isInteger(config)? [false, '', config]: config));
         chess.configure(frc, options, depth);
+
         let moves = chess.moves(frc, false),
             masks = chess.search(moves, mask);
 
@@ -1331,6 +1218,8 @@ beforeEach(() => {
                         missing = key;
                         return;
                     }
+                    if (Number.isInteger(check))
+                        check = [check - 50, check + 50];
                     if (value < check[0] || value > check[1])
                         LS(dico);
                     expect(value).toBeGreaterThanOrEqual(check[0]);
@@ -1343,6 +1232,8 @@ beforeEach(() => {
             }
         }
 
+        if (Number.isInteger(answer))
+            answer = [answer -50, answer + 50];
         if (answer.length) {
             expect(best.score).toBeGreaterThanOrEqual(answer[0]);
             expect(best.score).toBeLessThanOrEqual(answer[1]);

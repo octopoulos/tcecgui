@@ -5,8 +5,9 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility
 -          : 2020-09-08 : show game timer
 ~          : 2020-09-14 : ply_moves <= moves
--          : 2020-09-16 : update c++ code
-~          : 2020-09-16 : clean up search + quiesce function
+-          : 2020-09-16 : transposition table
+~          : 2020-09-16 : update c++ code
+2020-09-16 : 2020-09-16 : clean up search + quiesce function
 2020-09-16 : 2020-09-16 : perft
 2020-09-16 : 2020-09-14 : calculate pinned pieces + only allow legal moves
 2020-09-16 : 2020-09-16 : 3x faster attacked

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-16
 //
 // game board:
 // - 4 rendering modes:
@@ -14,19 +14,12 @@
 //      - go (future)
 //
 // included after: common, engine, global, 3d
-//
-// 128 SQUARES idea taken from chess.js:
-// @license
-// Copyright (c) 2016, Jeff Hlywa (jhlywa@gmail.com)
-// Released under the BSD license
-// https://github.com/jhlywa/chess.js/blob/master/LICENSE
-//
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, Events, Floor, Format, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit,
-IsString, Keys,
+DEV, EMPTY, Events, Floor, Format, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes,
+IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
 window, Worker, Y
@@ -935,7 +928,7 @@ class XBoard {
 
         // calculate
         let checked = chess.checked(chess.turn()),
-            moves = this.chess_moves(Undefined(move.frc, this.frc), true, -1),
+            moves = this.chess_moves(Undefined(move.frc, this.frc)),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -981,14 +974,15 @@ class XBoard {
 
     /**
      * Calculate all legal moves
-     * @param {Object=} options
+     * @param {boolean} frc
+     * @param {number=} single_square
      * @returns {Object[]}
      */
-    chess_moves(frc, legal, single_square) {
-        let moves = this.chess.moves(frc, legal, false);
+    chess_moves(frc, single_square=EMPTY) {
+        let moves = this.chess.moves(frc, false);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-        if (single_square != -1)
+        if (single_square != EMPTY)
             moves = moves.filter(move => move.from == single_square);
         return moves;
     }
@@ -1304,7 +1298,7 @@ class XBoard {
                 return;
 
             this.chess_load(this.fen);
-            let moves = this.chess_moves(this.frc, true, this.picked);
+            let moves = this.chess_moves(this.frc, this.picked);
             for (let move of moves)
                 this.add_high(move.to, 'target');
             if (moves[0])
@@ -1552,7 +1546,7 @@ class XBoard {
      */
     is_finished(move, fen, ply) {
         // 1) stalemate
-        let moves = this.chess_moves(this.frc, true, -1);
+        let moves = this.chess_moves(this.frc);
         if (!moves.length) {
             let is_mate = move.m.slice(-1) == '#';
             LS(is_mate? `${WB_TITLE[ply % 2]} mates.`: 'Stalemate.');
@@ -2269,7 +2263,7 @@ class XBoard {
 
         this.chess_load(this.fen);
 
-        let moves = this.chess_moves(this.frc, true, -1),
+        let moves = this.chess_moves(this.frc),
             froms = new Set(moves.map(move => move.from));
 
         this.clear_high('source target');
@@ -2315,7 +2309,7 @@ class XBoard {
 
             // check moves
             chess.load(fen);
-            moves = this.chess_moves(this.frc, true, -1);
+            moves = this.chess_moves(this.frc);
             num_move = moves.length;
             if (!num_move)
                 return false;
@@ -2331,7 +2325,7 @@ class XBoard {
                     draw = (rule50 >= 50 || fen_set.has(prune));
 
                 if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
-                    let moves2 = this.chess_moves(this.frc, true, -1);
+                    let moves2 = this.chess_moves(this.frc);
                     for (let move2 of moves2) {
                         chess.moveRaw(move2);
                         let splits2 = chess.fen().split(' '),
