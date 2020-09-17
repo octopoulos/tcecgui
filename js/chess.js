@@ -28,6 +28,12 @@ if (typeof global != 'undefined') {
 }
 // >>
 
+// specific
+let F32 = array => new Float32Array(array),
+    I8 = array => new Int8Array(array),
+    I32 = array => new Int32Array(array),
+    U8 = array => new Uint8Array(array);
+
 // defines
 let BISHOP = 3,
     BITS_NORMAL = 1,
@@ -44,10 +50,7 @@ let BISHOP = 3,
     COLORIZE = (color, type) => (type + (color << 3)),
     DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     EMPTY = -1,
-    F32 = array => new Float32Array(array),
     FILE = square => square & 15,
-    I8 = array => new Int8Array(array),
-    I32 = array => new Int32Array(array),
     KING = 6,
     KNIGHT = 2,
     PAWN = 1,
@@ -60,7 +63,6 @@ let BISHOP = 3,
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
     TYPE = piece => piece & 7,
-    U8 = array => new Uint8Array(array),
     // UNICODES = '⭘♟♞♝♜♛♚⭘♙♘♗♖♕♔',
     WHITE = 0;
 
@@ -88,6 +90,7 @@ let PAWN_OFFSETS = [
         32800,      // k
         0,
     ]),
+    // for move generation
     PIECE_DIRS = [
         [],
         [],
@@ -100,11 +103,11 @@ let PAWN_OFFSETS = [
     PIECE_OFFSETS = [
         [],
         [],
-        I8([-18, -33, -31, -14,  18, 33, 31,  14]),
+        I8([-18, -33, -31, -14,  18, 33, 31, 14]),
         I8([-17, -15,  17,  15]),
         I8([-16,   1,  16,  -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15,  -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15, -1]),
+        I8([-17, -16, -15,   1,  17, 16, 15, -1]),
     ],
     // move ordering
     PIECE_ORDERS = I8([
@@ -191,6 +194,7 @@ let EVAL_MODES = {
         'null': 0,
         'qui': 1 + 2 + 4,
     },
+    // piece names for print
     PIECES = {
         b: 11,
         B: 3,
@@ -610,11 +614,7 @@ var Chess = function(fen_) {
                     if (piece_type == KING)
                         return true;
                     if (target == BISHOP && piece_type == PAWN) {
-                        if (j < 4) {
-                            if (color == BLACK)
-                                return true;
-                        }
-                        else if (color == WHITE)
+                        if (color == ((j < 4)? BLACK: WHITE))
                             return true;
                     }
                 }
@@ -668,7 +668,7 @@ var Chess = function(fen_) {
         if (depth >= 0)
             max_depth = depth;
         max_nodes = 1e9;
-        max_quiesce = 4;
+        max_quiesce = 5;
         max_time = 0;
         search_mode = 0;
 
@@ -1562,10 +1562,11 @@ var Chess = function(fen_) {
      * @returns {Object}
      */
     function moveUci(text, frc, decorate) {
-        let move = {};
-        move.from = anToSquare(text.substr(0, 2));
-        move.promote = PIECES[text[4]];
-        move.to = anToSquare(text.substr(2, 2));
+        let move = {
+            from: anToSquare(text.substr(0, 2)),
+            promote: PIECES[text[4]],
+            to: anToSquare(text.substr(2, 2)),
+        };
         return moveObject(move, frc, decorate);
     }
 
@@ -1805,21 +1806,18 @@ var Chess = function(fen_) {
             if (!empty && !mask.includes(uci))
                 continue;
 
-            if (max_depth < 1) {
-                move.score = 0;
-                continue;
-            }
-
-            moveRaw(move);
             let score = 0;
 
-            if (search_mode == 1)
-                score = -miniMax(max_depth - 1);
-            else
-                score = -alphaBeta(max_depth - 1, -99999, 99999);
+            if (max_depth > 0) {
+                moveRaw(move);
+                if (search_mode == 1)
+                    score = -miniMax(max_depth - 1);
+                else
+                    score = -alphaBeta(max_depth - 1, -99999, 99999);
+                undoMove();
+            }
 
             move.score = score;
-            undoMove();
             masked.push(move);
         }
         return masked;
@@ -1958,7 +1956,7 @@ var Chess = function(fen_) {
         turn: () => turn,
         ucify: ucify,
         undo: undoMove,
-        version: () => '20200915',
+        version: () => '20200916',
     };
 };
 
