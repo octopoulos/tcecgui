@@ -57,6 +57,27 @@ int PAWN_OFFSETS[2][3] = {
         {-17, -16, -15},
         {17, 16, 15},
     },
+    // attacks + defenses
+    // those values could be optimized automatically
+    PIECE_ATTACKS[16][16] = {
+        //  .   P   N   B   R   Q   K   .   .   p   n   b   r   q   k   .
+        {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+        {0,  5, 25, 10,  5,  5,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0},    // P
+        {0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  2,  9,  5,  5,  5,  0},    // N
+        {0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  9,  2,  5,  5,  5,  0},    // B
+        {0, 10,  4,  4, 30, 15,  0,  0,  0,  5,  5,  5,  2,  5,  5,  0},    // R
+        {0,  5,  5,  5, 15,  0,  0,  0,  0,  5,  5,  5,  5,  2,  5,  0},    // Q
+        {0,  5,  9,  9,  9,  9,  0,  0,  0, 10,  5,  5,  5,  0,  0,  0},    // K
+        {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+        {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+        {0,  1,  1,  1,  1,  1,  5,  0,  0,  5, 25, 10,  5,  5,  0,  0},    // p
+        {0,  5,  2,  9,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0},    // n
+        {0,  5,  9,  2,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0},    // b
+        {0,  5,  5,  5,  2,  5,  5,  0,  0,  5, 10,  4, 30, 15,  0,  0},    // r
+        {0,  5,  5,  5,  5,  2,  5,  0,  0,  5,  5,  5, 15,  0,  0,  0},    // q
+        {0, 10,  5,  5,  5,  0,  0,  0,  0,  5,  9,  9,  9,  9,  9,  0},    // k
+        {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    },
     // move ordering
     PIECE_CAPTURES[] = {
         0,
@@ -152,23 +173,41 @@ int PAWN_OFFSETS[2][3] = {
         0,
     };
 
-float
+// mobility: multiplier + limit
+int MOBILITY_LIMITS[] = {
+        0,
+        8,          // P
+        32,         // N
+        24,         // B
+        24,         // R
+        24,         // Q
+        1,          // K
+        0,
+        0,
+        8,          // p
+        32,         // n
+        24,         // b
+        24,         // r
+        24,         // q
+        1,          // k
+        0,
+    },
     MOBILITY_SCORES[] = {
         0,
-        1,          // P
-        6,          // N
+        2,          // P
+        4,          // N
         3,          // B
         3,          // R
-        0.3,        // Q
-        -1,         // K
+        2,          // Q
+        1,          // K
         0,
         0,
-        1,          // p
-        6,          // n
+        2,          // p
+        4,          // n
         3,          // b
         3,          // r
-        0.3,        // q
-        -1,         // k
+        2,          // q
+        1,          // k
         0,
     };
 
@@ -245,18 +284,22 @@ private:
     // PRIVATE
     //////////
 
+    uint8_t attacks[16];
     int     avg_depth;
     uint8_t board[128];
+    uint8_t bishops[8];
     int     castling[4];
     int     cur_ply;
+    uint8_t defenses[16];
     int     ep_square;
     uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     bool    frc;
     int     half_moves;
     int     idepth;                         // positive depth = max_depth - depth
-    uint8_t interpose[128];                 // check path, can interpose a piece there
+    int     interpose[128];                 // check path, can interpose a piece there
     int     kings[2];
+    uint8_t knights[8];
     int     materials[2];
     int     max_depth;
     int     max_nodes;
@@ -265,9 +308,12 @@ private:
     uint8_t mobilities[16];
     int     move_number;
     int     nodes;
+    uint8_t pawns[8];
     uint8_t pins[128];
     int     ply;
     std::vector<State> ply_states;
+    uint8_t rooks[8];
+    uint8_t queens[8];
     int     search_mode;                    // 1:minimax, 2:alpha-beta
     int     sel_depth;
     uint8_t turn;
@@ -293,8 +339,11 @@ private:
             to,
         });
 
-        if (!promote)
+        if (!promote) {
+            // TODO:
+            // empty => give bonus for controlling the square, especially if near the other king (or in the center)
             mobilities[piece] ++;
+        }
     }
 
     /**
@@ -343,7 +392,7 @@ private:
             avg_depth = idepth;
 
         // check all moves
-        auto moves = createMoves(frc, false);
+        auto moves = createMoves(false);
         auto num_move = moves.size();
 
         // mat + stalemate
@@ -358,6 +407,7 @@ private:
                 moveRaw(move);
                 auto score = -alphaBeta(depth - 1, -beta, -alpha);
                 undoMove();
+
                 if (score >= beta)
                     return beta;
                 if (score > best) {
@@ -453,7 +503,7 @@ private:
             avg_depth = idepth;
 
         // check all moves
-        auto moves = createMoves(frc, false);
+        auto moves = createMoves(false);
         auto num_move = moves.size();
 
         // mat + stalemate
@@ -503,7 +553,7 @@ private:
             return;
         }
 
-        auto moves = createMoves(frc, false);
+        auto moves = createMoves(false);
         // speed-up
         if (depth <= 1) {
             nodes += moves.size();
@@ -534,7 +584,7 @@ private:
         if (idepth > sel_depth)
             sel_depth = idepth;
 
-        auto moves = createMoves(frc, true);
+        auto moves = createMoves(true);
         for (auto &move : moves) {
             moveRaw(move);
             auto score = -quiesce(depth - 1, -beta, -alpha);
@@ -650,21 +700,28 @@ public:
      * Clear the board
      */
     void clear() {
+        memset(attacks, 0, sizeof(attacks));
         avg_depth = 0;
+        memset(bishops, EMPTY, sizeof(bishops));
         memset(board, 0, sizeof(board));
         memset(castling, EMPTY, sizeof(castling));
         cur_ply = -1;
+        memset(defenses, 0, sizeof(defenses));
         ep_square = EMPTY;
         fen = "";
         half_moves = 0;
         idepth = 0;
         memset(kings, EMPTY, sizeof(kings));
+        memset(knights, 0, sizeof(knights));
         memset(materials, 0, sizeof(materials));
         memset(mobilities, 0, sizeof(mobilities));
         move_number = 1;
         nodes = 0;
+        memset(pawns, EMPTY, sizeof(pawns));
         ply = -1;
         ply_states.clear();
+        memset(rooks, EMPTY, sizeof(rooks));
+        memset(queens, EMPTY, sizeof(queens));
         sel_depth = 0;
         turn = WHITE;
     }
@@ -721,84 +778,6 @@ public:
             case 't':
                 max_time = value;
                 break;
-            }
-        }
-    }
-
-    /**
-     * Count the piece mobilities
-     */
-    void countMobilities() {
-        memset(mobilities, 0, sizeof(mobilities));
-
-        for (int i = SQUARE_A8; i <= SQUARE_H1; i ++) {
-            // off board
-            if (i & 0x88) {
-                i += 7;
-                continue;
-            }
-
-            auto piece = board[i];
-            if (!piece)
-                continue;
-
-            auto piece_type = TYPE(piece),
-                us = COLOR(piece),
-                them = us ^ 1;
-
-            if (piece_type == PAWN) {
-                int *offsets = PAWN_OFFSETS[us];
-
-                // single square, non-capturing
-                int square = i + offsets[0];
-                if (!board[square]) {
-                    mobilities[piece] ++;
-
-                    // double square
-                    square = i + offsets[1];
-                    if (6 - us * 5 == RANK(i) && !board[square])
-                        mobilities[piece] ++;
-                }
-
-                // pawn captures
-                for (int j = 2; j < 4; j ++) {
-                    square = i + offsets[j];
-                    if (square & 0x88)
-                        continue;
-
-                    if (board[square] && COLOR(board[square]) == them)
-                        mobilities[piece] ++;
-                    else if (square == ep_square)
-                        mobilities[piece] ++;
-                }
-            }
-            else {
-                int *offsets = PIECE_OFFSETS[piece_type];
-                for (int j = 0; j < 8; j ++) {
-                    int offset = offsets[j],
-                        square = i;
-                    if (!offset)
-                        break;
-
-                    while (true) {
-                        square += offset;
-                        if (square & 0x88)
-                            break;
-
-                        if (!board[square])
-                            mobilities[piece] ++;
-                        else {
-                            if (COLOR(board[square]) == us)
-                                break;
-                            mobilities[piece] ++;
-                            break;
-                        }
-
-                        // break if knight or king
-                        if (piece_type == KING || piece_type == KNIGHT)
-                            break;
-                    }
-                }
             }
         }
     }
@@ -882,9 +861,9 @@ public:
         int i, n1, n2, q;
         std::string line = "        ";
 
-        line[(index % 4) * 2 + 1] = 'B';
+        line[(index & 3) * 2 + 1] = 'B';
         index /= 4;
-        line[(index % 4) * 2] = 'B';
+        line[(index & 3) * 2] = 'B';
         index /= 4;
         q = index % 6;
         index /= 6;
@@ -915,15 +894,15 @@ public:
             }
 
         // rook - king - rook
-        std::string rooks, rooks2;
+        std::string castle, castle2;
         i = 7;
         for (auto type : "RKR")
             for (; i >= 0; i --) {
                 if (line[i] == ' ') {
                     line[i] = type;
                     if (type == 'R') {
-                        rooks += 'A' + i;
-                        rooks2 += 'a' + i;
+                        castle += 'A' + i;
+                        castle2 += 'a' + i;
                     }
                     break;
                 }
@@ -933,25 +912,27 @@ public:
         for (auto letter : line)
             result += letter + 'a' - 'A';
 
-        result = result + "/pppppppp/8/8/8/8/PPPPPPPP/" + line + " w " + rooks + rooks2 + " - 0 1";
+        result = result + "/pppppppp/8/8/8/8/PPPPPPPP/" + line + " w " + castle + castle2 + " - 0 1";
         return result;
     }
 
     /**
      * Create the moves
-     * @param frc Fisher Random Chess
      * @param only_capture
      * @return moves
      */
-    std::vector<Move> createMoves(bool frc,  bool only_capture) {
+    std::vector<Move> createMoves(bool only_capture) {
         std::vector<Move> moves;
         auto second_rank = 6 - turn * 5;
         uint8_t us = turn,
             us8 = us << 3,
             them = us ^ 1;
 
-        for (auto i = us8; i < us8 + 8; i ++)
+        for (auto i = us8; i < us8 + 8; i ++) {
+            attacks[i] = 0;
+            defenses[i] = 0;
             mobilities[i] = 0;
+        }
 
         // 1) find pinned pieces + check positions/paths
         // \: 1, |:2, /:4, _:8
@@ -1062,6 +1043,7 @@ public:
 
         // 2) collect king moves
         auto piece = board[king];
+        auto piece_attacks = PIECE_ATTACKS[piece];
         for (auto offset : PIECE_OFFSETS[KING]) {
             auto square = king + offset;
             if (square & 0x88)
@@ -1082,10 +1064,14 @@ public:
             }
             else if (COLOR(value) != us) {
                 board[king] = 0;
-                if (!attacked(them, square))
+                if (!attacked(them, square)) {
                     addMove(moves, piece, king, square, BITS_CAPTURE, 0, value);
+                    attacks[piece] += piece_attacks[value];
+                }
                 board[king] = piece;
             }
+            else
+                defenses[piece] += piece_attacks[value];
         }
 
         // 2+ checks => king must escape, other pieces cannot help
@@ -1098,6 +1084,7 @@ public:
         // 3) collect non king moves
         // - if king is attacked, then the piece must capture the attacker or interpose itself
         pins[king] |= 32;
+        // TODO: don't check all the squares here
         for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
             // off board
             if (i & 0x88) {
@@ -1105,16 +1092,20 @@ public:
                 continue;
             }
 
-            auto piece = board[i],
-                pin = pins[i];
-            if (!piece || (pin & 32) || COLOR(piece) != us)
+            auto piece = board[i];
+            if (!piece || COLOR(piece) != us)
+                continue;
+
+            auto pin = pins[i];
+            if (pin & 32)
                 continue;
             pin &= 15;
 
             auto piece_type = TYPE(piece);
             // pawn
             if (piece_type == PAWN) {
-                auto offsets = PAWN_OFFSETS[us];
+                auto offsets = PAWN_OFFSETS[us],
+                    piece_attacks = PIECE_ATTACKS[piece];
 
                 // single square, non-capturing
                 if (!only_capture && !(pin & (1 + 4 + 8))) {
@@ -1142,8 +1133,14 @@ public:
                         continue;
                     auto value = board[square];
 
-                    if (value && COLOR(value) == them)
-                        addPawnMove(moves, piece, i, square, BITS_CAPTURE, value);
+                    if (value) {
+                        if (COLOR(value) == them) {
+                            addPawnMove(moves, piece, i, square, BITS_CAPTURE, value);
+                            attacks[piece] += piece_attacks[value];
+                        }
+                        else
+                            defenses[piece] += piece_attacks[value];
+                    }
                     // en passant can be tricky:
                     // - 3k4/8/8/K1Pp3r/8/8/8/8 w - d6 0 2
                     // - b2k4/8/2P5/3p4/8/5K2/8/8 w - d6 0 2
@@ -1164,7 +1161,8 @@ public:
             // TODO: separate by piece_type?
             else if (piece_type != KNIGHT || !pin) {
                 auto dirs = PIECE_DIRS[piece_type],
-                    offsets = PIECE_OFFSETS[piece_type];
+                    offsets = PIECE_OFFSETS[piece_type],
+                    piece_attacks = PIECE_ATTACKS[piece];
                 for (auto j = 0; j < 8; j ++) {
                     auto offset = offsets[j],
                         square = i;
@@ -1184,10 +1182,14 @@ public:
                                 addMove(moves, piece, i, square, BITS_NORMAL, 0, 0);
                         }
                         else {
-                            if (COLOR(value) == us)
-                                break;
-                            if (!inter || interpose[square])
-                                addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
+                            if (!inter || interpose[square]) {
+                                if (COLOR(value) == us)
+                                    defenses[piece] += piece_attacks[value];
+                                else {
+                                    addMove(moves, piece, i, square, BITS_CAPTURE, 0, value);
+                                    attacks[piece] += piece_attacks[value];
+                                }
+                            }
                             break;
                         }
 
@@ -1211,8 +1213,8 @@ public:
                     if (rook == EMPTY)
                         continue;
 
-                    int error = false,
-                        flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
+                    auto error = false;
+                    int flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
                         king_to = pos0 + 6 - (q << 2),
                         rook_to = king_to - 1 + (q << 1),
                         max_king = std::max(king, king_to),
@@ -1256,7 +1258,7 @@ public:
         auto text = move.m;
         char last = text[text.size() - 1];
         if (last != '+' && last != '#' && kingAttacked(turn)) {
-            auto moves = createMoves(frc, false);
+            auto moves = createMoves(false);
             text += moves.size()? '+': '#';
             move.m = text;
         }
@@ -1276,14 +1278,17 @@ public:
             score = materials[WHITE] - materials[BLACK];
 
         if (eval_mode & 2) {
-            auto count0 = 0,
-                count1 = 0;
-                // countMobilities();
+            // mobility
             for (auto i = 1; i < 7; i ++)
-                count0 += mobilities[i] * MOBILITY_SCORES[i];
+                score += std::min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
             for (auto i = 9; i < 15; i ++)
-                count1 += mobilities[i] * MOBILITY_SCORES[i];
-            score += count0 - count1;
+                score -= std::min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+
+            // attacks + defenses
+            // for (auto i = 1; i < 7; i ++)
+            //     score += attacks[i] * 10 + defenses[i] * 5;
+            // for (auto i = 9; i < 15; i ++)
+            //     score -= attacks[i] * 10 + defenses[i] * 5;
         }
 
         return score * (1 - (turn << 1));
@@ -1424,19 +1429,18 @@ public:
     /**
      * Try an object move
      * @param move {from: 23, to: 7, promote: 5}
-     * @param frc Fisher Random Chess
      * @param decorate add + # decorators
      */
-    Move moveObject(Move &move, bool frc, bool decorate) {
+    Move moveObject(Move &move, bool decorate) {
         uint8_t flags = 0;
         Move move_obj;
-        auto moves = createMoves(frc, false);
+        auto moves = createMoves(false);
 
         // FRC castle?
         if (frc && move.from == kings[turn]) {
-            if (move.to == castling[turn * 2] || move.to == move.from + 2)
+            if (move.to == castling[turn << 1] || move.to == move.from + 2)
                 flags = BITS_KSIDE_CASTLE;
-            else if (move.to == castling[turn * 2 + 1] || move.to == move.from - 2)
+            else if (move.to == castling[(turn << 1) + 1] || move.to == move.from - 2)
                 flags = BITS_QSIDE_CASTLE;
         }
 
@@ -1559,12 +1563,11 @@ public:
     /**
      * Try a SAN move
      * @param text Nxb7, a8=Q
-     * @param frc Fisher Random Chess
      * @param decorate add + # decorators
      * @param sloppy allow sloppy parser
      */
-    Move moveSan(std::string text, bool frc, bool decorate, bool sloppy) {
-        auto moves = createMoves(frc, false);
+    Move moveSan(std::string text, bool decorate, bool sloppy) {
+        auto moves = createMoves(false);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece) {
             moveRaw(move);
@@ -1614,10 +1617,9 @@ public:
     /**
      * Try an UCI move
      * @param text c2c4, a7a8a
-     * @param frc Fisher Random Chess
      * @param decorate add + # decorators
      */
-    Move moveUci(std::string text, bool frc, bool decorate) {
+    Move moveUci(std::string text, bool decorate) {
         Move move = {
             0,
             0,
@@ -1627,16 +1629,15 @@ public:
             PIECES[text[4]],
             anToSquare(text.substr(2, 2)),
         };
-        return moveObject(move, frc, decorate);
+        return moveObject(move, decorate);
     }
 
     /**
      * Parse a list of SAN moves + create FEN for each move
      * @param text c2c4 a7a8a ...
-     * @param frc Fisher Random Chess
      * @param sloppy allow sloppy parser
      */
-    std::vector<MoveText> multiSan(std::string multi, bool frc, bool sloppy) {
+    std::vector<MoveText> multiSan(std::string multi, bool sloppy) {
         std::vector<MoveText> result;
         int prev = 0,
             size = multi.size();
@@ -1646,7 +1647,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto moves = createMoves(frc, false);
+                auto moves = createMoves(false);
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
@@ -1665,9 +1666,8 @@ public:
     /**
      * Parse a list of UCI moves + create SAN + FEN for each move
      * @param text c2c4 a7a8a ...
-     * @param frc Fisher Random Chess
      */
-    std::vector<MoveText> multiUci(std::string multi, bool frc) {
+    std::vector<MoveText> multiUci(std::string multi) {
         std::vector<MoveText> result;
         int prev = 0,
             size = multi.size();
@@ -1677,7 +1677,7 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto move = moveUci(text, frc, true);
+                auto move = moveUci(text, true);
                 if (move.piece) {
                     MoveText move_obj = move;
                     move_obj.fen = createFen();
@@ -1724,7 +1724,7 @@ public:
     std::string perft(std::string fen, int depth) {
         if (fen.size())
             load(fen);
-        auto moves = createMoves(false, false);
+        auto moves = createMoves(false);
         std::vector<std::string> lines;
         lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
 
@@ -1984,6 +1984,10 @@ public:
     // EMSCRIPTEN INTERFACES
     ////////////////////////
 
+    val em_attacks() {
+        return val(typed_memory_view(16, attacks));
+    }
+
     int em_avgDepth() {
         return avg_depth;
     }
@@ -2000,6 +2004,10 @@ public:
         return kingAttacked(color);
     }
 
+    val em_defenses() {
+        return val(typed_memory_view(16, defenses));
+    }
+
     std::string em_fen() {
         return fen;
     }
@@ -2013,7 +2021,6 @@ public:
     }
 
     val em_mobilities() {
-        countMobilities();
         return val(typed_memory_view(16, mobilities));
     }
 
@@ -2076,6 +2083,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         //
         .function("anToSquare", &Chess::anToSquare)
         .function("attacked", &Chess::attacked)
+        .function("attacks", &Chess::em_attacks)
         .function("avgDepth", &Chess::em_avgDepth)
         .function("board", &Chess::em_board)
         .function("castling", &Chess::em_castling)
@@ -2085,6 +2093,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("configure", &Chess::configure)
         .function("currentFen", &Chess::em_fen)
         .function("decorate", &Chess::decorateMove)
+        .function("defenses", &Chess::em_defenses)
         .function("evaluate", &Chess::evaluate)
         .function("fen", &Chess::createFen)
         .function("fen960", &Chess::createFen960)
