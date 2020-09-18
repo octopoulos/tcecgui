@@ -1189,11 +1189,21 @@ class XBoard {
     /**
      * Destroy the web workers
      * - useful when starting a new game, to make sure no code is running in the threads anymore
+     * @param {boolean=} force
      */
-    destroy_workers() {
+    destroy_workers(force) {
         for (let worker of this.workers)
             worker.terminate();
+        this.fen2 = '';
         this.workers = [];
+
+        if (force) {
+            Hide(`.xcog`, this.node);
+            this.finished = false;
+            this.replies = {};
+            this.hide_arrows();
+            this.set_play(true);
+        }
     }
 
     /**
@@ -1248,7 +1258,7 @@ class XBoard {
             }
 
             if (name != 'play')
-                that.play(true);
+                that.play(true, name == 'pause');
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
@@ -1364,6 +1374,7 @@ class XBoard {
             ply --;
         let move = this.set_ply(ply, {animate: true, manual: true});
         this.set_ai(false);
+        this.destroy_workers(true);
         return move;
     }
 
@@ -1606,7 +1617,9 @@ class XBoard {
      * Maybe play the move as AI
      */
     maybe_play() {
-        if (this.is_ai()) {
+        let is_ai = this.is_ai();
+        this.set_play(!is_ai);
+        if (is_ai) {
             this.delayed_picks(true);
             add_timeout('think', () => {this.think();}, TIMEOUT_think);
         }
@@ -1626,7 +1639,7 @@ class XBoard {
         else
             fen = START_FEN;
 
-        this.destroy_workers();
+        this.destroy_workers(true);
         this.reset(true, fen);
 
         // rotate if human is black
@@ -1762,17 +1775,23 @@ class XBoard {
     /**
      * Play button was pushed
      * @param {boolean=} stop
+     * @param {boolean=} manual button was pressed
      */
-    play(stop) {
+    play(stop, manual) {
         if (stop || timers.click_play) {
             clear_timeout(`click_play`);
             stop = true;
             this.play_mode = 'play';
         }
 
-        S('[data-x="pause"]', !stop, this.node);
-        S('[data-x="play"]', stop, this.node);
+        if (stop && manual) {
+            this.destroy_workers(true);
+            let players = this.players;
+            players[0].name = HUMAN;
+            players[1].name = HUMAN;
+        }
 
+        this.set_play(stop);
         if (stop)
             this.delayed_picks(true);
         else
@@ -2156,6 +2175,15 @@ class XBoard {
     }
 
     /**
+     * Set the play/pause icon
+     * @param {boolean} stop
+     */
+    set_play(stop) {
+        S('[data-x="pause"]', !stop, this.node);
+        S('[data-x="play"]', stop, this.node);
+    }
+
+    /**
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
@@ -2184,7 +2212,7 @@ class XBoard {
             this.animate({}, animate);
             if (manual && this.hook) {
                 this.hook(this, 'ply', {ply: -1});
-                this.stop_think();
+                this.destroy_workers(true);
             }
             return {};
         }
@@ -2253,7 +2281,7 @@ class XBoard {
         this.animate(move, animate);
 
         if (manual)
-            this.stop_think();
+            this.destroy_workers(true);
         return move;
     }
 
@@ -2268,7 +2296,6 @@ class XBoard {
         if (this.is_ai())
             return;
 
-        let fen2 = this.fen2;
         this.chess_load(this.fen);
 
         let moves = this.chess_moves(this.frc),
@@ -2282,14 +2309,6 @@ class XBoard {
     }
 
     /**
-     * Stop thinking
-     */
-    stop_think() {
-        this.destroy_workers();
-        this.finished = false;
-    }
-
-    /**
      * Think ...
      * @param {boolean} suggest
      * @param {number=} step
@@ -2298,6 +2317,11 @@ class XBoard {
     think(suggest, step) {
         if (this.finished)
             return;
+        if (!step) {
+            if (!suggest)
+                this.clear_high('source target', false);
+            this.set_play(false);
+        }
 
         let moves, num_move,
             chess = this.chess,
@@ -2634,6 +2658,7 @@ class XBoard {
         if (suggest) {
             this.arrow(color + 2, best);
             Hide(`.xcog`, mini);
+            this.set_play(true);
             return;
         }
 

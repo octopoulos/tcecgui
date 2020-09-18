@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-16
 //
 // Game specific code:
 // - control the board, moves
@@ -4764,6 +4764,7 @@ function start_game() {
     create_boards();
     show_board_info('pva', true);
 
+    Y.wasm = 0;
     if (Y.wasm)
         load_library('js/chess-wasm.js', () => {
             Module().then(instance => {

@@ -1,6 +1,6 @@
 
 var Module = (function() {
-  var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined;
+  var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src: undefined;
   if (typeof __filename !== 'undefined') _scriptDir = _scriptDir || __filename;
   return (
 function(Module) {
@@ -128,4 +128,3 @@ if (typeof exports === 'object' && typeof module === 'object')
       define([], function() { return Module; });
     else if (typeof exports === 'object')
       exports["Module"] = Module;
-    

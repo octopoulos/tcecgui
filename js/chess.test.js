@@ -1352,7 +1352,7 @@ beforeEach(() => {
 
 // version
 [
-    '20200916',
+    '20200917',
 ].forEach((answer, id) => {
     test(`version:${id}`, () => {
         expect(chess.version()).toEqual(answer);

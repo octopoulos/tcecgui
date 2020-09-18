@@ -173,7 +173,7 @@ let MOBILITY_SCORES = F32([
         3,          // B
         3,          // R
         0.3,        // Q
-        0,          // K
+        -1,         // K
         0,
         0,
         1,          // p
@@ -181,7 +181,7 @@ let MOBILITY_SCORES = F32([
         3,          // b
         3,          // r
         0.3,        // q
-        0,          // k
+        -1,         // k
         0,
     ]);
 
@@ -257,7 +257,7 @@ var Chess = function(fen_) {
         materials = I32(2),
         max_depth = 4,
         max_nodes = 1e9,
-        max_quiesce = 5,
+        max_quiesce = 10,
         max_time = 60,
         mobilities = U8(16),
         move_number = 1,
@@ -527,6 +527,7 @@ var Chess = function(fen_) {
      * https://www.chessprogramming.org/Quiescence_Search
      */
     function quiesce(depth, alpha, beta) {
+        nodes ++;
         let stand = evaluate();
         if (depth <= 0)
             return stand;
@@ -668,7 +669,7 @@ var Chess = function(fen_) {
         if (depth >= 0)
             max_depth = depth;
         max_nodes = 1e9;
-        max_quiesce = 5;
+        max_quiesce = 10;
         max_time = 0;
         search_mode = 0;
 
@@ -1654,7 +1655,8 @@ var Chess = function(fen_) {
      * @returns {string}
      */
     function perft(fen, depth) {
-        load(fen);
+        if (fen)
+            load(fen);
         let moves = createMoves(false, false),
             lines = [`1=${moves.length}`];
 
@@ -1957,7 +1959,7 @@ var Chess = function(fen_) {
         turn: () => turn,
         ucify: ucify,
         undo: undoMove,
-        version: () => '20200916',
+        version: () => '20200917',
     };
 };
 

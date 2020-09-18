@@ -160,7 +160,7 @@ float
         3,          // B
         3,          // R
         0.3,        // Q
-        0,          // K
+        -1,         // K
         0,
         0,
         1,          // p
@@ -168,7 +168,7 @@ float
         3,          // b
         3,          // r
         0.3,        // q
-        0,          // k
+        -1,         // k
         0,
     };
 
@@ -521,6 +521,7 @@ private:
      * https://www.chessprogramming.org/Quiescence_Search
      */
     int quiesce(int depth, int alpha, int beta) {
+        nodes ++;
         auto stand = evaluate();
         if (depth <= 0)
             return stand;
@@ -677,7 +678,7 @@ public:
         if (depth >= 0)
             max_depth = depth;
         max_nodes = 1e9;
-        max_quiesce = 5;
+        max_quiesce = 10;
         max_time = 0;
         search_mode = 0;
 
@@ -1721,7 +1722,8 @@ public:
      * @returns {string}
      */
     std::string perft(std::string fen, int depth) {
-        load(fen);
+        if (fen.size())
+            load(fen);
         auto moves = createMoves(false, false);
         std::vector<std::string> lines;
         lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
@@ -2035,7 +2037,7 @@ public:
     }
 
     std::string em_version() {
-        return "20200916";
+        return "20200917";
     }
 };
 
