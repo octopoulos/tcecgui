@@ -1502,7 +1502,7 @@ var Chess = function(fen_) {
     }
 
     /**
-     * Try a string move
+     * Try a SAN move
      * @param {string} text Nxb7, a8=Q
      * @param {boolean} decorate add + # decorators
      * @param {boolean} sloppy allow sloppy parser

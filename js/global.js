@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200917';
+    VERSION = '20200918';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -253,7 +253,6 @@ function parse_dev() {
             e: 'eval',                  // live eval
             E: 'engine',
             f: 'fen',                   // parse_fen
-            g: 'graph',
             G: 'global',
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files
@@ -261,11 +260,11 @@ function parse_dev() {
             m: 'mobil',
             o: 'open',
             n: 'new',                   // new game debugging
-            p: 'pv',
             P: 'popup',                 // disable popups
             q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',
+            t: 'time',                  // clock + pause/start click
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             w: 'wasm',

@@ -3742,6 +3742,9 @@ function set_viewers(count) {
  * @param {number=} delta elapsed time since pgn creation
  */
 function start_clock(section, id, finished, delta) {
+    if (DEV.time)
+        LS(`start_clock: section=${section} : id=${id} : finished=${finished} : delta=${delta}`);
+
     let is_live = (section == 'live');
     if (is_live) {
         if (Y.x != section)
@@ -3754,7 +3757,8 @@ function start_clock(section, id, finished, delta) {
     let main = xboards[section],
         node = main.node,
         player = main.players[id];
-    S(`.xcolor${id} .xcog`, !finished, node);
+
+    S(`.xcolor${id} .xcog`, !finished && (section != 'pva' || main.thinking), node);
     Hide(`.xcolor${1 - id} .xcog`, node);
 
     stop_clock(section, [0, 1]);
@@ -4417,7 +4421,8 @@ function copy_moves() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let name = board.name,
+    let move,
+        name = board.name,
         section = Y.x;
 
     switch (type) {
@@ -4425,6 +4430,7 @@ function handle_board_events(board, type, value) {
         board_target = board;
         // used for CTRL+C
         context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
+        move = board.moves[board.ply];
         break;
     // controls: play, next, ...
     case 'control':
@@ -4457,6 +4463,7 @@ function handle_board_events(board, type, value) {
         let cur_ply = board.ply,
             prev_ply = cur_ply - 1,
             prev_move = board.moves[prev_ply];
+        move = value;
 
         if (name == section || board.manual) {
             // update main board stats
@@ -4482,6 +4489,13 @@ function handle_board_events(board, type, value) {
             update_time_control(section, (cur_ply + 3) % 2);
         }
         break;
+    }
+
+    // update MR50
+    if (move && board == board_target) {
+        let fen = move.fen;
+        if (fen)
+            HTML('#overview td[data-x="50"]', 50 - fen.split(' ')[4]);
     }
 }
 

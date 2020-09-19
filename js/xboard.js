@@ -18,8 +18,8 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide, HTML,
-I8, Id, InsertNodes, IsDigit, IsString, Keys,
+DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
+Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Pad, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
 Upper, Visible, window, Worker, Y
@@ -359,7 +359,7 @@ class XBoard {
                     this.set_fen(null, true);
                     this.ply = -1;
                     this.play_mode = 'book';
-                    this.play();
+                    this.play(false, false, 'add_moves');
                 }
             }
             else
@@ -1261,7 +1261,7 @@ class XBoard {
                 that.set_locked(true);
                 break;
             case 'play':
-                that.play();
+                that.play(false, false, 'event_hook');
                 break;
             case 'rotate':
                 that.rotate = (that.rotate + 1) % 2;
@@ -1280,7 +1280,7 @@ class XBoard {
             }
 
             if (CONTROL_STOPS[name])
-                that.play(true, true);
+                that.play(true, true, 'hook');
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
@@ -1291,7 +1291,7 @@ class XBoard {
             if (['mousedown', 'touchstart'].includes(type)) {
                 if (!['next', 'prev'].includes(name))
                     return;
-                that.play(true, true);
+                that.play(true, true, 'events');
                 let target = Parent(e.target, {class_: 'control', self: true});
                 if (target) {
                     that.rect = target.getBoundingClientRect();
@@ -1317,10 +1317,8 @@ class XBoard {
                 else
                     that.hold = null;
 
-                if (!that.hold) {
+                if (!that.hold)
                     that.rect = null;
-                    that.play(true, true);
-                }
             }
 
             if (e.cancelable != false)
@@ -1485,7 +1483,7 @@ class XBoard {
 
         if (step < 0) {
             if (is_play)
-                this.play(true);
+                this.play(true, false, 'hold_button');
             return;
         }
 
@@ -1701,13 +1699,14 @@ class XBoard {
      * @param {Move} move
      */
     new_move(move) {
-        // fen/ply
+        // 0) fen/ply
         let fen = this.chess_fen();
         move.fen = fen;
         let now = Now(true),
-            ply = get_move_ply(move);
+            ply = get_move_ply(move),
+            player = this.players[(2 + ply) % 2];
 
-        // user vote?
+        // 1) user vote?
         if (this.main) {
             let prev_fen = this.moves.length? this.moves[this.moves.length - 1].fen: this.start_fen,
                 uci = this.chess.ucify(move);
@@ -1732,20 +1731,34 @@ class XBoard {
             }
         }
 
+        // 2) add move + add missing info
+        if (!move.mt)
+            move.mt = DefaultInt(player.elapsed, 0);
+        if (!move.n)
+            move.n = '-';
+        if (!move.s)
+            move.s = '-';
+        if (!move.wv)
+            move.wv = '-';
+
         this.add_moves([move]);
         this.move_time = now;
 
-        // maybe finished the game? 50MR / stalemate / win / 3-fold
+        // 3) maybe finished the game? 50MR / stalemate / win / 3-fold
         if (this.manual) {
             let finished = this.is_finished(move, fen, ply);
             if (finished) {
                 this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
-                this.play(true);
+                this.play(true, false, 'new_move');
             }
+
+            if (this.hook)
+                this.hook(this, 'ply', move);
             this.clock(this.name, (ply + 3) % 2, finished);
         }
 
+        // 4) next player
         this.hide_arrows();
         this.maybe_play();
     }
@@ -1822,8 +1835,11 @@ class XBoard {
      * Play button was pushed
      * @param {boolean=} stop
      * @param {boolean=} manual button was pressed
+     * @param {string=} origin
      */
-    play(stop, manual) {
+    play(stop, manual, origin) {
+        if (DEV.time)
+            LS(`play: ${origin} : stop=${stop} : manual=${manual} : cp=${timers.click_play} : mode=${this.play_mode}`);
         if (stop || timers.click_play) {
             clear_timeout(`click_play`);
             stop = true;
@@ -2078,7 +2094,7 @@ class XBoard {
         this.move_time = Now(true);
         this.moves.length = 0;
         this.next = null;
-        this.ply = 0;
+        this.ply = -1;
         this.seen = 0;
         this.text = '';
 
@@ -2394,7 +2410,6 @@ class XBoard {
             if (!suggest)
                 this.clear_high('source target', false);
             this.set_play(false);
-            this.clock(this.name, color);
             this.create_workers();
 
             // check moves
@@ -2478,7 +2493,9 @@ class XBoard {
             });
         }
 
+        // show clock
         this.thinking = true;
+        this.clock(this.name, color);
 
         // pure random + insta move?
         if (!max_depth || num_worker < 1 || num_move < 2) {
@@ -2753,6 +2770,7 @@ class XBoard {
             LS(combine);
 
         // 7) stop things
+        Hide(`.xcolor${color} .xcog`, this.node);
         this.thinking = false;
 
         // arrow suggest

@@ -620,7 +620,7 @@ public:
     uint8_t anToSquare(std::string an) {
         if (an.size() < 2)
             return EMPTY;
-        int file = an[0] - 'a',
+        uint8_t file = an[0] - 'a',
             rank = '8' - an[1];
         return file + (rank << 4);
     }
@@ -818,7 +818,7 @@ public:
         if (frc) {
             for (auto square : castling)
                 if (square != EMPTY) {
-                    int file = FILE(square),
+                    auto file = FILE(square),
                         rank = RANK(square);
                     if (rank > 0)
                         castle += (file + 'A');
@@ -1867,7 +1867,7 @@ public:
      * @return updated moves
      */
     std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
-        avg_depth = 0;
+        avg_depth = 1;
         nodes = 0;
         sel_depth = 0;
 
@@ -1906,7 +1906,7 @@ public:
      * @return a1
      */
     std::string squareToAn(int square, bool check) {
-        int file = FILE(square),
+        auto file = FILE(square),
             rank = RANK(square);
         if (check && (file < 0 || file > 7 || rank < 0 || rank > 7))
             return "";
