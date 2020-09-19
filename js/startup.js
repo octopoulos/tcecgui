@@ -25,10 +25,10 @@ resume_sleep,
 S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, SetDefault, Show, show_banner,
 show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
 THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, Undefined, update_board_theme, update_chart_options, update_debug, update_pgn, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
-virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
-virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+translates:true, Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
+virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true, Visible, WB_LOWER,
+wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -94,7 +94,6 @@ let AD_STYLES = {},
         tb: 'TB',
     },
     TIMEOUT_font = 200,
-    TIMEOUT_graph = 500,
     TIMEOUT_popup = 600,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
@@ -293,20 +292,6 @@ function change_setting_special(name, value, no_close) {
     case 'game_time':
         configure('t', value);
         break;
-    case 'graph_color_0':
-    case 'graph_color_1':
-    case 'graph_color_2':
-    case 'graph_color_3':
-    case 'graph_line':
-    case 'graph_radius':
-    case 'graph_tension':
-    case 'graph_text':
-        update_chart_options(null, 3);
-        break;
-    case 'graph_eval_clamp':
-    case 'graph_eval_mode':
-        redraw_eval_charts();
-        break;
     case 'grid':
     case 'grid_copy':
     case 'grid_live':
@@ -420,6 +405,7 @@ function check_hash_special(dico) {
         section = 'live';
     hashes[section] = dico;
     Y.x = section;
+    Y.s = section;
 
     let is_live = (section == 'live'),
         parent = Id('tables');
@@ -455,6 +441,7 @@ function check_stream() {
     if (location.pathname.includes('stream.html')) {
         Y.stream = 1;
         Y.x = 'live';
+        Y.s = 'live';
     }
 
     let stream = Y.stream;
@@ -1026,8 +1013,6 @@ function resize() {
 
     adjust_popups();
     resize_game();
-
-    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
 }
 
 /**
@@ -1631,6 +1616,7 @@ function set_global_events() {
                 if (update_pgn(new_section, data)) {
                     Y.scroll = '#overview';
                     Y.x = new_section;
+                    Y.s = new_section;
                     check_hash_special({x: new_section});
                 }
                 break;

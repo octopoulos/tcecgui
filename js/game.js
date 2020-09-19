@@ -289,6 +289,7 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
+    TIMEOUT_graph = 500,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -739,6 +740,19 @@ function reset_sub_boards(mode, start_fen) {
         if (mode & 2)
             board.reset(mode & 4, start_fen);
     });
+}
+
+/**
+ * Get the board name for the section: live, archive, pva ...
+ * @param {string=} section
+ */
+function section_board(section) {
+    if (board_target.name == 'pva') {
+        Y.s = 'pva';
+        return 'pva';
+    }
+    Y.s = section || Y.x;
+    return section || Y.x;
 }
 
 /**
@@ -3015,6 +3029,8 @@ function resize_game() {
 
     show_board_info(Y.x);
     resize_3d();
+
+    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
 }
 
 /**
@@ -3374,7 +3390,11 @@ function update_overview_moves(section, headers, moves, is_new) {
         return;
 
     // 2) update the visible charts
-    update_player_charts(null, moves);
+    if (section == section_board()) {
+        if (DEV.chart)
+            LS(`UOM: ${section}`);
+        update_player_charts(null, moves);
+    }
 
     // 3) check adjudication
     if (move && move.fen) {
@@ -3492,7 +3512,11 @@ function update_pgn(section, data, extras, reset_moves) {
         main.reset(1, pgn.frc);
         if (is_same) {
             reset_sub_boards(7, pgn.frc);
-            reset_charts(true);
+            if (section == section_board()) {
+                if (DEV.chart)
+                    LS(`UP: ${section}`);
+                reset_charts(true);
+            }
         }
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
@@ -3523,8 +3547,11 @@ function update_pgn(section, data, extras, reset_moves) {
     // remove moves that are after the last move
     // - could have been sent by error just after a new game started
     let last_move = main.moves[main.moves.length - 1];
-    if (is_same && last_move)
+    if (is_same && last_move && section == section_board()) {
+        if (DEV.chart)
+            LS(`UP: ${section}`);
         slice_charts(last_move.ply);
+    }
 
     update_mobility();
     add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
@@ -3878,7 +3905,7 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @returns {boolean}
  */
 function update_live_eval(section, data, id, force_ply) {
-    if (!data || board_target.name != section)
+    if (!data || section != section_board())
         return false;
 
     let board = xboards[`live${id}`],
@@ -3956,6 +3983,8 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
+    if (DEV.chart)
+        LS(`ULE: ${section}`);
     update_live_chart(moves || [data], id + 2);
     check_missing_moves(ply, round);
     return true;
@@ -3969,7 +3998,7 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv || board_target.name != section)
+    if (!Y.live_pv || section != section_board())
         return false;
 
     let is_pva = (section == 'pva'),
@@ -4039,10 +4068,16 @@ function update_player_eval(section, data) {
         });
     }
 
+    if (DEV.chart)
+        LS(`UPE: ${section}`);
     board.evals[data.ply] = data;
-    update_live_chart([data], id);
-    if (!is_pva)
+
+    if (is_pva)
+        update_player_charts(null, [data]);
+    else {
+        update_live_chart([data], id);
         check_missing_moves(data.ply, null, data.pos);
+    }
     return true;
 }
 
@@ -4265,8 +4300,9 @@ function random_position() {
 function change_setting_game(name, value) {
     let update_tab,
         prefix = name.split('_')[0],
+        sboard = section_board(),
         section = Y.x,
-        main = xboards[section];
+        main = xboards[sboard];
 
     // using exact name
     switch (name) {
@@ -4283,6 +4319,20 @@ function change_setting_game(name, value) {
         break;
     case 'copy_moves':
         copy_moves();
+        break;
+    case 'graph_color_0':
+    case 'graph_color_1':
+    case 'graph_color_2':
+    case 'graph_color_3':
+    case 'graph_line':
+    case 'graph_radius':
+    case 'graph_tension':
+    case 'graph_text':
+        update_chart_options(null, 3);
+        break;
+    case 'graph_eval_clamp':
+    case 'graph_eval_mode':
+        redraw_eval_charts(sboard);
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
@@ -4373,6 +4423,8 @@ function changed_section() {
 
     // reset some stuff
     reset_sub_boards(3);
+    if (DEV.chart)
+        LS(`CS: ${section}`);
     reset_charts(true);
 
     if (section == 'live')
@@ -4428,7 +4480,7 @@ function copy_moves() {
 function handle_board_events(board, type, value) {
     let move,
         name = board.name,
-        old_board = board_target,
+        old_board = section_board(),
         section = Y.x;
 
     switch (type) {
@@ -4456,6 +4508,10 @@ function handle_board_events(board, type, value) {
         board_target = board;
         if (value != undefined && !Visible(board.vis))
             open_table(board.tab);
+        break;
+    case 'new':
+        if (board_target == board)
+            old_board = null;
         break;
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
@@ -4505,12 +4561,17 @@ function handle_board_events(board, type, value) {
     }
 
     // changed board => redraw the graph
-    if (board_target != old_board) {
+    let new_board = section_board();
+    if (new_board != old_board) {
+        if (DEV.chart)
+            LS(`NN: ${old_board} => ${new_board}`);
         reset_charts(false);
-        if (board_target.name == 'pva')
+        if (new_board == 'pva')
             update_player_charts(null, board.moves);
-        else
+        else {
+            update_player_charts(null, board.moves);
             redraw_eval_charts(name);
+        }
     }
 }
 
@@ -4585,8 +4646,9 @@ function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = _('canvas', node),
+        sboard = section_board(),
         section = Y.x,
-        main = xboards[section];
+        main = xboards[sboard];
     if (DEV.open)
         LS(`opened_table: ${parent}/${name}`);
 

@@ -1678,9 +1678,7 @@ class XBoard {
      * Start a new game
      */
     new_game() {
-        let fen,
-            players = this.players;
-
+        let fen;
         if (this.frc) {
             let index = RandomInt(960);
             fen = this.chess.fen960(index);
@@ -1694,6 +1692,9 @@ class XBoard {
         this.instant();
         this.render(7);
         this.chess_fen(fen);
+
+        if (this.hook)
+            this.hook(this, 'new', null);
         this.maybe_play();
     }
 
@@ -1705,6 +1706,8 @@ class XBoard {
         // 0) fen/ply
         let fen = this.chess_fen();
         move.fen = fen;
+        this.chess_mobility(move, true);
+
         let now = Now(true),
             ply = get_move_ply(move),
             player = this.players[(2 + ply) % 2];
@@ -1746,6 +1749,7 @@ class XBoard {
 
         this.add_moves([move]);
         this.move_time = now;
+        this.eval(this.name, move);
 
         // 3) maybe finished the game? 50MR / stalemate / win / 3-fold
         if (this.manual) {
@@ -2504,8 +2508,10 @@ class XBoard {
         if (!max_depth || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = moves[id];
-            move.depth = 0;
-            move.score = 0;
+            Assign(move, {
+                depth: '-',
+                score: '-',
+            });
             this.worker_message({
                 data: {
                     avg_depth: 0,
@@ -2668,7 +2674,7 @@ class XBoard {
             reply.lefts[id] = 0;
 
         for (let move of moves)
-            if (move.piece && move.score > -900)
+            if (move.piece && (move.score > -900) || move.score == '-')
                 combine.push(move);
 
         reply.nodes += nodes;
@@ -2683,7 +2689,7 @@ class XBoard {
             let move = moves[0];
             if (!reply.count)
                 LS(this.fen);
-            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(2): '-').padStart(7)} : ${reply.lefts} : ${combine.length}`);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(format_eval(move? move.score: '-')).padStart(7)} : ${reply.lefts} : ${combine.length}`);
         }
         reply.count ++;
         if (!reply.lefts.every(item => !item))
@@ -2715,12 +2721,16 @@ class XBoard {
 
         if (id >= -1) {
             Assign(player, {
+                d: reply.avg_depth,
                 depth: `${reply.avg_depth}/${reply.sel_depth}`,
-                eval: best_score.toFixed(2),
+                eval: format_eval(best_score),
                 id: color,
+                n: reply.nodes2,
                 node: FormatUnit(reply.nodes2, '-'),
                 ply: ply + 1,
+                sd: reply.sel_depth,
                 speed: `${FormatUnit(nps)}nps`,
+                wv: format_eval(best_score),
             });
             this.update_mini(color);
             this.eval(this.name, player);
@@ -2797,11 +2807,13 @@ class XBoard {
         Assign(result, {
             _fixed: 2,
             d: reply.avg_depth,
+            id: color,
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
             s: Floor(nps + 0.5),
             sd: reply.sel_depth,
-            wv: best_score.toFixed(2),
+            tb: 0,
+            wv: format_eval(best_score),
         });
         this.new_move(result);
     }
