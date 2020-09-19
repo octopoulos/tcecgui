@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
+// @version 2020-09-18
 /*
 globals
 Chess, importScripts, LS, Now, Random, self, Undefined
@@ -74,7 +74,7 @@ function think(engine, fen, mask, frc) {
     chess.load(fen);
 
     let start = Now(true),
-        moves = chess.moves(frc, false),
+        moves = chess.moves(false),
         masks = chess.search(moves, mask),
         elapsed = Now(true) - start;
 

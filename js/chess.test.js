@@ -78,7 +78,7 @@ beforeEach(() => {
 
 // castling
 [
-    ['8/8/8/8/8/8/8/8 w - - 0 1', [-1, -1, -1, -1]],
+    ['8/8/8/8/8/8/8/8 w - - 0 1', [255, 255, 255, 255]],
     [START_FEN, [119, 112, 7, 0]],
     ['qnnbbrkr/pppppppp/8/8/8/8/PPPPPPPP/QNNBBRKR w HFhf - 0 1', [119, 117, 7, 5]],
     ['q4rkr/ppp1bppp/2nnp3/1b1p4/3PP3/2NN1B2/PPPB1PPP/Q4RKR b HFhf - 9 7', [119, 117, 7, 5]],

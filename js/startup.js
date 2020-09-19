@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
+// @version 2020-09-18
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -290,6 +290,9 @@ function change_setting_special(name, value, no_close) {
         pva.set_ai(true);
         pva.think();
         break;
+    case 'game_time':
+        configure('t', value);
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -508,7 +511,7 @@ function configure(name, value, only_color) {
 
         // create the command line
         save_option(key, Keys(result).sort().map(key => `${key}=${result[key]}`).join(' '));
-        let node = _(`input[name="${key}"]`);
+        let node = _(`textarea[name="${key}"]`);
         if (node)
             node.value = Y[key];
     }
@@ -1892,11 +1895,13 @@ function prepare_settings() {
             game_depth: option_number(-4, -120, 6),
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'qui', 'nn'], 'hce'],
             game_every: option_number(500, 50, 5000, 50),
+            game_level: [['custom', 'ninja dog', 'beginner', 'amateur', 'proficient', 'master'], 'amateur'],
             game_new_game: '1',
-            game_options_black: [{type: 'text'}, 'd=-4 e=hce s=ab'],
-            game_options_white: [{type: 'text'}, 'd=-4 e=hce s=ab'],
+            game_options_black: [{type: 'area'}, 'd=-4 e=hce s=ab'],
+            game_options_white: [{type: 'area'}, 'd=-4 e=hce s=ab'],
             game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
             game_think: '1',
+            game_time: option_number(5, -1, 120),
             game_threads: option_number(Max(1, cores / 2), 0, cores),
             game_wasm: [ON_OFF, 1],
         },

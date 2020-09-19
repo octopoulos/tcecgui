@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
+// @version 2020-09-18
 //
 // Game specific code:
 // - control the board, moves
@@ -14,9 +14,10 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil, change_setting, charts,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls, CopyClipboard,
 create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit,
-From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
+DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, format_eval,
+FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
+HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
+IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
 parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
 Resource, restore_history, resume_game, Round,
@@ -114,6 +115,7 @@ let ANALYSIS_URLS = {
             vis: 'table-pv',
         },
         pva: {
+            clock: start_clock,
             manual: true,
             size: 36,
             sub: 1,
@@ -421,35 +423,6 @@ function format_engine(engine, multi_line, scale) {
 }
 
 /**
- * Format the eval to make the 2 decimals smaller if the eval is high
- * @param {number} value
- * @param {boolean=} process can make decimals smaller
- * @returns {number}
- */
-function format_eval(value, process) {
-    let float = parseFloat(value);
-    if (isNaN(float))
-        return value;
-
-    let small_decimal = Y.small_decimal,
-        text = float.toFixed(2);
-
-    if (!process || small_decimal == 'never')
-        return text;
-
-    let items = text.split('.');
-
-    if (small_decimal != 'always') {
-        let abs = Abs(float);
-        if (abs < 10 && small_decimal == '>= 10')
-            return text;
-        if (abs < 100 && small_decimal == '>= 100')
-            return text;
-    }
-    return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
-}
-
-/**
  * Format a FEN
  * @param {string} fen
  * @returns {string}
@@ -717,6 +690,8 @@ function create_boards(mode='html') {
         Class('.color', '-active');
         Class(this, 'active');
     });
+
+    xboards.pva.reset();
 }
 
 /**
@@ -773,7 +748,6 @@ function reset_sub_boards(mode, start_fen) {
 function show_board_info(name, show) {
     let board = xboards[name],
         node = board.node,
-        players = board.players,
         status = (name == 'pva')? Y.status_pva: Y.status;
 
     if (show == undefined) {
@@ -802,14 +776,10 @@ function show_board_info(name, show) {
     Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
     Style('.xframe', `top:${show? 23: 0}px`, true, node);
 
-    for (let id = 0; id < 2; id ++) {
-        let player = players[id],
-            mini = _(`.xcolor${id}`, node);
-        HTML('.xeval', format_eval(player.eval, true), mini);
-        HTML(`.xleft`, player.sleft, mini);
-        HTML('.xshort', player.short, mini);
-        HTML(`.xtime`, player.stime, mini);
-    }
+    board.update_mini(0);
+    board.update_mini(1);
+    if (board.manual && !board.is_ai())
+        board.show_picks(true);
 }
 
 /**
@@ -3147,6 +3117,7 @@ function update_move_info(section, ply, move, fresh) {
         depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': Undefined(move.wv, '-'),
         id = (ply + 2) % 2,
+        is_pva = (section == 'pva'),
         main = xboards[section],
         num_ply = main.moves.length,
         players = main.players,
@@ -3158,20 +3129,25 @@ function update_move_info(section, ply, move, fresh) {
             tb: is_book? '-': FormatUnit(move.tb, '-'),
         };
 
-    Keys(stats).forEach(key => {
-        HTML(Id(`${key}${id}`), stats[key]);
-    });
+    // pva?
+    if (is_pva)
+        main.update_mini(id, stats);
+    if (!is_pva) {
+        Keys(stats).forEach(key => {
+            HTML(Id(`${key}${id}`), stats[key]);
+        });
 
-    if (fresh || Y.x == 'archive') {
-        let player = players[id];
-        player.eval = eval_;
+        if (fresh || Y.x == 'archive') {
+            let player = players[id];
+            player.eval = eval_;
 
-        if (!isNaN(move.tl))
-            Assign(player, {
-                elapsed: 0,
-                left: move.tl * 1,
-                time: move.mt * 1,
-            });
+            if (!isNaN(move.tl))
+                Assign(player, {
+                    elapsed: 0,
+                    left: move.tl * 1,
+                    time: move.mt * 1,
+                });
+        }
     }
 
     // past move?
@@ -3587,7 +3563,7 @@ function update_pgn(section, data, extras, reset_moves) {
         let who = last_move? (1 + last_move.ply) % 2: 0;
         if (!new_game)
             players[who].time = 0;
-        start_clock(who, finished, pgn.elapsed || 0);
+        start_clock(section, who, finished, pgn.elapsed || 0);
     }
     return true;
 }
@@ -3727,10 +3703,11 @@ function analyse_log(line) {
 
 /**
  * Clock countdown
+ * @param {string} section live, pva
  * @param {number} id
  */
-function clock_tick(id) {
-    let main = xboards.live,
+function clock_tick(section, id) {
+    let main = xboards[section],
         now = Now(true),
         player = main.players[id],
         elapsed = (now - player.start) * 1000,
@@ -3745,8 +3722,8 @@ function clock_tick(id) {
         timeout += 100;
 
     player.elapsed = elapsed;
-    update_clock('live', id);
-    add_timeout(`clock${id}`, () => {clock_tick(id, now);}, timeout);
+    update_clock(section, id);
+    add_timeout(`clock-${section}${id}`, () => {clock_tick(section, id, now);}, timeout);
 }
 
 /**
@@ -3759,43 +3736,50 @@ function set_viewers(count) {
 
 /**
  * Start the clock for one player, and stop it for the other
+ * @param {string} section live, pva
  * @param {number} id
- * @param {boolean} finished if true, then both clocks are stopped
- * @param {number} delta elapsed time since pgn creation
+ * @param {boolean=} finished if true, then both clocks are stopped
+ * @param {number=} delta elapsed time since pgn creation
  */
-function start_clock(id, finished, delta) {
-    if (Y.x != 'live')
-        return;
+function start_clock(section, id, finished, delta) {
+    let is_live = (section == 'live');
+    if (is_live) {
+        if (Y.x != section)
+            return;
 
-    S(Id(`cog${id}`), !finished);
-    Hide(`#cog${1 - id}`);
+        S(Id(`cog${id}`), !finished);
+        Hide(`#cog${1 - id}`);
+    }
 
-    let main = xboards.live,
+    let main = xboards[section],
         node = main.node,
         player = main.players[id];
     S(`.xcolor${id} .xcog`, !finished, node);
     Hide(`.xcolor${1 - id} .xcog`, node);
 
-    stop_clock([0, 1]);
+    stop_clock(section, [0, 1]);
+
     // handle Chat player
-    main.manual = (!finished && (player.feature & 256));
+    if (is_live)
+        main.manual = (!finished && (player.feature & 256));
 
     if (!finished) {
         Assign(player, {
             elapsed: 0.000001,
-            start: Now(true) - player.time / 1000 - delta,
+            start: Now(true) - player.time / 1000 - (delta || 0),
         });
-        clock_tick(id);
+        clock_tick(section, id);
     }
 }
 
 /**
  * Stop the clock(s)
+ * @param {string} section live, pva
  * @param {number[]} ids
  */
-function stop_clock(ids) {
+function stop_clock(section, ids) {
     for (let id of ids)
-        clear_timeout(`clock${id}`);
+        clear_timeout(`clock-${section}${id}`);
 }
 
 /**
@@ -3840,6 +3824,8 @@ function update_clock(section, id, move) {
         HTML(`.xleft`, left, mini);
         HTML(`.xtime`, time, mini);
     }
+    else if (section == 'pva')
+        HTML(`.xleft`, time, mini);
 }
 
 /**
@@ -4431,7 +4417,8 @@ function copy_moves() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x;
+    let name = board.name,
+        section = Y.x;
 
     switch (type) {
     case 'activate':
@@ -4467,14 +4454,16 @@ function handle_board_events(board, type, value) {
     // ply was set
     // !! make sure it's set manually
     case 'ply':
-        if (board.name == section) {
-            // update main board stats
-            let cur_ply = board.ply,
-                prev_ply = cur_ply - 1,
-                prev_move = board.moves[prev_ply];
-            update_move_info(section, prev_ply, prev_move);
-            update_move_info(section, cur_ply, value);
+        let cur_ply = board.ply,
+            prev_ply = cur_ply - 1,
+            prev_move = board.moves[prev_ply];
 
+        if (name == section || board.manual) {
+            // update main board stats
+            update_move_info(name, prev_ply, prev_move);
+            update_move_info(name, cur_ply, value);
+        }
+        if (name == section) {
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
             reset_sub_boards(1);

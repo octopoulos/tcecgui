@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-18
 //
 // general 3d rendering code
 //
@@ -1415,19 +1415,23 @@ function show_settings(name, xy) {
                 );
         }
         else if (data) {
-            let type = data.type;
+            let class_ = data.class,
+                type = data.type;
+            class_ = ` class="setting${class_? ' ': ''}${class_}"`;
             lines.push('<vert class="fcenter">');
 
-            if (type == 'number')
-                lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
+            if (type == 'area')
+                lines.push(`<textarea name="${key}"${class_}>${y_key}</textarea>`);
+            else if (type == 'number')
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
             else if (type == 'link') {
                 if (data.text)
-                    lines.push(`<input name="${key}" type="text" class="setting" data-t="${data.text}" data-t2="placeholder" value="">`);
+                    lines.push(`<input name="${key}" type="text"${class_} data-t="${data.text}" data-t2="placeholder" value="">`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
                 Attrs(Id('file'), {'data-x': key});
             }
             else if (type)
-                lines.push(`<input name="${key}" type="${type}" class="setting" value="${y_key}">`);
+                lines.push(`<input name="${key}" type="${type}"${class_} value="${y_key}">`);
             // dictionary
             else
                 lines.push(
@@ -1587,7 +1591,7 @@ function set_modal_events(parent) {
     Events('.item', 'contextmenu', function(e) {
         let next = this.nextElementSibling;
         if (next) {
-            next = _('input, select', next);
+            next = _('input, select, textarea', next);
             if (next) {
                 let name = next.name,
                     def = DEFAULTS[name];
@@ -1605,17 +1609,17 @@ function set_modal_events(parent) {
     }, parent);
 
     // inputs
-    Events('input, select', 'change', function() {
+    Events('input, select, textarea', 'change', function() {
         done_touch();
         change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, true);
     }, {}, parent);
     //
-    Input('input, select', function() {
+    Input('input, select, textarea', function() {
         done_touch();
         change_setting(undefined, undefined, true);
     }, parent);
     //
-    C('input, select', function() {
+    C('input, select, textarea', function() {
         if (cannot_click())
             return;
         change_setting(undefined, undefined, true);

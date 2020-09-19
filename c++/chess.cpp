@@ -18,6 +18,8 @@ using namespace emscripten;
 // specific
 #define DELETE(x) {if (x) delete x; x = nullptr;}
 #define DELETE_ARRAY(x) {if (x) delete [] x; x = nullptr;}
+#define Max(a, b) (((a) >= (b))? (a): (b))
+#define Min(a, b) (((a) <= (b))? (a): (b))
 
 // defines
 #define BISHOP 3
@@ -34,7 +36,7 @@ using namespace emscripten;
 #define COLOR_TEXT(color) ((color == 0)? 'w': 'b')
 #define COLORIZE(color, type) (type + (color << 3))
 #define DEFAULT_POSITION "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define EMPTY -1
+#define EMPTY 255
 #define FILE(square) (square & 15)
 #define FILE_ALGEBRAIC(square) ('a' + FILE(square))
 #define KING 6
@@ -53,7 +55,43 @@ using namespace emscripten;
 #define WHITE 0
 
 // tables
-int PAWN_OFFSETS[2][3] = {
+int MOBILITY_LIMITS[] = {
+        0,
+        8,          // P
+        32,         // N
+        24,         // B
+        24,         // R
+        24,         // Q
+        1,          // K
+        0,
+        0,
+        8,          // p
+        32,         // n
+        24,         // b
+        24,         // r
+        24,         // q
+        1,          // k
+        0,
+    },
+    MOBILITY_SCORES[] = {
+        0,
+        2,          // P
+        4,          // N
+        3,          // B
+        3,          // R
+        2,          // Q
+        1,          // K
+        0,
+        0,
+        2,          // p
+        4,          // n
+        3,          // b
+        3,          // r
+        2,          // q
+        1,          // k
+        0,
+    },
+    PAWN_OFFSETS[2][3] = {
         {-17, -16, -15},
         {17, 16, 15},
     },
@@ -173,46 +211,8 @@ int PAWN_OFFSETS[2][3] = {
         0,
     };
 
-// mobility: multiplier + limit
-int MOBILITY_LIMITS[] = {
-        0,
-        8,          // P
-        32,         // N
-        24,         // B
-        24,         // R
-        24,         // Q
-        1,          // K
-        0,
-        0,
-        8,          // p
-        32,         // n
-        24,         // b
-        24,         // r
-        24,         // q
-        1,          // k
-        0,
-    },
-    MOBILITY_SCORES[] = {
-        0,
-        2,          // P
-        4,          // N
-        3,          // B
-        3,          // R
-        2,          // Q
-        1,          // K
-        0,
-        0,
-        2,          // p
-        4,          // n
-        3,          // b
-        3,          // r
-        2,          // q
-        1,          // k
-        0,
-    };
-
 // extras
-std::map<std::string, uint8_t> EVAL_MODES = {
+std::map<std::string, int> EVAL_MODES = {
     {"hce", 1 + 2},
     {"mat", 1},
     {"mob", 2},
@@ -235,7 +235,7 @@ std::map<char, uint8_t> PIECES = {
     {'q', 13},
     {'k', 14},
 };
-std::map<std::string, uint8_t> SEARCH_MODES = {
+std::map<std::string, int> SEARCH_MODES = {
     {"ab", 2},
     {"mm", 1},
     {"rnd", 0},
@@ -267,10 +267,10 @@ struct MoveText: Move {
 };
 
 struct State {
-    int     castling[4];
-    int     ep_square;
-    int     half_moves;
-    int     kings[2];
+    uint8_t castling[4];
+    uint8_t ep_square;
+    uint8_t half_moves;
+    uint8_t kings[2];
     Move    move;
 };
 
@@ -286,19 +286,19 @@ private:
 
     uint8_t attacks[16];
     int     avg_depth;
-    uint8_t board[128];
+    int     board[128];
     uint8_t bishops[8];
-    int     castling[4];
+    uint8_t castling[4];
     int     cur_ply;
     uint8_t defenses[16];
     int     ep_square;
-    uint8_t eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
+    int     eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     bool    frc;
-    int     half_moves;
+    uint8_t half_moves;
     int     idepth;                         // positive depth = max_depth - depth
     int     interpose[128];                 // check path, can interpose a piece there
-    int     kings[2];
+    uint8_t kings[4];
     uint8_t knights[8];
     int     materials[2];
     int     max_depth;
@@ -316,7 +316,7 @@ private:
     uint8_t queens[8];
     int     search_mode;                    // 1:minimax, 2:alpha-beta
     int     sel_depth;
-    uint8_t turn;
+    int     turn;
 
     /**
      * Add a single move
@@ -349,8 +349,8 @@ private:
     /**
      * Add a pawn move + promote moves
      */
-    void addPawnMove(std::vector<Move> &moves, uint8_t piece, int from, int to, uint8_t flags, uint8_t value) {
-        int rank = RANK(to);
+    void addPawnMove(std::vector<Move> &moves, uint8_t piece, uint8_t from, uint8_t to, uint8_t flags, uint8_t value) {
+        auto rank = RANK(to);
         if ((rank % 7) == 0) {
             for (uint8_t promote = QUEEN; promote >= KNIGHT; promote --)
                 addMove(moves, piece, from, to, flags | BITS_PROMOTION, promote, value);
@@ -453,12 +453,12 @@ private:
      * Uniquely identify ambiguous moves
      */
     std::string disambiguate(Move &move, std::vector<Move> &moves) {
-        int ambiguities = 0,
+        uint8_t ambiguities = 0,
             from = move.from,
             same_file = 0,
             same_rank = 0,
-            to = move.to;
-        uint8_t type = TYPE(move.piece);
+            to = move.to,
+            type = TYPE(move.piece);
 
         for (auto &move2 : moves) {
             int ambig_from = move2.from,
@@ -631,7 +631,7 @@ public:
      * @param square .
      * @return true if the square is attacked
      */
-    bool attacked(uint8_t color, int square) {
+    bool attacked(int color, uint8_t square) {
         // knight
         auto target = COLORIZE(color, KNIGHT);
         for (auto offset : PIECE_OFFSETS[KNIGHT]) {
@@ -645,8 +645,8 @@ public:
         // bishop + pawn + rook + queen
         auto offsets = PIECE_OFFSETS[QUEEN];
         for (int j = 0; j < 8; j ++) {
-            auto offset = offsets[j],
-                pos = square,
+            auto offset = offsets[j];
+            uint8_t pos = square,
                 target = BISHOP + (j & 1);
 
             for (auto k = 0; ; k ++) {
@@ -923,8 +923,8 @@ public:
      */
     std::vector<Move> createMoves(bool only_capture) {
         std::vector<Move> moves;
-        auto second_rank = 6 - turn * 5;
-        uint8_t us = turn,
+        auto second_rank = 6 - turn * 5,
+            us = turn,
             us8 = us << 3,
             them = us ^ 1;
 
@@ -941,7 +941,7 @@ public:
 
         auto checks = 0;
         auto dirs = PIECE_DIRS[QUEEN];
-        auto inter = 0,
+        uint8_t inter = 0,
             interpose_ep = EMPTY,
             king = kings[us];
         auto offsets = PIECE_OFFSETS[QUEEN];
@@ -1217,10 +1217,10 @@ public:
                     int flags = q? BITS_QSIDE_CASTLE: BITS_KSIDE_CASTLE,
                         king_to = pos0 + 6 - (q << 2),
                         rook_to = king_to - 1 + (q << 1),
-                        max_king = std::max(king, king_to),
-                        min_king = std::min(king, king_to),
-                        max_path = std::max(max_king, std::max(rook, rook_to)),
-                        min_path = std::min(min_king, std::min(rook, rook_to));
+                        max_king = Max(king, king_to),
+                        min_king = Min(king, king_to),
+                        max_path = Max(max_king, Max(rook, rook_to)),
+                        min_path = Min(min_king, Min(rook, rook_to));
 
                     // check that all squares are empty along the path
                     for (auto j = min_path; j <= max_path; j ++)
@@ -1280,9 +1280,9 @@ public:
         if (eval_mode & 2) {
             // mobility
             for (auto i = 1; i < 7; i ++)
-                score += std::min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
             for (auto i = 9; i < 15; i ++)
-                score -= std::min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
 
             // attacks + defenses
             // for (auto i = 1; i < 7; i ++)
@@ -1299,7 +1299,7 @@ public:
      * @param color 0, 1 + special cases: 2, 3
      * @return true if king is attacked
      */
-    bool kingAttacked(uint8_t color) {
+    bool kingAttacked(int color) {
         if (color > 1)
             color = (color == 2)? turn: turn ^ 1;
         return attacked(color ^ 1, kings[color]);
@@ -1373,7 +1373,7 @@ public:
 
         ep_square = (ep == "-")? EMPTY: anToSquare(ep);
         half_moves = half;
-        move_number = std::max(move, 1);
+        move_number = Max(move, 1);
         ply = move_number * 2 - 3 + turn;
         cur_ply = ply;
 
@@ -1401,7 +1401,7 @@ public:
             // fix corrupted FEN (only for the initial board)
             if (error) {
                 castle = "";
-                for (uint8_t color = 0; color < 2; color ++) {
+                for (auto color = 0; color < 2; color ++) {
                     char file_letter = color? 'a': 'A';
                     auto king = kings[color];
 
@@ -1432,7 +1432,7 @@ public:
      * @param decorate add + # decorators
      */
     Move moveObject(Move &move, bool decorate) {
-        uint8_t flags = 0;
+        auto flags = 0;
         Move move_obj;
         auto moves = createMoves(false);
 
@@ -1476,7 +1476,7 @@ public:
      * Make a raw move, no verification is being performed
      */
     void moveRaw(Move &move) {
-        uint8_t us = turn,
+        auto us = turn,
             them = us ^ 1;
 
         // not smart to do it for every move
@@ -1808,13 +1808,13 @@ public:
         if (!sloppy)
             return NULL_MOVE;
 
-        int from_file = -1,
-            from_rank = -1,
-            i = clean.size() - 1,
-            to = EMPTY;
-        uint8_t promote = 0,
+        uint8_t from_file = EMPTY,
+            from_rank = EMPTY,
+            promote = 0,
+            to = EMPTY,
             type = 0;
 
+        auto i = clean.size() - 1;
         if (i < 2)
             return NULL_MOVE;
 
@@ -1849,8 +1849,8 @@ public:
         for (auto &move : moves) {
             if (to == move.to
                     && (!type || type == TYPE(move.piece))
-                    && (from_file < 0 || from_file == FILE(move.from))
-                    && (from_rank < 0 || from_rank == RANK(move.from))
+                    && (from_file == EMPTY || from_file == FILE(move.from))
+                    && (from_rank == EMPTY || from_rank == RANK(move.from))
                     && (!promote || promote == move.promote)) {
                 move.m = moveToSan(move, moves);
                 return move;
@@ -1947,7 +1947,7 @@ public:
             move_number --;
         ply --;
 
-        uint8_t us = turn,
+        auto us = turn,
             them = turn ^ 1;
 
         // undo castle
@@ -2000,7 +2000,7 @@ public:
         return val(typed_memory_view(4, castling));
     }
 
-    bool em_checked(uint8_t color) {
+    bool em_checked(int color) {
         return kingAttacked(color);
     }
 
@@ -2016,7 +2016,7 @@ public:
         return frc;
     }
 
-    int em_material(uint8_t color) {
+    int em_material(int color) {
         return materials[color];
     }
 
@@ -2039,7 +2039,7 @@ public:
         return avg_depth + sel_depth;
     }
 
-    uint8_t em_turn() {
+    int em_turn() {
         return turn;
     }
 

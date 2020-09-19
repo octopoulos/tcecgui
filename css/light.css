@@ -1,5 +1,6 @@
 /*
 light.css
+@version 20200918
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -165,19 +166,24 @@ i {
     line-height: 0;
 }
 input,
-select {
+select,
+textarea {
     border: 1px solid #bbb;
     border-radius: 1px;
-    height: 24px;
     padding: 0.2em;
     width: calc(100% - 0.5em);
 }
+input,
+select {
+    height: 24px;
+}
 input:hover,
-select:hover {
+select:hover,
+textarea:hover {
     border: 1px solid #aaa;
 }
 input[type="checkbox"] {
-    margin: 0.5em;
+    margin: 0.2em 0.5em;
     transform: scale(1.35);
     width: auto;
 }
@@ -192,6 +198,9 @@ table {
 td {
     padding: 0.25em 0.5em;
     text-align: center;
+}
+textarea {
+    margin: 0.2em 0;
 }
 th {
     background: #191919;
@@ -371,7 +380,7 @@ grid {
     width: 100%;
 }
 .options > * {
-    max-width: 185px;
+    max-width: 200px;
     padding-right: 2px;
 }
 #modal a {
@@ -395,6 +404,7 @@ grid {
     transition: none;
 }
 .item {
+    align-self: center;
     padding: 0.3em 2em 0.3em 1em;
     width: 100%;
 }

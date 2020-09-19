@@ -1,5 +1,6 @@
 /*
 dark.css
+@version 20200918
 - used in Live mode
 - inherits from light.css
 */
@@ -9,13 +10,15 @@ html {
     color: #fff;
 }
 input,
-select {
+select,
+textarea {
     background: #222;
     border: 1px solid #666;
     color: #fff;
 }
 input:hover,
-select:hover {
+select:hover,
+textarea:hover {
     border: 1px solid #777;
 }
 .popup {

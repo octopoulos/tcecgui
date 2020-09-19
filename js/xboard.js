@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
+// @version 2020-09-18
 //
 // game board:
 // - 4 rendering modes:
@@ -18,11 +18,11 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, EMPTY, Events, Floor, Format, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide, HTML, I8, Id,
-InsertNodes, IsDigit, IsString, Keys,
+DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide, HTML,
+I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, Now, Pad, Parent, play_sound, RandomInt,
-S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
-window, Worker, Y
+S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
+Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -31,6 +31,14 @@ let AI = 'ai',
     CONSOLE_NULL = {
         console: 1,
         null: 1,
+    },
+    // those controls stop the play
+    CONTROL_STOPS = {
+        end: 1,
+        next: 1,
+        pause: 1,
+        prev: 1,
+        start: 1,
     },
     CONTROLS = {
         start: {
@@ -129,6 +137,7 @@ class XBoard {
     constructor(options={}) {
         // options
         this.border = options.border || 2;
+        this.clock = options.clock || (() => {});
         this.count = options.count;
         this.dims = options.dims || [8, 8];
         this.hook = options.hook;
@@ -193,6 +202,7 @@ class XBoard {
         this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
+        this.rect = null;                               // control rect
         this.replies = {};                              // worker replies
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.shared = null;
@@ -206,6 +216,7 @@ class XBoard {
             {id: 3},
         ];                                              // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
+        this.thinking = false;
         this.valid = true;
         this.workers = [];                              // web workers
         this.xmoves = null;
@@ -809,6 +820,16 @@ class XBoard {
     }
 
     /**
+     * The ply was changed
+     * @param {Move} move
+     */
+    changed_ply(move) {
+        if (this.hook)
+            this.hook(this, 'ply', move);
+        this.destroy_workers(true);
+    }
+
+    /**
      * Check if there's a delayed ply
      */
     check_delayed_ply() {
@@ -1180,25 +1201,28 @@ class XBoard {
             return;
 
         AnimationFrame(() => {
-            add_timeout(`pick${this.id}`, () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
+            add_timeout(`pick${this.id}`, () => {this.show_picks(true);}, is_delay? TIMEOUT_pick: 0);
         });
     }
 
     /**
      * Destroy the web workers
      * - useful when starting a new game, to make sure no code is running in the threads anymore
-     * @param {boolean=} force
+     * @param {boolean=} manual
      */
-    destroy_workers(force) {
-        for (let worker of this.workers)
-            worker.terminate();
+    destroy_workers(manual) {
+        if (!manual || this.thinking) {
+            for (let worker of this.workers)
+                worker.terminate();
+            this.thinking = false;
+            this.workers = [];
+        }
         this.fen2 = '';
-        this.workers = [];
 
-        if (force) {
+        if (manual) {
             this.finished = false;
             this.replies = {};
-            this.start_clock(0, true);
+            this.clock(this.name, 0, true);
             this.hide_arrows();
             this.set_play(true);
         }
@@ -1255,8 +1279,8 @@ class XBoard {
                 callback(that, 'control', name);
             }
 
-            if (name != 'play')
-                that.play(true, name == 'pause');
+            if (CONTROL_STOPS[name])
+                that.play(true, true);
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
@@ -1267,18 +1291,36 @@ class XBoard {
             if (['mousedown', 'touchstart'].includes(type)) {
                 if (!['next', 'prev'].includes(name))
                     return;
-                that.hold_button(name, 0);
+                that.play(true, true);
+                let target = Parent(e.target, {class_: 'control', self: true});
+                if (target) {
+                    that.rect = target.getBoundingClientRect();
+                    that.hold_button(name, 0);
+                }
             }
             else {
                 if (!that.hold)
                     return;
 
                 if (['mousemove', 'touchmove'].includes(type)) {
+                    // no 'leave' for touch => check rect
+                    let rect = that.rect;
+                    if (rect) {
+                        let [change] = touch_event(e);
+                        if (change.x < rect.left || change.x > rect.left + rect.width
+                                || change.y < rect.top || change.y > rect.bottom + rect.height)
+                            that.hold = null;
+                    }
                     if (name != that.hold)
                         that.hold = null;
                 }
                 else
                     that.hold = null;
+
+                if (!that.hold) {
+                    that.rect = null;
+                    that.play(true, true);
+                }
             }
 
             if (e.cancelable != false)
@@ -1371,7 +1413,8 @@ class XBoard {
         while (ply > start && !this.moves[ply])
             ply --;
         let move = this.set_ply(ply, {animate: true, manual: true});
-        this.set_ai(false);
+        this.set_ai(false, 0);
+        this.set_ai(false, 1);
         this.destroy_workers(true);
         return move;
     }
@@ -1398,6 +1441,13 @@ class XBoard {
      * - for now, only HTML code
      */
     hide_arrows() {
+        // update players' arrows
+        for (let player of this.players) {
+            let arrow = player.arrow;
+            if (arrow)
+                arrow[1] = null;
+        }
+
         for (let svg of this.svgs)
             Hide(svg.svg);
     }
@@ -1640,10 +1690,6 @@ class XBoard {
         this.destroy_workers(true);
         this.reset(true, fen);
 
-        // rotate if human is black
-        if (players[0].name != players[1].name)
-            this.rotate = (players[1].name != AI);
-
         this.instant();
         this.render(7);
         this.chess_fen(fen);
@@ -1695,10 +1741,12 @@ class XBoard {
             if (finished) {
                 this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
-                this.start_clock(0, true);
                 this.play(true);
             }
+            this.clock(this.name, (ply + 3) % 2, finished);
         }
+
+        this.hide_arrows();
         this.maybe_play();
     }
 
@@ -1782,18 +1830,18 @@ class XBoard {
             this.play_mode = 'play';
         }
 
-        if (stop && manual) {
+        if (stop && manual && this.manual) {
             this.destroy_workers(true);
             let players = this.players;
             players[0].name = HUMAN;
             players[1].name = HUMAN;
         }
 
-        this.set_play(stop);
         if (stop)
             this.delayed_picks(true);
         else
             this.hold_button('play', 0);
+        this.set_play(stop);
     }
 
     /**
@@ -2042,6 +2090,23 @@ class XBoard {
 
         this.set_fen(null, true);
         this.set_last(this.last);
+
+        // rotate if human is black
+        if (this.name == 'pva') {
+            let players = this.players;
+            if (players[0].name != players[1].name)
+                this.rotate = (players[1].name != AI);
+
+            for (let player of players) {
+                Assign(player, {
+                    elapsed: 0,
+                    left: 5400 * 1000,
+                    tc: 5400,
+                    tc2: 10,
+                    time: 0,
+                });
+            }
+        }
     }
 
     /**
@@ -2084,9 +2149,10 @@ class XBoard {
     /**
      * Set the current player AI or HUMAN
      * @param {boolean} ai
+     * @param {number=} offset player offset
      */
-    set_ai(ai) {
-        this.players[(1 + this.ply) % 2].name = ai? AI: HUMAN;
+    set_ai(ai, offset=0) {
+        this.players[(1 + this.ply + offset) % 2].name = ai? AI: HUMAN;
     }
 
     /**
@@ -2173,11 +2239,13 @@ class XBoard {
 
     /**
      * Set the play/pause icon
-     * @param {boolean} stop
+     * @param {boolean} play
      */
-    set_play(stop) {
-        S('[data-x="pause"]', !stop, this.node);
-        S('[data-x="play"]', stop, this.node);
+    set_play(play) {
+        if (this.hold == 'play')
+            play = false;
+        S('[data-x="pause"]', !play, this.node);
+        S('[data-x="play"]', play, this.node);
     }
 
     /**
@@ -2207,10 +2275,8 @@ class XBoard {
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
-            if (manual && this.hook) {
-                this.hook(this, 'ply', {ply: -1});
-                this.destroy_workers(true);
-            }
+            if (manual)
+                this.changed_ply({ply: -1});
             return {};
         }
 
@@ -2266,8 +2332,8 @@ class XBoard {
                 }, delay + offset);
         }
 
-        if (manual && this.hook)
-            this.hook(this, 'ply', move);
+        if (manual)
+            this.changed_ply(move);
 
         // new move => remove arrows from the past
         this.hide_arrows();
@@ -2276,19 +2342,17 @@ class XBoard {
         if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
-
-        if (manual)
-            this.destroy_workers(true);
         return move;
     }
 
     /**
      * Show which pieces can be picked
+     * @param {boolean=} force
      */
-    show_picks() {
+    show_picks(force) {
         if (!this.manual || timers.click_play)
             return;
-        if (this.fen == this.fen2)
+        if (!force && this.fen == this.fen2)
             return;
         if (this.is_ai())
             return;
@@ -2303,25 +2367,6 @@ class XBoard {
             this.add_high(from, 'turn');
 
         this.fen2 = this.fen;
-    }
-
-    /**
-     * Start the clock for one player, and stop it for the other
-     * @param {number} id
-     * @param {boolean} finished if true, then both clocks are stopped
-     */
-    start_clock(id, finished) {
-        S(`.xcolor${id} .xcog`, !finished, this.node);
-        Hide(`.xcolor${1 - id} .xcog`, this.node);
-    }
-
-    /**
-     * Stop the clock(s)
-     * @param {number[]} ids
-     */
-    stop_clock(ids) {
-        for (let id of ids)
-            clear_timeout(`xclock${id}`);
     }
 
     /**
@@ -2349,7 +2394,7 @@ class XBoard {
             if (!suggest)
                 this.clear_high('source target', false);
             this.set_play(false);
-            this.start_clock(color);
+            this.clock(this.name, color);
             this.create_workers();
 
             // check moves
@@ -2432,6 +2477,8 @@ class XBoard {
                 start2: now,
             });
         }
+
+        this.thinking = true;
 
         // pure random + insta move?
         if (!max_depth || num_worker < 1 || num_move < 2) {
@@ -2539,6 +2586,37 @@ class XBoard {
     }
 
     /**
+     * Update mini information in PVA
+     * @param {number} id
+     * @param {Object=} stats
+     */
+    update_mini(id, stats) {
+        let mini = _(`.xcolor${id}`, this.node),
+            player = this.players[id],
+            dico = {...player};
+
+        if (stats)
+            Assign(dico, stats);
+
+        HTML('.xeval', format_eval(dico.eval, true), mini);
+
+        if (this.name == 'pva') {
+            HTML(`.xleft`, Undefined(dico.stime, '-'), mini);
+            HTML('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
+            HTML(`.xtime`, Undefined(dico.depth, '-'), mini);
+
+            let arrow = player.arrow;
+            if (arrow)
+                this.arrow(arrow[0], arrow[1]);
+        }
+        else {
+            HTML(`.xleft`, player.sleft, mini);
+            HTML('.xshort', player.short, mini);
+            HTML(`.xtime`, player.stime, mini);
+        }
+    }
+
+    /**
      * Receive a worker message
      * @param {Event} e
      */
@@ -2595,8 +2673,7 @@ class XBoard {
         let now = Now(true),
             elapsed = now - reply.start,
             elapsed2 = now - reply.start2,
-            nps = (elapsed2 > 0.001)? reply.nodes2 / elapsed2: '-',
-            nps_string = (nps != '-')? `${FormatUnit(nps)}nps`: nps;
+            nps = (elapsed2 > 0.001)? reply.nodes2 / elapsed2: 0;
 
         // get the best move
         combine.sort((a, b) => b.score - a.score);
@@ -2611,15 +2688,19 @@ class XBoard {
             is_iterative = this.max_depth < 0,
             ply = get_fen_ply(fen),
             color = (1 + ply) % 2,
-            mini = _(`.xcolor${color}`, this.node);
+            player = this.players[color];
 
         if (color)
             best_score *= -1;
 
         if (id >= -1) {
-            HTML('.xeval', best_score.toFixed(2), mini);
-            HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps_string}</div>`, mini);
-            HTML(`.xtime`, `${reply.avg_depth}/${reply.sel_depth}`, mini);
+            Assign(player, {
+                depth: `${reply.avg_depth}/${reply.sel_depth}`,
+                eval: best_score.toFixed(2),
+                node: FormatUnit(reply.nodes2, '-'),
+                speed: `${FormatUnit(nps)}nps`,
+            });
+            this.update_mini(color);
         }
 
         // 6) iterative thinking?
@@ -2655,7 +2736,10 @@ class XBoard {
                             arrow = color + 2;
                         else
                             arrow = arrow.slice(-1) * 1;
-                        add_timeout('xarrow', () => {this.arrow(arrow, best);}, TIMEOUT_arrow);
+                        add_timeout('xarrow', () => {
+                            player.arrow = [arrow, best];
+                            this.arrow(arrow, best);
+                        }, TIMEOUT_arrow);
                     }
                 }
 
@@ -2669,10 +2753,11 @@ class XBoard {
             LS(combine);
 
         // 7) stop things
-        this.start_clock(0, true);
+        this.thinking = false;
 
         // arrow suggest
         if (suggest) {
+            player.arrow = [color + 2, best];
             this.arrow(color + 2, best);
             this.set_play(true);
             return;
@@ -2680,12 +2765,13 @@ class XBoard {
 
         // 8) move
         if (id > -1) {
-            let time = FromSeconds(elapsed2).slice(1, -1).map(item => Pad(item)).join(':');
-            HTML(`.xleft`, time, mini);
+            player.stime = FromSeconds(elapsed2).slice(1, -1).map(item => Pad(item)).join(':');
+            this.update_mini(color);
         }
 
         let result = this.chess_move(best, {decorate: true});
         Assign(result, {
+            _fixed: 2,
             d: reply.avg_depth,
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,

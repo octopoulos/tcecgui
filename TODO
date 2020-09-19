@@ -2,21 +2,21 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
-~          : 2020-07-22 : individual piece mobility
--          : 2020-09-08 : show game timer
+~          : 2020-07-22 : individual piece mobility, ex: bishop 1 + bishop 2
 -          : 2020-09-16 : transposition table
 -          : 2020-09-18 : pressure area around opponent king = larger bonus
 -          : 2020-09-17 : hce improvement: indirect flux, ex: piece piling up
 -          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
--          : 2020-09-17 : show MR50 of PVA when PVA is playing a game + active, otherwise Live
 -          : 2020-09-17 : depth => minimum depth, or: depth >=
 -          : 2020-09-17 : reuse move order from previous iterations
 -          : 2020-09-18 : pawn structure eval
 ~          : 2020-09-18 : keep list of non empty squares for each side => list of pieces
 ~          : 2020-09-18 : knight protected by pawn = good bonus, rook by rook = high too => matrix of this
-~          : 2020-09-17 : show history move stats when <- and ->
+-          : 2020-09-17 : show MR50 of PVA when PVA is playing a game + active, otherwise Live
+2020-09-18 : 2020-09-08 : show game timer
+2020-09-18 : 2020-09-17 : show history move stats when <- and ->
 2020-09-18 : 2020-09-18 : 4k3/1q5p/8/8/8/7K/8/7B w - - 0 31 => Bxb7 : bishop doesn't animate
 2020-09-18 : 2020-09-18 : remove frc from function args
 2020-09-17 : 2020-09-17 : don't reupdate stats too quickly bc no time to read, use a timeout

@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-17
+// @version 2020-09-18
 // - fast javascript implementation, 20x faster than original
 // - FRC support
 /*
@@ -49,7 +49,7 @@ let BISHOP = 3,
     COLOR_TEXT = 'wb',
     COLORIZE = (color, type) => (type + (color << 3)),
     DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    EMPTY = -1,
+    EMPTY = 255,
     FILE = square => square & 15,
     KING = 6,
     KNIGHT = 2,
@@ -1736,8 +1736,8 @@ var Chess = function(fen_) {
         if (!sloppy)
             return NULL_MOVE;
 
-        let from_file = -1,
-            from_rank = -1,
+        let from_file = EMPTY,
+            from_rank = EMPTY,
             i = clean.length - 1,
             to = EMPTY,
             promote = 0,
@@ -1777,8 +1777,8 @@ var Chess = function(fen_) {
         for (let move of moves) {
             if (to == move.to
                     && (!type || type == TYPE(move.piece))
-                    && (from_file < 0 || from_file == FILE(move.from))
-                    && (from_rank < 0 || from_rank == RANK(move.from))
+                    && (from_file == EMPTY || from_file == FILE(move.from))
+                    && (from_rank == EMPTY || from_rank == RANK(move.from))
                     && (!promote || promote == move.promote)) {
                 move.m = moveToSan(move, moves);
                 return move;

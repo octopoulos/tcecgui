@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
+// @version 2020-09-18
 //
 // global variables/functions shared across multiple js files
 //
@@ -140,7 +140,36 @@ function fix_move_format(move) {
         }
     }
 
-    move._fixed = true;
+    move._fixed = 1;
+}
+
+/**
+ * Format the eval to make the 2 decimals smaller if the eval is high
+ * @param {number} value
+ * @param {boolean=} process can make decimals smaller
+ * @returns {number}
+ */
+function format_eval(value, process) {
+    let float = parseFloat(value);
+    if (isNaN(float))
+        return value;
+
+    let small_decimal = Y.small_decimal,
+        text = float.toFixed(2);
+
+    if (!process || small_decimal == 'never')
+        return text;
+
+    let items = text.split('.');
+
+    if (small_decimal != 'always') {
+        let abs = Abs(float);
+        if (abs < 10 && small_decimal == '>= 10')
+            return text;
+        if (abs < 100 && small_decimal == '>= 100')
+            return text;
+    }
+    return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
 /**
