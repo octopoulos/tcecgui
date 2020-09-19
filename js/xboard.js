@@ -18,9 +18,9 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, EMPTY, Events, Floor, Format, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes,
-IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt,
+DEV, EMPTY, Events, Floor, Format, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide, HTML, I8, Id,
+InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, Now, Pad, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
 window, Worker, Y
 */
@@ -69,6 +69,7 @@ let AI = 'ai',
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    TIMEOUT_arrow = 200,
     TIMEOUT_click = 200,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
@@ -495,7 +496,8 @@ class XBoard {
             lines = items[0].split('/'),
             pieces = this.pieces;
 
-        if (items.length != 6)
+        // accept incomplete fens (without half_moves + move_number)
+        if (items.length < 4)
             return false;
 
         grid.fill('');
@@ -522,7 +524,6 @@ class XBoard {
                 else
                     col += parseInt(char);
             }
-
             off += 16;
         }
 
@@ -554,7 +555,7 @@ class XBoard {
             for (let item of items) {
                 if (item[0])
                     continue;
-                let diff = Abs((index >> 4) - (item[1] >> 4)) + Abs((index % 16) - (item[1] % 16));
+                let diff = (item[1] < -7)? 999: Abs((index >> 4) - (item[1] >> 4)) + Abs((index & 15) - (item[1] & 15));
                 if (diff < best) {
                     best = diff;
                     win = item;
@@ -565,11 +566,10 @@ class XBoard {
         }
 
         // 3) move non found pieces off the board
-        let [num_row] = this.dims;
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 if (!piece[0])
-                    piece[1] = -num_row;
+                    piece[1] = -8;
         });
 
         // 4) update variables
@@ -708,8 +708,8 @@ class XBoard {
         let path,
             name = this.name,
             rotate = this.rotate,
-            x1 = ROTATE(rotate, dico.from % 16),
-            x2 = ROTATE(rotate, dico.to % 16),
+            x1 = ROTATE(rotate, dico.from & 15),
+            x2 = ROTATE(rotate, dico.to & 15),
             y1 = ROTATE(rotate, dico.from >> 4),
             y2 = ROTATE(rotate, dico.to >> 4);
 
@@ -930,7 +930,7 @@ class XBoard {
 
         // calculate
         let checked = chess.checked(chess.turn()),
-            moves = this.chess_moves(Undefined(move.frc, this.frc)),
+            moves = this.chess_moves(),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -957,14 +957,13 @@ class XBoard {
     chess_move(text, options={}) {
         let result,
             chess = this.chess,
-            decorate = Undefined(options.decorate, false),
-            frc = Undefined(options.frc, this.frc);
+            decorate = Undefined(options.decorate, false);
 
         // handle UCI: e1g1 = O-O, e7e8q = promotion
         if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
-            result = chess.moveUci(text, frc, true);
+            result = chess.moveUci(text, true);
         else
-            result = IsString(text)? chess.moveSan(text, frc, decorate, false): chess.moveObject(text, frc, true);
+            result = IsString(text)? chess.moveSan(text, decorate, false): chess.moveObject(text, true);
 
         if (result.piece) {
             result.san = result.m;
@@ -976,12 +975,11 @@ class XBoard {
 
     /**
      * Calculate all legal moves
-     * @param {boolean} frc
      * @param {number=} single_square
      * @returns {Object[]}
      */
-    chess_moves(frc, single_square=EMPTY) {
-        let moves = this.chess.moves(frc, false);
+    chess_moves(single_square=EMPTY) {
+        let moves = this.chess.moves(false);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         if (single_square != EMPTY)
@@ -1198,9 +1196,9 @@ class XBoard {
         this.workers = [];
 
         if (force) {
-            Hide(`.xcog`, this.node);
             this.finished = false;
             this.replies = {};
+            this.start_clock(0, true);
             this.hide_arrows();
             this.set_play(true);
         }
@@ -1310,7 +1308,7 @@ class XBoard {
                 return;
 
             this.chess_load(this.fen);
-            let moves = this.chess_moves(this.frc, this.picked);
+            let moves = this.chess_moves(this.picked);
             for (let move of moves)
                 this.add_high(move.to, 'target');
             if (moves[0])
@@ -1554,7 +1552,7 @@ class XBoard {
      */
     is_finished(move, fen, ply) {
         // 1) stalemate
-        let moves = this.chess_moves(this.frc);
+        let moves = this.chess_moves();
         if (!moves.length) {
             let is_mate = move.m.slice(-1) == '#';
             LS(is_mate? `${WB_TITLE[ply % 2]} mates.`: 'Stalemate.');
@@ -1697,7 +1695,7 @@ class XBoard {
             if (finished) {
                 this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
-                Hide(`.xcog`, this.node);
+                this.start_clock(0, true);
                 this.play(true);
             }
         }
@@ -1857,7 +1855,7 @@ class XBoard {
                         even = (i + j) % 2,
                         note_x = '',
                         note_y = '',
-                        square = i * 16 + j,
+                        square = (i << 4) + j,
                         style = '';
 
                     if (notation) {
@@ -1906,8 +1904,7 @@ class XBoard {
                     if (!found || !node || node.style.opacity > 0)
                         continue;
 
-
-                    let col = ROTATE(rotate, index % 16),
+                    let col = ROTATE(rotate, index & 15),
                         row = ROTATE(rotate, index >> 4),
                         style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
                     Style(node, `transform:${style_transform};transition:none`);
@@ -1923,7 +1920,7 @@ class XBoard {
 
                     for (let item of items) {
                         let [found, index, node] = item,
-                            col = index % 16,
+                            col = index & 15,
                             row = index >> 4;
 
                         if (!node) {
@@ -1937,7 +1934,7 @@ class XBoard {
                             Style('div', `${style};background-position-x:${offset}px`, true, node);
 
                         if (found) {
-                            node.dataset.c = row * 16 + col;
+                            node.dataset.c = (row << 4) + col;
                             col = ROTATE(rotate, col);
                             row = ROTATE(rotate, row);
 
@@ -2298,7 +2295,7 @@ class XBoard {
 
         this.chess_load(this.fen);
 
-        let moves = this.chess_moves(this.frc),
+        let moves = this.chess_moves(),
             froms = new Set(moves.map(move => move.from));
 
         this.clear_high('source target', false);
@@ -2306,6 +2303,25 @@ class XBoard {
             this.add_high(from, 'turn');
 
         this.fen2 = this.fen;
+    }
+
+    /**
+     * Start the clock for one player, and stop it for the other
+     * @param {number} id
+     * @param {boolean} finished if true, then both clocks are stopped
+     */
+    start_clock(id, finished) {
+        S(`.xcolor${id} .xcog`, !finished, this.node);
+        Hide(`.xcolor${1 - id} .xcog`, this.node);
+    }
+
+    /**
+     * Stop the clock(s)
+     * @param {number[]} ids
+     */
+    stop_clock(ids) {
+        for (let id of ids)
+            clear_timeout(`xclock${id}`);
     }
 
     /**
@@ -2317,18 +2333,12 @@ class XBoard {
     think(suggest, step) {
         if (this.finished)
             return;
-        if (!step) {
-            if (!suggest)
-                this.clear_high('source target', false);
-            this.set_play(false);
-        }
 
         let moves, num_move,
             chess = this.chess,
             fen = this.fen,
             folds = [],
-            ply = get_fen_ply(this.fen),
-            color = (1 + ply) % 2;
+            color = (1 + this.ply) % 2;
 
         // busy thinking => return
         let reply = SetDefault(this.replies, fen, {});
@@ -2336,12 +2346,15 @@ class XBoard {
             return true;
 
         if (!step) {
-            Show(`.xcolor${color} .xcog`, this.node);
+            if (!suggest)
+                this.clear_high('source target', false);
+            this.set_play(false);
+            this.start_clock(color);
             this.create_workers();
 
             // check moves
             chess.load(fen);
-            moves = this.chess_moves(this.frc);
+            moves = this.chess_moves();
             num_move = moves.length;
             if (!num_move)
                 return false;
@@ -2357,7 +2370,7 @@ class XBoard {
                     draw = (rule50 >= 50 || fen_set.has(prune));
 
                 if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
-                    let moves2 = this.chess_moves(this.frc);
+                    let moves2 = this.chess_moves();
                     for (let move2 of moves2) {
                         chess.moveRaw(move2);
                         let splits2 = chess.fen().split(' '),
@@ -2582,7 +2595,8 @@ class XBoard {
         let now = Now(true),
             elapsed = now - reply.start,
             elapsed2 = now - reply.start2,
-            nps = (elapsed2 > 0.001)? `${FormatUnit(reply.nodes2 / elapsed2)}nps`: '-';
+            nps = (elapsed2 > 0.001)? reply.nodes2 / elapsed2: '-',
+            nps_string = (nps != '-')? `${FormatUnit(nps)}nps`: nps;
 
         // get the best move
         combine.sort((a, b) => b.score - a.score);
@@ -2604,7 +2618,7 @@ class XBoard {
 
         if (id >= -1) {
             HTML('.xeval', best_score.toFixed(2), mini);
-            HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps}</div>`, mini);
+            HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps_string}</div>`, mini);
             HTML(`.xtime`, `${reply.avg_depth}/${reply.sel_depth}`, mini);
         }
 
@@ -2630,7 +2644,7 @@ class XBoard {
 
         if (is_iterative) {
             moves = combine.filter(move => !move.special);
-            if (moves.length > 1 && this.depth < 8) {
+            if (moves.length > 1) {
                 // arrow?
                 if (this.depth >= 3 && predict > 1) {
                     let arrow = Y.game_arrow;
@@ -2641,7 +2655,7 @@ class XBoard {
                             arrow = color + 2;
                         else
                             arrow = arrow.slice(-1) * 1;
-                        this.arrow(arrow, best);
+                        add_timeout('xarrow', () => {this.arrow(arrow, best);}, TIMEOUT_arrow);
                     }
                 }
 
@@ -2654,20 +2668,31 @@ class XBoard {
         if (DEV.engine)
             LS(combine);
 
+        // 7) stop things
+        this.start_clock(0, true);
+
         // arrow suggest
         if (suggest) {
             this.arrow(color + 2, best);
-            Hide(`.xcog`, mini);
             this.set_play(true);
             return;
         }
 
-        // 7) move
-        Hide(`.xcog`, mini);
-        if (id > -1)
-            HTML(`.xleft`, elapsed2.toFixed(1), mini);
+        // 8) move
+        if (id > -1) {
+            let time = FromSeconds(elapsed2).slice(1, -1).map(item => Pad(item)).join(':');
+            HTML(`.xleft`, time, mini);
+        }
 
         let result = this.chess_move(best, {decorate: true});
+        Assign(result, {
+            d: reply.avg_depth,
+            mt: Floor(elapsed2 * 1000 + 0.5),
+            n: reply.nodes2,
+            s: Floor(nps + 0.5),
+            sd: reply.sel_depth,
+            wv: best_score.toFixed(2),
+        });
         this.new_move(result);
     }
 }

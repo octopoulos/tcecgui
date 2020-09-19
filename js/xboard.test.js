@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-18
 //
 /*
 globals
@@ -68,6 +68,8 @@ live.dual = archive;
     [START_FEN, true],
     ['1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 Nc6', false],
     ['1. e4 c5 2. Nf3 d6', false],
+    ['4k3/1q5p/8/8/8/7K/8/7B w - - 0 31', true],
+    ['4k3/1B5p/8/8/8/7K/8/8 b - - 0 31', true],
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
         expect(live.analyse_fen(fen)).toEqual(answer);
