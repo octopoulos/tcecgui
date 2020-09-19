@@ -112,8 +112,10 @@ class XBoard {
      * @param {Object} options options:
      * @example
      * - border         // frame size
+     * - clock          // start_clock function
      * - count          // add a counter in a red circle
      * - dims           // [num_col, num_row]
+     * - eval           // update_player_eval function
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' and 'null' too
      * - last           // default result text, ex: *
@@ -140,6 +142,7 @@ class XBoard {
         this.clock = options.clock || (() => {});
         this.count = options.count;
         this.dims = options.dims || [8, 8];
+        this.eval = options.eval || (() => {});
         this.hook = options.hook;
         this.id = options.id;
         this.last = options.last || '';
@@ -2714,10 +2717,13 @@ class XBoard {
             Assign(player, {
                 depth: `${reply.avg_depth}/${reply.sel_depth}`,
                 eval: best_score.toFixed(2),
+                id: color,
                 node: FormatUnit(reply.nodes2, '-'),
+                ply: ply + 1,
                 speed: `${FormatUnit(nps)}nps`,
             });
             this.update_mini(color);
+            this.eval(this.name, player);
         }
 
         // 6) iterative thinking?

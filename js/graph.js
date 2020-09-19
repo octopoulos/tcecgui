@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-19
+// @version 2020-09-18
 //
 /*
 globals
@@ -392,9 +392,14 @@ function new_y_axis(id, y_ticks, dico) {
 
 /**
  * Redraw eval charts when eval mode has changed
+ * @param {string} section
  */
-function redraw_eval_charts() {
-    let moves = xboards[Y.x].moves,
+function redraw_eval_charts(section) {
+    let board = xboards[section];
+    if (!board)
+        return;
+
+    let moves = board.moves,
         num_move = moves.length;
 
     // update existing moves + kibitzer evals (including next move)
@@ -428,16 +433,18 @@ function reset_chart(chart) {
 
 /**
  * Reset all charts
+ * @param {boolean} all reset (live + pv) evals as well
  */
-function reset_charts()
+function reset_charts(all)
 {
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
 
-    for (let key of ['live0', 'live1', 'pv0', 'pv1'])
-        xboards[key].evals = [];
+    if (all)
+        for (let key of ['live0', 'live1', 'pv0', 'pv1'])
+            xboards[key].evals = [];
 }
 
 /**

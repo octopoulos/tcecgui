@@ -116,6 +116,7 @@ let ANALYSIS_URLS = {
         },
         pva: {
             clock: start_clock,
+            eval: update_player_eval,
             manual: true,
             size: 36,
             sub: 1,
@@ -3491,7 +3492,7 @@ function update_pgn(section, data, extras, reset_moves) {
         main.reset(1, pgn.frc);
         if (is_same) {
             reset_sub_boards(7, pgn.frc);
-            reset_charts();
+            reset_charts(true);
         }
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
@@ -3877,7 +3878,7 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @returns {boolean}
  */
 function update_live_eval(section, data, id, force_ply) {
-    if (section != Y.x || !data)
+    if (!data || board_target.name != section)
         return false;
 
     let board = xboards[`live${id}`],
@@ -3968,34 +3969,37 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv || section != Y.x)
+    if (!Y.live_pv || board_target.name != section)
         return false;
 
-    let main = xboards[section],
+    let is_pva = (section == 'pva'),
+        main = xboards[section],
         cur_ply = main.ply,
         engine = data.engine,
         eval_ = data.eval,
         id = Undefined(data.id, data.color),
         mini = _(`.xcolor${id}`, main.node),
-        node = Id(`moves-pv${id}`),
         player = main.players[id],
         short = get_short_name(engine);
 
     // 1) update the live part on the left
-    let dico = {
-        eval: format_eval(eval_),
-        score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
-    };
+    if (!is_pva) {
+        let dico = {
+                eval: format_eval(eval_),
+                score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
+            },
+            node = Id(`moves-pv${id}`);
 
-    // update engine name if it has changed
-    update_hardware(section, id, engine, short, null, [node]);
+        // update engine name if it has changed
+        update_hardware(section, id, engine, short, null, [node]);
 
-    Keys(dico).forEach(key => {
-        HTML(`[data-x="${key}"]`, dico[key], node);
-    });
+        Keys(dico).forEach(key => {
+            HTML(`[data-x="${key}"]`, dico[key], node);
+        });
 
-    HTML(`.xshort`, short, mini);
-    HTML(`.xeval`, format_eval(eval_), mini);
+        HTML(`.xshort`, short, mini);
+        HTML(`.xeval`, format_eval(eval_), mini);
+    }
 
     // 2) add moves
     let board = xboards[`pv${id}`],
@@ -4008,7 +4012,7 @@ function update_player_eval(section, data) {
         LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
         LS(board.moves);
     }
-    else {
+    else if (data.pv) {
         data.ply = split_move_string(data.pv)[0];
         board.add_moves_string(data.pv);
     }
@@ -4020,7 +4024,7 @@ function update_player_eval(section, data) {
 
     // 3) update the engine info in the center
     // - only if the ply is the currently selected ply + 1
-    if (data.ply == cur_ply + 1) {
+    if (!is_pva && data.ply == cur_ply + 1) {
         let stats = {
             depth: data.depth,
             engine: format_engine(data.engine, true, 21),
@@ -4037,7 +4041,8 @@ function update_player_eval(section, data) {
 
     board.evals[data.ply] = data;
     update_live_chart([data], id);
-    check_missing_moves(data.ply, null, data.pos);
+    if (!is_pva)
+        check_missing_moves(data.ply, null, data.pos);
     return true;
 }
 
@@ -4368,7 +4373,7 @@ function changed_section() {
 
     // reset some stuff
     reset_sub_boards(3);
-    reset_charts();
+    reset_charts(true);
 
     if (section == 'live')
         download_live(redraw_eval_charts);
@@ -4423,6 +4428,7 @@ function copy_moves() {
 function handle_board_events(board, type, value) {
     let move,
         name = board.name,
+        old_board = board_target,
         section = Y.x;
 
     switch (type) {
@@ -4496,6 +4502,15 @@ function handle_board_events(board, type, value) {
         let fen = move.fen;
         if (fen)
             HTML('#overview td[data-x="50"]', 50 - fen.split(' ')[4]);
+    }
+
+    // changed board => redraw the graph
+    if (board_target != old_board) {
+        reset_charts(false);
+        if (board_target.name == 'pva')
+            update_player_charts(null, board.moves);
+        else
+            redraw_eval_charts(name);
     }
 }
 
