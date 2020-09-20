@@ -1,7 +1,7 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-16
-// - wasm implementation, 25x faster than original, and 2x faster than fast chess.js
+// @version 2020-09-19
+// - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
 
@@ -100,19 +100,19 @@ int MOBILITY_LIMITS[] = {
     PIECE_ATTACKS[16][16] = {
         //  .   P   N   B   R   Q   K   .   .   p   n   b   r   q   k   .
         {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-        {0,  5, 25, 10,  5,  5,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0},    // P
+        {0,  7, 15, 10,  2,  1,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0},    // P
         {0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  2,  9,  5,  5,  5,  0},    // N
         {0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  9,  2,  5,  5,  5,  0},    // B
-        {0, 10,  4,  4, 30, 15,  0,  0,  0,  5,  5,  5,  2,  5,  5,  0},    // R
-        {0,  5,  5,  5, 15,  0,  0,  0,  0,  5,  5,  5,  5,  2,  5,  0},    // Q
+        {0, 10,  4,  4, 18, 14,  0,  0,  0,  5,  5,  5,  2,  5,  5,  0},    // R
+        {0,  5,  5,  5, 14,  1,  0,  0,  0,  5,  5,  5,  5,  2,  5,  0},    // Q
         {0,  5,  9,  9,  9,  9,  0,  0,  0, 10,  5,  5,  5,  0,  0,  0},    // K
         {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
         {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-        {0,  1,  1,  1,  1,  1,  5,  0,  0,  5, 25, 10,  5,  5,  0,  0},    // p
+        {0,  1,  1,  1,  1,  1,  5,  0,  0,  7, 15, 10,  2,  1,  0,  0},    // p
         {0,  5,  2,  9,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0},    // n
         {0,  5,  9,  2,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0},    // b
-        {0,  5,  5,  5,  2,  5,  5,  0,  0,  5, 10,  4, 30, 15,  0,  0},    // r
-        {0,  5,  5,  5,  5,  2,  5,  0,  0,  5,  5,  5, 15,  0,  0,  0},    // q
+        {0,  5,  5,  5,  2,  5,  5,  0,  0,  5, 10,  4, 18, 14,  0,  0},    // r
+        {0,  5,  5,  5,  5,  2,  5,  0,  0,  5,  5,  5, 14,  1,  0,  0},    // q
         {0, 10,  5,  5,  5,  0,  0,  0,  0,  5,  9,  9,  9,  9,  9,  0},    // k
         {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
     },
@@ -213,12 +213,12 @@ int MOBILITY_LIMITS[] = {
 
 // extras
 std::map<std::string, int> EVAL_MODES = {
+    {"att", 1 + 2 + 4},
     {"hce", 1 + 2},
     {"mat", 1},
     {"mob", 2},
-    {"nn", 1 + 2 + 8},
+    {"nn", 1 + 2 + 32},
     {"null", 0},
-    {"qui", 1 + 2 + 4},
 };
 // piece names for print
 std::map<char, uint8_t> PIECES = {
@@ -286,7 +286,7 @@ private:
 
     uint8_t attacks[16];
     int     avg_depth;
-    int     board[128];
+    uint8_t board[128];
     uint8_t bishops[8];
     uint8_t castling[4];
     int     cur_ply;
@@ -381,7 +381,7 @@ private:
     int alphaBeta(int depth, int alpha, int beta) {
         if (depth <= 0) {
             nodes ++;
-            return (eval_mode & 4)? quiesce(max_quiesce, alpha, beta): evaluate();
+            return (max_quiesce > 0)? quiesce(max_quiesce, alpha, beta): evaluate();
         }
 
         // setup
@@ -728,14 +728,16 @@ public:
 
     /**
      * Configure parameters
+     * @param frc_
+     * @param options
+     * @param depth this overrides max_depth if > 0
      */
     void configure(bool frc_, std::string options, int depth) {
         eval_mode = 1;
         frc = frc_;
-        if (depth >= 0)
-            max_depth = depth;
+        max_depth = 4;
         max_nodes = 1e9;
-        max_quiesce = 10;
+        max_quiesce = 0;
         max_time = 0;
         search_mode = 0;
 
@@ -780,6 +782,9 @@ public:
                 break;
             }
         }
+
+        if (depth > 0)
+            max_depth = depth;
     }
 
     /**
@@ -1268,6 +1273,9 @@ public:
     /**
      * Evaluate the current position
      * - eval_mode: 0:null, 1:mat, 2:hc2, &4:qui, 8:nn
+     * - 8/5q2/8/3K4/8/8/8/7k w - - 0 1 KQ vs K
+     * - 8/5r2/8/3K4/8/8/8/7k w - - 0 1 KR vs K
+     * - 8/5n2/8/3K4/8/8/b7/7k w - - 0 1  KNB vs K
      */
     int evaluate() {
         if (half_moves >= 50)
@@ -1275,20 +1283,39 @@ public:
         int score = 0;
 
         if (eval_mode & 1)
-            score = materials[WHITE] - materials[BLACK];
+            score += materials[WHITE] - materials[BLACK];
 
+        // mobility
         if (eval_mode & 2) {
-            // mobility
-            for (auto i = 1; i < 7; i ++)
-                score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
-            for (auto i = 9; i < 15; i ++)
-                score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+            if (!materials[WHITE]) {
+                auto king = kings[WHITE],
+                    king2 = kings[BLACK];
+                score -= (abs(FILE(king) * 2 - 7) + abs(RANK(king) * 2 - 7)) * 15;
+                score += (abs(FILE(king) - FILE(king2)) + abs(RANK(king) - RANK(king2))) * 10;
+                score += mobilities[6] * 15;
+            }
+            else
+                for (auto i = 1; i < 7; i ++)
+                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
 
-            // attacks + defenses
-            // for (auto i = 1; i < 7; i ++)
-            //     score += attacks[i] * 10 + defenses[i] * 5;
-            // for (auto i = 9; i < 15; i ++)
-            //     score -= attacks[i] * 10 + defenses[i] * 5;
+            if (!materials[BLACK]) {
+                auto king = kings[BLACK],
+                    king2 = kings[WHITE];
+                score -= (abs(FILE(king) * 2 - 7) + abs(RANK(king) * 2 - 7)) * 15;
+                score += (abs(FILE(king) - FILE(king2)) + abs(RANK(king) - RANK(king2))) * 10;
+                score += mobilities[6] * 15;
+            }
+            else
+                for (auto i = 9; i < 15; i ++)
+                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+        }
+
+        // attacks + defenses
+        if (eval_mode & 4) {
+            for (auto i = 1; i < 7; i ++)
+                score += attacks[i] + defenses[i];
+            for (auto i = 9; i < 15; i ++)
+                score -= attacks[i] + defenses[i];
         }
 
         return score * (1 - (turn << 1));
@@ -1711,6 +1738,7 @@ public:
             max_nodes,          // 2
             search_mode,        // 3
             max_time,           // 4
+            max_quiesce,        // 5
         };
         return result;
     }
@@ -2044,7 +2072,7 @@ public:
     }
 
     std::string em_version() {
-        return "20200917";
+        return "20200918";
     }
 };
 

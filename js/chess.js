@@ -1,19 +1,20 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
-// - fast javascript implementation, 20x faster than original
+// @version 2020-09-19
+// - fast javascript implementation, 30000x faster
 // - FRC support
 /*
 globals
-Assign, DefaultInt, exports, Floor, From, global, Lower, LS, Max, Min, require, SetDefault, Undefined
+Abs, Assign, DefaultInt, exports, Floor, From, global, Lower, LS, Max, Min, require, SetDefault, Undefined
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, DefaultInt, Floor, From, Lower, LS, Max, Min, SetDefault, Undefined} = req('./common');
+        {Abs, Assign, DefaultInt, Floor, From, Lower, LS, Max, Min, SetDefault, Undefined} = req('./common');
     Assign(global, {
+        Abs: Abs,
         Assign: Assign,
         DefaultInt: DefaultInt,
         Floor: Floor,
@@ -67,7 +68,43 @@ let BISHOP = 3,
     WHITE = 0;
 
 // tables
-let PAWN_OFFSETS = [
+let MOBILITY_LIMITS = I8([
+        0,
+        8,          // P
+        32,         // N
+        24,         // B
+        24,         // R
+        24,         // Q
+        1,          // K
+        0,
+        0,
+        8,          // p
+        32,         // n
+        24,         // b
+        24,         // r
+        24,         // q
+        1,          // k
+        0,
+    ]),
+    MOBILITY_SCORES = I8([
+        0,
+        2,          // P
+        4,          // N
+        3,          // B
+        3,          // R
+        2,          // Q
+        1,          // K
+        0,
+        0,
+        2,          // p
+        4,          // n
+        3,          // b
+        3,          // r
+        2,          // q
+        1,          // k
+        0,
+    ]),
+    PAWN_OFFSETS = [
         I8([-17, -16, -15]),
         I8([17, 16, 15]),
     ],
@@ -76,19 +113,19 @@ let PAWN_OFFSETS = [
     PIECE_ATTACKS = [
         //  .   P   N   B   R   Q   K   .   .   p   n   b   r   q   k   .
         [],
-        I8([0,  5, 25, 10,  5,  5,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0]),    // P
+        I8([0,  7, 15, 10,  2,  1,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0]),    // P
         I8([0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  2,  9,  5,  5,  5,  0]),    // N
         I8([0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  9,  2,  5,  5,  5,  0]),    // B
-        I8([0, 10,  4,  4, 30, 15,  0,  0,  0,  5,  5,  5,  2,  5,  5,  0]),    // R
-        I8([0,  5,  5,  5, 15,  0,  0,  0,  0,  5,  5,  5,  5,  2,  5,  0]),    // Q
+        I8([0, 10,  4,  4, 18, 14,  0,  0,  0,  5,  5,  5,  2,  5,  5,  0]),    // R
+        I8([0,  5,  5,  5, 14,  1,  0,  0,  0,  5,  5,  5,  5,  2,  5,  0]),    // Q
         I8([0,  5,  9,  9,  9,  9,  0,  0,  0, 10,  5,  5,  5,  0,  0,  0]),    // K
         [],
         [],
-        I8([0,  1,  1,  1,  1,  1,  5,  0,  0,  5, 25, 10,  5,  5,  0,  0]),    // p
+        I8([0,  1,  1,  1,  1,  1,  5,  0,  0,  7, 15, 10,  2,  1,  0,  0]),    // p
         I8([0,  5,  2,  9,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0]),    // n
         I8([0,  5,  9,  2,  5,  5,  5,  0,  0,  5,  9,  9,  8,  8,  0,  0]),    // b
-        I8([0,  5,  5,  5,  2,  5,  5,  0,  0,  5, 10,  4, 30, 15,  0,  0]),    // r
-        I8([0,  5,  5,  5,  5,  2,  5,  0,  0,  5,  5,  5, 15,  0,  0,  0]),    // q
+        I8([0,  5,  5,  5,  2,  5,  5,  0,  0,  5, 10,  4, 18, 14,  0,  0]),    // r
+        I8([0,  5,  5,  5,  5,  2,  5,  0,  0,  5,  5,  5, 14,  1,  0,  0]),    // q
         I8([0, 10,  5,  5,  5,  0,  0,  0,  0,  5,  9,  9,  9,  9,  9,  0]),    // k
         [],
     ],
@@ -124,11 +161,11 @@ let PAWN_OFFSETS = [
     PIECE_OFFSETS = [
         [],
         [],
-        I8([-18, -33, -31, -14,  18, 33, 31, 14]),
+        I8([-18, -33, -31, -14, 18, 33, 31, 14]),
         I8([-17, -15,  17,  15]),
         I8([-16,   1,  16,  -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15, -1]),
-        I8([-17, -16, -15,   1,  17, 16, 15, -1]),
+        I8([-17, -16, -15,   1, 17, 16, 15, -1]),
+        I8([-17, -16, -15,   1, 17, 16, 15, -1]),
     ],
     // move ordering
     PIECE_ORDERS = I8([
@@ -187,67 +224,29 @@ let PAWN_OFFSETS = [
         0,
     ]);
 
-// mobility: multiplier + limit
-let MOBILITY_LIMITS = I8([
-        0,
-        8,          // P
-        32,         // N
-        24,         // B
-        24,         // R
-        24,         // Q
-        1,          // K
-        0,
-        0,
-        8,          // p
-        32,         // n
-        24,         // b
-        24,         // r
-        24,         // q
-        1,          // k
-        0,
-    ]),
-    MOBILITY_SCORES = I8([
-        0,
-        2,          // P
-        4,          // N
-        3,          // B
-        3,          // R
-        2,          // Q
-        1,          // K
-        0,
-        0,
-        2,          // p
-        4,          // n
-        3,          // b
-        3,          // r
-        2,          // q
-        1,          // k
-        0,
-    ]);
-
 // extras
 let EVAL_MODES = {
-        'hce': 1 + 2,
-        'mat': 1,
-        'mob': 2,
-        'nn': 1 + 2 + 8,
-        'null': 0,
-        'qui': 1 + 2 + 4,
+        att: 1 + 2 + 4,
+        hce: 1 + 2,
+        mat: 1,
+        mob: 2,
+        nn: 1 + 2 + 32,
+        null: 0,
     },
     // piece names for print
     PIECES = {
-        b: 11,
-        B: 3,
-        k: 14,
-        K: 6,
-        n: 10,
-        N: 2,
-        p: 9,
         P: 1,
-        q: 13,
-        Q: 5,
-        r: 12,
+        N: 2,
+        B: 3,
         R: 4,
+        Q: 5,
+        K: 6,
+        p: 9,
+        n: 10,
+        b: 11,
+        r: 12,
+        q: 13,
+        k: 14,
     },
     SEARCH_MODES = {
         'ab': 2,
@@ -284,9 +283,9 @@ var Chess = function(fen_) {
 
     let attacks = U8(16),
         avg_depth = 0,
-        bishops = I32(8).fill(EMPTY),
+        bishops = U8(8).fill(EMPTY),
         board = U8(128),
-        castling = I32(4).fill(EMPTY),
+        castling = U8(4).fill(EMPTY),
         cur_ply = -1,
         defenses = U8(16),
         ep_square = EMPTY,
@@ -296,22 +295,22 @@ var Chess = function(fen_) {
         half_moves = 0,
         idepth = 0,                         // positive depth = max_depth - depth
         interpose = U8(128),                // check path, can interpose a piece there
-        kings = I32(2).fill(EMPTY),
-        knights = I32(8).fill(EMPTY),
+        kings = U8(2).fill(EMPTY),
+        knights = U8(8).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
         max_nodes = 1e9,
-        max_quiesce = 10,
+        max_quiesce = 0,
         max_time = 60,
         mobilities = U8(16),
         move_number = 1,
         nodes = 0,
-        pawns = I32(8).fill(EMPTY),
+        pawns = U8(8).fill(EMPTY),
         pins = U8(128),
         ply = -1,
         ply_states = [],
-        rooks = I32(8).fill(EMPTY),
-        queens = I32(8).fill(EMPTY),
+        rooks = U8(8).fill(EMPTY),
+        queens = U8(8).fill(EMPTY),
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
         sel_depth = 0,
         turn = WHITE;
@@ -381,7 +380,7 @@ var Chess = function(fen_) {
     function alphaBeta(depth, alpha, beta) {
         if (depth <= 0) {
             nodes ++;
-            return (eval_mode & 4)? quiesce(max_quiesce, alpha, beta): evaluate();
+            return (max_quiesce > 0)? quiesce(max_quiesce, alpha, beta): evaluate();
         }
 
         // setup
@@ -718,15 +717,14 @@ var Chess = function(fen_) {
      * Configure parameters
      * @param {boolean} frc_
      * @param {string} options
-     * @param {number} depth
+     * @param {number} depth this overrides max_depth if > 0
      */
     function configure(frc_, options, depth) {
         eval_mode = 1;
         frc = frc_;
-        if (depth >= 0)
-            max_depth = depth;
+        max_depth = 4;
         max_nodes = 1e9;
-        max_quiesce = 10;
+        max_quiesce = 0;
         max_time = 0;
         search_mode = 0;
 
@@ -767,6 +765,9 @@ var Chess = function(fen_) {
                 break;
             }
         }
+
+        if (depth > 0)
+            max_depth = depth;
     }
 
     /**
@@ -1243,6 +1244,9 @@ var Chess = function(fen_) {
     /**
      * Evaluate the current position
      * - eval_mode: 0:null, 1:mat, 2:hc2, &4:qui, 8:nn
+     * - 8/5q2/8/3K4/8/8/8/7k w - - 0 1 KQ vs K
+     * - 8/5r2/8/3K4/8/8/8/7k w - - 0 1 KR vs K
+     * - 8/5n2/8/3K4/8/8/b7/7k w - - 0 1  KNB vs K
      * @returns {number}
      */
     function evaluate() {
@@ -1251,20 +1255,39 @@ var Chess = function(fen_) {
         let score = 0;
 
         if (eval_mode & 1)
-            score = materials[WHITE] - materials[BLACK];
+            score += materials[WHITE] - materials[BLACK];
 
+        // mobility
         if (eval_mode & 2) {
-            // mobility
-            for (let i = 1; i < 7; i ++)
-                score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
-            for (let i = 9; i < 15; i ++)
-                score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+            if (!materials[WHITE]) {
+                let king = kings[WHITE],
+                    king2 = kings[BLACK];
+                score -= (Abs(FILE(king) * 2 - 7) + Abs(RANK(king) * 2 - 7)) * 15;
+                score += (Abs(FILE(king) - FILE(king2)) + Abs(RANK(king) - RANK(king2))) * 10;
+                score += mobilities[6] * 15;
+            }
+            else
+                for (let i = 1; i < 7; i ++)
+                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
 
-            // attacks + defenses
-            // for (let i = 1; i < 7; i ++)
-            //     score += attacks[i] * 10 + defenses[i] * 5;
-            // for (let i = 9; i < 15; i ++)
-            //     score -= attacks[i] * 10 + defenses[i] * 5;
+            if (!materials[BLACK]) {
+                let king = kings[BLACK],
+                    king2 = kings[WHITE];
+                score -= (Abs(FILE(king) * 2 - 7) + Abs(RANK(king) * 2 - 7)) * 15;
+                score += (Abs(FILE(king) - FILE(king2)) + Abs(RANK(king) - RANK(king2))) * 10;
+                score += mobilities[6] * 15;
+            }
+            else
+                for (let i = 9; i < 15; i ++)
+                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+        }
+
+        // attacks + defenses
+        if (eval_mode & 4) {
+            for (let i = 1; i < 7; i ++)
+                score += attacks[i] + defenses[i];
+            for (let i = 9; i < 15; i ++)
+                score -= attacks[i] + defenses[i];
         }
 
         return score * (1 - (turn << 1));
@@ -1642,6 +1665,7 @@ var Chess = function(fen_) {
             max_nodes,          // 2
             search_mode,        // 3
             max_time,           // 4
+            max_quiesce,        // 5
         ];
         return result;
     }
@@ -1965,7 +1989,7 @@ var Chess = function(fen_) {
         turn: () => turn,
         ucify: ucify,
         undo: undoMove,
-        version: () => '20200917',
+        version: () => '20200918',
     };
 };
 

@@ -70,6 +70,7 @@ live.dual = archive;
     ['1. e4 c5 2. Nf3 d6', false],
     ['4k3/1q5p/8/8/8/7K/8/7B w - - 0 31', true],
     ['4k3/1B5p/8/8/8/7K/8/8 b - - 0 31', true],
+    ['4k3/1B5p/8/8/8/7K/8/8 b - -', true],
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
         expect(live.analyse_fen(fen)).toEqual(answer);

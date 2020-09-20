@@ -85,7 +85,7 @@ function think(engine, fen, mask, frc) {
 
     for (let move of masks) {
         move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-        move.score = Undefined(move.score, 0) / 100 + Random() * 0.1;
+        move.score = Undefined(move.score, 0) / 100 + Random() * 0.15;
     }
     masks.sort((a, b) => b.score - a.score);
     return [masks, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];

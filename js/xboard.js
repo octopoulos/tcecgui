@@ -34,8 +34,6 @@ let AI = 'ai',
     },
     // those controls stop the play
     CONTROL_STOPS = {
-        end: 1,
-        next: 1,
         pause: 1,
         prev: 1,
         start: 1,
@@ -189,7 +187,8 @@ class XBoard {
         this.locked_obj = null;
         this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
-        this.max_depth = 0;                             // max depth in IT
+        this.max_time = 0;                              // max time in IT
+        this.min_depth = 0;                             // max depth in IT
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -1292,9 +1291,10 @@ class XBoard {
                 type = e.type;
 
             if (['mousedown', 'touchstart'].includes(type)) {
-                if (!['next', 'prev'].includes(name))
+                if (name != 'next' && name != 'prev')
                     return;
-                that.play(true, true, 'events');
+                if (name == 'prev')
+                    that.play(true, true, 'events');
                 let target = Parent(e.target, {class_: 'control', self: true});
                 if (target) {
                     that.rect = target.getBoundingClientRect();
@@ -1710,7 +1710,9 @@ class XBoard {
 
         let now = Now(true),
             ply = get_move_ply(move),
-            player = this.players[(2 + ply) % 2];
+            id = (2 + ply) % 2,
+            player = this.players[id];
+        move.id = id;
 
         // 1) user vote?
         if (this.main) {
@@ -1835,6 +1837,7 @@ class XBoard {
 
         // 3) update
         this.set_ai(false);
+        this.destroy_workers();
         this.new_move(move);
     }
 
@@ -2414,6 +2417,10 @@ class XBoard {
             return true;
 
         if (!step) {
+            if (this.thinking) {
+                LS('thinking');
+                return;
+            }
             if (!suggest)
                 this.clear_high('source target', false);
             this.set_play(false);
@@ -2475,7 +2482,9 @@ class XBoard {
 
         chess.configure(this.frc, options, -1);
         let params = chess.params(),
-            max_depth = (params[3] == 0)? 0: (params[4]? -params[4]: params[0]);
+            eval_mode = params[1],
+            min_depth = params[0],
+            max_time = params[4];
 
         Assign(reply, {
             avg_depth: 0,
@@ -2489,7 +2498,8 @@ class XBoard {
 
         if (!step) {
             this.depth = 3;
-            this.max_depth = max_depth;
+            this.min_depth = min_depth;
+            this.max_time = max_time;
             Assign(reply, {
                 all_elapsed: [],
                 all_nodes: [],
@@ -2505,7 +2515,7 @@ class XBoard {
         this.clock(this.name, color);
 
         // pure random + insta move?
-        if (!max_depth || num_worker < 1 || num_move < 2) {
+        if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = moves[id];
             Assign(move, {
@@ -2563,7 +2573,7 @@ class XBoard {
             if (!has_moves[id])
                 continue;
             this.workers[id].postMessage({
-                depth: (max_depth < 0)? this.depth: max_depth,
+                depth: max_time? this.depth: min_depth,
                 engine: Y.game_wasm? 'wasm': 'js',
                 func: 'think',
                 fen: fen,
@@ -2711,7 +2721,7 @@ class XBoard {
 
         // 4) update
         let best_score = best.score,
-            is_iterative = this.max_depth < 0,
+            is_iterative = this.max_time > 0,
             ply = get_fen_ply(fen),
             color = (1 + ply) % 2,
             player = this.players[color];
@@ -2721,14 +2731,11 @@ class XBoard {
 
         if (id >= -1) {
             Assign(player, {
-                d: reply.avg_depth,
                 depth: `${reply.avg_depth}/${reply.sel_depth}`,
                 eval: format_eval(best_score),
                 id: color,
-                n: reply.nodes2,
                 node: FormatUnit(reply.nodes2, '-'),
                 ply: ply + 1,
-                sd: reply.sel_depth,
                 speed: `${FormatUnit(nps)}nps`,
                 wv: format_eval(best_score),
             });
@@ -2750,7 +2757,7 @@ class XBoard {
                     extra = elapsed * ratio_nodes;
 
                 predict = elapsed2 + extra;
-                is_iterative = best.score < 200 && (this.depth < 4 || predict < -this.max_depth);
+                is_iterative = best.score < 200 && (this.depth < 4 || predict < this.max_time);
                 if (DEV.engine)
                     LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
             }
@@ -2807,7 +2814,6 @@ class XBoard {
         Assign(result, {
             _fixed: 2,
             d: reply.avg_depth,
-            id: color,
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
             s: Floor(nps + 0.5),

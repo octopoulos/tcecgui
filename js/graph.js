@@ -655,6 +655,8 @@ function update_player_chart(name, moves) {
             dico.y = is_percent? calculate_win(id, move.wv, ply): clamp_eval(move.wv);
             break;
         case 'mobil':
+            if (isNaN(move.mobil))
+                continue;
             datasets[2].data[num2] = {...dico, ...{y: move.goal? Abs(move.goal[0]): -1}};
             dico.mobil = move.mobil;
             dico.y = Abs(move.mobil);
@@ -675,6 +677,8 @@ function update_player_chart(name, moves) {
             break;
         }
 
+        if (isNaN(dico.y))
+            continue;
         datasets[id].data[num2] = dico;
     }
 

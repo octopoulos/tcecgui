@@ -15,6 +15,7 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'engine',
     //
     'global',
 ], OUTPUT_MODULE, 'Y');
@@ -81,7 +82,7 @@ let {
             ev: '5.52',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             ev: '5.52',
             wv: '5.52',
         },
@@ -94,7 +95,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 65000,
             n: 53674,
             s: 3488811,
@@ -108,7 +109,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             s: 129000,
             wv: '3.21',
         },
@@ -119,7 +120,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             s: 350550000,
             wv: '3.21',
         },
@@ -145,7 +146,7 @@ let {
             wv: '0.00',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 30,
             h: '0.0',
             m: 'f4',
@@ -180,7 +181,7 @@ let {
             tl: '01:27:00',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 29,
             ev: '-2.99',
             m: 'Rb3',
@@ -209,7 +210,7 @@ let {
             wv: '0.36',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 14,
             mt: 195000,
             n: 444481608,
@@ -228,7 +229,7 @@ let {
             s: 0,
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 1900,
             n: 10000,
             s: '-',
@@ -242,7 +243,7 @@ let {
             s: 0,
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 2000,
             n: 10000,
             s: 5000,

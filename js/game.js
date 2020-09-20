@@ -745,6 +745,7 @@ function reset_sub_boards(mode, start_fen) {
 /**
  * Get the board name for the section: live, archive, pva ...
  * @param {string=} section
+ * @returns {string}
  */
 function section_board(section) {
     if (board_target.name == 'pva') {
@@ -3905,7 +3906,7 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @returns {boolean}
  */
 function update_live_eval(section, data, id, force_ply) {
-    if (!data || section != section_board())
+    if (!data)
         return false;
 
     let board = xboards[`live${id}`],
@@ -3983,10 +3984,12 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    if (DEV.chart)
-        LS(`ULE: ${section}`);
-    update_live_chart(moves || [data], id + 2);
-    check_missing_moves(ply, round);
+    if (section == section_board(section)) {
+        if (DEV.chart)
+            LS(`ULE: ${section}`);
+        update_live_chart(moves || [data], id + 2);
+        check_missing_moves(ply, round);
+    }
     return true;
 }
 
@@ -4260,8 +4263,11 @@ function paste_text(text) {
     let board = board_target.manual? board_target: xboards.pva,
         fen = board.fen;
     if (board.set_fen(text, true)) {
-        if (board.fen != fen)
+        if (board.fen != fen) {
             board.reset(true, board.fen);
+            if (board_target.name == 'pva')
+                reset_charts();
+        }
     }
     else
         board.add_moves_string(text);
@@ -4486,6 +4492,7 @@ function handle_board_events(board, type, value) {
     switch (type) {
     case 'activate':
         board_target = board;
+        Y.s = (board.name == 'pva')? 'pva': section;
         // used for CTRL+C
         context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
         move = board.moves[board.ply];
