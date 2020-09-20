@@ -45,6 +45,7 @@ model/
 new.json
 node_modules/
 package-lock.json
+pull.bat
 schedule.json
 sound/*.js
 stream.html

@@ -1497,6 +1497,21 @@ class XBoard {
     }
 
     /**
+     * Check if it's a human turn
+     * @returns {boolean}
+     */
+    human_turn() {
+        let play_as = Y.game_play_as,
+            ply = get_fen_ply(this.fen);
+        if (play_as == 'AI')
+            return false;
+        else if (play_as == 'Human')
+            return true;
+        else
+            return (play_as == WB_TITLE[(1 + ply) % 2]);
+    }
+
+    /**
      * Initialise the board
      * - must be run before doing anything with it
      */

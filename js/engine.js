@@ -1560,6 +1560,9 @@ function create_url_list(dico) {
     if (is_grid)
         html += '</grid>';
 
+    if (is_grid)
+        html += '</grid>';
+
     return `<vert class="fastart">${html}</vert>`;
 }
 
