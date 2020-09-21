@@ -337,6 +337,7 @@ var Chess = function(fen_) {
         knights = U8(8).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
+        max_extend = 20,
         max_nodes = 1e9,
         max_quiesce = 0,
         max_time = 60,
@@ -411,26 +412,27 @@ var Chess = function(fen_) {
      * Alpha beta tree search
      * r1bk1bnr/3npppp/p1p3q1/1N6/8/1P2P3/1B1QBPPP/R3K2R w HA - 2 16
      * 2q1kr1r/R2bppb1/NQ3n2/3p1p1p/2pP3P/4P1P1/K5RN/5B2 w - - 7 52
-     * @param {number} depth
      * @param {number} alpha
      * @param {number} beta
+     * @param {number} depth
+     * @param {number} max_depth
      * @returns {number}
      */
-    function alphaBeta(depth, alpha, beta) {
-        // extend depth if in check
+    function alphaBeta(alpha, beta, depth, max_depth) {
         // let ml = moveList(),
         //     debug = (ml.slice(0, 4) == 'a5b6' && ml.includes('a5b6 d8e8 b5c7 e8d8 c7e6'));
         // if (debug)
         //     LS(`${ml}`);
-        if ((max_nodes & 1) && kingAttacked(turn))
-            depth ++;
+        // extend depth if in check
+        if ((max_nodes & 1) && max_depth < max_extend && kingAttacked(turn))
+            max_depth ++;
 
-        if (depth <= 0) {
+        if (depth >= max_depth) {
             if (!max_quiesce) {
                 nodes ++;
                 return evaluate();
             }
-            return quiesce(max_quiesce, alpha, beta);
+            return quiesce(alpha, beta, max_quiesce);
         }
 
         // statistics
@@ -452,7 +454,7 @@ var Chess = function(fen_) {
         else {
             for (let move of moves) {
                 moveRaw(move);
-                let score = -alphaBeta(depth - 1, -beta, -alpha);
+                let score = -alphaBeta(-beta, -alpha, depth + 1, max_depth);
                 undoMove();
 
                 if (score >= beta) {
@@ -543,10 +545,11 @@ var Chess = function(fen_) {
     /**
      * Mini max tree search
      * @param {number} depth
+     * @param {number} max_depth
      * @returns {number}
      */
-    function miniMax(depth) {
-        if (depth <= 0) {
+    function miniMax(depth, max_depth) {
+        if (depth >= max_depth) {
             nodes ++;
             return evaluate();
         }
@@ -570,7 +573,7 @@ var Chess = function(fen_) {
         else {
             for (let move of moves) {
                 moveRaw(move);
-                let score = -miniMax(depth - 1);
+                let score = -miniMax(depth + 1, max_depth);
                 undoMove();
 
                 if (score > best)
@@ -623,16 +626,16 @@ var Chess = function(fen_) {
     /**
      * Quiescence search
      * https://www.chessprogramming.org/Quiescence_Search
-     * @param {number} depth
      * @param {number} alpha
      * @param {number} beta
+     * @param {number} depth_left
      */
-    function quiesce(depth, alpha, beta) {
+    function quiesce(alpha, beta, depth_left) {
         let delta = PIECE_SCORES[QUEEN];
 
         nodes ++;
         let score = evaluate();
-        if (depth <= 0)
+        if (depth_left <= 0)
             return score;
         if (score >= beta)
             return beta;
@@ -654,7 +657,7 @@ var Chess = function(fen_) {
                 continue;
 
             moveRaw(move);
-            let score = -quiesce(depth - 1, -beta, -alpha);
+            let score = -quiesce(-beta, -alpha, depth_left - 1);
             undoMove();
 
             if (score > best) {
@@ -789,6 +792,7 @@ var Chess = function(fen_) {
         eval_mode = 1;
         frc = frc_;
         max_depth = 4;
+        max_extend = 20;
         max_nodes = 1e9;
         max_quiesce = 0;
         max_time = 0;
@@ -803,10 +807,7 @@ var Chess = function(fen_) {
                 value = right * 1;
             switch (left) {
             case 'd':
-                if (value >= 0)
-                    max_depth = value;
-                else if (value < 0)
-                    max_time = -value;
+                max_depth = value;
                 break;
             case 'e': {
                     let eit = EVAL_MODES[right];
@@ -829,11 +830,15 @@ var Chess = function(fen_) {
             case 't':
                 max_time = value;
                 break;
+            case 'x':
+                max_extend = value;
+                break;
             }
         }
 
         if (depth > 0)
             max_depth = depth;
+        max_extend = Max(max_extend, max_depth);
     }
 
     /**
@@ -1165,7 +1170,7 @@ var Chess = function(fen_) {
                 }
 
                 // pawn captures
-                for (let j = 0; j < 3; j += 2) {
+                for (let j of [0, 2]) {
                     if (pin && !(pin & (1 << j)))
                         continue;
                     let square = i + offsets[j];
@@ -1917,9 +1922,9 @@ var Chess = function(fen_) {
             if (max_depth > 0) {
                 moveRaw(move);
                 if (search_mode == 1)
-                    score = -miniMax(max_depth - 1);
+                    score = -miniMax(1, max_depth);
                 else
-                    score = -alphaBeta(max_depth - 1, -99999, 99999);
+                    score = -alphaBeta(-99999, 99999, 1, max_depth);
                 undoMove();
             }
 

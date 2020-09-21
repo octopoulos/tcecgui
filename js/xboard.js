@@ -2712,10 +2712,12 @@ class XBoard {
 
         // still expecting more data?
         if (DEV.engine) {
-            let move = moves[0];
+            let lefts = From(reply.lefts).map(left => left? (left - 1).toString(16): '.').join(''),
+                move = moves[0],
+                eval_ = format_eval(move? move.score: '-').padStart(7);
             if (!reply.count)
                 LS(this.fen);
-            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(format_eval(move? move.score: '-')).padStart(7)} : ${reply.lefts} : ${combine.length}`);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${eval_} : ${lefts} : ${combine.length}`);
         }
         reply.count ++;
         if (!reply.lefts.every(item => !item))

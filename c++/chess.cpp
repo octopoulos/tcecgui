@@ -304,6 +304,7 @@ private:
     uint8_t knights[8];
     int     materials[2];
     int     max_depth;
+    int     max_extend;
     int     max_nodes;
     int     max_quiesce;
     int     max_time;
@@ -379,17 +380,17 @@ private:
     /**
      * Alpha beta tree search
      */
-    int alphaBeta(int depth, int alpha, int beta) {
+    int alphaBeta(int alpha, int beta, int depth, int max_depth) {
         // extend depth if in check
-        if ((max_nodes & 1) && kingAttacked(turn))
-            depth ++;
+        if ((max_nodes & 1) && max_depth < max_extend && kingAttacked(turn))
+            max_depth ++;
 
-        if (depth <= 0) {
+        if (depth >= max_depth) {
             if (!max_quiesce) {
                 nodes ++;
                 return evaluate();
             }
-            return quiesce(max_quiesce, alpha, beta);
+            return quiesce(alpha, beta, max_quiesce);
         }
 
         // statistics
@@ -411,7 +412,7 @@ private:
         else {
             for (auto &move : moves) {
                 moveRaw(move);
-                auto score = -alphaBeta(depth - 1, -beta, -alpha);
+                auto score = -alphaBeta(-beta, -alpha, depth + 1, max_depth);
                 undoMove();
 
                 if (score >= beta)
@@ -495,8 +496,8 @@ private:
     /**
      * Mini max tree search
      */
-    int miniMax(int depth) {
-        if (depth <= 0) {
+    int miniMax(int depth, int max_depth) {
+        if (depth >= max_depth) {
             nodes ++;
             return evaluate();
         }
@@ -520,7 +521,7 @@ private:
         else {
             for (auto &move : moves) {
                 moveRaw(move);
-                auto score = -miniMax(depth - 1);
+                auto score = -miniMax(depth + 1, max_depth);
                 undoMove();
 
                 if (score > best)
@@ -574,11 +575,11 @@ private:
      * Quiescence search
      * https://www.chessprogramming.org/Quiescence_Search
      */
-    int quiesce(int depth, int alpha, int beta) {
+    int quiesce(int alpha, int beta, int depth_left) {
         auto delta = PIECE_SCORES[QUEEN];
         nodes ++;
         auto score = evaluate();
-        if (depth <= 0)
+        if (depth_left <= 0)
             return score;
         if (score >= beta)
             return beta;
@@ -600,7 +601,7 @@ private:
                 continue;
 
             moveRaw(move);
-            auto score = -quiesce(depth - 1, -beta, -alpha);
+            auto score = -quiesce(-beta, -alpha, depth_left - 1);
             undoMove();
 
             if (score > best) {
@@ -753,6 +754,7 @@ public:
         eval_mode = 1;
         frc = frc_;
         max_depth = 4;
+        max_extend = 20;
         max_nodes = 1e9;
         max_quiesce = 0;
         max_time = 0;
@@ -771,10 +773,7 @@ public:
             auto value = std::atoi(right.c_str());
             switch (left) {
             case 'd':
-                if (value >= 0)
-                    max_depth = value;
-                else if (value < 0)
-                    max_time = -value;
+                max_depth = value;
                 break;
             case 'e': {
                     auto eit = EVAL_MODES.find(right);
@@ -797,11 +796,15 @@ public:
             case 't':
                 max_time = value;
                 break;
+            case 'x':
+                max_extend = value;
+                break;
             }
         }
 
         if (depth > 0)
             max_depth = depth;
+        max_extend = std::max(max_extend, max_depth);
     }
 
     /**
@@ -1145,7 +1148,7 @@ public:
                 }
 
                 // pawn captures
-                for (auto j = 0; j < 3; j += 2) {
+                for (auto j : {0, 2}) {
                     if (pin && !(pin & (1 << j)))
                         continue;
                     auto square = i + offsets[j];
@@ -1942,9 +1945,9 @@ public:
             if (max_depth > 0) {
                 moveRaw(move);
                 if (search_mode == 1)
-                    score = -miniMax(max_depth - 1);
+                    score = -miniMax(1, max_depth);
                 else
-                    score = -alphaBeta(max_depth - 1, -99999, 99999);
+                    score = -alphaBeta(-99999, 99999, 1, max_depth);
                 undoMove();
             }
 

@@ -1864,7 +1864,7 @@ function prepare_settings() {
             game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
             game_think: '1',
             game_time: option_number(5, 0, 120),
-            game_threads: option_number(Max(1, cores / 2), 0, cores),
+            game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
             game_wasm: [ON_OFF, 1],
         },
         graph: {
