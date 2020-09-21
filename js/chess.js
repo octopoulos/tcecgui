@@ -447,7 +447,7 @@ var Chess = function(fen_) {
         // mate + stalemate
         if (!moves.length) {
             if (kingAttacked(turn))
-                best = -51000 + ply * 1000;
+                best = Min(-51000 + ply * 1000, -21000);
             else
                 best = 0;
         }

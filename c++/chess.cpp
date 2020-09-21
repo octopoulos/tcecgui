@@ -367,7 +367,7 @@ private:
      * Add a ply state
      */
     void addState(Move &move) {
-        for (auto i = ply_states.size(); i <= ply; i ++)
+        for (auto i = ply_states.size(); i <= ply + 1; i ++)
             ply_states.emplace_back();
 
         auto &state = ply_states[ply];
@@ -405,7 +405,7 @@ private:
         // mat + stalemate
         if (!moves.size()) {
             if (kingAttacked(2))
-                best = -51000 + ply * 1000;
+                best = std::min(-51000 + ply * 1000, -21000);
             else
                 best = 0;
         }
