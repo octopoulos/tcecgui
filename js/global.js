@@ -336,8 +336,8 @@ function reset_old_settings() {
         if (Y.scroll_inertia < 0.95)
             save_option('scroll_inertia', 0.95);
     if (version < '20200920') {
-        save_option('game_options_black', 'd=4 e=att q=10 s=ab t=5');
-        save_option('game_options_white', 'd=4 e=att q=10 s=ab t=5');
+        save_option('game_options_black', 'd=4 e=att n=1 q=10 s=ab t=5');
+        save_option('game_options_white', 'd=4 e=att n=1 q=10 s=ab t=5');
         save_option('turn_opacity', 0);
     }
 
