@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -15,19 +15,20 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
-DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader,
-From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes,
-Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, draw_rectangle, E, Events,
+export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
+HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
+is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 Min, navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
 PIECE_THEMES, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
-S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, SetDefault, Show, show_banner,
-show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
-THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
-virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true, Visible, WB_LOWER,
-wheel_event, window, X_SETTINGS, xboards, Y
+S, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault, Show,
+show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph,
+Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node,
+TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug, update_pgn, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
+virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -61,6 +62,9 @@ let AD_STYLES = {},
             archive: 1,
             'moves-archive': 1,
         },
+    },
+    LEVELS = {
+
     },
     old_font_height,
     old_stream = 0,
@@ -504,22 +508,6 @@ function configure(name, value, only_color) {
 }
 
 /**
- * Draw a rectangle around the node
- * @param {Node} node
- */
-function draw_rectangle(node) {
-    if (!node)
-        return;
-    let rect = node.getBoundingClientRect(),
-        rect_node = Id('rect'),
-        y1 = Max(rect.top, 0),
-        y2 = Min(rect.top + rect.height, window.innerHeight);
-
-    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
-    Show(rect_node);
-}
-
-/**
  * Handle a drop event
  * @param {Event} e
  */
@@ -599,9 +587,7 @@ function handle_drop(e) {
         populate_areas();
     }
 
-    Hide(Id('rect'));
-    Class('.area', '-dragging');
-
+    set_draggable();
     SP(e);
     PD(e);
     add_history();
@@ -1123,14 +1109,6 @@ function set_3d_scene(three) {
     S(Id('canvas'), three);
     if (three)
         start_3d();
-}
-
-/**
- * Set some elements to be draggable or not
- */
-function set_draggable() {
-    let drag = !!Y.drag_and_drop;
-    Attrs('.drag, .drop', {draggable: drag});
 }
 
 /**
@@ -1823,9 +1801,6 @@ function prepare_settings() {
         },
         board_pva: {
             _suffix: '_pva',
-            analysis_chessdb: '1',
-            analysis_evalguide: '1',
-            analysis_lichess: '1',
             animate_pva: [ON_OFF, 1],
             auto_paste: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
@@ -1842,7 +1817,7 @@ function prepare_settings() {
             target_color: [{type: 'color'}, '#ff5a00'],
             target_opacity: option_number(0.7, 0, 1, 0.01),
             turn_color: [{type: 'color'}, '#ff5a00'],
-            turn_opacity: option_number(0.25, 0, 1, 0.01),
+            turn_opacity: option_number(0, 0, 1, 0.01),
         },
         control: {
             book_every: option_number(600, 100, 5000, 100),
@@ -1873,6 +1848,8 @@ function prepare_settings() {
         },
         game: {
             _prefix: 'game_',
+            analysis_evalguide: '1',
+            analysis_lichess: '1',
             board_pva: '',
             game_960: [ON_OFF, 1],
             game_advice: '1',

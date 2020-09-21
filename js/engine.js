@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-09-20
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,13 +9,13 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, clearInterval, clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject,
-IsString, Keys,
-LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, QueryString,
-requestAnimationFrame, Resource,
-ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, WebSocket,
-window
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, clearInterval, clearTimeout, CreateNode,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, Hide, history, HTML, Id, IsArray, IsFloat,
+IsObject, IsString, Keys,
+LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD,
+QueryString, requestAnimationFrame, Resource,
+ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible,
+WebSocket, window
 */
 'use strict';
 
@@ -1564,6 +1564,42 @@ function create_url_list(dico) {
         html += '</grid>';
 
     return `<vert class="fastart">${html}</vert>`;
+}
+
+/**
+ * Draw a rectangle around the node
+ * @param {Node} node
+ */
+function draw_rectangle(node) {
+    if (!node)
+        return;
+    let rect = node.getBoundingClientRect(),
+        rect_node = Id('rect'),
+        y1 = Max(rect.top, 0),
+        y2 = Min(rect.top + rect.height, window.innerHeight);
+
+    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
+    Show(rect_node);
+}
+
+/**
+ * Get the drag and drop id
+ * @param {Node} target
+ * @returns {[Node, string]}
+ */
+function get_drop_id(target) {
+    let parent = Parent(target, {class_: 'drag|drop', self: true});
+    return [parent, parent? (parent.id || parent.dataset.x): null];
+}
+
+/**
+ * Set some elements to be draggable or not
+ */
+function set_draggable() {
+    let drag = !!Y.drag_and_drop;
+    Attrs('.drag, .drop', {draggable: drag});
+    Hide(Id('rect'));
+    Class('.area', '-dragging');
 }
 
 // API

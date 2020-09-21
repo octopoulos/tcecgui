@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 // general 3d rendering code
 //
@@ -9,11 +9,11 @@
 globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
-DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, HasClass, HTML, Id, Input,
-IsArray, IsString, KEY_TIMES, Keys, KEYS,
+DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
+Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
 LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, Parent, PD,
-S, save_option, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES, Undefined,
-update_theme, Visible, window, X_SETTINGS, Y
+S, save_option, set_draggable, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
+Undefined, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -1104,16 +1104,6 @@ function gamepad_modal() {
 }
 
 /**
- * Get the drag and drop id
- * @param {Node} target
- * @returns {[Node, string]}
- */
-function get_drop_id(target) {
-    let parent = Parent(target, {class_: 'drag|drop', self: true});
-    return [parent, parent? (parent.id || parent.dataset.x): null];
-}
-
-/**
  * Check if the overlay is visible
  * @returns {boolean}
  */
@@ -1185,7 +1175,10 @@ function show_modal(show, text, title, name) {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, overlay, setting, xy}={}) {
-    if (adjust && device.iphone)
+    // remove the red rectangle
+    if (!adjust)
+        set_draggable();
+    else if (device.iphone)
         return;
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
