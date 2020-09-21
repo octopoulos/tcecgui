@@ -843,19 +843,19 @@ beforeEach(() => {
 [
     ['8/8/8/2k2pP1/p3K3/8/1P6/8 w - f6 0 2', [], 's=mm', 1, 'e4d3 e4e3 e4e5 e4f3 e4f4 e4f5 g5f6'],
     ['8/7b/8/2k3P1/p3K3/8/1P6/8 w - f6 0 1', [], 's=mm', 1, 'e4e3 e4e5 e4f3 e4f4 g5g6'],
-    [START_FEN, [], 's=mm', 4, 197281],
-    [START_FEN, [], 's=mm', 3, 8902],
-    [START_FEN, [], 's=mm', 2, 400],
+    [START_FEN, [], 's=mm', 4, 206603],
+    [START_FEN, [], 's=mm', 3, 9322],
+    [START_FEN, [], 's=mm', 2, 420],
     [START_FEN, [], 's=mm', 1, 20],
     [START_FEN, [], 'd=0 s=mm', 0, 0],
-    [START_FEN, [], 's=ab', 5, 44246],
-    [START_FEN, [], 's=ab', 4, 10857],
-    [START_FEN, [], 's=ab', 3, 825],
-    [START_FEN, [], 's=ab', 2, 400],
+    [START_FEN, [], 's=ab', 5, 60892],
+    [START_FEN, [], 's=ab', 4, 12226],
+    [START_FEN, [], 's=ab', 3, 1245],
+    [START_FEN, [], 's=ab', 2, 420],
     [START_FEN, [], 's=ab', 1, 20],
     [START_FEN, [], 'd=0 s=ab', 0, 0],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=mm', 4, 403873],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 19207],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=mm', 4, 421547],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 22731],
 ].forEach(([fen, [frc, only_capture], options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         if (!frc)

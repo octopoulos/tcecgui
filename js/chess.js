@@ -433,14 +433,14 @@ var Chess = function(fen_) {
             return quiesce(max_quiesce, alpha, beta);
         }
 
-        // setup
-        let best = -99999;
-
+        // statistics
+        nodes ++;
         if (ply > avg_depth)
             avg_depth = ply;
 
         // check all moves
-        let moves = createMoves(false);
+        let best = -99999,
+            moves = createMoves(false);
 
         // mate + stalemate
         if (!moves.length) {
@@ -551,14 +551,14 @@ var Chess = function(fen_) {
             return evaluate();
         }
 
-        // setup
-        let best = -99999;
-
+        // statistics
+        nodes ++;
         if (ply > avg_depth)
             avg_depth = ply;
 
         // check all moves
-        let moves = createMoves(false);
+        let best = -99999,
+            moves = createMoves(false);
 
         // mate + stalemate
         if (!moves.length) {

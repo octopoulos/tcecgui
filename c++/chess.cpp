@@ -313,7 +313,6 @@ private:
     uint8_t pawns[8];
     uint8_t pins[128];
     int     ply;
-    std::vector<int> ply_checks;
     std::vector<State> ply_states;
     uint8_t rooks[8];
     uint8_t queens[8];
@@ -393,13 +392,13 @@ private:
             return quiesce(max_quiesce, alpha, beta);
         }
 
-        // setup
-        int best = -99999;
-
+        // statistics
+        nodes ++;
         if (ply > avg_depth)
             avg_depth = ply;
 
         // check all moves
+        int best = -99999;
         auto moves = createMoves(false);
 
         // mat + stalemate
@@ -502,13 +501,13 @@ private:
             return evaluate();
         }
 
-        // setup
-        int best = -99999;
-
+        // statistics
+        nodes ++;
         if (ply > avg_depth)
             avg_depth = ply;
 
         // check all moves
+        int best = -99999;
         auto moves = createMoves(false);
 
         // mate + stalemate
