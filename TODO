@@ -14,6 +14,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 ~          : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
 -          : 2020-09-17 : variable material value
+2020-09-20 : 2020-09-20 : average depth reported correctly
 2020-09-20 : 2020-09-20 : red rectangle disappears when showing popup/settings
 2020-09-19 : 2020-09-17 : depth => minimum depth, or: depth >=
 2020-09-19 : 2020-09-19 : tests should pass

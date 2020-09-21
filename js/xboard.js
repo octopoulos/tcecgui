@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 // game board:
 // - 4 rendering modes:
@@ -591,6 +591,7 @@ class XBoard {
         this.grid2 = temp;
 
         this.fen = fen;
+        this.ply = get_fen_ply(fen);
         this.valid = true;
         return true;
     }
@@ -2135,8 +2136,8 @@ class XBoard {
         // rotate if human is black
         if (this.name == 'pva') {
             let players = this.players;
-            if (players[0].name != players[1].name)
-                this.rotate = (players[1].name != AI);
+            // if (players[0].name != players[1].name)
+            //     this.rotate = (players[1].name != AI);
 
             for (let player of players) {
                 Assign(player, {
@@ -2527,7 +2528,8 @@ class XBoard {
 
         // show clock
         this.thinking = true;
-        this.clock(this.name, color);
+        if (!step)
+            this.clock(this.name, color);
 
         // pure random + insta move?
         if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
@@ -2702,10 +2704,9 @@ class XBoard {
             if (move.piece && (move.score > -900) || move.score == '-')
                 combine.push(move);
 
+        reply.avg_depth += avg_depth * nodes;
         reply.nodes += nodes;
         reply.nodes2 += nodes;
-        if (avg_depth > reply.avg_depth)
-            reply.avg_depth = avg_depth;
         if (sel_depth > reply.sel_depth)
             reply.sel_depth = sel_depth;
 
@@ -2736,7 +2737,7 @@ class XBoard {
 
         // 4) update
         let best_score = best.score,
-            is_iterative = this.max_time > 0,
+            is_iterative = (this.max_time > 0 && Abs(best_score) < 200),
             ply = get_fen_ply(fen),
             color = (1 + ply) % 2,
             player = this.players[color];
@@ -2746,7 +2747,7 @@ class XBoard {
 
         if (id >= -1) {
             Assign(player, {
-                depth: `${reply.avg_depth}/${reply.sel_depth}`,
+                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(1)}/${reply.sel_depth}`,
                 eval: format_eval(best_score),
                 id: color,
                 node: FormatUnit(reply.nodes2, '-'),
@@ -2772,7 +2773,7 @@ class XBoard {
                     extra = elapsed * ratio_nodes;
 
                 predict = elapsed2 + extra;
-                is_iterative = best.score < 200 && (this.depth < 4 || predict < this.max_time);
+                is_iterative = best.score < 200 && (this.depth < this.min_depth || predict < this.max_time);
                 if (DEV.engine)
                     LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
             }
@@ -2828,7 +2829,7 @@ class XBoard {
         let result = this.chess_move(best, {decorate: true});
         Assign(result, {
             _fixed: 2,
-            d: reply.avg_depth,
+            d: (reply.avg_depth / (reply.nodes + 1)).toFixed(1),
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
             s: Floor(nps + 0.5),

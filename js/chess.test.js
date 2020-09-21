@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-19
+// @version 2020-09-20
 //
 /*
 globals
@@ -236,14 +236,14 @@ beforeEach(() => {
 // evaluate
 [
     ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=null', 0],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mat', -200],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mat', -480],
     ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mob', 106],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=hce', -94],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=att', 4],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mat', -600],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=hce', -374],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=att', -276],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mat', -1450],
     ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mob', 75],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=hce', -525],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=att', -488],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=hce', -1375],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=att', -1338],
 ].forEach(([fen, options, answer], id) => {
     test(`evaluate:${id}`, () => {
         chess.load(fen);
@@ -350,10 +350,10 @@ beforeEach(() => {
 [
     ['8/8/8/8/8/8/8/8 w - - 0 1', 0, 0],
     ['8/8/8/8/8/8/8/8 w - - 0 1', 1, 0],
-    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 0, 900],
-    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 1, 100],
-    [START_FEN, 0, 3900],
-    [START_FEN, 1, 3900],
+    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 0, 2600],
+    ['8/p7/8/8/8/8/8/Q7 w - - 0 1', 1, 150],
+    [START_FEN, 0, 9600],
+    [START_FEN, 1, 9600],
 ].forEach(([fen, color, answer], id) => {
     test(`material:${id}`, () => {
         chess.load(fen);
@@ -442,63 +442,34 @@ beforeEach(() => {
 
 // moves
 [
-    ['1rk5/8/4n3/5B2/1N6/8/8/1Q1K4 b - - 0 1', false, 9, []],
-    ['3r2r1/pp3p1k/8/7P/4q2K/1P5P/P7/3R4 w - - 0 30', false, 0, []],
-    ['4k3/8/8/4q3/8/8/8/4RK2 b - - 0 1', false, 11, []],
-    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', false, 14, []],
-    ['7k/8/8/8/8/8/8/K7 w - - 0 1', false, 3, []],
-    ['8/6B1/2R5/8/8/2k5/8/K7 b - - 0 1', false, 4, []],
-    ['8/8/2R5/8/8/2k5/8/K7 b - - 0 1', false, 5, []],
-    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', false, 8, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', false, 2, []],
-    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', false, 29, []],
-    ['8/8/8/8/3k4/2q5/1b6/K7 w - - 0 1', false, 2, []],
-    ['8/8/8/8/8/2k5/1b6/K7 w - - 0 1', false, 2, []],
-    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', false, 2, []],
-    ['r1b1k1n1/pp2pp2/3p2p1/3P4/2P4b/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 23, []],
-    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4q/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 23, []],
-    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4r/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 28, []],
-    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', false, 21, []],
-    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', true, 0, []],
-    [START_FEN, false, 20, []],
-    [START_FEN, true, 0, []],
-    [
-        '4k2r/7p/8/8/8/8/7P/4K2R w Kk - 0 20',
-        false,
-        10,
-        [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
-    ],
-    [
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        false,
-        25,
-        [{capture: 0, flags: 32, from: 116, m: '', piece: 6, promote: 0, to: 118}],
-    ],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', false, 47, []],
-    [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        false,
-        47,
-        [
-            {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
-        ],
-    ],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', false, 36, []],
-    [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',
-        false,
-        48,
-        [
-            {capture: 0, flags: 32, from: 115, m: '', piece: 6, promote: 0, to: 119},
-            {capture: 0, flags: 64, from: 115, m: '', piece: 6, promote: 0, to: 113},
-        ],
-    ],
-    [
-        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        false,
-        13,
-        [{capture: 4, flags: 18, from: 17, m: '', piece: 1, promote: 5, to: 0}],
-    ],
+    ['r2k1bnr/3bpppp/p1p3q1/QN2n3/8/1P2P3/1B2BPPP/R3K2R b HA - 3 16', false, 2, 'd8c8 d8e8'],
+    ['1rk5/8/4n3/5B2/1N6/8/8/1Q1K4 b - - 0 1', false, 9, 'b8a8 b8b4 b8b5 b8b6 b8b7 c8b7 c8c7 c8d7 c8d8'],
+    ['3r2r1/pp3p1k/8/7P/4q2K/1P5P/P7/3R4 w - - 0 30', false, 0, ''],
+    ['4k3/8/8/4q3/8/8/8/4RK2 b - - 0 1', false, 11, 'e5e1 e5e2 e5e3 e5e4 e5e6 e5e7 e8d7 e8d8 e8e7 e8f7 e8f8'],
+    ['5K2/P1P5/3k2P1/5P2/8/8/8/8 w - - 0 68', false, 14, ''],
+    ['7k/8/8/8/8/8/8/K7 w - - 0 1', false, 3, 'a1a2 a1b1 a1b2'],
+    ['8/6B1/2R5/8/8/2k5/8/K7 b - - 0 1', false, 4, 'c3b3 c3b4 c3d2 c3d3'],
+    ['8/8/2R5/8/8/2k5/8/K7 b - - 0 1', false, 5, 'c3b3 c3b4 c3d2 c3d3 c3d4'],
+    ['8/8/5k2/8/2K5/8/8/8 w - - 0 1', false, 8, 'c4b3 c4b4 c4b5 c4c3 c4c5 c4d3 c4d4 c4d5'],
+    ['8/8/8/3Q4/8/2k5/8/K7 b - - 0 1', false, 2, 'c3b4 c3c2'],
+    ['8/8/8/3Q4/8/2k5/8/K7 w - - 0 1', false, 29, ''],
+    ['8/8/8/8/3k4/2q5/1b6/K7 w - - 0 1', false, 2, ''],
+    ['8/8/8/8/8/2k5/1b6/K7 w - - 0 1', false, 2, 'a1a2 a1b1'],
+    ['8/8/8/8/8/2k5/8/K7 w - - 0 1', false, 2, 'a1a2 a1b1'],
+    ['r1b1k1n1/pp2pp2/3p2p1/3P4/2P4b/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 23, ''],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4q/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 23, ''],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P4r/1P3P2/P1N1PNP1/1R1QK3 w q - 0 17', false, 28, ''],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', false, 21, ''],
+    ['r1b1kbn1/pp2pp2/3p2p1/3P4/2P5/1P3Pq1/P1N1PNP1/1R1QK3 w q - 0 17', true, 0, ''],
+    [START_FEN, false, 20, ''],
+    [START_FEN, true, 0, ''],
+    ['4k2r/7p/8/8/8/8/7P/4K2R w Kk - 0 20', false, 10, 'e1d1 e1d2 e1e2 e1f1 e1f2 e1h1 h1f1 h1g1 h2h3 h2h4'],
+    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', false, 25, ''],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', false, 47, ''],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', false, 47, ''],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', false, 36, ''],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', false, 48, ''],
+    ['r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1', false, 13, ''],
 ].forEach(([fen, only_capture, number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen);
@@ -506,8 +477,10 @@ beforeEach(() => {
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         expect(moves.length).toEqual(number);
-        for (let item of answer)
-            expect(moves).toContainEqual(item);
+        if (answer) {
+            let text = moves.map(move => chess.ucify(move)).sort().join(' ');
+            expect(text).toEqual(answer);
+        }
     });
 });
 
@@ -535,13 +508,13 @@ beforeEach(() => {
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         [false, false],
-        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, to: 118},
+        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, to: 119},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         [false, false],
-        {capture: 0, flags: 64, from: 116, m: 'O-O-O', piece: 6, promote: 0, to: 114},
+        {capture: 0, flags: 64, from: 116, m: 'O-O-O', piece: 6, promote: 0, to: 112},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
@@ -674,7 +647,7 @@ beforeEach(() => {
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'e1g1',
         false,
-        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, to: 118},
+        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, to: 119},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
@@ -871,14 +844,14 @@ beforeEach(() => {
     [START_FEN, [], 's=mm', 2, 400],
     [START_FEN, [], 's=mm', 1, 20],
     [START_FEN, [], 'd=0 s=mm', 0, 0],
-    [START_FEN, [], 's=ab', 5, 43794],
-    [START_FEN, [], 's=ab', 4, 10777],
+    [START_FEN, [], 's=ab', 5, 44246],
+    [START_FEN, [], 's=ab', 4, 10857],
     [START_FEN, [], 's=ab', 3, 825],
     [START_FEN, [], 's=ab', 2, 400],
     [START_FEN, [], 's=ab', 1, 20],
     [START_FEN, [], 'd=0 s=ab', 0, 0],
     ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=mm', 4, 403873],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 19180],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', [], 's=ab', 4, 19207],
 ].forEach(([fen, [frc, only_capture], options, depth, answer], id) => {
     test(`nodes:${id}`, () => {
         if (!frc)
@@ -911,7 +884,7 @@ beforeEach(() => {
     [
         'Qbk1r1b1/1p3p1p/2p1p3/5P2/6q1/B7/PPKn3P/NBR1R3 w - - 1 22',
         [false, '', 4],
-        'a8b8 f5e6 e1e6 a8b7 c2d2 a3b4 a3c5 a3d6 a3e7 a3f8 a1b3 c1d1 e1e2 e1e3 e1e4 e1e5 e1f1 e1g1 e1h1 e1d1 a8a7 a8a6 a8a5 a8a4 f5f6 b2b4 h2h4 b2b3 h2h3 c2c3 c2d3',
+        'f5e6 a8b8 e1e6 a8b7 c2d2 a3b4 a3c5 a3d6 a3e7 a3f8 a1b3 c1d1 e1e2 e1e3 e1e4 e1e5 e1f1 e1g1 e1h1 e1d1 a8a7 a8a6 a8a5 a8a4 f5f6 b2b4 h2h4 b2b3 h2h3 c2c3 c2d3',
     ],
     [
         '3r4/2p2k2/6p1/2p5/4N2p/PP2N3/2P2PK1/2R5 b - - 3 35',
@@ -957,7 +930,18 @@ beforeEach(() => {
 // https://sites.google.com/site/numptychess/perft/position-1
 // http://www.rocechess.ch/perft.html
 // https://www.chessprogramming.org/Perft_Results
+// https://www.chessprogramming.org/Chess960_Perft_Results
 [
+    // 960
+    ['bbqrnnkr/1ppp1p1p/5p2/p5p1/P7/1P4P1/2PPPP1P/1BQRNNKR w HDhd - 0 9	', 5, 3588435],     // ok
+    ['bbrqk1rn/pp1ppppp/8/2p5/2P1P3/5n1P/PPBP1PP1/B1RQKNRN w GCgc - 1 9', 5, 2518864],
+    ['bqnb1rkr/pp3ppp/3ppn2/2p5/5P2/P2P4/NPP1P1PP/BQ1BNRKR w HFhf - 2 9', 4, 326672],   // ok
+    ['brkqnnrb/1ppppppp/8/8/p3P3/5N2/PPPP1PPP/BRKQ1NRB w GBgb - 3 9', 4, 204350],
+    ['brq1nkrb/ppp2ppp/8/n2pp2P/P7/4P3/1PPP1PP1/BRQNNKRB w GBgb - 1 9', 4, 235162],
+    ['nrbnkrqb/pppp1p1p/4p1p1/8/7P/2P1P3/PPNP1PP1/1RBNKRQB w FBfb - 0 9', 4, 242762],
+    // ['nrkbnrbq/ppppppp1/8/8/7p/PP3P2/2PPPRPP/NRKBN1BQ w Bfb - 0 9', 5, 3008668],    // ERROR
+    ['r1krnnbq/pp1ppp1p/6p1/2p5/2P5/P3P3/Rb1P1PPP/1BKRNNBQ w Dda - 0 9', 5, 937188],
+
     // talkchess / martin sedlak
     // ['2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1', 6, 3821001],   // ok
     ['3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1', 6, 1134888],
@@ -1196,28 +1180,29 @@ beforeEach(() => {
 
 // search
 [
-    ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -790, {}],
-    ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 3000}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 650, {}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 43200, {1: 'g5e6 h7f7'}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 43200, {1: 'g5e6 h7f7'}],
+    ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 n=1 s=ab', 42000, {}],
+    ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -2075, {}],
+    ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 7000}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 1230, {}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 50000, {1: 'g5e6 h7f7'}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 50000, {1: 'g5e6 h7f7'}],
     ['7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47', '', '', [], {1: 'd3d8', b5c4: 50, c7f7: 50}],
-    ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 110, d7d8: 320, d7h7: -695}],
-    ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 43200}],
-    ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -1500, h1h7: -500}],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=ab', [], {g5d2: -220, h2h4: -1090}],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=mm', [], {g5d2: -220, h2h4: -1120}],
+    ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 110, d7d8: 450, d7h7: -2300}],
+    ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 50000}],
+    ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -3500, h1h7: -900}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=ab', [], {g5d2: -332, h2h4: -2952}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=mm', [], {g5d2: -332, h2h4: -2952}],
     ['r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16', '', 1, [], {1: 'e1f2'}],
-    ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -797, e1e4: -1400}],
-    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=ab', -540, {}],
-    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=mm', 360, {}],
-    ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=hce q=1 s=ab', -630, {}],
+    ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -2080, e1e4: -3530}],
+    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=ab', -1713, {}],
+    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=mm', 892, {}],
+    ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=hce q=1 s=ab', -1876, {}],
     ['rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq -', '', 3, [], {b3c1: 0, b3c5: 0, b3d2: 0}],
-    ['rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8', '', 1, [], {2: 'e1g1'}],
-    ['rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4', 'd2g5', 'd=3 e=hce q=1 s=ab', -720, {}],
-    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', '', 1, 800, {}],
+    ['rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8', '', 1, [], {2: 'e1h1'}],
+    ['rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4', 'd2g5', 'd=3 e=hce q=1 s=ab', -2394, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', '', 1, 2450, {}],
     ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 1, -100, {}],
-    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 2, -600, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 2, -1450, {}],
 ].forEach(([fen, mask, config, answer, checks], id) => {
     test(`search:${id}`, () => {
         let [frc, options, depth] =

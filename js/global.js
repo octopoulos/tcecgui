@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 // global variables/functions shared across multiple js files
 //
@@ -179,7 +179,7 @@ function format_eval(value, process) {
  */
 function get_fen_ply(fen) {
     let items = fen.split(' ');
-    return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+    return ((items[5] || 1) - 1) * 2 - (items[1] == 'w') * 1;
 }
 
 /**
@@ -335,9 +335,10 @@ function reset_old_settings() {
     if (version < '20200605')
         if (Y.scroll_inertia < 0.95)
             save_option('scroll_inertia', 0.95);
-    if (version < '20200912') {
+    if (version < '20200920') {
         save_option('game_options_black', 'd=4 e=att q=10 s=ab t=5');
         save_option('game_options_white', 'd=4 e=att q=10 s=ab t=5');
+        save_option('turn_opacity', 0);
     }
 
     LS(`version: ${version} => ${VERSION}`);

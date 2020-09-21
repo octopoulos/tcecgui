@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 /*
 globals
@@ -134,21 +134,27 @@ live.dual = archive;
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
+        'e1h1',
+        undefined,
+        {capture: 0, flags: 32, from: 116, m: 'e1h1', piece: 6, promote: 0, san: 'O-O', to: 119},
+    ],
+    [
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'e1g1',
         undefined,
-        {capture: 0, flags: 32, from: 116, m: 'e1g1', piece: 6, promote: 0, san: 'O-O', to: 118},
+        {capture: 0, flags: 32, from: 116, m: 'e1g1', piece: 6, promote: 0, san: 'O-O', to: 119},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O',
         undefined,
-        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, san: 'O-O', to: 118},
+        {capture: 0, flags: 32, from: 116, m: 'O-O', piece: 6, promote: 0, san: 'O-O', to: 119},
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         'O-O-O',
         undefined,
-        {capture: 0, flags: 64, from: 116, m: 'O-O-O', piece: 6, promote: 0, san: 'O-O-O', to: 114},
+        {capture: 0, flags: 64, from: 116, m: 'O-O-O', piece: 6, promote: 0, san: 'O-O-O', to: 112},
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
