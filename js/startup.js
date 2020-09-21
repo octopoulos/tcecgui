@@ -1865,7 +1865,7 @@ function prepare_settings() {
             game_think: '1',
             game_time: option_number(5, 0, 120),
             game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
-            game_wasm: [ON_OFF, 1],
+            game_wasm: [ON_OFF, 0],
         },
         graph: {
             _prefix: 'graph_',

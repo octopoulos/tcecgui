@@ -265,7 +265,7 @@ struct MoveText: Move {
     MoveText(): Move() {}
     MoveText(const Move &move) {
         memcpy(this, &move, sizeof(Move));
-        ply = -1;
+        ply = 0;
         score = 0;
     }
 };
@@ -314,7 +314,7 @@ private:
     uint8_t pawns[8];
     uint8_t pins[128];
     int     ply;
-    std::vector<State> ply_states;
+    State   ply_states[128];
     uint8_t rooks[8];
     uint8_t queens[8];
     int     search_mode;                    // 1:minimax, 2:alpha-beta
@@ -367,10 +367,7 @@ private:
      * Add a ply state
      */
     void addState(Move &move) {
-        for (auto i = ply_states.size(); i <= ply + 1; i ++)
-            ply_states.emplace_back();
-
-        auto &state = ply_states[ply];
+        auto &state = ply_states[ply % 128];
         memcpy(state.castling, castling, sizeof(castling));
         state.ep_square = ep_square;
         state.half_moves = half_moves;
@@ -395,8 +392,8 @@ private:
 
         // statistics
         nodes ++;
-        if (ply > avg_depth)
-            avg_depth = ply;
+        if (ply >= avg_depth)
+            avg_depth = ply + 1;
 
         // check all moves
         int best = -99999;
@@ -424,7 +421,7 @@ private:
                 }
 
                 // checkmate found
-                if (ply >= 3 && score > 20000)
+                if (ply > 3 && score > 20000)
                     break;
             }
         }
@@ -504,8 +501,8 @@ private:
 
         // statistics
         nodes ++;
-        if (ply > avg_depth)
-            avg_depth = ply;
+        if (ply >= avg_depth)
+            avg_depth = ply + 1;
 
         // check all moves
         int best = -99999;
@@ -528,7 +525,7 @@ private:
                     best = score;
 
                 // checkmate found
-                if (ply >= 3 && score > 20000)
+                if (ply > 3 && score > 20000)
                     break;
             }
         }
@@ -541,7 +538,7 @@ private:
     std::string moveList() {
         std::string text;
         for (auto i = 0 ; i <= ply; i ++) {
-            auto state = ply_states[i];
+            auto state = ply_states[i % 128];
             if (text.size())
                 text += " ";
             text += ucify(state.move);
@@ -591,8 +588,8 @@ private:
         auto best = score,
             futility = best + PIECE_SCORES[PAWN];
 
-        if (ply > sel_depth)
-            sel_depth = ply;
+        if (ply >= sel_depth)
+            sel_depth = ply + 1;
 
         auto moves = createMoves(true);
         for (auto &move : moves) {
@@ -737,7 +734,7 @@ public:
         nodes = 0;
         memset(pawns, EMPTY, sizeof(pawns));
         ply = 0;
-        ply_states.clear();
+        memset(ply_states, 0, sizeof(ply_states));
         memset(rooks, EMPTY, sizeof(rooks));
         memset(queens, EMPTY, sizeof(queens));
         sel_depth = 0;
@@ -2002,7 +1999,7 @@ public:
             return;
         ply --;
 
-        auto &state = ply_states[ply];
+        auto &state = ply_states[ply % 128];
         memcpy(castling, state.castling, sizeof(castling));
         ep_square = state.ep_square;
         half_moves = state.half_moves;

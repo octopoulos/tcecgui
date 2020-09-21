@@ -346,8 +346,8 @@ var Chess = function(fen_) {
         nodes = 0,
         pawns = U8(8).fill(EMPTY),
         pins = U8(128),
-        ply = -1,
-        ply_states = [],
+        ply = 0,
+        ply_states = Array(128).fill(0).map(_ => [0, 0, 0, 0]),
         rooks = U8(8).fill(EMPTY),
         queens = U8(8).fill(EMPTY),
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
@@ -401,7 +401,7 @@ var Chess = function(fen_) {
      * @param {Object} move
      */
     function addState(move) {
-        let state = SetDefault(ply_states, ply, []);
+        let state = ply_states[ply % 128];
         state[0] = castling.slice();
         state[1] = ep_square;
         state[2] = half_moves;
@@ -419,10 +419,6 @@ var Chess = function(fen_) {
      * @returns {number}
      */
     function alphaBeta(alpha, beta, depth, max_depth) {
-        // let ml = moveList(),
-        //     debug = (ml.slice(0, 4) == 'a5b6' && ml.includes('a5b6 d8e8 b5c7 e8d8 c7e6'));
-        // if (debug)
-        //     LS(`${ml}`);
         // extend depth if in check
         if ((max_nodes & 1) && max_depth < max_extend && kingAttacked(turn))
             max_depth ++;
@@ -437,8 +433,8 @@ var Chess = function(fen_) {
 
         // statistics
         nodes ++;
-        if (ply > avg_depth)
-            avg_depth = ply;
+        if (ply >= avg_depth)
+            avg_depth = ply + 1;
 
         // check all moves
         let best = -99999,
@@ -457,11 +453,8 @@ var Chess = function(fen_) {
                 let score = -alphaBeta(-beta, -alpha, depth + 1, max_depth);
                 undoMove();
 
-                if (score >= beta) {
-                    // if (debug)
-                    //     LS(`BREK: ${moveList()} : s=${score} a=${alpha} b=${beta}`);
+                if (score >= beta)
                     return beta;
-                }
                 if (score > best) {
                     best = score;
                     if (score > alpha)
@@ -469,7 +462,7 @@ var Chess = function(fen_) {
                 }
 
                 // checkmate found
-                if (ply >= 3 && score > 20000)
+                if (ply > 3 && score > 20000)
                     break;
             }
         }
@@ -556,8 +549,8 @@ var Chess = function(fen_) {
 
         // statistics
         nodes ++;
-        if (ply > avg_depth)
-            avg_depth = ply;
+        if (ply >= avg_depth)
+            avg_depth = ply + 1;
 
         // check all moves
         let best = -99999,
@@ -580,7 +573,7 @@ var Chess = function(fen_) {
                     best = score;
 
                 // checkmate found
-                if (ply >= 3 && score > 20000)
+                if (ply > 3 && score > 20000)
                     break;
             }
         }
@@ -594,7 +587,7 @@ var Chess = function(fen_) {
     function moveList() {
         let lines = [];
         for (let i = 0; i <= ply; i ++) {
-            let state = ply_states[i];
+            let state = ply_states[i % 128];
             lines.push(state? ucify(state[3]): '???');
         }
         return lines.join(' ');
@@ -647,8 +640,8 @@ var Chess = function(fen_) {
         let best = score,
             futility = best + PIECE_SCORES[PAWN];
 
-        if (ply > sel_depth)
-            sel_depth = ply;
+        if (ply >= sel_depth)
+            sel_depth = ply + 1;
 
         let moves = createMoves(true);
         for (let move of moves) {
@@ -775,7 +768,7 @@ var Chess = function(fen_) {
         nodes = 0;
         pawns.fill(EMPTY);
         ply = 0;
-        ply_states.length = 0;
+        ply_states[0].fill(0);
         rooks.fill(EMPTY);
         queens.fill(EMPTY);
         sel_depth = 0;
@@ -1981,7 +1974,7 @@ var Chess = function(fen_) {
         ply --;
 
         let move,
-            state = ply_states[ply];
+            state = ply_states[ply % 128];
         [
             castling,
             ep_square,

@@ -1686,7 +1686,7 @@ class XBoard {
         this.set_play(!is_ai);
         if (is_ai) {
             this.delayed_picks(true);
-            add_timeout('think', () => {this.think();}, TIMEOUT_think);
+            add_timeout('think', () => {this.think();}, Y.game_every);
         }
     }
 

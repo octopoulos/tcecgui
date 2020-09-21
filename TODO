@@ -6,7 +6,6 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-16 : transposition table
 -          : 2020-09-18 : pressure area around opponent king = larger bonus
 -          : 2020-09-17 : hce improvement: indirect flux, ex: piece piling up
--          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2020-09-17 : reuse move order from previous iterations
 -          : 2020-09-20 : passed pawns
 -          : 2020-09-18 : pawn structure eval
@@ -14,6 +13,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 ~          : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
 -          : 2020-09-17 : variable material value
+-          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-09-20 : 2020-09-20 : static arrays for ply_states
 2020-09-20 : 2020-09-20 : average depth reported correctly
 2020-09-20 : 2020-09-20 : red rectangle disappears when showing popup/settings
 2020-09-19 : 2020-09-17 : depth => minimum depth, or: depth >=
