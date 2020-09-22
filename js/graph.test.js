@@ -57,7 +57,7 @@ global.xboards = {
     [0, '#-18', -1, -100],
 ].forEach(([feature, eval_, ply, answer], id) => {
     test(`calculate_win:${id}`, () => {
-        Y.x = 'live';
+        Y.s = 'live';
         global.xboards.live.players[0].feature = feature;
         expect(calculate_win(0, eval_, ply)).toEqual(answer);
     });

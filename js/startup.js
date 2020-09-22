@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -15,25 +15,34 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
-DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, E, Events, export_settings, FileReader,
-From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes,
-Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, draw_rectangle, E, Events,
+export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
+HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
+is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 Min, navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
-PIECE_THEMES, popup_custom, redraw_eval_charts, reset_old_settings, reset_settings, resize_bracket, resize_game,
-resume_sleep,
-S, save_option, scroll_adjust, ScrollDocument, set_engine_events, set_game_events, SetDefault, Show, show_banner,
-show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TABLES,
-THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node, TRANSLATE_SPECIALS,
-translates:true, Undefined, update_board_theme, update_chart_options, update_debug, update_pgn, update_theme,
+PIECE_THEMES, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+S, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault, Show,
+show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph,
+Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node,
+TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug, update_pgn, update_theme,
 update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
-virtual_resize:true, Visible, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
 let AD_STYLES = {},
     CHAMPIONS = [],
+    CONFIGURE_KEYS = {
+        d: 'depth',
+        e: 'evaluation',
+        n: 1,
+        q: 1,
+        s: 'search',
+        t: 'time',
+        x: 1,
+    },
     CONTEXT_MENUS = {
         '#engine': 'engine',
         '#eval0, #eval1, #quick-search, #table-search': 'extra',
@@ -55,6 +64,17 @@ let AD_STYLES = {},
             'moves-archive': 1,
         },
     },
+    LEVELS = {
+        'custom': '',
+        'dog': 'd=3 e=hce n=0 q=0 s=ab t=0',
+        'ninja dog': 'd=4 e=hce n=0 q=0 s=ab t=0',
+        'novice': 'd=4 e=hce n=1 q=5 s=ab t=0',
+        'amateur': 'd=4 e=att n=1 q=8 s=ab t=2',
+        'engine maker': 'd=5 e=att n=1 q=10 s=ab t=5',
+        'chess player': 'd=6 e=att n=1 q=12 s=ab t=10',
+        'chess teacher': 'd=7 e=att n=1 q=15 s=ab t=12',
+        'other engine': 'd=8 e=att n=1 q=18 s=ab t=20',
+    },
     old_font_height,
     old_stream = 0,
     old_window_height,
@@ -70,6 +90,11 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
+    SEARCHES = {
+        AlphaBeta: 'ab',
+        Minimax: 'mm',
+        RandomMove: 'rnd',
+    },
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -81,7 +106,6 @@ let AD_STYLES = {},
         tb: 'TB',
     },
     TIMEOUT_font = 200,
-    TIMEOUT_graph = 500,
     TIMEOUT_popup = 600,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
@@ -147,7 +171,7 @@ function change_setting_special(name, value, no_close) {
     if (!name)
         return false;
 
-    // close contextual popup if we used a SELECT
+    // close contextual popup?
     if (!no_close) {
         let modal = Id('modal');
         if (modal && modal.dataset.xy)
@@ -256,29 +280,32 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'game_advice':
         pva.finished = false;
+        pva.set_ai(false);
         pva.think(true);
+        break;
+    case 'game_depth':
+        configure('d', value);
+        break;
+    case 'game_evaluation':
+        configure('e', value);
+        break;
+    case 'game_level':
+        configure_string(value);
         break;
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
         break;
+    case 'game_search':
+        configure('s', SEARCHES[value]);
+        break;
     case 'game_think':
         pva.finished = false;
+        pva.set_ai(true);
         pva.think();
         break;
-    case 'graph_color_0':
-    case 'graph_color_1':
-    case 'graph_color_2':
-    case 'graph_color_3':
-    case 'graph_line':
-    case 'graph_radius':
-    case 'graph_tension':
-    case 'graph_text':
-        update_chart_options(null, 3);
-        break;
-    case 'graph_eval_clamp':
-    case 'graph_eval_mode':
-        redraw_eval_charts();
+    case 'game_time':
+        configure('t', value);
         break;
     case 'grid':
     case 'grid_copy':
@@ -393,6 +420,7 @@ function check_hash_special(dico) {
         section = 'live';
     hashes[section] = dico;
     Y.x = section;
+    Y.s = section;
 
     let is_live = (section == 'live'),
         parent = Id('tables');
@@ -428,6 +456,7 @@ function check_stream() {
     if (location.pathname.includes('stream.html')) {
         Y.stream = 1;
         Y.x = 'live';
+        Y.s = 'live';
     }
 
     let stream = Y.stream;
@@ -460,19 +489,78 @@ function close_popups() {
 }
 
 /**
- * Draw a rectangle around the node
- * @param {Node} node
+ * Create the player options
+ * @param {string} name
+ * @param {number|string} value
+ * @param {string=} only_color only process this color
  */
-function draw_rectangle(node) {
-    if (!node)
-        return;
-    let rect = node.getBoundingClientRect(),
-        rect_node = Id('rect'),
-        y1 = Max(rect.top, 0),
-        y2 = Min(rect.top + rect.height, window.innerHeight);
+function configure(name, value, only_color) {
+    for (let scolor of WB_LOWER) {
+        if (only_color && scolor != only_color)
+            continue;
 
-    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
-    Show(rect_node);
+        // create the dico
+        let key = `game_options_${scolor}`,
+            options = Y[key].split(' '),
+            result = {};
+        for (let option of options) {
+            let items = option.split('=');
+            if (items.length < 2 || !CONFIGURE_KEYS[items[0]])
+                continue;
+            result[items[0]] = items[1];
+        }
+        result[name] = value;
+
+        // create the command line
+        let line = Keys(result).sort().map(key => `${key}=${result[key]}`).join(' '),
+            node = _(`textarea[name="${key}"]`);
+        save_option(key, line);
+        if (node)
+            node.value = Y[key];
+
+        // existing level?
+        let found = 'custom';
+        Keys(LEVELS).forEach(name => {
+            let level = LEVELS[name];
+            if (level == line)
+                found = name;
+        });
+        let input = _('#modal select[name="game_level"]');
+        if (input)
+            input.value = found;
+    }
+}
+
+/**
+ * Configure a game preset
+ * @param {string} name
+ */
+function configure_string(name) {
+    let level = LEVELS[name],
+        options = level.split(' ');
+
+    // options b&w
+    if (name != 'custom')
+        for (let scolor of WB_LOWER) {
+            let key = `game_options_${scolor}`,
+                input = _(`#modal [name="${key}"]`);
+            if (input)
+                input.value = level;
+            save_option(key, level);
+        }
+
+    // other inputs
+    for (let option of options) {
+        let items = option.split('='),
+            config = CONFIGURE_KEYS[items[0]];
+        if (items.length < 2 || !config)
+            continue;
+        let key = `game_${config}`,
+            input = _(`#modal [name="${key}"]`);
+        if (input)
+            input.value = items[1];
+        save_option(key, items[1]);
+    }
 }
 
 /**
@@ -555,9 +643,7 @@ function handle_drop(e) {
         populate_areas();
     }
 
-    Hide(Id('rect'));
-    Class('.area', '-dragging');
-
+    set_draggable();
     SP(e);
     PD(e);
     add_history();
@@ -968,8 +1054,6 @@ function resize() {
 
     adjust_popups();
     resize_game();
-
-    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
 }
 
 /**
@@ -1081,14 +1165,6 @@ function set_3d_scene(three) {
     S(Id('canvas'), three);
     if (three)
         start_3d();
-}
-
-/**
- * Set some elements to be draggable or not
- */
-function set_draggable() {
-    let drag = !!Y.drag_and_drop;
-    Attrs('.drag, .drop', {draggable: drag});
 }
 
 /**
@@ -1573,6 +1649,7 @@ function set_global_events() {
                 if (update_pgn(new_section, data)) {
                     Y.scroll = '#overview';
                     Y.x = new_section;
+                    Y.s = new_section;
                     check_hash_special({x: new_section});
                 }
                 break;
@@ -1780,9 +1857,6 @@ function prepare_settings() {
         },
         board_pva: {
             _suffix: '_pva',
-            analysis_chessdb: '1',
-            analysis_evalguide: '1',
-            analysis_lichess: '1',
             animate_pva: [ON_OFF, 1],
             auto_paste: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
@@ -1799,14 +1873,14 @@ function prepare_settings() {
             target_color: [{type: 'color'}, '#ff5a00'],
             target_opacity: option_number(0.7, 0, 1, 0.01),
             turn_color: [{type: 'color'}, '#ff5a00'],
-            turn_opacity: option_number(0.25, 0, 1, 0.01),
+            turn_opacity: option_number(0, 0, 1, 0.01),
         },
         control: {
             book_every: option_number(600, 100, 5000, 100),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
             play_every: option_number(1200, 100, 5000, 100),
-            wasm: [ON_OFF, 0],
+            // wasm: [ON_OFF, 0],
         },
         engine: {
             material_color: [['inverted', 'normal'], 'normal'],
@@ -1830,22 +1904,24 @@ function prepare_settings() {
         },
         game: {
             _prefix: 'game_',
+            analysis_evalguide: '1',
+            analysis_lichess: '1',
             board_pva: '',
             game_960: [ON_OFF, 1],
             game_advice: '1',
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
-            game_depth_black: option_number(-3, -60, 5),
-            game_depth_white: option_number(-3, -60, 5),
-            game_engine: [['Minimax', 'RandomMove'], 'Minimax'],
+            game_depth: option_number(4, 0, 8),
+            game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'nn'], 'att'],
             game_every: option_number(500, 50, 5000, 50),
+            game_level: [Keys(LEVELS), 'ninja dog'],
             game_new_game: '1',
-            game_nodes: option_number(1e9, 0, 1e10),
-            game_options_black: [{type: 'text'}, 'x'],
-            game_options_white: [{type: 'text'}, 'x'],
-            game_play_as: [['White', 'Black', 'AI', 'Human'], 'AI'],
+            game_options_black: [{type: 'area'}, 'd=4 e=att n=1 q=10 s=ab t=5'],
+            game_options_white: [{type: 'area'}, 'd=4 e=att n=1 q=10 s=ab t=5'],
+            game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
             game_think: '1',
-            game_threads: option_number(Max(1, cores / 2), 0, cores),
-            game_wasm: [ON_OFF, 1],
+            game_time: option_number(5, 0, 120),
+            game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
+            game_wasm: [ON_OFF, 0],
         },
         graph: {
             _prefix: 'graph_',

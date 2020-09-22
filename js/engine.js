@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,13 +9,13 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, clearInterval, clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, history, HTML, Id, IsArray, IsFloat, IsObject,
-IsString, Keys,
-LoadLibrary, localStorage, location, Lower, LS, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, QueryString,
-requestAnimationFrame, Resource,
-ScrollDocument, SetDefault, setInterval, setTimeout, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible, WebSocket,
-window
+_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, clearInterval, clearTimeout, CreateNode,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, Hide, history, HTML, Id, IsArray, IsFloat,
+IsObject, IsString, Keys,
+LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD,
+QueryString, requestAnimationFrame, Resource,
+ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible,
+WebSocket, window
 */
 'use strict';
 
@@ -1063,7 +1063,12 @@ function add_move(change, stamp, ratio_x=1, ratio_y=1) {
  * @returns {boolean}
  */
 function cannot_click() {
-    return (Now(true) < touch_done + TIMEOUT_touch);
+    if (Now(true) < touch_done + TIMEOUT_touch)
+        return true;
+    let active = document.activeElement;
+    if (active && {INPUT: 1, TEXTAREA: 1}[active.tagName])
+        return true;
+    return false;
 }
 
 /**
@@ -1515,34 +1520,86 @@ function create_url_list(dico) {
     if (!dico)
         return '';
 
-    let is_grid,
+    let ext, is_grid,
         html = Keys(dico).map(key => {
-        let value = dico[key];
+            let data = '',
+                text = '',
+                value = dico[key];
 
-        // grid?
-        if (key[0] == '_') {
-            let lines = is_grid? ['</grid>']: [];
-            if (value)
-                lines.push(`<grid class="w100" style="grid-template-columns:repeat(${value}, 1fr)">`);
-            is_grid = !!value;
-            return lines.join('');
-        }
+            // grid?
+            if (key[0] == '_') {
+                if (key == '_ext') {
+                    ext = value;
+                    return '';
+                }
 
-        if (!IsString(value))
-            return '<hr>';
+                let lines = is_grid? ['</grid>']: [];
+                if (value)
+                    lines.push(`<grid class="w100" style="grid-template-columns:repeat(${value}, 1fr)">`);
+                is_grid = !!value;
+                return lines.join('');
+            }
 
-        if (!value)
-            return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
+            if (!IsString(value))
+                return '<hr>';
 
-        if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
-            value = `${HOST}/${value}`;
-        return `<a class="item" href="${value}" target="_blank" data-t="${key}"></a>`;
-    }).join('');
+            if (!value)
+                return `<a class="item" data-id="${create_field_value(key)[0]}" data-t="${key}"></a>`;
+
+            if (!'./'.includes(value[0]) && value.slice(0, 4) != 'http')
+                value = `${HOST}/${value}`;
+
+            if (ext && key.includes(ext))
+                text = key.replace(ext, `<i class="ext">${ext}</i>`);
+            else
+                data = ` data-t="${key}"`;
+
+            return `<a class="item" href="${value}" target="_blank"${data}>${text}</a>`;
+        }).join('');
+
+    if (is_grid)
+        html += '</grid>';
 
     if (is_grid)
         html += '</grid>';
 
     return `<vert class="fastart">${html}</vert>`;
+}
+
+/**
+ * Draw a rectangle around the node
+ * @param {Node} node
+ */
+function draw_rectangle(node) {
+    if (!node)
+        return;
+    let rect = node.getBoundingClientRect(),
+        rect_node = Id('rect'),
+        y1 = Max(rect.top, 0),
+        y2 = Min(rect.top + rect.height, window.innerHeight);
+
+    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
+    Show(rect_node);
+}
+
+/**
+ * Get the drag and drop id
+ * @param {Node} target
+ * @returns {[Node, string]}
+ */
+function get_drop_id(target) {
+    let parent = Parent(target, {class_: 'drag|drop', self: true});
+    return [parent, parent? (parent.id || parent.dataset.x): null];
+}
+
+/**
+ * Set some elements to be draggable or not
+ */
+function set_draggable() {
+    let drag = !!Y.drag_and_drop;
+    Attrs('.drag, .drop', {draggable: drag});
+    Hide(Id('rect'));
+    Class('.area', '-dragging');
 }
 
 // API

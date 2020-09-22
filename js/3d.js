@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // general 3d rendering code
 //
@@ -9,11 +9,11 @@
 globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
-DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, HasClass, HTML, Id, Input,
-IsArray, IsString, KEY_TIMES, Keys, KEYS,
+DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
+Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
 LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, Parent, PD,
-S, save_option, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES, Undefined,
-update_theme, Visible, window, X_SETTINGS, Y
+S, save_option, set_draggable, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
+Undefined, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -1104,16 +1104,6 @@ function gamepad_modal() {
 }
 
 /**
- * Get the drag and drop id
- * @param {Node} target
- * @returns {[Node, string]}
- */
-function get_drop_id(target) {
-    let parent = Parent(target, {class_: 'drag|drop', self: true});
-    return [parent, parent? (parent.id || parent.dataset.x): null];
-}
-
-/**
  * Check if the overlay is visible
  * @returns {boolean}
  */
@@ -1177,13 +1167,18 @@ function show_modal(show, text, title, name) {
  * @param {string=} name
  * @param {boolean|string=} show
  * @param {boolean=} adjust only change its position
+ * @param {string=} html
  * @param {boolean=} instant popup appears instantly
+ * @param {number=} margin_y
  * @param {boolean=} overlay dark overlay is used behind the popup
  * @param {string=} setting
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, overlay, setting, xy}={}) {
-    if (adjust && device.iphone)
+    // remove the red rectangle
+    if (!adjust)
+        set_draggable();
+    else if (device.iphone)
         return;
 
     let node = (name == 'about')? Id('popup-about'): Id('modal');
@@ -1413,19 +1408,23 @@ function show_settings(name, xy) {
                 );
         }
         else if (data) {
-            let type = data.type;
+            let class_ = data.class,
+                type = data.type;
+            class_ = ` class="setting${class_? ' ': ''}${class_}"`;
             lines.push('<vert class="fcenter">');
 
-            if (type == 'number')
-                lines.push(`<input name="${key}" type="${type}" class="setting" min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
+            if (type == 'area')
+                lines.push(`<textarea name="${key}"${class_}>${y_key}</textarea>`);
+            else if (type == 'number')
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
             else if (type == 'link') {
                 if (data.text)
-                    lines.push(`<input name="${key}" type="text" class="setting" data-t="${data.text}" data-t2="placeholder" value="">`);
+                    lines.push(`<input name="${key}" type="text"${class_} data-t="${data.text}" data-t2="placeholder" value="">`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
                 Attrs(Id('file'), {'data-x': key});
             }
             else if (type)
-                lines.push(`<input name="${key}" type="${type}" class="setting" value="${y_key}">`);
+                lines.push(`<input name="${key}" type="${type}"${class_} value="${y_key}">`);
             // dictionary
             else
                 lines.push(
@@ -1564,13 +1563,13 @@ function set_modal_events(parent) {
             case 'INPUT':
                 if (next.type == 'checkbox') {
                     next.checked = !next.checked;
-                    change_setting(next.name, next.checked * 1);
+                    change_setting(next.name, next.checked * 1, true);
                 }
                 break;
             case 'SELECT':
                 if (next.options.length == 2) {
                     next.selectedIndex ^= 1;
-                    change_setting(next.name, next.value);
+                    change_setting(next.name, next.value, true);
                 }
                 break;
             }
@@ -1585,7 +1584,7 @@ function set_modal_events(parent) {
     Events('.item', 'contextmenu', function(e) {
         let next = this.nextElementSibling;
         if (next) {
-            next = _('input, select', next);
+            next = _('input, select, textarea', next);
             if (next) {
                 let name = next.name,
                     def = DEFAULTS[name];
@@ -1603,20 +1602,20 @@ function set_modal_events(parent) {
     }, parent);
 
     // inputs
-    Events('input, select', 'change', function() {
+    Events('input, select, textarea', 'change', function() {
         done_touch();
-        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, this.tagName == 'INPUT');
+        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, true);
     }, {}, parent);
     //
-    Input('input, select', function() {
+    Input('input, select, textarea', function() {
         done_touch();
-        change_setting(undefined, undefined, this.tagName == 'INPUT');
+        change_setting(undefined, undefined, true);
     }, parent);
     //
-    C('input, select', function() {
+    C('input, select, textarea', function() {
         if (cannot_click())
             return;
-        change_setting(undefined, undefined, this.tagName == 'INPUT');
+        change_setting(undefined, undefined, true);
     }, parent);
     //
     C('div[name]', function() {

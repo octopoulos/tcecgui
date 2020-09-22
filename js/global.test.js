@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-21
+// @version 2020-09-18
 //
 /*
 globals
@@ -15,13 +15,14 @@ let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
 
 create_module(IMPORT_PATH, [
     'common',
+    'engine',
     //
     'global',
-], OUTPUT_MODULE);
+], OUTPUT_MODULE, 'Y');
 
 let {
-    allie_cp_to_score, calculate_feature_q, fix_move_format, get_fen_ply, get_move_ply, leela_cp_to_score,
-    mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score,
+    allie_cp_to_score, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply, leela_cp_to_score,
+    mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score, Y,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +82,7 @@ let {
             ev: '5.52',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             ev: '5.52',
             wv: '5.52',
         },
@@ -94,7 +95,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 65000,
             n: 53674,
             s: 3488811,
@@ -108,7 +109,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             s: 129000,
             wv: '3.21',
         },
@@ -119,7 +120,7 @@ let {
             wv: '3.21',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             s: 350550000,
             wv: '3.21',
         },
@@ -145,7 +146,7 @@ let {
             wv: '0.00',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 30,
             h: '0.0',
             m: 'f4',
@@ -180,7 +181,7 @@ let {
             tl: '01:27:00',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 29,
             ev: '-2.99',
             m: 'Rb3',
@@ -209,7 +210,7 @@ let {
             wv: '0.36',
         },
         {
-            _fixed: true,
+            _fixed: 1,
             d: 14,
             mt: 195000,
             n: 444481608,
@@ -228,7 +229,7 @@ let {
             s: 0,
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 1900,
             n: 10000,
             s: '-',
@@ -242,7 +243,7 @@ let {
             s: 0,
         },
         {
-            _fixed: true,
+            _fixed: 1,
             mt: 2000,
             n: 10000,
             s: 5000,
@@ -253,6 +254,35 @@ let {
     test(`fix_move_format:${id}`, () => {
         fix_move_format(move);
         expect(move).toEqual(answer);
+    });
+});
+
+// format_eval
+[
+    ['', null, undefined, null],
+    ['', NaN, undefined, NaN],
+    ['', Infinity, undefined, 'Infinity'],
+    ['', '', undefined, ''],
+    ['', 0, undefined, '0.00'],
+    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    ['always', 0, false, '0.00'],
+    ['>= 10', 0, true, '0.00'],
+    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    ['always', 0.98, true, '<i>0.</i><i class="smaller">98</i>'],
+    ['always', 0.987654321, false, '0.99'],
+    ['always', 0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
+    ['always', '150.142', true, '<i>150.</i><i class="smaller">14</i>'],
+    ['always', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
+    ['>= 10', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
+    ['>= 100', 10.15535, true, '10.16'],
+    ['always', -198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['always', '-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
+    ['never', '-198.42', true, '-198.42'],
+    ['always', 'M#43', true, 'M#43'],
+].forEach(([small_decimal, value, process, answer], id) => {
+    test(`format_eval:${id}`, () => {
+        Y.small_decimal = small_decimal;
+        expect(format_eval(value, process)).toEqual(answer);
     });
 });
 

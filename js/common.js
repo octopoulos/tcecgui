@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-08-26
+// @version 2020-09-20
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1484,6 +1484,7 @@ function Undefined(value, def) {
 // <<
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
+        Abs: Abs,
         Assign: Assign,
         Clamp: Clamp,
         Contain: Contain,
@@ -1494,6 +1495,7 @@ if (typeof exports != 'undefined') {
         Format: Format,
         FormatFloat: FormatFloat,
         FormatUnit: FormatUnit,
+        From: From,
         FromSeconds: FromSeconds,
         FromTimestamp: FromTimestamp,
         HashText: HashText,

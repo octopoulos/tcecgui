@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // game board:
 // - 4 rendering modes:
@@ -14,29 +14,29 @@
 //      - go (future)
 //
 // included after: common, engine, global, 3d
-//
-// 128 SQUARES idea taken from chess.js:
-// @license
-// Copyright (c) 2016, Jeff Hlywa (jhlywa@gmail.com)
-// Released under the BSD license
-// https://github.com/jhlywa/chess.js/blob/master/LICENSE
-//
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
 CreateNode, CreateSVG,
-DEV, Events, Floor, Format, FormatUnit, From, get_fen_ply, get_move_ply, Hide, HTML, I8, Id, InsertNodes, IsDigit,
-IsString, Keys,
-Lower, LS, Min, mix_hex_colors, Now, Parent, play_sound, RandomInt,
-S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, Undefined, update_svg, Upper, Visible,
-window, Worker, Y
+DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
+Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, Now, Pad, Parent, play_sound, RandomInt,
+S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
+Upper, Visible, window, Worker, Y
 */
 'use strict';
 
-let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
+let AI = 'ai',
+    COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     CONSOLE_NULL = {
         console: 1,
         null: 1,
+    },
+    // those controls stop the play
+    CONTROL_STOPS = {
+        pause: 1,
+        prev: 1,
+        start: 1,
     },
     CONTROLS = {
         start: {
@@ -59,6 +59,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
         },
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
+    HUMAN = 'human',
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -74,6 +75,7 @@ let COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     // KQkq is also supported instead of AHah
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    TIMEOUT_arrow = 200,
     TIMEOUT_click = 200,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
@@ -108,8 +110,10 @@ class XBoard {
      * @param {Object} options options:
      * @example
      * - border         // frame size
+     * - clock          // start_clock function
      * - count          // add a counter in a red circle
      * - dims           // [num_col, num_row]
+     * - eval           // update_player_eval function
      * - hook           // events callback
      * - id             // output selector for HTML & text, can be 'console' and 'null' too
      * - last           // default result text, ex: *
@@ -133,8 +137,10 @@ class XBoard {
     constructor(options={}) {
         // options
         this.border = options.border || 2;
+        this.clock = options.clock || (() => {});
         this.count = options.count;
         this.dims = options.dims || [8, 8];
+        this.eval = options.eval || (() => {});
         this.hook = options.hook;
         this.id = options.id;
         this.last = options.last || '';
@@ -181,7 +187,8 @@ class XBoard {
         this.locked_obj = null;
         this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
-        this.max_depth = 0;                             // max depth in IT
+        this.max_time = 0;                              // max time in IT
+        this.min_depth = 0;                             // max depth in IT
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -193,12 +200,14 @@ class XBoard {
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_mode = 'play';
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
-        this.ply = 0;                                   // current ply
+        this.ply = -1;                                  // current ply
         this.ply_moves = [];                            // PV moves by real ply
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
+        this.rect = null;                               // control rect
         this.replies = {};                              // worker replies
         this.seen = 0;                                  // last seen move -> used to show the counter
+        this.shared = null;
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
         this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
@@ -209,6 +218,7 @@ class XBoard {
             {id: 3},
         ];                                              // svg objects for the arrows
         this.text = '';                                 // current text from add_moves_string
+        this.thinking = false;
         this.valid = true;
         this.workers = [];                              // web workers
         this.xmoves = null;
@@ -351,7 +361,7 @@ class XBoard {
                     this.set_fen(null, true);
                     this.ply = -1;
                     this.play_mode = 'book';
-                    this.play();
+                    this.play(false, false, 'add_moves');
                 }
             }
             else
@@ -499,7 +509,8 @@ class XBoard {
             lines = items[0].split('/'),
             pieces = this.pieces;
 
-        if (items.length != 6)
+        // accept incomplete fens (without half_moves + move_number)
+        if (items.length < 4)
             return false;
 
         grid.fill('');
@@ -526,7 +537,6 @@ class XBoard {
                 else
                     col += parseInt(char);
             }
-
             off += 16;
         }
 
@@ -558,7 +568,7 @@ class XBoard {
             for (let item of items) {
                 if (item[0])
                     continue;
-                let diff = Abs((index >> 4) - (item[1] >> 4)) + Abs((index % 16) - (item[1] % 16));
+                let diff = (item[1] < -7)? 999: Abs((index >> 4) - (item[1] >> 4)) + Abs((index & 15) - (item[1] & 15));
                 if (diff < best) {
                     best = diff;
                     win = item;
@@ -569,11 +579,10 @@ class XBoard {
         }
 
         // 3) move non found pieces off the board
-        let [num_row] = this.dims;
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 if (!piece[0])
-                    piece[1] = -num_row;
+                    piece[1] = -8;
         });
 
         // 4) update variables
@@ -582,6 +591,7 @@ class XBoard {
         this.grid2 = temp;
 
         this.fen = fen;
+        this.ply = get_fen_ply(fen);
         this.valid = true;
         return true;
     }
@@ -636,7 +646,7 @@ class XBoard {
      * @param {boolean} animate false => remove highlights
      */
     animate_html(move, animate) {
-        this.clear_high('source target');
+        this.clear_high('source target', false);
 
         let prev = this.move2;
         if (prev) {
@@ -712,8 +722,8 @@ class XBoard {
         let path,
             name = this.name,
             rotate = this.rotate,
-            x1 = ROTATE(rotate, dico.from % 16),
-            x2 = ROTATE(rotate, dico.to % 16),
+            x1 = ROTATE(rotate, dico.from & 15),
+            x2 = ROTATE(rotate, dico.to & 15),
             y1 = ROTATE(rotate, dico.from >> 4),
             y2 = ROTATE(rotate, dico.to >> 4);
 
@@ -810,6 +820,16 @@ class XBoard {
             .forEach((svg, id) => {
                 Style(svg.svg, `z-index:${id}`);
             });
+    }
+
+    /**
+     * The ply was changed
+     * @param {Move} move
+     */
+    changed_ply(move) {
+        if (this.hook)
+            this.hook(this, 'ply', move);
+        this.destroy_workers(true);
     }
 
     /**
@@ -934,7 +954,7 @@ class XBoard {
 
         // calculate
         let checked = chess.checked(chess.turn()),
-            moves = this.chess_moves(Undefined(move.frc, this.frc), true, -1),
+            moves = this.chess_moves(),
             rule50 = fen.split(' ')[4] * 1,
             sign = ((ply + 2) % 2)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
@@ -961,14 +981,13 @@ class XBoard {
     chess_move(text, options={}) {
         let result,
             chess = this.chess,
-            decorate = Undefined(options.decorate, false),
-            frc = Undefined(options.frc, this.frc);
+            decorate = Undefined(options.decorate, false);
 
         // handle UCI: e1g1 = O-O, e7e8q = promotion
         if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
-            result = chess.moveUci(text, frc, true);
+            result = chess.moveUci(text, true);
         else
-            result = IsString(text)? chess.moveSan(text, frc, decorate, false): chess.moveObject(text, frc, true);
+            result = IsString(text)? chess.moveSan(text, decorate, false): chess.moveObject(text, true);
 
         if (result.piece) {
             result.san = result.m;
@@ -980,13 +999,15 @@ class XBoard {
 
     /**
      * Calculate all legal moves
-     * @param {Object=} options
+     * @param {number=} single_square
      * @returns {Object[]}
      */
-    chess_moves(frc, legal, single_square) {
-        let moves = this.chess.moves(frc, legal, single_square);
+    chess_moves(single_square=EMPTY) {
+        let moves = this.chess.moves(false);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        if (single_square != EMPTY)
+            moves = moves.filter(move => move.from == single_square);
         return moves;
     }
 
@@ -1002,7 +1023,6 @@ class XBoard {
             Class('.source', '-source', true, this.xpieces);
         if (restore)
             Style('.source', `background:${Y.turn_color};opacity:${Y.turn_opacity}`, true, this.xsquares);
-        this.fen2 = '';
     }
 
     /**
@@ -1151,23 +1171,26 @@ class XBoard {
             LS(`threads: ${this.workers.length} => ${number}`);
 
         this.destroy_workers();
+        if (!window.Worker)
+            return;
 
-        if (window.Worker)
-            for (let id = 0; id < number; id ++) {
-                let worker = new Worker(`js/worker.js?ts=${Now()}`);
+        this.shared = new SharedArrayBuffer(1);
 
-                worker.onerror = error => {
-                    LS(`worker error:`);
-                    LS(error);
-                };
-                worker.onmessage = e => {
-                    this.worker_message(e);
-                };
+        for (let id = 0; id < number; id ++) {
+            let worker = new Worker(`js/worker.js?ts=${Now()}`);
 
-                worker.id = id;
-                worker.postMessage({dev: DEV, func: 'config'});
-                this.workers.push(worker);
-            }
+            worker.onerror = error => {
+                LS(`worker error:`);
+                LS(error);
+            };
+            worker.onmessage = e => {
+                this.worker_message(e);
+            };
+
+            worker.id = id;
+            worker.postMessage({dev: DEV, func: 'config'});
+            this.workers.push(worker);
+        }
     }
 
     /**
@@ -1175,23 +1198,37 @@ class XBoard {
      * @param {boolean} is_delay
      */
     delayed_picks(is_delay) {
-        if (timers.click_play)
-            if (!this.manual || !this.human_turn())
-                return;
+        if (!this.manual)
+            return;
+        if (timers.click_play && this.is_ai())
+            return;
 
         AnimationFrame(() => {
-            add_timeout(`pick${this.id}`, () => {this.show_picks();}, is_delay? TIMEOUT_pick: 0);
+            add_timeout(`pick${this.id}`, () => {this.show_picks(true);}, is_delay? TIMEOUT_pick: 0);
         });
     }
 
     /**
      * Destroy the web workers
      * - useful when starting a new game, to make sure no code is running in the threads anymore
+     * @param {boolean=} manual
      */
-    destroy_workers() {
-        for (let worker of this.workers)
-            worker.terminate();
-        this.workers = [];
+    destroy_workers(manual) {
+        if (!manual || this.thinking) {
+            for (let worker of this.workers)
+                worker.terminate();
+            this.thinking = false;
+            this.workers = [];
+        }
+        this.fen2 = '';
+
+        if (manual) {
+            this.finished = false;
+            this.replies = {};
+            this.clock(this.name, 0, true);
+            this.hide_arrows();
+            this.set_play(true);
+        }
     }
 
     /**
@@ -1227,7 +1264,7 @@ class XBoard {
                 that.set_locked(true);
                 break;
             case 'play':
-                that.play();
+                that.play(false, false, 'event_hook');
                 break;
             case 'rotate':
                 that.rotate = (that.rotate + 1) % 2;
@@ -1245,8 +1282,8 @@ class XBoard {
                 callback(that, 'control', name);
             }
 
-            if (name != 'play')
-                that.play(true);
+            if (CONTROL_STOPS[name])
+                that.play(true, true, 'hook');
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
@@ -1255,20 +1292,37 @@ class XBoard {
                 type = e.type;
 
             if (['mousedown', 'touchstart'].includes(type)) {
-                if (!['next', 'prev'].includes(name))
+                if (name != 'next' && name != 'prev')
                     return;
-                that.hold_button(name, 0);
+                if (name == 'prev')
+                    that.play(true, true, 'events');
+                let target = Parent(e.target, {class_: 'control', self: true});
+                if (target) {
+                    that.rect = target.getBoundingClientRect();
+                    that.hold_button(name, 0);
+                }
             }
             else {
                 if (!that.hold)
                     return;
 
                 if (['mousemove', 'touchmove'].includes(type)) {
+                    // no 'leave' for touch => check rect
+                    let rect = that.rect;
+                    if (rect) {
+                        let [change] = touch_event(e);
+                        if (change.x < rect.left || change.x > rect.left + rect.width
+                                || change.y < rect.top || change.y > rect.bottom + rect.height)
+                            that.hold = null;
+                    }
                     if (name != that.hold)
                         that.hold = null;
                 }
                 else
                     that.hold = null;
+
+                if (!that.hold)
+                    that.rect = null;
             }
 
             if (e.cancelable != false)
@@ -1298,7 +1352,7 @@ class XBoard {
                 return;
 
             this.chess_load(this.fen);
-            let moves = this.chess_moves(this.frc, true, this.picked);
+            let moves = this.chess_moves(this.picked);
             for (let move of moves)
                 this.add_high(move.to, 'target');
             if (moves[0])
@@ -1343,6 +1397,7 @@ class XBoard {
 
         // next to think
         if (!success && this.manual && ply >= num_move) {
+            this.set_ai(true);
             success = this.think();
             if (success)
                 this.play_mode = 'game';
@@ -1359,7 +1414,11 @@ class XBoard {
             start = this.main_manual? -1: 0;
         while (ply > start && !this.moves[ply])
             ply --;
-        return this.set_ply(ply, {animate: true, manual: true});
+        let move = this.set_ply(ply, {animate: true, manual: true});
+        this.set_ai(false, 0);
+        this.set_ai(false, 1);
+        this.destroy_workers(true);
+        return move;
     }
 
     /**
@@ -1384,6 +1443,13 @@ class XBoard {
      * - for now, only HTML code
      */
     hide_arrows() {
+        // update players' arrows
+        for (let player of this.players) {
+            let arrow = player.arrow;
+            if (arrow)
+                arrow[1] = null;
+        }
+
         for (let svg of this.svgs)
             Hide(svg.svg);
     }
@@ -1421,7 +1487,7 @@ class XBoard {
 
         if (step < 0) {
             if (is_play)
-                this.play(true);
+                this.play(true, false, 'hold_button');
             return;
         }
 
@@ -1538,6 +1604,13 @@ class XBoard {
     }
 
     /**
+     * Is it the AI turn to play?
+     */
+    is_ai() {
+        return (this.players[(1 + this.ply) % 2].name == AI);
+    }
+
+    /**
      * Check if the game is finished
      * @param {Move} move
      * @param {string} fen
@@ -1546,7 +1619,7 @@ class XBoard {
      */
     is_finished(move, fen, ply) {
         // 1) stalemate
-        let moves = this.chess_moves(this.frc, true, -1);
+        let moves = this.chess_moves();
         if (!moves.length) {
             let is_mate = move.m.slice(-1) == '#';
             LS(is_mate? `${WB_TITLE[ply % 2]} mates.`: 'Stalemate.');
@@ -1609,17 +1682,19 @@ class XBoard {
      * Maybe play the move as AI
      */
     maybe_play() {
-        if (!this.human_turn())
-            add_timeout('think', () => {this.think();}, TIMEOUT_think);
+        let is_ai = this.is_ai();
+        this.set_play(!is_ai);
+        if (is_ai) {
+            this.delayed_picks(true);
+            add_timeout('think', () => {this.think();}, Y.game_every);
+        }
     }
 
     /**
      * Start a new game
      */
     new_game() {
-        let fen,
-            play_as = Y.game_play_as;
-
+        let fen;
         if (this.frc) {
             let index = RandomInt(960);
             fen = this.chess.fen960(index);
@@ -1627,20 +1702,16 @@ class XBoard {
         else
             fen = START_FEN;
 
-        this.destroy_workers();
+        this.destroy_workers(true);
         this.reset(true, fen);
-        this.replies = {};
-
-        if (play_as != 'AI')
-            this.rotate = (play_as == WB_TITLE[1]);
 
         this.instant();
         this.render(7);
         this.chess_fen(fen);
 
-        this.play(play_as != 'AI');
+        if (this.hook)
+            this.hook(this, 'new', null);
         this.maybe_play();
-        this.delayed_picks(true);
     }
 
     /**
@@ -1648,13 +1719,18 @@ class XBoard {
      * @param {Move} move
      */
     new_move(move) {
-        // fen/ply
+        // 0) fen/ply
         let fen = this.chess_fen();
         move.fen = fen;
-        let now = Now(true),
-            ply = get_move_ply(move);
+        this.chess_mobility(move, true);
 
-        // user vote?
+        let now = Now(true),
+            ply = get_move_ply(move),
+            id = (2 + ply) % 2,
+            player = this.players[id];
+        move.id = id;
+
+        // 1) user vote?
         if (this.main) {
             let prev_fen = this.moves.length? this.moves[this.moves.length - 1].fen: this.start_fen,
                 uci = this.chess.ucify(move);
@@ -1664,7 +1740,7 @@ class XBoard {
         }
         else {
             this.set_fen(fen, true);
-            this.clear_high('source target');
+            this.clear_high('source target', false);
             this.picked = null;
 
             // delete some moves?
@@ -1679,20 +1755,37 @@ class XBoard {
             }
         }
 
+        // 2) add move + add missing info
+        if (!move.mt)
+            move.mt = DefaultInt(player.elapsed, 0);
+        if (!move.n)
+            move.n = '-';
+        if (!move.s)
+            move.s = '-';
+        if (!move.wv)
+            move.wv = '-';
+
         this.add_moves([move]);
         this.move_time = now;
+        this.eval(this.name, move);
 
-        // maybe finished the game? 50MR / stalemate / win / 3-fold
+        // 3) maybe finished the game? 50MR / stalemate / win / 3-fold
         if (this.manual) {
             let finished = this.is_finished(move, fen, ply);
             if (finished) {
                 this.finished = true;
                 play_sound(audiobox, Y.sound_draw);
-                Hide(`.xcog`, this.node);
-                this.play(true);
+                this.play(true, false, 'new_move');
             }
+
+            if (this.hook)
+                this.hook(this, 'ply', move);
+            this.clock(this.name, (ply + 3) % 2, finished);
         }
-        this.delayed_picks(true);
+
+        // 4) next player
+        this.hide_arrows();
+        this.maybe_play();
     }
 
     /**
@@ -1759,28 +1852,38 @@ class XBoard {
             return false;
 
         // 3) update
+        this.set_ai(false);
+        this.destroy_workers();
         this.new_move(move);
-        this.maybe_play();
     }
 
     /**
      * Play button was pushed
      * @param {boolean=} stop
+     * @param {boolean=} manual button was pressed
+     * @param {string=} origin
      */
-    play(stop) {
+    play(stop, manual, origin) {
+        if (DEV.time)
+            LS(`play: ${origin} : stop=${stop} : manual=${manual} : cp=${timers.click_play} : mode=${this.play_mode}`);
         if (stop || timers.click_play) {
             clear_timeout(`click_play`);
             stop = true;
             this.play_mode = 'play';
         }
 
-        S('[data-x="pause"]', !stop, this.node);
-        S('[data-x="play"]', stop, this.node);
+        if (stop && manual && this.manual) {
+            this.destroy_workers(true);
+            let players = this.players;
+            players[0].name = HUMAN;
+            players[1].name = HUMAN;
+        }
 
         if (stop)
             this.delayed_picks(true);
         else
             this.hold_button('play', 0);
+        this.set_play(stop);
     }
 
     /**
@@ -1842,7 +1945,7 @@ class XBoard {
                         even = (i + j) % 2,
                         note_x = '',
                         note_y = '',
-                        square = i * 16 + j,
+                        square = (i << 4) + j,
                         style = '';
 
                     if (notation) {
@@ -1891,8 +1994,7 @@ class XBoard {
                     if (!found || !node || node.style.opacity > 0)
                         continue;
 
-
-                    let col = ROTATE(rotate, index % 16),
+                    let col = ROTATE(rotate, index & 15),
                         row = ROTATE(rotate, index >> 4),
                         style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
                     Style(node, `transform:${style_transform};transition:none`);
@@ -1908,7 +2010,7 @@ class XBoard {
 
                     for (let item of items) {
                         let [found, index, node] = item,
-                            col = index % 16,
+                            col = index & 15,
                             row = index >> 4;
 
                         if (!node) {
@@ -1922,7 +2024,7 @@ class XBoard {
                             Style('div', `${style};background-position-x:${offset}px`, true, node);
 
                         if (found) {
-                            node.dataset.c = row * 16 + col;
+                            node.dataset.c = (row << 4) + col;
                             col = ROTATE(rotate, col);
                             row = ROTATE(rotate, row);
 
@@ -2018,7 +2120,7 @@ class XBoard {
         this.move_time = Now(true);
         this.moves.length = 0;
         this.next = null;
-        this.ply = 0;
+        this.ply = -1;
         this.seen = 0;
         this.text = '';
 
@@ -2030,6 +2132,23 @@ class XBoard {
 
         this.set_fen(null, true);
         this.set_last(this.last);
+
+        // rotate if human is black
+        if (this.name == 'pva') {
+            let players = this.players;
+            // if (players[0].name != players[1].name)
+            //     this.rotate = (players[1].name != AI);
+
+            for (let player of players) {
+                Assign(player, {
+                    elapsed: 0,
+                    left: 5400 * 1000,
+                    tc: 5400,
+                    tc2: 10,
+                    time: 0,
+                });
+            }
+        }
     }
 
     /**
@@ -2067,6 +2186,15 @@ class XBoard {
         this.size = size;
         if (render)
             this.render(2);
+    }
+
+    /**
+     * Set the current player AI or HUMAN
+     * @param {boolean} ai
+     * @param {number=} offset player offset
+     */
+    set_ai(ai, offset=0) {
+        this.players[(1 + this.ply + offset) % 2].name = ai? AI: HUMAN;
     }
 
     /**
@@ -2152,6 +2280,17 @@ class XBoard {
     }
 
     /**
+     * Set the play/pause icon
+     * @param {boolean} play
+     */
+    set_play(play) {
+        if (this.hold == 'play')
+            play = false;
+        S('[data-x="pause"]', !play, this.node);
+        S('[data-x="play"]', play, this.node);
+    }
+
+    /**
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
@@ -2178,8 +2317,8 @@ class XBoard {
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
-            if (manual && this.hook)
-                this.hook(this, 'ply', {ply: -1});
+            if (manual)
+                this.changed_ply({ply: -1});
             return {};
         }
 
@@ -2216,7 +2355,7 @@ class XBoard {
         if (can_source && can_moves) {
             let audio_delay = Y.audio_delay,
                 offset = 0,
-                text = Undefined(move.m, '???'),
+                text = move.m || '???',
                 last = text.slice(-1),
                 sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
 
@@ -2235,8 +2374,8 @@ class XBoard {
                 }, delay + offset);
         }
 
-        if (manual && this.hook)
-            this.hook(this, 'ply', move);
+        if (manual)
+            this.changed_ply(move);
 
         // new move => remove arrows from the past
         this.hide_arrows();
@@ -2245,26 +2384,27 @@ class XBoard {
         if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
-
-        this.finished = false;
         return move;
     }
 
     /**
      * Show which pieces can be picked
+     * @param {boolean=} force
      */
-    show_picks() {
+    show_picks(force) {
         if (!this.manual || timers.click_play)
             return;
-        if (this.fen == this.fen2)
+        if (!force && this.fen == this.fen2)
+            return;
+        if (this.is_ai())
             return;
 
         this.chess_load(this.fen);
 
-        let moves = this.chess_moves(this.frc, true, -1),
+        let moves = this.chess_moves(),
             froms = new Set(moves.map(move => move.from));
 
-        this.clear_high('source target');
+        this.clear_high('source target', false);
         for (let from of froms)
             this.add_high(from, 'turn');
 
@@ -2285,8 +2425,7 @@ class XBoard {
             chess = this.chess,
             fen = this.fen,
             folds = [],
-            ply = get_fen_ply(this.fen),
-            color = (1 + ply) % 2;
+            color = (1 + this.ply) % 2;
 
         // busy thinking => return
         let reply = SetDefault(this.replies, fen, {});
@@ -2294,12 +2433,18 @@ class XBoard {
             return true;
 
         if (!step) {
-            Show(`.xcolor${color} .xcog`, this.node);
+            if (this.thinking) {
+                LS('thinking');
+                return;
+            }
+            if (!suggest)
+                this.clear_high('source target', false);
+            this.set_play(false);
             this.create_workers();
 
             // check moves
             chess.load(fen);
-            moves = this.chess_moves(this.frc, true, -1);
+            moves = this.chess_moves();
             num_move = moves.length;
             if (!num_move)
                 return false;
@@ -2307,36 +2452,36 @@ class XBoard {
             // check for 3-fold moves
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
             for (let move of moves) {
-                this.chess.ucify(move);
-                this.chess.moveRaw(move);
-                let splits = this.chess.fen().split(' '),
+                chess.ucify(move);
+                chess.moveRaw(move);
+                let splits = chess.fen().split(' '),
                     prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
                     rule50 = splits[4] * 1,
                     draw = (rule50 >= 50 || fen_set.has(prune));
 
                 if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
-                    let moves2 = this.chess_moves(this.frc, true, -1);
+                    let moves2 = this.chess_moves();
                     for (let move2 of moves2) {
-                        this.chess.moveRaw(move2);
-                        let splits2 = this.chess.fen().split(' '),
+                        chess.moveRaw(move2);
+                        let splits2 = chess.fen().split(' '),
                             prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
                         if (fen_set.has(prune2)) {
                             if (DEV.engine)
-                                LS(`DRAW WITH ${move.m} THEN ${this.chess.ucify(move2)}`);
+                                LS(`DRAW WITH ${move.m} THEN ${chess.ucify(move2)}`);
                             draw = true;
                         }
-                        this.chess.undo();
+                        chess.undo();
                     }
                 }
                 if (draw) {
                     Assign(move, {
                         depth: 0,
-                        score: -2.5,
+                        score: -1,
                         special: 1,
                     });
                     folds.push(move);
                 }
-                this.chess.undo();
+                chess.undo();
             }
         }
         else {
@@ -2348,12 +2493,17 @@ class XBoard {
         // setup combined reply
         let now = Now(true),
             scolor = WB_LOWER[color],
-            max_depth = (Y.game_engine == 'RandomMove')? 0: Y[`game_depth_${scolor}`],
-            max_extend = 0,     // max_depth? Y[`game_extend_${scolor}`]: 0,
             num_worker = this.workers.length,
-            params = Y[`game_options_${scolor}`];
+            options = Y[`game_options_${scolor}`];
+
+        chess.configure(this.frc, options, -1);
+        let params = chess.params(),
+            eval_mode = params[1],
+            min_depth = params[0],
+            max_time = params[4];
 
         Assign(reply, {
+            avg_depth: 0,
             count: 0,
             lefts: I8(num_worker),
             moves: [],
@@ -2364,7 +2514,8 @@ class XBoard {
 
         if (!step) {
             this.depth = 3;
-            this.max_depth = max_depth;
+            this.min_depth = min_depth;
+            this.max_time = max_time;
             Assign(reply, {
                 all_elapsed: [],
                 all_nodes: [],
@@ -2375,14 +2526,22 @@ class XBoard {
             });
         }
 
+        // show clock
+        this.thinking = true;
+        if (!step)
+            this.clock(this.name, color);
+
         // pure random + insta move?
-        if (!max_depth || num_worker < 1 || num_move < 2) {
+        if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = moves[id];
-            move.depth = 0;
-            move.score = 0;
+            Assign(move, {
+                depth: '-',
+                score: '-',
+            });
             this.worker_message({
                 data: {
+                    avg_depth: 0,
                     fen: fen,
                     frc: this.frc,
                     id: -2,
@@ -2399,13 +2558,13 @@ class XBoard {
         let has_moves = {},
             masks = [];
         for (let i = 0; i < num_worker; i ++)
-            masks.push(I8(num_move));
+            masks.push([]);
 
         for (let i = 0; i < num_move; i ++) {
             if (moves[i].special)
                 continue;
             let id = i % num_worker;
-            masks[id][i] = 1;
+            masks[id].push(chess.ucify(moves[i]));
             has_moves[id] = 1;
         }
         for (let id = 0; id < num_worker; id ++)
@@ -2416,6 +2575,7 @@ class XBoard {
         if (folds.length) {
             this.worker_message({
                 data: {
+                    avg_depth: 0,
                     fen: fen,
                     frc: this.frc,
                     id: -1,
@@ -2430,16 +2590,15 @@ class XBoard {
             if (!has_moves[id])
                 continue;
             this.workers[id].postMessage({
+                depth: max_time? this.depth: min_depth,
                 engine: Y.game_wasm? 'wasm': 'js',
                 func: 'think',
                 fen: fen,
                 frc: this.frc,
                 id: id,
-                mask: masks[id].join(''),
-                max_depth: (max_depth < 0)? this.depth: max_depth,
-                max_extend: max_extend,
-                max_nodes: Y.game_nodes,
-                params: params,
+                mask: masks[id].join(' '),
+                options: options,
+                search: Y.search,
                 suggest: suggest,
             });
         }
@@ -2480,6 +2639,37 @@ class XBoard {
     }
 
     /**
+     * Update mini information in PVA
+     * @param {number} id
+     * @param {Object=} stats
+     */
+    update_mini(id, stats) {
+        let mini = _(`.xcolor${id}`, this.node),
+            player = this.players[id],
+            dico = {...player};
+
+        if (stats)
+            Assign(dico, stats);
+
+        HTML('.xeval', format_eval(dico.eval, true), mini);
+
+        if (this.name == 'pva') {
+            HTML(`.xleft`, Undefined(dico.stime, '-'), mini);
+            HTML('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
+            HTML(`.xtime`, Undefined(dico.depth, '-'), mini);
+
+            let arrow = player.arrow;
+            if (arrow)
+                this.arrow(arrow[0], arrow[1]);
+        }
+        else {
+            HTML(`.xleft`, player.sleft, mini);
+            HTML('.xshort', player.short, mini);
+            HTML(`.xtime`, player.stime, mini);
+        }
+    }
+
+    /**
      * Receive a worker message
      * @param {Event} e
      */
@@ -2488,6 +2678,7 @@ class XBoard {
             return;
 
         let data = e.data,
+            avg_depth = data.avg_depth,
             fen = data.fen,
             id = data.id,
             moves = data.moves,
@@ -2510,9 +2701,10 @@ class XBoard {
             reply.lefts[id] = 0;
 
         for (let move of moves)
-            if (move.piece && move.score > -900)
+            if (move.piece && (move.score > -900) || move.score == '-')
                 combine.push(move);
 
+        reply.avg_depth += avg_depth * nodes;
         reply.nodes += nodes;
         reply.nodes2 += nodes;
         if (sel_depth > reply.sel_depth)
@@ -2520,10 +2712,12 @@ class XBoard {
 
         // still expecting more data?
         if (DEV.engine) {
-            let move = moves[0];
+            let lefts = From(reply.lefts).map(left => left? (left - 1).toString(16): '.').join(''),
+                move = moves[0],
+                eval_ = format_eval(move? move.score: '-').padStart(7);
             if (!reply.count)
                 LS(this.fen);
-            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${(move? move.score.toFixed(2): '-').padStart(7)} : ${reply.lefts} : ${combine.length}`);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${eval_} : ${lefts} : ${combine.length}`);
         }
         reply.count ++;
         if (!reply.lefts.every(item => !item))
@@ -2533,13 +2727,11 @@ class XBoard {
         let now = Now(true),
             elapsed = now - reply.start,
             elapsed2 = now - reply.start2,
-            nps = (elapsed2 > 0.001)? `${FormatUnit(reply.nodes2 / elapsed2)}nps`: '-';
+            nps = (elapsed2 > 0.001)? reply.nodes2 / elapsed2: 0;
 
         // get the best move
         combine.sort((a, b) => b.score - a.score);
         let best = combine[0];
-        if (DEV.engine)
-            LS(combine);
         if (!best) {
             LS('no legal move to play');
             return;
@@ -2547,25 +2739,26 @@ class XBoard {
 
         // 4) update
         let best_score = best.score,
-            is_iterative = this.max_depth < 0,
+            is_iterative = (this.max_time > 0 && Abs(best_score) < 200),
             ply = get_fen_ply(fen),
             color = (1 + ply) % 2,
-            mini = _(`.xcolor${color}`, this.node);
+            player = this.players[color];
 
         if (color)
             best_score *= -1;
 
         if (id >= -1) {
-            HTML('.xeval', best_score.toFixed(2), mini);
-            HTML('.xshort', `<div>${FormatUnit(reply.nodes2)}</div><div>${nps}</div>`, mini);
-            HTML(`.xtime`, `${best.depth}/${reply.sel_depth}`, mini);
-        }
-
-        // arrow suggest
-        if (suggest) {
-            this.arrow(color + 2, best);
-            Hide(`.xcog`, mini);
-            return;
+            Assign(player, {
+                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(1)}/${reply.sel_depth}`,
+                eval: format_eval(best_score),
+                id: color,
+                node: FormatUnit(reply.nodes2, '-'),
+                ply: ply + 1,
+                speed: `${FormatUnit(nps)}nps`,
+                wv: format_eval(best_score),
+            });
+            this.update_mini(color);
+            this.eval(this.name, player);
         }
 
         // 6) iterative thinking?
@@ -2582,15 +2775,15 @@ class XBoard {
                     extra = elapsed * ratio_nodes;
 
                 predict = elapsed2 + extra;
-                is_iterative = best.score < 200 && (this.depth < 4 || predict < -this.max_depth);
+                is_iterative = best.score < 200 && (this.depth < this.min_depth || predict < this.max_time);
                 if (DEV.engine)
                     LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
             }
         }
 
         if (is_iterative) {
-            moves = combine.filter(move => move.depth > 0);
-            if (moves.length > 1 && this.depth < 8) {
+            moves = combine.filter(move => !move.special);
+            if (moves.length > 1) {
                 // arrow?
                 if (this.depth >= 3 && predict > 1) {
                     let arrow = Y.game_arrow;
@@ -2601,22 +2794,51 @@ class XBoard {
                             arrow = color + 2;
                         else
                             arrow = arrow.slice(-1) * 1;
-                        this.arrow(arrow, best);
+                        add_timeout('xarrow', () => {
+                            player.arrow = [arrow, best];
+                            this.arrow(arrow, best);
+                        }, TIMEOUT_arrow);
                     }
                 }
 
                 this.depth ++;
-                this.think(false, 1);
+                this.think(suggest, 1);
                 return;
             }
         }
 
-        // 7) move
-        Hide(`.xcog`, mini);
-        if (id > -1)
-            HTML(`.xleft`, elapsed2.toFixed(1), mini);
+        if (DEV.engine)
+            LS(combine);
+
+        // 7) stop things
+        Hide(`.xcolor${color} .xcog`, this.node);
+        this.thinking = false;
+
+        // arrow suggest
+        if (suggest) {
+            player.arrow = [color + 2, best];
+            this.arrow(color + 2, best);
+            this.set_play(true);
+            return;
+        }
+
+        // 8) move
+        if (id > -1) {
+            player.stime = FromSeconds(elapsed2).slice(1, -1).map(item => Pad(item)).join(':');
+            this.update_mini(color);
+        }
 
         let result = this.chess_move(best, {decorate: true});
+        Assign(result, {
+            _fixed: 2,
+            d: (reply.avg_depth / (reply.nodes + 1)).toFixed(1),
+            mt: Floor(elapsed2 * 1000 + 0.5),
+            n: reply.nodes2,
+            s: Floor(nps + 0.5),
+            sd: reply.sel_depth,
+            tb: 0,
+            wv: format_eval(best_score),
+        });
         this.new_move(result);
     }
 }

@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-18
+// @version 2020-09-18
 /*
 globals
 __dirname, expect, global, require, test
@@ -28,9 +28,9 @@ create_module(IMPORT_PATH, [
 let {
     analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
     create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
-    format_eval, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
-    parse_date_time, parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials,
-    update_pgn, update_player_eval, xboards, Y,
+    format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults, parse_date_time,
+    parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials, update_pgn,
+    update_player_eval, xboards, Y,
 } = require(OUTPUT_MODULE);
 
 Assign(global, {
@@ -381,35 +381,6 @@ create_chart_data();
 ].forEach(([text, multi_line, scale, answer], id) => {
     test(`format_engine:${id}`, () => {
         expect(format_engine(text, multi_line, scale)).toEqual(answer);
-    });
-});
-
-// format_eval
-[
-    ['', null, undefined, null],
-    ['', NaN, undefined, NaN],
-    ['', Infinity, undefined, 'Infinity'],
-    ['', '', undefined, ''],
-    ['', 0, undefined, '0.00'],
-    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
-    ['always', 0, false, '0.00'],
-    ['>= 10', 0, true, '0.00'],
-    ['always', 0, true, '<i>0.</i><i class="smaller">00</i>'],
-    ['always', 0.98, true, '<i>0.</i><i class="smaller">98</i>'],
-    ['always', 0.987654321, false, '0.99'],
-    ['always', 0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
-    ['always', '150.142', true, '<i>150.</i><i class="smaller">14</i>'],
-    ['always', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
-    ['>= 10', 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
-    ['>= 100', 10.15535, true, '10.16'],
-    ['always', -198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
-    ['always', '-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
-    ['never', '-198.42', true, '-198.42'],
-    ['always', 'M#43', true, 'M#43'],
-].forEach(([small_decimal, value, process, answer], id) => {
-    test(`format_eval:${id}`, () => {
-        Y.small_decimal = small_decimal;
-        expect(format_eval(value, process)).toEqual(answer);
     });
 });
 

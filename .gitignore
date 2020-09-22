@@ -24,6 +24,7 @@ c++/*.js
 c++/*.wasm
 c++/shared*
 chart.js
+coverage/
 crash.json
 create_list.js
 crosstable.json
@@ -44,6 +45,7 @@ model/
 new.json
 node_modules/
 package-lock.json
+pull.bat
 schedule.json
 sound/*.js
 stream.html

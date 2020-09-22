@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-07
+// @version 2020-09-18
 /*
 globals
 Chess, importScripts, LS, Now, Random, self, Undefined
@@ -38,18 +38,11 @@ let SQUARES_INV = [
 ///////////
 
 /**
- * Think ...
+ * Create a chess engine
  * @param {string} engine
- * @param {string} params
- * @param {string} fen
- * @param {boolean} frc
- * @param {string} mask
- * @param {number} max_depth
- * @param {number} max_extend
- * @param {number} max_nodes
- * @returns {[Move, number, number]} best_move, score, depth
+ * @returns {Object}
  */
-function think(engine, params, fen, mask, frc, max_depth, max_extend, max_nodes) {
+function create_chess(engine) {
     // 1) use the desired engine
     let engine_class = engine_classes[engine];
     if (!engine_class) {
@@ -64,26 +57,38 @@ function think(engine, params, fen, mask, frc, max_depth, max_extend, max_nodes)
         engines[engine] = new engine_class();
         chess = engines[engine];
     }
+    return chess;
+}
 
-    // 2) generate all moves + analyse them, using the mask
+/**
+ * Think ...
+ * @param {string} engine
+ * @param {string} fen
+ * @param {string} mask
+ * @param {boolean} frc
+ * @returns {[Move, number, number]} best_move, score, depth
+ */
+function think(engine, fen, mask, frc) {
+    // 1) generate all moves + analyse them, using the mask
+    let chess = create_chess(engine);
     chess.load(fen);
-    chess.configure(frc, params, max_depth, max_extend, max_nodes);
 
     let start = Now(true),
-        moves = chess.moves(frc, true, -1),
+        moves = chess.moves(false),
         masks = chess.search(moves, mask),
         elapsed = Now(true) - start;
 
+    // 2) results
     // convert wasm to object
     if (masks.size)
         masks = new Array(masks.size()).fill(0).map((_, id) => masks.get(id));
 
     for (let move of masks) {
         move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-        move.score = Undefined(move.score, 0) / 100 + Random() * 0.1;
+        move.score = Undefined(move.score, 0) / 100 + Random() * 0.15;
     }
     masks.sort((a, b) => b.score - a.score);
-    return [masks, elapsed, chess.nodes(), chess.selDepth()];
+    return [masks, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];
 }
 
 // COMMUNICATION
@@ -97,6 +102,12 @@ self.onmessage = e => {
     let data = e.data,
         func = data.func;
 
+    // 1) create the chess engine
+    let chess = create_chess(data.engine);
+    if (data.options)
+        chess.configure(data.frc, data.options, data.depth);
+
+    // 2) handle the messages
     if (func == 'config') {
         if (data.dev)
             DEV = data.dev;
@@ -106,9 +117,9 @@ self.onmessage = e => {
         LS(e);
     }
     if (func == 'think') {
-        let [moves, elapsed, nodes, sel_depth] = think(
-            data.engine, data.params, data.fen, data.mask, data.frc, data.max_depth, data.max_extend, data.max_nodes);
+        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.mask, data.frc);
         self.postMessage({
+            avg_depth: avg_depth,
             elapsed: elapsed,
             fen: data.fen,
             id: data.id,

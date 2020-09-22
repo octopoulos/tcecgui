@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200908';
+    VERSION = '20200918';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -140,7 +140,36 @@ function fix_move_format(move) {
         }
     }
 
-    move._fixed = true;
+    move._fixed = 1;
+}
+
+/**
+ * Format the eval to make the 2 decimals smaller if the eval is high
+ * @param {number} value
+ * @param {boolean=} process can make decimals smaller
+ * @returns {number}
+ */
+function format_eval(value, process) {
+    let float = parseFloat(value);
+    if (isNaN(float))
+        return value;
+
+    let small_decimal = Y.small_decimal,
+        text = float.toFixed(2);
+
+    if (!process || small_decimal == 'never')
+        return text;
+
+    let items = text.split('.');
+
+    if (small_decimal != 'always') {
+        let abs = Abs(float);
+        if (abs < 10 && small_decimal == '>= 10')
+            return text;
+        if (abs < 100 && small_decimal == '>= 100')
+            return text;
+    }
+    return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
 /**
@@ -149,8 +178,9 @@ function fix_move_format(move) {
  * @returns {number}
  */
 function get_fen_ply(fen) {
-    let items = fen.split(' ');
-    return (items[5] - 1) * 2 - (items[1] == 'w') * 1;
+    let items = fen.split(' '),
+        ply = ((items[5] || 1) - 1) * 2 - (items[1] == 'w') * 1;
+    return isNaN(ply)? -1: ply;
 }
 
 /**
@@ -224,7 +254,6 @@ function parse_dev() {
             e: 'eval',                  // live eval
             E: 'engine',
             f: 'fen',                   // parse_fen
-            g: 'graph',
             G: 'global',
             i: 'input',                 // gamepad input
             j: 'json',                  // static json files
@@ -232,11 +261,11 @@ function parse_dev() {
             m: 'mobil',
             o: 'open',
             n: 'new',                   // new game debugging
-            p: 'pv',
             P: 'popup',                 // disable popups
             q: 'queue',
             s: 'socket',                // socket messages
             S: 'no_socket',
+            t: 'time',                  // clock + pause/start click
             T: 'translate',             // gather translations
             u: 'ui',                    // UI events
             w: 'wasm',
@@ -307,9 +336,11 @@ function reset_old_settings() {
     if (version < '20200605')
         if (Y.scroll_inertia < 0.95)
             save_option('scroll_inertia', 0.95);
-    if (version < '20200908') {
-        save_option('game_depth_black', -4);
-        save_option('game_depth_white', -4);
+    if (version < '20200920') {
+        save_option('game_options_black', 'd=4 e=att n=1 q=10 s=ab t=5');
+        save_option('game_options_white', 'd=4 e=att n=1 q=10 s=ab t=5');
+        save_option('game_wasm', 0);
+        save_option('turn_opacity', 0);
     }
 
     LS(`version: ${version} => ${VERSION}`);

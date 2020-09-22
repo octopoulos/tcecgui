@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-19
+// @version 2020-09-18
 //
 /*
 globals
@@ -62,7 +62,7 @@ function calculate_win(id, eval_, ply) {
     if (eval_ == undefined)
         return eval_;
 
-    let main = xboards[Y.x],
+    let main = xboards[Y.s],
         feature = main.players[id].feature,
         cache_features = SetDefault(cached_percents, feature, {}),
         key = `${eval_}:${ply}`,
@@ -242,7 +242,7 @@ function create_charts()
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards[Y.x].set_ply(dico.ply, {manual: true});
+                xboards[Y.s].set_ply(dico.ply, {manual: true});
         });
     });
 
@@ -392,9 +392,16 @@ function new_y_axis(id, y_ticks, dico) {
 
 /**
  * Redraw eval charts when eval mode has changed
+ * @param {string} section
  */
-function redraw_eval_charts() {
-    let moves = xboards[Y.x].moves,
+function redraw_eval_charts(section) {
+    if (DEV.chart)
+        LS(`REC: ${section}`);
+    let board = xboards[section];
+    if (!board)
+        return;
+
+    let moves = board.moves,
         num_move = moves.length;
 
     // update existing moves + kibitzer evals (including next move)
@@ -428,16 +435,18 @@ function reset_chart(chart) {
 
 /**
  * Reset all charts
+ * @param {boolean} all reset (live + pv) evals as well
  */
-function reset_charts()
+function reset_charts(all)
 {
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key]);
     });
 
-    for (let key of ['live0', 'live1', 'pv0', 'pv1'])
-        xboards[key].evals = [];
+    if (all)
+        for (let key of ['live0', 'live1', 'pv0', 'pv1'])
+            xboards[key].evals = [];
 }
 
 /**
@@ -537,6 +546,8 @@ function update_chart_options(name, mode) {
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
 function update_live_chart(moves, id) {
+    if (DEV.chart)
+        LS('ULC');
     // library hasn't loaded yet => queue
     let data_c = chart_data.eval;
     if (!data_c) {
@@ -590,6 +601,8 @@ function update_live_chart(moves, id) {
  * @param {Move[]} moves
  */
 function update_player_chart(name, moves) {
+    if (DEV.chart)
+        LS(`UPC: ${name}`);
     if (!Visible(Id(`table-${name}`)))
         return;
 
@@ -636,10 +649,14 @@ function update_player_chart(name, moves) {
             dico.y = move.d;
             break;
         case 'eval':
+            if (move.wv == '-')
+                continue;
             dico.eval = move.wv;
             dico.y = is_percent? calculate_win(id, move.wv, ply): clamp_eval(move.wv);
             break;
         case 'mobil':
+            if (isNaN(move.mobil))
+                continue;
             datasets[2].data[num2] = {...dico, ...{y: move.goal? Abs(move.goal[0]): -1}};
             dico.mobil = move.mobil;
             dico.y = Abs(move.mobil);
@@ -660,6 +677,8 @@ function update_player_chart(name, moves) {
             break;
         }
 
+        if (isNaN(dico.y))
+            continue;
         datasets[id].data[num2] = dico;
     }
 
@@ -674,6 +693,8 @@ function update_player_chart(name, moves) {
  * @param {Move[]} moves
  */
 function update_player_charts(name, moves) {
+    if (DEV.chart)
+        LS('UPC+');
     if (!name) {
         Keys(charts).forEach(key => {
             update_player_chart(key, moves);
@@ -693,6 +714,8 @@ function update_player_charts(name, moves) {
  */
 function init_graph(callback) {
     function _done() {
+        if (DEV.chart)
+            LS('IG');
         create_chart_data();
         create_charts();
         update_player_charts(null, xboards[Y.x].moves);

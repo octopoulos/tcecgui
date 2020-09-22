@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-08
+// @version 2020-09-20
 //
 // Game specific code:
 // - control the board, moves
@@ -14,9 +14,10 @@ globals
 _, A, Abs, add_timeout, Assign, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil, change_setting, charts,
 check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls, CopyClipboard,
 create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, FormatUnit,
-From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass, HasClasses, Hide,
-HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
+DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, format_eval,
+FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
+HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
+IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
 parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
 Resource, restore_history, resume_game, Round,
@@ -114,6 +115,8 @@ let ANALYSIS_URLS = {
             vis: 'table-pv',
         },
         pva: {
+            clock: start_clock,
+            eval: update_player_eval,
             manual: true,
             size: 36,
             sub: 1,
@@ -286,6 +289,7 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
+    TIMEOUT_graph = 500,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -418,35 +422,6 @@ function format_engine(engine, multi_line, scale) {
         version = engine.slice(pos + 1),
         version_class = `version${(scale && version.length >= scale)? ' version-small': ''}`;
     return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
-}
-
-/**
- * Format the eval to make the 2 decimals smaller if the eval is high
- * @param {number} value
- * @param {boolean=} process can make decimals smaller
- * @returns {number}
- */
-function format_eval(value, process) {
-    let float = parseFloat(value);
-    if (isNaN(float))
-        return value;
-
-    let small_decimal = Y.small_decimal,
-        text = float.toFixed(2);
-
-    if (!process || small_decimal == 'never')
-        return text;
-
-    let items = text.split('.');
-
-    if (small_decimal != 'always') {
-        let abs = Abs(float);
-        if (abs < 10 && small_decimal == '>= 10')
-            return text;
-        if (abs < 100 && small_decimal == '>= 100')
-            return text;
-    }
-    return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
 }
 
 /**
@@ -717,6 +692,8 @@ function create_boards(mode='html') {
         Class('.color', '-active');
         Class(this, 'active');
     });
+
+    xboards.pva.reset();
 }
 
 /**
@@ -766,6 +743,20 @@ function reset_sub_boards(mode, start_fen) {
 }
 
 /**
+ * Get the board name for the section: live, archive, pva ...
+ * @param {string=} section
+ * @returns {string}
+ */
+function section_board(section) {
+    if (board_target.name == 'pva') {
+        Y.s = 'pva';
+        return 'pva';
+    }
+    Y.s = section || Y.x;
+    return section || Y.x;
+}
+
+/**
  * Show/hide the timers around the board
  * @param {string} name
  * @param {boolean=} show undefined => show when center/engine is disabled
@@ -773,7 +764,6 @@ function reset_sub_boards(mode, start_fen) {
 function show_board_info(name, show) {
     let board = xboards[name],
         node = board.node,
-        players = board.players,
         status = (name == 'pva')? Y.status_pva: Y.status;
 
     if (show == undefined) {
@@ -802,14 +792,10 @@ function show_board_info(name, show) {
     Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
     Style('.xframe', `top:${show? 23: 0}px`, true, node);
 
-    for (let id = 0; id < 2; id ++) {
-        let player = players[id],
-            mini = _(`.xcolor${id}`, node);
-        HTML('.xeval', format_eval(player.eval, true), mini);
-        HTML(`.xleft`, player.sleft, mini);
-        HTML('.xshort', player.short, mini);
-        HTML(`.xtime`, player.stime, mini);
-    }
+    board.update_mini(0);
+    board.update_mini(1);
+    if (board.manual && !board.is_ai())
+        board.show_picks(true);
 }
 
 /**
@@ -3044,6 +3030,8 @@ function resize_game() {
 
     show_board_info(Y.x);
     resize_3d();
+
+    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
 }
 
 /**
@@ -3147,6 +3135,7 @@ function update_move_info(section, ply, move, fresh) {
         depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': Undefined(move.wv, '-'),
         id = (ply + 2) % 2,
+        is_pva = (section == 'pva'),
         main = xboards[section],
         num_ply = main.moves.length,
         players = main.players,
@@ -3158,20 +3147,25 @@ function update_move_info(section, ply, move, fresh) {
             tb: is_book? '-': FormatUnit(move.tb, '-'),
         };
 
-    Keys(stats).forEach(key => {
-        HTML(Id(`${key}${id}`), stats[key]);
-    });
+    // pva?
+    if (is_pva)
+        main.update_mini(id, stats);
+    if (!is_pva) {
+        Keys(stats).forEach(key => {
+            HTML(Id(`${key}${id}`), stats[key]);
+        });
 
-    if (fresh || Y.x == 'archive') {
-        let player = players[id];
-        player.eval = eval_;
+        if (fresh || Y.x == 'archive') {
+            let player = players[id];
+            player.eval = eval_;
 
-        if (!isNaN(move.tl))
-            Assign(player, {
-                elapsed: 0,
-                left: move.tl * 1,
-                time: move.mt * 1,
-            });
+            if (!isNaN(move.tl))
+                Assign(player, {
+                    elapsed: 0,
+                    left: move.tl * 1,
+                    time: move.mt * 1,
+                });
+        }
     }
 
     // past move?
@@ -3397,7 +3391,11 @@ function update_overview_moves(section, headers, moves, is_new) {
         return;
 
     // 2) update the visible charts
-    update_player_charts(null, moves);
+    if (section == section_board()) {
+        if (DEV.chart)
+            LS(`UOM: ${section}`);
+        update_player_charts(null, moves);
+    }
 
     // 3) check adjudication
     if (move && move.fen) {
@@ -3515,7 +3513,11 @@ function update_pgn(section, data, extras, reset_moves) {
         main.reset(1, pgn.frc);
         if (is_same) {
             reset_sub_boards(7, pgn.frc);
-            reset_charts();
+            if (section == section_board()) {
+                if (DEV.chart)
+                    LS(`UP: ${section}`);
+                reset_charts(true);
+            }
         }
         new_game = (main.event && main.round)? 2: 1;
         main.event = headers.Event;
@@ -3546,8 +3548,11 @@ function update_pgn(section, data, extras, reset_moves) {
     // remove moves that are after the last move
     // - could have been sent by error just after a new game started
     let last_move = main.moves[main.moves.length - 1];
-    if (is_same && last_move)
+    if (is_same && last_move && section == section_board()) {
+        if (DEV.chart)
+            LS(`UP: ${section}`);
         slice_charts(last_move.ply);
+    }
 
     update_mobility();
     add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
@@ -3587,7 +3592,7 @@ function update_pgn(section, data, extras, reset_moves) {
         let who = last_move? (1 + last_move.ply) % 2: 0;
         if (!new_game)
             players[who].time = 0;
-        start_clock(who, finished, pgn.elapsed || 0);
+        start_clock(section, who, finished, pgn.elapsed || 0);
     }
     return true;
 }
@@ -3727,10 +3732,11 @@ function analyse_log(line) {
 
 /**
  * Clock countdown
+ * @param {string} section live, pva
  * @param {number} id
  */
-function clock_tick(id) {
-    let main = xboards.live,
+function clock_tick(section, id) {
+    let main = xboards[section],
         now = Now(true),
         player = main.players[id],
         elapsed = (now - player.start) * 1000,
@@ -3745,8 +3751,8 @@ function clock_tick(id) {
         timeout += 100;
 
     player.elapsed = elapsed;
-    update_clock('live', id);
-    add_timeout(`clock${id}`, () => {clock_tick(id, now);}, timeout);
+    update_clock(section, id);
+    add_timeout(`clock-${section}${id}`, () => {clock_tick(section, id, now);}, timeout);
 }
 
 /**
@@ -3759,43 +3765,54 @@ function set_viewers(count) {
 
 /**
  * Start the clock for one player, and stop it for the other
+ * @param {string} section live, pva
  * @param {number} id
- * @param {boolean} finished if true, then both clocks are stopped
- * @param {number} delta elapsed time since pgn creation
+ * @param {boolean=} finished if true, then both clocks are stopped
+ * @param {number=} delta elapsed time since pgn creation
  */
-function start_clock(id, finished, delta) {
-    if (Y.x != 'live')
-        return;
+function start_clock(section, id, finished, delta) {
+    if (DEV.time)
+        LS(`start_clock: section=${section} : id=${id} : finished=${finished} : delta=${delta}`);
 
-    S(Id(`cog${id}`), !finished);
-    Hide(`#cog${1 - id}`);
+    let is_live = (section == 'live');
+    if (is_live) {
+        if (Y.x != section)
+            return;
 
-    let main = xboards.live,
+        S(Id(`cog${id}`), !finished);
+        Hide(`#cog${1 - id}`);
+    }
+
+    let main = xboards[section],
         node = main.node,
         player = main.players[id];
-    S(`.xcolor${id} .xcog`, !finished, node);
+
+    S(`.xcolor${id} .xcog`, !finished && (section != 'pva' || main.thinking), node);
     Hide(`.xcolor${1 - id} .xcog`, node);
 
-    stop_clock([0, 1]);
+    stop_clock(section, [0, 1]);
+
     // handle Chat player
-    main.manual = (!finished && (player.feature & 256));
+    if (is_live)
+        main.manual = (!finished && (player.feature & 256));
 
     if (!finished) {
         Assign(player, {
             elapsed: 0.000001,
-            start: Now(true) - player.time / 1000 - delta,
+            start: Now(true) - player.time / 1000 - (delta || 0),
         });
-        clock_tick(id);
+        clock_tick(section, id);
     }
 }
 
 /**
  * Stop the clock(s)
+ * @param {string} section live, pva
  * @param {number[]} ids
  */
-function stop_clock(ids) {
+function stop_clock(section, ids) {
     for (let id of ids)
-        clear_timeout(`clock${id}`);
+        clear_timeout(`clock-${section}${id}`);
 }
 
 /**
@@ -3840,6 +3857,8 @@ function update_clock(section, id, move) {
         HTML(`.xleft`, left, mini);
         HTML(`.xtime`, time, mini);
     }
+    else if (section == 'pva')
+        HTML(`.xleft`, time, mini);
 }
 
 /**
@@ -3887,7 +3906,7 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @returns {boolean}
  */
 function update_live_eval(section, data, id, force_ply) {
-    if (section != Y.x || !data)
+    if (!data)
         return false;
 
     let board = xboards[`live${id}`],
@@ -3965,8 +3984,12 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    update_live_chart(moves || [data], id + 2);
-    check_missing_moves(ply, round);
+    if (section == section_board(section)) {
+        if (DEV.chart)
+            LS(`ULE: ${section}`);
+        update_live_chart(moves || [data], id + 2);
+        check_missing_moves(ply, round);
+    }
     return true;
 }
 
@@ -3978,34 +4001,37 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv || section != Y.x)
+    if (!Y.live_pv || section != section_board())
         return false;
 
-    let main = xboards[section],
+    let is_pva = (section == 'pva'),
+        main = xboards[section],
         cur_ply = main.ply,
         engine = data.engine,
         eval_ = data.eval,
         id = Undefined(data.id, data.color),
         mini = _(`.xcolor${id}`, main.node),
-        node = Id(`moves-pv${id}`),
         player = main.players[id],
         short = get_short_name(engine);
 
     // 1) update the live part on the left
-    let dico = {
-        eval: format_eval(eval_),
-        score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
-    };
+    if (!is_pva) {
+        let dico = {
+                eval: format_eval(eval_),
+                score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
+            },
+            node = Id(`moves-pv${id}`);
 
-    // update engine name if it has changed
-    update_hardware(section, id, engine, short, null, [node]);
+        // update engine name if it has changed
+        update_hardware(section, id, engine, short, null, [node]);
 
-    Keys(dico).forEach(key => {
-        HTML(`[data-x="${key}"]`, dico[key], node);
-    });
+        Keys(dico).forEach(key => {
+            HTML(`[data-x="${key}"]`, dico[key], node);
+        });
 
-    HTML(`.xshort`, short, mini);
-    HTML(`.xeval`, format_eval(eval_), mini);
+        HTML(`.xshort`, short, mini);
+        HTML(`.xeval`, format_eval(eval_), mini);
+    }
 
     // 2) add moves
     let board = xboards[`pv${id}`],
@@ -4018,7 +4044,7 @@ function update_player_eval(section, data) {
         LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
         LS(board.moves);
     }
-    else {
+    else if (data.pv) {
         data.ply = split_move_string(data.pv)[0];
         board.add_moves_string(data.pv);
     }
@@ -4030,7 +4056,7 @@ function update_player_eval(section, data) {
 
     // 3) update the engine info in the center
     // - only if the ply is the currently selected ply + 1
-    if (data.ply == cur_ply + 1) {
+    if (!is_pva && data.ply == cur_ply + 1) {
         let stats = {
             depth: data.depth,
             engine: format_engine(data.engine, true, 21),
@@ -4045,9 +4071,16 @@ function update_player_eval(section, data) {
         });
     }
 
+    if (DEV.chart)
+        LS(`UPE: ${section}`);
     board.evals[data.ply] = data;
-    update_live_chart([data], id);
-    check_missing_moves(data.ply, null, data.pos);
+
+    if (is_pva)
+        update_player_charts(null, [data]);
+    else {
+        update_live_chart([data], id);
+        check_missing_moves(data.ply, null, data.pos);
+    }
     return true;
 }
 
@@ -4230,8 +4263,11 @@ function paste_text(text) {
     let board = board_target.manual? board_target: xboards.pva,
         fen = board.fen;
     if (board.set_fen(text, true)) {
-        if (board.fen != fen)
+        if (board.fen != fen) {
             board.reset(true, board.fen);
+            if (board_target.name == 'pva')
+                reset_charts();
+        }
     }
     else
         board.add_moves_string(text);
@@ -4270,8 +4306,9 @@ function random_position() {
 function change_setting_game(name, value) {
     let update_tab,
         prefix = name.split('_')[0],
+        sboard = section_board(),
         section = Y.x,
-        main = xboards[section];
+        main = xboards[sboard];
 
     // using exact name
     switch (name) {
@@ -4288,6 +4325,20 @@ function change_setting_game(name, value) {
         break;
     case 'copy_moves':
         copy_moves();
+        break;
+    case 'graph_color_0':
+    case 'graph_color_1':
+    case 'graph_color_2':
+    case 'graph_color_3':
+    case 'graph_line':
+    case 'graph_radius':
+    case 'graph_tension':
+    case 'graph_text':
+        update_chart_options(null, 3);
+        break;
+    case 'graph_eval_clamp':
+    case 'graph_eval_mode':
+        redraw_eval_charts(sboard);
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
@@ -4378,7 +4429,9 @@ function changed_section() {
 
     // reset some stuff
     reset_sub_boards(3);
-    reset_charts();
+    if (DEV.chart)
+        LS(`CS: ${section}`);
+    reset_charts(true);
 
     if (section == 'live')
         download_live(redraw_eval_charts);
@@ -4431,13 +4484,18 @@ function copy_moves() {
  * @param {Event|string} value
  */
 function handle_board_events(board, type, value) {
-    let section = Y.x;
+    let move,
+        name = board.name,
+        old_board = section_board(),
+        section = Y.x;
 
     switch (type) {
     case 'activate':
         board_target = board;
+        Y.s = (board.name == 'pva')? 'pva': section;
         // used for CTRL+C
         context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
+        move = board.moves[board.ply];
         break;
     // controls: play, next, ...
     case 'control':
@@ -4458,6 +4516,10 @@ function handle_board_events(board, type, value) {
         if (value != undefined && !Visible(board.vis))
             open_table(board.tab);
         break;
+    case 'new':
+        if (board_target == board)
+            old_board = null;
+        break;
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
@@ -4467,14 +4529,17 @@ function handle_board_events(board, type, value) {
     // ply was set
     // !! make sure it's set manually
     case 'ply':
-        if (board.name == section) {
-            // update main board stats
-            let cur_ply = board.ply,
-                prev_ply = cur_ply - 1,
-                prev_move = board.moves[prev_ply];
-            update_move_info(section, prev_ply, prev_move);
-            update_move_info(section, cur_ply, value);
+        let cur_ply = board.ply,
+            prev_ply = cur_ply - 1,
+            prev_move = board.moves[prev_ply];
+        move = value;
 
+        if (name == section || board.manual) {
+            // update main board stats
+            update_move_info(name, prev_ply, prev_move);
+            update_move_info(name, cur_ply, value);
+        }
+        if (name == section) {
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
             reset_sub_boards(1);
@@ -4493,6 +4558,27 @@ function handle_board_events(board, type, value) {
             update_time_control(section, (cur_ply + 3) % 2);
         }
         break;
+    }
+
+    // update MR50
+    if (move && board == board_target) {
+        let fen = move.fen;
+        if (fen)
+            HTML('#overview td[data-x="50"]', 50 - fen.split(' ')[4]);
+    }
+
+    // changed board => redraw the graph
+    let new_board = section_board();
+    if (new_board != old_board) {
+        if (DEV.chart)
+            LS(`NN: ${old_board} => ${new_board}`);
+        reset_charts(false);
+        if (new_board == 'pva')
+            update_player_charts(null, board.moves);
+        else {
+            update_player_charts(null, board.moves);
+            redraw_eval_charts(name);
+        }
     }
 }
 
@@ -4567,8 +4653,9 @@ function opened_table(node, name, tab) {
     // 1) save the tab
     let parent = Parent(tab).id,
         is_chart = _('canvas', node),
+        sboard = section_board(),
         section = Y.x,
-        main = xboards[section];
+        main = xboards[sboard];
     if (DEV.open)
         LS(`opened_table: ${parent}/${name}`);
 
@@ -4764,6 +4851,7 @@ function start_game() {
     create_boards();
     show_board_info('pva', true);
 
+    Y.wasm = 0;
     if (Y.wasm)
         load_library('js/chess-wasm.js', () => {
             Module().then(instance => {
