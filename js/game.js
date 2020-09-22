@@ -656,7 +656,7 @@ function create_boards(mode='html') {
     let keys = Keys(BOARDS);
 
     keys.forEach(key => {
-        let options = {...{
+        let options = Assign({
                 border: 2,
                 hook: handle_board_events,
                 id: `#${key}`,
@@ -664,7 +664,7 @@ function create_boards(mode='html') {
                 name: key,
                 mode: mode,
                 size: 24,
-            }, ...BOARDS[key]},
+            }, BOARDS[key]),
             xboard = new XBoard(options);
 
         xboard.initialise();
@@ -833,7 +833,7 @@ function update_board_theme(mode) {
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
                 smooth = Y[`animate${suffix}`],
-                theme = {...{ext: 'png', name: piece_theme, off: [0, 0], size: 80}, ...PIECE_THEMES[piece_theme]};
+                theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
 
             Assign(board, {
                 colors: colors,
@@ -2000,7 +2000,7 @@ function open_event(section, callback) {
 
     download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
     download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, {...{show: !event_tag}, ...dico});
+    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: !event_tag}, dico));
 
     open_game();
     if (callback)
@@ -2043,7 +2043,7 @@ function set_season_events() {
             return;
 
         // 'season=18&div=l3' or 'season=cup5&round=round16'
-        let dico = {...{div: '', round: '', stage: ''}, ...QueryString({query: this.dataset.u})};
+        let dico = Assign({div: '', round: '', stage: ''}, QueryString({query: this.dataset.u}));
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -3267,7 +3267,7 @@ function update_options(section) {
             }
         });
 
-        players[id].options = {...pgn_options};
+        players[id].options = Assign({}, pgn_options);
         update_hardware(section, id, null, null, info.join(' ').trim(), [Id(`moves-pv${id}`)]);
     }
 }

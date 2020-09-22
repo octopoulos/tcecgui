@@ -310,15 +310,15 @@ function new_chart(name, has_legend, y_axes, y_ticks, tooltip_callback, dico) {
     if (y_ticks && !IsObject(y_ticks))
         y_ticks = {callback: y_ticks};
 
-    let options = {...CHART_OPTIONS, ...{
+    let options = Assign(Assign({}, CHART_OPTIONS), {
         scales: {
             xAxes: [CHART_X_AXES],
             yAxes: y_axes.map(id => new_y_axis(id, y_ticks)),
         },
-    }};
+    });
 
     if (has_legend)
-        options.legend = {...CHART_LEGEND};
+        options.legend = Assign({}, CHART_LEGEND);
 
     if (tooltip_callback)
         options.tooltips = {
@@ -645,7 +645,7 @@ function update_player_chart(name, moves) {
 
         switch (name) {
         case 'depth':
-            datasets[ply % 2 + 2].data[num2] = {...dico, ...{y: move.sd}};
+            datasets[ply % 2 + 2].data[num2] = Assign({y: move.sd}, dico);
             dico.y = move.d;
             break;
         case 'eval':
@@ -657,7 +657,7 @@ function update_player_chart(name, moves) {
         case 'mobil':
             if (isNaN(move.mobil))
                 continue;
-            datasets[2].data[num2] = {...dico, ...{y: move.goal? Abs(move.goal[0]): -1}};
+            datasets[2].data[num2] = Assign({y: move.goal? Abs(move.goal[0]): -1}, dico);
             dico.mobil = move.mobil;
             dico.y = Abs(move.mobil);
             break;

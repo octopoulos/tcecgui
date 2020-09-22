@@ -1517,7 +1517,7 @@ class XBoard {
      * - must be run before doing anything with it
      */
     initialise() {
-        let controls2 = {...CONTROLS};
+        let controls2 = Assign({}, CONTROLS);
         if (this.main_manual) {
             delete controls2.lock;
             controls2.cube = 'Change view';
@@ -2646,7 +2646,7 @@ class XBoard {
     update_mini(id, stats) {
         let mini = _(`.xcolor${id}`, this.node),
             player = this.players[id],
-            dico = {...player};
+            dico = Assign({}, player);
 
         if (stats)
             Assign(dico, stats);
