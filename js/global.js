@@ -178,8 +178,9 @@ function format_eval(value, process) {
  * @returns {number}
  */
 function get_fen_ply(fen) {
-    let items = fen.split(' ');
-    return ((items[5] || 1) - 1) * 2 - (items[1] == 'w') * 1;
+    let items = fen.split(' '),
+        ply = ((items[5] || 1) - 1) * 2 - (items[1] == 'w') * 1;
+    return isNaN(ply)? -1: ply;
 }
 
 /**
