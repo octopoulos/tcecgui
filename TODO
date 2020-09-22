@@ -11,9 +11,9 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-18 : pawn structure eval
 ~          : 2020-09-18 : keep list of non empty squares for each side => list of pieces
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
-~          : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-09-20 : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
 2020-09-20 : 2020-09-20 : static arrays for ply_states
 2020-09-20 : 2020-09-20 : average depth reported correctly
 2020-09-20 : 2020-09-20 : red rectangle disappears when showing popup/settings

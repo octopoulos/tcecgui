@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-20
 //
 // Game specific code:
 // - control the board, moves

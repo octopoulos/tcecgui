@@ -35,12 +35,13 @@ virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards
 let AD_STYLES = {},
     CHAMPIONS = [],
     CONFIGURE_KEYS = {
-        d: 1,
-        e: 1,
+        d: 'depth',
+        e: 'evaluation',
         n: 1,
         q: 1,
-        s: 1,
-        t: 1,
+        s: 'search',
+        t: 'time',
+        x: 1,
     },
     CONTEXT_MENUS = {
         '#engine': 'engine',
@@ -64,7 +65,15 @@ let AD_STYLES = {},
         },
     },
     LEVELS = {
-
+        'custom': '',
+        'dog': 'd=3 e=hce n=0 q=0 s=ab t=0',
+        'ninja dog': 'd=4 e=hce n=0 q=0 s=ab t=0',
+        'novice': 'd=4 e=hce n=1 q=5 s=ab t=0',
+        'amateur': 'd=4 e=att n=1 q=8 s=ab t=2',
+        'engine maker': 'd=5 e=att n=1 q=10 s=ab t=5',
+        'chess player': 'd=6 e=att n=1 q=12 s=ab t=10',
+        'chess teacher': 'd=7 e=att n=1 q=15 s=ab t=12',
+        'other engine': 'd=8 e=att n=1 q=18 s=ab t=20',
     },
     old_font_height,
     old_stream = 0,
@@ -279,6 +288,9 @@ function change_setting_special(name, value, no_close) {
         break;
     case 'game_evaluation':
         configure('e', value);
+        break;
+    case 'game_level':
+        configure_string(value);
         break;
     case 'game_new_game':
         pva.frc = Y.game_960;
@@ -500,10 +512,54 @@ function configure(name, value, only_color) {
         result[name] = value;
 
         // create the command line
-        save_option(key, Keys(result).sort().map(key => `${key}=${result[key]}`).join(' '));
-        let node = _(`textarea[name="${key}"]`);
+        let line = Keys(result).sort().map(key => `${key}=${result[key]}`).join(' '),
+            node = _(`textarea[name="${key}"]`);
+        save_option(key, line);
         if (node)
             node.value = Y[key];
+
+        // existing level?
+        let found = 'custom';
+        Keys(LEVELS).forEach(name => {
+            let level = LEVELS[name];
+            if (level == line)
+                found = name;
+        });
+        let input = _('#modal select[name="game_level"]');
+        if (input)
+            input.value = found;
+    }
+}
+
+/**
+ * Configure a game preset
+ * @param {string} name
+ */
+function configure_string(name) {
+    let level = LEVELS[name],
+        options = level.split(' ');
+
+    // options b&w
+    if (name != 'custom')
+        for (let scolor of WB_LOWER) {
+            let key = `game_options_${scolor}`,
+                input = _(`#modal [name="${key}"]`);
+            if (input)
+                input.value = level;
+            save_option(key, level);
+        }
+
+    // other inputs
+    for (let option of options) {
+        let items = option.split('='),
+            config = CONFIGURE_KEYS[items[0]];
+        if (items.length < 2 || !config)
+            continue;
+        let key = `game_${config}`,
+            input = _(`#modal [name="${key}"]`);
+        if (input)
+            input.value = items[1];
+        save_option(key, items[1]);
     }
 }
 
@@ -1857,7 +1913,7 @@ function prepare_settings() {
             game_depth: option_number(4, 0, 8),
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'nn'], 'att'],
             game_every: option_number(500, 50, 5000, 50),
-            game_level: [['custom', 'ninja dog', 'beginner', 'amateur', 'proficient', 'master'], 'ninja dog'],
+            game_level: [Keys(LEVELS), 'ninja dog'],
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att n=1 q=10 s=ab t=5'],
             game_options_white: [{type: 'area'}, 'd=4 e=att n=1 q=10 s=ab t=5'],
