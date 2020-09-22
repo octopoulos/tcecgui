@@ -251,7 +251,7 @@ function change_setting_special(name, value, no_close) {
         update_board_theme(is_pva? 4: (is_pv? 2: 1));
         break;
     case 'default_positions':
-        Y.areas = {...DEFAULTS.areas};
+        Y.areas = Assign({}, DEFAULTS.areas);
         populate_areas();
         break;
     case 'drag_and_drop':
@@ -843,7 +843,7 @@ function populate_areas() {
     let areas = Y.areas || {},
         default_areas = DEFAULTS.areas,
         section = Y.x,
-        hides = {...HIDES[section]};
+        hides = Assign({}, HIDES[section]);
 
     if (!Y.moves_copy)
         hides[`moves-${section}`] = 1;

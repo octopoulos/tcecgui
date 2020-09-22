@@ -1387,7 +1387,7 @@ function Resource(url, callback, {content=null, form, headers={}, method='GET', 
     xhr.open(method, url, true);
 
     // headers
-    headers = {...{'content-type': 'application/json'}, ...headers};
+    headers = Assign({'content-type': 'application/json'}, headers);
     Keys(headers).forEach(key => {
         xhr.setRequestHeader(key, headers[key]);
     });
