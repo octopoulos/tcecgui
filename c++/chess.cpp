@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-22
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -1292,7 +1292,7 @@ public:
      * - 8/5n2/8/3K4/8/8/b7/7k w - - 0 1  KNB vs K
      */
     int evaluate() {
-        if (half_moves >= 50)
+        if (half_moves >= 100)
             return 0;
         int score = 0;
 

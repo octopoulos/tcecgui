@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-22
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200918';
+    VERSION = '20200922';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -178,6 +178,8 @@ function format_eval(value, process) {
  * @returns {number}
  */
 function get_fen_ply(fen) {
+    if (!fen)
+        return -2;
     let items = fen.split(' '),
         ply = ((items[5] || 1) - 1) * 2 - (items[1] == 'w') * 1;
     return isNaN(ply)? -1: ply;

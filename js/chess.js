@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-22
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -412,6 +412,8 @@ var Chess = function(fen_) {
      * Alpha beta tree search
      * r1bk1bnr/3npppp/p1p3q1/1N6/8/1P2P3/1B1QBPPP/R3K2R w HA - 2 16
      * 2q1kr1r/R2bppb1/NQ3n2/3p1p1p/2pP3P/4P1P1/K5RN/5B2 w - - 7 52
+     * n1QBq1k1/5p1p/5KP1/p7/8/8/8/8 w - 0 1
+     * 8/2b1k3/8/5B2/8/5K2/1R6/8 b - - 0 108
      * @param {number} alpha
      * @param {number} beta
      * @param {number} depth
@@ -1313,7 +1315,7 @@ var Chess = function(fen_) {
      * @returns {number}
      */
     function evaluate() {
-        if (half_moves >= 50)
+        if (half_moves >= 100)
             return 0;
         let score = 0;
 

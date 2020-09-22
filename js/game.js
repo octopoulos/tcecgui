@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-22
 //
 // Game specific code:
 // - control the board, moves
@@ -3365,7 +3365,6 @@ function update_overview_moves(section, headers, moves, is_new) {
         return;
 
     let finished,
-        overview = Id('overview'),
         is_live = (section == 'live'),
         main = xboards[section],
         players = main.players,
@@ -3398,27 +3397,13 @@ function update_overview_moves(section, headers, moves, is_new) {
     }
 
     // 3) check adjudication
-    if (move && move.fen) {
-        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
-        if (tb <= 1)
-            tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
-        HTML('td[data-x="tb"]', tb, overview);
-    }
-
-    let result = check_adjudication(move, num_ply),
-        status = headers.Termination;
+    let status = headers.Termination;
     finished = headers.TerminationDetails;
     // support for old seasons
     if (!finished && status && status != 'unterminated')
         finished = status;
+    update_overview_result(move, num_ply, finished);
 
-    result.adj_rule = finished;
-    Keys(result).forEach(key => {
-        HTML(`td[data-x="${key}"]`, result[key], overview);
-    });
-
-    S('[data-x="adj_rule"]', finished, overview);
-    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
     if (finished) {
         let result = headers.Result;
         if (is_live && is_new)
@@ -3443,6 +3428,33 @@ function update_overview_moves(section, headers, moves, is_new) {
     }
 
     return finished;
+}
+
+/**
+ * Update the overview 50 / draw / win / tb / result
+ * @param {Move} move
+ * @param {number=} num_ply
+ * @param {string=} finished
+ */
+function update_overview_result(move, num_ply, finished) {
+    let overview = Id('overview');
+
+    if (move && move.fen) {
+        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+        if (tb <= 1)
+            tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
+        HTML('td[data-x="tb"]', tb, overview);
+        num_ply = get_move_ply(move) + 1;
+    }
+
+    let result = check_adjudication(move, num_ply);
+    result.adj_rule = finished;
+    Keys(result).forEach(key => {
+        HTML(`td[data-x="${key}"]`, result[key], overview);
+    });
+
+    S('[data-x="adj_rule"]', finished, overview);
+    S('[data-x="50"], [data-x="draw"], [data-x="win"]', !finished, overview);
 }
 
 /**
@@ -4560,12 +4572,9 @@ function handle_board_events(board, type, value) {
         break;
     }
 
-    // update MR50
-    if (move && board == board_target) {
-        let fen = move.fen;
-        if (fen)
-            HTML('#overview td[data-x="50"]', 50 - fen.split(' ')[4]);
-    }
+    // update MR50 + draw/win/tb
+    if (move && board == board_target)
+        update_overview_result(move);
 
     // changed board => redraw the graph
     let new_board = section_board();

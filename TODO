@@ -13,6 +13,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-09-22 : 2020-09-22 : update 50 / draw / win / tb when clicking on moves
 2020-09-20 : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates
 2020-09-20 : 2020-09-20 : static arrays for ply_states
 2020-09-20 : 2020-09-20 : average depth reported correctly

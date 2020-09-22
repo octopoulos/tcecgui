@@ -11,7 +11,7 @@ _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
 Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, Parent, PD,
+LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, PD,
 S, save_option, set_draggable, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
 Undefined, update_theme, Visible, window, X_SETTINGS, Y
 */
