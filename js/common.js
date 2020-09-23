@@ -955,7 +955,7 @@ function CopyClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {});
     // support for old browsers
     else {
-        let node = CreateNode('textarea', null, {readonly: ''});
+        let node = CreateNode('input');
         node.value = text;
         Style(node, `left:-9999px;position:absolute`);
         document.body.appendChild(node);
