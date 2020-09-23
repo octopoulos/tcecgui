@@ -408,7 +408,7 @@ private:
         }
         else {
             for (auto &move : moves) {
-                moveRaw(move);
+                makeMove(move);
                 auto score = -alphaBeta(-beta, -alpha, depth + 1, max_depth);
                 undoMove();
 
@@ -517,7 +517,7 @@ private:
         }
         else {
             for (auto &move : moves) {
-                moveRaw(move);
+                makeMove(move);
                 auto score = -miniMax(depth + 1, max_depth);
                 undoMove();
 
@@ -562,7 +562,7 @@ private:
             return;
         }
         for (auto &move : moves) {
-            moveRaw(move);
+            makeMove(move);
             nullSearch(depth - 1);
             undoMove();
         }
@@ -597,7 +597,7 @@ private:
                     && (TYPE(move.piece) != PAWN || relativeRank(turn, move.to) <= 5))
                 continue;
 
-            moveRaw(move);
+            makeMove(move);
             auto score = -quiesce(-beta, -alpha, depth_left - 1);
             undoMove();
 
@@ -1468,69 +1468,9 @@ public:
     }
 
     /**
-     * Try an object move
-     * @param move {from: 23, to: 7, promote: 5}
-     * @param decorate add + # decorators
-     */
-    Move moveObject(Move &move, bool decorate) {
-        uint8_t flags = 0;
-        Move move_obj;
-        auto moves = createMoves(false);
-
-        // castle
-        if (move.from == kings[turn]) {
-            auto piece = board[move.to];
-
-            // regular notation => change .to to rook position
-            if (!piece) {
-                if (std::abs(FILE(move.from) - FILE(move.to)) == 2) {
-                    if (move.to > move.from)
-                        move.to ++;
-                    else
-                        move.to -= 2;
-                }
-            }
-            // frc notation
-            else if (piece == COLORIZE(turn, ROOK)) {
-                if (FILE(move.to) > FILE(move.from))
-                    flags = BITS_KSIDE_CASTLE;
-                else
-                    flags = BITS_QSIDE_CASTLE;
-            }
-        }
-
-        // find an existing match + add the SAN
-        if (flags) {
-            for (auto &move2 : moves)
-                if (move2.flags & flags) {
-                    move2.m = moveToSan(move2, moves);
-                    move_obj = move2;
-                    break;
-                }
-        }
-        else
-            for (auto &move2 : moves) {
-                if (move.from == move2.from && move.to == move2.to
-                        && (!move2.promote || TYPE(move.promote) == move2.promote)) {
-                    move2.m = moveToSan(move2, moves);
-                    move_obj = move2;
-                    break;
-                }
-            }
-
-        // no suitable move?
-        if (move_obj.piece) {
-            moveRaw(move_obj);
-            if (decorate)
-                decorateMove(move_obj);
-        }
-        return move_obj;
-    }
-
-    /**
      * Make a raw move, no verification is being performed
      */
-    void moveRaw(Move &move) {
+    void makeMove(Move &move) {
         auto us = turn,
             them = us ^ 1;
 
@@ -1616,6 +1556,66 @@ public:
     }
 
     /**
+     * Try an object move
+     * @param move {from: 23, to: 7, promote: 5}
+     * @param decorate add + # decorators
+     */
+    Move moveObject(Move &move, bool decorate) {
+        uint8_t flags = 0;
+        Move move_obj;
+        auto moves = createMoves(false);
+
+        // castle
+        if (move.from == kings[turn]) {
+            auto piece = board[move.to];
+
+            // regular notation => change .to to rook position
+            if (!piece) {
+                if (std::abs(FILE(move.from) - FILE(move.to)) == 2) {
+                    if (move.to > move.from)
+                        move.to ++;
+                    else
+                        move.to -= 2;
+                }
+            }
+            // frc notation
+            else if (piece == COLORIZE(turn, ROOK)) {
+                if (FILE(move.to) > FILE(move.from))
+                    flags = BITS_KSIDE_CASTLE;
+                else
+                    flags = BITS_QSIDE_CASTLE;
+            }
+        }
+
+        // find an existing match + add the SAN
+        if (flags) {
+            for (auto &move2 : moves)
+                if (move2.flags & flags) {
+                    move2.m = moveToSan(move2, moves);
+                    move_obj = move2;
+                    break;
+                }
+        }
+        else
+            for (auto &move2 : moves) {
+                if (move.from == move2.from && move.to == move2.to
+                        && (!move2.promote || TYPE(move.promote) == move2.promote)) {
+                    move2.m = moveToSan(move2, moves);
+                    move_obj = move2;
+                    break;
+                }
+            }
+
+        // no suitable move?
+        if (move_obj.piece) {
+            makeMove(move_obj);
+            if (decorate)
+                decorateMove(move_obj);
+        }
+        return move_obj;
+    }
+
+    /**
      * Try a SAN move
      * @param text Nxb7, a8=Q
      * @param decorate add + # decorators
@@ -1625,7 +1625,7 @@ public:
         auto moves = createMoves(false);
         Move move = sanToMove(text, moves, sloppy);
         if (move.piece) {
-            moveRaw(move);
+            makeMove(move);
             if (decorate)
                 decorateMove(move);
         }
@@ -1706,7 +1706,7 @@ public:
                 Move move = sanToMove(text, moves, sloppy);
                 if (!move.piece)
                     break;
-                moveRaw(move);
+                makeMove(move);
                 MoveText move_obj = move;
                 move_obj.fen = createFen();
                 move_obj.ply = fen_ply + ply;
@@ -1785,7 +1785,7 @@ public:
         lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
 
         for (auto &move : moves) {
-            moveRaw(move);
+            makeMove(move);
             auto prev = nodes;
             nullSearch(depth - 1);
             auto delta = nodes - prev;
@@ -1940,7 +1940,7 @@ public:
             avg_depth = 1;
 
             if (max_depth > 0) {
-                moveRaw(move);
+                makeMove(move);
                 if (search_mode == 1)
                     score = -miniMax(1, max_depth);
                 else
@@ -2164,10 +2164,10 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("fen960", &Chess::createFen960)
         .function("frc", &Chess::em_frc)
         .function("load", &Chess::load)
+        .function("makeMove", &Chess::makeMove)
         .function("material", &Chess::em_material)
         .function("mobilities", &Chess::em_mobilities)
         .function("moveObject", &Chess::moveObject)
-        .function("moveRaw", &Chess::moveRaw)
         .function("moves", &Chess::createMoves)
         .function("moveSan", &Chess::moveSan)
         .function("moveToSan", &Chess::moveToSan)

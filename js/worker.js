@@ -71,7 +71,7 @@ function create_chess(engine) {
 function think(engine, fen, mask, frc) {
     // 1) generate all moves + analyse them, using the mask
     let chess = create_chess(engine);
-    chess.load(fen);
+    chess.load(fen, true);
 
     let start = Now(true),
         moves = chess.moves(false),

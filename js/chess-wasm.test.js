@@ -140,7 +140,7 @@ beforeEach(() => {
     test(`checked:${id}`, () => {
         chess.load(fen);
         if (move)
-            chess.moveRaw(move);
+            chess.makeMove(move);
         expect(chess.checked(color)).toEqual(answer);
     });
 });
@@ -350,6 +350,27 @@ beforeEach(() => {
     });
 });
 
+// makeMove
+[
+    [
+        START_FEN,
+        {capture: 0, depth: 0, fen: '', flags: 4, from: 97, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 65},
+        undefined,
+    ],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        {capture: 0, depth: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: 0},
+        undefined,
+    ],
+].forEach(([fen, move, answer], id) => {
+    test(`makeMove:${id}`, () => {
+        chess.load(fen);
+        let old = {...move};
+        chess.makeMove(move);
+        expect(move).toEqual(Undefined(answer, old));
+    });
+});
+
 // material
 [
     ['8/8/8/8/8/8/8/8 w - - 0 1', 0, 0],
@@ -420,27 +441,6 @@ beforeEach(() => {
     test(`moveObject:${id}`, () => {
         chess.load(fen);
         expect(chess.moveObject(move, decorate)).toEqual(answer);
-    });
-});
-
-// moveRaw
-[
-    [
-        START_FEN,
-        {capture: 0, depth: 0, fen: '', flags: 4, from: 97, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 65},
-        undefined,
-    ],
-    [
-        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        {capture: 0, depth: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: 0},
-        undefined,
-    ],
-].forEach(([fen, move, answer], id) => {
-    test(`moveRaw:${id}`, () => {
-        chess.load(fen);
-        let old = {...move};
-        chess.moveRaw(move);
-        expect(move).toEqual(Undefined(answer, old));
     });
 });
 
@@ -1363,7 +1363,7 @@ beforeEach(() => {
                 chess.moveSan(move, false, false);
         }
         else
-            chess.moveRaw(moves);
+            chess.makeMove(moves);
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);

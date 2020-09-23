@@ -54,7 +54,7 @@ beforeEach(() => {
     ['r2q1rk1/1b1nppbp/1P1p2p1/pBpP4/PnN1P3/1QN5/1P3PPP/R1B2RK1 b - - 7 14', 1, 'h8', true],
 ].forEach(([fen, color, square, answer], id) => {
     test(`attacked:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         if (IsString(square))
             square = chess.anToSquare(square);
         expect(chess.attacked(color, square)).toEqual(answer);
@@ -69,7 +69,7 @@ beforeEach(() => {
     ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', [0, 0, 7, 2, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
 ].forEach(([fen, answer], id) => {
     test(`attacks:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.moves(false);
         answer = new Uint8Array(answer);
         expect(chess.attacks()).toEqual(answer);
@@ -82,12 +82,24 @@ beforeEach(() => {
     ['8/8/8/8/8/8/8/4K3 w - - 0 1', 128, {116: 6, 127: 0}],
 ].forEach(([fen, answer, dico], id) => {
     test(`board:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         answer = new Uint8Array(answer);
         Keys(dico).forEach(key => {
             answer[key] = dico[key];
         });
         expect(chess.board()).toEqual(answer);
+    });
+});
+
+// boardHash
+[
+    ['8/8/8/8/8/8/8/8 w - - 0 1', 0],
+    [START_FEN, -1245505341],
+    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', -1393186695],
+].forEach(([fen, answer], id) => {
+    test(`boardHash:${id}`, () => {
+        chess.load(fen, true);
+        expect(chess.boardHash()).toEqual(answer);
     });
 });
 
@@ -101,7 +113,7 @@ beforeEach(() => {
     ['bbrknqrn/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQRN w GCgc - 0 1', [118, 114, 6, 2]],
 ].forEach(([fen, answer], id) => {
     test(`castling:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         answer = new Uint8Array(answer);
         expect(chess.castling()).toEqual(answer);
     });
@@ -134,9 +146,9 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, color, answer], id) => {
     test(`checked:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         if (move)
-            chess.moveRaw(move);
+            chess.makeMove(move);
         expect(chess.checked(color)).toEqual(answer);
     });
 });
@@ -160,9 +172,10 @@ beforeEach(() => {
     ['2r3k1/7p/4pQpP/1R2Pq2/3P1P2/PR6/1K6/8 b - - 0 42', '8/8/8/8/8/8/8/8 w - - 0 1'],
 ].forEach(([fen, answer], id) => {
     test(`clear:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, true);
         chess.clear();
         expect(chess.fen()).toEqual(answer);
+        expect(chess.boardHash()).toEqual(0);
     });
 });
 
@@ -194,7 +207,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, answer], id) => {
     test(`currentFen:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.currentFen()).toEqual(Undefined(answer, fen));
     });
 });
@@ -213,7 +226,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, answer], id) => {
     test(`decorate:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.decorate(move)).toEqual(answer);
     });
 });
@@ -226,7 +239,7 @@ beforeEach(() => {
     ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', [0, 0, 0, 9, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
 ].forEach(([fen, answer], id) => {
     test(`defenses:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.moves(false);
         answer = new Uint8Array(answer);
         expect(chess.defenses()).toEqual(answer);
@@ -246,7 +259,7 @@ beforeEach(() => {
     ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=att', -1338],
 ].forEach(([fen, options, answer], id) => {
     test(`evaluate:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.configure(false, options, 1);
         chess.moves(false);
         expect(chess.evaluate()).toBeCloseTo(answer, 1);
@@ -257,42 +270,42 @@ beforeEach(() => {
 [
     [
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
-        [],
+        '',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
     ],
     [
         'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
-        ['O-O'],
+        'O-O',
         'rbq2rk1/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R w KQ - 3 11',
     ],
-    [START_FEN, [], undefined],
-    [START_FEN, ['e4'], 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'],
-    [START_FEN, ['e4', 'e5'], 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'],
+    [START_FEN, '', undefined],
+    [START_FEN, 'e4', 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'],
+    [START_FEN, 'e4 e5', 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'],
     [
         'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w GDgd - 1 11',
-        ['Rc1'],
+        'Rc1',
         'b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B1R1KBR1 b Ggd - 2 11',
     ],
     [
         'r1bqk2r/1P3ppp/3b1n2/p2p4/8/P1P1P3/1B1N1PpP/R2QKB1R w KQkq - 0 14',
-        ['bxa8=Q'],
+        'bxa8=Q',
         'Q1bqk2r/5ppp/3b1n2/p2p4/8/P1P1P3/1B1N1PpP/R2QKB1R b KQk - 0 14',
     ],
-    ['qnnbbrkr/pppppppp/8/8/8/8/PPPPPPPP/QNNBBRKR w HFhf - 0 1', [], undefined],
-    ['rnkrnbbq/pppppppp/8/8/8/8/PPPPPPPP/RNKRNBBQ w DAda - 0 1', [], undefined],
-    ['bbrknqrn/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQRN w GCgc - 0 1', [], undefined],
-    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', [], undefined],
+    ['qnnbbrkr/pppppppp/8/8/8/8/PPPPPPPP/QNNBBRKR w HFhf - 0 1', '', undefined],
+    ['rnkrnbbq/pppppppp/8/8/8/8/PPPPPPPP/RNKRNBBQ w DAda - 0 1', '', undefined],
+    ['bbrknqrn/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQRN w GCgc - 0 1', '', undefined],
+    ['rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', '', undefined],
     [
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
-        ['e4'],
+        'e4',
         'rknrbqnb/pppppppp/8/8/4P3/8/PPPP1PPP/RKNRBQNB b DAda e3 0 1',
     ],
-    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', ['Rxa6'], '8/2pk4/R2p4/8/1P6/1KP4r/8/8 b - - 0 80'],
-    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', ['Rxa6', 'd5'], '8/2pk4/R7/3p4/1P6/1KP4r/8/8 w - - 0 81'],
+    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', 'Rxa6', '8/2pk4/R2p4/8/1P6/1KP4r/8/8 b - - 0 80'],
+    ['8/2pk4/p2p4/8/1P6/1KP4r/8/R7 w - - 42 80', 'Rxa6 d5', '8/2pk4/R7/3p4/1P6/1KP4r/8/8 w - - 0 81'],
 ].forEach(([fen, moves, answer], id) => {
     test(`fen:${id}`, () => {
-        chess.load(fen);
-        for (let move of moves)
+        chess.load(fen, false);
+        for (let move of moves.split(' '))
             chess.moveSan(move, false, false);
         expect(chess.fen()).toEqual(Undefined(answer, fen));
     });
@@ -314,35 +327,89 @@ beforeEach(() => {
 
 // load
 [
-    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -', [], undefined, START_FEN],
-    [START_FEN, [], undefined, START_FEN],
-    [START_FEN, ['d5'], undefined, START_FEN],
-    [START_FEN, ['d4'], undefined, 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
-    [START_FEN, ['d4', 'd5'], undefined, 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -', false, '', undefined, START_FEN, 0],
+    [START_FEN, false, '', undefined, START_FEN, 0],
+    [START_FEN, true, '', undefined, START_FEN, -1245505341],
+    [
+        'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+        true,
+        '',
+        undefined,
+        'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+        1467105663,
+    ],
+    [START_FEN, true, 'd5', undefined, START_FEN, -1245505341],
+    [START_FEN, true, 'd4', undefined, 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1', 1467105663],
+    [START_FEN, true, 'd4 d5', undefined, 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2', 1798615587],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        ['O-O'],
+        true,
+        'O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1',
+        1873396825,
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        ['O-O-O'],
+        true,
+        'O-O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1',
+        -546581409,
     ],
     [
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
-        [],
+        true,
+        '',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
+        425758327,
     ],
-].forEach(([fen, moves, answer, new_fen], id) => {
+    [
+        'rnbqkb1r/pp1ppppp/5n2/2pP4/8/8/PPP1PPPP/RNBQKBNR w KQkq c6 0 3',
+        true,
+        'dxc6',
+        undefined,
+        'rnbqkb1r/pp1ppppp/2P2n2/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 3',
+        -1867472723,
+    ],
+    [
+        'rnbqk2r/ppPpppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 1 5',
+        true,
+        'cxd8=Q+',
+        undefined,
+        'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
+        988728373,
+
+    ]
+].forEach(([fen, hash, moves, answer, new_fen, new_hash], id) => {
     test(`load:${id}`, () => {
-        expect(chess.load(fen)).toEqual(Undefined(answer, fen));
-        for (let move of moves)
+        expect(chess.load(fen, hash)).toEqual(Undefined(answer, fen));
+        for (let move of moves.split(' '))
             chess.moveSan(move, false, false);
         expect(chess.fen()).toEqual(new_fen);
+        expect(chess.boardHash()).toEqual(new_hash);
+    });
+});
+
+// makeMove
+[
+    [
+        START_FEN,
+        {capture: 0, depth: 0, fen: '', flags: 4, from: 97, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 65},
+        undefined,
+    ],
+    [
+        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
+        {capture: 0, depth: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: 0},
+        undefined,
+    ],
+].forEach(([fen, move, answer], id) => {
+    test(`makeMove:${id}`, () => {
+        chess.load(fen, false);
+        let old = {...move};
+        chess.makeMove(move);
+        expect(move).toEqual(Undefined(answer, old));
     });
 });
 
@@ -356,7 +423,7 @@ beforeEach(() => {
     [START_FEN, 1, 9600],
 ].forEach(([fen, color, answer], id) => {
     test(`material:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.material(color)).toEqual(answer);
     });
 });
@@ -367,7 +434,7 @@ beforeEach(() => {
     [START_FEN, [0, 16, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
 ].forEach(([fen, answer], id) => {
     test(`mobilities:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.moves(false);
         answer = new Uint8Array(answer);
         expect(chess.mobilities()).toEqual(answer);
@@ -414,29 +481,8 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, decorate, answer], id) => {
     test(`moveObject:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.moveObject(move, decorate)).toEqual(answer);
-    });
-});
-
-// moveRaw
-[
-    [
-        START_FEN,
-        {capture: 0, depth: 0, fen: '', flags: 4, from: 97, m: '', piece: 1, ply: 0, promote: 0, score: 0, to: 65},
-        undefined,
-    ],
-    [
-        'r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1',
-        {capture: 0, depth: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -1, promote: 0, score: 0, to: 0},
-        undefined,
-    ],
-].forEach(([fen, move, answer], id) => {
-    test(`moveRaw:${id}`, () => {
-        chess.load(fen);
-        let old = {...move};
-        chess.moveRaw(move);
-        expect(move).toEqual(Undefined(answer, old));
     });
 });
 
@@ -472,7 +518,7 @@ beforeEach(() => {
     ['r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1', false, 13, ''],
 ].forEach(([fen, only_capture, number, answer], id) => {
     test(`moves:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.moves(only_capture);
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
@@ -608,7 +654,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, [decorate, sloppy], answer], id) => {
     test(`moveSan:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let result = chess.moveSan(move, decorate, sloppy);
         expect(result).toEqual(answer);
     });
@@ -623,7 +669,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, answer], id) => {
     test(`moveToSan:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.moves(false);
         expect(chess.moveToSan(move, moves)).toEqual(answer);
     });
@@ -687,7 +733,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, move, decorate, answer], id) => {
     test(`moveUci:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.moveUci(move, decorate)).toEqual(answer);
     });
 });
@@ -747,7 +793,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, multi, sloppy, answer, new_fen], id) => {
     test(`multiSan:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.multiSan(multi, sloppy);
         if (answer) {
             if (moves.size)
@@ -819,7 +865,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, multi, answer, new_fen], id) => {
     test(`multiUci:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.multiUci(multi);
         if (answer) {
             if (moves.size)
@@ -859,7 +905,7 @@ beforeEach(() => {
         if (!only_capture)
             only_capture = false;
         chess.configure(frc, options, depth);
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.moves(only_capture);
         chess.search(moves, '');
         let nodes = chess.nodes();
@@ -899,7 +945,7 @@ beforeEach(() => {
 ].forEach(([fen, [only_capture, options, depth], answer], id) => {
     test(`order:${id}`, () => {
         chess.configure(false, options, depth);
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.moves(only_capture);
         chess.order(moves);
         if (moves.size)
@@ -1075,7 +1121,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, answer], id) => {
     test(`print:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         expect(chess.print(false)).toEqual(answer);
     });
 });
@@ -1114,7 +1160,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, piece, square, answer], id) => {
     test(`put:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.put(piece, square);
         expect(chess.fen()).toEqual(answer);
     });
@@ -1125,7 +1171,7 @@ beforeEach(() => {
     ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', START_FEN],
 ].forEach(([fen, answer], id) => {
     test(`reset:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         chess.reset();
         expect(chess.fen()).toEqual(answer);
     });
@@ -1171,7 +1217,7 @@ beforeEach(() => {
     ],
 ].forEach(([fen, san, sloppy, answer], id) => {
     test(`sanToMove:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, false);
         let moves = chess.moves(false),
             move = chess.sanToMove(san, moves, sloppy);
         expect(move).toEqual(answer);
@@ -1208,7 +1254,7 @@ beforeEach(() => {
         let [frc, options, depth] =
             (IsString(config)? [false, config, 0]: (Number.isInteger(config)? [false, '', config]: config));
         chess.configure(frc, options, depth);
-        chess.load(fen);
+        chess.load(fen, false);
 
         let moves = chess.moves(false),
             masks = chess.search(moves, mask);
@@ -1286,14 +1332,14 @@ beforeEach(() => {
 
 // turn
 [
-    [START_FEN, [], 0],
-    [START_FEN, ['e4'], 1],
-    [START_FEN, ['e4', 'd5'], 0],
-    ['rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2', ['e6'], 0],
+    [START_FEN, '', 0],
+    [START_FEN, 'e4', 1],
+    [START_FEN, 'e4 d5', 0],
+    ['rnbqkbnr/pp1ppppp/8/1Bp5/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2', 'e6', 0],
 ].forEach(([fen, moves, answer], id) => {
     test(`turn:${id}`, () => {
-        chess.load(fen);
-        for (let move of moves)
+        chess.load(fen, false);
+        for (let move of moves.split(' '))
             chess.moveSan(move, false, false);
         expect(chess.turn()).toEqual(answer);
     });
@@ -1317,49 +1363,47 @@ beforeEach(() => {
 
 // undo
 [
-    [START_FEN, ['e4'], 1, ''],
-    [START_FEN, [], 1, ''],
-    [START_FEN, ['e4', 'e5'], 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'],
-    [START_FEN, ['e4', 'e5'], 2, ''],
-    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', ['O-O'], 1, ''],
-    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', ['O-O'], 1, ''],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', ['O-O'], 1, ''],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', ['O-O-O'], 1, ''],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', ['O-O-O'], 1, ''],
+    [START_FEN, 'e4', 1, '', -1245505341],
+    [START_FEN, '', 1, '', -1245505341],
+    [START_FEN, 'e4 e5', 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', -1075114427],
+    [START_FEN, 'e4 e5', 2, '', -1245505341],
+    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', 'O-O', 1, '', 790067727],
+    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', 'O-O', 1, '', -1070191305],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O', 1, '', -928015052],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', 1, '', -928015052],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', 'O-O-O', 1, '', 1796922085],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flags: 1, from: 65, m: '', piece: 14, ply: 215, promote: 0, score: 0, to: 48},
         1,
         '',
+        1120212064,
     ],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flags: 1, from: 65, m: '', piece: 14, ply: 215, promote: 0, score: 0, to: 80},
         1,
         '',
+        1120212064,
     ],
     [
         'r1b1kb1r/p1pp1ppp/1p2pn2/7q/1nPPP3/BP1B1N1P/P4PP1/RN1Q1RK1 b ha - 2 10',
-        ['Nxd3', 'Bxf8', 'Nb2', 'Qc2', 'Rxf8', 'Qxb2', 'Nxe4'],
+        'Nxd3 Bxf8 Nb2 Qc2 Rxf8 Qxb2 Nxe4',
         7,
         '',
+        230805468,
     ],
-    [
-        'bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17',
-        ['gxh3+'],
-        1,
-        '',
-    ],
-].forEach(([fen, moves, steps, answer], id) => {
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17', 'gxh3+', 1, '', -952280715],
+].forEach(([fen, moves, steps, answer, hash], id) => {
     test(`undo:${id}`, () => {
-        chess.load(fen);
+        chess.load(fen, true);
         let materials = [chess.material(0), chess.material(1)];
-        if (IsArray(moves)) {
-            for (let move of moves)
+        if (IsString(moves)) {
+            for (let move of moves.split(' '))
                 chess.moveSan(move, false, false);
         }
         else
-            chess.moveRaw(moves);
+            chess.makeMove(moves);
         for (let i = 0; i < steps; i ++)
             chess.undo();
         expect(chess.fen()).toEqual(answer || fen);
@@ -1367,6 +1411,7 @@ beforeEach(() => {
             expect(chess.material(0)).toEqual(materials[0]);
             expect(chess.material(1)).toEqual(materials[1]);
         }
+        expect(chess.boardHash()).toEqual(hash);
     });
 });
 

@@ -691,8 +691,6 @@ function init_customs(initial) {
  * Ran once at the last initialisation step
  */
 function init_globals() {
-    check_hash();
-    parse_dev();
     changed_hash();
     api_translate_get(Y.new_version);
 
@@ -776,6 +774,14 @@ function insert_google_ad(id) {
 }
 
 /**
+ * Check hash for the first time
+ */
+function init_hash() {
+    check_hash();
+    parse_dev();
+}
+
+/**
  * Insert google ads after some time
  */
 function insert_google_ads() {
@@ -794,7 +800,7 @@ function load_google_analytics() {
         ['_setAccount', 'UA-37458566-1'],
         ['_trackPageview'],
         ['b._setAccount', 'UA-1679851-1'],
-        ['b._trackPageview'],
+        ['b._trackPageview']
     );
 
     load_library(('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
@@ -1018,6 +1024,7 @@ function populate_areas() {
 function reset_settings_special(is_default) {
     if (is_default) {
         load_settings();
+        init_hash();
         init_globals();
     }
 
@@ -2130,6 +2137,7 @@ function startup() {
     prepare_settings();
     load_settings();
     start_game();
+    init_hash();
 
     set_global_events();
     set_engine_events();

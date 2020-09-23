@@ -924,7 +924,7 @@ class XBoard {
      * @returns {string}
      */
     chess_load(fen) {
-        return this.chess.load(fen);
+        return this.chess.load(fen, false);
     }
 
     /**
@@ -950,7 +950,7 @@ class XBoard {
         if (!fen)
             return -20.5;
         if (!no_load)
-            chess.load(fen);
+            chess.load(fen, false);
 
         // calculate
         let checked = chess.checked(chess.turn()),
@@ -1174,7 +1174,8 @@ class XBoard {
         if (!window.Worker)
             return;
 
-        this.shared = new SharedArrayBuffer(1);
+        let shared_array_buffer = window.SharedArrayBuffer;
+        this.shared = shared_array_buffer? new shared_array_buffer(1): [];
 
         for (let id = 0; id < number; id ++) {
             let worker = new Worker(`js/worker.js?ts=${Now()}`);
@@ -2443,7 +2444,7 @@ class XBoard {
             this.create_workers();
 
             // check moves
-            chess.load(fen);
+            chess.load(fen, false);
             moves = this.chess_moves();
             num_move = moves.length;
             if (!num_move)
@@ -2453,7 +2454,7 @@ class XBoard {
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
             for (let move of moves) {
                 chess.ucify(move);
-                chess.moveRaw(move);
+                chess.makeMove(move);
                 let splits = chess.fen().split(' '),
                     prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
                     rule50 = splits[4] * 1,
@@ -2462,7 +2463,7 @@ class XBoard {
                 if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
                     let moves2 = this.chess_moves();
                     for (let move2 of moves2) {
-                        chess.moveRaw(move2);
+                        chess.makeMove(move2);
                         let splits2 = chess.fen().split(' '),
                             prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
                         if (fen_set.has(prune2)) {
