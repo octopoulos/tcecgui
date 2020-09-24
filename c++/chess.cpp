@@ -263,7 +263,7 @@ struct MoveText: Move {
     MoveText(): Move() {}
     MoveText(const Move &move) {
         memcpy(this, &move, sizeof(Move));
-        ply = 0;
+        ply = -2;
         score = 0;
     }
 };
@@ -276,6 +276,7 @@ struct State {
 };
 
 Move NULL_MOVE = {0, 0, 0, 0, 0, 0};
+MoveText NULL_TEXT = NULL_MOVE;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1552,6 +1553,8 @@ public:
             if (decorate)
                 decorateMove(move_obj);
         }
+
+        move_obj.ply = fen_ply + ply;
         return move_obj;
     }
 
@@ -1793,12 +1796,13 @@ public:
             if (clean == cleanSan(moveToSan(move, moves))) {
                 MoveText move_obj = move;
                 move_obj.m = san;
+                move_obj.ply = fen_ply + ply + 1;
                 return move_obj;
             }
 
         // 2) try sloppy matching
         if (!sloppy)
-            return NULL_MOVE;
+            return NULL_TEXT;
 
         uint8_t from_file = EMPTY,
             from_rank = EMPTY,
@@ -1808,7 +1812,7 @@ public:
 
         auto i = clean.size() - 1;
         if (i < 2)
-            return NULL_MOVE;
+            return NULL_TEXT;
 
         // analyse backwards
         if (strchr("bnrqBNRQ", clean[i])) {
@@ -1817,10 +1821,10 @@ public:
         }
         // to
         if (clean[i] < '1' || clean[i] > '8')
-            return NULL_MOVE;
+            return NULL_TEXT;
         i --;
         if (clean[i] < 'a' || clean[i] > 'j')
-            return NULL_MOVE;
+            return NULL_TEXT;
         to = clean[i] - 'a' + (('8' - clean[i + 1]) << 4);
         i --;
         //
@@ -1846,10 +1850,11 @@ public:
                     && (!promote || promote == move.promote)) {
                 MoveText move_obj = move;
                 move_obj.m = moveToSan(move, moves);
+                move_obj.ply = fen_ply + ply + 1;
                 return move_obj;
             }
         }
-        return NULL_MOVE;
+        return NULL_TEXT;
     }
 
     /**

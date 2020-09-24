@@ -308,7 +308,7 @@ let {
     [null, -2],
     [{}, -2],
     [{ply: null}, -2],
-    [{ply: -3}, -3],
+    [{ply: -3}, -2],
     [{ply: -1}, -1],
     [{ply: 0}, 0],
     [{fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, -1],

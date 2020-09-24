@@ -34,21 +34,9 @@ live.dual = archive;
 
 // add_moves_string
 [
-    [
-        '1. d4 Nf6 2. c4 c5 3. d5',
-        0,
-        [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}],
-    ],
-    [
-        '38...Qg7 39. Rf2 Qh6 40. Nxg6',
-        75,
-        [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}],
-    ],
-    [
-        '41...Kxg8 42. a8=Q+ Kg7',
-        81,
-        [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}],
-    ],
+    ['1. d4 Nf6 2. c4 c5 3. d5', 0, [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}]],
+    ['38...Qg7 39. Rf2 Qh6 40. Nxg6', 75, [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}]],
+    ['41...Kxg8 42. a8=Q+ Kg7', 81, [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}]],
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
         live.add_moves_string(text, cur_ply);
@@ -119,96 +107,69 @@ live.dual = archive;
 
 // chess_move
 [
-    [START_FEN, 'd5', undefined, {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0}],
     [
-        START_FEN,
-        'd4',
-        undefined,
-        {capture: 0, flags: 0, from: 99, m: 'd4', piece: 1, promote: 0, san: 'd4', to: 67},
+        START_FEN, 'd5', undefined,
+        {capture: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -2, promote: 0, score: 0, to: 0},
     ],
     [
-        START_FEN,
-        'd2d4',
-        undefined,
-        {capture: 0, flags: 0, from: 99, m: 'd2d4', piece: 1, promote: 0, san: 'd4', to: 67},
+        START_FEN, 'd4', undefined,
+        {capture: 0, fen: '', flags: 0, from: 99, m: 'd4', piece: 1, ply: 0, promote: 0, san: 'd4', score: 0, to: 67},
     ],
     [
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        'e1h1',
-        undefined,
-        {capture: 0, flags: 1, from: 116, m: 'e1h1', piece: 6, promote: 0, san: 'O-O', to: 119},
+        START_FEN, 'd2d4', undefined,
+        {capture: 0, fen: '', flags: 0, from: 99, m: 'd2d4', piece: 1, ply: 0, promote: 0, san: 'd4', score: 0, to: 67},
     ],
     [
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        'e1g1',
-        undefined,
-        {capture: 0, flags: 1, from: 116, m: 'e1g1', piece: 6, promote: 0, san: 'O-O', to: 119},
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'e1h1', undefined,
+        {capture: 0, fen: '', flags: 1, from: 116, m: 'e1h1', piece: 6, ply: 0, promote: 0, san: 'O-O', score: 0, to: 119},
     ],
     [
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        'O-O',
-        undefined,
-        {capture: 0, flags: 1, from: 116, m: 'O-O', piece: 6, promote: 0, san: 'O-O', to: 119},
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'e1g1', undefined,
+        {capture: 0, fen: '', flags: 1, from: 116, m: 'e1g1', piece: 6, ply: 0, promote: 0, san: 'O-O', score: 0, to: 119},
     ],
     [
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
-        'O-O-O',
-        undefined,
-        {capture: 0, flags: 1, from: 116, m: 'O-O-O', piece: 6, promote: 0, san: 'O-O-O', to: 112},
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'O-O', undefined,
+        {capture: 0, fen: '', flags: 1, from: 116, m: 'O-O', piece: 6, ply: 0, promote: 0, san: 'O-O', score: 0, to: 119},
     ],
     [
-        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
-        'O-O',
-        undefined,
-        {capture: 0, flags: 1, from: 3, m: 'O-O', piece: 14, promote: 0, san: 'O-O', to: 7},
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'O-O-O', undefined,
+        {capture: 0, fen: '', flags: 1, from: 116, m: 'O-O-O', piece: 6, ply: 0, promote: 0, san: 'O-O-O', score: 0, to: 112},
     ],
     [
-        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
-        'd8h8',
-        {frc: true},
-        {capture: 0, flags: 1, from: 3, m: 'd8h8', piece: 14, promote: 0, san: 'O-O', to: 7},
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', undefined,
+        {capture: 0, fen: '', flags: 1, from: 3, m: 'O-O', piece: 14, ply: 19, promote: 0, san: 'O-O', score: 0, to: 7},
     ],
     [
-        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10',
-        'O-O',
-        {frc: true},
-        {capture: 0, flags: 1, from: 3, m: 'O-O', piece: 14, promote: 0, san: 'O-O', to: 7},
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'd8h8', {frc: true},
+        {capture: 0, fen: '', flags: 1, from: 3, m: 'd8h8', piece: 14, ply: 19, promote: 0, san: 'O-O', score: 0, to: 7},
     ],
     [
-        'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3',
-        'O-O',
-        {frc: true},
-        {capture: 0, flags: 1, from: 118, m: 'O-O', piece: 6, promote: 0, san: 'O-O', to: 119},
+        'rbqk3r/pp1p1bpp/3n1pn1/2B5/5P2/4N1P1/PP2P1NP/RBQK3R b KQkq - 2 10', 'O-O', {frc: true},
+        {capture: 0, fen: '', flags: 1, from: 3, m: 'O-O', piece: 14, ply: 19, promote: 0, san: 'O-O', score: 0, to: 7},
     ],
     [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        'O-O',
-        {frc: true},
-        {capture: 0, flags: 1, from: 115, m: 'O-O', piece: 6, promote: 0, san: 'O-O', to: 119},
+        'brqnn1kr/ppppppbp/6p1/8/8/6P1/PPPPPPBP/BRQNN1KR w KQkq - 2 3', 'O-O', {frc: true},
+        {capture: 0, fen: '', flags: 1, from: 118, m: 'O-O', piece: 6, ply: 4, promote: 0, san: 'O-O', score: 0, to: 119},
     ],
     [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20',
-        'O-O-O',
-        {frc: true},
-        {capture: 0, flags: 0, from: 0, m: '', piece: 0, promote: 0, to: 0},
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', 'O-O', {frc: true},
+        {capture: 0, fen: '', flags: 1, from: 115, m: 'O-O', piece: 6, ply: 38, promote: 0, san: 'O-O', score: 0, to: 119},
     ],
     [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20',
-        'O-O-O',
-        {frc: true},
-        {capture: 0, flags: 1, from: 115, m: 'O-O-O', piece: 6, promote: 0, san: 'O-O-O', to: 113},
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', 'O-O-O', {frc: true},
+        {capture: 0, fen: '', flags: 0, from: 0, m: '', piece: 0, ply: -2, promote: 0, score: 0, to: 0},
     ],
     [
-        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
-        'axb1=Q',
-        false,
-        {capture: 4, flags: 0, from: 96, m: 'axb1=Q', piece: 9, promote: 5, san: 'axb1=Q', to: 113},
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', {frc: true},
+        {capture: 0, fen: '', flags: 1, from: 115, m: 'O-O-O', piece: 6, ply: 38, promote: 0, san: 'O-O-O', score: 0, to: 113},
     ],
     [
-        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26',
-        'a2b1q',
-        false,
-        {capture: 4, flags: 0, from: 96, m: 'a2b1q', piece: 9, san: 'axb1=Q', promote: 5, to: 113},
+        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26', 'axb1=Q', false,
+        {capture: 4, fen: '', flags: 0, from: 96, m: 'axb1=Q', piece: 9, ply: 51, promote: 5, san: 'axb1=Q', score: 0, to: 113},
+    ],
+    [
+        'r1b2r1k/p2PPp1p/3N2p1/2p3b1/5Pn1/2q3P1/p2Q3P/1R3RK1 b - - 0 26', 'a2b1q', false,
+        {capture: 4, fen: '', flags: 0, from: 96, m: 'a2b1q', piece: 9, san: 'axb1=Q', ply: 51, promote: 5, score: 0, to: 113},
     ],
 ].forEach(([fen, move, options, answer], id) => {
     test(`chess_move:${id}`, () => {
