@@ -317,6 +317,9 @@ let {
     [{fen: 'rnbqkbnr/pppppp1p/6p1/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2'}, 2],
     [{fen: '2r2rk1/ppqbppbp/6p1/nPPp4/Q7/3BPNP1/P2N1PP1/2R2RK1 b - - 2 18'}, 34],
     [{fen: '8/1p2Bp2/p4pkp/4b3/P7/1P1R2PP/2r2PK1/8 b - - 0 35'}, 68],
+    [{fen: '8/1p2Bp2/p4pkp/4b3/P7/1P1R2PP/2r2PK1/8 b - - 0 35', ply: 40}, 40],
+    [{fen: '8/1p2Bp2/p4pkp/4b3/P7/1P1R2PP/2r2PK1/8 b - - 0 35', ply: -2}, 68],
+    [{fen: '8/1p2Bp2/p4pkp/4b3/P7/1P1R2PP/2r2PK1/8 b - - 0 35', ply: -3}, 68],
 ].forEach(([move, answer], id) => {
     test(`get_move_ply:${id}`, () => {
         expect(get_move_ply(move)).toEqual(answer);

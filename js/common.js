@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-22
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -950,8 +950,19 @@ function Clamp(number, min, max, min_set) {
  * - must be called from an event callback
  * @param {string} text
  */
-async function CopyClipboard(text) {
-    await navigator.clipboard.writeText(text);
+function CopyClipboard(text) {
+    if (navigator.clipboard)
+        navigator.clipboard.writeText(text).then(() => {});
+    // support for old browsers
+    else {
+        let node = CreateNode('input');
+        node.value = text;
+        Style(node, `left:-9999px;position:absolute`);
+        document.body.appendChild(node);
+        node.select();
+        document.execCommand('copy');
+        document.body.removeChild(node);
+    }
 }
 
 /**

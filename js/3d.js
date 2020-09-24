@@ -1364,7 +1364,7 @@ function show_settings(name, xy) {
             is_string = IsString(data)? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${key}"`,
-            title = settings[key][2],
+            title = setting[2],
             y_key = Y[key];
 
         // remove prefix and suffix
@@ -1400,7 +1400,12 @@ function show_settings(name, xy) {
                     '<vert class="fcenter">'
                     + `<select name="${key}">`
                         + data.map(option => {
-                            let value = Undefined({off: 0, on: 1}[option], option);
+                            let splits = option.split('='),
+                                value = Undefined({off: 0, on: 1}[option], option);
+                            if (splits.length > 1) {
+                                option = splits[1];
+                                value = splits[0];
+                            }
                             return `<option value="${value}"${y_key == value? ' selected': ''} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'

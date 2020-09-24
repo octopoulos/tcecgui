@@ -3437,18 +3437,23 @@ function update_overview_moves(section, headers, moves, is_new) {
  * @param {string=} finished
  */
 function update_overview_result(move, num_ply, finished) {
-    let overview = Id('overview');
+    let fen,
+        overview = Id('overview');
 
     if (move && move.fen) {
-        let tb = Lower(move.fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
+        fen = move.fen;
+        let tb = Lower(fen.split(' ')[0]).split('').filter(item => 'bnprqk'.includes(item)).length - 6;
         if (tb <= 1)
-            tb = `<a href="${TB_URL.replace('{FEN}', move.fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
+            tb = `<a href="${TB_URL.replace('{FEN}', fen.replace(/ /g, '_'))}" target="_blank">${tb}</a>`;
         HTML('td[data-x="tb"]', tb, overview);
         num_ply = get_move_ply(move) + 1;
     }
 
     let result = check_adjudication(move, num_ply);
     result.adj_rule = finished;
+    if (fen && result['50'] == '-')
+        result['50'] = Floor(50 - fen.split(' ')[4] / 2);
+
     Keys(result).forEach(key => {
         HTML(`td[data-x="${key}"]`, result[key], overview);
     });

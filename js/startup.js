@@ -90,11 +90,6 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
-    SEARCHES = {
-        AlphaBeta: 'ab',
-        Minimax: 'mm',
-        RandomMove: 'rnd',
-    },
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -297,7 +292,7 @@ function change_setting_special(name, value, no_close) {
         pva.new_game();
         break;
     case 'game_search':
-        configure('s', SEARCHES[value]);
+        configure('s', value);
         break;
     case 'game_think':
         pva.finished = false;
@@ -556,10 +551,11 @@ function configure_string(name) {
         if (items.length < 2 || !config)
             continue;
         let key = `game_${config}`,
-            input = _(`#modal [name="${key}"]`);
+            input = _(`#modal [name="${key}"]`),
+            value = items[1];
         if (input)
-            input.value = items[1];
-        save_option(key, items[1]);
+            input.value = value;
+        save_option(key, value);
     }
 }
 
@@ -691,8 +687,6 @@ function init_customs(initial) {
  * Ran once at the last initialisation step
  */
 function init_globals() {
-    check_hash();
-    parse_dev();
     changed_hash();
     api_translate_get(Y.new_version);
 
@@ -776,6 +770,14 @@ function insert_google_ad(id) {
 }
 
 /**
+ * Check hash for the first time
+ */
+function init_hash() {
+    check_hash();
+    parse_dev();
+}
+
+/**
  * Insert google ads after some time
  */
 function insert_google_ads() {
@@ -794,7 +796,7 @@ function load_google_analytics() {
         ['_setAccount', 'UA-37458566-1'],
         ['_trackPageview'],
         ['b._setAccount', 'UA-1679851-1'],
-        ['b._trackPageview'],
+        ['b._trackPageview']
     );
 
     load_library(('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js');
@@ -1018,6 +1020,7 @@ function populate_areas() {
 function reset_settings_special(is_default) {
     if (is_default) {
         load_settings();
+        init_hash();
         init_globals();
     }
 
@@ -1917,7 +1920,7 @@ function prepare_settings() {
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
             game_options_white: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
-            game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
+            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'AlphaBeta'],
             game_think: '1',
             game_time: option_number(5, 0, 120),
             game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
@@ -2130,6 +2133,7 @@ function startup() {
     prepare_settings();
     load_settings();
     start_game();
+    init_hash();
 
     set_global_events();
     set_engine_events();

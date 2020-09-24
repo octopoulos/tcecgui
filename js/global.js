@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-22
+// @version 2020-09-23
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200922';
+    VERSION = '20200923';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -194,7 +194,7 @@ function get_fen_ply(fen) {
 function get_move_ply(move) {
     if (!move)
         return -2;
-    if (move.ply != undefined)
+    if (move.ply >= -1)
         return move.ply;
     if (!move.fen)
         return -2;
