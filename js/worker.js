@@ -74,7 +74,7 @@ function think(engine, fen, mask, frc) {
     chess.load(fen, true);
 
     let start = Now(true),
-        moves = chess.moves(false),
+        moves = chess.moves(),
         masks = chess.search(moves, mask),
         elapsed = Now(true) - start;
 

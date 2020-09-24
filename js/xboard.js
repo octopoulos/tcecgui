@@ -1003,7 +1003,7 @@ class XBoard {
      * @returns {Object[]}
      */
     chess_moves(single_square=EMPTY) {
-        let moves = this.chess.moves(false);
+        let moves = this.chess.moves();
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         if (single_square != EMPTY)
@@ -1629,7 +1629,7 @@ class XBoard {
 
         // 2) 50 move rule
         let rule50 = this.fen.split(' ')[4] * 1;
-        if (rule50 >= 50) {
+        if (rule50 >= 100) {
             LS('Fifty move rule.');
             return true;
         }
@@ -2750,7 +2750,7 @@ class XBoard {
 
         if (id >= -1) {
             Assign(player, {
-                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(1)}/${reply.sel_depth}`,
+                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(1)}/${Floor(reply.sel_depth + 0.5)}`,
                 eval: format_eval(best_score),
                 id: color,
                 node: FormatUnit(reply.nodes2, '-'),
@@ -2836,7 +2836,7 @@ class XBoard {
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
             s: Floor(nps + 0.5),
-            sd: reply.sel_depth,
+            sd: Floor(reply.sel_depth + 0.5),
             tb: 0,
             wv: format_eval(best_score),
         });

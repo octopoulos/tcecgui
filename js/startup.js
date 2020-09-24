@@ -90,11 +90,6 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
-    SEARCHES = {
-        AlphaBeta: 'ab',
-        Minimax: 'mm',
-        RandomMove: 'rnd',
-    },
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -297,7 +292,7 @@ function change_setting_special(name, value, no_close) {
         pva.new_game();
         break;
     case 'game_search':
-        configure('s', SEARCHES[value]);
+        configure('s', value);
         break;
     case 'game_think':
         pva.finished = false;
@@ -556,10 +551,11 @@ function configure_string(name) {
         if (items.length < 2 || !config)
             continue;
         let key = `game_${config}`,
-            input = _(`#modal [name="${key}"]`);
+            input = _(`#modal [name="${key}"]`),
+            value = items[1];
         if (input)
-            input.value = items[1];
-        save_option(key, items[1]);
+            input.value = value;
+        save_option(key, value);
     }
 }
 
@@ -1924,7 +1920,7 @@ function prepare_settings() {
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
             game_options_white: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
-            game_search: [['AlphaBeta', 'Minimax', 'RandomMove'], 'AlphaBeta'],
+            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'AlphaBeta'],
             game_think: '1',
             game_time: option_number(5, 0, 120),
             game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
