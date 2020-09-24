@@ -2,6 +2,7 @@
 *.gz
 *_.css
 *.log
+*.map
 *.pgn
 *.jar
 *_.js
@@ -30,6 +31,7 @@ create_list.js
 crosstable.json
 cutechess_parser.py
 data*.json
+debug.bat
 dist/
 dist/js/
 doc/

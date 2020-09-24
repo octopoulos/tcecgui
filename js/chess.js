@@ -263,18 +263,12 @@ let NULL_MOVE = {
         promote: 0,
         to: 0,
     },
-    NULL_TEXT = {
-        capture: 0,
+    NULL_TEXT = Assign({
         fen: '',
-        flags: 0,
-        from: 0,
         m: '',
-        piece: 0,
         ply: -2,
-        promote: 0,
         score: 0,
-        to: 0,
-    };
+    }, NULL_MOVE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -305,6 +299,7 @@ var Chess = function(fen_) {
         board = U8(128),
         board_hash = 0,
         castling = U8(4).fill(EMPTY),
+        debug = 0,
         defenses = U8(16),
         ep_square = EMPTY,
         eval_mode = 1,                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
@@ -807,6 +802,7 @@ var Chess = function(fen_) {
      * @param {number} depth this overrides max_depth if > 0
      */
     function configure(frc_, options, depth) {
+        debug = 0;
         eval_mode = 1;
         frc = frc_;
         max_depth = 4;
@@ -826,6 +822,9 @@ var Chess = function(fen_) {
             switch (left) {
             case 'd':
                 max_depth = value;
+                break;
+            case 'D':
+                debug = value;
                 break;
             case 'e': {
                     let eit = EVAL_MODES[right];
@@ -1562,6 +1561,8 @@ var Chess = function(fen_) {
             if (decorate)
                 decorateMove(move_obj);
         }
+
+        move_obj.ply = fen_ply + ply;
         return Assign(Assign({}, NULL_TEXT), move_obj);
     }
 
@@ -1791,6 +1792,7 @@ var Chess = function(fen_) {
         for (let move of moves)
             if (clean == cleanSan(moveToSan(move, moves))) {
                 move.m = san;
+                move.ply = fen_ply + ply + 1;
                 return Assign(Assign({}, NULL_TEXT), move);
             }
 
@@ -1843,6 +1845,7 @@ var Chess = function(fen_) {
                     && (from_rank == EMPTY || from_rank == Rank(move.from))
                     && (!promote || promote == move.promote)) {
                 move.m = moveToSan(move, moves);
+                move.ply = fen_ply + ply + 1;
                 return Assign(Assign({}, NULL_TEXT), move);
             }
         }
@@ -1896,7 +1899,8 @@ var Chess = function(fen_) {
         }
 
         avg_depth = count? average / count: 0;
-        LS(`${turn}: ${max_nodes & 1}: adds=${tt_adds}/${tt_adds2} : hits=${tt_hits}/${tt_hits2} : nodes=${nodes} => ${nodes? (tt_hits / nodes).toFixed(2): '-'}`);
+        if (debug & 1)
+            LS(`${turn}: ${max_nodes & 1}: adds=${tt_adds}/${tt_adds2} : hits=${tt_hits}/${tt_hits2} : nodes=${nodes} => ${nodes? (tt_hits / nodes).toFixed(2): '-'}`);
         return masked;
     }
 

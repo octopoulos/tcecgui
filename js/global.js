@@ -194,7 +194,7 @@ function get_fen_ply(fen) {
 function get_move_ply(move) {
     if (!move)
         return -2;
-    if (move.ply >= -1)
+    if (move.ply != undefined && move.ply >= -1)
         return move.ply;
     if (!move.fen)
         return -2;
