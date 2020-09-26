@@ -893,7 +893,7 @@ class XBoard {
                 for (let next = curr + 1; next <= ply; next ++) {
                     let move_next = moves[next],
                         result = this.chess_move(move_next.m);
-                    if (!result.piece) {
+                    if (result.from == result.to) {
                         if (DEV.ply)
                             LS(`${this.id}: invalid move at ply ${next}: ${move_next.m}`);
                         return false;
@@ -989,7 +989,7 @@ class XBoard {
         else
             result = IsString(text)? chess.moveSan(text, decorate, false): chess.moveObject(text, true);
 
-        if (result.piece) {
+        if (result.from != result.to) {
             result.san = result.m;
             if (!decorate)
                 result.m = text;
@@ -2460,7 +2460,7 @@ class XBoard {
                     rule50 = splits[4] * 1,
                     draw = (rule50 >= 50 || fen_set.has(prune));
 
-                if (!draw && fen_set.size && !move.capture && (move.piece & 7) != 1) {
+                if (!draw && fen_set.size && rule50) {
                     let moves2 = this.chess_moves();
                     for (let move2 of moves2) {
                         chess.makeMove(move2);
@@ -2702,7 +2702,7 @@ class XBoard {
             reply.lefts[id] = 0;
 
         for (let move of moves)
-            if (move.piece && (move.score > -900) || move.score == '-')
+            if (move.from != move.to && (move.score > -900) || move.score == '-')
                 combine.push(move);
 
         reply.avg_depth += avg_depth * nodes;

@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-26
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -36,8 +36,10 @@ let AD_STYLES = {},
     CHAMPIONS = [],
     CONFIGURE_KEYS = {
         d: 'depth',
+        D: 1,
         e: 'evaluation',
         n: 1,
+        p: 1,
         q: 1,
         s: 'search',
         t: 'time',
