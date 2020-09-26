@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-22
+// @version 2020-09-26
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1165,6 +1165,19 @@ function FromTimestamp(stamp) {
         day = `${Pad(date.getFullYear())}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
         time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}:${Pad(date.getSeconds())}`;
     return [day, time];
+}
+
+/**
+ * Gaussian random between 0 and 1
+ * @returns {number}
+ */
+function GaussianRandom() {
+    let rand = -1;
+    while (rand < 0 || rand > 1) {
+        rand = Sqrt(-2 * Math.log(1 - Random())) * Math.cos(2 * Math.PI * Random());
+        rand = rand / 10 + 0.5;
+    }
+    return rand;
 }
 
 /**
