@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-23
+// @version 2020-09-26
 //
 /*
 globals
@@ -393,9 +393,9 @@ beforeEach(() => {
         [988728373, -1059036150],
 
     ],
-].forEach(([fen, hash, moves, answer, new_fen, new_hash], id) => {
+].forEach(([fen, must_hash, moves, answer, new_fen, new_hash], id) => {
     test(`load:${id}`, () => {
-        expect(chess.load(fen, hash)).toEqual(Undefined(answer, fen));
+        expect(chess.load(fen, must_hash)).toEqual(Undefined(answer, fen));
         if (IsString(moves)) {
             for (let move of moves.split(' '))
                 chess.moveSan(move, false, false);
@@ -1190,15 +1190,15 @@ beforeEach(() => {
 [
     [START_FEN, '', 'd=4 e=hce p=1 s=mm', 0, {}],
     ['1rb1kbnq/1p1p4/p1nPp1p1/6Br/5Q2/P1N2N2/1P2PPPP/3RKB1R w K -', 'f4f7', 'd=5 e=att q=2 s=ab t=0', -2114, {}],
-    ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 n=1 s=ab', 42000, {}],
+    ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 n=1 s=ab', 30991, {}],
     ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -1915, {}],
     ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 6620}],
     ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 1230, {}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 50000, {1: 'g5e6 h7f7'}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 50000, {1: 'g5e6 h7f7'}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 30999, {1: 'g5e6 h7f7'}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 30999, {1: 'g5e6 h7f7'}],
     ['7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47', '', '', [], {1: 'd3d8', b5c4: 50, c7f7: 50}],
     ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 110, d7d8: 450, d7h7: -2180}],
-    ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 50000}],
+    ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 30999}],
     ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -3310, h1h7: -900}],
     ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=ab', [], {g5d2: -332, h2h4: -2862}],
     ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=mm', [], {g5d2: -332, h2h4: -2862}],
@@ -1396,7 +1396,7 @@ beforeEach(() => {
 
 // version
 [
-    '20200923',
+    '20200926',
 ].forEach((answer, id) => {
     test(`version:${id}`, () => {
         expect(chess.version()).toEqual(answer);

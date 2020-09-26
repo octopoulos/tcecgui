@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-25
+// @version 2020-09-26
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -67,6 +67,9 @@ let BISHOP = 3,
     Rank = square => square >> 4,
     RELATIVE_RANK = (color, square) => (color? 7 - (square >> 4): (square >> 4)),
     ROOK = 4,
+    SCORE_INFINITY = 31001,
+    SCORE_MATE = 31000,
+    SCORE_NONE = 31002,
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
     TT_SIZE = 4096,
@@ -205,18 +208,18 @@ let MOBILITY_LIMITS = I8([
     PROMOTE_SCORES = I32([
         0,
         0,          // P
-        530,        // N
-        500,        // B
-        1150,       // R
-        2450,       // Q
+        600,        // N
+        590,        // B
+        1040,       // R
+        2340,       // Q
         0,          // K
         0,
         0,
         0,          // p
-        530,        // n
-        500,        // b
-        1150,       // r
-        2450,       // q
+        600,        // n
+        590,        // b
+        1040,       // r
+        2340,       // q
         0,          // k
         0,
     ]);
@@ -369,12 +372,12 @@ let NULL_MOVE = {
  * @param {number=} state
  */
 function xorshift32(state) {
-    let x = state || xorshift32.state;
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    xorshift32.state = x;
-    return x;
+    let seed = state || xorshift32.state;
+    seed ^= seed << 13;
+    seed ^= seed >> 17;
+    seed ^= seed << 5;
+    xorshift32.state = seed;
+    return seed;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -386,7 +389,6 @@ var Chess = function(fen_) {
 
     let attacks = U8(16),
         avg_depth = 0,
-        bishops = U8(8).fill(EMPTY),
         board = U8(128),
         board_hash = 0,
         castling = U8(4).fill(EMPTY),
@@ -399,7 +401,6 @@ var Chess = function(fen_) {
         frc = false,
         half_moves = 0,
         kings = U8(2).fill(EMPTY),
-        knights = U8(8).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
         max_extend = 20,
@@ -410,12 +411,11 @@ var Chess = function(fen_) {
         move_number = 1,
         nodes = 0,
         pawns = U8(8).fill(EMPTY),
+        pieces = [U8(16).fill(EMPTY), U8(16).fill(EMPTY)],
         ply = 0,
         ply_states = Array(128).fill(0).map(_ => [0, 0, 0, 0]),
         positions = I32(2),
         pv_mode = 0,
-        rooks = U8(8).fill(EMPTY),
-        queens = U8(8).fill(EMPTY),
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
         sel_depth = 0,
         table = Array(TT_SIZE).fill(0),
@@ -442,7 +442,13 @@ var Chess = function(fen_) {
         if (exist && exist[2] >= depth)
             return;
         // TODO: convert the array to a number + save the move too (when it's converted to a number)
-        table[(hash % TT_SIZE) >>> 0] = [hash, score, depth];
+        table[(hash % TT_SIZE) >>> 0] = [
+            hash,
+            score,
+            depth,
+            bound,
+            move,
+        ];
         tt_adds ++;
     }
 
@@ -519,7 +525,7 @@ var Chess = function(fen_) {
                 nodes ++;
                 return evaluate();
             }
-            return quiesce(alpha, beta, max_quiesce, pv);
+            return quiesce(alpha, beta, max_quiesce);
         }
 
         // statistics
@@ -529,8 +535,8 @@ var Chess = function(fen_) {
 
         // check all moves
         let alpha0 = alpha,
-            best = -99999,
-            best_move = null,
+            best = -SCORE_INFINITY,
+            best_move = 0,
             line = [],
             moves = createMoves(false),
             num_valid = 0;
@@ -567,11 +573,11 @@ var Chess = function(fen_) {
 
         // mate + stalemate
         if (!num_valid)
-            return kingAttacked(turn)? Min(-51000 + ply * 1000, -21000): 0;
+            return kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
         if (max_nodes & 2) {
             let bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
-            addEntry(board_hash, best, max_depth, bound);
+            addEntry(board_hash, best, max_depth, bound, best_move);
         }
         return best;
     }
@@ -649,7 +655,7 @@ var Chess = function(fen_) {
      */
     function findEntry(hash, depth) {
         let entry = table[(hash % TT_SIZE) >>> 0];
-        if (entry && entry[2] >= depth)
+        if (entry && entry[0] == hash && entry[2] >= depth)
             return entry;
         return null;
     }
@@ -686,8 +692,8 @@ var Chess = function(fen_) {
             avg_depth = ply + 1;
 
         // check all moves
-        let best = -99999,
-            best_move = null,
+        let best = -SCORE_INFINITY,
+            best_move = 0,
             line = [],
             moves = createMoves(false),
             num_valid = 0;
@@ -726,11 +732,10 @@ var Chess = function(fen_) {
 
         // mate + stalemate
         if (!num_valid)
-            return kingAttacked(turn)? Min(-51000 + ply * 1000, -21000): 0;
+            return kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
         if (max_nodes & 2)
-            addEntry(board_hash, best, max_depth, BOUND_EXACT);
-
+            addEntry(board_hash, best, max_depth, BOUND_EXACT, best_move);
         return best;
     }
 
@@ -903,7 +908,6 @@ var Chess = function(fen_) {
     function clear() {
         attacks.fill(0);
         avg_depth = 0;
-        bishops.fill(EMPTY);
         board.fill(0);
         board_hash = 0;
         castling.fill(EMPTY);
@@ -913,16 +917,16 @@ var Chess = function(fen_) {
         fen_ply = -1;
         half_moves = 0;
         kings.fill(EMPTY);
-        knights.fill(EMPTY);
         materials.fill(0);
         mobilities.fill(0);
         move_number = 1;
         nodes = 0;
         pawns.fill(EMPTY);
+        pieces[0].fill(0);
+        pieces[1].fill(0);
+        positions.fill(EMPTY);
         ply = 0;
         ply_states[0].fill(0);
-        rooks.fill(EMPTY);
-        queens.fill(EMPTY);
         sel_depth = 0;
         turn = WHITE;
     }
@@ -1444,10 +1448,10 @@ var Chess = function(fen_) {
     /**
      * Load a FEN
      * @param {string} fen valid or invalid FEN
-     * @param {boolean} hash hash the board?
+     * @param {boolean} must_hash hash the board?
      * @returns {string} empty on error, and the FEN may be corrected
      */
-    function load(fen_, hash) {
+    function load(fen_, must_hash) {
         if (!fen_)
             return "";
 
@@ -1524,7 +1528,7 @@ var Chess = function(fen_) {
             }
         }
 
-        if (hash)
+        if (must_hash)
             hashBoard();
         else
             board_hash = 0;
@@ -2064,18 +2068,19 @@ var Chess = function(fen_) {
                 if (search_mode == 1)
                     score = -miniMax(1, max_depth, pv);
                 else
-                    score = -alphaBeta(-99999, 99999, 1, max_depth, pv);
+                    score = -alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 1, max_depth, pv);
                 undoMove();
             }
 
-            move.pv = pv.map(item => ucify(item)).join(' ');
+            let pv_string = `${ucify(move)} ${pv.map(item => ucifyMove(item)).join(' ')}`;
+            move.pv = pv_string;
             move.score = score;
             masked.push(move);
 
             average += avg_depth;
             count ++;
             if (debug & 2)
-                LS(`${move.score} : ${ucify(move)} : ${move.pv}`);
+                LS(`${move.score} : ${pv_string}`);
         }
 
         avg_depth = count? average / count: 0;
@@ -2128,10 +2133,11 @@ var Chess = function(fen_) {
 
     /**
      * Undo a move
+     * @returns {boolean}
      */
     function undoMove() {
         if (ply <= 0)
-            return;
+            return false;
         ply --;
 
         let move,
@@ -2155,7 +2161,7 @@ var Chess = function(fen_) {
 
         if (move_from == move_to) {
             // null move
-            return;
+            return true;
         }
 
         // undo castle
@@ -2177,6 +2183,7 @@ var Chess = function(fen_) {
             board[move_to] = rook_piece;
             kings[us] = king;
 
+            // score
             positions[us]
                 += squares[KING][king] - squares[KING][king_to]
                 + squares[ROOK][move_to] - squares[ROOK][rook_to];
@@ -2214,6 +2221,8 @@ var Chess = function(fen_) {
             let psquares = squares[piece_type];
             positions[turn] += psquares[move_from] - psquares[move_to];
         }
+
+        return true;
     }
 
     /**
@@ -2295,7 +2304,7 @@ var Chess = function(fen_) {
         ucify: ucify,
         undo: undoMove,
         unpackMove: unpackMove,
-        version: () => '20200923',
+        version: () => '20200926',
     };
 };
 
