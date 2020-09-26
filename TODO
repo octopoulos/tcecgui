@@ -13,8 +13,9 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-16 : transposition table
-~          : 2020-09-26 : show pva PV
--          : 2020-09-26 : convert moves to uint32_t
+~          : 2020-09-26 : convert moves to uint32_t
+2020-09-26 : 2020-09-26 : preliminary new c++
+2020-09-26 : 2020-09-26 : show pva PV
 2020-09-26 : 2020-09-26 : remove .piece from move
 2020-09-22 : 2020-09-22 : update 50 / draw / win / tb when clicking on moves
 2020-09-20 : 2020-09-17 : preset for difficulty: beginner, amateur, pro + some intermediates

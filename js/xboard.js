@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-26
 //
 // game board:
 // - 4 rendering modes:
@@ -1849,7 +1849,7 @@ class XBoard {
         // TODO: handle promotions
         let promote = 'q';
         let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`, {decorate: true});
-        if (!move.piece)
+        if (move.from == move.to)
             return false;
 
         // 3) update
@@ -2808,8 +2808,10 @@ class XBoard {
             }
         }
 
-        if (DEV.engine)
+        if (DEV.engine) {
+            LS(best.pv);
             LS(combine);
+        }
 
         // 7) stop things
         Hide(`.xcolor${color} .xcog`, this.node);
