@@ -20,7 +20,7 @@ _, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Cla
 CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
 Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, Now, Pad, Parent, play_sound, RandomInt,
+Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
 Upper, Visible, window, Worker, Y
 */
@@ -1000,14 +1000,14 @@ class XBoard {
     /**
      * Calculate all legal moves
      * @param {number=} single_square
-     * @returns {Object[]}
+     * @returns {number[]}
      */
     chess_moves(single_square=EMPTY) {
         let moves = this.chess.moves();
         if (moves.size)
             moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
         if (single_square != EMPTY)
-            moves = moves.filter(move => move.from == single_square);
+            moves = moves.filter(move => MoveFrom(move) == single_square);
         return moves;
     }
 
@@ -1355,9 +1355,9 @@ class XBoard {
             this.chess_load(this.fen);
             let moves = this.chess_moves(this.picked);
             for (let move of moves)
-                this.add_high(move.to, 'target');
+                this.add_high(MoveTo(move), 'target');
             if (moves[0])
-                this.add_high(moves[0].from, 'source');
+                this.add_high(MoveFrom(moves[0]), 'source');
         }, this.node);
     }
 
@@ -1734,7 +1734,7 @@ class XBoard {
         // 1) user vote?
         if (this.main) {
             let prev_fen = this.moves.length? this.moves[this.moves.length - 1].fen: this.start_fen,
-                uci = this.chess.ucify(move);
+                uci = this.chess.ucifyObject(move);
             if ((now - this.move_time) * 1000 > TIMEOUT_vote)
                 socket.emit('vote', {fen: prev_fen, move: uci, time: now});
             this.arrow(3, move);
@@ -1847,15 +1847,15 @@ class XBoard {
 
         // 2) try to move, it might be invalid
         // TODO: handle promotions
-        let promote = 'q';
-        let move = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`, {decorate: true});
-        if (move.from == move.to)
+        let promote = 'q',
+            obj = this.chess_move(`${SQUARES_INV[this.picked]}${SQUARES_INV[found]}${promote}`, {decorate: true});
+        if (obj.from == obj.to)
             return false;
 
         // 3) update
         this.set_ai(false);
         this.destroy_workers();
-        this.new_move(move);
+        this.new_move(obj);
     }
 
     /**
@@ -2403,7 +2403,7 @@ class XBoard {
         this.chess_load(this.fen);
 
         let moves = this.chess_moves(),
-            froms = new Set(moves.map(move => move.from));
+            froms = new Set(moves.map(move => MoveFrom(move)));
 
         this.clear_high('source target', false);
         for (let from of froms)
@@ -2453,8 +2453,9 @@ class XBoard {
             // check for 3-fold moves
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
             for (let move of moves) {
-                chess.ucify(move);
-                chess.makeMove(move);
+                let obj = chess.unpackMove(move);
+                chess.ucify(obj);
+                chess.moveObject(obj);
                 let splits = chess.fen().split(' '),
                     prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
                     rule50 = splits[4] * 1,
@@ -2475,12 +2476,12 @@ class XBoard {
                     }
                 }
                 if (draw) {
-                    Assign(move, {
+                    Assign(obj, {
                         depth: 0,
                         score: -1,
                         special: 1,
                     });
-                    folds.push(move);
+                    folds.push(obj);
                 }
                 chess.undo();
             }
@@ -2565,7 +2566,7 @@ class XBoard {
             if (moves[i].special)
                 continue;
             let id = i % num_worker;
-            masks[id].push(chess.ucify(moves[i]));
+            masks[id].push(chess.ucifyMove(moves[i]));
             has_moves[id] = 1;
         }
         for (let id = 0; id < num_worker; id ++)
@@ -2701,9 +2702,9 @@ class XBoard {
         if (id >= 0)
             reply.lefts[id] = 0;
 
-        for (let move of moves)
-            if (move.from != move.to && (move.score > -900) || move.score == '-')
-                combine.push(move);
+        for (let obj of moves)
+            if (obj.from != obj.to && (obj.score > -900) || obj.score == '-')
+                combine.push(obj);
 
         reply.avg_depth += avg_depth * nodes;
         reply.nodes += nodes;
@@ -2714,11 +2715,11 @@ class XBoard {
         // still expecting more data?
         if (DEV.engine) {
             let lefts = From(reply.lefts).map(left => left? (left - 1).toString(16): '.').join(''),
-                move = moves[0],
-                eval_ = format_eval(move? move.score: '-').padStart(7);
+                obj = moves[0],
+                eval_ = format_eval(obj? obj.score: '-').padStart(7);
             if (!reply.count)
                 LS(this.fen);
-            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${move? move.m: '----'} : ${eval_} : ${lefts} : ${combine.length}`);
+            LS(`>> ${id}${fen == this.fen? '': 'X'} : ${obj? obj.m: '----'} : ${eval_} : ${lefts} : ${combine.length}`);
         }
         reply.count ++;
         if (!reply.lefts.every(item => !item))
@@ -2783,7 +2784,7 @@ class XBoard {
         }
 
         if (is_iterative) {
-            moves = combine.filter(move => !move.special);
+            moves = combine.filter(obj => !obj.special);
             if (moves.length > 1) {
                 // arrow?
                 if (this.depth >= 3 && predict > 1) {
