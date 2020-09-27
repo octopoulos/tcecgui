@@ -1916,7 +1916,7 @@ function prepare_settings() {
             game_advice: '1',
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
             game_depth: option_number(4, 0, 8),
-            game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'nn'], 'att'],
+            game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
             game_every: option_number(500, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
             game_new_game: '1',
