@@ -39,12 +39,12 @@ constexpr uint8_t   BLACK = 1;
 constexpr uint8_t   BOUND_EXACT = 0;
 constexpr uint8_t   BOUND_LOWER = 1;
 constexpr uint8_t   BOUND_UPPER = 2;
-constexpr uint8_t   COLOR(uint8_t piece) {return piece >> 3;}
+constexpr uint8_t   COLOR(Piece piece) {return piece >> 3;}
 constexpr char      COLOR_TEXT(uint8_t color) {return (color == 0)? 'w': 'b';}
-constexpr Piece     COLORIZE(uint8_t color, uint8_t type) {return type + (color << 3);}
+constexpr Piece     COLORIZE(uint8_t color, Piece type) {return type + (color << 3);}
 #define DEFAULT_POSITION "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 constexpr Square    EMPTY = 255;
-constexpr Square    File(uint8_t square) {return square & 15;}
+constexpr Square    File(Square square) {return square & 15;}
 constexpr Piece     KING = 6;
 constexpr Piece     KNIGHT = 2;
 constexpr uint8_t   MAX_DEPTH = 64;
@@ -54,21 +54,22 @@ constexpr Square    MoveFrom(Move move) {return (move >> 15) & 127;};
 constexpr uint8_t   moveOrder(Move move) {return (move & 1023);};
 constexpr Piece     MovePromote(Move move) {return (move >> 22) & 7;};
 constexpr Square    MoveTo(Move move) {return (move >> 25) & 127;};
+constexpr Piece     NONE = 0;
 constexpr Piece     PAWN = 1;
 #define PIECE_LOWER " pnbrqk  pnbrqk"
 #define PIECE_NAMES " PNBRQK  pnbrqk"
 #define PIECE_UPPER " PNBRQK  PNBRQK"
 constexpr Piece     QUEEN = 5;
-constexpr Square    Rank(uint8_t square) {return square >> 4;}
+constexpr Square    Rank(Square square) {return square >> 4;}
 constexpr Square    RELATIVE_RANK(int color, int square) {return color? 7 - (square >> 4): (square >> 4);}
 constexpr Piece     ROOK = 4;
 constexpr int       SCORE_INFINITY = 31001;
 constexpr int       SCORE_MATE = 31000;
-constexpr int       SCORE_NONE = 31002;
+// constexpr int       SCORE_NONE = 31002;
 constexpr Square    SQUARE_A8 = 0;
 constexpr Square    SQUARE_H1 = 119;
 constexpr int       TT_SIZE = 4096;
-constexpr Piece     TYPE(uint8_t piece) {return piece & 7;}
+constexpr Piece     TYPE(Piece piece) {return piece & 7;}
 constexpr uint8_t   WHITE = 0;
 
 // tables
@@ -136,20 +137,20 @@ int MOBILITY_LIMITS[] = {
     // move ordering
     PIECE_CAPTURES[] = {
         0,
-        20100,      // P
-        20300,      // N
-        20300,      // B
-        20500,      // R
-        20900,      // Q
-        32800,      // K
+        80,         // P
+        200,        // N
+        200,        // B
+        360,        // R
+        720,        // Q
+        640,        // K
         0,
         0,
-        20100,      // p
-        20300,      // n
-        20300,      // b
-        20500,      // r
-        20900,      // q
-        32800,      // k
+        80,         // p
+        200,        // n
+        200,        // b
+        360,        // r
+        720,        // q
+        640,        // k
         0,
     },
     // for move generation
@@ -227,6 +228,7 @@ std::map<std::string, int> EVAL_MODES = {
     {"mob", 2},
     {"nn", 1 + 2 + 32},
     {"null", 0},
+    {"sq", 1 + 2 + 4 + 8},
 };
 // piece names for print
 std::map<char, Piece> PIECES = {
@@ -338,35 +340,32 @@ int PIECE_SQUARES[2][8][128] = {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct MoveObject {
+struct MoveText {
     Piece   capture;
+    std::string fen;
     uint8_t flag;
     Square  from;
-    Piece   promote;
-    Square  to;
-};
-
-struct MoveText: MoveObject {
-    std::string fen;
     std::string m;
     int     ply;
+    Piece   promote;
     std::string pv;
     int     score;
+    Square  to;
 
-    MoveText(): MoveObject() {}
+    MoveText() {}
+    MoveText(Piece capture, uint8_t flag, Square from, Piece promote, int score, Square to):
+            capture(capture), flag(flag), from(from), promote(promote), score(score), to(to) {
+        ply = -2;
+    }
+
     MoveText(const Move move) {
         capture = MoveCapture(move);
         flag = MoveFlag(move);
         from = MoveFrom(move);
+        ply = -2;
         promote = MovePromote(move);
+        score = 0;
         to = MoveTo(move);
-        ply = -2;
-        score = 0;
-    }
-    MoveText(const MoveObject &move) {
-        memcpy(this, &move, sizeof(MoveObject));
-        ply = -2;
-        score = 0;
     }
 };
 
@@ -376,7 +375,7 @@ struct PV {
 };
 
 struct State {
-    uint8_t castling[4];
+    Square  castling[4];
     Square  ep_square;
     uint8_t half_moves;
     Move    move;
@@ -390,8 +389,15 @@ struct Table {
     Move    move;       // 32
 };
 
-MoveObject NULL_MOVE = {0, 0, 0, 0, 0};
-MoveText NULL_TEXT = NULL_MOVE;
+// null object
+MoveText NULL_OBJ = {
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -478,16 +484,19 @@ private:
     /**
      * Add a single move
      */
-    void addMove(std::vector<MoveObject> &moves, uint8_t piece, uint8_t from, uint8_t to, uint8_t flag, uint8_t promote, uint8_t value) {
-        uint8_t capture = (flag & BITS_EN_PASSANT)? PAWN: (flag & BITS_CASTLE? 0: TYPE(value));
-        moves.push_back({
-            capture,
-            flag,
-            from,
-            TYPE(piece),
-            promote,
-            to,
-        });
+    void addMove(std::vector<Move> &moves, Piece piece, Square from, Square to, uint8_t flag, Piece promote, Piece value) {
+        int capture = (flag & BITS_EN_PASSANT)? PAWN: (flag & BITS_CASTLE? NONE: TYPE(value));
+        auto score = (capture | promote)? Max(PIECE_CAPTURES[capture], PIECE_CAPTURES[promote]) - (PIECE_CAPTURES[piece] >> 3) + 50: 0;
+        auto squares = PIECE_SQUARES[COLOR(piece)][TYPE(piece)];
+
+        moves.push_back(
+            100 + squares[to] - squares[from] + (flag & BITS_CASTLE) * 30 + score
+            + (capture << 10)
+            + (flag << 13)
+            + ((from & 127) << 15)
+            + (promote << 22)
+            + ((to & 127) << 25)
+        );
 
         if (!promote) {
             // TODO:
@@ -499,7 +508,7 @@ private:
     /**
      * Add a pawn move + promote moves
      */
-    void addPawnMove(std::vector<MoveObject> &moves, Piece piece, Square from, Square to, uint8_t flag, Piece value, bool only_capture) {
+    void addPawnMove(std::vector<Move> &moves, Piece piece, Square from, Square to, uint8_t flag, Piece value, bool only_capture) {
         auto rank = Rank(to);
         if (rank == 0 || rank == 7) {
             if (only_capture)
@@ -516,12 +525,12 @@ private:
     /**
      * Add a ply state
      */
-    void addState(MoveObject &move) {
+    void addState(Move move) {
         auto &state = ply_states[ply & 127];
         memcpy(state.castling, castling, sizeof(castling));
         state.ep_square = ep_square;
         state.half_moves = half_moves;
-        memcpy(&state.move, &move, sizeof(MoveObject));
+        state.move = move;
     }
 
     /**
@@ -573,8 +582,8 @@ private:
                     // update pv
                     if (pv_mode) {
                         pv->length = line.length + 1;
-                        pv->moves[0] = packMove(move);
-                        memcpy(pv->moves + 1, line, line.length * sizeof(int));
+                        pv->moves[0] = move;
+                        memcpy(pv->moves + 1, &line, line.length * sizeof(int));
                     }
                 }
             }
@@ -601,40 +610,24 @@ private:
      * - castle
      * - nb/r/q/r/p
      */
-    static bool compareMoves(const MoveObject &a, const MoveObject &b) {
-        // capture a big piece with a small one = good
-        auto apiece = board[a.from],
-            bpiece = board[b.from];
-        if (a.capture | b.capture | a.promote | b.promote)
-            return ((PIECE_CAPTURES[b.capture] - PIECE_CAPTURES[a.capture] + PROMOTE_SCORES[b.promote] - PROMOTE_SCORES[a.promote]) << 3)
-                + PIECE_SCORES[apiece] - PIECE_SCORES[bpiece] < 0;
-
-        // castle
-        auto castle = !!(b.flag & BITS_CASTLE) - !!(a.flag & BITS_CASTLE);
-        if (castle)
-            return castle < 0;
-
-        // piece squares
-        // auto asquares = PIECE_SQUARES[turn][apiece],
-        //     bsquares = PIECE_SQUARES[turn][bpiece];
-        // return (bsquares[b.to] - bsquares[b.from]) < (asquares[a.to] - asquares[a.from]);
-        return false;
+    static bool compareMoves(const Move a, const Move b) {
+        return (b & 1023) < (a & 1023);
     }
 
     /**
      * Uniquely identify ambiguous moves
      */
-    std::string disambiguate(MoveObject &move, std::vector<MoveObject> &moves) {
-        uint8_t ambiguities = 0,
-            from = move.from,
-            same_file = 0,
-            same_rank = 0,
-            to = move.to,
-            type = board[from];
+    std::string disambiguate(Move move, std::vector<Move> &moves) {
+        auto ambiguities = 0;
+        auto from = MoveFrom(move),
+            to = MoveTo(move);
+        auto same_file = 0,
+            same_rank = 0;
+        auto type = board[from];
 
         for (auto &move2 : moves) {
-            int ambig_from = move2.from,
-                ambig_to = move2.to;
+            auto ambig_from = MoveFrom(move2),
+                ambig_to = MoveTo(move2);
 
             // if a move of the same piece type ends on the same to square,
             // we'll need to add a disambiguator to the algebraic notation
@@ -700,13 +693,21 @@ private:
             best_move = 0;
         PV line;
         auto moves = createMoves(false);
-        int num_valid = 0;
+        auto num_valid = 0;
 
         for (auto &move : moves) {
             if (!makeMove(move))
                 continue;
             num_valid ++;
-            auto score = -miniMax(depth + 1, max_depth);
+
+            int score;
+            auto entry = (max_nodes & 2)? findEntry(board_hash, max_depth): nullptr;
+            if (entry) {
+                score = entry->score;
+                tt_hits ++;
+            }
+            else
+                score = -miniMax(depth + 1, max_depth, &line);
             undoMove();
 
             if (score > best) {
@@ -716,8 +717,8 @@ private:
                 // update pv
                 if (pv_mode) {
                     pv->length = line.length + 1;
-                    pv->moves[0] = packMove(move);
-                    memcpy(pv->moves + 1, line, line.length * sizeof(int));
+                    pv->moves[0] = move;
+                    memcpy(pv->moves + 1, &line, line.length * sizeof(int));
                 }
             }
 
@@ -744,7 +745,7 @@ private:
             auto state = ply_states[i & 127];
             if (text.size())
                 text += " ";
-            text += ucify(state.move);
+            text += ucifyMove(state.move);
         }
         return text;
     }
@@ -792,8 +793,8 @@ private:
 
         auto moves = createMoves(true);
         for (auto &move : moves) {
-            if (futility + PIECE_SCORES[move.capture] <= alpha
-                    && (board[move.from] != PAWN || RELATIVE_RANK(turn, move.to) <= 5))
+            if (futility + PIECE_SCORES[MoveCapture(move)] <= alpha
+                    && (TYPE(board[MoveFrom(move)]) != PAWN || RELATIVE_RANK(turn, MoveTo(move)) <= 5))
                 continue;
 
             if (!makeMove(move))
@@ -834,10 +835,10 @@ public:
      * @param an c2
      * @return 98
      */
-    uint8_t anToSquare(std::string an) {
+    Square anToSquare(std::string an) {
         if (an.size() < 2)
             return EMPTY;
-        uint8_t file = an[0] - 'a',
+        Square file = an[0] - 'a',
             rank = '8' - an[1];
         return file + (rank << 4);
     }
@@ -863,8 +864,8 @@ public:
         auto offsets = PIECE_OFFSETS[QUEEN];
         for (auto j = 0; j < 8; j ++) {
             auto offset = offsets[j];
-            Square pos = square;
-            Piece target = BISHOP + (j & 1);
+            auto pos = square;
+            auto target = BISHOP + (j & 1);
 
             for (auto k = 0; ; k ++) {
                 pos += offset;
@@ -1144,8 +1145,8 @@ public:
      * @param only_capture
      * @return moves
      */
-    std::vector<MoveObject> createMoves(bool only_capture) {
-        std::vector<MoveObject> moves;
+    std::vector<Move> createMoves(bool only_capture) {
+        std::vector<Move> moves;
         auto second_rank = 6 - turn * 5,
             us = turn,
             us8 = us << 3,
@@ -1179,7 +1180,7 @@ public:
                 auto square = i + offsets[1];
                 if (!only_capture) {
                     if (!board[square]) {
-                        addPawnMove(moves, piece, i, square, 0, 0, false);
+                        addPawnMove(moves, piece, i, square, 0, 0, only_capture);
 
                         // double square
                         square += offsets[1];
@@ -1299,15 +1300,13 @@ public:
     /**
      * Decorate the SAN with + or #
      */
-    std::string decorateMove(MoveText &move) {
-        auto text = move.m;
-        char last = text[text.size() - 1];
+    std::string decorateSan(std::string san) {
+        char last = san[san.size() - 1];
         if (last != '+' && last != '#' && kingAttacked(turn)) {
             auto moves = legalMoves();
-            text += moves.size()? '+': '#';
-            move.m = text;
+            san += moves.size()? '+': '#';
         }
-        return text;
+        return san;
     }
 
     /**
@@ -1357,6 +1356,10 @@ public:
             for (auto i = 9; i < 15; i ++)
                 score -= attacks[i] + defenses[i];
         }
+
+        // squares
+        if (eval_mode & 8)
+            score += positions[WHITE] - positions[BLACK];
 
         return score * (1 - (turn << 1));
     }
@@ -1451,9 +1454,9 @@ public:
     /**
      * Get a list of all legal moves
      */
-    std::vector<MoveObject> legalMoves() {
+    std::vector<Move> legalMoves() {
         auto moves = createMoves(false);
-        std::vector<MoveObject> legals;
+        std::vector<Move> legals;
         for (auto &move : moves) {
             if (!makeMove(move))
                 continue;
@@ -1594,10 +1597,10 @@ public:
      * Make a raw move, no verification is being performed
      * @returns false if the move is not legal
      */
-    bool makeMove(MoveObject &move) {
+    bool makeMove(Move move) {
         // null move
-        auto move_from = move.from,
-            move_to = move.to;
+        auto move_from = MoveFrom(move),
+            move_to = MoveTo(move);
         if (move_from == move_to) {
             // addState(move);
             // ply ++;
@@ -1608,14 +1611,18 @@ public:
         auto us = turn,
             them = us ^ 1;
 
-        Piece capture = move.capture;
-        uint8_t is_castle = (move.flag & BITS_CASTLE),
-            passant = (move.flag & BITS_EN_PASSANT)? move_to + 16 - (turn << 5): EMPTY;
-        Square piece_from = board[move_from],
+        auto capture = MoveCapture(move);
+        auto flag = MoveFlag(move);
+        uint8_t is_castle = (flag & BITS_CASTLE),
+            passant = (flag & BITS_EN_PASSANT)? move_to + 16 - (turn << 5): EMPTY;
+        auto piece_from = board[move_from],
             piece_to = board[move_to],
             piece_type = TYPE(piece_from);
-        Piece promote = move.promote? COLORIZE(us, move.promote): 0;
+        auto promote = MovePromote(move);
         auto squares = PIECE_SQUARES[us];
+
+        if (promote)
+            promote = COLORIZE(us, promote);
 
         // 1) check if move is legal
         // castle is always legal because the checks were made in makeMove
@@ -1648,13 +1655,13 @@ public:
 
         // castle?
         if (is_castle) {
-            uint8_t q = (move.to < move.from)? 1: 0,
-                king = kings[us],
-                king_piece = COLORIZE(us, KING),
-                king_to = (Rank(king) << 4) + 6 - (q << 2),
-                rook = castling[(us << 1) + q],
-                rook_piece = COLORIZE(us, ROOK),
-                rook_to = king_to - 1 + (q << 1);
+            auto q = (move_to < move_from)? 1: 0;
+            auto king = kings[us];
+            auto king_piece = COLORIZE(us, KING);
+            auto king_to = (Rank(king) << 4) + 6 - (q << 2);
+            auto rook = castling[(us << 1) + q];
+            auto rook_piece = COLORIZE(us, ROOK);
+            auto rook_to = king_to - 1 + (q << 1);
 
             hashSquare(king, king_piece);
             hashSquare(rook, rook_piece);
@@ -1668,6 +1675,12 @@ public:
             kings[us] = king_to;
             castling[us << 1] = EMPTY;
             castling[(us << 1) + 1] = EMPTY;
+
+            // score
+            positions[us]
+                += squares[KING][king_to] - squares[KING][king]
+                + squares[ROOK][rook_to] - squares[ROOK][rook]
+                + 30;
         }
         else {
             hashSquare(move_from, piece_from);
@@ -1710,8 +1723,8 @@ public:
             }
 
             // score
-            auto psquares = PIECE_SQUARES[us][piece_type];
-            positions[turn] += psquares[piece_to] - psquares[piece_from];
+            auto psquares = squares[piece_type];
+            positions[us] += psquares[piece_to] - psquares[piece_from];
         }
 
         ply ++;
@@ -1726,22 +1739,25 @@ public:
      * @param move {from: 23, to: 7, promote: 5}
      * @param decorate add + # decorators
      */
-    MoveText moveObject(MoveObject &move, bool decorate) {
-        uint8_t flag = 0;
-        MoveText move_obj;
+    MoveText moveObject(MoveText &obj, bool decorate) {
+        auto flag = 0;
+        Move move = 0;
+        auto move_from = obj.from,
+            move_to = obj.to;
         auto moves = legalMoves();
+        std::string san;
 
         // castle
-        if (move.from == kings[turn]) {
-            auto piece = board[move.to];
+        if (move_from == kings[turn]) {
+            auto piece = board[move_to];
 
             // regular notation => change .to to rook position
             if (!piece) {
-                if (std::abs(File(move.from) - File(move.to)) == 2) {
-                    if (move.to > move.from)
-                        move.to ++;
+                if (std::abs(File(move_from) - File(move_to)) == 2) {
+                    if (move_to > move_from)
+                        move_to ++;
                     else
-                        move.to -= 2;
+                        move_to -= 2;
                 }
             }
             // frc notation
@@ -1752,31 +1768,32 @@ public:
         // find an existing match + add the SAN
         if (flag) {
             for (auto &move2 : moves)
-                if (move2.flag & flag) {
-                    move_obj = move2;
-                    move_obj.m = moveToSan(move2, moves);
+                if ((MoveFlag(move2) & flag) && move_to == MoveTo(move2)) {
+                    move = move2;
+                    san = moveToSan(move, moves);
                     break;
                 }
         }
         else
             for (auto &move2 : moves) {
-                if (move.from == move2.from && move.to == move2.to
-                        && (!move2.promote || move.promote == move2.promote)) {
-                    move_obj = move2;
-                    move_obj.m = moveToSan(move2, moves);
-                    break;
-                }
+                if (move_from != MoveFrom(move2) || move_to != MoveTo(move2))
+                    continue;
+                auto promote = MovePromote(move2);
+                if (promote && obj.promote != promote)
+                    continue;
+
+                move = move2;
+                san = moveToSan(move, moves);
+                break;
             }
 
         // no suitable move?
-        if (move_obj.from != move_obj.to) {
-            makeMove(move_obj);
-            if (decorate)
-                decorateMove(move_obj);
+        if (move && makeMove(move)) {
+            obj = unpackMove(move);
+            obj.m = decorate? decorateSan(san): san;
+            obj.ply = fen_ply + ply;
         }
-
-        move_obj.ply = fen_ply + ply;
-        return move_obj;
+        return obj;
     }
 
     /**
@@ -1787,46 +1804,50 @@ public:
      */
     MoveText moveSan(std::string text, bool decorate, bool sloppy) {
         auto moves = legalMoves();
-        auto move = sanToMove(text, moves, sloppy);
-        if (move.from != move.to) {
-            makeMove(move);
+        auto obj = sanToObject(text, moves, sloppy);
+        if (obj.from != obj.to) {
+            makeMove(packObject(obj));
             if (decorate)
-                decorateMove(move);
+                obj.m = decorateSan(obj.m);
         }
-        return move;
+        return obj;
     }
 
     /**
      * Convert a move to SAN
-     * https://github.com/jhlywa/chess.js
      * r1bqkbnr/ppp2ppp/2n5/1B1pP3/4P3/8/PPPP2PP/RNBQK1NR b KQkq - 2 4
      * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
      * 4. ... Ne7 is technically the valid SAN
      * @param move
      * @param moves
      */
-    std::string moveToSan(MoveObject &move, std::vector<MoveObject> &moves) {
-        if (move.flag & BITS_CASTLE)
-            return (move.to > move.from)? "O-O": "O-O-O";
+    std::string moveToSan(Move move, std::vector<Move> &moves) {
+        auto move_flag = MoveFlag(move),
+            move_from = MoveFrom(move),
+            move_to = MoveTo(move);
+
+        if (move_flag & BITS_CASTLE)
+            return (move_to > move_from)? "O-O": "O-O-O";
 
         std::string disambiguator = disambiguate(move, moves);
-        auto move_type = TYPE(board[move.from]);
+        auto move_type = TYPE(board[move_from]);
         std::string output;
 
         if (move_type != PAWN)
             output += PIECE_UPPER[move_type] + disambiguator;
 
-        if (move.capture || (move.flag & BITS_EN_PASSANT)) {
+        if (MoveCapture(move) || (move_flag & BITS_EN_PASSANT)) {
             if (move_type == PAWN)
-                output += squareToAn(move.from, false)[0];
+                output += squareToAn(move_from, false)[0];
             output += 'x';
         }
 
-        output += squareToAn(move.to, false);
+        output += squareToAn(move_to, false);
 
-        if (move.promote) {
+        auto promote = MovePromote(move);
+        if (promote) {
             output += '=';
-            output += PIECE_UPPER[move.promote];
+            output += PIECE_UPPER[promote];
         }
         return output;
     }
@@ -1837,15 +1858,11 @@ public:
      * @param decorate add + # decorators
      */
     MoveText moveUci(std::string text, bool decorate) {
-        MoveObject move = {
-            0,
-            0,
-            anToSquare(text.substr(0, 2)),
-            0,
-            PIECES[text[4]],
-            anToSquare(text.substr(2, 2)),
-        };
-        return moveObject(move, decorate);
+        MoveText obj;
+        obj.from = anToSquare(text.substr(0, 2));
+        obj.promote = text[4]? TYPE(PIECES[text[4]]): 0;
+        obj.to = anToSquare(text.substr(2, 2));
+        return moveObject(obj, decorate);
     }
 
     /**
@@ -1864,14 +1881,14 @@ public:
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
                 auto moves = legalMoves();
-                auto move = sanToMove(text, moves, sloppy);
-                if (move.from == move.to)
+                auto obj = sanToObject(text, moves, sloppy);
+                if (obj.from == obj.to)
                     break;
-                makeMove(move);
-                move.fen = createFen();
-                move.ply = fen_ply + ply;
-                move.score = 0;
-                result.emplace_back(move);
+                makeMove(packObject(obj));
+                obj.fen = createFen();
+                obj.ply = fen_ply + ply;
+                obj.score = 0;
+                result.emplace_back(obj);
             }
             prev = i + 1;
         }
@@ -1892,12 +1909,12 @@ public:
 
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
-                auto move = moveUci(text, true);
-                if (move.from != move.to) {
-                    move.fen = createFen();
-                    move.ply = fen_ply + ply;
-                    move.score = 0;
-                    result.emplace_back(move);
+                auto obj = moveUci(text, true);
+                if (obj.from != obj.to) {
+                    obj.fen = createFen();
+                    obj.ply = fen_ply + ply;
+                    obj.score = 0;
+                    result.emplace_back(obj);
                 }
             }
             prev = i + 1;
@@ -1911,27 +1928,26 @@ public:
      * - castle
      * - nb/r/q/r/p
      */
-    void orderMoves(std::vector<MoveObject> &moves) {
+    void orderMoves(std::vector<Move> &moves) {
         std::stable_sort(moves.begin(), moves.end(), compareMoves);
     }
 
     /**
-     * Pack a move to a number
+     * Pack a move object to a number
      * - 0-9 : order
      * - 10-12 : capture
      * - 13-14 : flag
      * - 15-21 : from
      * - 22-24 : promote
      * - 25-31 : to
-     * @param {MoveObject} move
      */
-    Move packMove(MoveObject &move) {
+    Move packObject(MoveText &obj) {
         return 0
-            + (move.capture << 10)
-            + (move.flag << 13)
-            + ((move.from & 127) << 15)
-            + (move.promote << 22)
-            + ((move.to & 127) << 25);
+            + (obj.capture << 10)
+            + (obj.flag << 13)
+            + ((obj.from & 127) << 15)
+            + (obj.promote << 22)
+            + ((obj.to & 127) << 25);
     }
 
     /**
@@ -1967,7 +1983,7 @@ public:
             auto prev = nodes;
             nullSearch(depth - 1);
             auto delta = nodes - prev;
-            lines.push_back(ucify(move) + ":" + std::to_string(delta));
+            lines.push_back(ucifyMove(move) + ":" + std::to_string(delta));
             prev = nodes;
             undoMove();
         }
@@ -2029,20 +2045,20 @@ public:
      * @param moves list of moves to match the san against
      * @param sloppy allow sloppy parser
      */
-    MoveText sanToMove(std::string san, std::vector<MoveObject> &moves, bool sloppy) {
+    MoveText sanToObject(std::string san, std::vector<Move> &moves, bool sloppy) {
         // 1) try exact matching
         auto clean = cleanSan(san);
         for (auto &move : moves)
             if (clean == cleanSan(moveToSan(move, moves))) {
-                MoveText move_obj = move;
-                move_obj.m = san;
-                move_obj.ply = fen_ply + ply + 1;
-                return move_obj;
+                auto obj = unpackMove(move);
+                obj.m = san;
+                obj.ply = fen_ply + ply + 1;
+                return obj;
             }
 
         // 2) try sloppy matching
         if (!sloppy)
-            return NULL_TEXT;
+            return NULL_OBJ;
 
         auto from_file = EMPTY,
             from_rank = EMPTY;
@@ -2052,7 +2068,7 @@ public:
 
         auto i = clean.size() - 1;
         if (i < 2)
-            return NULL_TEXT;
+            return NULL_OBJ;
 
         // analyse backwards
         if (strchr("bnrqBNRQ", clean[i])) {
@@ -2061,10 +2077,10 @@ public:
         }
         // to
         if (clean[i] < '1' || clean[i] > '8')
-            return NULL_TEXT;
+            return NULL_OBJ;
         i --;
         if (clean[i] < 'a' || clean[i] > 'j')
-            return NULL_TEXT;
+            return NULL_OBJ;
         to = clean[i] - 'a' + (('8' - clean[i + 1]) << 4);
         i --;
         //
@@ -2083,18 +2099,21 @@ public:
         type = TYPE(PIECES[clean[i]]);
 
         for (auto &move : moves) {
-            if (to == move.to
-                    && (!type || type == TYPE(board[move.from]))
-                    && (from_file == EMPTY || from_file == File(move.from))
-                    && (from_rank == EMPTY || from_rank == Rank(move.from))
-                    && (!promote || promote == move.promote)) {
-                MoveText move_obj = move;
-                move_obj.m = moveToSan(move, moves);
-                move_obj.ply = fen_ply + ply + 1;
-                return move_obj;
+            auto move_from = MoveFrom(move),
+                move_to = MoveTo(move);
+
+            if (to == move_to
+                    && (!type || type == TYPE(board[move_from]))
+                    && (from_file == EMPTY || from_file == File(move_from))
+                    && (from_rank == EMPTY || from_rank == Rank(move_from))
+                    && (!promote || promote == MovePromote(move))) {
+                auto obj = unpackMove(move);
+                obj.m = moveToSan(move, moves);
+                obj.ply = fen_ply + ply + 1;
+                return obj;
             }
         }
-        return NULL_TEXT;
+        return NULL_OBJ;
     }
 
     /**
@@ -2104,7 +2123,7 @@ public:
      * @param mask moves to search, ex: 'b8c6 b8a6 g8h6'
      * @return updated moves
      */
-    std::vector<MoveText> search(std::vector<MoveObject> &moves, std::string mask) {
+    std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
         hashBoard();
         evaluatePositions();
 
@@ -2121,12 +2140,12 @@ public:
         std::vector<MoveText> masked;
 
         for (auto &move : moves) {
-            auto uci = ucify(move);
+            auto uci = ucifyMove(move);
             if (!empty && mask.find(uci) == std::string::npos)
                 continue;
 
             PV pv;
-            auto score = 0;
+            int score = 0;
             avg_depth = 1;
 
             if (max_depth > 0) {
@@ -2139,21 +2158,23 @@ public:
                 undoMove();
             }
 
-            std::string pv_string = ucifyMove(move);
+            // results
+            std::string pv_string = uci;
             for (auto &item : pv.moves) {
                 pv_string += " ";
                 pv_string += ucifyMove(item);
             }
 
-            MoveText move_obj = move;
-            move_obj.pv = pv_string;
-            move_obj.score = score;
-            masked.emplace_back(move_obj);
+            auto obj = unpackMove(move);
+            obj.m = uci;
+            obj.pv = pv_string;
+            obj.score = score;
+            masked.emplace_back(obj);
 
             average += avg_depth;
             count ++;
             if (debug & 2)
-                std::cout << move.score << ":" << pv_string << "\n";
+                std::cout << score << ":" << pv_string << "\n";
         }
 
         avg_depth = count? average / count: 0;
@@ -2182,22 +2203,26 @@ public:
     }
 
     /**
-     * Get the UCI of a move
-     * @param {MoveObject} move
-     * @returns {string}
+     * Get the UCI of a move number
      */
-    std::string ucify(MoveObject &move) {
-        auto uci = squareToAn(move.from, false) + squareToAn(move.to, false);
-        if (move.promote)
-            uci += PIECE_LOWER[move.promote];
+    std::string ucifyMove(Move move) {
+        auto promote = MovePromote(move);
+        auto uci = squareToAn(MoveFrom(move), false) + squareToAn(MoveTo(move), false);
+        if (promote)
+            uci += PIECE_LOWER[promote];
         return uci;
     }
 
     /**
-     * Get the UCI of a move number
+     * Get the UCI of a move
+     * @param {MoveText} obj
+     * @returns {string}
      */
-    std::string ucifyMove(Move move) {
-        return squareToAn(MoveFrom(move)) + squareToAn(MoveTo(move));
+    std::string ucifyObject(MoveText &obj) {
+        auto uci = squareToAn(obj.from, false) + squareToAn(obj.to, false);
+        if (obj.promote)
+            uci += PIECE_LOWER[obj.promote];
+        return uci;
     }
 
     /**
@@ -2212,14 +2237,17 @@ public:
         memcpy(castling, state.castling, sizeof(castling));
         ep_square = state.ep_square;
         half_moves = state.half_moves;
-        MoveObject &move = state.move;
+        auto move = state.move;
 
         turn ^= 1;
         if (turn == BLACK)
             move_number --;
 
-        auto move_from = move.from,
-            move_to = move.to;
+        auto move_capture = MoveCapture(move);
+        auto move_flag = MoveFlag(move);
+        auto move_from = MoveFrom(move),
+            move_to = MoveTo(move);
+        auto promote = MovePromote(move);
         auto squares = PIECE_SQUARES[turn];
         auto us = turn,
             them = turn ^ 1;
@@ -2230,13 +2258,13 @@ public:
         }
 
         // undo castle
-        if (move.flag & BITS_CASTLE) {
-            uint8_t q = (move_to < move_from)? 1: 0,
-                king = move_from,
-                king_piece = COLORIZE(us, KING),
-                king_to = (Rank(king) << 4) + 6 - (q << 2),
-                rook_piece = COLORIZE(us, ROOK),
-                rook_to = king_to - 1 + (q << 1);
+        if (move_flag & BITS_CASTLE) {
+            auto q = (move_to < move_from)? 1: 0;
+            auto king = move_from;
+            auto king_piece = COLORIZE(us, KING);
+            auto king_to = (Rank(king) << 4) + 6 - (q << 2);
+            auto rook_piece = COLORIZE(us, ROOK);
+            auto rook_to = king_to - 1 + (q << 1);
 
             hashSquare(king_to, king_piece);
             hashSquare(rook_to, rook_piece);
@@ -2251,14 +2279,15 @@ public:
             // score
             positions[us]
                 += squares[KING][king] - squares[KING][king_to]
-                + squares[ROOK][move_to] - squares[ROOK][rook_to];
+                + squares[ROOK][move_to] - squares[ROOK][rook_to]
+                - 30;
         }
         else {
             auto piece = board[move_to];
             hashSquare(move_to, piece);
-            if (move.promote) {
+            if (promote) {
                 piece = COLORIZE(us, PAWN);
-                materials[us] -= PROMOTE_SCORES[move.promote];
+                materials[us] -= PROMOTE_SCORES[promote];
             }
             hashSquare(move_from, piece);
             board[move_to] = 0;
@@ -2268,18 +2297,18 @@ public:
             if (piece_type == KING)
                 kings[us] = move_from;
 
-            if (move.flag & BITS_EN_PASSANT) {
+            if (move_flag & BITS_EN_PASSANT) {
                 auto capture = COLORIZE(them, PAWN);
                 Square target = move_to + 16 - (us << 5);
                 hashSquare(target, capture);
                 board[target] = capture;
                 materials[them] += PIECE_SCORES[PAWN];
             }
-            else if (move.capture) {
-                auto capture = COLORIZE(them, move.capture);
+            else if (move_capture) {
+                auto capture = COLORIZE(them, move_capture);
                 hashSquare(move_to, capture);
                 board[move_to] = capture;
-                materials[them] += PIECE_SCORES[move.capture];
+                materials[them] += PIECE_SCORES[move_capture];
             }
 
             // score
@@ -2291,7 +2320,7 @@ public:
     }
 
     /**
-     * Unpack a move
+     * Unpack a move to an object
      * - 0-9 : order
      * - 10-12 : capture
      * - 13-14 : flag
@@ -2299,12 +2328,13 @@ public:
      * - 22-24 : promote
      * - 25-31 : to
      */
-    MoveObject unpackMove(Move move) {
+    MoveText unpackMove(Move move) {
         return {
             MoveCapture(move),
             MoveFlag(move),
             MoveFrom(move),
             MovePromote(move),
+            static_cast<int>(move & 1023),
             MoveTo(move),
         };
     }
@@ -2360,7 +2390,7 @@ public:
         return nodes;
     }
 
-    uint8_t em_piece(std::string text) {
+    Piece em_piece(std::string text) {
         if (text.size() != 1)
             return 0;
         auto it = PIECES.find(text.at(0));
@@ -2389,14 +2419,6 @@ public:
 
 EMSCRIPTEN_BINDINGS(chess) {
     // MOVE BINDINGS
-    value_object<MoveObject>("MoveObject")
-        .field("capture", &MoveObject::capture)
-        .field("flag", &MoveObject::flag)
-        .field("from", &MoveObject::from)
-        .field("promote", &MoveObject::promote)
-        .field("to", &MoveObject::to)
-        ;
-
     value_object<MoveText>("MoveText")
         .field("capture", &MoveText::capture)
         .field("flag", &MoveText::flag)
@@ -2427,7 +2449,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("clear", &Chess::clear)
         .function("configure", &Chess::configure)
         .function("currentFen", &Chess::em_fen)
-        .function("decorate", &Chess::decorateMove)
+        .function("decorateSan", &Chess::decorateSan)
         .function("defenses", &Chess::em_defenses)
         .function("evaluate", &Chess::evaluate)
         .function("fen", &Chess::createFen)
@@ -2447,26 +2469,27 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("multiUci", &Chess::multiUci)
         .function("nodes", &Chess::em_nodes)
         .function("order", &Chess::orderMoves)
-        .function("packMove", &Chess::packMove)
+        .function("packObject", &Chess::packObject)
         .function("params", &Chess::params)
         .function("perft", &Chess::perft)
         .function("piece", &Chess::em_piece)
         .function("print", &Chess::print)
         .function("put", &Chess::put)
         .function("reset", &Chess::reset)
-        .function("sanToMove", &Chess::sanToMove)
+        .function("sanToObject", &Chess::sanToObject)
         .function("search", &Chess::search)
         .function("selDepth", &Chess::em_selDepth)
         .function("squareToAn", &Chess::squareToAn)
         .function("trace", &Chess::em_trace)
         .function("turn", &Chess::em_turn)
-        .function("ucify", &Chess::ucify)
+        .function("ucifyMove", &Chess::ucifyMove)
+        .function("ucifyObject", &Chess::ucifyObject)
         .function("undo", &Chess::undoMove)
         .function("unpackMove", &Chess::unpackMove)
         .function("version", &Chess::em_version)
         ;
 
     register_vector<int>("vector<int>");
-    register_vector<MoveObject>("vector<MoveObject>");
+    register_vector<Move>("vector<Move>");
     register_vector<MoveText>("vector<MoveText>");
 }

@@ -70,7 +70,7 @@ let BISHOP = 3,
     ROOK = 4,
     SCORE_INFINITY = 31001,
     SCORE_MATE = 31000,
-    SCORE_NONE = 31002,
+    // SCORE_NONE = 31002,
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
     TT_SIZE = 4096,
@@ -142,20 +142,20 @@ let MOBILITY_LIMITS = I8([
     // move ordering
     PIECE_CAPTURES = I32([
         0,
-        20100,      // P
-        20300,      // N
-        20300,      // B
-        20500,      // R
-        20900,      // Q
-        32800,      // K
+        80,         // P
+        200,        // N
+        200,        // B
+        360,        // R
+        720,        // Q
+        640,        // K
         0,
         0,
-        20100,      // p
-        20300,      // n
-        20300,      // b
-        20500,      // r
-        20900,      // q
-        32800,      // k
+        80,         // p
+        200,        // n
+        200,        // b
+        360,        // r
+        720,        // q
+        640,        // k
         0,
     ]),
     // for move generation
@@ -273,7 +273,7 @@ let PIECE_SQUARES = [
         0,
         // pawn
         I32([
-            90, 90, 90, 90, 90, 90, 90, 90, 0, 0, 0, 0, 0, 0, 0, 0,
+             0,  0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0,
             50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0,
             25, 25, 25, 25, 25, 25, 25, 25, 0, 0, 0, 0, 0, 0, 0, 0,
             12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -352,19 +352,6 @@ let PIECE_SQUARES = [
     ],
 ];
 
-let NULL_OBJ = {
-    capture: 0,
-    fen: '',
-    flag: 0,
-    from: 0,
-    m: '',
-    ply: -2,
-    promote: 0,
-    pv: '',
-    score: 0,
-    to: 0,
-};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -382,7 +369,21 @@ let NULL_OBJ = {
  * @property {number} to
  */
 
- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// null object
+let NULL_OBJ = {
+    capture: 0,
+    fen: '',
+    flag: 0,
+    from: 0,
+    m: '',
+    ply: -2,
+    promote: 0,
+    pv: '',
+    score: 0,
+    to: 0,
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * 32bit pseudo random generator
@@ -475,16 +476,17 @@ var Chess = function(fen_) {
      */
     function addMove(moves, piece, from, to, flag, promote, value) {
         let capture = (flag & BITS_EN_PASSANT)? PAWN: (flag & BITS_CASTLE? NONE: TYPE(value)),
+            score = (capture | promote)? Max(PIECE_CAPTURES[capture], PIECE_CAPTURES[promote]) - (PIECE_CAPTURES[piece] >> 3) + 50: 0,
             squares = PIECE_SQUARES[COLOR(piece)][TYPE(piece)];
 
-        moves.push(
-            128 + squares[to] - squares[from] + (flag & BITS_CASTLE) * 30
+        let move =
+            100 + squares[to] - squares[from] + (flag & BITS_CASTLE) * 30 + score
             + (capture << 10)
             + (flag << 13)
             + ((from & 127) << 15)
             + (promote << 22)
-            + ((to & 127) << 25)
-        );
+            + ((to & 127) << 25);
+        moves.push(move >>> 0);
 
         if (!promote) {
             // TODO:
@@ -613,21 +615,6 @@ var Chess = function(fen_) {
      * @returns {number} -1 if a should be before b
      */
     function compareMoves(a, b) {
-        let acapture = MoveCapture(a),
-            afrom = MoveFrom(a),
-            apromote = MovePromote(a),
-            bcapture = MoveCapture(b),
-            bfrom = MoveFrom(b),
-            bpromote = MovePromote(b);
-
-        // capture a big piece with a small one = good
-        if (acapture | bcapture | apromote | bpromote) {
-            let apiece = board[afrom],
-                bpiece = board[bfrom];
-            return ((PIECE_CAPTURES[bcapture] - PIECE_CAPTURES[acapture] + PROMOTE_SCORES[bpromote] - PROMOTE_SCORES[apromote]) << 3)
-                + PIECE_SCORES[apiece] - PIECE_SCORES[bpiece];
-        }
-
         return (b & 1023) - (a & 1023);
     }
 
@@ -640,9 +627,9 @@ var Chess = function(fen_) {
     function disambiguate(move, moves) {
         let ambiguities = 0,
             from = MoveFrom(move),
+            to = MoveTo(move),
             same_file = 0,
             same_rank = 0,
-            to = MoveTo(move),
             type = board[from];
 
         for (let move2 of moves) {
@@ -1711,7 +1698,7 @@ var Chess = function(fen_) {
      */
     function moveObject(obj, decorate) {
         let flag = 0,
-            move = null,
+            move = 0,
             move_from = obj.from,
             move_to = obj.to,
             moves = legalMoves(),
@@ -1831,12 +1818,12 @@ var Chess = function(fen_) {
      * @returns {Object}
      */
     function moveUci(text, decorate) {
-        let move = {
+        let obj = {
             from: anToSquare(text.substr(0, 2)),
             promote: text[4]? TYPE(PIECES[text[4]]): 0,
             to: anToSquare(text.substr(2, 2)),
         };
-        return moveObject(move, decorate);
+        return moveObject(obj, decorate);
     }
 
     /**
@@ -1910,12 +1897,13 @@ var Chess = function(fen_) {
      * @param {MoveText} obj
      */
     function packObject(obj) {
-        return 0
+        let value = 0
             + (obj.capture << 10)
             + (obj.flag << 13)
             + ((obj.from & 127) << 15)
             + (obj.promote << 22)
             + ((obj.to & 127) << 25);
+        return value >>> 0;
     }
 
     /**
@@ -2172,8 +2160,11 @@ var Chess = function(fen_) {
      * @returns {string}
      */
     function ucifyMove(move) {
-        let promote = MovePromote(move);
-        return `${squareToAn(MoveFrom(move))}${squareToAn(MoveTo(move))}${promote? PIECE_LOWER[promote]: ''}`;
+        let promote = MovePromote(move),
+            uci = squareToAn(MoveFrom(move), false) + squareToAn(MoveTo(move), false);
+        if (promote)
+            uci += PIECE_LOWER[promote];
+        return uci;
     }
 
     /**
