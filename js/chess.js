@@ -49,7 +49,7 @@ let BISHOP = 3,
     COLORIZE = (color, type) => (type + (color << 3)),
     DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     EMPTY = 255,
-    File = square => square & 15,
+    Filer = square => square & 15,
     KING = 6,
     KNIGHT = 2,
     MAX_DEPTH = 64,
@@ -647,7 +647,7 @@ var Chess = function(fen_) {
 
                 if (Rank(from) == Rank(ambig_from))
                     same_rank ++;
-                if (File(from) == File(ambig_from))
+                if (Filer(from) == Filer(ambig_from))
                     same_file ++;
             }
         }
@@ -683,7 +683,7 @@ var Chess = function(fen_) {
             let bsquares = PIECE_SQUARES[1][piece],
                 wsquares = PIECE_SQUARES[0][piece];
             for (let i = SQUARE_A8; i <= SQUARE_H1; i ++)
-                bsquares[((7 - Rank(i)) << 4) + File(i)] = wsquares[i];
+                bsquares[((7 - Rank(i)) << 4) + Filer(i)] = wsquares[i];
         }
     }
 
@@ -1051,7 +1051,7 @@ var Chess = function(fen_) {
         if (frc) {
             for (let square of castling)
                 if (square != EMPTY) {
-                    let file = File(square),
+                    let file = Filer(square),
                         rank = Rank(square);
                     if (rank > 0)
                         castle += 'ABCDEFGHIJ'[file];
@@ -1331,8 +1331,8 @@ var Chess = function(fen_) {
             if (!materials[WHITE]) {
                 let king = kings[WHITE],
                     king2 = kings[BLACK];
-                score -= (Abs(File(king) * 2 - 7) + Abs(Rank(king) * 2 - 7)) * 15;
-                score += (Abs(File(king) - File(king2)) + Abs(Rank(king) - Rank(king2))) * 10;
+                score -= (Abs(Filer(king) * 2 - 7) + Abs(Rank(king) * 2 - 7)) * 15;
+                score += (Abs(Filer(king) - Filer(king2)) + Abs(Rank(king) - Rank(king2))) * 10;
                 score += mobilities[6] * 15;
             }
             else
@@ -1342,8 +1342,8 @@ var Chess = function(fen_) {
             if (!materials[BLACK]) {
                 let king = kings[BLACK],
                     king2 = kings[WHITE];
-                score -= (Abs(File(king) * 2 - 7) + Abs(Rank(king) * 2 - 7)) * 15;
-                score += (Abs(File(king) - File(king2)) + Abs(Rank(king) - Rank(king2))) * 10;
+                score -= (Abs(Filer(king) * 2 - 7) + Abs(Rank(king) * 2 - 7)) * 15;
+                score += (Abs(Filer(king) - Filer(king2)) + Abs(Rank(king) - Rank(king2))) * 10;
                 score += mobilities[6] * 15;
             }
             else
@@ -1532,17 +1532,17 @@ var Chess = function(fen_) {
                     let file_letters = color? 'abcdefghij': 'ABCDEFGHIJ',
                         king = kings[color];
 
-                    for (let i = king + 1; File(i) <= 7; i ++)
+                    for (let i = king + 1; Filer(i) <= 7; i ++)
                         if (TYPE(board[i]) == ROOK) {
                             castling[color << 1] = i;
-                            castle += file_letters[File(i)];
+                            castle += file_letters[Filer(i)];
                             break;
                         }
 
-                    for (let i = king - 1; File(i) >= 0; i --)
+                    for (let i = king - 1; Filer(i) >= 0; i --)
                         if (TYPE(board[i]) == ROOK) {
                             castling[(color << 1) + 1] = i;
-                            castle += file_letters[File(i)];
+                            castle += file_letters[Filer(i)];
                             break;
                         }
                 }
@@ -1721,7 +1721,7 @@ var Chess = function(fen_) {
 
             // regular notation => change .to to rook position
             if (!piece) {
-                if (Abs(File(move_from) - File(move_to)) == 2) {
+                if (Abs(Filer(move_from) - Filer(move_to)) == 2) {
                     if (move_to > move_from)
                         move_to ++;
                     else
@@ -2067,7 +2067,7 @@ var Chess = function(fen_) {
 
             if (to == move_to
                     && (!type || type == TYPE(board[move_from]))
-                    && (from_file == EMPTY || from_file == File(move_from))
+                    && (from_file == EMPTY || from_file == Filer(move_from))
                     && (from_rank == EMPTY || from_rank == Rank(move_from))
                     && (!promote || promote == MovePromote(move))) {
                 let obj = unpackMove(move);
@@ -2155,7 +2155,7 @@ var Chess = function(fen_) {
      * @returns {string} a1
      */
     function squareToAn(square, check) {
-        let file = File(square),
+        let file = Filer(square),
             rank = Rank(square);
         if (check && (file < 0 || file > 7 || rank < 0 || rank > 7))
             return "";

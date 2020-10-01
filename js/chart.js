@@ -272,9 +272,6 @@ var colorString = {
     hexString: hexString,
     rgbString: rgbString,
     rgbaString: rgbaString,
-    percentString: percentString,
-    percentaString: percentaString,
-    keyword: keyword
 };
 
 function getRgba(string) {
@@ -386,28 +383,6 @@ function rgbaString(rgba, alpha) {
             + ", " + alpha + ")";
 }
 
-function percentString(rgba, alpha) {
-    if (alpha < 1 || (rgba[3] && rgba[3] < 1)) {
-        return percentaString(rgba, alpha);
-    }
-    var r = Round(rgba[0]/255 * 100),
-        g = Round(rgba[1]/255 * 100),
-        b = Round(rgba[2]/255 * 100);
-
-    return "rgb(" + r + "%, " + g + "%, " + b + "%)";
-}
-
-function percentaString(rgba, alpha) {
-    var r = Round(rgba[0]/255 * 100),
-        g = Round(rgba[1]/255 * 100),
-        b = Round(rgba[2]/255 * 100);
-    return "rgba(" + r + "%, " + g + "%, " + b + "%, " + (alpha || rgba[3] || 1) + ")";
-}
-
-function keyword(rgb) {
-    return reverseNames[rgb.slice(0, 3)];
-}
-
 function hexDouble(num) {
     var str = num.toString(16).toUpperCase();
     return (str.length < 2) ? "0" + str : str;
@@ -454,19 +429,8 @@ var Color = function (obj) {
 };
 
 Color.prototype = {
-    isValid: function () {
-        return this.valid;
-    },
     rgb: function () {
         return this.setSpace('rgb', arguments);
-    },
-
-    rgbArray: function () {
-        return this.values.rgb;
-    },
-    rgbaArray: function () {
-        var values = this.values;
-        return values.rgb.concat([values.alpha]);
     },
     alpha: function (val) {
         if (val === undefined) {
@@ -475,7 +439,6 @@ Color.prototype = {
         this.setValues('alpha', val);
         return this;
     },
-
     red: function (val) {
         return this.setChannel('rgb', 0, val);
     },
@@ -485,7 +448,6 @@ Color.prototype = {
     blue: function (val) {
         return this.setChannel('rgb', 2, val);
     },
-
     hexString: function () {
         return colorString.hexString(this.values.rgb);
     },
@@ -494,87 +456,6 @@ Color.prototype = {
     },
     rgbaString: function () {
         return colorString.rgbaString(this.values.rgb, this.values.alpha);
-    },
-    percentString: function () {
-        return colorString.percentString(this.values.rgb, this.values.alpha);
-    },
-    keyword: function () {
-        return colorString.keyword(this.values.rgb, this.values.alpha);
-    },
-
-    rgbNumber: function () {
-        var rgb = this.values.rgb;
-        return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-    },
-
-    luminosity: function () {
-        // http://www.w3.org/TR/WCAG20/#relativeluminancedef
-        var rgb = this.values.rgb;
-        var lum = [];
-        for (var i = 0; i < rgb.length; i++) {
-            var chan = rgb[i] / 255;
-            lum[i] = (chan <= 0.03928) ? chan / 12.92 : Pow(((chan + 0.055) / 1.055), 2.4);
-        }
-        return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-    },
-
-    contrast: function (color2) {
-        // http://www.w3.org/TR/WCAG20/#contrast-ratiodef
-        var lum1 = this.luminosity();
-        var lum2 = color2.luminosity();
-        if (lum1 > lum2) {
-            return (lum1 + 0.05) / (lum2 + 0.05);
-        }
-        return (lum2 + 0.05) / (lum1 + 0.05);
-    },
-
-    level: function (color2) {
-        var contrastRatio = this.contrast(color2);
-        if (contrastRatio >= 7.1) {
-            return 'AAA';
-        }
-
-        return (contrastRatio >= 4.5) ? 'AA' : '';
-    },
-
-    dark: function () {
-        // YIQ equation from http://24ways.org/2010/calculating-color-contrast
-        var rgb = this.values.rgb;
-        var yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-        return yiq < 128;
-    },
-
-    light: function () {
-        return !this.dark();
-    },
-
-    negate: function () {
-        var rgb = [];
-        for (var i = 0; i < 3; i++) {
-            rgb[i] = 255 - this.values.rgb[i];
-        }
-        this.setValues('rgb', rgb);
-        return this;
-    },
-
-    greyscale: function () {
-        var rgb = this.values.rgb;
-        // http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
-        var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
-        this.setValues('rgb', [val, val, val]);
-        return this;
-    },
-
-    clearer: function (ratio) {
-        var alpha = this.values.alpha;
-        this.setValues('alpha', alpha - (alpha * ratio));
-        return this;
-    },
-
-    opaquer: function (ratio) {
-        var alpha = this.values.alpha;
-        this.setValues('alpha', alpha + (alpha * ratio));
-        return this;
     },
 
     /**
@@ -2879,7 +2760,8 @@ function parseVisibleItems(chart, handler) {
         metadata = metasets[i].data;
         for (j = 0, jlen = metadata.length; j < jlen; ++j) {
             element = metadata[j];
-            if (!element._view.skip) {
+            let view = element._view;
+            if (view && !view.skip) {
                 handler(element);
             }
         }
