@@ -308,26 +308,31 @@ function invert_eval(eval_) {
  * Mark a ply on a chart
  * @param {string} name
  * @param {number} ply
+ * @param {number} max_ply
  */
-function mark_ply_chart(name, ply) {
+function mark_ply_chart(name, ply, max_ply) {
     if (!Visible(Id(`table-${name}`)))
         return;
 
     let data, offset,
         chart = charts[name],
-        invert_wb = (name == 'mobil') * 1,
-        dataset = chart.data.datasets[(ply + invert_wb) & 1].data,
-        first = dataset[ply & 1],
-        markers = A(`#table-${name} .cmarker`),
-        rect = chart.canvas.getBoundingClientRect();
-    if (first) {
-        offset = first.ply;
-        data = dataset[ply - offset + (offset & 1)];
+        markers = A(`#table-${name} .cmarker`);
+
+    if (ply < max_ply) {
+        let invert_wb = (name == 'mobil') * 1,
+            dataset = chart.data.datasets[(ply + invert_wb) & 1].data,
+            first = dataset[ply & 1];
+        if (first) {
+            offset = first.ply;
+            data = dataset[ply - offset + (offset & 1)];
+        }
     }
 
     if (data) {
-        let x = chart.scales['x-axis-0'].getPixelForValue(data.x),
-            y = chart.scales['y-axis-0'].getPixelForValue(data.y);
+        let rect = chart.canvas.getBoundingClientRect(),
+            scales = chart.scales,
+            x = scales['x-axis-0'].getPixelForValue(data.x),
+            y = scales['y-axis-0'].getPixelForValue(data.y);
         Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);
         Style(markers[1], `height:1px;left:0;top:${y - 0.5}px;width:${rect.width}px`);
     }
@@ -338,10 +343,11 @@ function mark_ply_chart(name, ply) {
 /**
  * Mark a ply on all charts
  * @param {number} ply
+ * @param {number} max_ply
  */
-function mark_ply_charts(ply) {
+function mark_ply_charts(ply, max_ply) {
     Keys(charts).forEach(key => {
-        mark_ply_chart(key, ply);
+        mark_ply_chart(key, ply, max_ply);
     });
 }
 
@@ -646,6 +652,13 @@ function update_live_chart(moves, id) {
 }
 
 /**
+ * Update the marker color+opacity
+ */
+function update_markers() {
+    Style('.cmarker', `background:${Y.graph_marker_color};opacity:${Y.graph_marker_opacity}`);
+}
+
+/**
  * Update a player chart using new moves
  * - designed for white & black, not live
  * @param {string} name
@@ -775,6 +788,7 @@ function init_graph(callback) {
             update_live_chart(moves, id);
         queued_charts = [];
 
+        update_markers();
         callback();
     }
 

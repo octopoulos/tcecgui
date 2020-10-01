@@ -23,7 +23,7 @@ Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts
 resize_text, Resource, restore_history, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
-touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
+touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart, update_markers,
 update_player_charts, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window,
 XBoard, Y
 */
@@ -4357,6 +4357,10 @@ function change_setting_game(name, value) {
     case 'graph_eval_mode':
         redraw_eval_charts(sboard);
         break;
+    case 'graph_marker_color':
+    case 'graph_marker_opacity':
+        update_markers();
+        break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
         break;
@@ -4555,7 +4559,7 @@ function handle_board_events(board, type, value) {
             // update main board stats
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
-            mark_ply_charts(cur_ply);
+            mark_ply_charts(cur_ply, board.moves.length - 1);
         }
         if (name == section) {
             // show PV's

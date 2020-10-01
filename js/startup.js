@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-09-30
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1939,6 +1939,8 @@ function prepare_settings() {
             graph_eval_clamp: option_number(10, 1, 100),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
+            graph_marker_color: [{type: 'color'}, '#ffac28'],
+            graph_marker_opacity: option_number(0.5, 0, 1, 0.01),
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(1.2, 0, 10, 0.1),
             graph_tension: option_number(0.1, 0, 0.5, 0.01),
