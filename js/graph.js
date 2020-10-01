@@ -738,7 +738,7 @@ function update_player_chart(name, moves) {
             dico.y = move.tb;
             break;
         case 'time':
-            dico.y = Round(move.mt / 1000);
+            dico.y = move.mt / 1000;
             break;
         }
 
