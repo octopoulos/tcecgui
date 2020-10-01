@@ -96,9 +96,9 @@ function get_pgn_stats(data, origin) {
         if (!move || isNaN(move.n) || move.n < 2 || isNaN(move.s))
             return;
         let time = move.n / move.s;
-        sum_moves[ply % 2] += move.n * 1.0;
-        sum_times[ply % 2] += time;
-        all_values[ply % 2].push([move.s, move.n, time]);
+        sum_moves[ply & 1] += move.n * 1.0;
+        sum_times[ply & 1] += time;
+        all_values[ply & 1].push([move.s, move.n, time]);
     });
     average = [
         sum_times[0]? Floor(sum_moves[0] / sum_times[0]): 0,

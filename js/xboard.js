@@ -310,7 +310,7 @@ class XBoard {
             }
 
             let move_num = 1 + ply / 2;
-            if (ply % 2 == 0) {
+            if (!(ply & 1)) {
                 if (is_ply)
                     lines.push(`<i class="turn">${move_num}.</i>`);
                 else if (i < 0) {
@@ -767,7 +767,7 @@ class XBoard {
         // 3) arrow conflicts
         // - arrows have the same path => hide the other + modify the color
         let shead,
-            dual_id = id + 1 - (id % 2) * 2,
+            dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
             scolor = Y[`arrow_color_${id}`];
 
@@ -956,7 +956,7 @@ class XBoard {
         let checked = chess.checked(chess.turn()),
             moves = this.chess_moves(),
             rule50 = fen.split(' ')[4] * 1,
-            sign = ((ply + 2) % 2)? -1: 1,
+            sign = (ply & 1)? -1: 1,
             score = sign * (moves.length + (checked? 0: 0.5));
 
         if (!rule50 || Abs(score) < Abs(this.goal[0]))
@@ -1268,7 +1268,7 @@ class XBoard {
                 that.play(false, false, 'event_hook');
                 break;
             case 'rotate':
-                that.rotate = (that.rotate + 1) % 2;
+                that.rotate = (that.rotate + 1) & 1;
                 that.instant();
                 that.render(7);
                 callback(that, 'control', name);
@@ -1510,7 +1510,7 @@ class XBoard {
         else if (play_as == 'Human')
             return true;
         else
-            return (play_as == WB_TITLE[(1 + ply) % 2]);
+            return (play_as == WB_TITLE[(1 + ply) & 1]);
     }
 
     /**
@@ -1608,7 +1608,7 @@ class XBoard {
      * Is it the AI turn to play?
      */
     is_ai() {
-        return (this.players[(1 + this.ply) % 2].name == AI);
+        return (this.players[(1 + this.ply) & 1].name == AI);
     }
 
     /**
@@ -1623,7 +1623,7 @@ class XBoard {
         let moves = this.chess_moves();
         if (!moves.length) {
             let is_mate = move.m.slice(-1) == '#';
-            LS(is_mate? `${WB_TITLE[ply % 2]} mates.`: 'Stalemate.');
+            LS(is_mate? `${WB_TITLE[ply & 1]} mates.`: 'Stalemate.');
             return true;
         }
 
@@ -1727,7 +1727,7 @@ class XBoard {
 
         let now = Now(true),
             ply = get_move_ply(move),
-            id = (2 + ply) % 2,
+            id = ply & 1,
             player = this.players[id];
         move.id = id;
 
@@ -1781,7 +1781,7 @@ class XBoard {
 
             if (this.hook)
                 this.hook(this, 'ply', move);
-            this.clock(this.name, (ply + 3) % 2, finished);
+            this.clock(this.name, (ply + 1) & 1, finished);
         }
 
         // 4) next player
@@ -1943,7 +1943,7 @@ class XBoard {
 
                 for (let j = 0; j < num_col; j ++) {
                     let col_name = COLUMN_LETTERS[ROTATE(rotate, j)],
-                        even = (i + j) % 2,
+                        even = (i + j) & 1,
                         note_x = '',
                         note_y = '',
                         square = (i << 4) + j,
@@ -2077,7 +2077,7 @@ class XBoard {
             for (let j = 0; j < num_col; j ++) {
                 let char = grid[off + j];
                 if (!char)
-                    char = ((i + j) % 2)? '·': ' ';
+                    char = ((i + j) & 1)? '·': ' ';
                 vector.push(char);
             }
 
@@ -2195,7 +2195,7 @@ class XBoard {
      * @param {number=} offset player offset
      */
     set_ai(ai, offset=0) {
-        this.players[(1 + this.ply + offset) % 2].name = ai? AI: HUMAN;
+        this.players[(1 + this.ply + offset) & 1].name = ai? AI: HUMAN;
     }
 
     /**
@@ -2273,7 +2273,7 @@ class XBoard {
     set_marker(ply) {
         [this.xmoves, this.pv_node].forEach((parent, id) => {
             let child = _(`[data-i="${ply}"]`, parent);
-            if (child && (ply % 2 == 0))
+            if (child && !(ply & 1))
                 child = child.previousElementSibling;
             if (child)
                 parent.insertBefore(this.markers[id], child);
@@ -2424,7 +2424,7 @@ class XBoard {
 
         let moves, num_move,
             chess = this.chess,
-            color = (1 + this.ply) % 2,
+            color = (1 + this.ply) & 1,
             fen = this.fen,
             folds = [];
 
@@ -2746,7 +2746,7 @@ class XBoard {
         let best_score = best.score,
             is_iterative = (this.max_time > 0 && Abs(best_score) < 200),
             ply = get_fen_ply(fen),
-            color = (1 + ply) % 2,
+            color = (1 + ply) & 1,
             player = this.players[color];
 
         if (color)

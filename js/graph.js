@@ -4,9 +4,9 @@
 //
 /*
 globals
-_, Abs, Assign, C, calculate_feature_q, Chart, Clamp,
+_, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
 DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, IsObject, Keys,
-load_library, LS, Min, Pad, Round, SetDefault, Sign, translate_expression, Visible, window, xboards, Y
+load_library, LS, Min, Pad, Round, S, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -204,28 +204,28 @@ function create_chart_data() {
 function create_charts()
 {
     // 1) create all charts
-    new_chart('depth', true, [1]);
-    new_chart('eval', true, [1], {beginAtZero: true}, false, (item, data) => {
+    new_chart('depth', true, FormatAxis, true);
+    new_chart('eval', true, null, false, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
-    new_chart('mobil', true, [1]);
-    new_chart('node', false, [1], FormatAxis, true, (item, data) => {
+    new_chart('mobil', true, FormatAxis, true);
+    new_chart('node', false, FormatAxis, true, (item, data) => {
         let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
-    new_chart('speed', false, [1], FormatAxis, true, (item, data) => {
+    new_chart('speed', false, FormatAxis, true, (item, data) => {
         let point = get_tooltip_data(item, data),
             nodes = FormatUnit(point.nodes),
             speed = FormatUnit(point.y);
         return `${speed}nps (${nodes} nodes)`;
     });
-    new_chart('tb', false, [1], FormatAxis, true, (item, data) => {
+    new_chart('tb', false, FormatAxis, true, (item, data) => {
         let hits = FormatUnit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', false, [1], undefined, false, (item, data) => {
+    new_chart('time', false, FormatAxis, true, (item, data) => {
         let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
         return `${min}:${Pad(sec)}`;
     }, {backgroundColor: 'rgb(10, 10, 10)'});
@@ -245,6 +245,13 @@ function create_charts()
             if (dico)
                 xboards[Y.s].set_ply(dico.ply, {manual: true});
         });
+
+        // add markers
+        let node = _(`#table-${name} > .chart`),
+            markers = A('cmarker', node);
+        if (!markers.length)
+            for (let i = 0; i < 2; i ++)
+                node.appendChild(CreateNode('div', null, {class: 'cmarker'}));
     });
 
     update_chart_options(null, 3);
@@ -298,24 +305,67 @@ function invert_eval(eval_) {
 }
 
 /**
+ * Mark a ply on a chart
+ * @param {string} name
+ * @param {number} ply
+ */
+function mark_ply_chart(name, ply) {
+    if (!Visible(Id(`table-${name}`)))
+        return;
+
+    let data, offset,
+        chart = charts[name],
+        invert_wb = (name == 'mobil') * 1,
+        dataset = chart.data.datasets[(ply + invert_wb) & 1].data,
+        first = dataset[ply & 1],
+        markers = A(`#table-${name} .cmarker`),
+        rect = chart.canvas.getBoundingClientRect();
+    if (first) {
+        offset = first.ply;
+        data = dataset[ply - offset + (offset & 1)];
+    }
+
+    if (data) {
+        let x = chart.scales['x-axis-0'].getPixelForValue(data.x),
+            y = chart.scales['y-axis-0'].getPixelForValue(data.y);
+        Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);
+        Style(markers[1], `height:1px;left:0;top:${y - 0.5}px;width:${rect.width}px`);
+    }
+    for (let marker of markers)
+        S(marker, data);
+}
+
+/**
+ * Mark a ply on all charts
+ * @param {number} ply
+ */
+function mark_ply_charts(ply) {
+    Keys(charts).forEach(key => {
+        mark_ply_chart(key, ply);
+    });
+}
+
+/**
  * Create a new chart
  * - an element with id="chart-{name}" must exist
  * @param {string} name
  * @param {boolean} has_legend
- * @param {number[]} y_axes [1] or [1, 2]
  * @param {function|Object=} y_ticks FormatUnit, {...}
  * @param {boolean=} logaritmic
  * @param {function=} tooltip_callback
  * @param {Object=} dico
  */
-function new_chart(name, has_legend, y_axes, y_ticks, logaritmic, tooltip_callback, dico) {
-    if (y_ticks && !IsObject(y_ticks))
-        y_ticks = {callback: y_ticks};
+function new_chart(name, has_legend, y_ticks, logaritmic, tooltip_callback, dico) {
+    let axis_dico = {
+        beginAtZero: true,
+    };
+    if (y_ticks)
+        axis_dico.callback = y_ticks;
 
     let options = Assign({}, CHART_OPTIONS, {
         scales: {
             xAxes: [CHART_X_AXES],
-            yAxes: y_axes.map(id => new_y_axis(id, y_ticks, logaritmic? {type: 'logarithmic'}: null)),
+            yAxes: [0].map(id => new_y_axis(id, axis_dico, logaritmic? {type: 'logarithmic'}: null)),
         },
     });
 
@@ -368,7 +418,7 @@ function new_dataset(label, color, yaxis, dico) {
 
 /**
  * Create a Y axis
- * @param {number} id 1 for left, 2 for right
+ * @param {number} id 0 for left, 1 for right
  * @param {Object=} y_ticks
  * @param {Object=} dico
  * @returns {Object}
@@ -377,10 +427,10 @@ function new_y_axis(id, y_ticks, dico) {
     let y_axis = {
         display: true,
         id: `y-axis-${id}`,
-        position: (id == 1)? 'left': 'right',
+        position: (id == 0)? 'left': 'right',
     };
 
-    if (id == 2)
+    if (id == 1)
         y_axis.gridLines = {drawOnChartArea: false};
 
     if (y_ticks)
@@ -575,7 +625,7 @@ function update_live_chart(moves, id) {
         let num2 = num - first_num;
         labels[num2] = num / 2 + 1;
 
-        if (move.invert && ply % 2 == 0) {
+        if (move.invert && !(ply & 1)) {
             eval_ = invert_eval(eval_);
             if (DEV.eval2)
                 LS(`inverting black @${ply}: ${move.eval} => ${eval_}`);
@@ -640,13 +690,13 @@ function update_player_chart(name, moves) {
                 x: num / 2 + 1,     // move number
                 ply: ply,           // used for jumping to the position
             },
-            id = (ply + invert_wb) % 2;
+            id = (ply + invert_wb) & 1;
         if (id < 0)
             continue;
 
         switch (name) {
         case 'depth':
-            datasets[ply % 2 + 2].data[num2] = Assign({y: move.sd}, dico);
+            datasets[ply & 1].data[num2] = Assign({y: move.sd}, dico);
             dico.y = move.d;
             break;
         case 'eval':

@@ -822,7 +822,7 @@ beforeEach(() => {
                 expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
 
             if (IsString(answer))
-                moves = moves.map((item, id) => `${id % 2 == 0? (1 + id / 2 + '. '): ''}${item.m}`).join(' ');
+                moves = moves.map((item, id) => `${!(id & 1)? (1 + id / 2 + '. '): ''}${item.m}`).join(' ');
             expect(moves).toEqual(answer);
         }
         expect(chess.fen()).toEqual(new_fen);
