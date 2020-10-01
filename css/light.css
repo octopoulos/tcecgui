@@ -1318,7 +1318,8 @@ grid {
     z-index: 9;
 }
 .cmarker {
-    background: rgba(255, 172, 40, 0.5);
+    background: #ffac28;
+    opacity: 0.5;
     position: absolute;
     transition: all 0.1s;
     z-index: 1;
