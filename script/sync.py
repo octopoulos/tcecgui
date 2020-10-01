@@ -44,7 +44,7 @@ JS_FILES = {
         'libs/camera-controls',
     ],
     'all': [
-        'libs/socket.io',
+        'libs/socket.io.dev',
         ':common',
         ':chess',
         ':engine',
@@ -300,7 +300,9 @@ class Sync:
                 print('J', end='')
                 continue
 
-            datas = []
+            datas = [
+                "'use strict';",
+            ]
             for js_name in js_names:
                 print(js_name)
                 script_data = read_text_safe(js_name)
@@ -309,7 +311,8 @@ class Sync:
 
                 # process the script.js
                 if js_name.endswith('script.js'):
-                    script_data = re.sub('@import {(.*?)}', self.import_file, script_data);
+                    script_data = re.sub(r'["\']use strict["\'];?', '', script_data)
+                    script_data = re.sub('@import {(.*?)}', self.import_file, script_data)
                     script_data = re.sub('// BEGIN.*?// END', '', script_data, flags=re.S)
 
                     if not self.debug:

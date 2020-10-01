@@ -4,7 +4,7 @@
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
 define, document, Floor, IsArray, IsObject, IsString, Keys,
-Log10, LS, Max, Min, module, PI, Pow, require, Round,
+Log10, Max, Min, module, PI, Pow, require, Round,
 Sign, Sin, Sqrt, Undefined, window
 */
 'use strict';
@@ -7388,10 +7388,6 @@ var Scale = Element.extend({
         me.afterFit();
 
         // Auto-skip
-        if (me.type == 'logarithmic' && me.chart.canvas.id == 'chart-node') {
-            // LS(me);
-            // LS(ticks);
-        }
         me._ticksToDraw = tickOpts.display && (tickOpts.autoSkip || tickOpts.source === 'auto') ? me._autoSkip(ticks) : ticks;
 
         if (samplingEnabled) {

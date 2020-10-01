@@ -390,6 +390,7 @@ let NULL_OBJ = {
  * 32bit pseudo random generator
  * https://en.wikipedia.org/wiki/Xorshift
  * @param {number=} state
+ * @returns {number}
  */
 function xorshift32(state) {
     let seed = state || xorshift32.state;
