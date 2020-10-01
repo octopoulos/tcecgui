@@ -8790,19 +8790,28 @@ function generateTicks$1(generationOptions, dataRange) {
                 maxTicks: 100,
             }, generationOptions),
             {
-                max: (max >= 1)? Log10(max) * 1.01: (max <= -1)? -Log10(max) * 1.01: 0,
-                min: (min >= 1)? Log10(min) * 0.99: (min <= -1)? -Log10(min) * 0.99: 0,
+                max: (max >= 1)? Log10(max * 1.08): (max <= -1)? -Log10(max * 1.08): 0,
+                min: (min >= 1)? Log10(min * 0.92): (min <= -1)? -Log10(min * 0.92): 0,
             });
 
     return ticks.map(tick => {
         let first = Pow(10, tick),
             pow = first;
 
-        for (let i = 2; i >= 0; i --) {
+        for (let i = 3; i >= 0; i --) {
+            if (i >= tick)
+                continue;
             let div = Pow(10, Floor(tick - i)),
                 pow2 = Round(pow / div) * div;
-            if (Abs(pow2 / (first + pow2) - 0.5) > 0.005)
+            if (Abs(pow2 / (first + pow2) - 0.5) > 0.005) {
+                div = Pow(10, Floor(tick - i)) / 2;
+                pow2 = Round(pow / div) * div;
+                if (Abs(pow2 / (first + pow2) - 0.5) <= 0.005) {
+                    // LS(`${i} : ${pow} : ${pow2} : ${Abs(pow2 / (first + pow2) - 0.5)}`);
+                    return pow2;
+                }
                 return pow;
+            }
             pow = pow2;
         }
         return pow;
