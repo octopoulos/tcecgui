@@ -1,6 +1,6 @@
 /*
 light.css
-@version 20200918
+@version 2020-09-30
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -928,7 +928,14 @@ grid {
     white-space: nowrap;
 }
 .version-small {
+    -ms-overflow-style: none;
     font-size: 0.75em;
+    max-width: calc(100% - 8px);
+    overflow: scroll;
+    scrollbar-width: none;
+}
+.version-small::-webkit-scrollbar {
+    display: none;
 }
 #overview {
     font-size: 0.95em;
@@ -965,6 +972,10 @@ grid {
 .engine-box {
     font-size: 0.9em;
     height: 3em;
+}
+#engine0,
+#engine1 {
+    width: 100%;
 }
 #eval0,
 #eval1 {
@@ -1485,6 +1496,7 @@ pre,
 .xmoves,
 .xmoves > a,
 .xtop {
+    -webkit-user-select: text;
     user-select: text;
 }
 

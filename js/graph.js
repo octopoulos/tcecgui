@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-09-30
 //
 /*
 globals
@@ -47,6 +47,7 @@ let cached_percents = {},
     },
     charts = {},
     first_num = -1,
+    FormatAxis = value => FormatUnit(value),
     queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,22 +167,22 @@ function create_chart_data() {
         },
         node: {
             datasets: [
-                new_dataset('w', Y.graph_color_0, 'y-axis-1'),
-                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w', Y.graph_color_0),
+                new_dataset('b', Y.graph_color_1),
             ],
             labels: [],
         },
         speed: {
             datasets: [
-                new_dataset('w',Y.graph_color_0, 'y-axis-1'),
-                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w',Y.graph_color_0),
+                new_dataset('b', Y.graph_color_1),
             ],
             labels: [],
         },
         tb: {
             datasets: [
-                new_dataset('w', Y.graph_color_0, 'y-axis-1'),
-                new_dataset('b', Y.graph_color_1, 'y-axis-2'),
+                new_dataset('w', Y.graph_color_0),
+                new_dataset('b', Y.graph_color_1),
             ],
             labels: [],
         },
@@ -204,27 +205,27 @@ function create_charts()
 {
     // 1) create all charts
     new_chart('depth', true, [1]);
-    new_chart('eval', true, [1], {beginAtZero: true}, (item, data) => {
+    new_chart('eval', true, [1], {beginAtZero: true}, false, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
     new_chart('mobil', true, [1]);
-    new_chart('node', false, [1, 2], FormatUnit, (item, data) => {
+    new_chart('node', false, [1], FormatAxis, true, (item, data) => {
         let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
-    new_chart('speed', false, [1, 2], FormatUnit, (item, data) => {
+    new_chart('speed', false, [1], FormatAxis, true, (item, data) => {
         let point = get_tooltip_data(item, data),
             nodes = FormatUnit(point.nodes),
             speed = FormatUnit(point.y);
         return `${speed}nps (${nodes} nodes)`;
     });
-    new_chart('tb', false, [1, 2], FormatUnit, (item, data) => {
+    new_chart('tb', false, [1], FormatAxis, true, (item, data) => {
         let hits = FormatUnit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', false, [1], undefined, (item, data) => {
+    new_chart('time', false, [1], undefined, false, (item, data) => {
         let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
         return `${min}:${Pad(sec)}`;
     }, {backgroundColor: 'rgb(10, 10, 10)'});
@@ -303,17 +304,18 @@ function invert_eval(eval_) {
  * @param {boolean} has_legend
  * @param {number[]} y_axes [1] or [1, 2]
  * @param {function|Object=} y_ticks FormatUnit, {...}
+ * @param {boolean=} logaritmic
  * @param {function=} tooltip_callback
  * @param {Object=} dico
  */
-function new_chart(name, has_legend, y_axes, y_ticks, tooltip_callback, dico) {
+function new_chart(name, has_legend, y_axes, y_ticks, logaritmic, tooltip_callback, dico) {
     if (y_ticks && !IsObject(y_ticks))
         y_ticks = {callback: y_ticks};
 
-    let options = Assign(Assign({}, CHART_OPTIONS), {
+    let options = Assign({}, CHART_OPTIONS, {
         scales: {
             xAxes: [CHART_X_AXES],
-            yAxes: y_axes.map(id => new_y_axis(id, y_ticks)),
+            yAxes: y_axes.map(id => new_y_axis(id, y_ticks, logaritmic? {type: 'logarithmic'}: null)),
         },
     });
 
@@ -376,7 +378,6 @@ function new_y_axis(id, y_ticks, dico) {
         display: true,
         id: `y-axis-${id}`,
         position: (id == 1)? 'left': 'right',
-        type: 'linear',
     };
 
     if (id == 2)

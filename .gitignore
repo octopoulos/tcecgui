@@ -14,6 +14,7 @@
 *.rar
 *.swp
 *.tmp
+*.bat
 .vscode/
 *.zip
 4d.js
@@ -24,7 +25,6 @@ c++/*.html
 c++/*.js
 c++/*.wasm
 c++/shared*
-chart.js
 coverage/
 crash.json
 create_list.js

@@ -1,9 +1,9 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-29
 /*
 globals
-Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, self, Undefined
+Abs, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
 */
 'use strict';
 
@@ -86,7 +86,14 @@ function think(engine, fen, mask, frc) {
     let pawn_score = PIECE_SCORES[PAWN];
     for (let move of masks) {
         move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-        move.score = Undefined(move.score, 0) / pawn_score + GaussianRandom() * 0.15;
+        let score = Undefined(move.score, 0);
+        if (Abs(score) >= SCORE_MATING)
+            score /= 100;
+        else {
+            score /= pawn_score;
+            score +=GaussianRandom() * 0.2;
+        }
+        move.score = score;
     }
     masks.sort((a, b) => b.score - a.score);
     return [masks, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];

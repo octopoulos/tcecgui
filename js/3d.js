@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-09-30
 //
 // general 3d rendering code
 //
@@ -1400,7 +1400,7 @@ function show_settings(name, xy) {
                     '<vert class="fcenter">'
                     + `<select name="${key}">`
                         + data.map(option => {
-                            let splits = option.split('='),
+                            let splits = (option + '').split('='),
                                 value = Undefined({off: 0, on: 1}[option], option);
                             if (splits.length > 1) {
                                 option = splits[1];
