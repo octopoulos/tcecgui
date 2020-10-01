@@ -709,7 +709,8 @@ function update_player_chart(name, moves) {
 
         switch (name) {
         case 'depth':
-            datasets[2 + (ply & 1)].data[num2] = Assign({y: move.sd}, dico);
+            if (!isNaN(move.sd))
+               datasets[2 + (ply & 1)].data[num2] = Assign({y: move.sd}, dico);
             dico.y = move.d;
             break;
         case 'eval':
