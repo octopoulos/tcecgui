@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-01
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -15,10 +15,9 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
-DEFAULTS, detect_device, DEV, device, document, download_live, download_tables, draw_rectangle, E, Events,
-export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
-HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
-is_fullscreen, KEY_TIMES, Keys, KEYS,
+DEFAULTS, detect_device, DEV, device, document, download_tables, draw_rectangle, E, Events, export_settings, FileReader,
+From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes,
+Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
 PIECE_THEMES, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -704,12 +703,6 @@ function init_globals() {
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    add_timeout('graph', () => {
-        init_graph(() => {
-            download_live();
-            resize();
-        });
-    }, TIMEOUTS.graph);
     add_timeout('three', set_3d_scene, TIMEOUTS.three);
 
     // google ads
@@ -2138,6 +2131,7 @@ function startup() {
     prepare_settings();
     load_settings();
     start_game();
+    init_graph();
     init_hash();
 
     set_global_events();

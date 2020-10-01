@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-01
 //
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, IsObject, Keys,
-load_library, LS, Min, Pad, Round, S, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y
+DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
+LS, Min, Pad, Round, S, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
 
@@ -774,28 +774,18 @@ function update_player_charts(name, moves) {
 /**
  * Load the chart.js library
  * - it might be bundled already => skip loading in that case
- * @param {function} callback
  */
-function init_graph(callback) {
-    function _done() {
-        if (DEV.chart)
-            LS('IG');
-        create_chart_data();
-        create_charts();
-        update_player_charts(null, xboards[Y.x].moves);
+function init_graph() {
+    if (DEV.chart)
+        LS('IG');
+    create_chart_data();
+    create_charts();
+    update_player_charts(null, xboards[Y.x].moves);
 
-        for (let [moves, id] of queued_charts)
-            update_live_chart(moves, id);
-        queued_charts = [];
-
-        update_markers();
-        callback();
-    }
-
-    if (window.Chart)
-        _done();
-    else
-        load_library(CHART_JS, _done);
+    for (let [moves, id] of queued_charts)
+        update_live_chart(moves, id);
+    queued_charts = [];
+    update_markers();
 }
 
 /**
