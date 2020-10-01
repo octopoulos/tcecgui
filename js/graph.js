@@ -709,7 +709,7 @@ function update_player_chart(name, moves) {
 
         switch (name) {
         case 'depth':
-            datasets[ply & 1].data[num2] = Assign({y: move.sd}, dico);
+            datasets[2 + (ply & 1)].data[num2] = Assign({y: move.sd}, dico);
             dico.y = move.d;
             break;
         case 'eval':
