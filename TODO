@@ -11,10 +11,12 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-18 : keep list of non empty squares for each side => list of pieces
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
--          : 2020-09-29 : use d3.js instead of chartjs
+-          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-16 : transposition table
 -          : 2020-09-26 : send a list of U32 to the threads instead of string of uci
+2020-09-30 : 2020-09-30 : logarithmic in chart.js
+2020-09-30 : 2020-09-30 : settings can be imported in IceDragon
 2020-09-29 : 2020-09-26 : fix 3-fold in xboard.js
 2020-09-26 : 2020-09-26 : update c++ with uint32_t
 2020-09-26 : 2020-09-26 : convert moves to uint32_t

@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-05-01
+# @version 2020-09-30
 
 """
 Sync
@@ -51,6 +51,7 @@ JS_FILES = {
         ':global',
         ':3d',
         ':xboard',
+        ':chart',
         ':graph',
         ':game',
         ':temp',
@@ -59,9 +60,9 @@ JS_FILES = {
         ':config',
         'script',
     ],
-    'chart': [
-        'libs/chart-quick',
-    ],
+    # 'chart': [
+    #     'libs/chart-quick',
+    # ],
 }
 
 NEED_GZIPS = {

@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-08-26
+// @version 2020-08-30
 //
 /*
 globals
@@ -10,8 +10,8 @@ expect, require, test
 
 let {
     Clamp, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-    Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, QueryString, SetDefault,
-    Split, Stringify, Title, Undefined,
+    Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, PI, QueryString,
+    SetDefault, Split, Stringify, Title, Undefined,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,9 +74,9 @@ let {
 
 // Format
 [
-    [[-1, 1, Math.PI], undefined, undefined, '-1, 1, 3.142'],
-    [[-1, 1, Math.PI], ' : ', undefined, '-1 : 1 : 3.142'],
-    [Math.PI, undefined, undefined, '3.142'],
+    [[-1, 1, PI], undefined, undefined, '-1, 1, 3.142'],
+    [[-1, 1, PI], ' : ', undefined, '-1 : 1 : 3.142'],
+    [PI, undefined, undefined, '3.142'],
     [{x: 1, y: 9, z: 2, w: -0.0004}, undefined, undefined, '1, 9, 2, 0'],
 ].forEach(([vector, sep, align, answer], id) => {
     test(`Format:${id}`, () => {
@@ -87,7 +87,7 @@ let {
 // FormatFloat
 [
     [-0.0001, undefined, '0'],
-    [Math.PI, undefined, '3.142'],
+    [PI, undefined, '3.142'],
 ].forEach(([text, align, answer], id) => {
     test(`FormatFloat:${id}`, () => {
         expect(FormatFloat(text, align)).toEqual(answer);
@@ -232,7 +232,7 @@ let {
     ['5', false],
     ['5.5', false],
     [Infinity, false],
-    [Math.PI, true],
+    [PI, true],
 ].forEach(([text, answer], id) => {
     test(`IsFloat:${id}`, () => {
         expect(IsFloat(text)).toEqual(answer);
@@ -242,6 +242,7 @@ let {
 // IsObject
 [
     [undefined, false],
+    [null, false],
     [0, false],
     ['', false],
     [{}, true],

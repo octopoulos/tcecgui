@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-30
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -18,22 +18,26 @@ let Abs = Math.abs,
     Assign = Object.assign,
     Atan = Math.atan,
     Ceil = Math.ceil,
+    Cos = Math.cos,
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
-    IsObject = value => (typeof(value) == 'object'),
+    IsObject = value => (value != null && typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
+    Log10 = Math.log10,
     Lower = (text) => (text.toLowerCase()),
     Max = Math.max,
     Min = Math.min,
     PD = e => e.preventDefault(),
+    PI = Math.PI,
     Pow = Math.pow,
     Random = Math.random,
     Round = Math.round,
     Sign = Math.sign,
+    Sin = Math.sin,
     SP = e => e.stopPropagation(),
     Sqrt = Math.sqrt,
     Tanh = Math.tanh,
@@ -1174,7 +1178,7 @@ function FromTimestamp(stamp) {
 function GaussianRandom() {
     let rand = -1;
     while (rand < 0 || rand > 1) {
-        rand = Sqrt(-2 * Math.log(1 - Random())) * Math.cos(2 * Math.PI * Random());
+        rand = Sqrt(-2 * Math.log(1 - Random())) * Math.cos(2 * PI * Random());
         rand = rand / 10 + 0.5;
     }
     return rand;
@@ -1539,6 +1543,7 @@ if (typeof exports != 'undefined') {
         Now: Now,
         Pad: Pad,
         ParseJSON: ParseJSON,
+        PI: PI,
         QueryString: QueryString,
         Round: Round,
         SetDefault: SetDefault,

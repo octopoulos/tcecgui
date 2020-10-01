@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-29
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -65,6 +65,7 @@ constexpr Square    RELATIVE_RANK(int color, int square) {return color? 7 - (squ
 constexpr Piece     ROOK = 4;
 constexpr int       SCORE_INFINITY = 31001;
 constexpr int       SCORE_MATE = 31000;
+constexpr int       SCORE_MATING = 30001;
 // constexpr int       SCORE_NONE = 31002;
 constexpr Square    SQUARE_A8 = 0;
 constexpr Square    SQUARE_H1 = 119;
@@ -226,7 +227,7 @@ std::map<std::string, int> EVAL_MODES = {
     {"hce", 1 + 2},
     {"mat", 1},
     {"mob", 2},
-    {"nn", 1 + 2 + 32},
+    {"nn", 1 + 2 + 4 + 32},
     {"null", 0},
     {"sq", 1 + 2 + 4 + 8},
 };
@@ -583,13 +584,13 @@ private:
                     if (pv_mode) {
                         pv->length = line.length + 1;
                         pv->moves[0] = move;
-                        memcpy(pv->moves + 1, &line, line.length * sizeof(int));
+                        memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
                     }
                 }
             }
 
             // checkmate found
-            if (ply > 3 && score > 20000)
+            if (ply > 3 && score >= SCORE_MATING)
                 break;
         }
 
@@ -718,12 +719,12 @@ private:
                 if (pv_mode) {
                     pv->length = line.length + 1;
                     pv->moves[0] = move;
-                    memcpy(pv->moves + 1, &line, line.length * sizeof(int));
+                    memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
                 }
             }
 
             // checkmate found
-            if (ply > 3 && score > 20000)
+            if (ply > 3 && score >= SCORE_MATING)
                 break;
         }
 
@@ -957,7 +958,7 @@ public:
         max_nodes = 1e9;
         max_quiesce = 0;
         max_time = 0;
-        pv_mode = 0;
+        pv_mode = 1;
         search_mode = 0;
 
         // parse the line
@@ -1188,8 +1189,8 @@ public:
                             addMove(moves, piece, i, square, 0, 0, 0);
                     }
                 }
-                else if (Rank(square) % 7 == 0)
-                    addMove(moves, piece, i, square, 0, QUEEN, 0);
+                // else if (Rank(square) % 7 == 0)
+                //     addMove(moves, piece, i, square, 0, QUEEN, 0);
 
                 // pawn captures
                 for (auto j : {0, 2}) {
@@ -1321,8 +1322,12 @@ public:
             return 0;
         int score = 0;
 
-        if (eval_mode & 1)
+        if (eval_mode & 1) {
             score += materials[WHITE] - materials[BLACK];
+            // KRR vs KR => KR should not exchange the rook
+            float ratio = materials[WHITE] * 1.0f / (materials[WHITE] + materials[BLACK]) - 0.5f;
+            score += int(ratio * 2048 + 0.5f);
+        }
 
         // mobility
         if (eval_mode & 2) {
@@ -1335,7 +1340,7 @@ public:
             }
             else
                 for (auto i = 1; i < 7; i ++)
-                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
 
             if (!materials[BLACK]) {
                 auto king = kings[BLACK],
@@ -1346,7 +1351,7 @@ public:
             }
             else
                 for (auto i = 9; i < 15; i ++)
-                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
         }
 
         // attacks + defenses
@@ -1358,9 +1363,10 @@ public:
         }
 
         // squares
-        if (eval_mode & 8)
+        if (eval_mode & 8) {
+            evaluatePositions();
             score += positions[WHITE] - positions[BLACK];
-
+        }
         return score * (1 - (turn << 1));
     }
 
@@ -2160,9 +2166,9 @@ public:
 
             // results
             std::string pv_string = uci;
-            for (auto &item : pv.moves) {
+            for (auto i = 0; i < pv.length; i ++) {
                 pv_string += " ";
-                pv_string += ucifyMove(item);
+                pv_string += ucifyMove(pv.moves[i]);
             }
 
             auto obj = unpackMove(move);

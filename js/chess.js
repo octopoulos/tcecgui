@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-29
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -70,6 +70,7 @@ let BISHOP = 3,
     ROOK = 4,
     SCORE_INFINITY = 31001,
     SCORE_MATE = 31000,
+    SCORE_MATING = 30001,
     // SCORE_NONE = 31002,
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
@@ -231,7 +232,7 @@ let EVAL_MODES = {
         hce: 1 + 2,
         mat: 1,
         mob: 2,
-        nn: 1 + 2 + 32,
+        nn: 1 + 2 + 4 + 32,
         null: 0,
         sq: 1 + 2 + 4 + 8,
     },
@@ -434,7 +435,7 @@ var Chess = function(fen_) {
         ply = 0,
         ply_states = Array(128).fill(0).map(_ => [0, 0, 0, 0]),
         positions = I32(2),
-        pv_mode = 0,
+        pv_mode = 1,
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
         sel_depth = 0,
         table = Array(TT_SIZE).fill(0),
@@ -530,6 +531,7 @@ var Chess = function(fen_) {
      * 2q1kr1r/R2bppb1/NQ3n2/3p1p1p/2pP3P/4P1P1/K5RN/5B2 w - - 7 52
      * n1QBq1k1/5p1p/5KP1/p7/8/8/8/8 w - 0 1
      * 8/2b1k3/8/5B2/8/5K2/1R6/8 b - - 0 108
+     * 2k2r1r/2p5/p1n2q2/3p4/2PPpPb1/P3P2p/1P1Q4/1K1R1R2 w - - 1 32 (d2b4??)
      * @param {number} alpha
      * @param {number} beta
      * @param {number} depth
@@ -582,6 +584,7 @@ var Chess = function(fen_) {
 
                     // update pv
                     if (pv_mode) {
+                        pv.length = line.length + 1;
                         pv[0] = move;
                         for (let i = 0; i < line.length; i ++)
                             pv[i + 1] = line[i];
@@ -590,7 +593,7 @@ var Chess = function(fen_) {
             }
 
             // checkmate found
-            if (ply > 3 && score > 20000)
+            if (ply > 3 && score >= SCORE_MATING)
                 break;
         }
 
@@ -730,6 +733,7 @@ var Chess = function(fen_) {
 
                 // update pv
                 if (pv_mode) {
+                    pv.length = line.length + 1;
                     pv[0] = move;
                     for (let i = 0; i < line.length; i ++)
                         pv[i + 1] = line[i];
@@ -737,7 +741,7 @@ var Chess = function(fen_) {
             }
 
             // checkmate found
-            if (ply > 3 && score > 20000)
+            if (ply > 3 && score >= SCORE_MATING)
                 break;
         }
 
@@ -785,6 +789,7 @@ var Chess = function(fen_) {
     /**
      * Quiescence search
      * https://www.chessprogramming.org/Quiescence_Search
+     * r1k2r1b/1p2pq1p/p2p1np1/2n2p2/P1Q1P3/2N3P1/1PPB1P1P/RK1NR3 w fa - 3 16
      * @param {number} alpha
      * @param {number} beta
      * @param {number} depth_left
@@ -957,7 +962,7 @@ var Chess = function(fen_) {
         max_nodes = 1e9;
         max_quiesce = 0;
         max_time = 0;
-        pv_mode = 0;
+        pv_mode = 1;
         search_mode = 0;
 
         // parse the line
@@ -1169,7 +1174,7 @@ var Chess = function(fen_) {
                 let square = i + offsets[1];
                 if (!only_capture) {
                     if (!board[square]) {
-                        addPawnMove(moves, piece, i, square, 0, 0, only_capture);
+                        addPawnMove(moves, piece, i, square, 0, 0, false);
 
                         // double square
                         square += offsets[1];
@@ -1177,8 +1182,8 @@ var Chess = function(fen_) {
                             addMove(moves, piece, i, square, 0, 0, 0);
                     }
                 }
-                else if (Rank(square) % 7 == 0)
-                    addMove(moves, piece, i, square, 0, QUEEN, 0);
+                // else if (Rank(square) % 7 == 0)
+                //     addMove(moves, piece, i, square, 0, QUEEN, 0);
 
                 // pawn captures
                 for (let j of [0, 2]) {
@@ -1313,8 +1318,12 @@ var Chess = function(fen_) {
             return 0;
         let score = 0;
 
-        if (eval_mode & 1)
+        if (eval_mode & 1) {
             score += materials[WHITE] - materials[BLACK];
+            // KRR vs KR => KR should not exchange the rook
+            let ratio = materials[WHITE] * 1.0 / (materials[WHITE] + materials[BLACK]) - 0.5;
+            score += (ratio * 2048 + 0.5) >> 0;
+        }
 
         // mobility
         if (eval_mode & 2) {
@@ -1327,7 +1336,7 @@ var Chess = function(fen_) {
             }
             else
                 for (let i = 1; i < 7; i ++)
-                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
 
             if (!materials[BLACK]) {
                 let king = kings[BLACK],
@@ -1338,7 +1347,7 @@ var Chess = function(fen_) {
             }
             else
                 for (let i = 9; i < 15; i ++)
-                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]);
+                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
         }
 
         // attacks + defenses
@@ -1350,9 +1359,10 @@ var Chess = function(fen_) {
         }
 
         // squares
-        if (eval_mode & 8)
+        if (eval_mode & 8) {
+            evaluatePositions();
             score += positions[WHITE] - positions[BLACK];
-
+        }
         return score * (1 - (turn << 1));
     }
 
@@ -1750,7 +1760,7 @@ var Chess = function(fen_) {
             obj.m = decorate? decorateSan(san): san;
             obj.ply = fen_ply + ply;
         }
-        return Assign(Assign({}, NULL_OBJ), obj);
+        return Assign({}, NULL_OBJ, obj);
     }
 
     /**
@@ -2005,7 +2015,7 @@ var Chess = function(fen_) {
                 let obj = unpackMove(move);
                 obj.m = san;
                 obj.ply = fen_ply + ply + 1;
-                return Assign(Assign({}, NULL_OBJ), obj);
+                return Assign({}, NULL_OBJ, obj);
             }
 
         // 2) try sloppy matching
@@ -2062,7 +2072,7 @@ var Chess = function(fen_) {
                 let obj = unpackMove(move);
                 obj.m = moveToSan(move, moves);
                 obj.ply = fen_ply + ply + 1;
-                return Assign(Assign({}, NULL_OBJ), obj);
+                return Assign({}, NULL_OBJ, obj);
             }
         }
         return NULL_OBJ;

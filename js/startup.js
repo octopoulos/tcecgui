@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-29
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -103,7 +103,6 @@ let AD_STYLES = {},
         tb: 'TB',
     },
     TIMEOUT_font = 200,
-    TIMEOUT_popup = 600,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
 
@@ -172,7 +171,7 @@ function change_setting_special(name, value, no_close) {
     if (!no_close) {
         let modal = Id('modal');
         if (modal && modal.dataset.xy)
-            add_timeout('close_popup', close_popups, (value == undefined)? 0: TIMEOUT_popup);
+            close_popups();
     }
 
     //
@@ -1627,12 +1626,12 @@ function set_global_events() {
     // file
     Events(Id('file'), 'change', function() {
         let file = this.files[0],
-            id = this.dataset.x;
+            id = this.dataset.x,
+            reader = new FileReader();
         if (!file)
             return;
 
         if (id == 'background_image') {
-            let reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onloadend = function() {
                 let node = Id('background');
@@ -1644,22 +1643,24 @@ function set_global_events() {
             return;
         }
 
-        file.text().then(data => {
+        reader.readAsText(file);
+        reader.onloadend = function() {
+            let data = reader.result;
             switch (id) {
-            case 'import_settings':
-                change_setting(id, data);
-                break;
-            case 'load_pgn':
-                let new_section = 'archive';
-                if (update_pgn(new_section, data)) {
-                    Y.scroll = '#overview';
-                    Y.x = new_section;
-                    Y.s = new_section;
-                    check_hash_special({x: new_section});
+                case 'import_settings':
+                    change_setting(id, data);
+                    break;
+                case 'load_pgn':
+                    let new_section = 'archive';
+                    if (update_pgn(new_section, data)) {
+                        Y.scroll = '#overview';
+                        Y.x = new_section;
+                        Y.s = new_section;
+                        check_hash_special({x: new_section});
+                    }
+                    break;
                 }
-                break;
-            }
-        });
+        };
     });
 }
 

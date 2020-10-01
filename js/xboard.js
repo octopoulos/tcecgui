@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-09-29
 //
 // game board:
 // - 4 rendering modes:
@@ -2424,11 +2424,12 @@ class XBoard {
 
         let moves, num_move,
             chess = this.chess,
+            color = (1 + this.ply) % 2,
             fen = this.fen,
-            folds = [],
-            color = (1 + this.ply) % 2;
+            folds = [];
 
         // busy thinking => return
+        // 8/6R1/5k2/8/8/8/7r/K7 w - - 52 129
         let reply = SetDefault(this.replies, fen, {});
         if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
             return true;
@@ -2453,13 +2454,11 @@ class XBoard {
             // check for 3-fold moves
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
             for (let move of moves) {
-                let obj = chess.unpackMove(move);
-                chess.ucify(obj);
-                chess.moveObject(obj);
+                chess.makeMove(move);
                 let splits = chess.fen().split(' '),
                     prune = `${splits[0]} ${splits[2]} ${splits[3]}`,
                     rule50 = splits[4] * 1,
-                    draw = (rule50 >= 50 || fen_set.has(prune));
+                    draw = (rule50 >= 100 || fen_set.has(prune));
 
                 if (!draw && fen_set.size && rule50) {
                     let moves2 = this.chess_moves();
@@ -2469,19 +2468,20 @@ class XBoard {
                             prune2 = `${splits2[0]} ${splits2[2]} ${splits2[3]}`;
                         if (fen_set.has(prune2)) {
                             if (DEV.engine)
-                                LS(`DRAW WITH ${move.m} THEN ${chess.ucify(move2)}`);
+                                LS(`DRAW WITH ${chess.ucifyMove(move)} THEN ${chess.ucifyMove(move2)}`);
                             draw = true;
                         }
                         chess.undo();
                     }
                 }
                 if (draw) {
-                    Assign(obj, {
-                        depth: 0,
+                    let uci = chess.ucifyMove(move);
+                    move = chess.unpackMove(move);
+                    Assign(move, {
+                        m: uci,
                         score: -1,
-                        special: 1,
                     });
-                    folds.push(obj);
+                    folds.push(move);
                 }
                 chess.undo();
             }
@@ -2536,7 +2536,7 @@ class XBoard {
         // pure random + insta move?
         if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
-                move = moves[id];
+                move = chess.unpackMove(moves[id]);
             Assign(move, {
                 depth: '-',
                 score: '-',
@@ -2558,15 +2558,17 @@ class XBoard {
 
         // split moves across workers
         let has_moves = {},
-            masks = [];
+            masks = [],
+            specials = new Set(folds.map(fold => fold.m));
         for (let i = 0; i < num_worker; i ++)
             masks.push([]);
 
         for (let i = 0; i < num_move; i ++) {
-            if (moves[i].special)
+            let uci = chess.ucifyMove(moves[i]);
+            if (specials.has(uci))
                 continue;
             let id = i % num_worker;
-            masks[id].push(chess.ucifyMove(moves[i]));
+            masks[id].push(uci);
             has_moves[id] = 1;
         }
         for (let id = 0; id < num_worker; id ++)
@@ -2673,6 +2675,7 @@ class XBoard {
 
     /**
      * Receive a worker message
+     * 8/7p/8/1P1P2kP/P1P1p3/3r1r2/4K1BR/R7 b - - 2 47
      * @param {Event} e
      */
     worker_message(e) {
@@ -2703,7 +2706,7 @@ class XBoard {
             reply.lefts[id] = 0;
 
         for (let obj of moves)
-            if (obj.from != obj.to && (obj.score > -900) || obj.score == '-')
+            if (obj.from != obj.to)
                 combine.push(obj);
 
         reply.avg_depth += avg_depth * nodes;
@@ -2777,7 +2780,7 @@ class XBoard {
                     extra = elapsed * ratio_nodes;
 
                 predict = elapsed2 + extra;
-                is_iterative = best.score < 200 && (this.depth < this.min_depth || predict < this.max_time);
+                is_iterative = best.score < 300 && (this.depth < this.min_depth || predict < this.max_time);
                 if (DEV.engine)
                     LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
             }
