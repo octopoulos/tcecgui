@@ -15,6 +15,8 @@ typeof define === 'function' && define.amd ? define(['require'], function(requir
 (global = global || self, global.Chart = factory());
 }(this, (function () {
 
+function noop() {}
+
 function createCommonjsModule(fn, module) {
     return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -639,11 +641,6 @@ var chartjsColor = Color;
  * @namespace Chart.helpers
  */
 var helpers = {
-    /**
-     * An empty function that can be used, for example, for optional callback.
-     */
-    noop: function() {},
-
     /**
      * Returns a unique id, sequentially generated from a global variable.
      * @returns {number}
@@ -1327,8 +1324,8 @@ core_defaults._set('global', {
     animation: {
         duration: 1000,
         easing: 'easeOutQuart',
-        onProgress: helpers.noop,
-        onComplete: helpers.noop
+        onProgress: noop,
+        onComplete: noop
     }
 });
 
@@ -1732,7 +1729,7 @@ Assign(DatasetController.prototype, {
         me.update(reset);
     },
 
-    update: helpers.noop,
+    update: noop,
 
     transition: function(easingValue) {
         var meta = this.getMeta();
@@ -2302,34 +2299,6 @@ core_defaults._set('global', {
         }
     }
 });
-
-function isVertical(vm) {
-    return vm && vm.width !== undefined;
-}
-
-function swap(orig, v1, v2) {
-    return orig === v1 ? v2 : orig === v2 ? v1 : orig;
-}
-
-function parseBorderSkipped(vm) {
-    var edge = vm.borderSkipped;
-    var res = {};
-
-    if (!edge) {
-        return res;
-    }
-
-    if (vm.horizontal) {
-        if (vm.base > vm.x) {
-            edge = swap(edge, 'left', 'right');
-        }
-    } else if (vm.base < vm.y) {
-        edge = swap(edge, 'bottom', 'top');
-    }
-
-    res[edge] = true;
-    return res;
-}
 
 var elements = {};
 var Line = element_line;
@@ -4150,7 +4119,7 @@ core_defaults._set('global', {
         borderWidth: 0,
         callbacks: {
             // Args are: (tooltipItems, data)
-            beforeTitle: helpers.noop,
+            beforeTitle: noop,
             title: function(tooltipItems, data) {
                 var title = '';
                 var labels = data.labels;
@@ -4169,13 +4138,13 @@ core_defaults._set('global', {
 
                 return title;
             },
-            afterTitle: helpers.noop,
+            afterTitle: noop,
 
             // Args are: (tooltipItems, data)
-            beforeBody: helpers.noop,
+            beforeBody: noop,
 
             // Args are: (tooltipItem, data)
-            beforeLabel: helpers.noop,
+            beforeLabel: noop,
             label: function(tooltipItem, data) {
                 var label = data.datasets[tooltipItem.datasetIndex].label || '';
 
@@ -4201,15 +4170,15 @@ core_defaults._set('global', {
             labelTextColor: function() {
                 return this._options.bodyFontColor;
             },
-            afterLabel: helpers.noop,
+            afterLabel: noop,
 
             // Args are: (tooltipItems, data)
-            afterBody: helpers.noop,
+            afterBody: noop,
 
             // Args are: (tooltipItems, data)
-            beforeFooter: helpers.noop,
-            footer: helpers.noop,
-            afterFooter: helpers.noop
+            beforeFooter: noop,
+            footer: noop,
+            afterFooter: noop,
         }
     }
 });
@@ -7350,7 +7319,7 @@ var Scale = Element.extend({
     beforeDataLimits: function() {
         helpers.callback(this.options.beforeDataLimits, [this]);
     },
-    determineDataLimits: helpers.noop,
+    determineDataLimits: noop,
     afterDataLimits: function() {
         helpers.callback(this.options.afterDataLimits, [this]);
     },
@@ -7359,7 +7328,7 @@ var Scale = Element.extend({
     beforeBuildTicks: function() {
         helpers.callback(this.options.beforeBuildTicks, [this]);
     },
-    buildTicks: helpers.noop,
+    buildTicks: noop,
     afterBuildTicks: function(ticks) {
         var me = this;
         // ticks is empty for old axis implementations here
@@ -7677,7 +7646,7 @@ var Scale = Element.extend({
      * @param index
      * @param datasetIndex
      */
-    getLabelForIndex: helpers.noop,
+    getLabelForIndex: noop,
 
     /**
      * Returns the location of the given data point. Value can either be an index or a numerical value
@@ -7686,14 +7655,14 @@ var Scale = Element.extend({
      * @param index
      * @param datasetIndex
      */
-    getPixelForValue: helpers.noop,
+    getPixelForValue: noop,
 
     /**
      * Used to get the data value from a given pixel. This is the inverse of getPixelForValue
      * The coordinate (0, 0) is at the upper-left corner of the canvas
      * @param pixel
      */
-    getValueForPixel: helpers.noop,
+    getValueForPixel: noop,
 
     /**
      * Returns the location of the tick at the given index
@@ -8364,7 +8333,6 @@ var scale_category = core_scale.extend({
 // INTERNAL: static default options, registered in src/index.js
 var _defaults = defaultConfig;
 scale_category._defaults = _defaults;
-var noop = helpers.noop;
 
 /**
  * Generate a set of linear ticks
@@ -8815,7 +8783,7 @@ function generateTicks$1(generationOptions, dataRange) {
             pow = pow2;
         }
         return pow;
-    });
+    }).reverse();
 }
 
 var defaultConfig$2 = {
@@ -9074,554 +9042,6 @@ var scale_logarithmic = core_scale.extend({
 var _defaults$2 = defaultConfig$2;
 scale_logarithmic._defaults = _defaults$2;
 
-var valueAtIndexOrDefault$1 = helpers.valueAtIndexOrDefault;
-var resolve$4 = helpers.options.resolve;
-
-var defaultConfig$3 = {
-    display: true,
-
-    // Boolean - Whether to animate scaling the chart from the centre
-    animate: true,
-    position: 'chartArea',
-
-    angleLines: {
-        display: true,
-        color: 'rgba(0,0,0,0.1)',
-        lineWidth: 1,
-        borderDash: [],
-        borderDashOffset: 0.0
-    },
-
-    gridLines: {
-        circular: false
-    },
-
-    // label settings
-    ticks: {
-        // Boolean - Show a backdrop to the scale label
-        showLabelBackdrop: true,
-
-        // String - The colour of the label backdrop
-        backdropColor: 'rgba(255,255,255,0.75)',
-
-        // Number - The backdrop padding above & below the label in pixels
-        backdropPaddingY: 2,
-
-        // Number - The backdrop padding to the side of the label in pixels
-        backdropPaddingX: 2,
-
-        callback: core_ticks.formatters.linear
-    },
-
-    pointLabels: {
-        // Boolean - if true, show point labels
-        display: true,
-
-        // Number - Point label font size in pixels
-        fontSize: 10,
-
-        // Function - Used to convert point labels
-        callback: function(label) {
-            return label;
-        }
-    }
-};
-
-function getTickBackdropHeight(opts) {
-    var tickOpts = opts.ticks;
-
-    if (tickOpts.display && opts.display) {
-        return Undefined(tickOpts.fontSize, core_defaults.global.defaultFontSize) + tickOpts.backdropPaddingY * 2;
-    }
-    return 0;
-}
-
-function measureLabelSize(ctx, lineHeight, label) {
-    if (IsArray(label)) {
-        return {
-            w: helpers.longestText(ctx, ctx.font, label),
-            h: label.length * lineHeight
-        };
-    }
-
-    return {
-        w: ctx.measureText(label).width,
-        h: lineHeight
-    };
-}
-
-function determineLimits(angle, pos, size, min, max) {
-    if (angle === min || angle === max) {
-        return {
-            start: pos - (size / 2),
-            end: pos + (size / 2)
-        };
-    } else if (angle < min || angle > max) {
-        return {
-            start: pos - size,
-            end: pos
-        };
-    }
-
-    return {
-        start: pos,
-        end: pos + size
-    };
-}
-
-/**
- * Helper function to fit a radial linear scale with point labels
- */
-function fitWithPointLabels(scale) {
-
-    // Right, this is really confusing and there is a lot of maths going on here
-    // The gist of the problem is here: https://gist.github.com/nnnick/696cc9c55f4b0beb8fe9
-    //
-    // Reaction: https://dl.dropboxusercontent.com/u/34601363/toomuchscience.gif
-    //
-    // Solution:
-    //
-    // We assume the radius of the polygon is half the size of the canvas at first
-    // at each index we check if the text overlaps.
-    //
-    // Where it does, we store that angle and that index.
-    //
-    // After finding the largest index and angle we calculate how much we need to remove
-    // from the shape radius to move the point inwards by that x.
-    //
-    // We average the left and right distances to get the maximum shape radius that can fit in the box
-    // along with labels.
-    //
-    // Once we have that, we can find the centre point for the chart, by taking the x text protrusion
-    // on each side, removing that from the size, halving it and adding the left x protrusion width.
-    //
-    // This will mean we have a shape fitted to the canvas, as large as it can be with the labels
-    // and position it in the most space efficient manner
-    //
-    // https://dl.dropboxusercontent.com/u/34601363/yeahscience.gif
-
-    var plFont = helpers.options._parseFont(scale.options.pointLabels);
-
-    // Get maximum radius of the polygon. Either half the height (minus the text width) or half the width.
-    // Use this to calculate the offset + change. - Make sure L/R protrusion is at least 0 to stop issues with centre points
-    var furthestLimits = {
-        l: 0,
-        r: scale.width,
-        t: 0,
-        b: scale.height - scale.paddingTop
-    };
-    var furthestAngles = {};
-    var i, textSize, pointPosition;
-
-    scale.ctx.font = plFont.string;
-    scale._pointLabelSizes = [];
-
-    var valueCount = scale.chart.data.labels.length;
-    for (i = 0; i < valueCount; i++) {
-        pointPosition = scale.getPointPosition(i, scale.drawingArea + 5);
-        textSize = measureLabelSize(scale.ctx, plFont.lineHeight, scale.pointLabels[i]);
-        scale._pointLabelSizes[i] = textSize;
-
-        // Add quarter circle to make degree 0 mean top of circle
-        var angleRadians = scale.getIndexAngle(i);
-        var angle = helpers.toDegrees(angleRadians) % 360;
-        var hLimits = determineLimits(angle, pointPosition.x, textSize.w, 0, 180);
-        var vLimits = determineLimits(angle, pointPosition.y, textSize.h, 90, 270);
-
-        if (hLimits.start < furthestLimits.l) {
-            furthestLimits.l = hLimits.start;
-            furthestAngles.l = angleRadians;
-        }
-
-        if (hLimits.end > furthestLimits.r) {
-            furthestLimits.r = hLimits.end;
-            furthestAngles.r = angleRadians;
-        }
-
-        if (vLimits.start < furthestLimits.t) {
-            furthestLimits.t = vLimits.start;
-            furthestAngles.t = angleRadians;
-        }
-
-        if (vLimits.end > furthestLimits.b) {
-            furthestLimits.b = vLimits.end;
-            furthestAngles.b = angleRadians;
-        }
-    }
-
-    scale.setReductions(scale.drawingArea, furthestLimits, furthestAngles);
-}
-
-function getTextAlignForAngle(angle) {
-    if (angle === 0 || angle === 180) {
-        return 'center';
-    } else if (angle < 180) {
-        return 'left';
-    }
-
-    return 'right';
-}
-
-function fillText(ctx, text, position, lineHeight) {
-    var y = position.y + lineHeight / 2;
-    var i, ilen;
-
-    if (IsArray(text)) {
-        for (i = 0, ilen = text.length; i < ilen; ++i) {
-            ctx.fillText(text[i], position.x, y);
-            y += lineHeight;
-        }
-    } else {
-        ctx.fillText(text, position.x, y);
-    }
-}
-
-function adjustPointPositionForLabelHeight(angle, textSize, position) {
-    if (angle === 90 || angle === 270) {
-        position.y -= (textSize.h / 2);
-    } else if (angle > 270 || angle < 90) {
-        position.y -= textSize.h;
-    }
-}
-
-function drawPointLabels(scale) {
-    var ctx = scale.ctx;
-    var opts = scale.options;
-    var pointLabelOpts = opts.pointLabels;
-    var tickBackdropHeight = getTickBackdropHeight(opts);
-    var outerDistance = scale.getDistanceFromCenterForValue(opts.ticks.reverse ? scale.min : scale.max);
-    var plFont = helpers.options._parseFont(pointLabelOpts);
-
-    ctx.save();
-
-    ctx.font = plFont.string;
-    ctx.textBaseline = 'middle';
-
-    for (var i = scale.chart.data.labels.length - 1; i >= 0; i--) {
-        // Extra pixels out for some label spacing
-        var extra = (i === 0 ? tickBackdropHeight / 2 : 0);
-        var pointLabelPosition = scale.getPointPosition(i, outerDistance + extra + 5);
-
-        // Keep this in loop since we may support array properties here
-        var pointLabelFontColor = valueAtIndexOrDefault$1(pointLabelOpts.fontColor, i, core_defaults.global.defaultFontColor);
-        ctx.fillStyle = pointLabelFontColor;
-
-        var angleRadians = scale.getIndexAngle(i);
-        var angle = helpers.toDegrees(angleRadians);
-        ctx.textAlign = getTextAlignForAngle(angle);
-        adjustPointPositionForLabelHeight(angle, scale._pointLabelSizes[i], pointLabelPosition);
-        fillText(ctx, scale.pointLabels[i], pointLabelPosition, plFont.lineHeight);
-    }
-    ctx.restore();
-}
-
-function drawRadiusLine(scale, gridLineOpts, radius, index) {
-    var ctx = scale.ctx;
-    var circular = gridLineOpts.circular;
-    var valueCount = scale.chart.data.labels.length;
-    var lineColor = valueAtIndexOrDefault$1(gridLineOpts.color, index - 1);
-    var lineWidth = valueAtIndexOrDefault$1(gridLineOpts.lineWidth, index - 1);
-    var pointPosition;
-
-    if ((!circular && !valueCount) || !lineColor || !lineWidth) {
-        return;
-    }
-
-    ctx.save();
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = lineWidth;
-    if (ctx.setLineDash) {
-        ctx.setLineDash(gridLineOpts.borderDash || []);
-        ctx.lineDashOffset = gridLineOpts.borderDashOffset || 0.0;
-    }
-
-    ctx.beginPath();
-    if (circular) {
-        // Draw circular arcs between the points
-        ctx.arc(scale.xCenter, scale.yCenter, radius, 0, PI * 2);
-    } else {
-        // Draw straight lines connecting each index
-        pointPosition = scale.getPointPosition(0, radius);
-        ctx.moveTo(pointPosition.x, pointPosition.y);
-
-        for (var i = 1; i < valueCount; i++) {
-            pointPosition = scale.getPointPosition(i, radius);
-            ctx.lineTo(pointPosition.x, pointPosition.y);
-        }
-    }
-    ctx.closePath();
-    ctx.stroke();
-    ctx.restore();
-}
-
-function numberOrZero(param) {
-    return helpers.isNumber(param) ? param : 0;
-}
-
-var scale_radialLinear = scale_linearbase.extend({
-    setDimensions: function() {
-        var me = this;
-
-        // Set the unconstrained dimension before label rotation
-        me.width = me.maxWidth;
-        me.height = me.maxHeight;
-        me.paddingTop = getTickBackdropHeight(me.options) / 2;
-        me.xCenter = Floor(me.width / 2);
-        me.yCenter = Floor((me.height - me.paddingTop) / 2);
-        me.drawingArea = Min(me.height - me.paddingTop, me.width) / 2;
-    },
-
-    determineDataLimits: function() {
-        var me = this;
-        var chart = me.chart;
-        var min = Number.POSITIVE_INFINITY;
-        var max = Number.NEGATIVE_INFINITY;
-
-        helpers.each(chart.data.datasets, function(dataset, datasetIndex) {
-            if (chart.isDatasetVisible(datasetIndex)) {
-                var meta = chart.getDatasetMeta(datasetIndex);
-
-                helpers.each(dataset.data, function(rawValue, index) {
-                    var value = +me.getRightValue(rawValue);
-                    if (isNaN(value) || meta.data[index].hidden) {
-                        return;
-                    }
-
-                    min = Min(value, min);
-                    max = Max(value, max);
-                });
-            }
-        });
-
-        me.min = (min === Number.POSITIVE_INFINITY ? 0 : min);
-        me.max = (max === Number.NEGATIVE_INFINITY ? 0 : max);
-
-        // Common base implementation to handle ticks.min, ticks.max, ticks.beginAtZero
-        me.handleTickRangeOptions();
-    },
-
-    // Returns the maximum number of ticks based on the scale dimension
-    _computeTickLimit: function() {
-        return Ceil(this.drawingArea / getTickBackdropHeight(this.options));
-    },
-
-    convertTicksToLabels: function() {
-        var me = this;
-
-        scale_linearbase.prototype.convertTicksToLabels.call(me);
-
-        // Point labels
-        me.pointLabels = me.chart.data.labels.map(function() {
-            var label = helpers.callback(me.options.pointLabels.callback, arguments, me);
-            return label || label === 0 ? label : '';
-        });
-    },
-
-    getLabelForIndex: function(index, datasetIndex) {
-        return +this.getRightValue(this.chart.data.datasets[datasetIndex].data[index]);
-    },
-
-    fit: function() {
-        var me = this;
-        var opts = me.options;
-
-        if (opts.display && opts.pointLabels.display) {
-            fitWithPointLabels(me);
-        } else {
-            me.setCenterPoint(0, 0, 0, 0);
-        }
-    },
-
-    /**
-     * Set radius reductions and determine new radius and center point
-     * @private
-     */
-    setReductions: function(largestPossibleRadius, furthestLimits, furthestAngles) {
-        var me = this;
-        var radiusReductionLeft = furthestLimits.l / Sin(furthestAngles.l);
-        var radiusReductionRight = Max(furthestLimits.r - me.width, 0) / Sin(furthestAngles.r);
-        var radiusReductionTop = -furthestLimits.t / Cos(furthestAngles.t);
-        var radiusReductionBottom = -Max(furthestLimits.b - (me.height - me.paddingTop), 0) / Cos(furthestAngles.b);
-
-        radiusReductionLeft = numberOrZero(radiusReductionLeft);
-        radiusReductionRight = numberOrZero(radiusReductionRight);
-        radiusReductionTop = numberOrZero(radiusReductionTop);
-        radiusReductionBottom = numberOrZero(radiusReductionBottom);
-
-        me.drawingArea = Min(
-            Floor(largestPossibleRadius - (radiusReductionLeft + radiusReductionRight) / 2),
-            Floor(largestPossibleRadius - (radiusReductionTop + radiusReductionBottom) / 2));
-        me.setCenterPoint(radiusReductionLeft, radiusReductionRight, radiusReductionTop, radiusReductionBottom);
-    },
-
-    setCenterPoint: function(leftMovement, rightMovement, topMovement, bottomMovement) {
-        var me = this;
-        var maxRight = me.width - rightMovement - me.drawingArea;
-        var maxLeft = leftMovement + me.drawingArea;
-        var maxTop = topMovement + me.drawingArea;
-        var maxBottom = (me.height - me.paddingTop) - bottomMovement - me.drawingArea;
-
-        me.xCenter = Floor(((maxLeft + maxRight) / 2) + me.left);
-        me.yCenter = Floor(((maxTop + maxBottom) / 2) + me.top + me.paddingTop);
-    },
-
-    getIndexAngle: function(index) {
-        var chart = this.chart;
-        var angleMultiplier = 360 / chart.data.labels.length;
-        var options = chart.options || {};
-        var startAngle = options.startAngle || 0;
-
-        // Start from the top instead of right, so remove a quarter of the circle
-        var angle = (index * angleMultiplier + startAngle) % 360;
-
-        return (angle < 0 ? angle + 360 : angle) * PI * 2 / 360;
-    },
-
-    getDistanceFromCenterForValue: function(value) {
-        var me = this;
-
-        if (value == null) {
-            return NaN;
-        }
-
-        // Take into account half font size + the yPadding of the top value
-        var scalingFactor = me.drawingArea / (me.max - me.min);
-        if (me.options.ticks.reverse) {
-            return (me.max - value) * scalingFactor;
-        }
-        return (value - me.min) * scalingFactor;
-    },
-
-    getPointPosition: function(index, distanceFromCenter) {
-        var me = this;
-        var thisAngle = me.getIndexAngle(index) - (PI / 2);
-        return {
-            x: Cos(thisAngle) * distanceFromCenter + me.xCenter,
-            y: Sin(thisAngle) * distanceFromCenter + me.yCenter
-        };
-    },
-
-    getPointPositionForValue: function(index, value) {
-        return this.getPointPosition(index, this.getDistanceFromCenterForValue(value));
-    },
-
-    getBasePosition: function(index) {
-        var me = this;
-        var min = me.min;
-        var max = me.max;
-
-        return me.getPointPositionForValue(index || 0,
-            me.beginAtZero ? 0 :
-            min < 0 && max < 0 ? max :
-            min > 0 && max > 0 ? min :
-            0);
-    },
-
-    /**
-     * @private
-     */
-    _drawGrid: function() {
-        var me = this;
-        var ctx = me.ctx;
-        var opts = me.options;
-        var gridLineOpts = opts.gridLines;
-        var angleLineOpts = opts.angleLines;
-        var lineWidth = Undefined(angleLineOpts.lineWidth, gridLineOpts.lineWidth);
-        var lineColor = Undefined(angleLineOpts.color, gridLineOpts.color);
-        var i, offset, position;
-
-        if (opts.pointLabels.display) {
-            drawPointLabels(me);
-        }
-
-        if (gridLineOpts.display) {
-            helpers.each(me.ticks, function(label, index) {
-                if (index !== 0) {
-                    offset = me.getDistanceFromCenterForValue(me.ticksAsNumbers[index]);
-                    drawRadiusLine(me, gridLineOpts, offset, index);
-                }
-            });
-        }
-
-        if (angleLineOpts.display && lineWidth && lineColor) {
-            ctx.save();
-            ctx.lineWidth = lineWidth;
-            ctx.strokeStyle = lineColor;
-            if (ctx.setLineDash) {
-                ctx.setLineDash(resolve$4([angleLineOpts.borderDash, gridLineOpts.borderDash, []]));
-                ctx.lineDashOffset = resolve$4([angleLineOpts.borderDashOffset, gridLineOpts.borderDashOffset, 0.0]);
-            }
-
-            for (i = me.chart.data.labels.length - 1; i >= 0; i--) {
-                offset = me.getDistanceFromCenterForValue(opts.ticks.reverse ? me.min : me.max);
-                position = me.getPointPosition(i, offset);
-                ctx.beginPath();
-                ctx.moveTo(me.xCenter, me.yCenter);
-                ctx.lineTo(position.x, position.y);
-                ctx.stroke();
-            }
-
-            ctx.restore();
-        }
-    },
-
-    /**
-     * @private
-     */
-    _drawLabels: function() {
-        var me = this;
-        var ctx = me.ctx;
-        var opts = me.options;
-        var tickOpts = opts.ticks;
-
-        if (!tickOpts.display) {
-            return;
-        }
-
-        var startAngle = me.getIndexAngle(0);
-        var tickFont = helpers.options._parseFont(tickOpts);
-        var tickFontColor = Undefined(tickOpts.fontColor, core_defaults.global.defaultFontColor);
-        var offset, width;
-
-        ctx.save();
-        ctx.font = tickFont.string;
-        ctx.translate(me.xCenter, me.yCenter);
-        ctx.rotate(startAngle);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        helpers.each(me.ticks, function(label, index) {
-            if (index === 0 && !tickOpts.reverse) {
-                return;
-            }
-
-            offset = me.getDistanceFromCenterForValue(me.ticksAsNumbers[index]);
-
-            if (tickOpts.showLabelBackdrop) {
-                width = ctx.measureText(label).width;
-                ctx.fillStyle = tickOpts.backdropColor;
-
-                ctx.fillRect(
-                    -width / 2 - tickOpts.backdropPaddingX,
-                    -offset - tickFont.size / 2 - tickOpts.backdropPaddingY,
-                    width + tickOpts.backdropPaddingX * 2,
-                    tickFont.size + tickOpts.backdropPaddingY * 2
-                );
-            }
-
-            ctx.fillStyle = tickFontColor;
-            ctx.fillText(label, 0, -offset);
-        });
-
-        ctx.restore();
-    },
-
-    /**
-     * @private
-     */
-    _drawTitle: helpers.noop
-});
-
 var defaultConfig$4 = {
     position: 'bottom',
 
@@ -9663,14 +9083,10 @@ var defaultConfig$4 = {
     }
 };
 
-// INTERNAL: static default options, registered in src/index.js
-var _defaults$4 = defaultConfig$4;
-
 var scales = {
     category: scale_category,
     linear: scale_linear,
     logarithmic: scale_logarithmic,
-    radialLinear: scale_radialLinear,
 };
 
 core_defaults._set('global', {
@@ -10043,8 +9459,6 @@ var plugin_filler = {
     }
 };
 
-var noop$1 = helpers.noop;
-
 core_defaults._set('global', {
     legend: {
         display: true,
@@ -10167,7 +9581,7 @@ var Legend = Element.extend({
     // Any function defined here is inherited by all legend types.
     // Any function can be extended by the legend type
 
-    beforeUpdate: noop$1,
+    beforeUpdate: noop,
     update: function(maxWidth, maxHeight, margins) {
         var me = this;
 
@@ -10197,11 +9611,11 @@ var Legend = Element.extend({
 
         return me.minSize;
     },
-    afterUpdate: noop$1,
+    afterUpdate: noop,
 
     //
 
-    beforeSetDimensions: noop$1,
+    beforeSetDimensions: noop,
     setDimensions: function() {
         var me = this;
         // Set the unconstrained dimension before label rotation
@@ -10230,11 +9644,11 @@ var Legend = Element.extend({
             height: 0
         };
     },
-    afterSetDimensions: noop$1,
+    afterSetDimensions: noop,
 
     //
 
-    beforeBuildLabels: noop$1,
+    beforeBuildLabels: noop,
     buildLabels: function() {
         var me = this;
         var labelOpts = me.options.labels || {};
@@ -10252,11 +9666,11 @@ var Legend = Element.extend({
 
         me.legendItems = legendItems;
     },
-    afterBuildLabels: noop$1,
+    afterBuildLabels: noop,
 
     //
 
-    beforeFit: noop$1,
+    beforeFit: noop,
     fit: function() {
         var me = this;
         var opts = me.options;
@@ -10364,7 +9778,7 @@ var Legend = Element.extend({
         me.width = minSize.width;
         me.height = minSize.height;
     },
-    afterFit: noop$1,
+    afterFit: noop,
 
     // Shared Methods
     isHorizontal: function() {
@@ -10657,8 +10071,6 @@ var plugin_legend = {
     }
 };
 
-var noop$2 = helpers.noop;
-
 core_defaults._set('global', {
     title: {
         display: false,
@@ -10685,7 +10097,7 @@ var Title = Element.extend({
 
     // These methods are ordered by lifecycle. Utilities then follow.
 
-    beforeUpdate: noop$2,
+    beforeUpdate: noop,
     update: function(maxWidth, maxHeight, margins) {
         var me = this;
 
@@ -10716,11 +10128,11 @@ var Title = Element.extend({
         return me.minSize;
 
     },
-    afterUpdate: noop$2,
+    afterUpdate: noop,
 
     //
 
-    beforeSetDimensions: noop$2,
+    beforeSetDimensions: noop,
     setDimensions: function() {
         var me = this;
         // Set the unconstrained dimension before label rotation
@@ -10749,17 +10161,17 @@ var Title = Element.extend({
             height: 0
         };
     },
-    afterSetDimensions: noop$2,
+    afterSetDimensions: noop,
 
     //
 
-    beforeBuildLabels: noop$2,
-    buildLabels: noop$2,
-    afterBuildLabels: noop$2,
+    beforeBuildLabels: noop,
+    buildLabels: noop,
+    afterBuildLabels: noop,
 
     //
 
-    beforeFit: noop$2,
+    beforeFit: noop,
     fit: function() {
         var me = this;
         var opts = me.options;
@@ -10778,7 +10190,7 @@ var Title = Element.extend({
         me.width = minSize.width = isHorizontal ? me.maxWidth : textSize;
         me.height = minSize.height = isHorizontal ? textSize : me.maxHeight;
     },
-    afterFit: noop$2,
+    afterFit: noop,
 
     // Shared Methods
     isHorizontal: function() {

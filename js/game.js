@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-22
+// @version 2020-09-30
 //
 // Game specific code:
 // - control the board, moves
@@ -18,9 +18,9 @@ DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo,
 FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
 HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
 IsString, Keys, KEYS,
-listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, Max, Min, Module, navigator, Now, Pad, Parent,
-parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d, resize_text,
-Resource, restore_history, resume_game, Round,
+listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
+Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
+resize_text, Resource, restore_history, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
 Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
 touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart,
@@ -601,7 +601,7 @@ function check_draw_arrow(board) {
         next_ply = ply + 1;
 
     // wrong color?
-    if (board.name.slice(0, 2) == 'pv' && next_ply % 2 != id % 2)
+    if (board.name.slice(0, 2) == 'pv' && (next_ply & 1) != (id & 1))
         return;
 
     // wrong current move?
@@ -682,7 +682,7 @@ function create_boards(mode='html') {
     // 4) pva colors
     let lines = [0, 1, 2, 3].map(id => {
         let color = Y[`graph_color_${id}`];
-        return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id % 2}" style="background:${color}"></div>`;
+        return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id & 1}" style="background:${color}"></div>`;
     });
     HTML(Id('colors'), lines.join(''));
 
@@ -2109,7 +2109,7 @@ function calculate_seeds(num_team, new_mode) {
         number *= 2;
         let seeds = [];
         for (let i = 0; i < number; i ++) {
-            let value = (i % 2)? (new_mode? (number/2 + seeds[i - 1]) % (number + 1): (number + 1 - seeds[i - 1])): nexts[Floor(i / 2)];
+            let value = (i & 1)? (new_mode? (number/2 + seeds[i - 1]) % (number + 1): (number + 1 - seeds[i - 1])): nexts[Floor(i / 2)];
             seeds[i] = (value <= num_team)? value: 0;
         }
         nexts = seeds;
@@ -2358,10 +2358,10 @@ function create_bracket(section, data) {
                     // propagate the winner to the next round
                     if (finished) {
                         if (class_ == ' win')
-                            SetDefault(nexts, Floor(i / 2), [{}, {}])[i % 2] = item;
+                            SetDefault(nexts, Floor(i / 2), [{}, {}])[i & 1] = item;
                         // match for 3rd place
                         else if (class_ == ' loss' && number == 2)
-                            SetDefault(nexts, 1, [{}, {}])[i % 2] = item;
+                            SetDefault(nexts, 1, [{}, {}])[i & 1] = item;
                     }
 
                     if (number == 1 && i == 1)
@@ -2920,7 +2920,7 @@ function parse_pgn(section, data, mode=7, origin='') {
                 if (pv && !pv.includes('.')) {
                     pv = pv.split(' ').map((item, id) => {
                         let curr = id + ply,
-                            is_white = (curr % 2 == 0),
+                            is_white = !(curr & 1),
                             move_num = Floor(curr / 2) + 1;
                         if (!id)
                             return `${move_num}.${is_white? ' ': '..'}${item}`;
@@ -3115,7 +3115,7 @@ function update_mobility() {
         HTML(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
         node.dataset.i = gply;
     }
-    HTML(`#mobil${1 - ply % 2}`, Abs(mobility));
+    HTML(`#mobil${1 - (ply & 1)}`, Abs(mobility));
 }
 
 /**
@@ -3134,7 +3134,7 @@ function update_move_info(section, ply, move, fresh) {
     let is_book = move.book,
         depth = is_book? '-': Undefined(move.d, '-'),
         eval_ = is_book? 'book': Undefined(move.wv, '-'),
-        id = (ply + 2) % 2,
+        id = ply & 1,
         is_pva = (section == 'pva'),
         main = xboards[section],
         num_ply = main.moves.length,
@@ -3190,7 +3190,7 @@ function update_move_pv(section, ply, move) {
 
     let is_book = move.book,
         eval_ = is_book? 'book': move.wv,
-        id = (ply + 2) % 2,
+        id = ply & 1,
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
@@ -3373,7 +3373,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         num_ply = main.moves.length,
         move = moves[num_move - 1],
         ply = get_move_ply(move),
-        who = num_ply % 2;                      // num_ply % 2 tells us who plays next
+        who = num_ply & 1;                      // num_ply & 1 tells us who plays next
 
     // 1) clock
     // time control could be different for white and black
@@ -3606,7 +3606,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
     // 5) clock
     if (section == 'live' && (last_move || new_game)) {
-        let who = last_move? (1 + last_move.ply) % 2: 0;
+        let who = last_move? (1 + last_move.ply) & 1: 0;
         if (!new_game)
             players[who].time = 0;
         start_clock(section, who, finished, pgn.elapsed || 0);
@@ -3973,7 +3973,7 @@ function update_live_eval(section, data, id, force_ply) {
     update_hardware(section, id + 2, engine, short, desc, [box_node, node]);
 
     // invert eval for black?
-    if (data.invert && data.ply % 2 == 0)
+    if (data.invert && !(data.ply & 1))
         eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
@@ -4555,6 +4555,7 @@ function handle_board_events(board, type, value) {
             // update main board stats
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
+            mark_ply_charts(cur_ply);
         }
         if (name == section) {
             // show PV's
@@ -4572,12 +4573,12 @@ function handle_board_events(board, type, value) {
             if (Y.arrow_moves == 'all')
                 add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
 
-            update_time_control(section, (cur_ply + 3) % 2);
+            update_time_control(section, (cur_ply + 1) & 1);
         }
         break;
     }
 
-    // update MR50 + draw/win/tb
+    // update MR50 + draw/win/tb + x/yaxis
     if (move && board == board_target)
         update_overview_result(move);
 

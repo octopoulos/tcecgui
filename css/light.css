@@ -1317,6 +1317,12 @@ grid {
     position: fixed;
     z-index: 9;
 }
+.cmarker {
+    background: rgba(255, 172, 40, 0.5);
+    position: absolute;
+    transition: all 0.1s;
+    z-index: 1;
+}
 #background,
 #meta-canvas {
     height: 100%;
