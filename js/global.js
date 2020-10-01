@@ -342,9 +342,10 @@ function reset_old_settings() {
         save_option('game_level', 'amateur');
         save_option('game_options_black', 'd=4 e=att n=1 q=8 s=ab t=2');
         save_option('game_options_white', 'd=4 e=att n=1 q=8 s=ab t=2');
-        save_option('game_wasm', 0);
         save_option('turn_opacity', 0);
     }
+    if (version < '20200930')
+        save_option('game_wasm', 1);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
