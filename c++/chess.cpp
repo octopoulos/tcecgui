@@ -44,7 +44,7 @@ constexpr char      COLOR_TEXT(uint8_t color) {return (color == 0)? 'w': 'b';}
 constexpr Piece     COLORIZE(uint8_t color, Piece type) {return type + (color << 3);}
 #define DEFAULT_POSITION "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 constexpr Square    EMPTY = 255;
-constexpr Square    File(Square square) {return square & 15;}
+constexpr Square    Filer(Square square) {return square & 15;}
 constexpr Piece     KING = 6;
 constexpr Piece     KNIGHT = 2;
 constexpr uint8_t   MAX_DEPTH = 64;
@@ -637,7 +637,7 @@ private:
 
                 if (Rank(from) == Rank(ambig_from))
                     same_rank ++;
-                if (File(from) == File(ambig_from))
+                if (Filer(from) == Filer(ambig_from))
                     same_file ++;
             }
         }
@@ -670,7 +670,7 @@ private:
             auto bsquares = PIECE_SQUARES[1][piece],
                 wsquares = PIECE_SQUARES[0][piece];
             for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++)
-                bsquares[((7 - Rank(i)) << 4) + File(i)] = wsquares[i];
+                bsquares[((7 - Rank(i)) << 4) + Filer(i)] = wsquares[i];
         }
     }
 
@@ -1050,7 +1050,7 @@ public:
         if (frc) {
             for (auto square : castling)
                 if (square != EMPTY) {
-                    auto file = File(square),
+                    auto file = Filer(square),
                         rank = Rank(square);
                     if (rank > 0)
                         castle += (file + 'A');
@@ -1334,8 +1334,8 @@ public:
             if (!materials[WHITE]) {
                 auto king = kings[WHITE],
                     king2 = kings[BLACK];
-                score -= (std::abs(File(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
-                score += (std::abs(File(king) - File(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
+                score -= (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
+                score += (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
                 score += mobilities[6] * 15;
             }
             else
@@ -1345,8 +1345,8 @@ public:
             if (!materials[BLACK]) {
                 auto king = kings[BLACK],
                     king2 = kings[WHITE];
-                score -= (std::abs(File(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
-                score += (std::abs(File(king) - File(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
+                score -= (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
+                score += (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
                 score += mobilities[6] * 15;
             }
             else
@@ -1573,17 +1573,17 @@ public:
                     char file_letter = color? 'a': 'A';
                     auto king = kings[color];
 
-                    for (int i = king + 1; File(i) <= 7; i ++)
+                    for (int i = king + 1; Filer(i) <= 7; i ++)
                         if (TYPE(board[i]) == ROOK) {
                             castling[color * 2] = i;
-                            castle += file_letter + File(i);
+                            castle += file_letter + Filer(i);
                             break;
                         }
 
-                    for (int i = king - 1; File(i) >= 0; i --)
+                    for (int i = king - 1; Filer(i) >= 0; i --)
                         if (TYPE(board[i]) == ROOK) {
                             castling[color * 2 + 1] = i;
-                            castle += file_letter + File(i);
+                            castle += file_letter + Filer(i);
                             break;
                         }
                 }
@@ -1759,7 +1759,7 @@ public:
 
             // regular notation => change .to to rook position
             if (!piece) {
-                if (std::abs(File(move_from) - File(move_to)) == 2) {
+                if (std::abs(Filer(move_from) - Filer(move_to)) == 2) {
                     if (move_to > move_from)
                         move_to ++;
                     else
@@ -2110,7 +2110,7 @@ public:
 
             if (to == move_to
                     && (!type || type == TYPE(board[move_from]))
-                    && (from_file == EMPTY || from_file == File(move_from))
+                    && (from_file == EMPTY || from_file == Filer(move_from))
                     && (from_rank == EMPTY || from_rank == Rank(move_from))
                     && (!promote || promote == MovePromote(move))) {
                 auto obj = unpackMove(move);
@@ -2198,7 +2198,7 @@ public:
      * @return a1
      */
     std::string squareToAn(Square square, bool check) {
-        auto file = File(square),
+        auto file = Filer(square),
             rank = Rank(square);
         if (check && (file < 0 || file > 7 || rank < 0 || rank > 7))
             return "";
