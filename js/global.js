@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-01
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20200930';
+    VERSION = '20201001';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,6 +54,20 @@ function allie_cp_to_score(cp) {
     if (Abs(cp) > 1000)
         return (cp + (cp > 0 ? 127407 : -127407)) / 153007;
     return Atan(cp / 111) / 1.74;
+}
+
+/**
+ * Update move values but skips empty strings like fen='' and pv=''
+ * @param {Move} move
+ * @param {Object} dico
+ */
+function assign_move(move, dico) {
+    Assign(move, ...Keys(dico).filter(key => {
+        let value = dico[key];
+        if (value == '' || (key == 'ply' && value < -1))
+            return false;
+        return true;
+    }).map(key => ({[key]: dico[key]})));
 }
 
 /**

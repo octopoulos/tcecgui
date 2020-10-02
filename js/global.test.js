@@ -21,8 +21,8 @@ create_module(IMPORT_PATH, [
 ], OUTPUT_MODULE, 'Y');
 
 let {
-    allie_cp_to_score, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply, leela_cp_to_score,
-    mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score, Y,
+    allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
+    leela_cp_to_score, mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score, Y,
 } = require(OUTPUT_MODULE);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,6 +46,23 @@ let {
 ].forEach(([cp, answer], id) => {
     test(`allie_cp_to_score:${id}`, () => {
         expect(allie_cp_to_score(cp)).toBeCloseTo(answer, 5);
+    });
+});
+
+// assign_move
+[
+    [{}, {}, {}],
+    [{}, {text: ''}, {}],
+    [{}, {text: 'hello'}, {text: 'hello'}],
+    [{fen: '8/8/8'}, {fen: ''}, {fen: '8/8/8'}],
+    [{ply: 55}, {ply: 5}, {ply: 5}],
+    [{ply: 55}, {ply: -1}, {ply: -1}],
+    [{ply: 55}, {ply: -2}, {ply: 55}],
+    [{ply: 55}, {ply: -3}, {ply: 55}],
+].forEach(([move, dico, answer], id) => {
+    test(`assign_move:${id}`, () => {
+        assign_move(move, dico);
+        expect(move).toEqual(answer);
     });
 });
 
