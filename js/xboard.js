@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, Assign, AttrsNS, audiobox, C, Chess, Class, clear_timeout, CopyClipboard,
-CreateNode, CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
+CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
 Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, play_sound, RandomInt,
@@ -387,7 +387,7 @@ class XBoard {
                 if (!move.fen) {
                     this.chess_load(fen);
                     let result = this.chess_move(move.m);
-                    Assign(move, result);
+                    assign_move(move, result);
                     move.fen = this.chess_fen();
                     no_load = true;
                 }
@@ -898,7 +898,7 @@ class XBoard {
                             LS(`${this.id}: invalid move at ply ${next}: ${move_next.m}`);
                         return false;
                     }
-                    Assign(move_next, result);
+                    assign_move(move_next, result);
                     move_next.fen = this.chess_fen();
                     move_next.ply = next;
                     // LS(`next=${next} : ${get_move_ply(move_next)}`);
