@@ -816,7 +816,7 @@ function update_scale_custom(scale) {
 
     // no center?
     if (range[1] >= range[2]) {
-        scale.options.funcs = [x => x, y=> y];
+        scale.options.funcs = [x => x, y => y];
         return;
     }
 
