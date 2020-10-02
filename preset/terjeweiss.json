@@ -191,7 +191,6 @@
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
   "graph_color_3": "#b91115",
-  "graph_eval_clamp": 10,
   "graph_eval_mode": "score",
   "graph_line": 1.8,
   "graph_min_width": 400,

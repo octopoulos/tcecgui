@@ -1929,7 +1929,6 @@ function prepare_settings() {
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
-            graph_eval_clamp: option_number(10, 1, 100),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
             graph_marker_color: [{type: 'color'}, '#ffac28'],

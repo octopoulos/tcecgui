@@ -1,6 +1,6 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-12
+// @version 2020-10-01
 //
 /*
 globals
@@ -129,23 +129,24 @@ global.xboards = {
 // clamp_eval
 [
     ['', 0],
-    [NaN, 10],
-    [Infinity, 10],
+    [NaN, 128],
+    [Infinity, 128],
     [-5.2, -5.2],
-    [-19, -10],
+    [-19, -19],
     [3.14, 3.14],
-    [10.05, 10],
+    [10.05, 10.05],
+    [128, 128],
+    [256, 256],
     ['3.14', 3.14],
     ['-3.14', -3.14],
-    ['-something', -10],
-    ['something', 10],
-    ['M#33', 10],
-    ['-M#33', -10],
-    ['#18', 10],
-    ['#-18', -10],
+    ['-something', -128],
+    ['something', 128],
+    ['M#33', 128],
+    ['-M#33', -128],
+    ['#18', 128],
+    ['#-18', -128],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
-        Y.graph_eval_clamp = 10;
         expect(clamp_eval(eval_)).toEqual(answer);
     });
 });

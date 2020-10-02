@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-01
 //
 // Game specific code:
 // - control the board, moves
@@ -4001,7 +4001,7 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    if (section == section_board(section)) {
+    if (section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
         update_live_chart(moves || [data], id + 2);
@@ -4353,7 +4353,6 @@ function change_setting_game(name, value) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
-    case 'graph_eval_clamp':
     case 'graph_eval_mode':
         redraw_eval_charts(sboard);
         break;
