@@ -1321,7 +1321,7 @@ grid {
     background: #ffac28;
     opacity: 0.5;
     position: absolute;
-    transition: all 0.1s;
+    /* transition: all 0.1s; */
     z-index: 1;
 }
 #background,

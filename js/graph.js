@@ -5,8 +5,8 @@
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
-LS, Min, Pad, Round, S, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
+DEV, fix_move_format, Floor, format_eval, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
+Log10, LS, Max, Min, Pad, Pow, Round, S, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
 
@@ -46,6 +46,7 @@ let cached_percents = {},
         },
     },
     charts = {},
+    EVAL_CLAMP = 12.32593,
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
     queued_charts = [];
@@ -125,14 +126,14 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
-    let eval_clamp = Y.graph_eval_clamp;
     if (!isNaN(eval_))
-        return Clamp(eval_ * 1, -eval_clamp, eval_clamp);
+        return eval_ * 1;
+        // return Clamp(eval_ * 1, -EVAL_CLAMP, EVAL_CLAMP);
 
     if (eval_ && eval_.includes('-'))
-        eval_ = -eval_clamp;
+        eval_ = -EVAL_CLAMP;
     else if (eval_ != undefined)
-        eval_ = eval_clamp;
+        eval_ = EVAL_CLAMP;
     else
         eval_ = 0;
 
@@ -204,28 +205,28 @@ function create_chart_data() {
 function create_charts()
 {
     // 1) create all charts
-    new_chart('depth', true, FormatAxis, true);
-    new_chart('eval', true, null, false, (item, data) => {
+    new_chart('depth', true, FormatAxis, 1);
+    new_chart('eval', true, format_eval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
-    new_chart('mobil', true, FormatAxis, true);
-    new_chart('node', false, FormatAxis, true, (item, data) => {
+    new_chart('mobil', true, FormatAxis, 1);
+    new_chart('node', false, FormatAxis, 3, (item, data) => {
         let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
-    new_chart('speed', false, FormatAxis, true, (item, data) => {
+    new_chart('speed', false, FormatAxis, 3, (item, data) => {
         let point = get_tooltip_data(item, data),
             nodes = FormatUnit(point.nodes),
             speed = FormatUnit(point.y);
         return `${speed}nps (${nodes} nodes)`;
     });
-    new_chart('tb', false, FormatAxis, true, (item, data) => {
+    new_chart('tb', false, FormatAxis, 1, (item, data) => {
         let hits = FormatUnit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', false, FormatAxis, true, (item, data) => {
+    new_chart('time', false, FormatAxis, 1, (item, data) => {
         let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
         return `${min}:${Pad(sec)}`;
     }, {backgroundColor: 'rgb(10, 10, 10)'});
@@ -320,11 +321,14 @@ function mark_ply_chart(name, ply, max_ply) {
 
     if (ply < max_ply) {
         let invert_wb = (name == 'mobil') * 1,
-            dataset = chart.data.datasets[(ply + invert_wb) & 1].data,
-            first = dataset[ply & 1];
-        if (first) {
-            offset = first.ply;
-            data = dataset[ply - offset + (offset & 1)];
+            dataset = chart.data.datasets[(ply + invert_wb) & 1].data;
+        for (let i = 0; i < 2; i ++) {
+            let first = dataset[i];
+            if (first) {
+                offset = first.ply - i;
+                data = dataset[ply - offset];
+                break;
+            }
         }
     }
 
@@ -357,21 +361,40 @@ function mark_ply_charts(ply, max_ply) {
  * @param {string} name
  * @param {boolean} has_legend
  * @param {function|Object=} y_ticks FormatUnit, {...}
- * @param {boolean=} logaritmic
+ * @param {number=} mode 1:custom, 2:variable, 4:tanh
  * @param {function=} tooltip_callback
  * @param {Object=} dico
  */
-function new_chart(name, has_legend, y_ticks, logaritmic, tooltip_callback, dico) {
-    let axis_dico = {
-        beginAtZero: true,
-    };
+function new_chart(name, has_legend, y_ticks, mode, tooltip_callback, dico) {
+    let ticks_dico = {};
     if (y_ticks)
-        axis_dico.callback = y_ticks;
+        ticks_dico.callback = y_ticks;
+
+    let axis_dico = {
+        funcs: [x => x, x => x],
+    };
+    if (mode & 1)
+        axis_dico.funcs = [
+            x => x > 0? Log10(x + 1): 0,
+            x => x > 0? Pow(10, x) - 1: 0,
+        ];
+    if (mode & 2)
+        axis_dico.beforeBuildTicks = update_scales;
+
+    // eval
+    // 13 - 91/(x+7)
+    if (mode & 4) {
+        axis_dico.funcs = [
+            x => (x > 10)? (13 - 91/(x + 7)): ((x < -10)? (-13 - 91/(x - 7)): x),
+            y => (y > 10)? ((7 * y)/(-y + 13)): ((y < -10)? (7 * y)/(y + 13) : y),
+        ];
+        ticks_dico.beginAtZero = true;
+    }
 
     let options = Assign({}, CHART_OPTIONS, {
         scales: {
             xAxes: [CHART_X_AXES],
-            yAxes: [0].map(id => new_y_axis(id, axis_dico, logaritmic? {type: 'logarithmic'}: null)),
+            yAxes: [0].map(id => new_y_axis(id, ticks_dico, axis_dico)),
         },
     });
 
@@ -767,6 +790,48 @@ function update_player_charts(name, moves) {
     }
     else
         update_player_chart(name, moves);
+}
+
+/**
+ * Update chart scales
+ * @param {Object} scale
+ */
+function update_scales(scale) {
+    // 1) calculate the 2 regions + center
+    let datasets = scale.chart.data.datasets,
+        data0 = datasets[0].data.filter(item => item != null).map(item => item.y),
+        data1 = datasets[1].data.filter(item => item != null).map(item => item.y),
+        max0 = Max(...data0),
+        max1 = Max(...data1),
+        min0 = Min(...data0),
+        min1 = Min(...data1),
+        range = [0, 0];
+
+    if (max0 < min1)
+        range = [max0 + 1, min1 - 1];
+    else if (max1 < min0)
+        range = [max1 + 1, min0 - 1];
+
+    // no center?
+    if (range[0] == range[1]) {
+        scale.options.funcs = [
+            x => x > 0? Log10(x + 1): 0,
+            x => x > 0? Pow(10, x) - 1: 0,
+        ];
+        return;
+    }
+
+    // 2) adjust the regions
+    let middle = (range[0] + range[1]) / 2,
+        ratio0 = (range[0] * 0.3 + middle * 0.7) / range[0],
+        ratio1 = (range[1] * 0.3 + middle * 0.7) / range[1];
+    if (!isNaN(middle)) {
+        LS(`m=${middle} r=${range}`);
+        scale.options.funcs = [
+            x => x > 0? (x < middle)? x * ratio0: ((x > middle)? x * ratio1 + 3: x): 0,
+            x => x > 0? (x < middle)? x / ratio0: ((x > middle)? (x - 3) / ratio1: x): 0,
+        ];
+    }
 }
 
 // STARTUP

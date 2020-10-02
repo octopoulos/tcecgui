@@ -4001,7 +4001,7 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, force_ply);
 
-    if (section == section_board(section)) {
+    if (section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
         update_live_chart(moves || [data], id + 2);
