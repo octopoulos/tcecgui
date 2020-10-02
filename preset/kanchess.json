@@ -193,7 +193,6 @@
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
   "graph_color_3": "#eb282d",
-  "graph_eval_clamp": 10,
   "graph_eval_mode": "percent",
   "graph_line": 1.2,
   "graph_min_width": 240,

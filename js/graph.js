@@ -5,7 +5,7 @@
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEV, fix_move_format, Floor, format_eval, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
+DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
 Log10, LS, Max, Min, Pad, Pow, Round, S, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
@@ -46,9 +46,10 @@ let cached_percents = {},
         },
     },
     charts = {},
-    EVAL_CLAMP = 12.32593,
+    EVAL_CLAMP = 128,
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
+    FormatEval = value => value? value.toFixed(2): 0,
     queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,9 +127,12 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
-    if (!isNaN(eval_))
-        return eval_ * 1;
-        // return Clamp(eval_ * 1, -EVAL_CLAMP, EVAL_CLAMP);
+    if (!isNaN(eval_)) {
+        eval_ *= 1;
+        if (!Number.isFinite(eval_))
+            return Clamp(eval_, -EVAL_CLAMP, EVAL_CLAMP);
+        return eval_;
+    }
 
     if (eval_ && eval_.includes('-'))
         eval_ = -EVAL_CLAMP;
@@ -205,31 +209,31 @@ function create_chart_data() {
 function create_charts()
 {
     // 1) create all charts
-    new_chart('depth', true, FormatAxis, 1);
-    new_chart('eval', true, format_eval, 4, (item, data) => {
+    // new_chart('depth', true, FormatAxis, 1);
+    new_chart('eval', true, FormatEval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
-    new_chart('mobil', true, FormatAxis, 1);
-    new_chart('node', false, FormatAxis, 3, (item, data) => {
-        let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
-        return nodes;
-    });
-    new_chart('speed', false, FormatAxis, 3, (item, data) => {
-        let point = get_tooltip_data(item, data),
-            nodes = FormatUnit(point.nodes),
-            speed = FormatUnit(point.y);
-        return `${speed}nps (${nodes} nodes)`;
-    });
-    new_chart('tb', false, FormatAxis, 1, (item, data) => {
-        let hits = FormatUnit(get_tooltip_data(item, data).y);
-        return hits;
-    });
-    new_chart('time', false, FormatAxis, 1, (item, data) => {
-        let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
-        return `${min}:${Pad(sec)}`;
-    }, {backgroundColor: 'rgb(10, 10, 10)'});
+    // new_chart('mobil', true, FormatAxis, 1);
+    // new_chart('node', false, FormatAxis, 3, (item, data) => {
+    //     let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
+    //     return nodes;
+    // });
+    // new_chart('speed', false, FormatAxis, 3, (item, data) => {
+    //     let point = get_tooltip_data(item, data),
+    //         nodes = FormatUnit(point.nodes),
+    //         speed = FormatUnit(point.y);
+    //     return `${speed}nps (${nodes} nodes)`;
+    // });
+    // new_chart('tb', false, FormatAxis, 1, (item, data) => {
+    //     let hits = FormatUnit(get_tooltip_data(item, data).y);
+    //     return hits;
+    // });
+    // new_chart('time', false, FormatAxis, 1, (item, data) => {
+    //     let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
+    //     return `${min}:${Pad(sec)}`;
+    // }, {backgroundColor: 'rgb(10, 10, 10)'});
 
     // 2) click events
     Keys(charts).forEach(name => {

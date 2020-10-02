@@ -15,6 +15,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-16 : transposition table
 -          : 2020-09-26 : send a list of U32 to the threads instead of string of uci
+2020-10-01 : 2020-10-01 : improved eval graph
 2020-10-01 : 2020-10-01 : show marker on the graphs
 2020-09-30 : 2020-09-30 : update sync.py
 2020-09-30 : 2020-09-30 : logarithmic in chart.js

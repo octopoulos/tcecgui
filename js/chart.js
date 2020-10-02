@@ -1,5 +1,5 @@
 // chart.js
-// @version 2020-09-30
+// @version 2020-10-01
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
@@ -6384,37 +6384,7 @@ var core_helpers = function() {
  * @namespace Chart.Ticks
  */
 var core_ticks = {
-    /**
-     * Namespace to hold formatters for different types of ticks
-     * @namespace Chart.Ticks.formatters
-     */
-    formatters: {
-        /**
-         * Formatter for value labels
-         * @method Chart.Ticks.formatters.values
-         * @param value the value to display
-         * @return {string|string[]} the label to display
-         */
-        values: function(value) {
-            return IsArray(value) ? value : '' + value;
-        },
-
-        /**
-         * Formatter for linear numeric ticks
-         * @method Chart.Ticks.formatters.linear
-         * @param tickValue {number} the value to be formatted
-         * @param index {number} the position of the tickValue parameter in the ticks array
-         * @param ticks {number[]} the list of ticks being converted
-         * @return {string} string representation of the tickValue parameter
-         */
-        linear: function(tickValue, index, ticks) {
-            return tickValue;
-        },
-
-        custom: function(tickValue, index, ticks) {
-            return tickValue;
-        }
-    }
+    formatters: {}
 };
 
 function valueAtIndexOrDefault(value, index, defaultValue) {
@@ -6471,10 +6441,7 @@ core_defaults._set('scale', {
         autoSkip: true,
         autoSkipPadding: 0,
         labelOffset: 0,
-        // We pass through arrays to be rendered as multiline labels, we convert Others to strings here.
-        callback: core_ticks.formatters.values,
         minor: {},
-        major: {}
     }
 });
 
@@ -6545,7 +6512,7 @@ function computeLabelSizes(ctx, tickFonts, ticks, caches) {
 
     for (i = 0; i < length; ++i) {
         label = ticks[i].label;
-        tickFont = ticks[i].major ? tickFonts.major : tickFonts.minor;
+        tickFont = tickFonts.minor;
         ctx.font = fontString = tickFont.string;
         cache = caches[fontString] = caches[fontString] || {data: {}, gc: []};
         lineHeight = tickFont.lineHeight + 8;
@@ -6620,9 +6587,7 @@ function parseFontOptions(options, nestedOpts) {
 
 function parseTickFontOptions(options) {
     var minor = parseFontOptions(options, options.minor);
-    var major = options.major.enabled ? parseFontOptions(options, options.major) : minor;
-
-    return {minor: minor, major: major};
+    return {minor: minor};
 }
 
 function nonSkipped(ticksToFilter) {
@@ -6653,91 +6618,49 @@ function getEvenSpacing(arr) {
     return diff;
 }
 
-function calculateSpacing(majorIndices, ticks, axisLength, ticksLimit) {
-    var evenMajorSpacing = getEvenSpacing(majorIndices);
-    var spacing = (ticks.length - 1) / ticksLimit;
-    var factors, factor, i, ilen;
+function skip(ticks, spacing) {
+    let start = 0,
+        end = ticks.length,
+        prunes = new Set(),
+        zero = 0;
 
-    // If the major ticks are evenly spaced apart, place the minor ticks
-    // so that they divide the major ticks into even chunks
-    if (!evenMajorSpacing) {
-        return Max(spacing, 1);
-    }
-
-    factors = helpers.math._factorize(evenMajorSpacing);
-    for (i = 0, ilen = factors.length - 1; i < ilen; i++) {
-        factor = factors[i];
-        if (factor > spacing) {
-            return factor;
+    // 1) find zero
+    for (let i = Max(start, 0); i < end; i ++) {
+        let tick = ticks[i];
+        if (tick.value == 0) {
+            zero = i;
+            break;
         }
     }
-    return Max(spacing, 1);
-}
-
-function getMajorIndices(ticks) {
-    var result = [];
-    var i, ilen;
-    for (i = 0, ilen = ticks.length; i < ilen; i++) {
-        if (ticks[i].major) {
-            result.push(i);
-        }
-    }
-    return result;
-}
-
-function skipMajors(ticks, majorIndices, spacing) {
-    var count = 0;
-    var next = majorIndices[0];
-    var i, tick;
 
     spacing = Ceil(spacing);
-    for (i = 0; i < ticks.length; i++) {
-        tick = ticks[i];
-        if (i === next) {
+
+    // 2) check below 0
+    for (let i = 0, next = zero; next >= 0; i --) {
+        let tick = ticks[next];
+        if (tick)
+            prunes.add(next);
+        next = Round(zero + i * spacing);
+    }
+
+    // 3) check above 0
+    for (let i = 1, next = zero; i < end; i ++) {
+        next = Round(zero + i * spacing);
+        let tick = ticks[next];
+        if (tick)
+            prunes.add(next);
+    }
+
+    // 3) result
+    ticks.forEach((tick, i) => {
+        if (prunes.has(i))
             tick._index = i;
-            count++;
-            next = majorIndices[count * spacing];
-        } else {
-            delete tick.label;
-        }
-    }
-}
-
-function skip(ticks, spacing, majorStart, majorEnd) {
-    var start = Undefined(majorStart, 0);
-    var end = Min(Undefined(majorEnd, ticks.length), ticks.length);
-    var count = 0;
-    var length, i, tick, next;
-
-    spacing = Ceil(spacing);
-    if (majorEnd) {
-        length = majorEnd - majorStart;
-        spacing = length / Floor(length / spacing);
-    }
-
-    next = start;
-
-    while (next < 0) {
-        count++;
-        next = Round(start + count * spacing);
-    }
-
-    for (i = Max(start, 0); i < end; i++) {
-        tick = ticks[i];
-        if (i === next) {
-            tick._index = i;
-            count++;
-            next = Round(start + count * spacing);
-        } else {
-            delete tick.label;
-        }
-    }
+        else
+            tick.label = null;
+    });
 }
 
 var Scale = Element.extend({
-
-    zeroLineIndex: 0,
-
     /**
      * Get the padding needed for the scale
      * @method getPadding
@@ -6755,7 +6678,7 @@ var Scale = Element.extend({
     },
 
     /**
-     * Returns the scale tick objects ({label, major})
+     * Returns the scale tick objects ({label})
      * @since 2.7
      */
     getTicks: function() {
@@ -6846,7 +6769,6 @@ var Scale = Element.extend({
             for (i = 0, ilen = me.ticks.length; i < ilen; ++i) {
                 ticks.push({
                     value: me.ticks[i],
-                    major: false
                 });
             }
         }
@@ -7361,29 +7283,7 @@ var Scale = Element.extend({
         var tickOpts = me.options.ticks;
         var axisLength = me._length;
         var ticksLimit = tickOpts.maxTicksLimit || axisLength / me._tickSize() + 1;
-        var majorIndices = tickOpts.major.enabled ? getMajorIndices(ticks) : [];
-        var numMajorIndices = majorIndices.length;
-        var first = majorIndices[0];
-        var last = majorIndices[numMajorIndices - 1];
-        var i, ilen, spacing, avgMajorSpacing;
-
-        // If there are too many major ticks to display them all
-        if (numMajorIndices > ticksLimit) {
-            skipMajors(ticks, majorIndices, numMajorIndices / ticksLimit);
-            return nonSkipped(ticks);
-        }
-
-        spacing = calculateSpacing(majorIndices, ticks, axisLength, ticksLimit);
-
-        if (numMajorIndices > 0) {
-            for (i = 0, ilen = numMajorIndices - 1; i < ilen; i++) {
-                skip(ticks, spacing, majorIndices[i], majorIndices[i + 1]);
-            }
-            avgMajorSpacing = numMajorIndices > 1 ? (last - first) / (numMajorIndices - 1) : null;
-            skip(ticks, spacing, (avgMajorSpacing == null) ? 0 : first - avgMajorSpacing, first);
-            skip(ticks, spacing, last, (avgMajorSpacing == null) ? ticks.length : last + avgMajorSpacing);
-            return nonSkipped(ticks);
-        }
+        let spacing = Max((ticks.length - 1) / ticksLimit, 1);
         skip(ticks, spacing);
         return nonSkipped(ticks);
     },
@@ -7496,13 +7396,14 @@ var Scale = Element.extend({
                 continue;
             }
 
-            if (i === me.zeroLineIndex && options.offset === offsetGridLines) {
+            if (tick.value == 0 || (isHorizontal && !i)) { // && options.offset === offsetGridLines) {
                 // Draw the first index specially
                 lineWidth = gridLines.zeroLineWidth;
                 lineColor = gridLines.zeroLineColor;
                 borderDash = gridLines.zeroLineBorderDash || [];
                 borderDashOffset = gridLines.zeroLineBorderDashOffset || 0.0;
-            } else {
+            }
+            else {
                 lineWidth = valueAtIndexOrDefault(gridLines.lineWidth, i, 1);
                 lineColor = valueAtIndexOrDefault(gridLines.color, i, 'rgba(0,0,0,0.1)');
                 borderDash = gridLines.borderDash || [];
@@ -7512,9 +7413,8 @@ var Scale = Element.extend({
             lineValue = getPixelForGridLine(me, tick._index || i, offsetGridLines);
 
             // Skip if the pixel is out of the range
-            if (lineValue === undefined) {
+            if (lineValue === undefined)
                 continue;
-            }
 
             alignedLineValue = alignPixel(chart, lineValue, lineWidth);
 
@@ -7588,7 +7488,7 @@ var Scale = Element.extend({
             }
 
             pixel = me.getPixelForTick(tick._index || i) + optionTicks.labelOffset;
-            font = tick.major ? fonts.major : fonts.minor;
+            font = fonts.minor;
             lineHeight = font.lineHeight;
             lineCount = IsArray(label) ? label.length : 1;
 
@@ -7999,186 +7899,6 @@ function generateTicks(generationOptions, dataRange) {
     return ticks;
 }
 
-var scale_linearbase = core_scale.extend({
-    getRightValue: function(value) {
-        if (IsString(value)) {
-            return +value;
-        }
-        return core_scale.prototype.getRightValue.call(this, value);
-    },
-
-    handleTickRangeOptions: function() {
-        var me = this;
-        var opts = me.options;
-        var tickOpts = opts.ticks;
-
-        // If we are forcing it to begin at 0, but 0 will already be rendered on the chart,
-        // do nothing since that would make the chart weird. If the user really wants a weird chart
-        // axis, they can manually override it
-        if (tickOpts.beginAtZero) {
-            var minSign = Sign(me.min);
-            var maxSign = Sign(me.max);
-
-            if (minSign < 0 && maxSign < 0) {
-                // move the top up to 0
-                me.max = 0;
-            } else if (minSign > 0 && maxSign > 0) {
-                // move the bottom down to 0
-                me.min = 0;
-            }
-        }
-
-        var setMin = tickOpts.min !== undefined || tickOpts.suggestedMin !== undefined;
-        var setMax = tickOpts.max !== undefined || tickOpts.suggestedMax !== undefined;
-
-        if (tickOpts.min !== undefined) {
-            me.min = tickOpts.min;
-        } else if (tickOpts.suggestedMin !== undefined) {
-            if (me.min === null) {
-                me.min = tickOpts.suggestedMin;
-            } else {
-                me.min = Min(me.min, tickOpts.suggestedMin);
-            }
-        }
-
-        if (tickOpts.max !== undefined) {
-            me.max = tickOpts.max;
-        } else if (tickOpts.suggestedMax !== undefined) {
-            if (me.max === null) {
-                me.max = tickOpts.suggestedMax;
-            } else {
-                me.max = Max(me.max, tickOpts.suggestedMax);
-            }
-        }
-
-        if (setMin !== setMax) {
-            // We set the min or the max but not both.
-            // So ensure that our range is good
-            // Inverted or 0 length range can happen when
-            // ticks.min is set, and no datasets are visible
-            if (me.min >= me.max) {
-                if (setMin) {
-                    me.max = me.min + 1;
-                } else {
-                    me.min = me.max - 1;
-                }
-            }
-        }
-
-        if (me.min === me.max) {
-            me.max++;
-
-            if (!tickOpts.beginAtZero) {
-                me.min--;
-            }
-        }
-    },
-
-    getTickLimit: function() {
-        var me = this;
-        var tickOpts = me.options.ticks;
-        var stepSize = tickOpts.stepSize;
-        var maxTicksLimit = tickOpts.maxTicksLimit;
-        var maxTicks;
-
-        if (stepSize) {
-            maxTicks = Ceil(me.max / stepSize) - Floor(me.min / stepSize) + 1;
-        } else {
-            maxTicks = me._computeTickLimit();
-            maxTicksLimit = maxTicksLimit || 11;
-        }
-
-        if (maxTicksLimit) {
-            maxTicks = Min(maxTicksLimit, maxTicks);
-        }
-
-        return maxTicks;
-    },
-
-    _computeTickLimit: function() {
-        return Number.POSITIVE_INFINITY;
-    },
-
-    handleDirectionalChanges: noop,
-
-    buildTicks: function() {
-        var me = this;
-        var opts = me.options;
-        var tickOpts = opts.ticks;
-        let [func, inv] = opts.funcs;
-
-        // Figure out what the max number of ticks we can support it is based on the size of
-        // the axis area. For now, we say that the minimum tick spacing in pixels must be 40
-        // We also limit the maximum number of ticks to 11 which gives a nice 10 squares on
-        // the graph. Make sure we always have at least 2 ticks
-        var maxTicks = me.getTickLimit();
-        maxTicks = Max(2, maxTicks);
-
-        var numericGeneratorOptions = {
-            maxTicks: maxTicks,
-            min: func(tickOpts.min),
-            max: func(tickOpts.max),
-            precision: tickOpts.precision,
-            stepSize: Undefined(tickOpts.fixedStepSize, tickOpts.stepSize)
-        };
-
-        var ticks = generateTicks(numericGeneratorOptions, me);
-        ticks = ticks.map(tick => inv(tick));
-        me.ticks = ticks;
-
-        me.handleDirectionalChanges();
-
-        // At this point, we need to update our max and min given the tick values since we have expanded the
-        // range of the scale
-        me.max = Max(...ticks);
-        me.min = Min(...ticks);
-
-        if (tickOpts.reverse) {
-            ticks.reverse();
-            me.start = me.max;
-            me.end = me.min;
-        } else {
-            me.start = me.min;
-            me.end = me.max;
-        }
-    },
-
-    convertTicksToLabels: function() {
-        var me = this;
-        me.ticksAsNumbers = me.ticks.slice();
-        me.zeroLineIndex = me.ticks.indexOf(0);
-        core_scale.prototype.convertTicksToLabels.call(me);
-    },
-
-    _configure: function() {
-        var me = this;
-        var ticks = me.getTicks();
-        var start = me.min;
-        var end = me.max;
-        var offset;
-
-        core_scale.prototype._configure.call(me);
-
-        if (me.options.offset && ticks.length) {
-            offset = (end - start) / Max(ticks.length - 1, 1) / 2;
-            start -= offset;
-            end += offset;
-        }
-
-        // let [func] = me.options.funcs;
-        me._startValue = start;
-        me._endValue = end;
-        me._valueRange = end - start;
-    }
-});
-
-var defaultConfig$1 = {
-    position: 'left',
-    ticks: {
-        callback: core_ticks.formatters.linear
-    }
-};
-
 var DEFAULT_MIN = 0;
 var DEFAULT_MAX = 1;
 
@@ -8197,78 +7917,6 @@ function updateMinMax(scale, meta, data) {
     }
 }
 
-var scale_linear = scale_linearbase.extend({
-    determineDataLimits: function() {
-        var me = this;
-        var chart = me.chart;
-        var datasets = chart.data.datasets;
-        var metasets = me._getMatchingVisibleMetas();
-        var ilen = metasets.length;
-        var i, meta, data;
-
-        me.min = Number.POSITIVE_INFINITY;
-        me.max = Number.NEGATIVE_INFINITY;
-
-        for (i = 0; i < ilen; ++i) {
-            meta = metasets[i];
-            data = datasets[meta.index].data;
-            updateMinMax(me, meta, data);
-        }
-
-        me.min = helpers.isFinite(me.min) && !isNaN(me.min) ? me.min : DEFAULT_MIN;
-        me.max = helpers.isFinite(me.max) && !isNaN(me.max) ? me.max : DEFAULT_MAX;
-
-        // Common base implementation to handle ticks.min, ticks.max, ticks.beginAtZero
-        me.handleTickRangeOptions();
-    },
-
-    // Returns the maximum number of ticks based on the scale dimension
-    _computeTickLimit: function() {
-        var me = this;
-        var tickFont;
-
-        if (me.isHorizontal()) {
-            return Ceil(me.width / 40);
-        }
-        tickFont = helpers.options._parseFont(me.options.ticks);
-        return Ceil(me.height / tickFont.lineHeight);
-    },
-
-    // Called after the ticks are built. We need
-    handleDirectionalChanges: function() {
-        if (!this.isHorizontal()) {
-            // We are in a vertical orientation. The top value is the highest. So reverse the array
-            this.ticks.reverse();
-        }
-    },
-
-    getLabelForIndex: function(index, datasetIndex) {
-        return this._getScaleLabel(this.chart.data.datasets[datasetIndex].data[index]);
-    },
-
-    // Utils
-    getPixelForValue: function(value) {
-        var me = this;
-        return me.getPixelForDecimal((+me.getRightValue(value) - me._startValue) / me._valueRange);
-    },
-
-    getValueForPixel: function(pixel) {
-        return this._startValue + this.getDecimalForPixel(pixel) * this._valueRange;
-    },
-
-    getPixelForTick: function(index) {
-        var ticks = this.ticksAsNumbers;
-        if (index < 0 || index > ticks.length - 1) {
-            return null;
-        }
-        return this.getPixelForValue(ticks[index]);
-    }
-});
-
-// INTERNAL: static default options, registered in src/index.js
-var _defaults$1 = defaultConfig$1;
-scale_linear._defaults = _defaults$1;
-
 /**
  * Generate a set of custom ticks
  * @param generationOptions the options used to generate the ticks
@@ -8284,8 +7932,8 @@ function generateTicks$1(generationOptions, dataRange) {
                 maxTicks: 100,
             }, generationOptions),
             {
-                max: func(max >= 0? max * 1.02: max * 0.98),
-                min: func(min >= 0? min * 0.98: min * 1.02),
+                max: func(max >= 0? max * 1.0250: max * 0.9756),
+                min: func(min >= 0? min * 0.9756: min * 1.0250),
             });
 
     return ticks.map(tick => {
@@ -8315,11 +7963,7 @@ function generateTicks$1(generationOptions, dataRange) {
 
 var defaultConfig$2 = {
     position: 'left',
-
-    // label settings
-    ticks: {
-        callback: core_ticks.formatters.custom,
-    }
+    ticks: {}
 };
 
 var scale_custom = core_scale.extend({
@@ -8341,8 +7985,13 @@ var scale_custom = core_scale.extend({
             updateMinMax(me, meta, data);
         }
 
-        me.min = helpers.isFinite(me.min) && !isNaN(me.min) ? me.min : DEFAULT_MIN;
-        me.max = helpers.isFinite(me.max) && !isNaN(me.max) ? me.max : DEFAULT_MAX;
+        me.minValue = me.min;
+        me.maxValue = me.max;
+
+        if (!Number.isFinite(me.max))
+            me.max = DEFAULT_MAX;
+        if (!Number.isFinite(me.min))
+            me.min = DEFAULT_MIN;
 
         // Common base implementation to handle ticks.min, ticks.max
         this.handleTickRangeOptions();
@@ -8351,8 +8000,6 @@ var scale_custom = core_scale.extend({
     handleTickRangeOptions: function() {
         var me = this;
         var tickOpts = me.options.ticks;
-        var DEFAULT_MIN = 0;
-        var DEFAULT_MAX = 10;
         let [func, inv] = me.options.funcs;
 
         me.min = Undefined(tickOpts.min, me.min);
@@ -8426,10 +8073,6 @@ var scale_custom = core_scale.extend({
     convertTicksToLabels: function() {
         var me = this;
         me.tickValues = me.ticks.slice();
-        if (me.options.ticks.beginAtZero) {
-            me.zeroLineIndex = me.ticks.indexOf(0);
-            // LS(me.zeroLineIndex);
-        }
         core_scale.prototype.convertTicksToLabels.call(me);
     },
 
@@ -8445,19 +8088,6 @@ var scale_custom = core_scale.extend({
         }
         return this.getPixelForValue(ticks[index]);
     },
-
-    /**
-     * Returns the value of the first tick.
-     * @param {number} value - The minimum not zero value.
-     * @return {number} The first tick value.
-     * @private
-     */
-    // _getFirstTickValue: function(value) {
-    //     let [func, inv] = this.options.funcs;
-    //     var exp = Floor(func(value));
-    //     var significand = Floor(value / inv(exp));
-    //     return significand * inv(exp);
-    // },
 
     _configure: function() {
         var me = this;
@@ -8503,7 +8133,6 @@ scale_custom._defaults = _defaults$2;
 
 var scales = {
     category: scale_category,
-    linear: scale_linear,
     custom: scale_custom,
 };
 

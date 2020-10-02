@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-01
 //
 // Game specific code:
 // - control the board, moves
@@ -4353,7 +4353,6 @@ function change_setting_game(name, value) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
-    case 'graph_eval_clamp':
     case 'graph_eval_mode':
         redraw_eval_charts(sboard);
         break;
