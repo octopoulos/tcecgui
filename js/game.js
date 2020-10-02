@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-01
+// @version 2020-10-02
 //
 // Game specific code:
 // - control the board, moves
@@ -21,11 +21,11 @@ IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
-S, save_option, save_storage, scene, scroll_adjust, set_3d_events, SetDefault, Show, show_modal, slice_charts, SP,
-Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS, Title, Toggle,
-touch_handle, translate_default, translate_node, Undefined, update_chart_options, update_live_chart, update_markers,
-update_player_charts, update_svg, Upper, virtual_init_3d_special:true, virtual_random_position:true, Visible, window,
-XBoard, Y
+S, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
+slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS,
+Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
+update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
+virtual_random_position:true, Visible, window, XBoard, Y
 */
 'use strict';
 
@@ -4359,6 +4359,15 @@ function change_setting_game(name, value) {
     case 'graph_marker_color':
     case 'graph_marker_opacity':
         update_markers();
+        break;
+    case 'graph_scale':
+        let target = ((context_target || {}).id || '').split('-')[1];
+        if (charts[target]) {
+            Y.scales[target] = value;
+            save_option('scales');
+            set_scale_func(target);
+            update_chart(target);
+        }
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
