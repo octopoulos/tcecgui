@@ -816,7 +816,7 @@ function update_scale_custom(scale) {
 
     // no center?
     if (range[1] >= range[2]) {
-        scale.options.funcs = [x => x, x=> x];
+        scale.options.funcs = [x => x, y=> y];
         return;
     }
 
@@ -851,7 +851,7 @@ function update_scale_custom(scale) {
 
 /**
  * Update the eval scale
- * - 13 - 91/(x+7)
+ * - 12 - 84/(x+7)
  * @param {Object} scale
  */
 function update_scale_eval(scale) {
@@ -859,8 +859,8 @@ function update_scale_eval(scale) {
         x => x,
         y => y,
     ]:[
-        x => (x > 10)? (13 - 91/(x + 7)): ((x < -10)? (-13 - 91/(x - 7)): x),
-        y => (y > 10)? ((7 * y)/(-y + 13)): ((y < -10)? (7 * y)/(y + 13) : y),
+        x => (x >= 0)? 12 - 84/(x + 7): -12 - 84/(x - 7),
+        y => (y >= 0)? (7 * y)/(-y + 12): (7 * y)/(y + 12),
     ];
 }
 
