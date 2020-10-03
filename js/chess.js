@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -528,6 +528,7 @@ var Chess = function(fen_) {
 
     /**
      * Alpha beta tree search
+     * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      * r1bk1bnr/3npppp/p1p3q1/1N6/8/1P2P3/1B1QBPPP/R3K2R w HA - 2 16
      * 2q1kr1r/R2bppb1/NQ3n2/3p1p1p/2pP3P/4P1P1/K5RN/5B2 w - - 7 52
      * n1QBq1k1/5p1p/5KP1/p7/8/8/8/8 w - 0 1
@@ -571,7 +572,16 @@ var Chess = function(fen_) {
             if (!makeMove(move))
                 continue;
             num_valid ++;
-            let score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
+
+            let score;
+            // pv search
+            if (alpha > alpha0 && (max_nodes & 4)) {
+                score = -alphaBeta(-alpha - 1, -alpha, depth + 1, max_depth, line);
+                if (score > alpha && score < beta)
+                    score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
+            }
+            else
+                score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
             undoMove();
 
             if (score >= beta)
@@ -2080,13 +2090,12 @@ var Chess = function(fen_) {
     }
 
     /**
-     * Basic tree search with mask
+     * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
      * @param {number[]} moves
-     * @param {string} mask moves to search, ex: 'b8c6 b8a6 g8h6'
      * @returns {MoveText[]} updated moves
      */
-    function search(moves, mask) {
+    function search(moves) {
         hashBoard();
         evaluatePositions();
 
@@ -2099,14 +2108,9 @@ var Chess = function(fen_) {
 
         let average = 0,
             count = 0,
-            empty = !mask,
-            masked = [];
+            objs = [];
 
         for (let move of moves) {
-            let uci = ucifyMove(move);
-            if (!empty && !mask.includes(uci))
-                continue;
-
             let pv = [],
                 score = 0;
             avg_depth = 1;
@@ -2122,7 +2126,8 @@ var Chess = function(fen_) {
             }
 
             // results
-            let pv_string = uci;
+            let uci = ucifyMove(move),
+                pv_string = uci;
             for (let item of pv) {
                 pv_string += " ";
                 pv_string += ucifyMove(item);
@@ -2132,7 +2137,7 @@ var Chess = function(fen_) {
             obj.m = uci;
             obj.pv = pv_string;
             obj.score = score;
-            masked.push(obj);
+            objs.push(obj);
 
             average += avg_depth;
             count ++;
@@ -2142,8 +2147,11 @@ var Chess = function(fen_) {
 
         avg_depth = count? average / count: 0;
         if (debug & 1)
-            LS(`${turn}: ${max_nodes & 1}: adds=${tt_adds}/${tt_adds2} : hits=${tt_hits}/${tt_hits2} : nodes=${nodes} => ${nodes? (tt_hits / nodes).toFixed(2): '-'}`);
-        return masked;
+            LS([
+                `${turn}: ${max_nodes & 1}: adds=${tt_adds}/${tt_adds2} : hits=${tt_hits}/${tt_hits2}`,
+                ` : nodes=${nodes} => ${nodes? (tt_hits / nodes).toFixed(2): '-'}`,
+            ].join(''));
+        return objs;
     }
 
     /**

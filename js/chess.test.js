@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 //
 /*
 globals
@@ -851,7 +851,7 @@ beforeEach(() => {
         chess.configure(false, options, depth);
         chess.load(fen, false);
         let moves = chess.moves();
-        chess.search(moves, '');
+        chess.search(moves);
         let nodes = chess.nodes();
         if (IsString(answer)) {
             if (moves.size)
@@ -1212,21 +1212,37 @@ beforeEach(() => {
         chess.configure(frc, options, depth);
         chess.load(fen, false);
 
-        let moves = chess.moves(),
-            masks = chess.search(moves, mask);
+        let moves = chess.moves();
+        if (mask) {
+            let copies,
+                mask_set = new Set(mask.split(' '));
+            if (moves.size)
+                copies = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+            else
+                copies = moves;
+            copies = copies.filter(move => mask_set.has(chess.ucifyMove(move)));
+            if (moves.size) {
+                moves.resize(0, 0);
+                for (let copy of copies)
+                    moves.push_back(copy);
+            }
+            else
+                moves = copies;
+        }
+        let objs = chess.search(moves);
 
-        if (masks.size)
-            masks = new Array(masks.size()).fill(0).map((_, id) => masks.get(id));
-        masks.sort((a, b) => b.score - a.score);
+        if (objs.size)
+            objs = new Array(objs.size()).fill(0).map((_, id) => objs.get(id));
+        objs.sort((a, b) => b.score - a.score);
 
-        let best = masks[0],
-            bests = masks.filter(mask => mask.score <= best.score + 0.001),
+        let best = objs[0],
+            bests = objs.filter(mask => mask.score <= best.score + 0.001),
             keys = Keys(checks),
             ucis = new Set(bests.map(mask => mask.m));
 
         if (keys.length) {
             let missing = false,
-                dico = Assign({}, ...masks.map(move => ({[move.m]: move.score})));
+                dico = Assign({}, ...objs.map(move => ({[move.m]: move.score})));
             keys.forEach(key => {
                 let check = checks[key],
                     value = dico[key];

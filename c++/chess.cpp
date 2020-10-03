@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -373,6 +373,10 @@ struct MoveText {
 struct PV {
     int     length;
     Move    moves[MAX_DEPTH];
+
+    PV() {
+        length = 0;
+    }
 };
 
 struct State {
@@ -536,6 +540,7 @@ private:
 
     /**
      * Alpha beta tree search
+     * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      */
     int alphaBeta(int alpha, int beta, int depth, int max_depth, PV *pv) {
         // extend depth if in check
@@ -568,7 +573,16 @@ private:
             if (!makeMove(move))
                 continue;
             num_valid ++;
-            auto score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
+
+            int score;
+            // pv search
+            if (alpha > alpha0 && (max_nodes & 4)) {
+                score = -alphaBeta(-alpha - 1, -alpha, depth + 1, max_depth, &line);
+                if (score > alpha && score < beta)
+                    score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
+            }
+            else
+                score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
             undoMove();
 
             if (score >= beta)
@@ -2123,13 +2137,12 @@ public:
     }
 
     /**
-     * Basic tree search with mask
+     * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
      * @param moves
-     * @param mask moves to search, ex: 'b8c6 b8a6 g8h6'
      * @return updated moves
      */
-    std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
+    std::vector<MoveText> search(std::vector<Move> &moves) {
         hashBoard();
         evaluatePositions();
 
@@ -2142,14 +2155,9 @@ public:
 
         auto average = 0,
             count = 0;
-        auto empty = !mask.size();
-        std::vector<MoveText> masked;
+        std::vector<MoveText> objs;
 
         for (auto &move : moves) {
-            auto uci = ucifyMove(move);
-            if (!empty && mask.find(uci) == std::string::npos)
-                continue;
-
             PV pv;
             int score = 0;
             avg_depth = 1;
@@ -2165,6 +2173,7 @@ public:
             }
 
             // results
+            auto uci = ucifyMove(move);
             std::string pv_string = uci;
             for (auto i = 0; i < pv.length; i ++) {
                 pv_string += " ";
@@ -2175,7 +2184,7 @@ public:
             obj.m = uci;
             obj.pv = pv_string;
             obj.score = score;
-            masked.emplace_back(obj);
+            objs.emplace_back(obj);
 
             average += avg_depth;
             count ++;
@@ -2186,7 +2195,7 @@ public:
         avg_depth = count? average / count: 0;
         if (debug & 1)
             std::cout << turn << ":" << (max_nodes & 1) << "\n";
-        return masked;
+        return objs;
     }
 
     /**

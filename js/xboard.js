@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 //
 // game board:
 // - 4 rendering modes:
@@ -21,8 +21,8 @@ CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
 Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, play_sound, RandomInt,
-S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
-Upper, Visible, window, Worker, Y
+S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
+update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -2557,22 +2557,21 @@ class XBoard {
         }
 
         // split moves across workers
-        let has_moves = {},
-            masks = [],
+        let masks = [],
             specials = new Set(folds.map(fold => fold.m));
         for (let i = 0; i < num_worker; i ++)
             masks.push([]);
 
         for (let i = 0; i < num_move; i ++) {
-            let uci = chess.ucifyMove(moves[i]);
+            let move = moves[i],
+                uci = chess.ucifyMove(move);
             if (specials.has(uci))
                 continue;
             let id = i % num_worker;
-            masks[id].push(uci);
-            has_moves[id] = 1;
+            masks[id].push(move);
         }
         for (let id = 0; id < num_worker; id ++)
-            if (has_moves[id])
+            if (masks[id].length)
                 reply.lefts[id] = id + 1;
 
         // send messages
@@ -2591,7 +2590,7 @@ class XBoard {
             });
         }
         for (let id = 0; id < num_worker; id ++) {
-            if (!has_moves[id])
+            if (!masks[id].length)
                 continue;
             this.workers[id].postMessage({
                 depth: max_time? this.depth: min_depth,
@@ -2600,7 +2599,7 @@ class XBoard {
                 fen: fen,
                 frc: this.frc,
                 id: id,
-                mask: masks[id].join(' '),
+                moves: U32(masks[id]),
                 options: options,
                 search: Y.search,
                 suggest: suggest,

@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 /*
 globals
 Abs, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
@@ -64,27 +64,25 @@ function create_chess(engine) {
  * Think ...
  * @param {string} engine
  * @param {string} fen
- * @param {string} mask
- * @param {boolean} frc
+ * @param {number[]} moves
  * @returns {[Move, number, number]} best_move, score, depth
  */
-function think(engine, fen, mask, frc) {
-    // 1) generate all moves + analyse them, using the mask
+function think(engine, fen, moves) {
+    // 1) generate all moves + analyse them
     let chess = create_chess(engine);
     chess.load(fen, true);
 
     let start = Now(true),
-        moves = chess.moves(),
-        masks = chess.search(moves, mask),
+        objs = chess.search(moves),
         elapsed = Now(true) - start;
 
     // 2) results
     // convert wasm to object
-    if (masks.size)
-        masks = new Array(masks.size()).fill(0).map((_, id) => masks.get(id));
+    if (objs.size)
+        objs = new Array(objs.size()).fill(0).map((_, id) => objs.get(id));
 
     let pawn_score = PIECE_SCORES[PAWN];
-    for (let move of masks) {
+    for (let move of objs) {
         move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
         let score = Undefined(move.score, 0);
         if (Abs(score) >= SCORE_MATING)
@@ -95,8 +93,8 @@ function think(engine, fen, mask, frc) {
         }
         move.score = score;
     }
-    masks.sort((a, b) => b.score - a.score);
-    return [masks, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];
+    objs.sort((a, b) => b.score - a.score);
+    return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];
 }
 
 // COMMUNICATION
@@ -125,7 +123,7 @@ self.onmessage = e => {
         LS(e);
     }
     if (func == 'think') {
-        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.mask, data.frc);
+        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.moves);
         self.postMessage({
             avg_depth: avg_depth,
             elapsed: elapsed,

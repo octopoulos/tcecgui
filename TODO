@@ -5,7 +5,6 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-07-22 : individual piece mobility, ex: bishop 1 + bishop 2
 -          : 2020-09-18 : pressure area around opponent king = larger bonus
 -          : 2020-09-17 : hce improvement: indirect flux, ex: piece piling up
--          : 2020-09-17 : reuse move order from previous iterations
 -          : 2020-09-20 : passed pawns
 -          : 2020-09-18 : pawn structure eval
 ~          : 2020-09-18 : keep list of non empty squares for each side => list of pieces
@@ -14,7 +13,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-16 : transposition table
--          : 2020-09-26 : send a list of U32 to the threads instead of string of uci
+-          : 2020-09-17 : reuse move order from previous iterations
+2020-10-02 : 2020-09-26 : send a U32 list to the threads instead of UCIs
 2020-10-02 : 2010-10-02 : auto graph scale mode + manual config
 2020-10-01 : 2020-10-01 : handle speed/node graphs
 2020-10-01 : 2020-10-01 : improved eval graph
