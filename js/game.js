@@ -4364,7 +4364,7 @@ function change_setting_game(name, value) {
     case 'graph_scale':
         let target = ((context_target || {}).id || '').split('-')[1];
         if (charts[target]) {
-            Y.scales[target] = value;
+            Y.scales[target] = value * 1;
             save_option('scales');
             set_scale_func(target);
             update_chart(target);
