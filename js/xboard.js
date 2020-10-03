@@ -2803,7 +2803,7 @@ class XBoard {
 
         if (id >= -1) {
             Assign(player, {
-                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(1)}/${Floor(reply.sel_depth + 0.5)}`,
+                depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(0)}/${Floor(reply.sel_depth + 0.5)}`,
                 eval: format_eval(best_score),
                 id: color,
                 node: FormatUnit(reply.nodes2, '-'),
@@ -2887,7 +2887,7 @@ class XBoard {
         let result = this.chess_move(best, {decorate: true});
         Assign(result, {
             _fixed: 2,
-            d: (reply.avg_depth / (reply.nodes + 1)).toFixed(1),
+            d: (reply.avg_depth / (reply.nodes + 1)).toFixed(0),
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
             s: Floor(nps + 0.5),

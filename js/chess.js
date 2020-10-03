@@ -2369,7 +2369,7 @@ var Chess = function(fen_) {
         anToSquare: anToSquare,
         attacked: attacked,
         attacks: () => attacks,
-        avgDepth: () => avg_depth,
+        avgDepth: () => max_depth,
         board: () => board,
         boardHash: () => board_hash,
         castling: () => castling,
