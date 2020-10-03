@@ -4353,6 +4353,7 @@ function change_setting_game(name, value) {
     case 'graph_text':
         update_chart_options(null, 3);
         break;
+    case 'graph_eval_clamp':
     case 'graph_eval_mode':
         redraw_eval_charts(sboard);
         break;

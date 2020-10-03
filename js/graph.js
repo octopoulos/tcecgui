@@ -587,6 +587,8 @@ function update_chart(name) {
         return;
 
     let scale = Y.scales[name];
+    if (scale == 0 && name == 'eval')
+        update_scale_linear(chart);
     if (scale & 2)
         update_scale_custom(chart);
     else if (scale & 4)
@@ -915,6 +917,22 @@ function update_scale_eval(chart) {
     ]:[
         x => (x >= 0)? 12 - 84/(x + 7): -12 - 84/(x - 7),
         y => (y >= 0)? (7 * y)/(-y + 12): (7 * y)/(y + 12),
+    ];
+}
+
+/**
+ * Update the linear scale for the EVAL graph
+ * @param {Object} chart
+ */
+function update_scale_linear(chart) {
+    let eval_clamp = Y.graph_eval_clamp,
+        scale = chart.scales['y-axis-0'];
+    scale.options.funcs = (eval_clamp > 0)? [
+        x => Clamp(x, -eval_clamp, eval_clamp),
+        y => y,
+    ]: [
+        x => x,
+        y => y,
     ];
 }
 

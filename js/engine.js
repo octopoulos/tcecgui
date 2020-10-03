@@ -426,10 +426,11 @@ function merge_settings(x_settings) {
  * @param {number} min
  * @param {number} max
  * @param {number=} step
+ * @param {string=} help
  * @returns {[Object, number]}
  */
-function option_number(def, min, max, step=1) {
-    return [{max: max, min: min, step: step, type: 'number'}, def];
+function option_number(def, min, max, step=1, help='') {
+    return [{max: max, min: min, step: step, type: 'number'}, def, help];
 }
 
 /**
