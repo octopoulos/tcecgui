@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-03
 //
 // Game specific code:
 // - control the board, moves
@@ -54,6 +54,7 @@ let ANALYSIS_URLS = {
     BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
+        c64: ['#867ade', '#483aaa'],
         chess24: ['#9e7863', '#633526'],
         custom: [],
         dark: ['#797877', '#585655'],
@@ -222,6 +223,10 @@ let ANALYSIS_URLS = {
     // defaults: {ext: png, off: [0, 0], size: 80}
     PIECE_THEMES = {
         alpha: {},
+        c64: {
+            font: 'c64',
+            size: 100,
+        },
         chess24: {},
         dilena: {
             off: [0, -15],
@@ -233,7 +238,11 @@ let ANALYSIS_URLS = {
             off: [0, -4],
             size: 160,
         },
-        symbol: {},
+        symbol: {
+            font: 'arial',
+            size: 60,
+            unicode: 1,
+        },
         uscf: {},
         wikipedia: {},
     },

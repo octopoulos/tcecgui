@@ -1,10 +1,14 @@
 /*
 light.css
-@version 2020-09-30
+@version 2020-10-03
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
 */
+@font-face {
+    font-family: 'c64';
+    src: url('data:application/font-woff2;charset=utf-8;base64,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') format('woff2');
+}
 * {
     box-sizing: border-box;
     margin: 0;
@@ -189,6 +193,11 @@ input[type="checkbox"] {
 }
 label {
     cursor: pointer;
+}
+pre {
+    font-family: c64;
+    margin-left: 0.5em;
+    pointer-events: all;
 }
 table {
     border-spacing: 0;
@@ -527,9 +536,6 @@ grid {
     grid-template-columns: repeat(8, 1em);
     pointer-events: none;
 }
-.xsquares > pre {
-    margin-left: 0.28em;
-}
 .xsquare {
     height: 1em;
     pointer-events: all;
@@ -542,7 +548,7 @@ grid {
     width: 100%;
 }
 .xnote {
-    font-family: monospace;
+    font-family: consolas;
     font-size: 0.3em;
     left: 0;
     pointer-events: none;
@@ -857,7 +863,7 @@ grid {
     color: #11b;
 }
 .mono {
-    font-family: monospace;
+    font-family: consolas;
     font-size: large;
     text-align: left;
 }
@@ -1092,7 +1098,7 @@ grid {
     outline: 0;
 }
 #live-log {
-    font-family: monospace;
+    font-family: consolas;
     max-height: 80vh;
     width: 100%;
 }

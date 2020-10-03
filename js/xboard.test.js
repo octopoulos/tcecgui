@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-26
+// @version 2020-10-03
 //
 /*
 globals
@@ -184,13 +184,13 @@ live.dual = archive;
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         {notation: 1 + 4},
         [
-            '  a b c d e f g h',
+            '+ a b c d e f g h',
             '8 r n b q k b n r',
             '7 p p p p p p p p',
-            '6   ·   ·   ·   ·',
-            '5 ·   ·   ·   ·  ',
-            '4   ·   ·   ·   ·',
-            '3 ·   ·   ·   ·  ',
+            '6 . . . . . . . .',
+            '5 . . . . . . . .',
+            '4 . . . . . . . .',
+            '3 . . . . . . . .',
             '2 P P P P P P P P',
             '1 R N B Q K B N R',
         ].join('\n'),
@@ -199,14 +199,14 @@ live.dual = archive;
         '6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4 w KQkq - 0 1',
         {notation: 0},
         [
-            '  ·   ·   · k ·',
-            'p r ·   · p · p',
-            '  ·   · p · p ·',
-            '·   · p B   N  ',
-            'b p   P   · R q',
-            '· n r   ·   · B',
-            '  ·   ·   ·   K',
-            '· R · Q ·   ·  ',
+            '. . . . . . k .',
+            'p r . . . p . p',
+            '. . . . p . p .',
+            '. . . p B . N .',
+            'b p . P . . R q',
+            '. n r . . . . B',
+            '. . . . . . . K',
+            '. R . Q . . . .',
         ].join('\n'),
     ],
 ].forEach(([fen, options, answer], id) => {

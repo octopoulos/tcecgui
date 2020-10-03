@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-03
 //
 // game board:
 // - 4 rendering modes:
@@ -17,10 +17,10 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
-CopyClipboard, CreateNode, CreateSVG,
+COLOR, CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
 Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, play_sound, RandomInt,
+Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
@@ -80,6 +80,7 @@ let AI = 'ai',
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
+    UNICODES = [0, 9817, 9816, 9815, 9814, 9813, 9812, 0, 0, 9817, 9822, 9821, 9820, 9819, 9818],
     WB_LOWER = ['white', 'black'],
     WB_TITLE = ['White', 'Black'];
 
@@ -981,6 +982,9 @@ class XBoard {
      * @returns {Object}
      */
     chess_move(text, options={}) {
+        if (!text)
+            return {};
+
         let result,
             chess = this.chess,
             decorate = Undefined(options.decorate, false);
@@ -1155,6 +1159,34 @@ class XBoard {
         this.overlay.appendChild(arrow);
         this.svgs[id].svg = arrow;
         return arrow;
+    }
+
+    /**
+     * Create a chess piece for HTML rendering
+     * @param {string} char
+     * @param {string} style
+     * @param {number} offset
+     * @returns {string}
+     */
+    create_piece(char, style, offset) {
+        let html,
+            theme = this.theme;
+
+        // text/symbol piece
+        if (theme.font) {
+            let piece = PIECES[char] || 0;
+            if (theme.unicode) {
+                char = UNICODES[piece] || '';
+                if (char)
+                    char = `&#${char};`;
+            }
+            html = `<vert style="${style};color:${COLOR(piece)? '#000': '#fff'}">${char}</vert>`;
+        }
+        // png/svg piece
+        else
+            html = `<div style="${style};background-position-x:${offset}px"></div>`;
+
+        return html;
     }
 
     /**
@@ -1368,8 +1400,13 @@ class XBoard {
      */
     get_piece_background(size) {
         let theme = this.theme,
-            image = `url(theme/${theme.name}.${theme.ext})`,
-            piece_size = theme.size,
+            font = theme.font,
+            piece_size = theme.size;
+
+        if (font)
+            return [piece_size, `font-family:${font}`, `scale(${size / piece_size})`];
+
+        let image = `url(theme/${theme.name}.${theme.ext})`,
             diff = (piece_size - size) / 2,
             style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
             transform = `scale(${size / piece_size}) translate(${theme.off[0] - diff}px, ${theme.off[1] - diff}px)`;
@@ -2015,14 +2052,16 @@ class XBoard {
                             row = index >> 4;
 
                         if (!node) {
-                            let html = `<div style="${style};background-position-x:${offset}px"></div>`;
+                            let html = this.create_piece(char, style, offset);
                             node = CreateNode('div', html, {class: 'xpiece'});
                             nodes.push(node);
                             item[2] = node;
                         }
                         // theme change
-                        else if (dirty & 4)
-                            Style('div', `${style};background-position-x:${offset}px`, true, node);
+                        else if (dirty & 4) {
+                            let html = this.create_piece(char, style, offset);
+                            HTML(node, html);
+                        }
 
                         if (found) {
                             node.dataset.c = (row << 4) + col;
@@ -2065,7 +2104,7 @@ class XBoard {
         // column notation
         let scolumn = COLUMN_LETTERS.slice(0, num_col).join(' ');
         if (notation & 1)
-            lines.push(`  ${scolumn}`);
+            lines.push(`+ ${scolumn}`);
 
         // parse all cells
         for (let i = 0; i < num_row; i ++) {
@@ -2074,12 +2113,8 @@ class XBoard {
             if (notation & 4)
                 vector.push(`${8 - i}`);
 
-            for (let j = 0; j < num_col; j ++) {
-                let char = grid[off + j];
-                if (!char)
-                    char = ((i + j) & 1)? '·': ' ';
-                vector.push(char);
-            }
+            for (let j = 0; j < num_col; j ++)
+                vector.push(grid[off + j] || '.');
 
             if (notation & 8)
                 vector.push(`${i + 1}`);
@@ -2092,7 +2127,7 @@ class XBoard {
             lines.push(`  ${scolumn}`);
 
         // output result
-        let font_size = (notation & 12)? 0.91 * num_col / (num_col + 1): 0.91,
+        let font_size = (notation & 12)? 0.5 * num_col / (num_col + 1): 0.5,
             text = lines.join('\n');
         this.output(`<pre style="font-size:${font_size}em">${text}</pre>`);
 
