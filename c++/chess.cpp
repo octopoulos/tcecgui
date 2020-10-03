@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -66,7 +66,7 @@ constexpr Piece     ROOK = 4;
 constexpr int       SCORE_INFINITY = 31001;
 constexpr int       SCORE_MATE = 31000;
 constexpr int       SCORE_MATING = 30001;
-// constexpr int       SCORE_NONE = 31002;
+constexpr int       SCORE_NONE = 31002;
 constexpr Square    SQUARE_A8 = 0;
 constexpr Square    SQUARE_H1 = 119;
 constexpr int       TT_SIZE = 4096;
@@ -373,6 +373,10 @@ struct MoveText {
 struct PV {
     int     length;
     Move    moves[MAX_DEPTH];
+
+    PV() {
+        length = 0;
+    }
 };
 
 struct State {
@@ -434,6 +438,8 @@ private:
     int         eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     int         fen_ply;
+    std::vector<Move> first_moves;
+    std::vector<MoveText> first_objs;
     bool        frc;
     uint8_t     half_moves;
     Square      kings[4];
@@ -452,6 +458,7 @@ private:
     State       ply_states[128];
     int         positions[2];
     int         pv_mode;
+    bool        scan_all;
     int         search_mode;                    // 1:minimax, 2:alpha-beta
     int         sel_depth;
     Table       table[TT_SIZE];
@@ -535,7 +542,30 @@ private:
     }
 
     /**
+     * Add a top level move
+     */
+    void addTopMove(Move move, int score, PV *pv) {
+        auto uci = ucifyMove(move),
+            pv_string = uci;
+        if (pv)
+            for (auto i = 0; i < pv->length; i ++) {
+                pv_string += " ";
+                pv_string += ucifyMove(pv->moves[i]);
+            }
+
+        auto obj = unpackMove(move);
+        obj.m = uci;
+        obj.pv = pv_string;
+        obj.score = score;
+        first_objs.emplace_back(obj);
+
+        if (debug & 2)
+            std::cout << score << ":" << pv_string << "\n";
+    }
+
+    /**
      * Alpha beta tree search
+     * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      */
     int alphaBeta(int alpha, int beta, int depth, int max_depth, PV *pv) {
         // extend depth if in check
@@ -551,12 +581,6 @@ private:
             return quiesce(alpha, beta, max_quiesce);
         }
 
-        // statistics
-        nodes ++;
-        if (ply >= avg_depth)
-            avg_depth = ply + 1;
-
-        // check all moves
         auto alpha0 = alpha,
             best = -SCORE_INFINITY;
         Move best_move = 0;
@@ -564,13 +588,41 @@ private:
         auto moves = createMoves(false);
         auto num_valid = 0;
 
+        // top level
+        if (depth == 0)
+            moves = first_moves;
+        else {
+            nodes ++;
+            if (ply >= avg_depth)
+                avg_depth = ply + 1;
+        }
+
+        // check all moves
         for (auto &move : moves) {
             if (!makeMove(move))
                 continue;
             num_valid ++;
-            auto score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
+
+            int score;
+            // pv search
+            if (alpha > alpha0 && (max_nodes & 4)) {
+                score = -alphaBeta(-alpha - 1, -alpha, depth + 1, max_depth, &line);
+                if (score > alpha && score < beta)
+                    score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
+            }
+            else
+                score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
             undoMove();
 
+            // top level
+            if (depth == 0 && scan_all) {
+                addTopMove(move, score, &line);
+                if (score > best)
+                    best = score;
+                continue;
+            }
+
+            // bound check
             if (score >= beta)
                 return beta;
             if (score > best) {
@@ -579,6 +631,8 @@ private:
 
                 if (score > alpha) {
                     alpha = score;
+                    if (depth == 0)
+                        addTopMove(move, score, &line);
 
                     // update pv
                     if (pv_mode) {
@@ -684,18 +738,22 @@ private:
             return evaluate();
         }
 
-        // statistics
-        nodes ++;
-        if (ply >= avg_depth)
-            avg_depth = ply + 1;
-
-        // check all moves
         auto best = -SCORE_INFINITY,
             best_move = 0;
         PV line;
         auto moves = createMoves(false);
         auto num_valid = 0;
 
+        // top level
+        if (depth == 0)
+            moves = first_moves;
+        else {
+            nodes ++;
+            if (ply >= avg_depth)
+                avg_depth = ply + 1;
+        }
+
+        // check all moves
         for (auto &move : moves) {
             if (!makeMove(move))
                 continue;
@@ -710,6 +768,10 @@ private:
             else
                 score = -miniMax(depth + 1, max_depth, &line);
             undoMove();
+
+            // top level
+            if (depth == 0)
+                addTopMove(move, score, &line);
 
             if (score > best) {
                 best = score;
@@ -853,7 +915,7 @@ public:
     bool attacked(int color, Square square) {
         // knight
         auto target = COLORIZE(color, KNIGHT);
-        for (auto offset : PIECE_OFFSETS[KNIGHT]) {
+        for (auto &offset : PIECE_OFFSETS[KNIGHT]) {
             auto pos = square + offset;
             if (pos & 0x88)
                 continue;
@@ -1048,7 +1110,7 @@ public:
 
         std::string castle;
         if (frc) {
-            for (auto square : castling)
+            for (auto &square : castling)
                 if (square != EMPTY) {
                     auto file = Filer(square),
                         rank = Rank(square);
@@ -1363,10 +1425,9 @@ public:
         }
 
         // squares
-        if (eval_mode & 8) {
-            evaluatePositions();
+        if (eval_mode & 8)
             score += positions[WHITE] - positions[BLACK];
-        }
+
         return score * (1 - (turn << 1));
     }
 
@@ -1374,6 +1435,10 @@ public:
      * Evaluate every piece position, done when starting a search
      */
     void evaluatePositions() {
+        memset(attacks, 0, sizeof(attacks));
+        memset(defenses, 0, sizeof(defenses));
+        memset(materials, 0, sizeof(materials));
+        memset(mobilities, 0, sizeof(mobilities));
         memset(positions, 0, sizeof(positions));
 
         for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
@@ -1381,6 +1446,7 @@ public:
             if (!piece)
                 continue;
             auto color = COLOR(piece);
+            materials[color] += PIECE_SCORES[piece];
             positions[color] += PIECE_SQUARES[color][TYPE(piece)][i];
         }
     }
@@ -2123,70 +2189,54 @@ public:
     }
 
     /**
-     * Basic tree search with mask
+     * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
-     * @param moves
-     * @param mask moves to search, ex: 'b8c6 b8a6 g8h6'
+     * @param move_string list of numbers
+     * @param scan_all_
      * @return updated moves
      */
-    std::vector<MoveText> search(std::vector<Move> &moves, std::string mask) {
+    std::vector<MoveText> search(std::string move_string, bool scan_all_) {
+        // creates the moves
+        first_moves.clear();
+        std::regex re("\\s+");
+        std::sregex_token_iterator it(move_string.begin(), move_string.end(), re, -1);
+        std::sregex_token_iterator reg_end;
+        for (; it != reg_end; it ++) {
+            auto move = static_cast<uint32_t>(std::stoul(it->str()));
+            first_moves.push_back(move);
+        }
+
         hashBoard();
         evaluatePositions();
 
+        avg_depth = 1;
+        first_objs.clear();
         nodes = 0;
+        scan_all = scan_all_;
         sel_depth = 0;
         tt_adds = 0;
         tt_adds2 = 0;
         tt_hits = 0;
         tt_hits2 = 0;
 
-        auto average = 0,
-            count = 0;
-        auto empty = !mask.size();
-        std::vector<MoveText> masked;
+        PV pv;
+        if (search_mode == 1)
+            miniMax(0, max_depth, &pv);
+        else
+            alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 0, max_depth, &pv);
 
-        for (auto &move : moves) {
-            auto uci = ucifyMove(move);
-            if (!empty && mask.find(uci) == std::string::npos)
-                continue;
-
-            PV pv;
-            int score = 0;
-            avg_depth = 1;
-
-            if (max_depth > 0) {
-                if (!makeMove(move))
-                    continue;
-                if (search_mode == 1)
-                    score = -miniMax(1, max_depth, &pv);
-                else
-                    score = -alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 1, max_depth, &pv);
-                undoMove();
+        // add unseen moves with a None score
+        if (!scan_all) {
+            std::map<std::string, int> seens;
+            for (auto &obj : first_objs)
+                seens[obj.m] = 1;
+            for (auto &move : first_moves) {
+                auto uci = ucifyMove(move);
+                if (seens.find(uci) != seens.end())
+                    addTopMove(move, -SCORE_NONE, nullptr);
             }
-
-            // results
-            std::string pv_string = uci;
-            for (auto i = 0; i < pv.length; i ++) {
-                pv_string += " ";
-                pv_string += ucifyMove(pv.moves[i]);
-            }
-
-            auto obj = unpackMove(move);
-            obj.m = uci;
-            obj.pv = pv_string;
-            obj.score = score;
-            masked.emplace_back(obj);
-
-            average += avg_depth;
-            count ++;
-            if (debug & 2)
-                std::cout << score << ":" << pv_string << "\n";
         }
-
-        avg_depth = count? average / count: 0;
-        if (debug & 1)
-            std::cout << turn << ":" << (max_nodes & 1) << "\n";
-        return masked;
+        return first_objs;
     }
 
     /**

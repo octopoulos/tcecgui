@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -71,7 +71,7 @@ let BISHOP = 3,
     SCORE_INFINITY = 31001,
     SCORE_MATE = 31000,
     SCORE_MATING = 30001,
-    // SCORE_NONE = 31002,
+    SCORE_NONE = 31002,
     SQUARE_A8 = 0,
     SQUARE_H1 = 119,
     TT_SIZE = 4096,
@@ -419,6 +419,8 @@ var Chess = function(fen_) {
         eval_mode = 1,                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
         fen = '',
         fen_ply = -1,
+        first_moves = [],                   // top level moves
+        first_objs = [],
         frc = false,
         half_moves = 0,
         kings = U8(2).fill(EMPTY),
@@ -437,6 +439,7 @@ var Chess = function(fen_) {
         ply_states = Array(128).fill(0).map(_ => [0, 0, 0, 0]),
         positions = I32(2),
         pv_mode = 1,
+        scan_all = false,
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
         sel_depth = 0,
         table = Array(TT_SIZE).fill(0),
@@ -527,7 +530,33 @@ var Chess = function(fen_) {
     }
 
     /**
+     * Add a top level move
+     * @param {Move} move
+     * @param {number} score
+     * @param {number[]} pv
+     */
+    function addTopMove(move, score, pv) {
+        let uci = ucifyMove(move),
+            pv_string = uci;
+        if (pv)
+            for (let item of pv) {
+                pv_string += " ";
+                pv_string += ucifyMove(item);
+            }
+
+        let obj = unpackMove(move);
+        obj.m = uci;
+        obj.pv = pv_string;
+        obj.score = score;
+        first_objs.push(obj);
+
+        if (debug & 2)
+            LS(`${score} : ${pv_string}`);
+    }
+
+    /**
      * Alpha beta tree search
+     * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      * r1bk1bnr/3npppp/p1p3q1/1N6/8/1P2P3/1B1QBPPP/R3K2R w HA - 2 16
      * 2q1kr1r/R2bppb1/NQ3n2/3p1p1p/2pP3P/4P1P1/K5RN/5B2 w - - 7 52
      * n1QBq1k1/5p1p/5KP1/p7/8/8/8/8 w - 0 1
@@ -554,12 +583,6 @@ var Chess = function(fen_) {
             return quiesce(alpha, beta, max_quiesce);
         }
 
-        // statistics
-        nodes ++;
-        if (ply >= avg_depth)
-            avg_depth = ply + 1;
-
-        // check all moves
         let alpha0 = alpha,
             best = -SCORE_INFINITY,
             best_move = 0,
@@ -567,13 +590,41 @@ var Chess = function(fen_) {
             moves = createMoves(false),
             num_valid = 0;
 
+        // top level
+        if (depth == 0)
+            moves = first_moves;
+        else {
+            nodes ++;
+            if (ply >= avg_depth)
+                avg_depth = ply + 1;
+        }
+
+        // check all moves
         for (let move of moves) {
             if (!makeMove(move))
                 continue;
             num_valid ++;
-            let score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
+
+            let score;
+            // pv search
+            if (alpha > alpha0 && (max_nodes & 4)) {
+                score = -alphaBeta(-alpha - 1, -alpha, depth + 1, max_depth, line);
+                if (score > alpha && score < beta)
+                    score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
+            }
+            else
+                score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, line);
             undoMove();
 
+            // top level
+            if (depth == 0 && scan_all) {
+                addTopMove(move, score, line);
+                if (score > best)
+                    best = score;
+                continue;
+            }
+
+            // bound check
             if (score >= beta)
                 return beta;
             if (score > best) {
@@ -582,6 +633,8 @@ var Chess = function(fen_) {
 
                 if (score > alpha) {
                     alpha = score;
+                    if (depth == 0)
+                        addTopMove(move, score, line);
 
                     // update pv
                     if (pv_mode) {
@@ -701,18 +754,22 @@ var Chess = function(fen_) {
             return evaluate();
         }
 
-        // statistics
-        nodes ++;
-        if (ply >= avg_depth)
-            avg_depth = ply + 1;
-
-        // check all moves
         let best = -SCORE_INFINITY,
             best_move = 0,
             line = [],
             moves = createMoves(false),
             num_valid = 0;
 
+        // top level
+        if (depth == 0)
+            moves = first_moves;
+        else {
+            nodes ++;
+            if (ply >= avg_depth)
+                avg_depth = ply + 1;
+        }
+
+        // check all moves
         for (let move of moves) {
             if (!makeMove(move))
                 continue;
@@ -727,6 +784,10 @@ var Chess = function(fen_) {
             else
                 score = -miniMax(depth + 1, max_depth, line);
             undoMove();
+
+            // top level
+            if (depth == 0)
+                addTopMove(move, score, line);
 
             if (score > best) {
                 best = score;
@@ -1360,10 +1421,9 @@ var Chess = function(fen_) {
         }
 
         // squares
-        if (eval_mode & 8) {
-            evaluatePositions();
+        if (eval_mode & 8)
             score += positions[WHITE] - positions[BLACK];
-        }
+
         return score * (1 - (turn << 1));
     }
 
@@ -1371,6 +1431,10 @@ var Chess = function(fen_) {
      * Evaluate every piece position, done when starting a search
      */
     function evaluatePositions() {
+        attacks.fill(0);
+        defenses.fill(0);
+        materials.fill(0);
+        mobilities.fill(0);
         positions.fill(0);
 
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
@@ -1378,6 +1442,7 @@ var Chess = function(fen_) {
             if (!piece)
                 continue;
             let color = COLOR(piece);
+            materials[color] += PIECE_SCORES[piece];
             positions[color] += PIECE_SQUARES[color][TYPE(piece)][i];
         }
     }
@@ -2080,70 +2145,45 @@ var Chess = function(fen_) {
     }
 
     /**
-     * Basic tree search with mask
+     * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
-     * @param {number[]} moves
-     * @param {string} mask moves to search, ex: 'b8c6 b8a6 g8h6'
+     * @param {string} move_string list of numbers
+     * @param {boolean} scan_all_
      * @returns {MoveText[]} updated moves
      */
-    function search(moves, mask) {
+    function search(move_string, scan_all_) {
+        // create the moves
+        first_moves = move_string.split(' ').map(item => item >>> 0);
+
         hashBoard();
         evaluatePositions();
 
+        avg_depth = 1;
+        first_objs.length = 0;
         nodes = 0;
+        scan_all = scan_all_;
         sel_depth = 0;
         tt_adds = 0;
         tt_adds2 = 0;
         tt_hits = 0;
         tt_hits2 = 0;
 
-        let average = 0,
-            count = 0,
-            empty = !mask,
-            masked = [];
+        let pv = [];
+        if (search_mode == 1)
+            miniMax(0, max_depth, pv);
+        else
+            alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 0, max_depth, pv);
 
-        for (let move of moves) {
-            let uci = ucifyMove(move);
-            if (!empty && !mask.includes(uci))
-                continue;
-
-            let pv = [],
-                score = 0;
-            avg_depth = 1;
-
-            if (max_depth > 0) {
-                if (!makeMove(move))
-                    continue;
-                if (search_mode == 1)
-                    score = -miniMax(1, max_depth, pv);
-                else
-                    score = -alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 1, max_depth, pv);
-                undoMove();
+        // add unseen moves with a None score
+        if (!scan_all) {
+            let seens = Assign({}, ...first_objs.map(obj => ({[obj.m]: 1})));
+            for (let move of first_moves) {
+                let uci = ucifyMove(move);
+                if (!seens[uci])
+                    addTopMove(move, -SCORE_NONE, []);
             }
-
-            // results
-            let pv_string = uci;
-            for (let item of pv) {
-                pv_string += " ";
-                pv_string += ucifyMove(item);
-            }
-
-            let obj = unpackMove(move);
-            obj.m = uci;
-            obj.pv = pv_string;
-            obj.score = score;
-            masked.push(obj);
-
-            average += avg_depth;
-            count ++;
-            if (debug & 2)
-                LS(`${score} : ${pv_string}`);
         }
-
-        avg_depth = count? average / count: 0;
-        if (debug & 1)
-            LS(`${turn}: ${max_nodes & 1}: adds=${tt_adds}/${tt_adds2} : hits=${tt_hits}/${tt_hits2} : nodes=${nodes} => ${nodes? (tt_hits / nodes).toFixed(2): '-'}`);
-        return masked;
+        return first_objs;
     }
 
     /**

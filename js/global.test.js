@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-22
+// @version 2020-10-02
 //
 /*
 globals
@@ -55,6 +55,7 @@ let {
     [{}, {text: ''}, {}],
     [{}, {text: 'hello'}, {text: 'hello'}],
     [{fen: '8/8/8'}, {fen: ''}, {fen: '8/8/8'}],
+    [{pv: 'd7d5 c2c4'}, {pv: ''}, {pv: 'd7d5 c2c4'}],
     [{ply: 55}, {ply: 5}, {ply: 5}],
     [{ply: 55}, {ply: -1}, {ply: -1}],
     [{ply: 55}, {ply: -2}, {ply: 55}],

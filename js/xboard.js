@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-29
+// @version 2020-10-02
 //
 // game board:
 // - 4 rendering modes:
@@ -16,13 +16,13 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
 CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
 Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, play_sound, RandomInt,
-S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, Undefined, update_svg,
-Upper, Visible, window, Worker, Y
+S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
+update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -202,10 +202,12 @@ class XBoard {
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = -1;                                  // current ply
         this.ply_moves = [];                            // PV moves by real ply
+        this.pv_strings = {};                           // iterative search: pv lists per move
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
         this.rect = null;                               // control rect
         this.replies = {};                              // worker replies
+        this.scores = {};                               // iterative search: used for move ordering
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.shared = null;
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
@@ -1003,9 +1005,7 @@ class XBoard {
      * @returns {number[]}
      */
     chess_moves(single_square=EMPTY) {
-        let moves = this.chess.moves();
-        if (moves.size)
-            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        let moves = ArrayJS(this.chess.moves());
         if (single_square != EMPTY)
             moves = moves.filter(move => MoveFrom(move) == single_square);
         return moves;
@@ -2415,7 +2415,7 @@ class XBoard {
     /**
      * Think ...
      * @param {boolean} suggest
-     * @param {number=} step
+     * @param {number=} step used in iterative mode
      * @returns {boolean} true if the AI was able to play
      */
     think(suggest, step) {
@@ -2434,6 +2434,7 @@ class XBoard {
         if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
             return true;
 
+        // 1) first step => reinitialise things
         if (!step) {
             if (this.thinking) {
                 LS('thinking');
@@ -2441,6 +2442,9 @@ class XBoard {
             }
             if (!suggest)
                 this.clear_high('source target', false);
+
+            this.pv_strings = {};
+            this.scores = {};
             this.set_play(false);
             this.create_workers();
 
@@ -2486,13 +2490,19 @@ class XBoard {
                 chess.undo();
             }
         }
+        // 2) in iteration
         else {
             folds = reply.folds;
             moves = reply.moves2;
             num_move = moves.length;
+
+            // order moves based on the previous scores
+            let scores = this.scores;
+            moves.sort((a, b) => scores[chess.ucifyMove(a)] < scores[chess.ucifyMove(b)]? 1: -1);
+            // LS(moves.map(move => `${chess.ucifyMove(move)}:${scores[chess.ucifyMove(move)]}`).join(' '));
         }
 
-        // setup combined reply
+        // 3) setup combined reply
         let now = Now(true),
             scolor = WB_LOWER[color],
             num_worker = this.workers.length,
@@ -2533,7 +2543,7 @@ class XBoard {
         if (!step)
             this.clock(this.name, color);
 
-        // pure random + insta move?
+        // 4) pure random + insta move?
         if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = chess.unpackMove(moves[id]);
@@ -2556,26 +2566,25 @@ class XBoard {
             return true;
         }
 
-        // split moves across workers
-        let has_moves = {},
-            masks = [],
+        // 5) split moves across workers
+        let masks = [],
             specials = new Set(folds.map(fold => fold.m));
         for (let i = 0; i < num_worker; i ++)
             masks.push([]);
 
         for (let i = 0; i < num_move; i ++) {
-            let uci = chess.ucifyMove(moves[i]);
+            let move = moves[i],
+                uci = chess.ucifyMove(move);
             if (specials.has(uci))
                 continue;
             let id = i % num_worker;
-            masks[id].push(uci);
-            has_moves[id] = 1;
+            masks[id].push(move);
         }
         for (let id = 0; id < num_worker; id ++)
-            if (has_moves[id])
+            if (masks[id].length)
                 reply.lefts[id] = id + 1;
 
-        // send messages
+        // 6) send messages
         if (folds.length) {
             this.worker_message({
                 data: {
@@ -2591,7 +2600,7 @@ class XBoard {
             });
         }
         for (let id = 0; id < num_worker; id ++) {
-            if (!has_moves[id])
+            if (!masks[id].length)
                 continue;
             this.workers[id].postMessage({
                 depth: max_time? this.depth: min_depth,
@@ -2600,8 +2609,10 @@ class XBoard {
                 fen: fen,
                 frc: this.frc,
                 id: id,
-                mask: masks[id].join(' '),
+                moves: U32(masks[id]),
                 options: options,
+                // TODO: remove folds once chess.js can recognize 3-fold itself
+                scan_all: (max_time && !step) || options.includes('X=') || folds.length,
                 search: Y.search,
                 suggest: suggest,
             });
@@ -2705,9 +2716,12 @@ class XBoard {
         if (id >= 0)
             reply.lefts[id] = 0;
 
-        for (let obj of moves)
+        for (let obj of moves) {
             if (obj.from != obj.to)
                 combine.push(obj);
+            this.pv_strings[obj.m] = obj.pv;
+            this.scores[obj.m] = obj.score;
+        }
 
         reply.avg_depth += avg_depth * nodes;
         reply.nodes += nodes;
@@ -2744,7 +2758,7 @@ class XBoard {
 
         // 4) update
         let best_score = best.score,
-            is_iterative = (this.max_time > 0 && Abs(best_score) < 200),
+            is_iterative = (this.max_time != 0 && Abs(best_score) < 200),
             ply = get_fen_ply(fen),
             color = (1 + ply) & 1,
             player = this.players[color];

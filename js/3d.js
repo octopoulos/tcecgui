@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-02
 //
 // general 3d rendering code
 //
@@ -1367,6 +1367,14 @@ function show_settings(name, xy) {
             title = setting[2],
             y_key = Y[key];
 
+        // only contextual actions?
+        if (title && title[0] == '!') {
+            if (!parent_id)
+                return;
+            title = title.slice(1);
+            y_key = setting[3]();
+        }
+
         // remove prefix and suffix
         if (suffix && clean.slice(-suffix.length) == suffix)
             clean = clean.slice(0, -suffix.length);
@@ -1379,7 +1387,7 @@ function show_settings(name, xy) {
         let style = color? `${(Y.theme == 'dark')? ' class="shadow"': ''} style="color:${color}"`: '';
 
         lines.push(
-            `<a${is_string} class="item${more_class}${title == 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
+            `<a${is_string} class="item${more_class}${title === 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
                 + `<i data-t="${Title(clean).replace(/_/g, ' ')}"${style}></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'

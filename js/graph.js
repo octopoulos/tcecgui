@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-01
+// @version 2020-10-02
 //
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
-Log10, LS, Max, Min, Pad, Pow, Round, S, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
+DEFAULTS, DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
+Log10, LS, Max, Min, Pad, Pow, Round, S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
 
@@ -46,6 +46,7 @@ let cached_percents = {},
         },
     },
     charts = {},
+    DEFAULT_SCALES = {},
     EVAL_CLAMP = 128,
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
@@ -209,18 +210,18 @@ function create_chart_data() {
 function create_charts()
 {
     // 1) create all charts
-    new_chart('depth', true, FormatAxis, 1);
+    new_chart('depth', true, FormatAxis, 10);
     new_chart('eval', true, FormatEval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
         return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
     new_chart('mobil', true, FormatAxis, 0);
-    new_chart('node', false, FormatAxis, 2, (item, data) => {
+    new_chart('node', false, FormatAxis, 10, (item, data) => {
         let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
-    new_chart('speed', false, FormatAxis, 2, (item, data) => {
+    new_chart('speed', false, FormatAxis, 10, (item, data) => {
         let point = get_tooltip_data(item, data),
             nodes = FormatUnit(point.nodes),
             speed = FormatUnit(point.y);
@@ -260,6 +261,10 @@ function create_charts()
     });
 
     update_chart_options(null, 3);
+
+    // settings
+    save_option('scales');
+    DEFAULTS.scales = DEFAULT_SCALES;
 }
 
 /**
@@ -365,33 +370,26 @@ function mark_ply_charts(ply, max_ply) {
  * @param {string} name
  * @param {boolean} has_legend
  * @param {function|Object=} y_ticks FormatUnit, {...}
- * @param {number=} mode 1:custom, 2:variable, 4:tanh
+ * @param {number=} scale 1:log, 2:custom, 4:eval
  * @param {function=} tooltip_callback
  * @param {Object=} dico
  */
-function new_chart(name, has_legend, y_ticks, mode, tooltip_callback, dico) {
+function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico) {
     let ticks_dico = {};
     if (y_ticks)
         ticks_dico.callback = y_ticks;
 
-    let axis_dico = {
-        funcs: [x => x, y => y],
-    };
-    // logarithmic
-    if (mode & 1)
-        axis_dico.funcs = [
-            x => x > 0? Log10(x + 1): 0,
-            y => y > 0? Pow(10, y) - 1: 0,
-        ];
-    // linear custom
-    if (mode & 2)
-        axis_dico.beforeBuildTicks = update_scale_custom;
-
     // eval
-    if (mode & 4) {
-        axis_dico.beforeBuildTicks = update_scale_eval;
+    if (scale & 4)
         ticks_dico.beginAtZero = true;
-    }
+
+    if (Y.scales[name] == undefined)
+        Y.scales[name] = scale;
+    DEFAULT_SCALES[name] = scale;
+
+    let axis_dico = {
+        funcs: set_scale_func(name),
+    };
 
     let options = Assign({}, CHART_OPTIONS, {
         scales: {
@@ -502,8 +500,9 @@ function redraw_eval_charts(section) {
 /**
  * Reset a chart
  * @param {Object} chart
+ * @param {string} name
  */
-function reset_chart(chart) {
+function reset_chart(chart, name) {
     if (!chart)
         return;
 
@@ -512,7 +511,7 @@ function reset_chart(chart) {
     for (let dataset of data_c.datasets)
         dataset.data.length = 0;
 
-    chart.update();
+    update_chart(name);
 }
 
 /**
@@ -523,12 +522,31 @@ function reset_charts(all)
 {
     first_num = -1;
     Keys(charts).forEach(key => {
-        reset_chart(charts[key]);
+        reset_chart(charts[key], key);
     });
 
     if (all)
         for (let key of ['live0', 'live1', 'pv0', 'pv1'])
             xboards[key].evals = [];
+}
+
+/**
+ * Set the y-axis scaling function (not custom)
+ * @param {string} name
+ * @returns {function[]}
+ */
+function set_scale_func(name) {
+    let funcs = (Y.scales[name] & 1)? [
+        x => x > 0? Log10(x + 1): 0,
+        y => y > 0? Pow(10, y) - 1: 0,
+    ]: [x => x, y => y];
+
+    let chart = charts[name];
+    if (chart) {
+        let scale = chart.scales['y-axis-0'];
+        scale.options.funcs = funcs;
+    }
+    return funcs;
 }
 
 /**
@@ -555,8 +573,28 @@ function slice_charts(last_ply) {
         for (let dataset of data_c.datasets)
             dataset.data = dataset.data.slice(from, to);
 
-        chart.update();
+        update_chart(key);
     });
+}
+
+/**
+ * Update the chart when it has received new data
+ * @param {string} name
+ */
+function update_chart(name) {
+    let chart = charts[name];
+    if (!chart)
+        return;
+
+    let scale = Y.scales[name];
+    if (scale & 2)
+        update_scale_custom(chart);
+    else if (scale & 4)
+        update_scale_eval(chart);
+
+    if (DEV.chart)
+        LS(`UC: ${name}`);
+    chart.update();
 }
 
 /**
@@ -672,8 +710,7 @@ function update_live_chart(moves, id) {
     }
 
     fix_labels(labels);
-    if (charts.eval)
-        charts.eval.update();
+    update_chart('eval');
 }
 
 /**
@@ -773,7 +810,7 @@ function update_player_chart(name, moves) {
     }
 
     fix_labels(labels);
-    charts[name].update();
+    update_chart(name);
 }
 
 /**
@@ -796,9 +833,11 @@ function update_player_charts(name, moves) {
 
 /**
  * Update the custom scale
- * @param {Object} scale
+ * @param {Object} chart
  */
-function update_scale_custom(scale) {
+function update_scale_custom(chart) {
+    let scale = chart.scales['y-axis-0'];
+
     // 1) calculate the 2 regions + center
     let datasets = scale.chart.data.datasets,
         data0 = datasets[0].data.filter(item => item != null).map(item => item.y),
@@ -807,7 +846,8 @@ function update_scale_custom(scale) {
         max1 = Max(...data1),
         min0 = Min(...data0),
         min1 = Min(...data1),
-        range = [0, 0];
+        name = scale.chart.canvas.id.split('-')[1],
+        range = [0, 0, 0, 0];
 
     if (max0 < min1)
         range = [min0, max0 * 1.1, min1 * 0.9, max1];
@@ -816,7 +856,20 @@ function update_scale_custom(scale) {
 
     // no center?
     if (range[1] >= range[2]) {
-        scale.options.funcs = [x => x, y => y];
+        // auto => choose log if averages are very different
+        if (Y.scales[name] & 8) {
+            let sum0 = data0.reduce((a, b) => a + b),
+                sum1 = data1.reduce((a, b) => a + b),
+                delta = Abs((sum0 / (sum0 + sum1) - 0.5));
+
+            if (DEV.chart)
+                LS(`USC: ${sum0} : ${sum1} : ${sum0/sum1} => ${delta}`);
+            if (delta > 0.25)
+                Y.scales[name] |= 1;
+            else
+                Y.scales[name] &= ~1;
+        }
+        set_scale_func(name);
         return;
     }
 
@@ -852,9 +905,10 @@ function update_scale_custom(scale) {
 /**
  * Update the eval scale
  * - 12 - 84/(x+7)
- * @param {Object} scale
+ * @param {Object} chart
  */
-function update_scale_eval(scale) {
+function update_scale_eval(chart) {
+    let scale = chart.scales['y-axis-0'];
     scale.options.funcs = (Y.graph_eval_mode == 'percent') ? [
         x => x,
         y => y,

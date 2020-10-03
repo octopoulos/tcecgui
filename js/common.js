@@ -925,6 +925,17 @@ function Visible(sel, parent) {
 // NON-NODE FUNCTIONS
 /////////////////////
 /**
+ * Convert an WASM vector to JS vector
+ * @param {Object|*[]} vector
+ * @returns {Object[]}
+ */
+function ArrayJS(vector) {
+    if (vector.size)
+        vector = new Array(vector.size()).fill(0).map((_, id) => vector.get(id));
+    return vector;
+}
+
+/**
  * Choose a random element in an array
  * @param {*[]} array
  * @param {number} length
@@ -1513,6 +1524,7 @@ function Undefined(value, def) {
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
         Abs: Abs,
+        ArrayJS: ArrayJS,
         Assign: Assign,
         Clamp: Clamp,
         Contain: Contain,

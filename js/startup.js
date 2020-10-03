@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-01
+// @version 2020-10-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -15,9 +15,10 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
-DEFAULTS, detect_device, DEV, device, document, download_tables, draw_rectangle, E, Events, export_settings, FileReader,
-From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types, HasClass, HasClasses, hashes,
-Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+DEFAULT_SCALES, DEFAULTS, detect_device, DEV, device, document, download_tables, draw_rectangle, E, Events,
+export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
+HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
+is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
 PIECE_THEMES, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -43,6 +44,7 @@ let AD_STYLES = {},
         s: 'search',
         t: 'time',
         x: 1,
+        X: 1,
     },
     CONTEXT_MENUS = {
         '#engine': 'engine',
@@ -91,6 +93,14 @@ let AD_STYLES = {},
         'terjeweiss',
     ],
     resume_time = Now(),
+    SCALES = [
+        '4=eval',
+        '0=linear',
+        '1=logarithmic',
+        '10=split auto',
+        '2=split linear',
+        '3=split logarithmic',
+    ],
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -481,6 +491,7 @@ function close_popups() {
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(Id('modal'), '');
+    context_target = null;
 }
 
 /**
@@ -1717,6 +1728,7 @@ function prepare_settings() {
         order: 'left|center|right',         // main panes order
         round: '',                          // archive link + live round
         season: '',                         // archive link
+        scales: {},
         stage: '',                          // archive link
         stream: 0,
         table_tab: {
@@ -1882,9 +1894,9 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
-            material_color: [['inverted', 'normal'], 'normal'],
-            mobility: [ON_OFF, 1],
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
+            material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
+            mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
+            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
@@ -1916,9 +1928,9 @@ function prepare_settings() {
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
             game_options_white: [{type: 'area'}, 'd=4 e=att n=1 q=8 s=ab t=2'],
-            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'AlphaBeta'],
+            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
             game_think: '1',
-            game_time: option_number(5, 0, 120),
+            game_time: option_number(5, -1, 120),
             game_threads: option_number(Max(1, cores / 2), 1, cores),
             game_wasm: [ON_OFF, 1],
         },
@@ -1935,6 +1947,12 @@ function prepare_settings() {
             graph_marker_opacity: option_number(0.5, 0, 1, 0.01),
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(1.2, 0, 10, 0.1),
+            graph_scale: [SCALES, 0, '!', () => {
+                let name = ((context_target || {}).id || '').split('-')[1],
+                    value = Y.scales[name];
+                DEFAULTS.graph_scale = DEFAULT_SCALES[name];
+                return (value & 10)? 10: value;
+            }],
             graph_tension: option_number(0.1, 0, 0.5, 0.01),
             graph_text: option_number(10, 1, 30),
             use_for_arrow: '1',
