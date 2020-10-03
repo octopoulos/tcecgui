@@ -491,7 +491,6 @@ function close_popups() {
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(Id('modal'), '');
-    context_target = null;
 }
 
 /**
