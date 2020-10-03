@@ -2403,7 +2403,7 @@ public:
     }
 
     int em_avgDepth() {
-        return avg_depth;
+        return max_depth;
     }
 
     val em_board() {
