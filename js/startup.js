@@ -1943,7 +1943,7 @@ function prepare_settings() {
             graph_eval_clamp: option_number(10, 0, 100, 1, 'works with scale=linear'),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
-            graph_marker_color: [{type: 'color'}, '#ffac28'],
+            graph_marker_color: [{type: 'color'}, '#299bff'],
             graph_marker_opacity: option_number(0.5, 0, 1, 0.01),
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(1.2, 0, 10, 0.1),
