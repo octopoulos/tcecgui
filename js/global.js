@@ -360,7 +360,7 @@ function reset_old_settings() {
     }
     if (version < '20200930')
         save_option('game_wasm', 1);
-    if (version < '20201003')
+    if (version < '20201003b')
         save_option('game_threads', 1);
 
     LS(`version: ${version} => ${VERSION}`);
