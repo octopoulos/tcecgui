@@ -1893,9 +1893,9 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
-            material_color: [['inverted', 'normal'], 'normal'],
-            mobility: [ON_OFF, 1],
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100'],
+            material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
+            mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
+            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
