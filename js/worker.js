@@ -3,7 +3,7 @@
 // @version 2020-10-02
 /*
 globals
-Abs, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
+Abs, ArrayJS, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
 */
 'use strict';
 
@@ -67,20 +67,16 @@ function create_chess(engine) {
  * @param {number[]} moves
  * @returns {[Move, number, number]} best_move, score, depth
  */
-function think(engine, fen, moves) {
+function think(engine, fen, moves, scan_all) {
     // 1) generate all moves + analyse them
     let chess = create_chess(engine);
     chess.load(fen, true);
 
     let start = Now(true),
-        objs = chess.search(moves),
+        objs = ArrayJS(chess.search(moves.join(' '), scan_all)),
         elapsed = Now(true) - start;
 
     // 2) results
-    // convert wasm to object
-    if (objs.size)
-        objs = new Array(objs.size()).fill(0).map((_, id) => objs.get(id));
-
     let pawn_score = PIECE_SCORES[PAWN];
     for (let move of objs) {
         move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
@@ -123,7 +119,7 @@ self.onmessage = e => {
         LS(e);
     }
     if (func == 'think') {
-        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.moves);
+        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.moves, data.scan_all);
         self.postMessage({
             avg_depth: avg_depth,
             elapsed: elapsed,

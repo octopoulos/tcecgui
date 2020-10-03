@@ -9,7 +9,7 @@ beforeEach, describe, expect, require, test
 'use strict';
 
 let {Chess} = require('./chess.js'),
-    {Assign, IsArray, IsString, Keys, LS, Undefined} = require('./common'),
+    {ArrayJS, Assign, IsArray, IsString, Keys, LS, Undefined} = require('./common'),
     {get_move_ply} = require('./global');
 
 let chess = new Chess(),
@@ -187,9 +187,7 @@ beforeEach(() => {
 ].forEach(([frc, options, depth, answer], id) => {
     test(`configure:${id}`, () => {
         chess.configure(frc, options, depth);
-        let params = chess.params();
-        if (params.size)
-            params = new Array(params.size()).fill(0).map((_, id) => params.get(id));
+        let params = ArrayJS(chess.params());
         expect(params).toEqual(answer);
         expect(chess.frc()).toEqual(frc);
     });
@@ -544,9 +542,7 @@ beforeEach(() => {
 ].forEach(([fen, number, answer], id) => {
     test(`moves:${id}`, () => {
         chess.load(fen, false);
-        let moves = chess.moves();
-        if (moves.size)
-            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
+        let moves = ArrayJS(chess.moves());
         expect(moves.length).toEqual(number);
         if (answer) {
             let text = moves.map(move => chess.ucifyMove(move)).sort().join(' ');
@@ -766,10 +762,8 @@ beforeEach(() => {
 ].forEach(([fen, multi, sloppy, answer, new_fen], id) => {
     test(`multiSan:${id}`, () => {
         chess.load(fen, false);
-        let moves = chess.multiSan(multi, sloppy);
+        let moves = ArrayJS(chess.multiSan(multi, sloppy));
         if (answer) {
-            if (moves.size)
-                moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
             for (let move of moves)
                 expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
             expect(moves).toEqual(answer);
@@ -814,13 +808,10 @@ beforeEach(() => {
 ].forEach(([fen, multi, answer, new_fen], id) => {
     test(`multiUci:${id}`, () => {
         chess.load(fen, false);
-        let moves = chess.multiUci(multi);
+        let moves = ArrayJS(chess.multiUci(multi));
         if (answer) {
-            if (moves.size)
-                moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
             for (let move of moves)
                 expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
-
             if (IsString(answer))
                 moves = moves.map((item, id) => `${!(id & 1)? (1 + id / 2 + '. '): ''}${item.m}`).join(' ');
             expect(moves).toEqual(answer);
@@ -831,31 +822,31 @@ beforeEach(() => {
 
 // nodes
 [
-    ['8/7b/8/2k3P1/p3K3/8/1P6/8 w - - 0 1', 's=mm', 1, 'e4e3 e4e5 e4f3 e4f4 g5g6'],
-    ['8/8/8/2k2pP1/p3K3/8/1P6/8 w - f6 0 2', 's=mm', 1, 'e4d3 e4e3 e4e5 e4f3 e4f4 e4f5 g5f6'],
-    [START_FEN, 's=mm', 4, 206603],
-    [START_FEN, 's=mm', 3, 9322],
-    [START_FEN, 's=mm', 2, 420],
-    [START_FEN, 's=mm', 1, 20],
-    [START_FEN, 'd=0 s=mm', 0, 0],
-    [START_FEN, 's=ab', 5, 77578],
-    [START_FEN, 's=ab', 4, 12808],
-    [START_FEN, 's=ab', 3, 1245],
-    [START_FEN, 's=ab', 2, 420],
-    [START_FEN, 's=ab', 1, 20],
-    [START_FEN, 'd=0 s=ab', 0, 0],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=mm', 4, 421547],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, 23028],
-].forEach(([fen, options, depth, answer], id) => {
+    ['8/7b/8/2k3P1/p3K3/8/1P6/8 w - - 0 1', 's=mm', 1, true, 'e4e3 e4e5 e4f3 e4f4 g5g6'],
+    ['8/8/8/2k2pP1/p3K3/8/1P6/8 w - f6 0 2', 's=mm', 1, true, 'e4d3 e4e3 e4e5 e4f3 e4f4 e4f5 g5f6'],
+    [START_FEN, 's=mm', 4, true, 206603],
+    [START_FEN, 's=mm', 3, true, 9322],
+    [START_FEN, 's=mm', 2, true, 420],
+    [START_FEN, 's=mm', 1, true, 20],
+    [START_FEN, 'd=0 s=mm', 0, true, 1],
+    [START_FEN, 's=ab', 5, true, 77578],
+    [START_FEN, 's=ab', 5, false, 21353],
+    [START_FEN, 's=ab', 4, true, 12808],
+    [START_FEN, 's=ab', 3, true, 1245],
+    [START_FEN, 's=ab', 2, true, 420],
+    [START_FEN, 's=ab', 1, true, 20],
+    [START_FEN, 'd=0 s=ab', 0, true, 1],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=mm', 4, true, 421547],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, true, 21672],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, false, 4795],
+].forEach(([fen, options, depth, scan_all, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.configure(false, options, depth);
         chess.load(fen, false);
-        let moves = chess.moves();
-        chess.search(moves);
+        let moves = ArrayJS(chess.moves());
+        chess.search(moves.join(' '), scan_all);
         let nodes = chess.nodes();
         if (IsString(answer)) {
-            if (moves.size)
-                moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
             let text = moves.map(move => chess.ucifyMove(move)).sort().join(' ');
             expect(text).toEqual(answer);
         }
@@ -897,9 +888,7 @@ beforeEach(() => {
         chess.load(fen, false);
         let moves = chess.moves();
         chess.order(moves);
-        if (moves.size)
-            moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-        moves = moves.map(move => chess.ucifyMove(move)).join(' ');
+        moves = ArrayJS(moves).map(move => chess.ucifyMove(move)).join(' ');
         expect(moves).toEqual(answer);
     });
 });
@@ -929,9 +918,7 @@ beforeEach(() => {
 ].forEach(([frc, options, depth, answer], id) => {
     test(`params:${id}`, () => {
         chess.configure(frc, options, depth);
-        let params = chess.params();
-        if (params.size)
-            params = new Array(params.size()).fill(0).map((_, id) => params.get(id));
+        let params = ArrayJS(chess.params());
         expect(params).toEqual(answer);
         expect(chess.frc()).toEqual(frc);
     });
@@ -1181,28 +1168,28 @@ beforeEach(() => {
 // search
 [
     [START_FEN, '', 'd=4 e=hce p=1 s=mm', 0, {}],
-    ['1rb1kbnq/1p1p4/p1nPp1p1/6Br/5Q2/P1N2N2/1P2PPPP/3RKB1R w K -', 'f4f7', 'd=5 e=att q=2 s=ab t=0', -2186, {}],
+    ['1rb1kbnq/1p1p4/p1nPp1p1/6Br/5Q2/P1N2N2/1P2PPPP/3RKB1R w K -', 'f4f7', 'd=5 e=att q=2 s=ab t=0', -2127, {}],
     ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 n=1 s=ab', 30991, {}],
-    ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -2037, {}],
-    ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 7644}],
-    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 1318, {}],
+    ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -1985, {}],
+    ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 7028}],
+    ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 1260, {}],
     ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 2, 30999, {1: 'g5e6 h7f7'}],
     ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 3, 30999, {1: 'g5e6 h7f7'}],
     ['7k/2Q5/8/1B2P3/8/2PRKN2/8/8 w - - 1 47', '', '', [], {1: 'd3d8', b5c4: 50, c7f7: 50}],
-    ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 188, d7d8: 564, d7h7: -2824}],
+    ['7k/3Q4/1p6/2p5/4K3/1P4PP/P6q/8 w - - 48 107', '', 3, [], {a2a3: 188, d7d8: 511, d7h7: -2345}],
     ['8/6Q1/7p/7k/4P3/P2P2K1/8/8 w - - 0 75', '', 'd=2 e=mat s=mm', [], {g3h3: 0, g7g4: 30999}],
-    ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -4334, h1h7: -1191}],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=ab', [], {g5d2: -332, h2h4: -3101}],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=mm', [], {g5d2: -332, h2h4: -3101}],
+    ['8/7R/8/4B3/P5N1/6P1/PKP3k1/7r b - - 48 96', '', 3, [], {h1b1: -3565, h1h7: -980}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=ab', [], {g5d2: -332, h2h4: -3005}],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1p1/1N6/PPP2PKP/B2R3R w h -', '', 'd=4 e=hce s=mm', [], {g5d2: -332, h2h4: -3005}],
     ['r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16', '', 1, [], {1: 'e1f2'}],
-    ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -2197, e1e4: -3833}],
+    ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -2034, e1e4: -3488}],
     ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=ab', -1737, {}],
     ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=mm', 939, {}],
-    ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=hce q=1 s=ab', -1933, {}],
+    ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=hce q=1 s=ab', -1880, {}],
     ['rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq -', '', 3, [], {b3c1: 0, b3c5: 0, b3d2: 0}],
     ['rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8', '', 1, [], {2: 'e1h1'}],
-    ['rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4', 'd2g5', 'd=3 e=hce q=1 s=ab', -2381, {}],
-    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', '', 1, 2497, {}],
+    ['rnbq1bnr/ppppk1pp/5p2/4p3/8/3P1N2/PPPQPPPP/RNB1KB1R w KQ - 2 4', 'd2g5', 'd=3 e=hce q=1 s=ab', -2321, {}],
+    ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', '', 1, 2434, {}],
     ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 1, -160, {}],
     ['rnbqkbnr/p3ppQp/1p1p4/1N6/8/8/PPP1PPPP/R1B1KBNR b KQkq - 0 5', 'b8c6', 2, -1444, {}],
 ].forEach(([fen, mask, config, answer, checks], id) => {
@@ -1212,27 +1199,12 @@ beforeEach(() => {
         chess.configure(frc, options, depth);
         chess.load(fen, false);
 
-        let moves = chess.moves();
+        let moves = ArrayJS(chess.moves());
         if (mask) {
-            let copies,
-                mask_set = new Set(mask.split(' '));
-            if (moves.size)
-                copies = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-            else
-                copies = moves;
-            copies = copies.filter(move => mask_set.has(chess.ucifyMove(move)));
-            if (moves.size) {
-                moves.resize(0, 0);
-                for (let copy of copies)
-                    moves.push_back(copy);
-            }
-            else
-                moves = copies;
+            let mask_set = new Set(mask.split(' '));
+            moves = moves.filter(move => mask_set.has(chess.ucifyMove(move)));
         }
-        let objs = chess.search(moves);
-
-        if (objs.size)
-            objs = new Array(objs.size()).fill(0).map((_, id) => objs.get(id));
+        let objs = ArrayJS(chess.search(moves.join(' '), true));
         objs.sort((a, b) => b.score - a.score);
 
         let best = objs[0],

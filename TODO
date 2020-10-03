@@ -2,6 +2,7 @@ TODO
 =====
 DONE         CREATED      DESCRIPTION
 ~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
+-          : 2020-10-02 : king safety: check 8 squares around, pawn or edge = block a direction
 ~          : 2020-07-22 : individual piece mobility, ex: bishop 1 + bishop 2
 -          : 2020-09-18 : pressure area around opponent king = larger bonus
 -          : 2020-09-17 : hce improvement: indirect flux, ex: piece piling up
@@ -10,10 +11,11 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-18 : keep list of non empty squares for each side => list of pieces
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
--          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-16 : transposition table
--          : 2020-09-17 : reuse move order from previous iterations
+-          : 2020-10-02 : hash passed pawn + castling
+~          : 2020-09-17 : reuse move order from previous iterations
+2020-10-02 : 2020-10-02 : alpha beta at top level
 2020-10-02 : 2020-09-26 : send a U32 list to the threads instead of UCIs
 2020-10-02 : 2010-10-02 : auto graph scale mode + manual config
 2020-10-01 : 2020-10-01 : handle speed/node graphs
@@ -452,6 +454,7 @@ low:
 -          : 2020-06-20 : parse live log
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
 lowest:
+-          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-05-23 : dynamic pagination and search nodes
 -          : 2020-09-08 : remove socket.io
 -          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)

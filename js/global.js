@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-03
 //
 // global variables/functions shared across multiple js files
 //
@@ -40,7 +40,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201002';
+    VERSION = '20201003';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -360,6 +360,8 @@ function reset_old_settings() {
     }
     if (version < '20200930')
         save_option('game_wasm', 1);
+    if (version < '20201003')
+        save_option('game_threads', 1);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
