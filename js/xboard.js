@@ -381,23 +381,7 @@ class XBoard {
         }
 
         this.update_counter();
-
-        // update mobility
-        if (this.main) {
-            let fen = this.start_fen;
-            for (let move of moves) {
-                let no_load;
-                if (!move.fen) {
-                    this.chess_load(fen);
-                    let result = this.chess_move(move.m);
-                    assign_move(move, result);
-                    move.fen = this.chess_fen();
-                    no_load = true;
-                }
-                this.chess_mobility(move, no_load);
-                fen = move.fen;
-            }
-        }
+        this.update_mobility();
     }
 
     /**
@@ -2731,6 +2715,25 @@ class XBoard {
             HTML(`.xleft`, player.sleft, mini);
             HTML('.xshort', player.short, mini);
             HTML(`.xtime`, player.stime, mini);
+        }
+    }
+
+    // update mobility
+    update_mobility() {
+        if (!this.main_manual)
+            return;
+        let fen = this.start_fen;
+        for (let move of this.moves) {
+            let no_load;
+            if (!move.fen) {
+                this.chess_load(fen);
+                let result = this.chess_move(move.m);
+                assign_move(move, result);
+                move.fen = this.chess_fen();
+                no_load = true;
+            }
+            this.chess_mobility(move, no_load);
+            fen = move.fen;
         }
     }
 
