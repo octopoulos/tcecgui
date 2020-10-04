@@ -4559,7 +4559,6 @@ function copy_pgn(download) {
             });
         }
     }
-    options = options.length? `{${options.join(', ')}}`: '';
 
     // 3) moves
     // - download => save full info
@@ -4581,7 +4580,8 @@ function copy_pgn(download) {
             tb: 1,
             tl: 1,
             wv: 1,
-        };
+        },
+        space = '';
 
     for (let move of board.moves) {
         if (!move)
@@ -4608,15 +4608,18 @@ function copy_pgn(download) {
 
         // add move info
         let number = (move.ply & 1)? (moves.length? '': `${(move.ply + 1) / 2}... `):  `${move.ply / 2 + 1}. `,
-            text = `${number}${move.san || move.m}`;
+            text = `${space}${number}${move.san || move.m}`;
 
+        space = ' ';
         if (download) {
             let extra = Keys(move).filter(key => keeps[key]).sort().map(key => {
                     let keep = keeps[key];
                     return (keep == 2)? key: `${key}=${move[key]}`;
                 }).join(', ');
-            if (extra)
-                text = `${text} {${extra}}`;
+            if (extra) {
+                text = `${text} {${extra}}\n`;
+                space = '';
+            }
         }
         moves.push(text);
     }
@@ -4624,18 +4627,13 @@ function copy_pgn(download) {
     // 4) result
     let text = [
         Keys(headers).sort().map(key => `[${key} "${headers[key]}"]`).join('\n'),
-        '',
-        options,
-        moves.join(download? '\n': ' '),
-    ];
-    if (!options)
-        delete text[2];
-    text = text.join('\n');
+        (options.length? `\n{${options.join(', ')}}`: ''),
+        moves.join(''),
+    ].join('\n');
 
     if (download)
         DownloadObject(text, `${FromTimestamp(Now()).join('').replace(/[:-]/g, '')}.pgn`, 2, true);
-    else
-        CopyClipboard(text);
+    CopyClipboard(text);
     return text;
 }
 
