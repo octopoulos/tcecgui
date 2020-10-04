@@ -1326,8 +1326,8 @@ grid {
 .cmarker {
     background: #ffac28;
     opacity: 0.5;
+    pointer-events: none;
     position: absolute;
-    /* transition: all 0.1s; */
     z-index: 1;
 }
 #background,
