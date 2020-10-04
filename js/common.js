@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-30
+// @version 2020-10-03
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1025,21 +1025,22 @@ function DefaultInt(value, def) {
  * Download a JSON object
  * @param {Object} object
  * @param {string} name output filename
- * @param {boolean=} is_raw save raw object instead of converting it to JSON
+ * @param {number=} mode 0:JSON, 1:binary, 2:text
  * @param {string=} space JSON space for pretty output
  */
-function DownloadObject(object, name, is_raw, space) {
+function DownloadObject(object, name, mode, space) {
     let text,
         node = document.createElement('a');
 
-    if (is_raw)
+    if (mode == 1)
         text = object;
     else {
-        let json = JSON.stringify(object, null, space);
+        let json = (mode == 2)? object: JSON.stringify(object, null, space),
+            type_ = (mode == 2)? 'plain': 'json';
         // add a newline to formatted JSON
         if (space && json.slice(-1) != '\n')
             json += '\n';
-        text = `data:text/json;charset=utf-8,${encodeURIComponent(json)}`;
+        text = `data:text/${type_};charset=utf-8,${encodeURIComponent(json)}`;
     }
 
     node.setAttribute('href', text);

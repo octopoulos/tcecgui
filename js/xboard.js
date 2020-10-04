@@ -1394,6 +1394,21 @@ class XBoard {
     }
 
     /**
+     * Find the FRC index of a FEN
+     * - slow but only needed when saving the PGN
+     * @param {string} fen
+     * @returns {number} -1 if nothing found
+     */
+    frc_index(fen) {
+        for (let i = 0; i < 960; i ++) {
+            let fen960 = this.chess.fen960(i);
+            if (fen960 == fen)
+                return i;
+        }
+        return -1;
+    }
+
+    /**
      * Get piece background
      * @param {number} size
      * @returns {[number, string, string]} piece_size, style, transform
@@ -2807,6 +2822,7 @@ class XBoard {
                 eval: format_eval(best_score),
                 id: color,
                 node: FormatUnit(reply.nodes2, '-'),
+                pv: best.pv,
                 ply: ply + 1,
                 speed: `${FormatUnit(nps)}nps`,
                 wv: format_eval(best_score),
@@ -2890,6 +2906,7 @@ class XBoard {
             d: (reply.avg_depth / (reply.nodes + 1)).toFixed(0),
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: reply.nodes2,
+            pv: best.pv,
             s: Floor(nps + 0.5),
             sd: Floor(reply.sel_depth + 0.5),
             tb: 0,
