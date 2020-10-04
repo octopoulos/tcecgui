@@ -381,7 +381,7 @@ class XBoard {
         }
 
         this.update_counter();
-        this.update_mobility();
+        this.update_mobility(moves);
     }
 
     /**
@@ -2718,12 +2718,15 @@ class XBoard {
         }
     }
 
-    // update mobility
-    update_mobility() {
+    /**
+     * Update mobility
+     * @param {Move[]} moves
+     */
+    update_mobility(moves) {
         if (!this.main_manual)
             return;
         let fen = this.start_fen;
-        for (let move of this.moves) {
+        for (let move of moves) {
             let no_load;
             if (!move.fen) {
                 this.chess_load(fen);
