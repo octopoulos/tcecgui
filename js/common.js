@@ -694,9 +694,10 @@ function S(sel, show, parent, mode='') {
  * Scroll the document to the top
  * @param {string|number=} top if undefined then returns the scrollTop value
  * @param {boolean=} smooth
+ * @param {number=} offset
  * @returns {number}
  */
-function ScrollDocument(top, smooth) {
+function ScrollDocument(top, smooth, offset=0) {
     let scroll = document.scrollingElement;
     if (top != undefined) {
         // top can be a selector too
@@ -707,7 +708,7 @@ function ScrollDocument(top, smooth) {
             top = top.offsetTop;
         }
         if (smooth) {
-            window.scrollTo({top: top, behavior: 'smooth'});
+            window.scrollTo({top: Max(0, top + offset), behavior: 'smooth'});
             return top;
         }
         scroll.scrollTop = top;
