@@ -4511,9 +4511,12 @@ function copy_pgn(download) {
     if (!context_target)
         return '';
     let parent = Parent(context_target, {class_: 'xboard', self: true});
-    if (!parent)
-        return '';
-    let board = xboards[parent.id];
+    if (!parent) {
+        parent = Parent(context_target, {class_: 'drag', self: true});
+        if (!parent)
+            return '';
+    }
+    let board = xboards[parent.id.split('-').slice(-1)[0]];
     if (!board)
         return '';
 
