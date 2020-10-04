@@ -361,6 +361,7 @@ function reset_old_settings() {
     if (version < '20200930')
         save_option('game_wasm', 1);
     if (version < '20201003b') {
+        save_option('game_every', 100);
         save_option('game_threads', 1);
         save_option('graph_marker_color', '#299bff');
     }
