@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-03
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -2020,6 +2020,8 @@ function prepare_settings() {
         copy: {
             _pop: true,
             copy_moves: '1',
+            copy_pgn: '1',
+            download_pgn: '1',
             grid: option_number(0, 0, 10),
             move_height: option_number(5.2, 3, 100, 0.05),
             moves: [ON_OFF, 1],
@@ -2036,6 +2038,8 @@ function prepare_settings() {
         copy_pv: {
             _pop: true,
             copy_moves: '1',
+            copy_pgn: '1',
+            download_pgn: '1',
             grid_pv: option_number(1, 0, 10),
             move_height_pv: option_number(5, 3, 100, 0.05),
             moves_pv: [ON_OFF, 1],
@@ -2043,6 +2047,8 @@ function prepare_settings() {
         copy_pva: {
             _pop: true,
             copy_moves: '1',
+            copy_pgn: '1',
+            download_pgn: '1',
             grid_pva: option_number(0, 0, 10),
             move_height_pva: option_number(5, 3, 100, 0.05),
             moves_pva: [ON_OFF, 1],

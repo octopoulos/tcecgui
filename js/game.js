@@ -11,21 +11,21 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil, change_setting, charts,
-check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls, CopyClipboard,
-create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, E, Events, exports, fill_combo, fix_move_format, Floor, format_eval,
-FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global, HasClass,
-HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject,
-IsString, Keys, KEYS,
+_, A, Abs, add_timeout, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
+change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
+CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
+format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global,
+HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray,
+IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
 S, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
-slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, STATE_KEYS, stockfish_wdl, Style, TEXT, TIMEOUTS,
-Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
+slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style, TEXT,
+TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
 update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, window, XBoard, Y
+virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, XBoard, Y
 */
 'use strict';
 
@@ -317,8 +317,7 @@ let ANALYSIS_URLS = {
         live: {},
     },
     virtual_opened_table_special,
-    xboards = {},
-    WB_TITLES = ['White', 'Black'];
+    xboards = {};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3251,7 +3250,7 @@ function update_options(section) {
         players = main.players;
 
     for (let id = 0; id < 2; id ++) {
-        let key = `${WB_TITLES[id]}EngineOptions`,
+        let key = `${WB_TITLE[id]}EngineOptions`,
             pgn_options = pgn[key];
         if (!pgn_options)
             continue;
@@ -3324,7 +3323,7 @@ function update_overview_basic(section, headers) {
     });
 
     // 2) engines
-    WB_TITLES.forEach((title, id) => {
+    WB_TITLE.forEach((title, id) => {
         let box_node = _(`#box-pv${id} .status`),
             name = headers[title],
             node = Id(`moves-pv${id}`),
@@ -3387,7 +3386,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     // 1) clock
     // time control could be different for white and black
     for (let id = 0; id < 2; id ++) {
-        let tc = headers[`${WB_TITLES[id]}TimeControl`];
+        let tc = headers[`${WB_TITLE[id]}TimeControl`];
         if (tc) {
             let dico = parse_time_control(tc)[1];
             Assign(players[id], dico);
@@ -4352,6 +4351,12 @@ function change_setting_game(name, value) {
     case 'copy_moves':
         copy_moves();
         break;
+    case 'copy_pgn':
+        copy_pgn();
+        break;
+    case 'download_pgn':
+        copy_pgn(true);
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -4494,6 +4499,144 @@ function changed_section() {
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
+}
+
+/**
+ * Copy a minimal PGN from the current context
+ * @param {boolean} download
+ * @returns {string}
+ */
+function copy_pgn(download) {
+    // 1) get the matching board
+    if (!context_target)
+        return '';
+    let parent = Parent(context_target, {class_: 'xboard', self: true});
+    if (!parent)
+        return '';
+    let board = xboards[parent.id];
+    if (!board)
+        return '';
+
+    // 2) headers
+    let fen = board.start_fen,
+        headers = {
+            FEN: fen,
+            SetUp: 1,
+        },
+        moves = [],
+        option_names = WB_TITLE.map(name => `${name}EngineOptions`),
+        options = [];
+
+    // downlod => save full info
+    if (download) {
+        let pgn = board.pgn,
+            pgn_headers = pgn.Headers;
+        if (pgn_headers) {
+            headers = pgn_headers;
+            for (let name of option_names) {
+                let dico = pgn[name];
+                if (dico) {
+                    let vector = Keys(dico).sort().map(key => `${key}=${dico[key]};`);
+                    options.push(`${name}: ${vector.join(' ')}`);
+                }
+            }
+        }
+        else if (board.name == 'pva') {
+            let fen960 = board.frc_index(fen),
+                players = board.players;
+
+            Assign(headers, {
+                Black: players[1].name,
+                Date: FromTimestamp(Now())[0].replace(/-/g, '.'),
+                Site: 'https://tcec-chess.com',
+                Variation: `${board.frc? 'FRC': ''} ${fen960}`,
+                White: players[0].name,
+            });
+
+            option_names.forEach((name, id) => {
+                let game_options = Y[`game_options_${WB_LOWER[id]}`];
+                options.push(`${name}: Options=${game_options};`);
+            });
+        }
+    }
+    options = options.length? `{${options.join(', ')}}`: '';
+
+    // 3) moves
+    // - download => save full info
+    // - mb is auto calculated, so, no need to export it
+    let first_fen,
+        keeps = {
+            book: 2,
+            d: 1,
+            h: 1,
+            mt: 1,
+            n: 1,
+            ph: 1,
+            pv: 1,
+            R50: 1,     // maybe not needed
+            Rd: 1,
+            Rr: 1,
+            s: 1,
+            sd: 1,
+            tb: 1,
+            tl: 1,
+            wv: 1,
+        };
+
+    for (let move of board.moves) {
+        if (!move)
+            continue;
+        // first correct move
+        if (!first_fen) {
+            first_fen = move.fen;
+            if (first_fen) {
+                fen = first_fen;
+                headers.FEN = fen;
+            }
+            if (!first_fen)
+                first_fen = '*';
+            board.chess_load(fen);
+        }
+        if (!move.m)
+            continue;
+
+        // play move because maybe missing info (pv0, pv1)
+        let result = board.chess_move(move.m);
+        assign_move(move, result);
+        move.fen = board.chess_fen();
+        move.ply = get_move_ply(move);
+
+        // add move info
+        let number = (move.ply & 1)? (moves.length? '': `${(move.ply + 1) / 2}... `):  `${move.ply / 2 + 1}. `,
+            text = `${number}${move.san || move.m}`;
+
+        if (download) {
+            let extra = Keys(move).filter(key => keeps[key]).sort().map(key => {
+                    let keep = keeps[key];
+                    return (keep == 2)? key: `${key}=${move[key]}`;
+                }).join(', ');
+            if (extra)
+                text = `${text} {${extra}}`;
+        }
+        moves.push(text);
+    }
+
+    // 4) result
+    let text = [
+        Keys(headers).sort().map(key => `[${key} "${headers[key]}"]`).join('\n'),
+        '',
+        options,
+        moves.join(download? '\n': ' '),
+    ];
+    if (!options)
+        delete text[2];
+    text = text.join('\n');
+
+    if (download)
+        DownloadObject(text, `${FromTimestamp(Now()).join('').replace(/[:-]/g, '')}.pgn`, 2, true);
+    else
+        CopyClipboard(text);
+    return text;
 }
 
 /**

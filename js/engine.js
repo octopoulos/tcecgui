@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-20
+// @version 2020-10-03
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -193,7 +193,7 @@ function export_settings(name) {
     let object = Assign(
         {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
     );
-    DownloadObject(object, `${name}.json`, false, '  ');
+    DownloadObject(object, `${name}.json`, 0, '  ');
 }
 
 /**
