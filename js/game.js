@@ -4662,12 +4662,11 @@ function copy_pgn(board, download, only_text) {
 
     if (download)
         DownloadObject(text, `${FromTimestamp(Now()).join('').replace(/[:-]/g, '')}.pgn`, 2, true);
-    CopyClipboard(text);
-
-    if (Y.auto_paste && board.name != 'pva') {
-        if (!download)
-            text = copy_pgn(board, true, true);
-        paste_text(text);
+    else {
+        // copy => mirror to PVA
+        CopyClipboard(text);
+        if (Y.auto_paste && board.name != 'pva')
+            paste_text(copy_pgn(board, true, true));
     }
     return text;
 }
