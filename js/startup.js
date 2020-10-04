@@ -1972,6 +1972,8 @@ function prepare_settings() {
         },
         live: {
             copy_moves: '1',
+            copy_pgn: '1',
+            download_pgn: '1',
             grid_live: option_number(0, 0, 10),
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
