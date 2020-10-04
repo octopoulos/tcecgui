@@ -1608,10 +1608,16 @@ function set_global_events() {
     Events(window, 'dragenter dragover', e => {
         if (!Y.drag_and_drop)
             return;
-        let [child] = get_drop_id(e.target),
-            parent = Parent(e.target, {class_: 'area', self: true});
+        let [child] = get_drop_id(e.target);
+        if (child == drag_source)
+            child = null;
+        else if (!child)
+            child = Parent(e.target, {class_: 'area', self: true});
 
-        draw_rectangle(child || parent);
+        draw_rectangle(child);
+        if (!child)
+            return;
+
         Class('.area', 'dragging');
         SP(e);
         PD(e);

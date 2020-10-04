@@ -4236,7 +4236,7 @@ function game_action_key(code) {
                         let text = board_target.fen;
                         CopyClipboard(text);
                         if (Y.auto_paste)
-                            paste_text(text);
+                            paste_text(copy_pgn(board_target, true, true));
                     }
                 }
                 // paste => try to add the FEN, if fails then moves string
@@ -4280,13 +4280,25 @@ function game_action_keyup(code) {
 
 /**
  * Paste text to PVA
+ * - FEN or PGN
  * @param {string} text
  */
 function paste_text(text) {
     text = text.replace(/\s+/g, ' ');
 
-    let board = board_target.manual? board_target: xboards.pva,
-        fen = board.fen;
+    // try PGN
+    let moves,
+        board = board_target.manual? board_target: xboards.pva,
+        pgn = parse_pgn(board.name, text);
+    if (pgn) {
+        board.pgn = pgn;
+        let fen = pgn.Headers.FEN;
+        text = fen? fen: START_FEN;
+        moves = pgn.Moves;
+    }
+
+    // try FEN
+    let fen = board.fen;
     if (board.set_fen(text, true)) {
         if (board.fen != fen) {
             board.reset(true, board.fen);
@@ -4294,8 +4306,13 @@ function paste_text(text) {
                 reset_charts();
         }
     }
+    // move string
     else
         board.add_moves_string(text);
+
+    // moves
+    if (moves)
+        board.add_moves(moves);
 }
 
 // 3D SCENE
@@ -4355,7 +4372,7 @@ function change_setting_game(name, value) {
         copy_pgn();
         break;
     case 'download_pgn':
-        copy_pgn(true);
+        copy_pgn(null, true);
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -4503,22 +4520,26 @@ function changed_section() {
 
 /**
  * Copy a minimal PGN from the current context
+ * @param {Object} board
  * @param {boolean} download
+ * @param {boolean} only_text only return the text, no download/clipboard
  * @returns {string}
  */
-function copy_pgn(download) {
+function copy_pgn(board, download, only_text) {
     // 1) get the matching board
-    if (!context_target)
-        return '';
-    let parent = Parent(context_target, {class_: 'xboard', self: true});
-    if (!parent) {
-        parent = Parent(context_target, {class_: 'drag', self: true});
-        if (!parent)
+    if (!board) {
+        if (!context_target)
+            return '';
+        let parent = Parent(context_target, {class_: 'xboard', self: true});
+        if (!parent) {
+            parent = Parent(context_target, {class_: 'drag', self: true});
+            if (!parent)
+                return '';
+        }
+        board = xboards[parent.id.split('-').slice(-1)[0]];
+        if (!board)
             return '';
     }
-    let board = xboards[parent.id.split('-').slice(-1)[0]];
-    if (!board)
-        return '';
 
     // 2) headers
     let fen = board.start_fen,
@@ -4551,7 +4572,9 @@ function copy_pgn(download) {
             Assign(headers, {
                 Black: players[1].name,
                 Date: FromTimestamp(Now())[0].replace(/-/g, '.'),
+                Opening: `${board.frc? 'FRC': ''} ${fen960}`,
                 Site: 'https://tcec-chess.com',
+                TimeControl: '1800+5',
                 Variation: `${board.frc? 'FRC': ''} ${fen960}`,
                 White: players[0].name,
             });
@@ -4589,10 +4612,10 @@ function copy_pgn(download) {
     for (let move of board.moves) {
         if (!move)
             continue;
-        // first correct move
+        // first correct move, copy its FEN unless it's the first move (ply=0), in which case we keep start_fen
         if (!first_fen) {
             first_fen = move.fen;
-            if (first_fen) {
+            if (first_fen && move.ply > 0) {
                 fen = first_fen;
                 headers.FEN = fen;
             }
@@ -4634,9 +4657,18 @@ function copy_pgn(download) {
         moves.join(''),
     ].join('\n');
 
+    if (only_text)
+        return text;
+
     if (download)
         DownloadObject(text, `${FromTimestamp(Now()).join('').replace(/[:-]/g, '')}.pgn`, 2, true);
     CopyClipboard(text);
+
+    if (Y.auto_paste && board.name != 'pva') {
+        if (!download)
+            text = copy_pgn(board, true, true);
+        paste_text(text);
+    }
     return text;
 }
 

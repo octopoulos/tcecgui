@@ -1571,10 +1571,12 @@ function create_url_list(dico) {
  * @param {Node} node
  */
 function draw_rectangle(node) {
-    if (!node)
+    let rect_node = Id('rect');
+    if (!node) {
+        Hide(rect_node);
         return;
+    }
     let rect = node.getBoundingClientRect(),
-        rect_node = Id('rect'),
         y1 = Max(rect.top, 0),
         y2 = Min(rect.top + rect.height, window.innerHeight);
 
