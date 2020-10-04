@@ -1185,6 +1185,9 @@ function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, over
     if (!node)
         return;
 
+    if (adjust && node.dataset.id == 'custom')
+        adjust = false;
+
     if (show == 'toggle')
         show = (node.dataset.id != name || !HasClass(node, 'popup-show'));
     S(Id('overlay'), show && overlay);

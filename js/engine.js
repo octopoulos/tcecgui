@@ -592,7 +592,6 @@ function translate(text) {
     // Mode
     if (text[0] == Upper(text[0]))
         return Title(result);
-
     return null;
 }
 

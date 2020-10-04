@@ -178,6 +178,22 @@ live.dual = archive;
     });
 });
 
+// frc_index
+[
+    ['rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1', -1],
+    ['bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w HFhf - 0 1', 0],
+    ['qnnrbbkr/pppppppp/8/8/8/8/PPPPPPPP/QNNRBBKR w HDhd - 0 1', 10],
+    ['nqnbbrkr/pppppppp/8/8/8/8/PPPPPPPP/NQNBBRKR w HFhf - 0 1', 25],
+    ['nbnqbrkr/pppppppp/8/8/8/8/PPPPPPPP/NBNQBRKR w HFhf - 0 1', 40],
+    ['nrbnqbkr/pppppppp/8/8/8/8/PPPPPPPP/NRBNQBKR w HBhb - 0 1', 150],
+    ['bbrnkrqn/pppppppp/8/8/8/8/PPPPPPPP/BBRNKRQN w FCfc - 0 1', 640],
+    ['rkrnnqbb/pppppppp/8/8/8/8/PPPPPPPP/RKRNNQBB w CAca - 0 1', 959],
+].forEach(([fen, answer], id) => {
+    test(`frc_index:${id}`, () => {
+        expect(live.frc_index(fen)).toEqual(answer);
+    });
+});
+
 // render_text
 [
     [
