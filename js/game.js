@@ -238,9 +238,10 @@ let ANALYSIS_URLS = {
             off: [0, -4],
             size: 160,
         },
-        symbol: {
+        symbol: {},
+        unicode: {
             font: 'arial',
-            size: 60,
+            size: 54,
             unicode: 1,
         },
         uscf: {},
