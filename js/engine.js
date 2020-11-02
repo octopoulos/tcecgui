@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-10-31
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,20 +9,43 @@
 // included after: common
 /*
 globals
-_, A, Abs, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, clearInterval, clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, From, Hide, history, HTML, Id, IsArray, IsFloat,
-IsObject, IsString, Keys,
-LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD,
-QueryString, requestAnimationFrame, Resource,
-ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Style, TEXT, Title, Undefined, Upper, Visible,
-WebSocket, window
+_, A, Abs, AnimationFrame, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, clearInterval, clearTimeout,
+CreateNode,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, From, global, Hide, history, HTML, Id, IsArray,
+IsFloat, IsObject, IsString, Keys,
+LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
+QueryString, require, Resource,
+Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
+UNDEFINED, Upper, Visible, WebSocket, window
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {
+            Assign, DefaultFloat, DefaultInt, IsArray, IsFloat, IsObject, IsString, Keys, Lower, SetDefault, Stringify,
+        } = req('./common.js');
+    Assign(global, {
+        Assign: Assign,
+        DefaultFloat: DefaultFloat,
+        DefaultInt: DefaultInt,
+        IsArray: IsArray,
+        IsFloat: IsFloat,
+        IsObject: IsObject,
+        IsString: IsString,
+        Keys: Keys,
+        Lower: Lower,
+        SetDefault: SetDefault,
+        Stringify: Stringify,
+        WebSocket: {},
+    });
+}
+// >>
 
 let __PREFIX = '_',
     ANCHORS = {},
     animation,
-    AnimationFrame = (callback, direct) => (direct? callback(): requestAnimationFrame(callback)),
     api = {},
     api_times = {},
     DEFAULTS = {
@@ -52,6 +75,8 @@ let __PREFIX = '_',
     },
     libraries = {},
     MAX_HISTORY = 20,
+    me = {},
+    // &1:no import, &2:no export
     NO_IMPORTS = {
         import_settings: 2,
         language: 1,
@@ -89,11 +114,15 @@ let __PREFIX = '_',
     TYPES = {},
     // virtual functions, can be assigned
     virtual_check_hash_special,
+    virtual_drag_done,
     virtual_import_settings,
+    virtual_logout,
     virtual_rename_option,
     virtual_reset_settings_special,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
+    virtual_socket_message,
+    virtual_socket_open,
     WS = WebSocket,
     X_SETTINGS = {},
     Y = {},                                             // params
@@ -175,7 +204,7 @@ function create_field_value(text) {
  * Remember the setting state
  */
 function add_history() {
-    let text = JSON.stringify(Y);
+    let text = Stringify(Y);
     if (text == y_states[y_index])
         return;
     y_index ++;
@@ -240,7 +269,7 @@ function get_object(name, def) {
  */
 function get_string(name, def) {
     let value = localStorage.getItem(`${__PREFIX}${name}`);
-    return (value == 'undefined')? def: (value || def);
+    return (value == UNDEFINED)? def: (value || def);
 }
 
 /**
@@ -400,7 +429,7 @@ function merge_settings(x_settings) {
         if (IsObject(value)) {
             let exists = SetDefault(X_SETTINGS, name, {});
             Assign(exists, value);
-            X_SETTINGS[name] = Assign({}, ...Keys(exists).sort().map(key => ({[key]: exists[key]})));
+            X_SETTINGS[name] = Assign({}, ...Keys(exists).map(key => ({[key]: exists[key]})));
         }
         // _split: 8
         else
@@ -426,11 +455,12 @@ function merge_settings(x_settings) {
  * @param {number} min
  * @param {number} max
  * @param {number=} step
+ * @param {Object=} options
  * @param {string=} help
  * @returns {[Object, number]}
  */
-function option_number(def, min, max, step=1, help='') {
-    return [{max: max, min: min, step: step, type: 'number'}, def, help];
+function option_number(def, min, max, step=1, options={}, help='') {
+    return [Assign({max: max, min: min, step: step, type: 'number'}, options), def, help];
 }
 
 /**
@@ -516,7 +546,7 @@ function save_option(name, value) {
  */
 function save_storage(name, value) {
     if (IsObject(value))
-        value = JSON.stringify(value);
+        value = Stringify(value);
     else if (value === true)
         value = 1;
     else if (value === false || value === undefined)
@@ -708,6 +738,12 @@ function fill_combo(letter, values, select, dico, no_translate)
             select = Y[letter];
     }
 
+    // {be: 'Belgium', fr: 'France'}
+    if (!IsArray(values) && IsObject(values)) {
+        dico = values;
+        values = Keys(values);
+    }
+
     let found = 'all',
         group = false,
         lines = [];
@@ -891,7 +927,7 @@ function update_svg(parent) {
  */
 function check_hash(no_special) {
     let string = QueryString({key: 'hash'}),
-        dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
+        dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == UNDEFINED)? undefined: string[key]})));
     Assign(Y, dico);
     sanitise_data();
 
@@ -1022,7 +1058,7 @@ function set_cursor(cursor='') {
  */
 function toggle_fullscreen(callback) {
     let full = is_fullscreen();
-    if (is_fullscreen()) {
+    if (full) {
         let exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
         if (exit)
             exit.call(document);
@@ -1036,6 +1072,98 @@ function toggle_fullscreen(callback) {
 
     if (callback)
         callback(full);
+}
+
+// SOCKETS
+//////////
+
+/**
+ * Check sockets: ping + reconnection
+ */
+function check_sockets() {
+    add_timeout('ws', () => {
+        let now = Now(true);
+        if (now < pong + 15)
+            return;
+
+        let ready = socket? socket.readyState: WS.CLOSED;
+        if (ready == WS.OPEN) {
+            socket.send(Uint8Array.of(0));
+            if (DEV.socket)
+                LS('ping');
+            ping = now;
+        }
+        else if (ready == WS.CLOSED)
+            init_websockets();
+    }, 8000, true);
+}
+
+/**
+ * Initialise websockets
+ */
+function init_websockets() {
+    if (socket && socket.readyState <= WS.OPEN)
+        return;
+    if (DEV.socket)
+        LS('init websockets');
+
+    socket = new WS(`ws${location.protocol == 'https:'? 's': ''}://${location.host}/api/`);
+    socket.binaryType = 'arraybuffer';
+
+    // reconnect when closed
+    socket.onclose = () => {
+        socket = null;
+        socket_error(`socket close: ${Now(true)}`);
+    };
+    socket.onopen = () => {
+        socket_fail = 0;
+        if (virtual_socket_open)
+            virtual_socket_open();
+    };
+    socket.onmessage = message => {
+        pong = Now(true);
+        let vector = new Uint8Array(message.data);
+        if (vector[0] == 0) {
+            if (DEV.socket)
+                LS(`pong: ${pong - ping}`);
+        }
+        else if (virtual_socket_message)
+            virtual_socket_message(message);
+    };
+
+    check_sockets();
+}
+
+/**
+ * Socket error
+ * @param {string} text
+ */
+function socket_error(text) {
+    LS(text);
+    socket_fail ++;
+    if (socket_fail > 3 && virtual_logout)
+        virtual_logout();
+    else
+        add_timeout('socket_init', init_websockets, Pow(socket_fail, 2) * 1000);
+}
+
+/**
+ * Send data to a socket
+ * @param {Object} data
+ * @returns {boolean}
+ */
+function socket_send(data) {
+    if (!socket || socket.readyState != WS.OPEN)
+        return false;
+    let success;
+    try {
+        socket.send(Stringify(data));
+        success = true;
+    }
+    catch(error) {
+        socket_error(`socket_send: ${Now()} : ${error}`);
+    }
+    return success;
 }
 
 // TOUCH
@@ -1060,14 +1188,14 @@ function add_move(change, stamp, ratio_x=1, ratio_y=1) {
 
 /**
  * We cannot click just after a touch drop, as that would cause misclick events
- * @returns {boolean}
+ * @returns {boolean|Node}
  */
 function cannot_click() {
     if (Now(true) < touch_done + TIMEOUT_touch)
         return true;
     let active = document.activeElement;
     if (active && {INPUT: 1, TEXTAREA: 1}[active.tagName])
-        return true;
+        return active;
     return false;
 }
 
@@ -1182,7 +1310,7 @@ function scroll_adjust(target, max_delta, depth=0) {
     // 2) no anchors found => scroll to the target if any
     if (!deltas.length) {
         if (target) {
-            y = _(target).getBoundingClientRect().top + y;
+            y = Safe(target).getBoundingClientRect().top + y;
             ScrollDocument(y, true);
         }
         return;
@@ -1234,7 +1362,7 @@ function scroll_adjust(target, max_delta, depth=0) {
     if (!target && depth < 1 && combined < 2) {
         let new_delta = max_delta - Abs(y - y_old);
         if (new_delta > 0)
-            add_timeout('adjust', () => {scroll_adjust(target, new_delta, depth + 1);}, TIMEOUT_adjust);
+            add_timeout('adjust', () => scroll_adjust(target, new_delta, depth + 1), TIMEOUT_adjust);
     }
 }
 
@@ -1326,8 +1454,9 @@ function touch_event(e) {
  * - supports full screen scroll
  * @param {Event} e
  * @param {boolean=} full full screen scrolling
+ * @param {boolean=} prevent_default
  */
-function touch_handle(e, full) {
+function touch_handle(e, full, prevent_default) {
     if (full == undefined)
         full = is_fullscreen();
 
@@ -1353,7 +1482,7 @@ function touch_handle(e, full) {
         clear_timeout('touch_end');
 
         drag_target = Parent(target, {class_: 'scroller', self: true, tag: 'div'});
-        if (!full_target) {
+        if (drag_target && !full_target) {
             // maybe the object is already fully visible?
             // TODO: limit x and y directions individually
             let child = drag_target.firstElementChild,
@@ -1399,7 +1528,7 @@ function touch_handle(e, full) {
         set_scroll();
 
         drag = [change, stamp];
-        if (e.cancelable != false || type5 != 'touch')
+        if (prevent_default && (e.cancelable != false || type5 != 'touch'))
             PD(e);
     }
     else if (TOUCH_ENDS[type]) {
@@ -1430,8 +1559,12 @@ function touch_handle(e, full) {
         if (absx > 1 || absy > 1) {
             scroll_target = drag_target;
             touch_speed = {x: sumx / time, y: sumy / time};
+
+            if (virtual_drag_done)
+                virtual_drag_done(sumx, sumy, touch_speed);
             cancelAnimationFrame(animation);
-            animation = AnimationFrame(render_scroll);
+            if (drag_target || full_target || scroll_target)
+                animation = AnimationFrame(render_scroll);
         }
         // big movement or average duration => prevent click
         if (type != 'mouseleave') {
@@ -1479,7 +1612,7 @@ function create_page_array(num_page, page, extra) {
     if (num_page < 2)
         return [2];
 
-    let array = new Array(num_page),
+    let array = Array(num_page),
         left = extra + (page <= 1 || page >= num_page - 2) * 1;
 
     array.fill(0);
@@ -1569,18 +1702,39 @@ function create_url_list(dico) {
 /**
  * Draw a rectangle around the node
  * @param {Node} node
+ * @param {number=} orient &1:hori &2:vert
+ * @param {number=} mx mouse x
+ * @param {number=} my mouse y
  */
-function draw_rectangle(node) {
+function draw_rectangle(node, orient, mx, my) {
     let rect_node = Id('rect');
     if (!node) {
         Hide(rect_node);
         return;
     }
     let rect = node.getBoundingClientRect(),
-        y1 = Max(rect.top, 0),
+        w = rect.width,
+        x = rect.left,
+        y1 = Max(rect.top - 1, 0),
         y2 = Min(rect.top + rect.height, window.innerHeight);
 
-    Style(rect_node, `left:${rect.left}px;height:${y2 - y1}px;top:${y1}px;width:${rect.width}px`);
+    if (orient & 1) {
+        if (mx > x + w / 2)
+            x += w - 6;
+        else
+            x -= 6;
+        w = 6;
+    }
+    if (orient & 2) {
+        if (my > (y1 + y2) / 2)
+            y1 = y2 - 6;
+        else {
+            y1 -= 6;
+            y2 = y1 + 6;
+        }
+    }
+
+    Style(rect_node, `left:${x}px;height:${y2 - y1}px;top:${y1}px;width:${w}px`);
     Show(rect_node);
 }
 
@@ -1668,3 +1822,27 @@ function set_engine_events() {
         }
     });
 }
+
+// <<
+if (typeof exports != 'undefined') {
+    Object.assign(exports, {
+        add_history: add_history,
+        create_field_value: create_field_value,
+        create_page_array: create_page_array,
+        create_url_list: create_url_list,
+        DEFAULTS: DEFAULTS,
+        guess_types: guess_types,
+        import_settings: import_settings,
+        me: me,
+        merge_settings: merge_settings,
+        reset_settings: reset_settings,
+        restore_history: restore_history,
+        sanitise_data: sanitise_data,
+        save_option: save_option,
+        TYPES: TYPES,
+        X_SETTINGS: X_SETTINGS,
+        Y: Y,
+        y_states: y_states,
+    });
+}
+// >>

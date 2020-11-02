@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-10-31
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -21,12 +21,13 @@ HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index
 is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
-PIECE_THEMES, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
-S, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault, Show,
-show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph,
-Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle, translate_node,
-TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug, update_pgn, update_theme,
-update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
+PIECE_THEMES, POPUP_ADJUSTS, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game,
+resume_sleep,
+S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
+SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
+startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
+touch_handle, translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug,
+update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
 virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
@@ -92,6 +93,7 @@ let AD_STYLES = {},
         'stream',
         'terjeweiss',
     ],
+    ready,
     resume_time = Now(),
     SCALES = [
         '4=eval',
@@ -142,7 +144,7 @@ function action_key(code) {
  */
 function adjust_popups() {
     show_popup('', null, {adjust: true});
-    show_popup('about', null, {adjust: true});
+    show_popup('about', null, {adjust: true, node_id: 'popup-about'});
 }
 
 /**
@@ -168,16 +170,16 @@ function audio_set(set) {
  * Handler for change settings
  * @param {string} name
  * @param {string|number} value
- * @param {boolean=} no_close don't close the popup
+ * @param {boolean=} close close the popup
  * @returns {boolean} true if we've handled the setting
  */
-function change_setting_special(name, value, no_close) {
+function change_setting_special(name, value, close) {
     clear_timeout('close_popup');
     if (!name)
         return false;
 
     // close contextual popup?
-    if (!no_close) {
+    if (close) {
         let modal = Id('modal');
         if (modal && modal.dataset.xy)
             close_popups();
@@ -441,7 +443,8 @@ function check_hash_special(dico) {
     translate_node(Id('table-tabs'));
 
     // changed section
-    changed_hash();
+    if (ready)
+        changed_hash();
 
     if (section != old_x) {
         old_x = section;
@@ -486,7 +489,7 @@ function check_stream() {
  */
 function close_popups() {
     show_popup();
-    show_popup('about');
+    show_popup('about', {node_id: 'popup-about'});
     popup_custom('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
@@ -641,7 +644,7 @@ function handle_drop(e) {
 
         // 4) update areas
         for (let parent of parent_areas)
-            Y.areas[parent] = From(Id(parent).children).filter(child => child.id).map(child => {
+            Y.areas[parent] = From(SafeId(parent).children).filter(child => child.id).map(child => {
                 let context_area = context_areas[child.id] || [];
                 return [child.id, context_area[1] || 0, Undefined(context_area[2], 1)];
             });
@@ -733,7 +736,7 @@ function init_globals() {
 
     // font size detector
     add_timeout('font', () => {
-        let font_height = Id('text').offsetHeight;
+        let font_height = SafeId('text').offsetHeight;
         if (font_height != old_font_height || window.innerHeight != old_window_height) {
             resize();
             old_font_height = font_height;
@@ -1298,7 +1301,8 @@ function update_visible() {
  * @param {Event} e
  */
 function window_click(e) {
-    if (cannot_click())
+    let cannot = cannot_click();
+    if (cannot == 1)
         return;
 
     let in_modal,
@@ -1311,7 +1315,13 @@ function window_click(e) {
         switch (id) {
         case 'about':
             show_popup('');
-            show_popup(id, true, {overlay: true});
+            show_popup(id, true, {
+                center: true,
+                html: HTML(Id('desc')),
+                html_target: Id('popup-desc'),
+                node_id: 'popup-about',
+                overlay: true,
+            });
             return;
         case 'load_pgn':
             let file = Id('file');
@@ -1440,15 +1450,13 @@ function set_global_events() {
             Class(parent, '-popup-enable -popup-show');
     });
     C('#articles, #download, #info, #navigate, #options', function() {
-        show_popup('about');
-        if (Id('modal').dataset.id == this.id)
+        show_popup('about', {node_id: 'popup-about'});
+        if (SafeId('modal').dataset.id == this.id)
             show_popup('');
         else
-            show_popup(this.id, true);
+            show_popup(this.id, 'toggle', {id: this.id});
     });
-    C('#overlay', () => {
-        close_popups();
-    });
+    C('#overlay', () => close_popups());
 
     // click somewhere => close the popups
     Events(window, 'click', window_click);
@@ -1490,7 +1498,7 @@ function set_global_events() {
             save_option(name, Clamp(value, -1, 1200));
             HTML(sizer, Y[name]);
             Show(sizer);
-            add_timeout('size', () => {Hide('.size');}, TIMEOUT_size);
+            add_timeout('size', () => Hide('.size'), TIMEOUT_size);
             resize();
         }
         SP(e);
@@ -1508,9 +1516,7 @@ function set_global_events() {
         save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
     });
-    C('#three', () => {
-        set_3d_scene(!Y.three);
-    });
+    C('#three', () => set_3d_scene(!Y.three));
     C('#full0, #full1', () => {
         toggle_fullscreen(full => {
             S(Id('full0'), full);
@@ -1614,7 +1620,7 @@ function set_global_events() {
         else if (!child)
             child = Parent(e.target, {class_: 'area', self: true});
 
-        draw_rectangle(child);
+        draw_rectangle(child, 1, e.clientX, e.clientY);
         if (!child)
             return;
 
@@ -1772,6 +1778,14 @@ function prepare_settings() {
         analysis_lichess: 1,
     });
 
+    // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter, &128:h100, &256:w100
+    Assign(POPUP_ADJUSTS, {
+        articles: 1,
+        download: 1,
+        info: 1,
+        options: 1,
+    });
+
     Assign(TITLES, {
         'D/SD': '{Depth} / {Selective depth}',
         'Mob': 'Mobility',
@@ -1789,7 +1803,11 @@ function prepare_settings() {
         // new column after 10 items
         _split: 10,
         general: {
+            export_settings: '1',
+            import_settings: [{text: 'Enter JSON data', type: 'link'}, ''],
+            language: [LANGUAGES, ''],
             preset: [PRESETS, 'custom'],
+            theme: [THEMES, THEMES[0]],
         },
         audio: {
             audio_book: [ON_OFF, 1],
@@ -1806,11 +1824,19 @@ function prepare_settings() {
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
+            volume: option_number(7, 0, 15),
         },
         video: {
             background_color: [{type: 'color'}, '#000000'],
             background_image: [{type: 'text'}, ''],
             background_opacity: option_number(0, 0, 1, 0.01),
+            encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
+            exposure: option_number(1, 0.1, 10, 0.1),
+            gamma: option_number(1.5, 0, 10, 0.1),
+            lighting: [['low', 'medium', 'high'], 'high'],
+            resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
+            shadow: [Keys(SHADOW_QUALITIES), 'high'],
+            texture: [AUTO_ON_OFF, 'auto'],
         },
         // separator
         _1: {},
@@ -2010,7 +2036,7 @@ function prepare_settings() {
             min_left: option_number(300, -1, 1200),
             min_right: option_number(300, -1, 1200),
             max_window: option_number(1920, 256, 32000),
-            panel_adjust: [ON_OFF, device.mobile? 0: 1],
+            panel_adjust: [ON_OFF, 0],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
             unhide: '1',
         },
@@ -2170,6 +2196,7 @@ function startup() {
     set_game_events();
     startup_graph();
     add_history();
+    ready = true;
 
     init_sockets();
     init_globals();

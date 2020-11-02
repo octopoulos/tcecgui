@@ -1,6 +1,6 @@
 /*
 light.css
-@version 2020-10-03
+@version 2020-10-31
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -128,7 +128,7 @@ img,
 .resize {
     font-size: 0.8em;
 }
-.shadow {
+.tshadow {
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 .small {
@@ -191,6 +191,9 @@ input[type="checkbox"] {
     transform: scale(1.35);
     width: auto;
 }
+input[type="image"] {
+    width: auto;
+}
 label {
     cursor: pointer;
 }
@@ -225,9 +228,11 @@ tr {
 .thin {
     border-width: 0.5px !important;
 }
-.dn,
-.hidden {
+.dn {
     display: none !important;
+}
+.hidden {
+    visibility: hidden !important;
 }
 
 /* grid */
@@ -1447,6 +1452,9 @@ grid {
 #twitch {
     margin-right: 4px;
 }
+#paypal .banner {
+    width: 92.77px;
+}
 .google-ad {
     cursor: pointer;
 }
@@ -1462,6 +1470,8 @@ grid {
     z-index: 1;
 }
 #twitch-vid {
+    max-width: 100%;
+    width: 420px;
     z-index: 1;
 }
 #theme1 {

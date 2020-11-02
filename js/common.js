@@ -1,36 +1,67 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-10-31
 //
 // utility JS functions used in all the sites
 // no state is being required
 //
 /*
 globals
-console, document, exports, FormData, location, navigator, Node, window, Window, XMLHttpRequest
+console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, window, Window, XMLHttpRequest
 */
 'use strict';
 
-// MATH FUNCTIONS
-/////////////////
+// SHORTCUTS
+////////////
 
 let Abs = Math.abs,
+    AnimationFrame = (callback, direct) => (direct? callback(): requestAnimationFrame(callback)),
     Assign = Object.assign,
     Atan = Math.atan,
     Ceil = Math.ceil,
     Cos = Math.cos,
+    // dummy object
+    DUMMY_OBJECT = {
+        addEventListener: () => 0,
+        children: [],
+        classList: {
+            add: () => 0,
+            contains: () => false,
+            remove: () => 0,
+            toggle: () => 0,
+        },
+        clientHeight: 0,
+        dataset: {},
+        getBoundingClientRect: () => ({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0}),
+        offsetHeight: 0,
+        removeAttribute: () => 0,
+        removeAttributeNS: () => 0,
+        setAttribute: () => 0,
+        setAttributeNS: () => 0,
+        style: {
+            getPropertyValue: () => 0,
+            removeProperty: () => 0,
+            setProperty: () => 0,
+        },
+        textContent: '',
+        top: 0,
+        value: '',
+    },
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
+    IsFunction = value => (typeof(value) == 'function'),
     IsObject = value => (value != null && typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
     Log10 = Math.log10,
-    Lower = (text) => (text.toLowerCase()),
+    Lower = text => text.toLowerCase(),
+    LS = console.log,
     Max = Math.max,
     Min = Math.min,
+    NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
     PD = e => e.preventDefault(),
     PI = Math.PI,
     Pow = Math.pow,
@@ -40,10 +71,12 @@ let Abs = Math.abs,
     Sin = Math.sin,
     SP = e => e.stopPropagation(),
     Sqrt = Math.sqrt,
+    Stringify = JSON.stringify,
     Tanh = Math.tanh,
-    Upper = (text) => (text.toUpperCase());
+    UNDEFINED = 'undefined',
+    Upper = text => text.toUpperCase();
 
-let NAMESPACE_SVG = 'http://www.w3.org/2000/svg';
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ELEMENTARY NODE FUNCTIONS
 ////////////////////////////
@@ -513,7 +546,7 @@ function Index(node) {
     if (IsString(node))
         node = _(node);
     if (!node)
-        return;
+        return -1;
 
     let index = 0;
     while (node) {
@@ -590,7 +623,7 @@ function Parent(node, {tag, class_, attrs, self}={}) {
         tags = tag? tag.split(' '): null;
 
     for (let depth = 0; ; depth ++) {
-        if (depth || !self) {
+        if (depth || !self || parent.nodeType != 1) {
             parent = parent.parentNode;
             if (!parent || !parent.tagName)
                 return null;
@@ -688,6 +721,26 @@ function S(sel, show, parent, mode='') {
         node.classList.remove('dn');
         node.style.display = show? mode: 'none';
     }, parent);
+}
+
+/**
+ * Safe _
+ * @param {string|Node} sel CSS selector or node
+ * @param {Node=} parent parent node, document by default
+ * @returns {Node|Object} found node or {}
+ */
+function Safe(sel, parent) {
+    return _(sel, parent) || Assign({}, DUMMY_OBJECT);
+}
+
+/**
+ * Safe Id
+ * @param {string|Node} sel CSS selector or node
+ * @param {Node=} parent parent node, document by default
+ * @returns {Node|Object} found node or {}
+ */
+function SafeId(sel, parent) {
+    return Id(sel, parent) || Assign({}, DUMMY_OBJECT);
 }
 
 /**
@@ -932,7 +985,7 @@ function Visible(sel, parent) {
  */
 function ArrayJS(vector) {
     if (vector.size)
-        vector = new Array(vector.size()).fill(0).map((_, id) => vector.get(id));
+        vector = Array(vector.size()).fill(0).map((_, id) => vector.get(id));
     return vector;
 }
 
@@ -959,6 +1012,18 @@ function Choice(array, length) {
  */
 function Clamp(number, min, max, min_set) {
     return (number < min)? (Number.isFinite(min_set)? min_set: min): (number > max? max: number);
+}
+
+/**
+ * Remove all properties of an object
+ * @param {Object} dico
+ * @returns {Object}
+ */
+function Clear(dico) {
+    Keys(dico).forEach(key => {
+        delete dico[key];
+    });
+    return dico;
 }
 
 /**
@@ -1036,7 +1101,7 @@ function DownloadObject(object, name, mode, space) {
     if (mode == 1)
         text = object;
     else {
-        let json = (mode == 2)? object: JSON.stringify(object, null, space),
+        let json = (mode == 2)? object: Stringify(object, null, space),
             type_ = (mode == 2)? 'plain': 'json';
         // add a newline to formatted JSON
         if (space && json.slice(-1) != '\n')
@@ -1179,7 +1244,7 @@ function FromTimestamp(stamp) {
     if (!stamp)
         return '???';
     let date = new Date(stamp * 1000),
-        day = `${Pad(date.getFullYear())}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
+        day = `${date.getFullYear()}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
         time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}:${Pad(date.getSeconds())}`;
     return [day, time];
 }
@@ -1272,17 +1337,6 @@ function LoadLibrary(url, callback, extra) {
 }
 
 /**
- * Alias for console.log
- * @param {*=} text
- * @example
- * LS()             // print an empty line
- * LS('hello')      // print 'hello'
- */
-function LS(text='') {
-    console.log(text);
-}
-
-/**
  * Get the timestamp in seconds
  * @params {boolean=} as_float get seconds as float instead of int
  * @returns {number} seconds
@@ -1345,7 +1399,7 @@ function QueryString({discard, keep, key='search', replace, query, string}={})
         if (parts.length == 2) {
             if ((!keep || keep[parts[0]]) && (!discard || !discard[parts[0]])) {
                 let value = decodeURIComponent(parts[1].replace(/\+/g," "));
-                dico[parts[0]] = (value == 'undefined')? undefined: value;
+                dico[parts[0]] = (value == UNDEFINED)? undefined: value;
             }
         }
     }
@@ -1413,7 +1467,7 @@ function RandomSpread(range) {
  * Resource('./fragment.frag', (status, text) => {LS(text)}, {type: 'text'})
  * // api call
  * Resource('api/user_login', (status, result) => {
- *     LS(result)}, JSON.stringify({user: 'David'}
+ *     LS(result)}, Stringify({user: 'David'}
  * ), {method: 'POST'})
  */
 function Resource(url, callback, {content=null, form, headers={}, method='GET', type='json'}={}) {
@@ -1474,33 +1528,6 @@ function Split(text, char) {
 }
 
 /**
- * Stringify an Object, better than JSON.stringify
- * @param {Object} object
- * @param {number=} [depth=0]
- * @param {number=} [max_depth=2]
- * @returns {string} stringified object
- */
-function Stringify(object, depth=0, max_depth=2) {
-    if (depth > max_depth)
-        return 'Object';
-
-    let obj = {};
-    for (let key in object) {
-        let value = object[key];
-        if (value instanceof Node)
-            value = {id: value.id};
-        else if (value instanceof Window)
-            value = 'Window';
-        else if (value instanceof Object)
-            value = Stringify(value, depth + 1, max_depth);
-
-        obj[key] = value;
-    }
-
-    return depth? obj: JSON.stringify(obj);
-}
-
-/**
  * Title a string:
  * - make the first letter uppercase and keep the rest as it is
  * - works on numbers too
@@ -1523,16 +1550,19 @@ function Undefined(value, def) {
 }
 
 // <<
-if (typeof exports != 'undefined') {
+if (typeof exports != UNDEFINED) {
     Object.assign(exports, {
         Abs: Abs,
         ArrayJS: ArrayJS,
         Assign: Assign,
+        Atan: Atan,
         Clamp: Clamp,
+        Clear: Clear,
         Contain: Contain,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
         DEV: {},
+        Exp: Exp,
         Floor: Floor,
         Format: Format,
         FormatFloat: FormatFloat,
@@ -1548,6 +1578,7 @@ if (typeof exports != 'undefined') {
         IsArray: IsArray,
         IsDigit: IsDigit,
         IsFloat: IsFloat,
+        IsFunction: IsFunction,
         IsObject: IsObject,
         IsString: IsString,
         Lower: Lower,
@@ -1558,8 +1589,11 @@ if (typeof exports != 'undefined') {
         Pad: Pad,
         ParseJSON: ParseJSON,
         PI: PI,
+        Pow: Pow,
         QueryString: QueryString,
         Round: Round,
+        Safe: Safe,
+        SafeId: SafeId,
         SetDefault: SetDefault,
         Split: Split,
         Stringify: Stringify,

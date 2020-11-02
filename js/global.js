@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-10-31
 //
 // global variables/functions shared across multiple js files
 //
@@ -15,10 +15,22 @@ require, Round, save_option, Split, Undefined, window, X_SETTINGS, Y
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign} = req('./common');
+        {Abs, Assign, Atan, Clamp, Exp, Floor, Max, Min, Pad, Pow, Round} = req('./common.js'),
+        {Y} = req('./engine.js');
     Assign(global, {
+        Abs: Abs,
         Assign: Assign,
+        Atan: Atan,
+        Clamp: Clamp,
+        Exp: Exp,
+        Floor: Floor,
         location: {},
+        Max: Max,
+        Min: Min,
+        Pad: Pad,
+        Pow: Pow,
+        Round: Round,
+        Y: Y,
     });
 }
 // >>
@@ -40,7 +52,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201003c';
+    VERSION = '20201018';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -283,7 +295,7 @@ function parse_dev() {
             S: 'no_socket',
             t: 'time',                  // clock + pause/start click
             T: 'translate',             // gather translations
-            u: 'ui',                    // UI events
+            U: 'ui',                    // UI events
             w: 'wasm',
             W: 'worker',                // web worker
             y: 'ply',
@@ -431,9 +443,21 @@ function stoof_cp_to_score(cp) {
 }
 
 // <<
-if (typeof exports != 'undefined')
+if (typeof exports != 'undefined') {
     Assign(exports, {
+        allie_cp_to_score: allie_cp_to_score,
+        assign_move: assign_move,
+        calculate_feature_q: calculate_feature_q,
         fix_move_format: fix_move_format,
+        format_eval: format_eval,
+        get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
+        leela_cp_to_score: leela_cp_to_score,
+        mix_hex_colors: mix_hex_colors,
+        split_move_string: split_move_string,
+        stockfish_wdl: stockfish_wdl,
+        stockfish_win_rate_model: stockfish_win_rate_model,
+        stoof_cp_to_score: stoof_cp_to_score,
     });
+}
 // >>

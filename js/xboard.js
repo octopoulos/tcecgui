@@ -604,7 +604,7 @@ class XBoard {
         this[func](move, animate || !delay);
 
         if (!animate && delay > 0)
-            add_timeout(`animate_${this.id}`, () => {this[func](move, true);}, delay);
+            add_timeout(`animate_${this.id}`, () => this[func](move, true), delay);
     }
 
     /**
@@ -1221,7 +1221,7 @@ class XBoard {
             return;
 
         AnimationFrame(() => {
-            add_timeout(`pick${this.id}`, () => {this.show_picks(true);}, is_delay? TIMEOUT_pick: 0);
+            add_timeout(`pick${this.id}`, () => this.show_picks(true), is_delay? TIMEOUT_pick: 0);
         });
     }
 
@@ -1271,7 +1271,7 @@ class XBoard {
             case 'copy':
                 CopyClipboard(that.fen).then(() => {
                     Class(this, 'copied');
-                    add_timeout('fen', () => {Class(this, '-copied');}, 1000);
+                    add_timeout('fen', () => Class(this, '-copied'), 1000);
                 });
                 break;
             case 'end':
@@ -1531,7 +1531,7 @@ class XBoard {
         this.hold_time = now;
 
         let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
-        add_timeout(`click_${name}`, () => {this.hold_button(name, step + 1);}, timeout);
+        add_timeout(`click_${name}`, () => this.hold_button(name, step + 1), timeout);
     }
 
     /**
@@ -1723,7 +1723,7 @@ class XBoard {
         this.set_play(!is_ai);
         if (is_ai) {
             this.delayed_picks(true);
-            add_timeout('think', () => {this.think();}, Y.game_every);
+            add_timeout('think', () => this.think(), Y.game_every);
         }
     }
 
