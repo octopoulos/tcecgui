@@ -1,6 +1,6 @@
 // chess-wasm.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-11-01
 //
 /*
 globals
@@ -98,12 +98,22 @@ beforeEach(() => {
 // boardHash
 [
     ['8/8/8/8/8/8/8/8 w - - 0 1', 0],
-    [START_FEN, [-1245505341, -993165387]],
-    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', [-1393186695, 310171956]],
+    ['8/8/8/8/8/8/8/8 b - - 0 2', [2096977426, 3923755811]],
+    ['8/8/8/8/8/8/P7/8 w - - 0 1', [3316105773, 2820892883]],
+    ['8/8/8/8/P7/8/8/8 b - a3 0 1', [3616909782, 2721577016]],
+    ['8/8/8/8/P7/8/8/8 b - - 0 1', [3211176109, 418177877]],
+    [START_FEN, [1449171223, 2851721280]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Qkq - 0 1', [1203750330, 3159420155]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Kkq - 0 1', [1181264836, 2102473982]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w kq - 0 1', [1471674217, 1761085509]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w q - 0 1', [2771708610, 1997162361]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w k - 0 1', [1134547903, 4214040372]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1', [2971454996, 3839846408]],
+    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', [3835669381, 3065660905]],
 ].forEach(([fen, answer], id) => {
     test(`boardHash:${id}`, () => {
         chess.load(fen, true);
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(answer))
             expect(answer).toContain(result);
         else
@@ -239,21 +249,23 @@ beforeEach(() => {
 
 // evaluate
 [
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=null', 0],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mat', -485],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mob', 212],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=hce', -273],
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=att', -175],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mat', -1509],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mob', 150],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=hce', -1359],
-    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=att', -1322],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=null', [0, 0]],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mat', [-485, -485]],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mob', [212, 212]],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=hce', [-273, -273]],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=att', [-175, -175]],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mat', [-1509, -1509]],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=mob', [114, 150]],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=hce', [-1395, -1359]],
+    ['3Q4/6qk/p7/4n3/2N5/r7/4B3/3bK3 w - - 0 40', 'e=att', [-1358, -1322]],
 ].forEach(([fen, options, answer], id) => {
     test(`evaluate:${id}`, () => {
-        chess.load(fen, false);
         chess.configure(false, options, 1);
+        chess.load(fen, false);
         chess.moves();
-        expect(chess.evaluate()).toBeCloseTo(answer, 1);
+        let score = chess.evaluate();
+        expect(score).toBeGreaterThanOrEqual(answer[0]);
+        expect(score).toBeLessThanOrEqual(answer[1]);
     });
 });
 
@@ -316,67 +328,94 @@ beforeEach(() => {
     });
 });
 
+// hashStats
+[
+    [START_FEN, 's=mm', 4, [0, 0, 0, 0]],
+    [START_FEN, 'h=1 s=mm', 1, [1, 1, 0, 0]],
+    [START_FEN, 'h=1 s=mm', 2, [21, 21, 0, 0]],
+    [START_FEN, 'h=1 s=mm', 3, [421, 421, 0, 0]],
+    [START_FEN, 'h=1 s=mm', 4, [[8158, 8181], [8158, 8181], [1144, 1165], 0]],
+].forEach(([fen, options, depth, answer], id) => {
+    test(`hashStats:${id}`, () => {
+        chess.configure(false, options, depth);
+        chess.load(fen, false);
+        let moves = ArrayJS(chess.moves());
+        chess.search(moves.join(' '), false);
+        let stats = ArrayJS(chess.hashStats());
+        for (let i = 0; i < 4; i ++) {
+            let item = answer[i],
+                stat = stats[i];
+            if (IsArray(item)) {
+                expect(stat).toBeGreaterThanOrEqual(item[0]);
+                expect(stat).toBeLessThanOrEqual(item[1]);
+            }
+            else
+                expect(stat).toEqual(item);
+        }
+    });
+});
+
 // load
 [
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -', false, '', undefined, START_FEN, 0],
     [START_FEN, false, '', undefined, START_FEN, 0],
-    [START_FEN, true, '', undefined, START_FEN, [-1245505341, -993165387]],
+    [START_FEN, true, '', undefined, START_FEN, [1449171223, 2851721280]],
     [
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
         true, '',
         undefined,
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
-        [1467105663, 434217185],
+        [894541731, 2342607200],
     ],
-    [START_FEN, true, 'd5', undefined, START_FEN, [-1245505341, -993165387]],
+    [START_FEN, true, 'd5', undefined, START_FEN, [1449171223, 2851721280]],
     [
         START_FEN,
         true, 'd4',
         undefined,
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
-        [1467105663, 434217185],
+        [1985588709, 2344719164],
     ],
     [
         START_FEN,
         true, 'd4 d5',
         undefined,
         'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2',
-        [1798615587, 429817858],
+        [2773017983, 3259486411],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1',
-        [1873396825, -1629470110],
+        [4280630151, 3652287715],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1',
-        [-546581409, 1944191191],
+        [3616831701, 1445905011],
     ],
     [
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
         true,  '',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
-        [425758327, -602303476],
+        [2722228778, 1533692916],
     ],
     [
         'rnbqkb1r/pp1ppppp/5n2/2pP4/8/8/PPP1PPPP/RNBQKBNR w KQkq c6 0 3',
         true, 'dxc6',
         undefined,
         'rnbqkb1r/pp1ppppp/2P2n2/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 3',
-        [-1867472723, -360264828],
+        [2504863392, 930110334],
     ],
     [
         'rnbqk2r/ppPpppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 1 5',
         true, {capture: 0, depth: 0, fen: '', flag: 0, from: 18, m: '', ply: 0, promote: 5, pv: '', score: 0, to: 3},
         undefined,
         'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
-        [988728373, 1591938819],
+        [3455057338, 3847915522],
 
     ],
     [
@@ -384,7 +423,7 @@ beforeEach(() => {
         true, 'cxd8=Q+',
         undefined,
         'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
-        [988728373, 1591938819],
+        [3455057338, 3847915522],
     ],
 ].forEach(([fen, must_hash, moves, answer, new_fen, new_hash], id) => {
     test(`load:${id}`, () => {
@@ -396,7 +435,7 @@ beforeEach(() => {
         else
             chess.makeMove(chess.packObject(moves));
         expect(chess.fen()).toEqual(new_fen);
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(new_hash))
             expect(new_hash).toContain(result);
         else
@@ -833,16 +872,16 @@ beforeEach(() => {
     [START_FEN, 's=mm', 2, true, 420],
     [START_FEN, 's=mm', 1, true, 20],
     [START_FEN, 'd=0 s=mm', 0, true, 1],
-    [START_FEN, 's=ab', 5, true, 77578],
-    [START_FEN, 's=ab', 5, false, 21353],
-    [START_FEN, 's=ab', 4, true, 12808],
+    [START_FEN, 's=ab', 5, true, 74952],
+    [START_FEN, 's=ab', 5, false, 25346],
+    [START_FEN, 's=ab', 4, true, 11695],
     [START_FEN, 's=ab', 3, true, 1245],
     [START_FEN, 's=ab', 2, true, 420],
     [START_FEN, 's=ab', 1, true, 20],
     [START_FEN, 'd=0 s=ab', 0, true, 1],
     ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=mm', 4, true, 421547],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, true, 21672],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, false, 4795],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, true, 22323],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, false, 4117],
 ].forEach(([fen, options, depth, scan_all, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.configure(false, options, depth);
@@ -1173,7 +1212,7 @@ beforeEach(() => {
 [
     [START_FEN, '', 'd=4 e=hce p=1 s=mm', 0, {}],
     ['1rb1kbnq/1p1p4/p1nPp1p1/6Br/5Q2/P1N2N2/1P2PPPP/3RKB1R w K -', 'f4f7', 'd=5 e=att q=2 s=ab t=0', -2127, {}],
-    ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 n=1 s=ab', 30991, {}],
+    ['r2k1bnr/3bpppp/pnp3q1/QN6/8/1P2P3/1B2BPPP/2KR3R w - - 6 18', 'a5b6', 'd=5 s=ab x=20', 30991, {}],
     ['1nb2k1r/rpbpqp1p/p4n1P/P1p1p1p1/R6R/2N3P1/1PPPPP2/2BQKBN1 w - g6 0 11', 'c3b5', 'e=hce q=2 s=ab', -1985, {}],
     ['4B2k/8/8/8/1P2N2P/2P1P1R1/P2PKPP1/R1B3N1 w - - 13 42', '', '', [], {e4f6: 40, g3g5: 7028}],
     ['4nk2/7Q/8/4p1N1/r3P3/q1P1NPP1/4K3/6R1 w - - 2 73', '', 1, 1260, {}],
@@ -1188,7 +1227,7 @@ beforeEach(() => {
     ['r1b1kbnr/p2np2p/8/5p1P/8/N7/2P2qP1/4K1NR w kq - 0 16', '', 1, [], {1: 'e1f2'}],
     ['r1b5/ppppn2r/8/4P1Kp/3k1B2/6P1/P6P/4R3 w - - 8 28', '', 'd=2 e=qui q=1 s=ab', [], {e1d1: -2034, e1e4: -3488}],
     ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=ab', -1737, {}],
-    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=mm', 939, {}],
+    ['rn1qkbnr/pp2pppp/8/2pp4/1P5P/2PQ1P2/P3P1P1/RNB1KBNR w KQkq c6 0 7', 'd3h7', 'd=1 e=hce q=1 s=mm', 880, {}],
     ['rn1qkbnr/ppp1pppp/8/3p4/6bP/6P1/PPPPPP2/RNBQKBNR w KQkq - 1 3', 'e2e4', 'd=3 e=hce q=1 s=ab', -1880, {}],
     ['rnb1k1nr/1p1p1p2/1qp1p3/4P1pp/p2P4/1N1B4/PPP2PPP/R2QK1NR w KQkq -', '', 3, [], {b3c1: 0, b3c5: 0, b3d2: 0}],
     ['rnb1k1nr/pppp1pp1/4p2p/8/2PP2q1/2PBPN2/P4PPP/R1BQK2R w KQkq - 2 8', '', 1, [], {2: 'e1h1'}],
@@ -1322,32 +1361,32 @@ beforeEach(() => {
 
 // undo
 [
-    [START_FEN, 'e4', 1, '', [-1245505341, -993165387]],
-    [START_FEN, '', 1, '', [-1245505341, -993165387]],
-    [START_FEN, 'e4 e5', 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', [-1075114427, 313854586]],
-    [START_FEN, 'e4 e5', 2, '', [-1245505341, -993165387]],
-    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', 'O-O', 1, '', [790067727, 16020623]],
-    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', 'O-O', 1, '', [-1070191305, 1776480650]],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O', 1, '', [-928015052, -791772756]],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', 1, '', [-928015052, -791772756]],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', 'O-O-O', 1, '', [1796922085, -1708452491]],
+    [START_FEN, 'e4', 1, '', [1449171223, 2851721280]],
+    [START_FEN, '', 1, '', [1449171223, 2851721280]],
+    [START_FEN, 'e4 e5', 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', [3016215727, 2857690465]],
+    [START_FEN, 'e4 e5', 2, '', [1449171223, 2851721280]],
+    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', 'O-O', 1, '', [2063398905, 2654829949]],
+    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', 'O-O', 1, '', [1272697903, 3887138050]],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O', 1, '', [2030799990, 4030562210]],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', 1, '', [2030799990, 4030562210]],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', 'O-O-O', 1, '', [4034064681, 359707402]],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flag: 0, from: 65, m: '', ply: 215, promote: 0, pv: '', score: 0, to: 48},
-        1, '', [1120212064, 385877072],
+        1, '', [2584252073, 4038902842],
     ],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flag: 0, from: 65, m: '', ply: 215, promote: 0, pv: '', score: 0, to: 80},
-        1, '', [1120212064, 385877072],
+        1, '', [2584252073, 4038902842],
     ],
     [
         'r1b1kb1r/p1pp1ppp/1p2pn2/7q/1nPPP3/BP1B1N1P/P4PP1/RN1Q1RK1 b ha - 2 10',
         'Nxd3 Bxf8 Nb2 Qc2 Rxf8 Qxb2 Nxe4',
-        7, '', [230805468, -275451685],
+        7, '', [1484355998, 3445566561],
     ],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17', 'gxh3+', 1, '', [-952280715, 1343807914]],
-    ['5k2/8/8/8/6pP/8/6K1/8 b - h3 0 17', 'gxh3+', 1, '', [-2083901243, 1189336239]],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17', 'gxh3+', 1, '', [2152484851, 3605274865]],
+    ['5k2/8/8/8/6pP/8/6K1/8 b - h3 0 17', 'gxh3+', 1, '', [1514358265, 2342289575]],
 ].forEach(([fen, moves, steps, answer, hash], id) => {
     test(`undo:${id}`, () => {
         chess.load(fen, true);
@@ -1365,7 +1404,7 @@ beforeEach(() => {
             expect(chess.material(0)).toEqual(materials[0]);
             expect(chess.material(1)).toEqual(materials[1]);
         }
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(hash))
             expect(hash).toContain(result);
         else

@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-11-01
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -69,7 +69,7 @@ constexpr int       SCORE_MATING = 30001;
 constexpr int       SCORE_NONE = 31002;
 constexpr Square    SQUARE_A8 = 0;
 constexpr Square    SQUARE_H1 = 119;
-constexpr int       TT_SIZE = 4096;
+constexpr int       TT_SIZE = 65536;
 constexpr Piece     TYPE(Piece piece) {return piece & 7;}
 constexpr uint8_t   WHITE = 0;
 
@@ -380,18 +380,19 @@ struct PV {
 };
 
 struct State {
-    Square  castling[4];
-    Square  ep_square;
-    uint8_t half_moves;
-    Move    move;
+    Hash    hash;           // 64 bit
+    Square  castling[4];    // 32
+    Square  ep_square;      // 8
+    uint8_t half_moves;     // 8
+    Move    move;           // 32
 };
 
 struct Table {
-    Hash    hash;       // 64 bit
-    int16_t score;      // 16
-    uint8_t bound;      // 8
-    uint8_t depth;      // 8
-    Move    move;       // 32
+    Hash    hash;           // 64 bit
+    int16_t score;          // 16
+    uint8_t bound;          // 8
+    uint8_t depth;          // 8
+    Move    move;           // 32
 };
 
 // null object
@@ -438,10 +439,11 @@ private:
     int         eval_mode;                      // 0:null, &1:mat, &2:hc2, &4:qui, &8:nn
     std::string fen;
     int         fen_ply;
-    std::vector<Move> first_moves;
+    std::vector<Move> first_moves;              // top level moves
     std::vector<MoveText> first_objs;
     bool        frc;
     uint8_t     half_moves;
+    int         hash_mode;
     Square      kings[4];
     int         materials[2];
     int         max_depth;
@@ -452,6 +454,7 @@ private:
     uint8_t     mobilities[16];
     int         move_number;
     int         nodes;
+    int         order_mode;
     Square      pawns[8];
     Square      pieces[2][16];
     int         ply;
@@ -461,7 +464,7 @@ private:
     bool        scan_all;
     int         search_mode;                    // 1:minimax, 2:alpha-beta
     int         sel_depth;
-    Table       table[TT_SIZE];
+    Table       table[TT_SIZE];                 // 16 bytes: hash=8, score=2, bound=1, depth=1, move=4
     std::string trace;
     int         tt_adds;
     int         tt_adds2;
@@ -470,21 +473,22 @@ private:
     int         turn;
     Hash        zobrist[15][128];
     bool        zobrist_ready;
+    Hash        zobrist_side;
 
     /**
      * Add an entry to the transposition table
      */
-    void addEntry(Hash hash, int score, uint8_t depth, uint8_t bound, Move move) {
+    void addEntry(Hash hash, int score, uint8_t bound, uint8_t depth, Move move) {
         tt_adds2 ++;
         auto exist = findEntry(hash, depth);
-        if (exist && exist->depth >= depth)
+        if (exist)
             return;
-        // TODO: convert the array to a number + save the move too (when it's converted to a number)
-        exist = &table[(hash % TT_SIZE)];
+
+        exist = &table[hash % TT_SIZE];
         exist->hash = hash;
         exist->score = score;
-        exist->depth = depth;
         exist->bound = bound;
+        exist->depth = depth;
         exist->move = move;
         tt_adds ++;
     }
@@ -535,6 +539,7 @@ private:
      */
     void addState(Move move) {
         auto &state = ply_states[ply & 127];
+        state.hash = board_hash;
         memcpy(state.castling, castling, sizeof(castling));
         state.ep_square = ep_square;
         state.half_moves = half_moves;
@@ -568,8 +573,10 @@ private:
      * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      */
     int alphaBeta(int alpha, int beta, int depth, int max_depth, PV *pv) {
+        // transposition
+
         // extend depth if in check
-        if ((max_nodes & 1) && max_depth < max_extend && kingAttacked(turn))
+        if (max_depth < max_extend && kingAttacked(turn))
             max_depth ++;
 
         if (depth >= max_depth) {
@@ -605,7 +612,7 @@ private:
 
             int score;
             // pv search
-            if (alpha > alpha0 && (max_nodes & 4)) {
+            if (alpha > alpha0 && pv_mode) {
                 score = -alphaBeta(-alpha - 1, -alpha, depth + 1, max_depth, &line);
                 if (score > alpha && score < beta)
                     score = -alphaBeta(-beta, -alpha, depth + 1, max_depth, &line);
@@ -635,11 +642,9 @@ private:
                         addTopMove(move, score, &line);
 
                     // update pv
-                    if (pv_mode) {
-                        pv->length = line.length + 1;
-                        pv->moves[0] = move;
-                        memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
-                    }
+                    pv->length = line.length + 1;
+                    pv->moves[0] = move;
+                    memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
                 }
             }
 
@@ -652,9 +657,9 @@ private:
         if (!num_valid)
             return kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
-        if (max_nodes & 2) {
+        if (hash_mode) {
             auto bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
-            addEntry(board_hash, best, max_depth, bound, best_move);
+            addEntry(board_hash, best, bound, max_depth - depth, best_move);
         }
         return best;
     }
@@ -710,7 +715,7 @@ private:
      * Find an entry in the transposition table
      */
     Table *findEntry(Hash hash, int depth) {
-        auto entry = &table[(hash % TT_SIZE)];
+        auto entry = &table[hash % TT_SIZE];
         if (entry->hash == hash && entry->depth >= depth)
             return entry;
         return nullptr;
@@ -732,6 +737,16 @@ private:
      * Mini max tree search
      */
     int miniMax(int depth, int max_depth, PV *pv) {
+        // transposition
+        if (hash_mode && depth > 0) {
+            auto entry = findEntry(board_hash, max_depth - depth);
+            if (entry) {
+                nodes ++;
+                tt_hits ++;
+                return entry->score;
+            }
+        }
+
         if (depth >= max_depth) {
             nodes ++;
             pv->length = 0;
@@ -759,14 +774,7 @@ private:
                 continue;
             num_valid ++;
 
-            int score;
-            auto entry = (max_nodes & 2)? findEntry(board_hash, max_depth): nullptr;
-            if (entry) {
-                score = entry->score;
-                tt_hits ++;
-            }
-            else
-                score = -miniMax(depth + 1, max_depth, &line);
+            int score = -miniMax(depth + 1, max_depth, &line);
             undoMove();
 
             // top level
@@ -778,11 +786,9 @@ private:
                 best_move = move;
 
                 // update pv
-                if (pv_mode) {
-                    pv->length = line.length + 1;
-                    pv->moves[0] = move;
-                    memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
-                }
+                pv->length = line.length + 1;
+                pv->moves[0] = move;
+                memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
             }
 
             // checkmate found
@@ -792,10 +798,10 @@ private:
 
         // mate + stalemate
         if (!num_valid)
-            return kingAttacked(turn)? -SCORE_MATE + ply: 0;
+            best = kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
-        if (max_nodes & 2)
-            addEntry(board_hash, best, max_depth, BOUND_EXACT, best_move);
+        if (hash_mode)
+            addEntry(board_hash, best, BOUND_EXACT, max_depth - depth, best_move);
         return best;
     }
 
@@ -1015,11 +1021,13 @@ public:
         debug = 0;
         eval_mode = 1;
         frc = frc_;
+        hash_mode = 0;
         max_depth = 4;
-        max_extend = 20;
+        max_extend = 0;
         max_nodes = 1e9;
         max_quiesce = 0;
         max_time = 0;
+        order_mode = 1;
         pv_mode = 1;
         search_mode = 0;
 
@@ -1047,8 +1055,14 @@ public:
                         eval_mode = eit->second;
                 }
                 break;
+            case 'h':
+                hash_mode = value;
+                break;
             case 'n':
                 max_nodes = value;
+                break;
+            case 'o':
+                order_mode = value;
                 break;
             case 'p':
                 pv_mode = value;
@@ -1355,7 +1369,7 @@ public:
         }
 
         // move ordering for alpha-beta
-        if (search_mode == 2)
+        if (order_mode)
             orderMoves(moves);
         return moves;
     }
@@ -1458,6 +1472,7 @@ public:
         if (!zobrist_ready)
             init_zobrist();
 
+        // 1) board
         board_hash = 0;
         for (auto square = SQUARE_A8; square <= SQUARE_H1; square ++) {
             if (square & 0x88) {
@@ -1468,6 +1483,37 @@ public:
             if (piece)
                 board_hash ^= zobrist[piece][square];
         }
+
+        // 2) en passant
+        hashEnPassant();
+
+        // 3) castle
+        for (auto id = 0; id < 4; id ++)
+            if (castling[id] != EMPTY)
+                board_hash ^= zobrist[0][id];
+
+        // 4) side
+        if (turn)
+            board_hash ^= zobrist_side;
+    }
+
+    /**
+     * Hash a castle square
+     * @param id 2 * color + 0/1 => 0, 1, 2, 3
+     */
+    void hashCastle(int id) {
+        if (castling[id] != EMPTY) {
+            castling[id] = EMPTY;
+            board_hash ^= zobrist[0][id];
+        }
+    }
+
+    /**
+     * Hash the en-passant square
+     */
+    void hashEnPassant() {
+        if (ep_square != EMPTY)
+            board_hash ^= zobrist[0][ep_square];
     }
 
     /**
@@ -1482,11 +1528,13 @@ public:
 
     /**
      * Initialise the zobrist table
+     * - 0 is used for en passant + castling
      */
     void init_zobrist() {
         auto collision = 0;
 
         xorshift64();
+        zobrist_side = xorshift64();
         std::set<Hash> seens;
 
         for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
@@ -1494,8 +1542,8 @@ public:
                 i += 7;
                 continue;
             }
-            for (auto j = 1; j <= 14; j ++) {
-                if (!PIECE_ORDERS[j])
+            for (auto j = 0; j <= 14; j ++) {
+                if (j && !PIECE_ORDERS[j])
                     continue;
                 auto x = xorshift64();
                 if (seens.find(x) != seens.end()) {
@@ -1723,6 +1771,7 @@ public:
         addState(move);
 
         half_moves ++;
+        hashEnPassant();
         ep_square = EMPTY;
 
         // castle?
@@ -1745,8 +1794,8 @@ public:
             board[rook_to] = rook_piece;
 
             kings[us] = king_to;
-            castling[us << 1] = EMPTY;
-            castling[(us << 1) + 1] = EMPTY;
+            hashCastle(us << 1);
+            hashCastle((us << 1) + 1);
 
             // score
             positions[us]
@@ -1764,28 +1813,28 @@ public:
                 materials[them] -= PIECE_SCORES[capture];
                 if (capture == ROOK) {
                     if (move_to == castling[them << 1])
-                        castling[them << 1] = EMPTY;
+                        hashCastle(them << 1);
                     else if (move_to == castling[(them << 1) + 1])
-                        castling[(them << 1) + 1] = EMPTY;
+                        hashCastle((them << 1) + 1);
                 }
                 half_moves = 0;
             }
 
             // remove castling if we move a king/rook
             if (piece_type == KING) {
-                castling[us << 1] = EMPTY;
-                castling[(us << 1) + 1] = EMPTY;
+                hashCastle(us << 1);
+                hashCastle((us << 1) + 1);
             }
             else if (piece_type == ROOK) {
                 if (move_from == castling[us << 1])
-                    castling[us << 1] = EMPTY;
+                    hashCastle(us << 1);
                 else if (move_from == castling[(us << 1) + 1])
-                    castling[(us << 1) + 1] = EMPTY;
+                    hashCastle((us << 1) + 1);
             }
             // pawn + update 50MR
             else if (piece_type == PAWN) {
                 if (passant != EMPTY)
-                    hashSquare(passant, COLORIZE(them, PAWN));
+                    hashEnPassant();
                 else if (promote)
                     materials[us] += PROMOTE_SCORES[promote];
                 // pawn moves 2 squares
@@ -1803,6 +1852,7 @@ public:
         if (turn == BLACK)
             move_number ++;
         turn ^= 1;
+        board_hash ^= zobrist_side;
         return true;
     }
 
@@ -2050,6 +2100,10 @@ public:
         std::vector<std::string> lines;
         lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
 
+        // no need to order moves
+        auto old_order = order_mode;
+        order_mode = 0;
+
         for (auto &move : moves) {
             makeMove(move);
             auto prev = nodes;
@@ -2059,6 +2113,8 @@ public:
             prev = nodes;
             undoMove();
         }
+
+        order_mode = old_order;
 
         if (depth > 1)
             lines.push_back(std::to_string(depth) + "=" + std::to_string(nodes));
@@ -2290,6 +2346,7 @@ public:
         ply --;
 
         auto &state = ply_states[ply & 127];
+        board_hash = state.hash;
         memcpy(castling, state.castling, sizeof(castling));
         ep_square = state.ep_square;
         half_moves = state.half_moves;
@@ -2322,10 +2379,6 @@ public:
             auto rook_piece = COLORIZE(us, ROOK);
             auto rook_to = king_to - 1 + (q << 1);
 
-            hashSquare(king_to, king_piece);
-            hashSquare(rook_to, rook_piece);
-            hashSquare(king, king_piece);
-            hashSquare(move_to, rook_piece);
             board[king_to] = 0;
             board[rook_to] = 0;
             board[king] = king_piece;
@@ -2340,12 +2393,10 @@ public:
         }
         else {
             auto piece = board[move_to];
-            hashSquare(move_to, piece);
             if (promote) {
                 piece = COLORIZE(us, PAWN);
                 materials[us] -= PROMOTE_SCORES[promote];
             }
-            hashSquare(move_from, piece);
             board[move_to] = 0;
             board[move_from] = piece;
 
@@ -2356,13 +2407,11 @@ public:
             if (move_flag & BITS_EN_PASSANT) {
                 auto capture = COLORIZE(them, PAWN);
                 Square target = move_to + 16 - (us << 5);
-                hashSquare(target, capture);
                 board[target] = capture;
                 materials[them] += PIECE_SCORES[PAWN];
             }
             else if (move_capture) {
                 auto capture = COLORIZE(them, move_capture);
-                hashSquare(move_to, capture);
                 board[move_to] = capture;
                 materials[them] += PIECE_SCORES[move_capture];
             }
@@ -2432,6 +2481,10 @@ public:
 
     bool em_frc() {
         return frc;
+    }
+
+    std::vector<int> em_hashStats() {
+        return {tt_adds, tt_adds2, tt_hits, tt_hits2};
     }
 
     int em_material(int color) {
@@ -2512,6 +2565,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("fen960", &Chess::createFen960)
         .function("frc", &Chess::em_frc)
         .function("hashBoard", &Chess::hashBoard)
+        .function("hashStats", &Chess::em_hashStats)
         .function("load", &Chess::load)
         .function("makeMove", &Chess::makeMove)
         .function("material", &Chess::em_material)

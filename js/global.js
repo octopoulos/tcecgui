@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-01
 //
 // global variables/functions shared across multiple js files
 //
@@ -366,8 +366,8 @@ function reset_old_settings() {
             save_option('scroll_inertia', 0.95);
     if (version < '20200920') {
         save_option('game_level', 'amateur');
-        save_option('game_options_black', 'd=4 e=att n=1 q=8 s=ab t=2');
-        save_option('game_options_white', 'd=4 e=att n=1 q=8 s=ab t=2');
+        save_option('game_options_black', 'd=4 e=att q=8 s=ab t=2 x=20');
+        save_option('game_options_white', 'd=4 e=att q=8 s=ab t=2 x=20');
         save_option('turn_opacity', 0);
     }
     if (version < '20200930')

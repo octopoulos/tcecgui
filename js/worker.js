@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-11-01
 /*
 globals
 Abs, ArrayJS, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
@@ -65,7 +65,7 @@ function create_chess(engine) {
  * @param {string} engine
  * @param {string} fen
  * @param {number[]} moves
- * @returns {[Move, number, number]} best_move, score, depth
+ * @returns {[Move, number, number]} best_move, score, depth, hash_stats
  */
 function think(engine, fen, moves, scan_all) {
     // 1) generate all moves + analyse them
@@ -90,7 +90,7 @@ function think(engine, fen, moves, scan_all) {
         move.score = score;
     }
     objs.sort((a, b) => b.score - a.score);
-    return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth()];
+    return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth(), chess.hashStats()];
 }
 
 // COMMUNICATION
@@ -119,11 +119,13 @@ self.onmessage = e => {
         LS(e);
     }
     if (func == 'think') {
-        let [moves, elapsed, nodes, avg_depth, sel_depth] = think(data.engine, data.fen, data.moves, data.scan_all);
+        let [moves, elapsed, nodes, avg_depth, sel_depth, hash_stats] =
+            think(data.engine, data.fen, data.moves, data.scan_all);
         self.postMessage({
             avg_depth: avg_depth,
             elapsed: elapsed,
             fen: data.fen,
+            hash_stats: hash_stats,
             id: data.id,
             moves: moves,
             nodes: nodes,
