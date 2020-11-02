@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-31
 //
 // general 3d rendering code
 //
@@ -10,10 +10,10 @@ globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
-Id, Input, IsArray, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, LINKS, load_library, LS, merge_settings, navigator, NO_IMPORTS, Now, ON_OFF, option_number, PD,
-S, save_option, set_draggable, Show, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
-Undefined, update_theme, Visible, window, X_SETTINGS, Y
+Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
+LANGUAGES, LINKS, load_library, LS, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
+S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
+Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -68,6 +68,7 @@ let audiobox = {
         },
     },
     change_queue,
+    click_target,
     clock,
     clock2,
     context_areas = {},
@@ -98,6 +99,7 @@ let audiobox = {
     old_pos,
     old_rot,
     ONLY_POPUPS = {},
+    POPUP_ADJUSTS = {},
     PARENT_3D = 'body',
     PARTS = [],
     Quaternion,
@@ -689,8 +691,8 @@ function resize_3d() {
         controls = new CameraControls(camera, renderer.domElement);
         controls.dampingFactor = 0.1;
         controls.dollyTransition = true;
-        controls.addEventListener('control', () => {request_render();});
-        controls.addEventListener('controlstart', () => {request_render();});
+        controls.addEventListener('control', () => request_render());
+        controls.addEventListener('controlstart', () => request_render());
         controls.update();
     }
 }
@@ -1035,25 +1037,31 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
  * Change a setting
  * @param {string} name
  * @param {string|number} value
- * @param {boolean=} no_close don't close the popup
+ * @param {boolean=} close close the popup
  */
-function change_setting(name, value, no_close) {
+function change_setting(name, value, close) {
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
         if (TYPES[name] == 'i' && !isNaN(value))
             value *= 1;
-        if (NO_IMPORTS[name] != 2)
-            save_option(name, value);
+
+        let no_import = NO_IMPORTS[name] || 0;
+        if (!(no_import & 2)) {
+            if (no_import & 4)
+                Y[name] = value;
+            else
+                save_option(name, value);
+        }
     }
 
     // holding down a key => skip
     if (KEYS[38] || KEYS[40]) {
-        change_queue = [name, value, no_close];
+        change_queue = [name, value, close];
         return;
     }
     change_queue = null;
 
-    if (virtual_change_setting_special && virtual_change_setting_special(name, value, no_close))
+    if (virtual_change_setting_special && virtual_change_setting_special(name, value, close))
         return;
 
     switch (name) {
@@ -1067,6 +1075,18 @@ function change_setting(name, value, no_close) {
         update_theme([value]);
         break;
     }
+}
+
+/**
+ * Destroy a popup content + style
+ * @param {Node} node
+ * @param {number} &1:html, &2:style
+ */
+function destroy_popup(node, flag) {
+    if (flag & 1)
+        HTML(node, '');
+    if (flag & 2)
+        Style(node, 'height:unset;transform:unset;width:unset');
 }
 
 /**
@@ -1167,30 +1187,56 @@ function show_modal(show, text, title, name) {
  * @param {string=} name
  * @param {boolean|string=} show
  * @param {boolean=} adjust only change its position
+ * @param {number=} bar_x width of the scrollbar
+ * @param {boolean=} center place the popup in the center of the screen
+ * @param {number=} event 0 to disable set_modal_events
  * @param {string=} html
+ * @param {Node=} html_target where to output the html
+ * @param {string=} id id of the element that us used for adjust
  * @param {boolean=} instant popup appears instantly
  * @param {number=} margin_y
+ * @param {string=} node_id popup id
  * @param {boolean=} overlay dark overlay is used behind the popup
  * @param {string=} setting
+ * @param {number=} shadow 0:none, 1:normal, 2:light
+ * @param {Node=} target element that was clicked
  * @param {number[]]=} xy
  */
-function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, overlay, setting, xy}={}) {
+function show_popup(name, show, {
+        adjust, bar_x=20, center, event=1, html='', html_target, id, instant=true, margin_y=0, node_id, overlay,
+        setting, shadow=1, target, xy}={}) {
     // remove the red rectangle
     if (!adjust)
         set_draggable();
     else if (device.iphone)
         return;
 
-    let node = (name == 'about')? Id('popup-about'): Id('modal');
+    // if clicked on home-form => make sure to reset click_target
+    let is_toggle = (show == 'toggle');
+    if (is_toggle || show == undefined)
+        click_target = null;
+
+    // find the modal
+    let node = click_target || Id(node_id || 'modal');
     if (!node)
         return;
 
-    if (adjust && node.dataset.id == 'custom')
+    let dataset = node.dataset,
+        data_id = dataset.id,
+        data_name = dataset.name,
+        is_modal = (node.id == 'modal'),
+        popup_adjust = POPUP_ADJUSTS[name] || POPUP_ADJUSTS[data_id || data_name];
+    if (adjust && !popup_adjust)
         adjust = false;
+    if (center == undefined)
+        center = dataset.center || '';
 
-    if (show == 'toggle')
-        show = (node.dataset.id != name || !HasClass(node, 'popup-show'));
-    S(Id('overlay'), show && overlay);
+    // smart toggle
+    if (is_toggle)
+        show = (data_id != (id || name) || !HasClass(node, 'popup-show') || (xy && xy + '' != dataset.xy));
+
+    if (!adjust && overlay != undefined)
+        S(Id('overlay'), show && overlay);
 
     if (show || adjust) {
         let px = 0,
@@ -1202,96 +1248,164 @@ function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, over
             y = 0,
             y2 = 0;
 
+        if (show)
+            click_target = Parent(target, {class_: 'popup', self: true});
+
         // create the html
         switch (name) {
-        case 'about':
-            html = HTML(Id('desc'));
-            px = -50;
-            py = -50;
-            x = win_x / 2;
-            y = win_y / 2;
-            break;
-        case 'custom':
-            break;
         case 'options':
             if (!xy)
                 context_target = null;
-            html = show_settings(setting, xy);
+            html = show_settings(setting, {xy: xy});
             break;
         default:
-            if (name)
+            let link = LINKS[name];
+            if (link)
                 html = create_url_list(LINKS[name]);
             break;
         }
 
-        if (show)
-            HTML(name == 'about'? '#popup-desc': '#modal', html);
-        else
-            name = node.dataset.id;
+        if (show) {
+            destroy_popup(node, 2);
+            HTML(html_target || node, html);
+            // focus?
+            let focus = _('[data-f]', node);
+            if (focus)
+                focus.focus();
+        }
+        else {
+            id = data_id;
+            name = data_name;
+        }
 
         Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
         translate_node(node);
+        update_svg();
 
-        // align the popup with the target, if any
-        if (adjust && !xy) {
-            let item = node.dataset.xy;
-            if (item)
-                xy = item.split(',').map(item => item * 1);
-        }
-        if (xy) {
-            x = xy[0];
-            y = xy[1];
-            x2 = x;
-            y2 = y;
-        }
-        else if (name && !px) {
-            let target = Id(name);
-            if (target) {
-                let rect = target.getBoundingClientRect();
-                [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
-            }
-        }
+        if (is_modal) {
+            // make sure the popup remains inside the window
+            let height = node.clientHeight,
+                width = node.clientWidth;
 
-        // make sure the popup remains inside the window
-        let height = node.clientHeight,
-            width = node.clientWidth;
-
-        // align left doesn't work => try align right, and if not then center
-        if (x + width > win_x - 20) {
-            if (x2 < win_x - 20 && x2 - width > 0) {
-                px = -100;
-                x = x2;
+            // center?
+            if (center) {
+                x = win_x / 2 - width / 2;
+                y = win_y / 2 - height / 2;
             }
             else {
-                px = -50;
-                x = win_x / 2;
-            }
-        }
-        // same for y
-        if (y + height + margin_y > win_y) {
-            if (y2 < win_y && y2 - height > 0) {
-                py = -100;
-                y = y2;
-            }
-            else {
-                py = -50;
-                y = win_y / 2;
-            }
-        }
+                let target = Id(id),
+                    rect = target? target.getBoundingClientRect(): null;
 
-        node.dataset.xy = xy || '';
-        x += full_scroll.x;
-        y += full_scroll.y;
-        Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
+                // align the popup with the target, if any
+                if (adjust) {
+                    // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter
+                    if (rect && popup_adjust > 1) {
+                        if (popup_adjust & 2)
+                            y = rect.top;
+                        if (popup_adjust & 4)
+                            x = rect.right;
+                        if (popup_adjust & 8)
+                            y = rect.bottom;
+                        if (popup_adjust & 16)
+                            x = rect.left;
+                        if (popup_adjust & 32)
+                            y = (rect.top + rect.bottom) / 2;
+                        if (popup_adjust & 64)
+                            x = (rect.left + rect.right) / 2;
+                        xy = [x, y];
+                    }
+                    else if (!xy) {
+                        let item = dataset.xy;
+                        if (item)
+                            xy = item.split(',').map(item => item * 1);
+                    }
+
+                    let data_margin = dataset.my;
+                    if (data_margin)
+                        margin_y = data_margin * 1;
+                }
+
+                // xy[2] => can align to the rect.right
+                if (xy) {
+                    x = xy[0];
+                    y = xy[1];
+                    x2 = xy[2] || x;
+                    y2 = xy[3] || y;
+                }
+                else if (name && !px && rect)
+                    [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
+            }
+
+            // align left doesn't work => try align right, and if not then center
+            if (x + width > win_x - bar_x) {
+                if (x2 >= win_x - bar_x)
+                    x2 = win_x - bar_x;
+
+                if (x2 - width > 0) {
+                    px = -100;
+                    x = x2;
+                }
+                else {
+                    px = -50;
+                    x = win_x / 2;
+                }
+            }
+            // same for y
+            if (y + height + margin_y > win_y) {
+                if (y2 >= win_y - 1)
+                    y2 = win_y - 1;
+
+                if (y2 < win_y && y2 - height > 0) {
+                    py = -100;
+                    y = y2;
+                }
+                else {
+                    py = -50;
+                    y = win_y / 2;
+                }
+            }
+
+            dataset.center = center || '';
+            dataset.my = margin_y || '';
+            dataset.xy = xy || '';
+            x += full_scroll.x;
+            y += full_scroll.y;
+            Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
+        }
     }
 
     if (!adjust) {
-        if (instant != undefined)
-            Class(node, 'instant', instant);
-        Class(node, 'popup-show popup-enable', !!show);
+        if (is_modal) {
+            if (instant != undefined)
+                Class(node, 'instant', instant);
+            Class(node, 'popup-show popup-enable', !!show);
 
-        // remember which popup it is, so if we click again on the same id => it closes it
-        node.dataset.id = show? name: '';
+            // remember which popup it is, so if we click again on the same id => it closes it
+            dataset.id = show? (id || ''): '';
+            dataset.name = show? name: '';
+            if (!show)
+                destroy_popup(node, 3);
+        }
+        if (show) {
+            dataset.ev = event;
+            let height = 'unset',
+                width = 'unset';
+            if (popup_adjust) {
+                if (popup_adjust & 128)
+                    height = '100%';
+                if (popup_adjust & 256)
+                    width = '100%';
+            }
+            Style(node, `height:${height};width:${width}`);
+
+            // shadow
+            Class(node, `${shadow == 0? '': '-'}shadow0 ${shadow == 2? '': '-'}shadow2`);
+        }
+        else {
+            dataset.center = '';
+            dataset.my = '';
+            dataset.xy = '';
+        }
 
         set_modal_events(node);
         Show(node);
@@ -1301,18 +1415,25 @@ function show_popup(name, show, {adjust, html='', instant=true, margin_y=0, over
 /**
  * Show a settings page
  * @param {string} name
- * @param {boolean} xy true if the dialog comes from a contextual popup, otherwise from main options
+ * @param {number=} flag &1:title &2:OK
+ * @param {string=} grid_class
+ * @param {string=} item_class
+ * @param {string=} title
+ * @param {boolean=} unique true if the dialog comes from a contextual popup, otherwise from main options
+ * @param {boolean=} xy
  * @returns {string} html
  */
-function show_settings(name, xy) {
-    let lines = ['<grid class="options">'],
-        parent_id = get_drop_id(context_target)[1],
-        settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
+function show_settings(name, {flag, grid_class='options', item_class='item', title, unique, xy}={}) {
+    let settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
+        class_ = settings._class || '',
         keys = Keys(settings),
+        lines = [`<grid class="${grid_class}${class_? ' ': ''}${class_}">`],
+        parent_id = get_drop_id(context_target)[1],
         prefix = settings._prefix,
-        simple = settings._simple,
         split = settings._split,
         suffix = settings._suffix;
+
+    flag = Undefined(flag, settings._flag) || 0;
 
     // set multiple columns
     if (split) {
@@ -1332,21 +1453,17 @@ function show_settings(name, xy) {
         keys = new_keys;
     }
 
-    if (!simple) {
+    if (!(flag & 1)) {
         if (parent_id)
             lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
-        else if (name)
-            lines.push(`<div class="item-title span" data-set="${xy? -1: ''}" data-t="${Title(name).replace(/_/g, ' ')} options"></div>`);
+        else if (name) {
+            if (!title)
+                title = settings._title || `${Title(name).replace(/_/g, ' ')}${settings._same? '': ' options'}`;
+            lines.push(`<div class="item-title span" data-set="${unique? -1: ''}" data-n="${name}" data-t="${title}"></div>`);
+        }
     }
 
     keys.forEach(key => {
-        // separator
-        if (key[0] == '_') {
-            if (parseInt(key[1]))
-                lines.push(`<hr${split? '': ' class="span"'}>`);
-            return;
-        }
-
         if (!key && split) {
             lines.push('<div></div>');
             return;
@@ -1360,38 +1477,78 @@ function show_settings(name, xy) {
         if (!xy && ONLY_POPUPS[key])
             return;
 
+        // extra _keys: class, color, flag, on, span, value
+        let sclass = setting._class,
+            scolor = setting._color,
+            sflag = setting._flag,
+            son = setting._on,
+            sset = setting._set,
+            sspan = setting._span,
+            ssvg = setting._svg,
+            ssyn = setting._syn || '',
+            svalue = setting._value;
+        if (sflag && sflag & flag)
+            return;
+        if (son && !son())
+            return;
+        if (svalue)
+            setting = svalue;
+
+        // separator
+        if (key[0] == '_') {
+            if (parseInt(key[1]))
+                lines.push(`<hr${split? '': ' class="span"'}>`);
+            return;
+        }
+
         // link or list
         let clean = key,
-            color = setting._color,
             data = setting[0],
+            fourth = setting[4],
             is_string = IsString(data)? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
-            more_data = data? '': ` data-set="${key}"`,
+            more_data = data? '': ` data-set="${sset || key}"`,
+            third = setting[3],
             title = setting[2],
             y_key = Y[key];
+
+        if (sclass)
+            more_class = ` ${sclass}`;
+        else if (sspan)
+            more_class = ' item-title span';
+
+        if (IsFunction(third) && !third())
+            return;
+        if (IsFunction(fourth))
+            y_key = fourth();
 
         // only contextual actions?
         if (title && title[0] == '!') {
             if (!parent_id)
                 return;
             title = title.slice(1);
-            y_key = setting[3]();
         }
 
         // remove prefix and suffix
-        if (suffix && clean.slice(-suffix.length) == suffix)
-            clean = clean.slice(0, -suffix.length);
-        if (prefix && clean.slice(0, prefix.length) == prefix)
-            clean = clean.slice(prefix.length);
+        if (clean.length == 2 && IsDigit(clean[1]))
+            clean = '';
+        else {
+            if (suffix && clean.slice(-suffix.length) == suffix)
+                clean = clean.slice(0, -suffix.length);
+            if (prefix && clean.slice(0, prefix.length) == prefix)
+                clean = clean.slice(prefix.length);
+        }
 
         // TODO: improve that part, it can be customised better
         if (is_string && data == '2')
-            color = '#f00';
-        let style = color? `${(Y.theme == 'dark')? ' class="shadow"': ''} style="color:${color}"`: '';
+            scolor = '#f00';
+        let style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
+            title2 = title? `data-t="${title}" data-t2="title"`: '';
 
         lines.push(
-            `<a${is_string} class="item${more_class}${title === 0? ' off': ''}"${more_data}${title? 'data-t="' + title + '" data-t2="title"': ''}>`
-                + `<i data-t="${Title(clean).replace(/_/g, ' ')}"${style}></i>`
+            `<a${is_string} class="${item_class}${more_class}${title === 0? ' off': ''}"${more_data}${title2}>`
+                + (ssvg? `<i class="icon" data-svg="${ssvg}"></i>`: '')
+                + `<i data-t="${Title(clean).replace(/_/g, ' ')}${ssyn}"${style}></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'
         );
@@ -1424,27 +1581,40 @@ function show_settings(name, xy) {
                 );
         }
         else if (data) {
-            let class_ = data.class,
-                type = data.type;
+            let auto = data.auto || '',
+                class_ = data.class || '',
+                focus = data.focus || '',
+                holder = data.text || '',
+                type = data.type || '';
             class_ = ` class="setting${class_? ' ': ''}${class_}"`;
+            if (focus)
+                focus = ` data-f="${focus}"`;
             lines.push('<vert class="fcenter">');
 
+            // placeholder + autocomplete
+            if (holder)
+                holder = ` data-t="${data.text}" data-t2="placeholder"`;
+            if (auto)
+                auto = ` autocomplete="${auto}"`;
+
             if (type == 'area')
-                lines.push(`<textarea name="${key}"${class_}>${y_key}</textarea>`);
+                lines.push(`<textarea name="${key}"${class_}${holder}${auto}${focus}>${y_key}</textarea>`);
+            else if (type == 'info' || type == 'upper')
+                lines.push(`<div class="${type}" name="${key}" data-t="${data.text || ''}"></div>`);
             else if (type == 'number')
-                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}" value="${y_key}">`);
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
             else if (type == 'link') {
                 if (data.text)
-                    lines.push(`<input name="${key}" type="text"${class_} data-t="${data.text}" data-t2="placeholder" value="">`);
+                    lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}>`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
                 Attrs(Id('file'), {'data-x': key});
             }
             else if (type)
-                lines.push(`<input name="${key}" type="${type}"${class_} value="${y_key}">`);
+                lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}>`);
             // dictionary
             else
                 lines.push(
-                    `<select name="${key}">`
+                    `<select name="${key}"${focus}>`
                         + Keys(data).map(value => {
                             let option = data[value];
                             return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
@@ -1457,7 +1627,7 @@ function show_settings(name, xy) {
     });
 
     // -1 to close the popup
-    if (!simple) {
+    if (!(flag & 2)) {
         if (parent_id) {
             let context_area = context_areas[parent_id] || {};
             lines.push(
@@ -1541,9 +1711,7 @@ function set_3d_events() {
     });
 
     // modal
-    C('#back', () => {
-        show_modal(true);
-    });
+    C('#back', () =>  show_modal(true));
 }
 
 /**
@@ -1558,43 +1726,46 @@ function set_modal_events(parent) {
     });
 
     // settings events
-    parent = parent || Id('overlay');
+    parent = parent || Id('modal');
+    if (parent.dataset.ev == 0)
+        return;
 
     // click on item => toggle if possible
     C('.item', function() {
-        if (HasClass(this, 'item-title'))
-            return;
-
+        // button
         let name = this.name;
-        if (name)
-            change_setting(name);
-        else {
-            let next = this.nextElementSibling;
-            if (!next)
-                return;
-            next = _('input, select', next);
-            if (!next)
-                return;
-            switch (next.tagName) {
-            case 'INPUT':
-                if (next.type == 'checkbox') {
-                    next.checked = !next.checked;
-                    change_setting(next.name, next.checked * 1, true);
-                }
-                break;
-            case 'SELECT':
-                if (next.options.length == 2) {
-                    next.selectedIndex ^= 1;
-                    change_setting(next.name, next.value, true);
-                }
-                break;
+        if (name || HasClass(this, 'item-title')) {
+            click_target = Parent(this, {class_: 'popup', self: true});
+            change_setting(name, undefined, this.dataset.set == '-1');
+            return;
+        }
+
+        // input + select
+        let next = this.nextElementSibling;
+        if (!next)
+            return;
+        next = _('input, select', next);
+        if (!next)
+            return;
+        switch (next.tagName) {
+        case 'INPUT':
+            if (next.type == 'checkbox') {
+                next.checked = !next.checked;
+                change_setting(next.name, next.checked * 1);
             }
+            break;
+        case 'SELECT':
+            if (next.options.length == 2) {
+                next.selectedIndex ^= 1;
+                change_setting(next.name, next.value);
+            }
+            break;
         }
     }, parent);
     C('.item2', function() {
         let name = this.dataset.t;
         change_setting(name? name.replace(/ /g, '_'): name);
-    });
+    }, parent);
 
     // right click on item => reset to default
     Events('.item', 'contextmenu', function(e) {
@@ -1610,28 +1781,29 @@ function set_modal_events(parent) {
                     else
                         next.value = def;
                     save_option(name, def);
-                    change_setting(name, def, true);
+                    change_setting(name, def);
                 }
             }
         }
         PD(e);
+        SP(e);
     }, parent);
 
     // inputs
     Events('input, select, textarea', 'change', function() {
         done_touch();
-        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value, true);
+        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value);
     }, {}, parent);
     //
     Input('input, select, textarea', function() {
         done_touch();
-        change_setting(undefined, undefined, true);
+        change_setting();
     }, parent);
     //
     C('input, select, textarea', function() {
         if (cannot_click())
             return;
-        change_setting(undefined, undefined, true);
+        change_setting();
     }, parent);
     //
     C('div[name]', function() {
@@ -1649,35 +1821,12 @@ function start_3d() {
     if (T)
         init_3d(true);
     else
-        load_library('./js/4d_.js?version=1', () => {
-            init_3d(true);
-        });
+        load_library('./js/4d_.js?version=1', () => init_3d(true));
 }
 
 /**
  * Initialise structures
  */
 function startup_3d() {
-    merge_settings({
-        general: {
-            export_settings: '1',
-            import_settings: [{text: 'Enter JSON data', type: 'link'}, ''],
-            language: [LANGUAGES, ''],
-            theme: [THEMES, THEMES[0]],
-        },
-        audio: {
-            volume: option_number(7, 0, 15),
-        },
-        video: {
-            encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
-            exposure: option_number(1, 0.1, 10, 0.1),
-            gamma: option_number(1.5, 0, 10, 0.1),
-            lighting: [['low', 'medium', 'high'], 'high'],
-            resolution: [['1:4', '1:3', '1:2', '1:1'], '1:2'],
-            shadow: [Keys(SHADOW_QUALITIES), 'high'],
-            texture: [AUTO_ON_OFF, 'auto'],
-        },
-    });
-
     window.T = window.T || window.THREE || null;
 }

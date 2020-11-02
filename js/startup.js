@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-01
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -39,6 +39,7 @@ let AD_STYLES = {},
         d: 'depth',
         D: 1,
         e: 'evaluation',
+        h: 1,
         n: 1,
         p: 1,
         q: 1,
@@ -180,8 +181,8 @@ function change_setting_special(name, value, close) {
 
     // close contextual popup?
     if (close) {
-        let modal = Id('modal');
-        if (modal && modal.dataset.xy)
+        let modal = SafeId('modal');
+        if (modal.dataset.xy)
             close_popups();
     }
 
@@ -289,6 +290,7 @@ function change_setting_special(name, value, close) {
         pva.finished = false;
         pva.set_ai(false);
         pva.think(true);
+        close_popups();
         break;
     case 'game_depth':
         configure('d', value);
@@ -302,6 +304,7 @@ function change_setting_special(name, value, close) {
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
+        close_popups();
         break;
     case 'game_search':
         configure('s', value);
@@ -310,6 +313,7 @@ function change_setting_special(name, value, close) {
         pva.finished = false;
         pva.set_ai(true);
         pva.think();
+        close_popups();
         break;
     case 'game_time':
         configure('t', value);
@@ -1307,6 +1311,8 @@ function window_click(e) {
 
     let in_modal,
         target = e.target,
+        type = e.type,
+        is_click = (type == 'click'),
         dataset = target.dataset;
 
     // special cases
@@ -1351,19 +1357,24 @@ function window_click(e) {
         }
 
         // sub settings
-        let dataset = target.dataset;
-        if (dataset) {
-            let set = target.dataset.set;
-            if (set != undefined) {
-                let parent = Parent(target, {class_: 'popup'}),
-                    xy = '';
-                if (parent && parent.dataset) {
-                    let item = parent.dataset.xy;
-                    if (item)
-                        xy = item.split(',').map(item => item * 1);
+        if (is_click) {
+            let dataset = target.dataset;
+            if (dataset) {
+                let set = target.dataset.set;
+                if (set != undefined) {
+                    let parent = Parent(target, {class_: 'popup'}),
+                        xy = '';
+                    if (parent && parent.dataset) {
+                        let item = parent.dataset.xy;
+                        if (item)
+                            xy = item.split(',').map(item => item * 1);
+                    }
+                    if (set == -1)
+                        close_popups();
+                    else
+                        show_popup('options', true, {id: 'options', setting: set, target: parent, xy: xy});
+                    return;
                 }
-                show_popup('options', set != -1, {setting: set, xy: xy});
-                return;
             }
         }
 
@@ -1374,8 +1385,8 @@ function window_click(e) {
         close_popups();
 }
 
-// MAIN
-///////
+// EVENTS
+/////////
 
 /**
  * Global events
@@ -1459,7 +1470,7 @@ function set_global_events() {
     C('#overlay', () => close_popups());
 
     // click somewhere => close the popups
-    Events(window, 'click', window_click);
+    Events(window, 'click touchstart', window_click);
 
     C('.pages', e => {
         let target = e.target;
@@ -1607,7 +1618,11 @@ function set_global_events() {
     Events(window, 'dragstart', e => {
         if (!Y.drag_and_drop)
             return;
-        let parent = Parent(e.target, {attrs: 'draggable=true', self: true});
+        // no drag and drop on text
+        let target = e.target;
+        if (target.nodeType != 1)
+            return;
+        let parent = Parent(target, {attrs: 'draggable=true', self: true});
         if (parent)
             drag_source = parent;
     });
@@ -1678,6 +1693,9 @@ function set_global_events() {
         };
     });
 }
+
+// MAIN
+///////
 
 /**
  * Load settings from Local Storage
@@ -1972,7 +1990,7 @@ function prepare_settings() {
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
             graph_color_3: [{type: 'color'}, '#eb282d'],
-            graph_eval_clamp: option_number(10, 0, 256, 0.5, 'works with scale=linear'),
+            graph_eval_clamp: option_number(10, 0, 256, 0.5, {}, 'works with scale=linear'),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
             graph_marker_color: [{type: 'color'}, '#299bff'],

@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-05
+// @version 2020-10-30
 //
 // all socket functions are here
 //
@@ -116,7 +116,7 @@ function init_sockets() {
     });
 
     //
-    add_timeout('get_users', () => {socket.emit('getusers', 'd');}, TIMEOUTS.users);
+    add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUTS.users);
 }
 
 /**
@@ -187,7 +187,7 @@ function show_banner(text) {
         HTML(node, text);
         Show(node);
     }
-    add_timeout('banner', () => {Hide(node);}, TIMEOUTS.banner);
+    add_timeout('banner', () => Hide(node), TIMEOUTS.banner);
 }
 
 /**

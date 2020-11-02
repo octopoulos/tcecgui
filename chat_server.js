@@ -1,5 +1,6 @@
 // chat_server.js
 // @authors octopoulo <polluxyz@gmail.com>, Aloril <aloril@iki.fi>
+// @version 2020-10-30
 /*
 globals
 console, exports, require
@@ -7,6 +8,7 @@ console, exports, require
 'use strict';
 
 let Module = require('./js/chess-wasm.js'),
+    {Stringify} = require('./js/common.js'),
     Net = require('net');
 
 let frc = false,
@@ -32,7 +34,7 @@ async function load_wasm() {
 
 function vote(data)
 {
-    LS('vote, data=' + JSON.stringify(data));
+    LS('vote, data=' + Stringify(data));
     if (typeof data.fen == "string") { //needed because fen string here don't match fen strings in Python
 	let lst = data.fen.split(" ");
 	data.fen = lst[0] + " " + lst[1] + " " + lst[5];
@@ -47,7 +49,7 @@ function vote(data)
     }
     let entry = voting[data.fen],
 	move = data.move;
-    LS('entry: ' + JSON.stringify(entry.votes) + ' ' + JSON.stringify(entry.byIP));
+    LS('entry: ' + Stringify(entry.votes) + ' ' + Stringify(entry.byIP));
     if (!(move in entry.votes)) {
 	entry.votes[move] = 0;
     }
@@ -61,14 +63,14 @@ function vote(data)
     }
     entry.votes[move]++;
     entry.byIP[data.ip] = move;
-    let msg = JSON.stringify({
+    let msg = Stringify({
         fen: data.fen,
         votes: Object.entries(entry.votes),
     });
     LS(`Sending data: ${msg}.`);
     LS('---');
     entry.socket.write(msg.length.toString().padStart(4, " ") + msg);
-};
+}
 
 server.on('connection', async socket => {
     let ip = socket.remoteAddress;
