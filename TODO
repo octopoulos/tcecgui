@@ -15,6 +15,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-16 : transposition table
 -          : 2020-10-02 : hash passed pawn + castling
 ~          : 2020-09-17 : reuse move order from previous iterations
+2020-10-31 : 2020-10-11 : switch back to archive/live graph when exiting PVA
 2020-10-04 : 2020-10-04 : supercharged copy_pgn
 2020-10-03 : 2020-10-03 : copy + download pgn
 2020-10-03 : 2020-10-03 : c64 theme

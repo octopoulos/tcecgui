@@ -1,29 +1,18 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-10-31
 //
 /*
 globals
-__dirname, expect, require, test,
+expect, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/global+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    'engine',
-    //
-    'global',
-], OUTPUT_MODULE, 'Y');
-
-let {
-    allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
-    leela_cp_to_score, mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score, Y,
-} = require(OUTPUT_MODULE);
+let {Y} = require('./engine.js'),
+    {
+        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
+        leela_cp_to_score, mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score
+    } = require('./global.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

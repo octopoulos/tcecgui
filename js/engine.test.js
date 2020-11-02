@@ -1,28 +1,18 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-02
+// @version 2020-10-31
 //
 /*
 globals
-__dirname, expect, require, test
+expect, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/engine+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    //
-    'engine',
-], OUTPUT_MODULE, 'Assign DEFAULTS Keys TYPES X_SETTINGS Y y_states');
-
-let {
-    add_history, Assign, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, import_settings,
-    Keys, merge_settings, reset_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
-} = require(OUTPUT_MODULE);
+let {Assign, Keys} = require('./common.js'),
+    {
+        add_history, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, import_settings,
+        merge_settings, reset_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
+    } = require('./engine.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-08-30
+// @version 2020-10-31
 //
 /*
 globals
@@ -9,9 +9,9 @@ expect, require, test
 'use strict';
 
 let {
-    Clamp, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp, HashText,
-    Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, PI, QueryString,
-    SetDefault, Split, Stringify, Title, Undefined,
+    Clamp, Clear, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp,
+    HashText, Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, PI,
+    QueryString, SetDefault, Split, Title, Undefined,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,16 @@ let {
 ].forEach(([number, min, max, min_set, answer], id) => {
     test(`Clamp:${id}`, () => {
         expect(Clamp(number, min, max, min_set)).toEqual(answer);
+    });
+});
+
+// Clear
+[
+    {},
+    {session: 'xxx', x: 'home'},
+].forEach((dico, id) => {
+    test(`Clear:${id}`, () => {
+        expect(Clear(dico)).toEqual({});
     });
 });
 
@@ -148,7 +158,7 @@ let {
 
 // FromTimestamp
 [
-    [1576574884, [['19-12-17'], ['09:28:04', '10:28:04']]],
+    [1576574884, [['2019-12-17'], ['09:28:04', '10:28:04']]],
 ].forEach(([stamp, answer], id) => {
     test(`FromTimestamp:${id}`, () => {
         let [date, time] = FromTimestamp(stamp);
@@ -354,15 +364,6 @@ let {
 ].forEach(([text, char, answer], id) => {
     test(`Split:${id}`, () => {
         expect(Split(text, char)).toEqual(answer);
-    });
-});
-
-// Stringify
-[
-    [{point: {x: 1, y: 5}}, undefined, undefined, '{"point":{"x":1,"y":5}}'],
-].forEach(([object, depth, maxdepth, answer], id) => {
-    test(`Stringify:${id}`, () => {
-        expect(Stringify(object, depth, maxdepth)).toEqual(answer);
     });
 });
 
