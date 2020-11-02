@@ -313,12 +313,8 @@ function open_file(filename, result, callback) {
                     get_multi_pgn_stats(data, result, `${filename} / ${name}`);
                 });
             })
-            .on('error', () => {
-                callback(true);
-            })
-            .on('finish', () => {
-                callback();
-            });
+            .on('error', () => callback(true))
+            .on('finish', () => callback());
     }
     // pgn
     else if (ext == 'pgn') {

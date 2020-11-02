@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-10-31
 //
 // Game specific code:
 // - control the board, moves
@@ -21,7 +21,7 @@ IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
-S, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
+S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
 slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style, TEXT,
 TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
 update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
@@ -32,7 +32,7 @@ virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, XBoard, Y
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, DEV, Floor, Keys, IsObject, Lower, LS} = req('./common');
+        {Assign, DEV, Floor, Keys, IsObject, Lower, LS} = req('./common.js');
     Assign(global, {
         Assign: Assign,
         DEV: DEV,
@@ -2579,7 +2579,7 @@ function create_cup(section, data, show) {
         if (Y.round != round) {
             Y.round = round;
             Y.scroll = '#tables';
-            open_event(section, () => {show_filtered_games(text);});
+            open_event(section, () => show_filtered_games(text));
         }
         else
             show_filtered_games(text);
@@ -3040,7 +3040,7 @@ function resize_game() {
     show_board_info(Y.x);
     resize_3d();
 
-    add_timeout('graph_resize', () => {update_chart_options(null, 2);}, TIMEOUT_graph);
+    add_timeout('graph_resize', () => update_chart_options(null, 2), TIMEOUT_graph);
 }
 
 /**
@@ -3555,7 +3555,7 @@ function update_pgn(section, data, extras, reset_moves) {
         players[1].info = {};
 
         if (reset_moves && !LOCALHOST)
-            add_timeout('tables', () => {download_tables(false, true);}, TIMEOUTS.tables);
+            add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
     }
     // can happen after resume
     else if (reset_moves) {
@@ -3778,7 +3778,7 @@ function clock_tick(section, id) {
 
     player.elapsed = elapsed;
     update_clock(section, id);
-    add_timeout(`clock-${section}${id}`, () => {clock_tick(section, id, now);}, timeout);
+    add_timeout(`clock-${section}${id}`, () => clock_tick(section, id, now), timeout);
 }
 
 /**
@@ -4822,7 +4822,7 @@ function open_table(sel) {
         if (target.slice(0, 6) != 'table-')
             target = `table-${target}`;
 
-        for (let child of Id('tables').children)
+        for (let child of SafeId('tables').children)
             if (!HasClass(child, 'tabs') && child.id.slice(0, 6) == 'table-')
                 Hide(child);
     }
@@ -4913,6 +4913,10 @@ function opened_table(node, name, tab) {
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
+
+    // switch graphs when PVA is hidden
+    if (board_target.name == 'pva' && !Visible(Id('table-pva')))
+        handle_board_events(xboards[section], 'activate', Id(section));
 }
 
 /**

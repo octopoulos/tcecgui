@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-11-01
 //
 /*
 globals
@@ -93,13 +93,23 @@ beforeEach(() => {
 
 // boardHash
 [
-    ['8/8/8/8/8/8/8/8 w - - 0 1', 0],
-    [START_FEN, [-1245505341, -993165387]],
-    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', [-1393186695, 310171956]],
+    ['8/8/8/8/8/8/8/8 w - - 0 1', [0]],
+    ['8/8/8/8/8/8/8/8 b - - 0 2', [2096977426]],
+    ['8/8/8/8/8/8/P7/8 w - - 0 1', [3316105773]],
+    ['8/8/8/8/P7/8/8/8 b - a3 0 1', [3616909782]],
+    ['8/8/8/8/P7/8/8/8 b - - 0 1', [3211176109]],
+    [START_FEN, [1449171223, -993165387]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Qkq - 0 1', [1203750330]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Kkq - 0 1', [1181264836]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w kq - 0 1', [1471674217]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w q - 0 1', [2771708610]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w k - 0 1', [1134547903]],
+    ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1', [2971454996]],
+    ['rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1', [3835669381, 310171956]],
 ].forEach(([fen, answer], id) => {
     test(`boardHash:${id}`, () => {
         chess.load(fen, true);
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(answer))
             expect(answer).toContain(result);
         else
@@ -316,63 +326,63 @@ beforeEach(() => {
 [
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -', false, '', undefined, START_FEN, 0],
     [START_FEN, false, '', undefined, START_FEN, 0],
-    [START_FEN, true, '', undefined, START_FEN, [-1245505341, -993165387]],
+    [START_FEN, true, '', undefined, START_FEN, [1449171223, -993165387]],
     [
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
         true, '',
         undefined,
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
-        [1467105663, 434217185],
+        [894541731, 434217185],
     ],
-    [START_FEN, true, 'd5', undefined, START_FEN, [-1245505341, -993165387]],
+    [START_FEN, true, 'd5', undefined, START_FEN, [1449171223, -993165387]],
     [
         START_FEN,
         true, 'd4',
         undefined,
         'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
-        [1467105663, 434217185],
+        [1985588709, 434217185],
     ],
     [
         START_FEN,
         true, 'd4 d5',
         undefined,
         'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2',
-        [1798615587, 429817858],
+        [2773017983, 429817858],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1',
-        [1873396825, -1629470110],
+        [4280630151, -1629470110],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O-O',
         undefined,
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1',
-        [-546581409, 1944191191],
+        [3616831701, 1944191191],
     ],
     [
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w KQkq - 0 1',
         true,  '',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
         'rknrbqnb/pppppppp/8/8/8/8/PPPPPPPP/RKNRBQNB w DAda - 0 1',
-        [425758327, -602303476],
+        [2722228778, -602303476],
     ],
     [
         'rnbqkb1r/pp1ppppp/5n2/2pP4/8/8/PPP1PPPP/RNBQKBNR w KQkq c6 0 3',
         true, 'dxc6',
         undefined,
         'rnbqkb1r/pp1ppppp/2P2n2/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 3',
-        [-1867472723, -360264828],
+        [2504863392, -360264828],
     ],
     [
         'rnbqk2r/ppPpppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 1 5',
         true, {capture: 0, depth: 0, fen: '', flag: 0, from: 18, m: '', ply: 0, promote: 5, pv: '', score: 0, to: 3},
         undefined,
         'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
-        [988728373, 1591938819],
+        [3455057338, 1591938819],
 
     ],
     [
@@ -380,7 +390,7 @@ beforeEach(() => {
         true, 'cxd8=Q+',
         undefined,
         'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
-        [988728373, 1591938819],
+        [3455057338, 1591938819],
     ],
 ].forEach(([fen, must_hash, moves, answer, new_fen, new_hash], id) => {
     test(`load:${id}`, () => {
@@ -392,7 +402,7 @@ beforeEach(() => {
         else
             chess.makeMove(chess.packObject(moves));
         expect(chess.fen()).toEqual(new_fen);
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(new_hash))
             expect(new_hash).toContain(result);
         else
@@ -1318,32 +1328,32 @@ beforeEach(() => {
 
 // undo
 [
-    [START_FEN, 'e4', 1, '', [-1245505341, -993165387]],
-    [START_FEN, '', 1, '', [-1245505341, -993165387]],
-    [START_FEN, 'e4 e5', 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', [-1075114427, 313854586]],
-    [START_FEN, 'e4 e5', 2, '', [-1245505341, -993165387]],
-    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', 'O-O', 1, '', [790067727, 16020623]],
-    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', 'O-O', 1, '', [-1070191305, 1776480650]],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O', 1, '', [-928015052, -791772756]],
-    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', 1, '', [-928015052, -791772756]],
-    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', 'O-O-O', 1, '', [1796922085, -1708452491]],
+    [START_FEN, 'e4', 1, '', [1449171223, -993165387]],
+    [START_FEN, '', 1, '', [1449171223, -993165387]],
+    [START_FEN, 'e4 e5', 1, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', [3016215727, 313854586]],
+    [START_FEN, 'e4 e5', 2, '', [1449171223, -993165387]],
+    ['r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', 'O-O', 1, '', [2063398905, 16020623]],
+    ['r1bqk2r/ppppbppp/3n4/4R3/8/8/PPPP1PPP/RNBQ1BK1 b kq - 0 8', 'O-O', 1, '', [1272697903, 1776480650]],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O', 1, '', [2030799990, -791772756]],
+    ['1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w HB - 0 20', 'O-O-O', 1, '', [2030799990, -791772756]],
+    ['b1nrk1r1/p3bppp/4p1n1/Pqp5/3p1P2/1P1NP3/2QP1NPP/B2RKBR1 w Dd - 1 11', 'O-O-O', 1, '', [4034064681, -1708452491]],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flag: 0, from: 65, m: '', ply: 215, promote: 0, pv: '', score: 0, to: 48},
-        1, '', [1120212064, 385877072],
+        1, '', [2584252073, 385877072],
     ],
     [
         '4N3/4R3/1Q6/8/1k2P2P/4KP2/6P1/8 b - - 2 108',
         {capture: 0, depth: 0, fen: '', flag: 0, from: 65, m: '', ply: 215, promote: 0, pv: '', score: 0, to: 80},
-        1, '', [1120212064, 385877072],
+        1, '', [2584252073, 385877072],
     ],
     [
         'r1b1kb1r/p1pp1ppp/1p2pn2/7q/1nPPP3/BP1B1N1P/P4PP1/RN1Q1RK1 b ha - 2 10',
         'Nxd3 Bxf8 Nb2 Qc2 Rxf8 Qxb2 Nxe4',
-        7, '', [230805468, -275451685],
+        7, '', [1484355998, -275451685],
     ],
-    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17', 'gxh3+', 1, '', [-952280715, 1343807914]],
-    ['5k2/8/8/8/6pP/8/6K1/8 b - h3 0 17', 'gxh3+', 1, '', [-2083901243, 1189336239]],
+    ['bq1b1k1r/p1pp1r2/1p6/3Pp1Q1/4p1pP/1N6/PPP2PK1/B2R3R b h h3 0 17', 'gxh3+', 1, '', [2152484851, 1343807914]],
+    ['5k2/8/8/8/6pP/8/6K1/8 b - h3 0 17', 'gxh3+', 1, '', [1514358265, 1189336239]],
 ].forEach(([fen, moves, steps, answer, hash], id) => {
     test(`undo:${id}`, () => {
         chess.load(fen, true);
@@ -1361,7 +1371,7 @@ beforeEach(() => {
             expect(chess.material(0)).toEqual(materials[0]);
             expect(chess.material(1)).toEqual(materials[1]);
         }
-        let result = chess.boardHash();
+        let result = chess.boardHash() >>> 0;
         if (IsArray(hash))
             expect(hash).toContain(result);
         else
