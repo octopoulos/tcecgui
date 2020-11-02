@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-11-01
 //
 // game board:
 // - 4 rendering modes:
@@ -2752,6 +2752,7 @@ class XBoard {
         let data = e.data,
             avg_depth = data.avg_depth,
             fen = data.fen,
+            hash_stats = data.hash_stats || [0, 0, 0, 0],
             id = data.id,
             moves = data.moves,
             nodes = data.nodes,
@@ -2786,7 +2787,7 @@ class XBoard {
             reply.sel_depth = sel_depth;
 
         // still expecting more data?
-        if (DEV.engine) {
+        if (DEV.engine2) {
             let lefts = From(reply.lefts).map(left => left? (left - 1).toString(16): '.').join(''),
                 obj = moves[0],
                 eval_ = format_eval(obj? obj.score: '-').padStart(7);
@@ -2799,10 +2800,11 @@ class XBoard {
             return;
 
         // 3) got all the data
-        let now = Now(true),
+        let nodes2 = reply.nodes2,
+            now = Now(true),
             elapsed = now - reply.start,
             elapsed2 = now - reply.start2,
-            nps = (elapsed2 > 0.001)? reply.nodes2 / elapsed2: 0;
+            nps = (elapsed2 > 0.001)? nodes2 / elapsed2: 0;
 
         // get the best move
         combine.sort((a, b) => b.score - a.score);
@@ -2827,7 +2829,7 @@ class XBoard {
                 depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(0)}/${Floor(reply.sel_depth + 0.5)}`,
                 eval: format_eval(best_score),
                 id: color,
-                node: FormatUnit(reply.nodes2, '-'),
+                node: FormatUnit(nodes2, '-'),
                 pv: best.pv,
                 ply: ply + 1,
                 speed: `${FormatUnit(nps)}nps`,
@@ -2884,8 +2886,12 @@ class XBoard {
         }
 
         if (DEV.engine) {
+            let hits = hash_stats[2] || 0;
+            if (hits && nodes2)
+                LS(`hits: ${(hits * 100 / nodes2).toFixed(2)}% = ${hits}/${nodes2}`);
             LS(best.pv);
-            LS(combine);
+            if (DEV.engine2)
+                LS(combine);
         }
 
         // 7) stop things
@@ -2911,7 +2917,7 @@ class XBoard {
             _fixed: 2,
             d: (reply.avg_depth / (reply.nodes + 1)).toFixed(0),
             mt: Floor(elapsed2 * 1000 + 0.5),
-            n: reply.nodes2,
+            n: nodes2,
             pv: best.pv,
             s: Floor(nps + 0.5),
             sd: Floor(reply.sel_depth + 0.5),
