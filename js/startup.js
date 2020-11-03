@@ -14,15 +14,14 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, CreateNode,
+changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, device, document, download_tables, draw_rectangle, E, Events,
 export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
 HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
 is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
-PIECE_THEMES, POPUP_ADJUSTS, popup_custom, reset_old_settings, reset_settings, resize_bracket, resize_game,
-resume_sleep,
+PIECE_THEMES, POPUP_ADJUSTS, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
@@ -71,14 +70,14 @@ let AD_STYLES = {},
     },
     LEVELS = {
         'custom': '',
-        'dog': 'd=3 e=hce n=0 q=0 s=ab t=0',
-        'ninja dog': 'd=4 e=hce n=0 q=0 s=ab t=0',
-        'novice': 'd=4 e=hce q=5 s=ab t=0 x=20',
-        'amateur': 'd=4 e=att q=8 s=ab t=2 x=20',
-        'engine maker': 'd=5 e=att q=12 s=ab t=5 x=20',
-        'chess player': 'd=6 e=att q=15 s=ab t=10 x=20',
-        'chess teacher': 'd=7 e=att q=20 s=ab t=12 x=20',
-        'other engine': 'd=8 e=att q=30 s=ab t=20 x=20',
+        'dog': 'd=3 e=hce h=1 n=0 q=0 s=ab t=0',
+        'ninja dog': 'd=4 e=hce h=1 n=0 q=0 s=ab t=0',
+        'novice': 'd=4 e=hce q=5 h=1 s=ab t=0 x=20',
+        'amateur': 'd=4 e=att q=8 h=1 s=ab t=2 x=20',
+        'engine maker': 'd=5 e=att h=1 q=12 s=ab t=5 x=20',
+        'chess player': 'd=6 e=att h=1 q=15 s=ab t=10 x=20',
+        'chess teacher': 'd=7 e=att h=1 q=20 s=ab t=12 x=20',
+        'other engine': 'd=8 e=att h=1 q=30 s=ab t=20 x=20',
     },
     old_font_height,
     old_stream = 0,
@@ -486,18 +485,6 @@ function check_stream() {
         scroll_adjust('#overview');
         Hide('.adblock, .google-ad');
     }
-}
-
-/**
- * Close all popups
- */
-function close_popups() {
-    show_popup();
-    show_popup('about', {node_id: 'popup-about'});
-    popup_custom('popup-fen', 'fen', {type: 'mouseleave'});
-
-    // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
-    HTML(Id('modal'), '');
 }
 
 /**
@@ -1351,13 +1338,14 @@ function window_click(e) {
             return;
         if (HasClasses(target, 'live-pv|xmoves'))
             context_target = target;
-        if (HasClass(target, 'tab')) {
-            open_table(target);
-            break;
-        }
 
-        // sub settings
         if (is_click) {
+            if (HasClass(target, 'tab')) {
+                open_table(target);
+                break;
+            }
+
+            // sub settings
             let dataset = target.dataset;
             if (dataset) {
                 let set = target.dataset.set;
@@ -1972,11 +1960,11 @@ function prepare_settings() {
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
             game_depth: option_number(4, 0, 8),
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
-            game_every: option_number(100, 50, 5000, 50),
+            game_every: option_number(200, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
             game_new_game: '1',
-            game_options_black: [{type: 'area'}, 'd=4 e=att q=8 s=ab t=2 x=20'],
-            game_options_white: [{type: 'area'}, 'd=4 e=att q=8 s=ab t=2 x=20'],
+            game_options_black: [{type: 'area'}, 'd=4 e=att h=1 q=8 s=ab t=2 x=20'],
+            game_options_white: [{type: 'area'}, 'd=4 e=att h=1 q=8 s=ab t=2 x=20'],
             game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
             game_think: '1',
             game_time: option_number(5, -1, 120),

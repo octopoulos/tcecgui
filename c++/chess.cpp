@@ -467,31 +467,11 @@ private:
     Table       table[TT_SIZE];                 // 16 bytes: hash=8, score=2, bound=1, depth=1, move=4
     std::string trace;
     int         tt_adds;
-    int         tt_adds2;
     int         tt_hits;
-    int         tt_hits2;
     int         turn;
     Hash        zobrist[15][128];
     bool        zobrist_ready;
     Hash        zobrist_side;
-
-    /**
-     * Add an entry to the transposition table
-     */
-    void addEntry(Hash hash, int score, uint8_t bound, uint8_t depth, Move move) {
-        tt_adds2 ++;
-        auto exist = findEntry(hash, depth);
-        if (exist)
-            return;
-
-        exist = &table[hash % TT_SIZE];
-        exist->hash = hash;
-        exist->score = score;
-        exist->bound = bound;
-        exist->depth = depth;
-        exist->move = move;
-        tt_adds ++;
-    }
 
     /**
      * Add a single move
@@ -573,19 +553,32 @@ private:
      * http://web.archive.org/web/20040427015506/http://brucemo.com/compchess/programming/pvs.htm
      */
     int alphaBeta(int alpha, int beta, int depth, int max_depth, PV *pv) {
-        // transposition
-
         // extend depth if in check
         if (max_depth < max_extend && kingAttacked(turn))
             max_depth ++;
 
-        if (depth >= max_depth) {
+        auto idepth = max_depth - depth;
+        if (idepth <= 0) {
             pv->length = 0;
             if (!max_quiesce) {
                 nodes ++;
                 return evaluate();
             }
             return quiesce(alpha, beta, max_quiesce);
+        }
+
+        // transposition
+        bool hit,
+            is_pv = (alpha != beta - 1);
+        auto entry = hash_mode? findEntry(board_hash, hit): nullptr;
+
+        if (depth > 0 && !is_pv && hit && entry->depth >= idepth) {
+            auto cutoff = (entry->score >= beta)? (entry->bound & BOUND_LOWER): (entry->bound & BOUND_UPPER);
+            if (cutoff) {
+                nodes ++;
+                tt_hits ++;
+                return entry->score;
+            }
         }
 
         auto alpha0 = alpha,
@@ -630,21 +623,26 @@ private:
             }
 
             // bound check
-            if (score >= beta)
+            if (!hash_mode && score >= beta)
                 return beta;
             if (score > best) {
                 best = score;
                 best_move = move;
+
+                // update pv
+                if ((score > alpha && is_pv) || (!ply && num_valid == 0)) {
+                    pv->length = line.length + 1;
+                    pv->moves[0] = move;
+                    memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
+                }
 
                 if (score > alpha) {
                     alpha = score;
                     if (depth == 0)
                         addTopMove(move, score, &line);
 
-                    // update pv
-                    pv->length = line.length + 1;
-                    pv->moves[0] = move;
-                    memcpy(pv->moves + 1, line.moves, line.length * sizeof(Move));
+                    if (hash_mode && score >= beta)
+                        break;
                 }
             }
 
@@ -659,7 +657,7 @@ private:
 
         if (hash_mode) {
             auto bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
-            addEntry(board_hash, best, bound, max_depth - depth, best_move);
+            updateEntry(entry, board_hash, best, bound, idepth, best_move);
         }
         return best;
     }
@@ -714,11 +712,10 @@ private:
     /**
      * Find an entry in the transposition table
      */
-    Table *findEntry(Hash hash, int depth) {
+    Table *findEntry(Hash hash, bool &hit) {
         auto entry = &table[hash % TT_SIZE];
-        if (entry->hash == hash && entry->depth >= depth)
-            return entry;
-        return nullptr;
+        hit = (entry->hash == hash);
+        return entry;
     }
 
     /**
@@ -738,13 +735,13 @@ private:
      */
     int miniMax(int depth, int max_depth, PV *pv) {
         // transposition
-        if (hash_mode && depth > 0) {
-            auto entry = findEntry(board_hash, max_depth - depth);
-            if (entry) {
-                nodes ++;
-                tt_hits ++;
-                return entry->score;
-            }
+        bool hit;
+        auto entry = hash_mode? findEntry(board_hash, hit): nullptr;
+        auto idepth = max_depth - depth;
+        if (depth > 0 && hit && entry->depth >= idepth) {
+            nodes ++;
+            tt_hits ++;
+            return entry->score;
         }
 
         if (depth >= max_depth) {
@@ -801,7 +798,7 @@ private:
             best = kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
         if (hash_mode)
-            addEntry(board_hash, best, BOUND_EXACT, max_depth - depth, best_move);
+            updateEntry(entry, board_hash, best, BOUND_EXACT, idepth, best_move);
         return best;
     }
 
@@ -882,6 +879,20 @@ private:
         }
 
         return best;
+    }
+
+    /**
+     * Update an entry
+     */
+    void updateEntry(Table *entry, Hash hash, int score, uint8_t bound, uint8_t depth, Move move) {
+        if (hash == entry->hash && depth < entry->depth && bound != BOUND_EXACT)
+            return;
+        entry->hash = hash;
+        entry->score = score;
+        entry->bound = bound;
+        entry->depth = depth;
+        entry->move = move;
+        tt_adds ++;
     }
 
 public:
@@ -2271,9 +2282,7 @@ public:
         scan_all = scan_all_;
         sel_depth = 0;
         tt_adds = 0;
-        tt_adds2 = 0;
         tt_hits = 0;
-        tt_hits2 = 0;
 
         PV pv;
         if (search_mode == 1)
@@ -2484,7 +2493,7 @@ public:
     }
 
     std::vector<int> em_hashStats() {
-        return {tt_adds, tt_adds2, tt_hits, tt_hits2};
+        return {tt_adds, tt_hits};
     }
 
     int em_material(int color) {

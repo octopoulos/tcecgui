@@ -1,13 +1,13 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-01
 //
 // utility JS functions used in all the sites
 // no state is being required
 //
 /*
 globals
-console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, window, Window, XMLHttpRequest
+console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, window, XMLHttpRequest
 */
 'use strict';
 
@@ -1030,10 +1030,14 @@ function Clear(dico) {
  * Copy text to the clipboard
  * - must be called from an event callback
  * @param {string} text
+ * @param {function=} callback
  */
-function CopyClipboard(text) {
+function CopyClipboard(text, callback) {
     if (navigator.clipboard)
-        navigator.clipboard.writeText(text).then(() => {});
+        navigator.clipboard.writeText(text).then(() => {
+            if (callback)
+                callback();
+        });
     // support for old browsers
     else {
         let node = CreateNode('input');
@@ -1043,6 +1047,8 @@ function CopyClipboard(text) {
         node.select();
         document.execCommand('copy');
         document.body.removeChild(node);
+        if (callback)
+            callback();
     }
 }
 
