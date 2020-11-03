@@ -7,8 +7,8 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, IsArray, Keys, location, LS, Max, Min, Pad, Pow,
-require, Round, save_option, Split, Undefined, window, X_SETTINGS, Y
+Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, HTML, Id, IsArray, Keys,
+location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, window, X_SETTINGS, Y
 */
 'use strict';
 
@@ -52,7 +52,8 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201018';
+    VERSION = '20201101',
+    virtual_close_popups;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -115,6 +116,20 @@ function calculate_feature_q(feature, eval_, ply) {
         white_win = (50 - (100 / (1 + Pow(10, eval_/ 4))));
 
     return white_win;
+}
+
+/**
+ * Close all popups
+ */
+function close_popups() {
+    show_popup();
+    show_popup('about', {node_id: 'popup-about'});
+
+    if (virtual_close_popups)
+        virtual_close_popups('popup-fen', 'fen', {type: 'mouseleave'});
+
+    // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
+    HTML(Id('modal'), '');
 }
 
 /**
@@ -366,8 +381,8 @@ function reset_old_settings() {
             save_option('scroll_inertia', 0.95);
     if (version < '20200920') {
         save_option('game_level', 'amateur');
-        save_option('game_options_black', 'd=4 e=att q=8 s=ab t=2 x=20');
-        save_option('game_options_white', 'd=4 e=att q=8 s=ab t=2 x=20');
+        save_option('game_options_black', 'd=4 e=att h=1 q=8 s=ab t=2 x=20');
+        save_option('game_options_white', 'd=4 e=att h=1 q=8 s=ab t=2 x=20');
         save_option('turn_opacity', 0);
     }
     if (version < '20200930')

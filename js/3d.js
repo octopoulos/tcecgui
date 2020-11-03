@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-01
 //
 // general 3d rendering code
 //
@@ -11,8 +11,8 @@ _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
 Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
-LANGUAGES, LINKS, load_library, LS, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
-S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THEMES, THREE, Title, translate_node, translates, TYPES,
+LINKS, load_library, LS, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
+S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_node, translates, TYPES,
 Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';

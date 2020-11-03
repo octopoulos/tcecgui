@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-01
 //
 // Game specific code:
 // - control the board, moves
@@ -12,8 +12,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
-change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
-CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+change_setting, charts, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true,
+controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
 format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global,
 HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray,
@@ -24,8 +24,8 @@ resize_text, Resource, restore_history, resume_game, Round,
 S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
 slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style, TEXT,
 TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
-update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, XBoard, Y
+update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_close_popups:true,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, XBoard, Y
 */
 'use strict';
 
@@ -4365,6 +4365,7 @@ function change_setting_game(name, value) {
             if (board)
                 window.open(url.replace('{FEN}', board.fen), '_blank');
         }
+        close_popups();
         break;
     case 'copy_moves':
         copy_moves();
@@ -5090,6 +5091,7 @@ function startup_game() {
         live: [],
     });
 
+    virtual_close_popups = popup_custom;
     virtual_init_3d_special = init_3d_special;
     virtual_random_position = random_position;
 }

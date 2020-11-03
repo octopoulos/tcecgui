@@ -13,7 +13,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2020-09-17 : reuse move order from previous iterations
-~          : 2020-09-16 : transposition table in alphaBeta
+2020-11-01 : 2020-11-01 : transposition table in alphaBeta
 2020-11-01 : 2020-09-16 : transposition table in miniMax
 2020-11-01 : 2020-10-02 : hash passed pawn + castling + side
 2020-10-31 : 2020-10-11 : switch back to archive/live graph when exiting PVA

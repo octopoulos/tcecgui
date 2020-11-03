@@ -326,11 +326,19 @@ beforeEach(() => {
 
 // hashStats
 [
-    [START_FEN, 's=mm', 4, [0, 0, 0, 0]],
-    [START_FEN, 'h=1 s=mm', 1, [1, 1, 0, 0]],
-    [START_FEN, 'h=1 s=mm', 2, [21, 21, 0, 0]],
-    [START_FEN, 'h=1 s=mm', 3, [421, 421, 0, 0]],
-    [START_FEN, 'h=1 s=mm', 4, [[8158, 8181], [8158, 8181], [1144, 1165], 0]],
+    [START_FEN, 's=mm', 4, [0, 0]],
+    [START_FEN, 'h=1 s=mm', 1, [1, 0]],
+    [START_FEN, 'h=1 s=mm', 2, [21, 0]],
+    [START_FEN, 'h=1 s=mm', 3, [421, 0]],
+    [START_FEN, 'h=1 s=mm', 4, [[8158, 8181], [1144, 1165]]],
+    [START_FEN, 's=ab', 4, [0, 0]],
+    [START_FEN, 'h=1 s=ab', 1, [1, 0]],
+    [START_FEN, 'h=1 s=ab', 2, [[3, 4], 0]],
+    [START_FEN, 'h=1 s=ab', 3, [6, 0]],
+    [START_FEN, 'h=1 s=ab', 4, [470, 60]],
+    [START_FEN, 'h=1 s=ab', 5, [[2104, 2106], [429, 431]]],
+    [START_FEN, 'h=1 s=ab', 6, [[32833, 32857], [4874, 4941]]],
+    [START_FEN, 'h=1 s=ab', 7, [[40169, 40336], [7394, 7645]]],
 ].forEach(([fen, options, depth, answer], id) => {
     test(`hashStats:${id}`, () => {
         chess.configure(false, options, depth);

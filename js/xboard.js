@@ -1269,9 +1269,9 @@ class XBoard {
             let name = this.dataset.x;
             switch (name) {
             case 'copy':
-                CopyClipboard(that.fen).then(() => {
+                CopyClipboard(that.fen, () => {
                     Class(this, 'copied');
-                    add_timeout('fen', () => Class(this, '-copied'), 1000);
+                    add_timeout('fen', Class(this, '-copied'), 1000);
                 });
                 break;
             case 'end':
@@ -2886,7 +2886,7 @@ class XBoard {
         }
 
         if (DEV.engine) {
-            let hits = hash_stats[2] || 0;
+            let hits = hash_stats[1] || 0;
             if (hits && nodes2)
                 LS(`hits: ${(hits * 100 / nodes2).toFixed(2)}% = ${hits}/${nodes2}`);
             LS(best.pv);

@@ -447,35 +447,11 @@ var Chess = function(fen_) {
         table = U32(3 * TT_SIZE),           // 12 bytes: hash=4, score=2, bound=1, depth=1, move=4
         trace = '',
         tt_adds = 0,
-        tt_adds2 = 0,
         tt_hits = 0,
-        tt_hits2 = 0,
         turn = WHITE,
         zobrist = Array(15).fill(0).map(_ => U32(128)),
         zobrist_ready = false,
         zobrist_side;
-
-    /**
-     * Add an entry to the transposition table
-     * @param {number} hash
-     * @param {number} score
-     * @param {number} depth
-     * @param {number} bound
-     * @param {number} move
-     */
-    function addEntry(hash, score, bound, depth, move) {
-        tt_adds2 ++;
-        let exist = findEntry(hash, depth);
-        if (exist)
-            return;
-
-        hash >>>= 0;
-        let index = (hash % TT_SIZE) * 3;
-        table[index + 0] = hash;
-        table[index + 1] = (score << 16) + (bound << 8) + depth;
-        table[index + 2] = move;
-        tt_adds ++;
-    }
 
     /**
      * Add a single move
@@ -573,19 +549,32 @@ var Chess = function(fen_) {
      * @returns {number}
      */
     function alphaBeta(alpha, beta, depth, max_depth, pv) {
-        // transposition
-
         // extend depth if in check
         if (max_depth < max_extend && kingAttacked(turn))
             max_depth ++;
 
-        if (depth >= max_depth) {
+        let idepth = max_depth - depth;
+        if (idepth <= 0) {
             pv.length = 0;
             if (!max_quiesce) {
                 nodes ++;
                 return evaluate();
             }
             return quiesce(alpha, beta, max_quiesce);
+        }
+
+        // transposition
+        let hit = [0],
+            is_pv = (alpha != beta - 1),
+            entry = hash_mode? findEntry(board_hash, hit): [];
+
+        if (depth > 0 && !is_pv && hit[0] && entry[3] >= idepth) {
+            let cutoff = (entry[1] >= beta)? (entry[2] & BOUND_LOWER): (entry[2] & BOUND_UPPER);
+            if (cutoff) {
+                nodes ++;
+                tt_hits ++;
+                return entry[1];
+            }
         }
 
         let alpha0 = alpha,
@@ -630,22 +619,27 @@ var Chess = function(fen_) {
             }
 
             // bound check
-            if (score >= beta)
+            if (!hash_mode && score >= beta)
                 return beta;
             if (score > best) {
                 best = score;
                 best_move = move;
+
+                // update pv
+                if ((score > alpha && is_pv) || (!ply && num_valid == 0)) {
+                    pv.length = line.length + 1;
+                    pv[0] = move;
+                    for (let i = 0; i < line.length; i ++)
+                        pv[i + 1] = line[i];
+                }
 
                 if (score > alpha) {
                     alpha = score;
                     if (depth == 0)
                         addTopMove(move, score, line);
 
-                    // update pv
-                    pv.length = line.length + 1;
-                    pv[0] = move;
-                    for (let i = 0; i < line.length; i ++)
-                        pv[i + 1] = line[i];
+                    if (hash_mode && score >= beta)
+                        break;
                 }
             }
 
@@ -660,7 +654,7 @@ var Chess = function(fen_) {
 
         if (hash_mode) {
             let bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
-            addEntry(board_hash, best, bound, max_depth - depth, best_move);
+            updateEntry(entry[5], board_hash, best, bound, idepth, best_move);
         }
         return best;
     }
@@ -721,21 +715,17 @@ var Chess = function(fen_) {
     /**
      * Find an entry in the transposition table
      * @param {number} hash
-     * @param {number} depth
-     * @returns {number[] | null}
+     * @param {[number]} hit true if the hash matches
+     * @returns {number[] | null} hash, score, bound, depth, move, index
      */
-    function findEntry(hash, depth) {
+    function findEntry(hash, hit) {
         hash >>>= 0;
         let index = (hash % TT_SIZE) * 3,
-            entry = table[index];
-        if (entry == hash) {
-            let middle = table[index + 1],
-                tt_depth = middle & 0xff;
-            if (tt_depth < depth)
-                return null;
-            return [entry, middle >> 16, (middle & 0xff00) >> 8, tt_depth, table[index + 2]];
-        }
-        return null;
+            middle = table[index + 1],
+            tt_hash = table[index];
+        hit[0] = (tt_hash == hash);
+        // LS(ucifyMove(table[index + 2]), tt_hash, middle >> 16, (middle & 0xff00) >> 8, middle & 0xff, table[index + 2], index);
+        return [tt_hash, middle >> 16, (middle & 0xff00) >> 8, middle & 0xff, table[index + 2], index];
     }
 
     /**
@@ -759,16 +749,16 @@ var Chess = function(fen_) {
      */
     function miniMax(depth, max_depth, pv) {
         // transposition
-        if (hash_mode && depth > 0) {
-            let entry = findEntry(board_hash, max_depth - depth);
-            if (entry) {
-                nodes ++;
-                tt_hits ++;
-                return entry[1];
-            }
+        let hit = [0],
+            entry = hash_mode? findEntry(board_hash, hit): [],
+            idepth = max_depth - depth;
+        if (depth > 0 && hit[0] && entry[3] >= idepth) {
+            nodes ++;
+            tt_hits ++;
+            return entry[1];
         }
 
-        if (depth >= max_depth) {
+        if (idepth <= 0) {
             nodes ++;
             pv.length = 0;
             return evaluate();
@@ -820,10 +810,10 @@ var Chess = function(fen_) {
 
         // mate + stalemate
         if (!num_valid)
-            best = kingAttacked(turn)? -SCORE_MATE + ply: 0;
+            return kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
         if (hash_mode)
-            addEntry(board_hash, best, BOUND_EXACT, max_depth - depth, best_move);
+            updateEntry(entry[5], board_hash, best, BOUND_EXACT, idepth, best_move);
         return best;
     }
 
@@ -909,6 +899,25 @@ var Chess = function(fen_) {
         }
 
         return best;
+    }
+
+    /**
+     * Update an entry
+     * @param {number} entry table index
+     * @param {Hash} hash
+     * @param {number} score
+     * @param {number} bound
+     * @param {number} depth
+     * @param {Move} move
+     */
+    function updateEntry(entry, hash, score, bound, depth, move) {
+        hash >>>= 0;
+        if (hash == table[entry] && depth < (table[entry + 1] & 0xff) && bound != BOUND_EXACT)
+            return;
+        table[entry + 0] = hash;
+        table[entry + 1] = (score << 16) + (bound << 8) + depth;
+        table[entry + 2] = move;
+        tt_adds ++;
     }
 
     // PUBLIC
@@ -2224,9 +2233,7 @@ var Chess = function(fen_) {
         scan_all = scan_all_;
         sel_depth = 0;
         tt_adds = 0;
-        tt_adds2 = 0;
         tt_hits = 0;
-        tt_hits2 = 0;
 
         let pv = [];
         if (search_mode == 1)
@@ -2438,7 +2445,7 @@ var Chess = function(fen_) {
         fen960: createFen960,
         frc: () => frc,
         hashBoard: hashBoard,
-        hashStats: () => [tt_adds, tt_adds2, tt_hits, tt_hits2],
+        hashStats: () => [tt_adds, tt_hits],
         load: load,
         makeMove: makeMove,
         material: color => materials[color],

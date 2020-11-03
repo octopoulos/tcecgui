@@ -65,6 +65,7 @@ function create_chess(engine) {
  * @param {string} engine
  * @param {string} fen
  * @param {number[]} moves
+ * @param {boolean} scan_all
  * @returns {[Move, number, number]} best_move, score, depth, hash_stats
  */
 function think(engine, fen, moves, scan_all) {
@@ -90,7 +91,7 @@ function think(engine, fen, moves, scan_all) {
         move.score = score;
     }
     objs.sort((a, b) => b.score - a.score);
-    return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth(), chess.hashStats()];
+    return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth(), ArrayJS(chess.hashStats())];
 }
 
 // COMMUNICATION
