@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 // Game specific code:
 // - control the board, moves
@@ -12,8 +12,8 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
-change_setting, charts, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true,
-controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
+CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
 format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global,
 HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray,
@@ -4221,7 +4221,7 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
-        // c, v, y, z
+        // CTRL + c, v, y, z
         case 67:
         case 86:
         case 89:
@@ -4236,7 +4236,7 @@ function game_action_key(code) {
                     if (!copy_moves()) {
                         let text = board_target.fen;
                         CopyClipboard(text);
-                        if (Y.auto_paste)
+                        if (board_target.name != 'pva' && Y.auto_paste)
                             paste_text(copy_pgn(board_target, true, true));
                     }
                 }
@@ -4365,7 +4365,6 @@ function change_setting_game(name, value) {
             if (board)
                 window.open(url.replace('{FEN}', board.fen), '_blank');
         }
-        close_popups();
         break;
     case 'copy_moves':
         copy_moves();
