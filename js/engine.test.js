@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-02
 //
 /*
 globals
@@ -10,9 +10,16 @@ expect, require, test
 
 let {Assign, Keys} = require('./common.js'),
     {
-        add_history, create_field_value, create_page_array, create_url_list, DEFAULTS, guess_types, import_settings,
-        merge_settings, reset_settings, restore_history, sanitise_data, save_option, TYPES, X_SETTINGS, Y, y_states,
+        add_history, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES, guess_types,
+        import_settings, merge_settings, parse_dev, reset_settings, restore_history, sanitise_data, save_option, TYPES,
+        X_SETTINGS, Y, y_states,
     } = require('./engine.js');
+
+Assign(DEV_NAMES, {
+    E: 'engine',
+    S: 'no_socket',
+    w: 'wasm',
+});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -198,6 +205,28 @@ let {Assign, Keys} = require('./common.js'),
         Keys(answer_type).forEach(key => {
             expect(TYPES).toHaveProperty(key, answer_type[key]);
         });
+    });
+});
+
+// parse_dev
+[
+    ['', {}],
+    ['E', {engine: 1}],
+    ['E0', {engine: 0}],
+    ['E1', {engine: 1}],
+    ['E2', {engine2: 2}],
+    ['E3', {engine: 3, engine2: 3}],
+    ['E3E0', {engine: 0, engine2: 3}],
+    ['E15', {engine: 15, engine2: 15, engine4: 15, engine8: 15}],
+    ['ES', {engine: 1, no_socket: 1}],
+    ['E5S100', {engine: 5, engine4: 5, no_socket4: 100, no_socket32: 100, no_socket64: 100}],
+    ['E5S100Z', {}],
+    ['E5S100Zw3', {wasm: 3, wasm2: 3}],
+].forEach(([dev, answer], id) => {
+    test(`parse_dev:${id}`, () => {
+        Y.dev = dev;
+        parse_dev();
+        expect(DEV).toEqual(answer);
     });
 });
 

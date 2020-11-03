@@ -12,7 +12,7 @@
 /*
 globals
 _, A, Abs, add_timeout, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
-change_setting, charts, check_hash, Clamp, Class, Clear, clear_timeout, context_areas, context_target:true, controls,
+change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
 CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
 format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global,
@@ -2759,7 +2759,7 @@ function download_pgn(section, url, reset_moves) {
             });
         }
 
-        Clear(main.pgn);
+        main.pgn = {};
         update_pgn(section, data, extra, reset_moves);
 
         if (section == 'archive' && Y.scroll)
@@ -3551,8 +3551,8 @@ function update_pgn(section, data, extras, reset_moves) {
 
         update_move_info(section, 0, {});
         update_move_info(section, 1, {});
-        Clear(players[0].info);
-        Clear(players[1].info);
+        players[0].info = {};
+        players[1].info = {};
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);

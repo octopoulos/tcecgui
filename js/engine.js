@@ -9,10 +9,10 @@
 // included after: common
 /*
 globals
-_, A, Abs, AnimationFrame, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, clearInterval, clearTimeout,
+_, A, Abs, AnimationFrame, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval, clearTimeout,
 CreateNode,
 DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, From, global, Hide, history, HTML, Id, IsArray,
-IsFloat, IsObject, IsString, Keys,
+IsDigit, IsFloat, IsObject, IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
 QueryString, require, Resource,
 Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
@@ -24,13 +24,16 @@ UNDEFINED, Upper, Visible, WebSocket, window
 if (typeof global != 'undefined') {
     let req = require,
         {
-            Assign, DefaultFloat, DefaultInt, IsArray, IsFloat, IsObject, IsString, Keys, Lower, SetDefault, Stringify,
+            Assign, Clear, DefaultFloat, DefaultInt, IsArray, IsDigit, IsFloat, IsObject, IsString, Keys, Lower,
+            SetDefault, Stringify,
         } = req('./common.js');
     Assign(global, {
         Assign: Assign,
+        Clear: Clear,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
         IsArray: IsArray,
+        IsDigit: IsDigit,
         IsFloat: IsFloat,
         IsObject: IsObject,
         IsString: IsString,
@@ -53,6 +56,9 @@ let __PREFIX = '_',
         theme: '',
     },
     DEV = {},
+    DEV_NAMES = {
+        d: 'debug',
+    },
     device = {},
     drag,
     drag_moved,
@@ -461,6 +467,46 @@ function merge_settings(x_settings) {
  */
 function option_number(def, min, max, step=1, options={}, help='') {
     return [Assign({max: max, min: min, step: step, type: 'number'}, options), def, help];
+}
+
+/**
+ * Parse DEV
+ */
+function parse_dev() {
+    let text = Y.dev || '';
+    Clear(DEV);
+
+    for (let i = 0, length = text.length; i < length; i ++) {
+        let letter = text[i];
+        if (letter == 'Z') {
+            Clear(DEV);
+            continue;
+        }
+
+        let name = DEV_NAMES[letter];
+        if (!name)
+            continue;
+
+        let i2 = i + 1,
+            value = 0;
+        for (; i2 < length && IsDigit(text[i2]); i2 ++)
+            value = value * 10 + text[i2] * 1;
+        if (i2 == i + 1)
+            value = 1;
+        i = i2 - 1;
+
+        if (!value)
+            DEV[name] = 0;
+        else {
+            (value.toString(2)).split('').reverse().forEach((bit, id) => {
+                if (bit == '1')
+                    DEV[`${name}${id? (1 << id): ''}`] = value;
+            });
+        }
+    }
+
+    if (DEV.debug)
+        LS(DEV);
 }
 
 /**
@@ -1832,10 +1878,12 @@ if (typeof exports != 'undefined') {
         create_url_list: create_url_list,
         DEFAULTS: DEFAULTS,
         DEV: DEV,
+        DEV_NAMES: DEV_NAMES,
         guess_types: guess_types,
         import_settings: import_settings,
         me: me,
         merge_settings: merge_settings,
+        parse_dev: parse_dev,
         reset_settings: reset_settings,
         restore_history: restore_history,
         sanitise_data: sanitise_data,

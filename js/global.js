@@ -7,22 +7,21 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, Clear, DEV, Exp, exports, Floor, global, HTML, Id, IsArray, IsDigit, Keys,
-location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, window, X_SETTINGS, Y
+Abs, Assign, Atan, Clamp, DEV, Exp, exports, Floor, global, HTML, Id, IsArray, IsDigit, Keys,
+location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Abs, Assign, Atan, Clamp, Clear, Exp, Floor, IsDigit, Max, Min, Pad, Pow, Round} = req('./common.js'),
+        {Abs, Assign, Atan, Clamp, Exp, Floor, IsDigit, Max, Min, Pad, Pow, Round} = req('./common.js'),
         {DEV, Y} = req('./engine.js');
     Assign(global, {
         Abs: Abs,
         Assign: Assign,
         Atan: Atan,
         Clamp: Clamp,
-        Clear: Clear,
         DEV: DEV,
         Exp: Exp,
         Floor: Floor,
@@ -286,64 +285,6 @@ function mix_hex_colors(color1, color2, mix) {
 }
 
 /**
- * Parse DEV
- */
-function parse_dev() {
-    let names = {
-            a: 'arrow',
-            A: 'ad',                    // disable ads (for development)
-            b: 'board',
-            c: 'chart',
-            C: 'cup',                   // force loading bracket.json
-            d: 'debug',
-            D: 'div',
-            e: 'eval',                  // live eval
-            E: 'engine',
-            f: 'fen',                   // parse_fen
-            G: 'global',
-            i: 'input',                 // gamepad input
-            j: 'json',                  // static json files
-            l: 'load',
-            m: 'mobil',
-            o: 'open',
-            n: 'new',                   // new game debugging
-            P: 'popup',                 // disable popups
-            q: 'queue',
-            s: 'socket',                // socket messages
-            S: 'no_socket',
-            t: 'time',                  // clock + pause/start click
-            T: 'translate',             // gather translations
-            U: 'ui',                    // UI events
-            w: 'wasm',
-            W: 'worker',                // web worker
-            y: 'ply',
-        },
-        text = Y.dev || '';
-
-    Clear(DEV);
-    for (let i = 0, length = text.length; i < length; i ++) {
-        let letter = text[i];
-        if (letter == 'Z')
-            Clear(DEV);
-        else {
-            let i2 = i + 1,
-                name = names[letter],
-                value = 0;
-            for (; i2 < length && IsDigit(text[i2]); i2 ++)
-                value = value * 10 + text[i2] * 1;
-            i = i2 - 1;
-
-            if (name)
-                DEV[name] = value || 1;
-        }
-    }
-
-    if (DEV.debug)
-        LS(DEV);
-    window.DEV = DEV;
-}
-
-/**
  * Get the seconds from a time text
  * @param {string} text
  * @returns {number}
@@ -478,7 +419,6 @@ if (typeof exports != 'undefined') {
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
         mix_hex_colors: mix_hex_colors,
-        parse_dev: parse_dev,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,

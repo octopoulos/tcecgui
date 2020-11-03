@@ -15,9 +15,9 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
-DEFAULT_SCALES, DEFAULTS, detect_device, DEV, device, document, download_tables, draw_rectangle, E, Events,
-export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object, guess_types,
-HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
+DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
+E, Events, export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object,
+guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
 is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
@@ -1758,6 +1758,36 @@ function prepare_settings() {
         x: 'live',
     });
     guess_types(DEFAULTS);
+
+    Assign(DEV_NAMES, {
+        a: 'arrow',
+        A: 'ad',                    // disable ads (for development)
+        b: 'board',
+        c: 'chart',
+        C: 'cup',                   // force loading bracket.json
+        d: 'debug',
+        D: 'div',
+        e: 'eval',                  // live eval
+        E: 'engine',
+        f: 'fen',                   // parse_fen
+        G: 'global',
+        i: 'input',                 // gamepad input
+        j: 'json',                  // static json files
+        l: 'load',
+        m: 'mobil',
+        o: 'open',
+        n: 'new',                   // new game debugging
+        P: 'popup',                 // disable popups
+        q: 'queue',
+        s: 'socket',                // socket messages
+        S: 'no_socket',
+        t: 'time',                  // clock + pause/start click
+        T: 'translate',             // gather translations
+        U: 'ui',                    // UI events
+        w: 'wasm',
+        W: 'worker',                // web worker
+        y: 'ply',
+    });
 
     Assign(NO_IMPORTS, {
         dev: 1,

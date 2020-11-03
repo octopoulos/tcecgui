@@ -8,11 +8,10 @@ expect, require, test
 */
 'use strict';
 
-let {DEV, Y} = require('./engine.js'),
+let {Y} = require('./engine.js'),
     {
         allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
-        leela_cp_to_score, mix_hex_colors, parse_dev, split_move_string, stockfish_wdl, stockfish_win_rate_model,
-        stoof_cp_to_score
+        leela_cp_to_score, mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,24 +366,6 @@ let {DEV, Y} = require('./engine.js'),
 ].forEach(([color1, color2, mix, answer], id) => {
     test(`mix_hex_colors:${id}`, () => {
         expect(mix_hex_colors(color1, color2, mix)).toEqual(answer);
-    });
-});
-
-// parse_dev
-[
-    ['', {}],
-    ['E', {engine: 1}],
-    ['E2', {engine: 2}],
-    ['E15', {engine: 15}],
-    ['ES', {engine: 1, no_socket: 1}],
-    ['E5S100', {engine: 5, no_socket: 100}],
-    ['E5S100Z', {}],
-    ['E5S100Zw3', {wasm: 3}],
-].forEach(([dev, answer], id) => {
-    test(`parse_dev:${id}`, () => {
-        Y.dev = dev;
-        parse_dev();
-        expect(DEV).toMatchObject(answer);
     });
 });
 
