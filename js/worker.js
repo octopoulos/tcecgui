@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 /*
 globals
 Abs, ArrayJS, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
@@ -65,16 +65,17 @@ function create_chess(engine) {
  * @param {string} engine
  * @param {string} fen
  * @param {number[]} moves
+ * @param {string} pv_string
  * @param {boolean} scan_all
  * @returns {[Move, number, number]} best_move, score, depth, hash_stats
  */
-function think(engine, fen, moves, scan_all) {
+function think(engine, fen, moves, pv_string, scan_all) {
     // 1) generate all moves + analyse them
     let chess = create_chess(engine);
     chess.load(fen, true);
 
     let start = Now(true),
-        objs = ArrayJS(chess.search(moves.join(' '), scan_all)),
+        objs = ArrayJS(chess.search(moves.join(' '), pv_string, scan_all)),
         elapsed = Now(true) - start;
 
     // 2) results
@@ -121,7 +122,7 @@ self.onmessage = e => {
     }
     if (func == 'think') {
         let [moves, elapsed, nodes, avg_depth, sel_depth, hash_stats] =
-            think(data.engine, data.fen, data.moves, data.scan_all);
+            think(data.engine, data.fen, data.moves, data.pv_string, data.scan_all);
         self.postMessage({
             avg_depth: avg_depth,
             elapsed: elapsed,

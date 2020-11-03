@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -424,6 +424,7 @@ var Chess = function(fen_) {
         frc = false,
         half_moves = 0,
         hash_mode = 0,
+        is_search = false,
         kings = U8(2).fill(EMPTY),
         materials = I32(2),
         max_depth = 4,
@@ -432,6 +433,7 @@ var Chess = function(fen_) {
         max_quiesce = 0,
         max_time = 60,
         mobilities = U8(16),
+        move_id = 0,
         move_number = 1,
         nodes = 0,
         order_mode = 1,
@@ -441,6 +443,7 @@ var Chess = function(fen_) {
         ply_states = Array(128).fill(0).map(_ => [0, 0, 0, 0, 0]),
         positions = I32(2),
         pv_mode = 1,
+        prev_pv = [],
         scan_all = false,
         search_mode = 0,                    // 1:minimax, 2:alpha-beta
         sel_depth = 0,
@@ -565,7 +568,6 @@ var Chess = function(fen_) {
 
             let score = entry[1],
                 bound = entry[2];
-
             if (bound & BOUND_EXACT)
                 return score;
             if ((bound & BOUND_UPPER) && score <= alpha)
@@ -585,6 +587,7 @@ var Chess = function(fen_) {
                 score = quiesce(alpha, beta, max_quiesce);
 
             updateEntry(entry[5], board_hash, score, BOUND_EXACT, idepth, 0);
+            move_id ++;
             return score;
         }
 
@@ -1027,9 +1030,11 @@ var Chess = function(fen_) {
         fen = "";
         fen_ply = -1;
         half_moves = 0;
+        is_search = false;
         kings.fill(EMPTY);
         materials.fill(0);
         mobilities.fill(0);
+        move_id = 0;
         move_number = 1;
         nodes = 0;
         pawns.fill(EMPTY);
@@ -1389,7 +1394,7 @@ var Chess = function(fen_) {
         }
 
         // move ordering for alpha-beta
-        if (order_mode)
+        if (order_mode && is_search)
             orderMoves(moves);
         return moves;
     }
@@ -2035,6 +2040,21 @@ var Chess = function(fen_) {
      * @param {number[]} moves
      */
     function orderMoves(moves) {
+        // use previous PV to reorder the first move
+        if (!move_id && (order_mode & 2) && prev_pv.length > ply) {
+            let first = prev_pv[ply],
+                from = anToSquare(first.substr(0, 2)),
+                to = anToSquare(first.substr(2, 2)),
+                promote = first[4]? TYPE(PIECES[first[4]]): 0;
+
+            let id = 0;
+            for (let move of moves) {
+                if (MoveFrom(move) == from && MoveTo(move) == to && MovePromote(move) == promote)
+                    moves[id] += 1023 - (move & 1023);
+                id ++;
+            }
+        }
+
         moves.sort(compareMoves);
     }
 
@@ -2085,10 +2105,6 @@ var Chess = function(fen_) {
         let moves = legalMoves(),
             lines = [`1=${moves.length}`];
 
-        // no need to order moves
-        let old_order = order_mode;
-        order_mode = 0;
-
         for (let move of moves) {
             makeMove(move);
             let prev = nodes;
@@ -2099,11 +2115,30 @@ var Chess = function(fen_) {
             undoMove();
         }
 
-        order_mode = old_order;
-
         if (depth > 1)
             lines.push(`${depth}=${nodes}`);
         return lines.sort().join(' ');
+    }
+
+    /**
+     * Process the move + pv strings
+     * @param {string} move_string list of numbers
+     * @param {string} pv_string previous pv
+     * @param {boolean} scan_all_
+     */
+    function prepareSearch(move_string, pv_string, scan_all_) {
+        first_moves = move_string? move_string.split(' ').map(item => item >>> 0): [];
+        prev_pv = pv_string? pv_string.split(' '): [];
+
+        avg_depth = 1;
+        first_objs.length = 0;
+        is_search = true;
+        move_id = 0;
+        nodes = 0;
+        scan_all = scan_all_;
+        sel_depth = 0;
+        tt_adds = 0;
+        tt_hits = 0;
     }
 
     /**
@@ -2230,31 +2265,24 @@ var Chess = function(fen_) {
      * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
      * @param {string} move_string list of numbers
+     * @param {string} pv_string previous pv
      * @param {boolean} scan_all_
      * @returns {MoveText[]} updated moves
      */
-    function search(move_string, scan_all_) {
-        // create the moves
-        first_moves = move_string.split(' ').map(item => item >>> 0);
-
+    function search(move_string, pv_string, scan_all_) {
+        // 1) prepare search
+        prepareSearch(move_string, pv_string, scan_all_);
         hashBoard();
         evaluatePositions();
 
-        avg_depth = 1;
-        first_objs.length = 0;
-        nodes = 0;
-        scan_all = scan_all_;
-        sel_depth = 0;
-        tt_adds = 0;
-        tt_hits = 0;
-
+        // 2) search
         let pv = [];
         if (search_mode == 1)
             miniMax(0, max_depth, pv);
         else
             alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 0, max_depth, pv);
 
-        // add unseen moves with a None score
+        // 3) add unseen moves with a None score
         if (!scan_all) {
             let seens = Assign({}, ...first_objs.map(obj => ({[obj.m]: 1})));
             for (let move of first_moves) {
@@ -2263,6 +2291,8 @@ var Chess = function(fen_) {
                     addTopMove(move, -SCORE_NONE, []);
             }
         }
+
+        is_search = false;
         return first_objs;
     }
 
@@ -2477,6 +2507,7 @@ var Chess = function(fen_) {
         perft: perft,
         piece: text => PIECES[text] || 0,
         print: print,
+        prepare: prepareSearch,
         put: put,
         reset: reset,
         sanToObject: sanToObject,
@@ -2489,7 +2520,7 @@ var Chess = function(fen_) {
         ucifyObject: ucifyObject,
         undo: undoMove,
         unpackMove: unpackMove,
-        version: () => '20200926',
+        version: () => '20201102',
     };
 };
 

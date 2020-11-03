@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 /*
 globals
@@ -330,21 +330,21 @@ beforeEach(() => {
     [START_FEN, 'h=1 s=mm', 1, [1, 0]],
     [START_FEN, 'h=1 s=mm', 2, [21, 0]],
     [START_FEN, 'h=1 s=mm', 3, [421, 0]],
-    [START_FEN, 'h=1 s=mm', 4, [[8158, 8181], [1144, 1165]]],
+    [START_FEN, 'h=1 s=mm', 4, [[8158, 8213], [1113, 1165]]],
     [START_FEN, 's=ab', 4, [0, 0]],
     [START_FEN, 'h=1 s=ab', 1, [21, [18, 19]]],
-    [START_FEN, 'h=1 s=ab', 2, [[3, 60], [37, 38]]],
-    [START_FEN, 'h=1 s=ab', 3, [524, [425, 433]]],
-    [START_FEN, 'h=1 s=ab', 4, [1341, [247, 248]]],
-    [START_FEN, 'h=1 s=ab', 5, [[14776, 14790], [3024, 3030]]],
-    [START_FEN, 'h=1 s=ab', 6, [[187373, 188528], [19171, 19614]]],
-    [START_FEN, 'h=1 s=ab', 7, [[40169, 293153], [53562, 55154]]],
+    [START_FEN, 'h=1 s=ab', 2, [[3, 60], [32, 38]]],
+    [START_FEN, 'h=1 s=ab', 3, [524, [424, 438]]],
+    [START_FEN, 'h=1 s=ab', 4, [[1341, 1380], [247, 264]]],
+    [START_FEN, 'h=1 s=ab', 5, [[13567, 14790], [2698, 3030]]],
+    [START_FEN, 'h=1 s=ab', 6, [[187373, 189109], [19171, 20121]]],
+    [START_FEN, 'h=1 s=ab', 7, [[40169, 304719], [53562, 60648]]],
 ].forEach(([fen, options, depth, answer], id) => {
     test(`hashStats:${id}`, () => {
         chess.configure(false, options, depth);
         chess.load(fen, false);
         let moves = ArrayJS(chess.moves());
-        chess.search(moves.join(' '), false);
+        chess.search(moves.join(' '), '', false);
         let stats = ArrayJS(chess.hashStats());
         for (let i = 0; i < 2; i ++) {
             let item = answer[i],
@@ -877,7 +877,7 @@ beforeEach(() => {
     [START_FEN, 's=mm', 1, true, 20],
     [START_FEN, 'd=0 s=mm', 0, true, 1],
     [START_FEN, 's=ab', 5, true, 74952],
-    [START_FEN, 's=ab', 5, false, 25346],
+    [START_FEN, 's=ab', 5, false, 23391],
     [START_FEN, 's=ab', 4, true, 11695],
     [START_FEN, 's=ab', 3, true, 1245],
     [START_FEN, 's=ab', 2, true, 420],
@@ -885,13 +885,13 @@ beforeEach(() => {
     [START_FEN, 'd=0 s=ab', 0, true, 1],
     ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=mm', 4, true, 421547],
     ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, true, 22323],
-    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, false, 4117],
+    ['6k1/pp1R1np1/7p/5p2/3B4/1P3P1P/r5P1/7K w - - 0 33', 's=ab', 4, false, 5799],
 ].forEach(([fen, options, depth, scan_all, answer], id) => {
     test(`nodes:${id}`, () => {
         chess.configure(false, options, depth);
         chess.load(fen, false);
         let moves = ArrayJS(chess.moves());
-        chess.search(moves.join(' '), scan_all);
+        chess.search(moves.join(' '), '', scan_all);
         let nodes = chess.nodes();
         if (IsString(answer)) {
             let text = moves.map(move => chess.ucifyMove(move)).sort().join(' ');
@@ -1112,6 +1112,35 @@ beforeEach(() => {
     });
 });
 
+// prepare
+[
+    [
+        START_FEN,
+        ['o=2', 5, '', ''],
+        'd2d4 e2e4 b1c3 g1f3 d2d3 e2e3 b1a3 g1h3 b2b3 g2g3 c2c4 f2f4 a2a3 c2c3 h2h3 a2a4 b2b4 f2f3 g2g4 h2h4',
+    ],
+    [
+        START_FEN,
+        ['o=2', 5, '', 'f2f4'],
+        'f2f4 d2d4 e2e4 b1c3 g1f3 d2d3 e2e3 b1a3 g1h3 b2b3 g2g3 c2c4 a2a3 c2c3 h2h3 a2a4 b2b4 f2f3 g2g4 h2h4',
+    ],
+    [
+        START_FEN,
+        ['o=2', 5, '', 'g1f3'],
+        'g1f3 d2d4 e2e4 b1c3 d2d3 e2e3 b1a3 g1h3 b2b3 g2g3 c2c4 f2f4 a2a3 c2c3 h2h3 a2a4 b2b4 f2f3 g2g4 h2h4',
+    ],
+].forEach(([fen, [options, depth, move_string, pv_string], answer], id) => {
+    test(`prepare:${id}`, () => {
+        chess.configure(false, options, depth);
+        chess.load(fen, false);
+        chess.prepare(move_string, pv_string, false);
+        let moves = chess.moves();
+        chess.order(moves);
+        moves = ArrayJS(moves).map(move => chess.ucifyMove(move)).join(' ');
+        expect(moves).toEqual(answer);
+    });
+});
+
 // print
 [
     [
@@ -1251,7 +1280,7 @@ beforeEach(() => {
             let mask_set = new Set(mask.split(' '));
             moves = moves.filter(move => mask_set.has(chess.ucifyMove(move)));
         }
-        let objs = ArrayJS(chess.search(moves.join(' '), true));
+        let objs = ArrayJS(chess.search(moves.join(' '), '', true));
         objs.sort((a, b) => b.score - a.score);
 
         let best = objs[0],
@@ -1434,7 +1463,7 @@ beforeEach(() => {
 
 // version
 [
-    '20200926',
+    '20201102',
 ].forEach((answer, id) => {
     test(`version:${id}`, () => {
         expect(chess.version()).toEqual(answer);

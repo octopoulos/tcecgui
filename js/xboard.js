@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
-COLOR, CopyClipboard, CreateNode, CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
+clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide,
 HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
@@ -203,6 +203,7 @@ class XBoard {
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = -1;                                  // current ply
         this.ply_moves = [];                            // PV moves by real ply
+        this.pv_string = '';                            // last pv_string used
         this.pv_strings = {};                           // iterative search: pv lists per move
         this.pv_node = _(this.pv_id);
         this.real = null;                               // pointer to a board with the real moves
@@ -1241,7 +1242,7 @@ class XBoard {
 
         if (manual) {
             this.finished = false;
-            this.replies = {};
+            Clear(this.replies);
             this.clock(this.name, 0, true);
             this.hide_arrows();
             this.set_play(true);
@@ -1671,7 +1672,7 @@ class XBoard {
         }
 
         if (rule50 == 0)
-            this.fens = {};
+            Clear(this.fens);
 
         // 3) insufficient material
         let enough = 0,
@@ -2148,7 +2149,7 @@ class XBoard {
 
         this.fen = '';
         this.fen2 = '';
-        this.fens = {};
+        Clear(this.fens);
         this.finished = false;
         this.goal = [-20.5, -1];
         this.grid.fill('');
@@ -2477,8 +2478,9 @@ class XBoard {
             if (!suggest)
                 this.clear_high('source target', false);
 
-            this.pv_strings = {};
-            this.scores = {};
+            this.pv_string = '';
+            Clear(this.pv_strings);
+            Clear(this.scores);
             this.set_play(false);
             this.create_workers();
 
@@ -2645,6 +2647,7 @@ class XBoard {
                 id: id,
                 moves: U32(masks[id]),
                 options: options,
+                pv_string: this.pv_string,
                 // TODO: remove folds once chess.js can recognize 3-fold itself
                 scan_all: (max_time && !step) || options.includes('X=') || folds.length,
                 search: Y.search,
@@ -2813,6 +2816,7 @@ class XBoard {
             LS('no legal move to play');
             return;
         }
+        this.pv_string = this.pv_strings[best.m];
 
         // 4) update
         let best_score = best.score,
@@ -2889,11 +2893,10 @@ class XBoard {
         let hits = hash_stats[1] || 0,
             tb = (hits && nodes2)? (hits * 100) / nodes2: 0;
 
-        if (DEV.engine) {
+        if (DEV.engine2) {
             if (hits && nodes2)
                 LS(`hits: ${tb.toFixed(2)}% = ${hits}/${nodes2}`);
-            if (DEV.engine2)
-                LS(combine);
+            LS(combine);
         }
 
         // 7) stop things

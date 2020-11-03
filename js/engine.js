@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-31
+// @version 2020-11-02
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1831,6 +1831,7 @@ if (typeof exports != 'undefined') {
         create_page_array: create_page_array,
         create_url_list: create_url_list,
         DEFAULTS: DEFAULTS,
+        DEV: DEV,
         guess_types: guess_types,
         import_settings: import_settings,
         me: me,

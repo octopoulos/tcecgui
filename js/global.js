@@ -1,13 +1,13 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEV:true, Exp, exports, Floor, global, HTML, Id, IsArray, Keys,
+Abs, Assign, Atan, Clamp, Clear, DEV, Exp, exports, Floor, global, HTML, Id, IsArray, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, window, X_SETTINGS, Y
 */
 'use strict';
@@ -15,15 +15,18 @@ location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Abs, Assign, Atan, Clamp, Exp, Floor, Max, Min, Pad, Pow, Round} = req('./common.js'),
-        {Y} = req('./engine.js');
+        {Abs, Assign, Atan, Clamp, Clear, Exp, Floor, IsDigit, Max, Min, Pad, Pow, Round} = req('./common.js'),
+        {DEV, Y} = req('./engine.js');
     Assign(global, {
         Abs: Abs,
         Assign: Assign,
         Atan: Atan,
         Clamp: Clamp,
+        Clear: Clear,
+        DEV: DEV,
         Exp: Exp,
         Floor: Floor,
+        IsDigit: IsDigit,
         location: {},
         Max: Max,
         Min: Min,
@@ -52,7 +55,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201101',
+    VERSION = '20201102',
     virtual_close_popups;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,15 +320,21 @@ function parse_dev() {
         },
         text = Y.dev || '';
 
-    DEV = {};
+    Clear(DEV);
     for (let i = 0, length = text.length; i < length; i ++) {
         let letter = text[i];
         if (letter == 'Z')
-            DEV = {};
+            Clear(DEV);
         else {
-            let name = names[letter];
+            let i2 = i + 1,
+                name = names[letter],
+                value = 0;
+            for (; i2 < length && IsDigit(text[i2]); i2 ++)
+                value = value * 10 + text[i2] * 1;
+            i = i2 - 1;
+
             if (name)
-                DEV[name] = 1;
+                DEV[name] = value || 1;
         }
     }
 
@@ -381,8 +390,8 @@ function reset_old_settings() {
             save_option('scroll_inertia', 0.95);
     if (version < '20200920') {
         save_option('game_level', 'amateur');
-        save_option('game_options_black', 'd=4 e=att h=1 q=8 s=ab t=2 x=20');
-        save_option('game_options_white', 'd=4 e=att h=1 q=8 s=ab t=2 x=20');
+        save_option('game_options_black', 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20');
+        save_option('game_options_white', 'd=4 e=att h=1 i=2 q=8 s=ab t=2 x=20');
         save_option('turn_opacity', 0);
     }
     if (version < '20200930')
@@ -469,6 +478,7 @@ if (typeof exports != 'undefined') {
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
         mix_hex_colors: mix_hex_colors,
+        parse_dev: parse_dev,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,

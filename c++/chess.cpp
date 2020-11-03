@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -444,6 +444,7 @@ private:
     bool        frc;
     uint8_t     half_moves;
     int         hash_mode;
+    bool        is_search;
     Square      kings[4];
     int         materials[2];
     int         max_depth;
@@ -452,6 +453,7 @@ private:
     int         max_quiesce;
     int         max_time;
     uint8_t     mobilities[16];
+    int         move_id;
     int         move_number;
     int         nodes;
     int         order_mode;
@@ -461,6 +463,7 @@ private:
     State       ply_states[128];
     int         positions[2];
     int         pv_mode;
+    std::vector<std::string> prev_pv;
     bool        scan_all;
     int         search_mode;                    // 1:minimax, 2:alpha-beta
     int         sel_depth;
@@ -585,8 +588,8 @@ private:
             else
                 score = quiesce(alpha, beta, max_quiesce);
 
-
             updateEntry(entry, board_hash, score, BOUND_EXACT, idepth, 0);
+            move_id ++;
             return score;
         }
 
@@ -1020,9 +1023,11 @@ public:
         fen = "";
         fen_ply = -1;
         half_moves = 0;
+        is_search = false;
         memset(kings, EMPTY, sizeof(kings));
         memset(materials, 0, sizeof(materials));
         memset(mobilities, 0, sizeof(mobilities));
+        move_id = 0;
         move_number = 1;
         nodes = 0;
         memset(pawns, EMPTY, sizeof(pawns));
@@ -1392,7 +1397,7 @@ public:
         }
 
         // move ordering for alpha-beta
-        if (order_mode)
+        if (order_mode && is_search)
             orderMoves(moves);
         return moves;
     }
@@ -2074,6 +2079,21 @@ public:
      * - nb/r/q/r/p
      */
     void orderMoves(std::vector<Move> &moves) {
+        // use previous PV to reorder the first move
+        if (!move_id && (order_mode & 2) && prev_pv.size() > ply) {
+            auto first = prev_pv[ply];
+            auto from = anToSquare(first.substr(0, 2)),
+                to = anToSquare(first.substr(2, 2));
+            auto promote = first[4]? TYPE(PIECES[first[4]]): 0;
+
+            auto id = 0;
+            for (auto &move : moves) {
+                if (MoveFrom(move) == from && MoveTo(move) == to && MovePromote(move) == promote)
+                    moves[id] += 1023 - (move & 1023);
+                id ++;
+            }
+        }
+
         std::stable_sort(moves.begin(), moves.end(), compareMoves);
     }
 
@@ -2123,10 +2143,6 @@ public:
         std::vector<std::string> lines;
         lines.push_back(std::to_string(1) + "=" +std::to_string(moves.size()));
 
-        // no need to order moves
-        auto old_order = order_mode;
-        order_mode = 0;
-
         for (auto &move : moves) {
             makeMove(move);
             auto prev = nodes;
@@ -2136,8 +2152,6 @@ public:
             prev = nodes;
             undoMove();
         }
-
-        order_mode = old_order;
 
         if (depth > 1)
             lines.push_back(std::to_string(depth) + "=" + std::to_string(nodes));
@@ -2150,6 +2164,43 @@ public:
             result += line;
         }
         return result;
+    }
+
+    /**
+     * Process the move + pv strings
+     * @param move_string list of numbers
+     * @param pv_string previous pv
+     * @param scan_all_
+     */
+    void prepareSearch(std::string move_string, std::string pv_string, bool scan_all_) {
+        std::regex re("\\s+");
+        std::sregex_token_iterator reg_end;
+
+        first_moves.clear();
+        if (move_string.size()) {
+            std::sregex_token_iterator it(move_string.begin(), move_string.end(), re, -1);
+            for (; it != reg_end; it ++) {
+                auto move = static_cast<uint32_t>(std::stoul(it->str()));
+                first_moves.push_back(move);
+            }
+        }
+
+        prev_pv.clear();
+        if (pv_string.size()) {
+            std::sregex_token_iterator it2(pv_string.begin(), pv_string.end(), re, -1);
+            for (; it2 != reg_end; it2 ++)
+                prev_pv.push_back(it2->str());
+        }
+
+        avg_depth = 1;
+        first_objs.clear();
+        is_search = true;
+        move_id = 0;
+        nodes = 0;
+        scan_all = scan_all_;
+        sel_depth = 0;
+        tt_adds = 0;
+        tt_hits = 0;
     }
 
     /**
@@ -2271,38 +2322,24 @@ public:
      * Main tree search
      * https://www.chessprogramming.org/Principal_Variation_Search
      * @param move_string list of numbers
+     * @param pv_string previous pv
      * @param scan_all_
      * @return updated moves
      */
-    std::vector<MoveText> search(std::string move_string, bool scan_all_) {
-        // creates the moves
-        first_moves.clear();
-        std::regex re("\\s+");
-        std::sregex_token_iterator it(move_string.begin(), move_string.end(), re, -1);
-        std::sregex_token_iterator reg_end;
-        for (; it != reg_end; it ++) {
-            auto move = static_cast<uint32_t>(std::stoul(it->str()));
-            first_moves.push_back(move);
-        }
-
+    std::vector<MoveText> search(std::string move_string, std::string pv_string, bool scan_all_) {
+        // 1) prepare search
+        prepareSearch(move_string, pv_string, scan_all_);
         hashBoard();
         evaluatePositions();
 
-        avg_depth = 1;
-        first_objs.clear();
-        nodes = 0;
-        scan_all = scan_all_;
-        sel_depth = 0;
-        tt_adds = 0;
-        tt_hits = 0;
-
+        // 3) search
         PV pv;
         if (search_mode == 1)
             miniMax(0, max_depth, &pv);
         else
             alphaBeta(-SCORE_INFINITY, SCORE_INFINITY, 0, max_depth, &pv);
 
-        // add unseen moves with a None score
+        // 4) add unseen moves with a None score
         if (!scan_all) {
             std::map<std::string, int> seens;
             for (auto &obj : first_objs)
@@ -2313,6 +2350,8 @@ public:
                     addTopMove(move, -SCORE_NONE, nullptr);
             }
         }
+
+        is_search = false;
         return first_objs;
     }
 
@@ -2540,7 +2579,7 @@ public:
     }
 
     std::string em_version() {
-        return "20200926";
+        return "20201102";
     }
 };
 
@@ -2604,6 +2643,7 @@ EMSCRIPTEN_BINDINGS(chess) {
         .function("params", &Chess::params)
         .function("perft", &Chess::perft)
         .function("piece", &Chess::em_piece)
+        .function("prepare", &Chess::prepareSearch)
         .function("print", &Chess::print)
         .function("put", &Chess::put)
         .function("reset", &Chess::reset)
