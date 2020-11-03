@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 // game board:
 // - 4 rendering modes:
@@ -18,8 +18,8 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, clear_timeout,
 COLOR, CopyClipboard, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, Floor, Format, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
-Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
+DefaultInt, DEV, EMPTY, Events, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide,
+HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
@@ -2855,7 +2855,7 @@ class XBoard {
                 predict = elapsed2 + extra;
                 is_iterative = best.score < 300 && (this.depth < this.min_depth || predict < this.max_time);
                 if (DEV.engine)
-                    LS(`#${this.depth}: ${best.m} : ${Format(best.score)} : ${Format(elapsed)} x ${Format(ratio_nodes)} = ${Format(extra)}`);
+                    LS(`#${this.depth}: ${best.pv}`);
             }
         }
 
@@ -2885,11 +2885,13 @@ class XBoard {
             }
         }
 
+        // TT hits
+        let hits = hash_stats[1] || 0,
+            tb = (hits && nodes2)? (hits * 100) / nodes2: 0;
+
         if (DEV.engine) {
-            let hits = hash_stats[1] || 0;
             if (hits && nodes2)
-                LS(`hits: ${(hits * 100 / nodes2).toFixed(2)}% = ${hits}/${nodes2}`);
-            LS(best.pv);
+                LS(`hits: ${tb.toFixed(2)}% = ${hits}/${nodes2}`);
             if (DEV.engine2)
                 LS(combine);
         }
@@ -2921,7 +2923,7 @@ class XBoard {
             pv: best.pv,
             s: Floor(nps + 0.5),
             sd: Floor(reply.sel_depth + 0.5),
-            tb: 0,
+            tb: tb,
             wv: format_eval(best_score),
         });
         this.new_move(result);

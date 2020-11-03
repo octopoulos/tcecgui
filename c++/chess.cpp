@@ -557,28 +557,37 @@ private:
         if (max_depth < max_extend && kingAttacked(turn))
             max_depth ++;
 
+        // transposition
+        bool hit = false,
+            is_pv = (alpha != beta - 1);
+        auto entry = findEntry(board_hash, hit);
         auto idepth = max_depth - depth;
-        if (idepth <= 0) {
-            pv->length = 0;
-            if (!max_quiesce) {
-                nodes ++;
-                return evaluate();
-            }
-            return quiesce(alpha, beta, max_quiesce);
+
+        if (depth > 0 && hit && entry->depth >= idepth) {
+            nodes ++;
+            tt_hits ++;
+
+            if (entry->bound & BOUND_EXACT)
+                return entry->score;
+            if ((entry->bound & BOUND_UPPER) && entry->score <= alpha)
+                return alpha;
+            if ((entry->bound & BOUND_LOWER) && entry->score >= beta)
+                return beta;
         }
 
-        // transposition
-        bool hit,
-            is_pv = (alpha != beta - 1);
-        auto entry = hash_mode? findEntry(board_hash, hit): nullptr;
-
-        if (depth > 0 && !is_pv && hit && entry->depth >= idepth) {
-            auto cutoff = (entry->score >= beta)? (entry->bound & BOUND_LOWER): (entry->bound & BOUND_UPPER);
-            if (cutoff) {
+        if (idepth <= 0) {
+            pv->length = 0;
+            int score;
+            if (!max_quiesce) {
                 nodes ++;
-                tt_hits ++;
-                return entry->score;
+                score = evaluate();
             }
+            else
+                score = quiesce(alpha, beta, max_quiesce);
+
+
+            updateEntry(entry, board_hash, score, BOUND_EXACT, idepth, 0);
+            return score;
         }
 
         auto alpha0 = alpha,
@@ -655,10 +664,8 @@ private:
         if (!num_valid)
             return kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
-        if (hash_mode) {
-            auto bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
-            updateEntry(entry, board_hash, best, bound, idepth, best_move);
-        }
+        auto bound = (best >= beta)? BOUND_LOWER: ((alpha != alpha0)? BOUND_EXACT: BOUND_UPPER);
+        updateEntry(entry, board_hash, best, bound, idepth, best_move);
         return best;
     }
 
@@ -713,6 +720,9 @@ private:
      * Find an entry in the transposition table
      */
     Table *findEntry(Hash hash, bool &hit) {
+        if (!hash_mode)
+            return nullptr;
+
         auto entry = &table[hash % TT_SIZE];
         hit = (entry->hash == hash);
         return entry;
@@ -735,8 +745,8 @@ private:
      */
     int miniMax(int depth, int max_depth, PV *pv) {
         // transposition
-        bool hit;
-        auto entry = hash_mode? findEntry(board_hash, hit): nullptr;
+        bool hit = false;
+        auto entry = findEntry(board_hash, hit);
         auto idepth = max_depth - depth;
         if (depth > 0 && hit && entry->depth >= idepth) {
             nodes ++;
@@ -797,8 +807,7 @@ private:
         if (!num_valid)
             best = kingAttacked(turn)? -SCORE_MATE + ply: 0;
 
-        if (hash_mode)
-            updateEntry(entry, board_hash, best, BOUND_EXACT, idepth, best_move);
+        updateEntry(entry, board_hash, best, BOUND_EXACT, idepth, best_move);
         return best;
     }
 
@@ -885,6 +894,9 @@ private:
      * Update an entry
      */
     void updateEntry(Table *entry, Hash hash, int score, uint8_t bound, uint8_t depth, Move move) {
+        if (!hash_mode)
+            return;
+
         if (hash == entry->hash && depth < entry->depth && bound != BOUND_EXACT)
             return;
         entry->hash = hash;

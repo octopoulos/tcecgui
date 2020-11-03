@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -20,8 +20,8 @@ export_settings, FileReader, From, game_action_key, game_action_keyup, get_area,
 HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
 is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
-navigator, NO_IMPORTS, Now, ON_OFF, ONLY_POPUPS, open_table, option_number, order_boards, Parent, parse_dev, PD,
-PIECE_THEMES, POPUP_ADJUSTS, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
+POPUP_ADJUSTS, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
@@ -181,7 +181,7 @@ function change_setting_special(name, value, close) {
     // close contextual popup?
     if (close) {
         let modal = SafeId('modal');
-        if (modal.dataset.xy)
+        if (modal.dataset.xy || close == 2)
             close_popups();
     }
 
@@ -289,7 +289,6 @@ function change_setting_special(name, value, close) {
         pva.finished = false;
         pva.set_ai(false);
         pva.think(true);
-        close_popups();
         break;
     case 'game_depth':
         configure('d', value);
@@ -303,7 +302,6 @@ function change_setting_special(name, value, close) {
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
-        close_popups();
         break;
     case 'game_search':
         configure('s', value);
@@ -312,7 +310,6 @@ function change_setting_special(name, value, close) {
         pva.finished = false;
         pva.set_ai(true);
         pva.think();
-        close_popups();
         break;
     case 'game_time':
         configure('t', value);
@@ -1778,12 +1775,6 @@ function prepare_settings() {
         x: 1,
     });
 
-    Assign(ONLY_POPUPS, {
-        analysis_chessdb: 1,
-        analysis_evalguide: 1,
-        analysis_lichess: 1,
-    });
-
     // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter, &128:h100, &256:w100
     Assign(POPUP_ADJUSTS, {
         articles: 1,
@@ -1868,9 +1859,9 @@ function prepare_settings() {
             arrow_width: option_number(1.6, 0, 5, 0.01),
         },
         board: {
-            analysis_chessdb: '1',
-            analysis_evalguide: '1',
-            analysis_lichess: '1',
+            analysis_chessdb: '4',
+            analysis_evalguide: '4',
+            analysis_lichess: '4',
             animate: [ON_OFF, 1],
             arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
@@ -1887,9 +1878,9 @@ function prepare_settings() {
         },
         board_pv: {
             _suffix: '_pv',
-            analysis_chessdb: '1',
-            analysis_evalguide: '1',
-            analysis_lichess: '1',
+            analysis_chessdb: '4',
+            analysis_evalguide: '4',
+            analysis_lichess: '4',
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             controls_pv: [ON_OFF, 1],
@@ -2009,9 +2000,9 @@ function prepare_settings() {
             single_line: [ON_OFF, 0],
         },
         live: {
-            copy_moves: '1',
-            copy_pgn: '1',
-            download_pgn: '1',
+            copy_moves: '4',
+            copy_pgn: '4',
+            download_pgn: '4',
             grid_live: option_number(0, 0, 10),
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],

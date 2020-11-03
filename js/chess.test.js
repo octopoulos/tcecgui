@@ -332,13 +332,13 @@ beforeEach(() => {
     [START_FEN, 'h=1 s=mm', 3, [421, 0]],
     [START_FEN, 'h=1 s=mm', 4, [[8158, 8181], [1144, 1165]]],
     [START_FEN, 's=ab', 4, [0, 0]],
-    [START_FEN, 'h=1 s=ab', 1, [1, 0]],
-    [START_FEN, 'h=1 s=ab', 2, [[3, 4], 0]],
-    [START_FEN, 'h=1 s=ab', 3, [6, 0]],
-    [START_FEN, 'h=1 s=ab', 4, [470, 60]],
-    [START_FEN, 'h=1 s=ab', 5, [[2104, 2106], [429, 431]]],
-    [START_FEN, 'h=1 s=ab', 6, [[32833, 32857], [4874, 4941]]],
-    [START_FEN, 'h=1 s=ab', 7, [[40169, 40336], [7394, 7645]]],
+    [START_FEN, 'h=1 s=ab', 1, [21, [18, 19]]],
+    [START_FEN, 'h=1 s=ab', 2, [[3, 60], [37, 38]]],
+    [START_FEN, 'h=1 s=ab', 3, [524, [425, 433]]],
+    [START_FEN, 'h=1 s=ab', 4, [1341, [247, 248]]],
+    [START_FEN, 'h=1 s=ab', 5, [[14776, 14790], [3024, 3030]]],
+    [START_FEN, 'h=1 s=ab', 6, [[187373, 188528], [19171, 19614]]],
+    [START_FEN, 'h=1 s=ab', 7, [[40169, 293153], [53562, 55154]]],
 ].forEach(([fen, options, depth, answer], id) => {
     test(`hashStats:${id}`, () => {
         chess.configure(false, options, depth);
@@ -346,7 +346,7 @@ beforeEach(() => {
         let moves = ArrayJS(chess.moves());
         chess.search(moves.join(' '), false);
         let stats = ArrayJS(chess.hashStats());
-        for (let i = 0; i < 4; i ++) {
+        for (let i = 0; i < 2; i ++) {
             let item = answer[i],
                 stat = stats[i];
             if (IsArray(item)) {

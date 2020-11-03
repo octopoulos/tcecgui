@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-11-02
 //
 // general 3d rendering code
 //
@@ -98,7 +98,6 @@ let audiobox = {
     Object3D,
     old_pos,
     old_rot,
-    ONLY_POPUPS = {},
     POPUP_ADJUSTS = {},
     PARENT_3D = 'body',
     PARTS = [],
@@ -1474,9 +1473,6 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         if (setting._pop)
             return;
 
-        if (!xy && ONLY_POPUPS[key])
-            return;
-
         // extra _keys: class, color, flag, on, span, value
         let sclass = setting._class,
             scolor = setting._color,
@@ -1508,16 +1504,21 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             is_string = IsString(data)? ` name="${key}"`: '',
             more_class = (split || (data && !is_string))? '': ' span',
             more_data = data? '': ` data-set="${sset || key}"`,
+            string_digit = is_string? data * 1: 0,
             third = setting[3],
             title = setting[2],
             y_key = Y[key];
+
+        // only in popup2?
+        if (!xy && (string_digit & 4))
+            return;
 
         if (sclass)
             more_class = ` ${sclass}`;
         else if (sspan)
             more_class = ' item-title span';
 
-        if (IsFunction(third) && !third())
+        if (IsFunction(third) && third() === false)
             return;
         if (IsFunction(fourth))
             y_key = fourth();
@@ -1540,7 +1541,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         }
 
         // TODO: improve that part, it can be customised better
-        if (is_string && data == '2')
+        if (string_digit & 2)
             scolor = '#f00';
         let style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
             title2 = title? `data-t="${title}" data-t2="title"`: '';
@@ -1736,7 +1737,7 @@ function set_modal_events(parent) {
         let name = this.name;
         if (name || HasClass(this, 'item-title')) {
             click_target = Parent(this, {class_: 'popup', self: true});
-            change_setting(name, undefined, this.dataset.set == '-1');
+            change_setting(name, undefined, (this.dataset.set == '-1' || HasClass(this, 'span'))? 2: 0);
             return;
         }
 
