@@ -1518,7 +1518,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         else if (sspan)
             more_class = ' item-title span';
 
-        if (IsFunction(third) && third() === false)
+        if (IsFunction(third) && !third())
             return;
         if (IsFunction(fourth))
             y_key = fourth();
