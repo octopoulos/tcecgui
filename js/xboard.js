@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-14
 //
 // game board:
 // - 4 rendering modes:
@@ -356,8 +356,17 @@ class XBoard {
 
         // update the cursor
         // - if live eval (is_ply) => check the dual board to know which ply to display
-        if (is_ply)
+        if (is_ply) {
+            // live engine => show an arrow for the next move
+            if (this.live_id != undefined || Visible(this.vis)) {
+                let move = this.set_ply(cur_ply, {hold: true, render: false});
+                if (this.hook) {
+                    this.next = move;
+                    this.hook(this, 'next', move);
+                }
+            }
             this.compare_duals(cur_ply);
+        }
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {

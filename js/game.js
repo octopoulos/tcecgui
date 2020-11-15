@@ -4072,7 +4072,9 @@ function update_player_eval(section, data) {
         data.ply = moves[0].ply;
         board.reset();
         board.instant();
-        board.add_moves(moves, cur_ply);
+        let last_move = main.moves.slice(-1)[0];
+        board.set_fen(last_move.fen || main.fen);
+        board.add_moves(moves, data.ply);
         if (DEV.ply) {
             LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
             LS(board.moves);
