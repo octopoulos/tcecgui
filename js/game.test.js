@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-18
+// @version 2020-11-14
 /*
 globals
 __dirname, expect, global, require, test
@@ -47,111 +47,39 @@ create_chart_data();
 // analyse_log
 [
     [
-        ['Stockfish 20200701', 'Komodo 2566.00'],
-        '35714477 Komodo 2566.00(45): info depth 31 time 7058 nodes 798000183 score cp -90 lowerbound nps 113047203 hashfull 66 tbhits 75 pv b7b5 a2a3 c8b7',
-        1,
-        {
-            cp: -90,
-            depth: 31,
-            engine: 'Komodo 2566.00',
-            eval: 0.9,
-            hashfull: 66,
-            id: 1,
-            nodes: 798000183,
-            nps: 113047203,
-            pv: 'b7b5 a2a3 c8b7',
-            tbhits: 75,
-            time: 7058,
-        },
-    ],
-    [
-        ['Stockfish 20200701', 'Komodo 2566.00'],
-        '33854431 Stockfish 20200701(40): info depth 32 seldepth 45 multipv 1 score cp 859 wdl 1000 0 0 upperbound nodes 1268292755 nps 187561779 hashfull 241 tbhits 106431 time 6762 pv b1g1 c8f5',
+        '2kr2rn/ppppb2p/2n1p1b1/8/6B1/2N1P2N/PPPP3P/2KRBR2 w - - 6 11',
+        ['Demolito dev-20201019', 'AllieStein v0.8-120f959_net-15.0'],
+        '30158367 Demolito dev-20201019(14): info depth 27 score cp -7 time 16216 nodes 1793674384 hashfull 194 pv h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
         0,
         {
-            cp: 859,
-            depth: 32,
-            engine: 'Stockfish 20200701',
-            eval: 8.59,
-            hashfull: 241,
+            engine: 'Demolito dev-20201019',
             id: 0,
-            nodes: 1268292755,
-            nps: 187561779,
-            pv: 'b1g1 c8f5',
-            seldepth: 45,
-            tbhits: 106431,
-            time: 6762,
-            wdl: '1000 0 0',
+            depth: 27,
+            cp: -7,
+            eval: -0.07,
+            time: 16216,
+            nodes: 1793674384,
+            hashfull: 194,
+            pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
+            ply: 20,
         },
+        'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6 Re4 Kd7 Kb1 Nge7 Ne3 R5f6 c3 Re6 Rxe6 Kxe6 b4 a6 Kc2 Nf5 Nxf5 Kxf5 Re1 h6',
     ],
-    [
-        ['Stockfish 20200701', 'Komodo 2566.00'],
-        '35794491 Stockfish 20200701(44): info depth 31 seldepth 53 multipv 1 score cp 142 wdl 606 389 5 nodes 1052562509 nps 151186801 hashfull 237 tbhits 9667 time 6962 pv c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
-        0,
-        {
-            cp: 142,
-            depth: 31,
-            engine: 'Stockfish 20200701',
-            eval: 1.42,
-            hashfull: 237,
-            id: 0,
-            nodes: 1052562509,
-            nps: 151186801,
-            pv: 'c1b1 f8e7 f4f5 d6d5 e4d5 f6d5 c3d5 d8d5 f1d3 e7g5 d2g5 c8b8 g5g7 h8h4 f5e6 f7e6 g7f6 h4f4 f6h6 f4f7 d1e1 d5e5 e1f1 f7d7 h6f8 c6d8 g1g8 b8a7 f8f6 e5d5 f6h4 d5d6 h4g3 d6d5 g3g4 c7b6 g8g7 b6e3 f1f8 a7b6',
-            seldepth: 53,
-            tbhits: 9667,
-            time: 6962,
-            wdl: '606 389 5',
-        },
-    ],
-    [
-        ['Stockfish 20200701', 'LCZeroCPU v0.26.0-n703596'],
-        '6200503 LCZeroCPU v0.26.0-n703596(7): info depth 10 seldepth 26 time 7138 nodes 312494 score cp -38 wdl 240 263 497 movesleft 52 nps 25028 tbhits 0 pv f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
-        1,
-        {
-            cp: -38,
-            depth: 10,
-            engine: 'LCZeroCPU v0.26.0-n703596',
-            eval: 0.38,
-            id: 1,
-            nodes: 312494,
-            nps: 25028,
-            pv: 'f7f5 g4g5 c7c5 a2a3 c8d7 a1b1 g8h7 b1b2 e8c7 e1g1 d8c8 b4c5 b6c5',
-            seldepth: 26,
-            tbhits: 0,
-            time: 7138,
-            wdl: '497 263 240',
-        },
-    ],
-    [
-        ['Fritz 17_20200130', 'iCE 4.0.853'],
-        '32813087 iCE 4.0.853(17): info depth 29 seldepth 0 score cp 0 nodes 156671098 nps 17407901696 time 9 multipv 1 pv g8e7 c6a4 e7f5 b1c3 a8b8 hashfull 349 tbhits 0',
-        1,
-        {
-            cp: 0,
-            depth: 29,
-            engine: 'iCE 4.0.853',
-            eval: -0,
-            hashfull: 349,
-            id: 1,
-            nodes: 156671098,
-            nps: 17407901696,
-            pv: 'g8e7 c6a4 e7f5 b1c3 a8b8',
-            seldepth: 0,
-            tbhits: 0,
-            time: 9,
-        },
-    ],
-].forEach(([names, line, player_id, answer], id) => {
+].forEach(([fen, names, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
-        let players = xboards.live.players;
+        let main = xboards.live,
+            players = xboards.live.players;
         names.forEach((name, id) => {
             players[id].name = name;
         });
+        main.set_fen(fen);
         analyse_log(line);
-        let info = players[player_id].info;
+        let info = players[player_id].info,
+            san_list = info.moves.map(move => move.m).join(' ');
+        delete info.moves;
         expect(info.id).toEqual(player_id);
         expect(info).toEqual(answer);
+        expect(san_list).toEqual(answer_san);
     });
 });
 

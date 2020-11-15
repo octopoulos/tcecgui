@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-14
 //
 // Game specific code:
 // - control the board, moves
@@ -11,7 +11,7 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
+_, A, Abs, add_timeout, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
 change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
 CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
@@ -2950,8 +2950,8 @@ function parse_pgn(section, data, mode=7, origin='') {
                 // error detected!!
                 if (number != (ply + 1) / 2 + 1) {
                     LS(`ERROR: ${origin} : ${ply} : ${number}`);
-                    LS(headers);
-                    return null;
+                    break;
+                    // return false;
                 }
             }
             start = i + 1;
@@ -3727,6 +3727,7 @@ function analyse_log(line) {
             info.wdl = value.split(' ').reverse().join(' ');
     }
 
+    let prev_pv = (player.info || {}).pv;
     player.info = info;
     if (Y.x != 'live')
         return;
@@ -3745,15 +3746,18 @@ function analyse_log(line) {
             }
         }
     }
+
     // 4) update PV (need chess.wasm)
-    else if (main.wasm) {
-        LS(info.pv);
-        main.chess.load(main.fen);
-        let moves = main.chess.multiUci(info.pv, false);
-        info.moves = new Array(moves.size()).fill(0).map((_, id) => moves.get(id));
-        LS(info);
-        update_player_eval('live', info);
-    }
+    // - don't update if the new PV is a subset of the previous pv
+    let last_move = main.moves.slice(-1)[0],
+        pv = info.pv;
+    if (prev_pv && prev_pv.slice(0, pv.length) == pv)
+        return;
+
+    main.chess.load(last_move? last_move.fen: main.fen);
+    let moves = ArrayJS(main.chess.multiUci(pv));
+    info.moves = moves;
+    update_player_eval('live', info);
 }
 
 /**
@@ -4067,8 +4071,10 @@ function update_player_eval(section, data) {
         board.reset();
         board.instant();
         board.add_moves(moves, cur_ply);
-        LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
-        LS(board.moves);
+        if (DEV.ply) {
+            LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
+            LS(board.moves);
+        }
     }
     else if (data.pv) {
         data.ply = split_move_string(data.pv)[0];
@@ -4297,6 +4303,9 @@ function paste_text(text) {
         text = fen? fen: START_FEN;
         moves = pgn.Moves;
     }
+    // valid PGN headers but a move was skipped => don't try FEN
+    if (pgn === false)
+        return;
 
     // try FEN
     let fen = board.fen;
