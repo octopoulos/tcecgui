@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-14
 //
 // general 3d rendering code
 //
@@ -1190,7 +1190,6 @@ function show_modal(show, text, title, name) {
  * @param {boolean=} center place the popup in the center of the screen
  * @param {number=} event 0 to disable set_modal_events
  * @param {string=} html
- * @param {Node=} html_target where to output the html
  * @param {string=} id id of the element that us used for adjust
  * @param {boolean=} instant popup appears instantly
  * @param {number=} margin_y
@@ -1202,8 +1201,8 @@ function show_modal(show, text, title, name) {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {
-        adjust, bar_x=20, center, event=1, html='', html_target, id, instant=true, margin_y=0, node_id, overlay,
-        setting, shadow=1, target, xy}={}) {
+        adjust, bar_x=20, center, event=1, html='', id, instant=true, margin_y=0, node_id, overlay, setting, shadow=1,
+        target, xy}={}) {
     // remove the red rectangle
     if (!adjust)
         set_draggable();
@@ -1240,7 +1239,7 @@ function show_popup(name, show, {
     if (show || adjust) {
         let px = 0,
             py = 0,
-            win_x = window.innerWidth,
+            win_x = window.innerWidth - 16,
             win_y = window.innerHeight,
             x = 0,
             x2 = 0,
@@ -1266,7 +1265,7 @@ function show_popup(name, show, {
 
         if (show) {
             destroy_popup(node, 2);
-            HTML(html_target || node, html);
+            HTML(node, html);
             // focus?
             let focus = _('[data-f]', node);
             if (focus)

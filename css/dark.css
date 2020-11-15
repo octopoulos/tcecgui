@@ -1,6 +1,6 @@
 /*
 dark.css
-@version 2020-09-30
+@version 2020-11-14
 - used in Live mode
 - inherits from light.css
 */
@@ -24,8 +24,7 @@ textarea:hover {
 .popup {
     background: rgba(30, 30, 30, 0.98);
 }
-#modal,
-#popup-about {
+#modal {
     background: #2c3034;
     color: #fff;
 }

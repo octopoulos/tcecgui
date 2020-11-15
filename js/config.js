@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-09-12
+// @version 2020-11-14
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -45,6 +45,7 @@ function startup_config() {
     LINKS = {
         articles: {
             '_ext': '.pdf',
+            'Super Final 19 by GM Sadler.pdf': 'articles/Sufi_19_-_Sadler.pdf',
             'Super Final 18 by GM Sadler.pdf': 'articles/Sufi_18_-_Sadler.pdf',
             'Super Final 17 by GM Sadler.pdf': 'articles/Sufi_17_-_Sadler.pdf',
             'Super Final 16 by GM Sadler.pdf': 'articles/Sufi_16_-_Sadler.pdf',
@@ -95,6 +96,7 @@ function startup_config() {
 
     // season champions
     CHAMPIONS = [
+        '19|Stockfish',
         '18|Stockfish',
         '17|LCZero',
         '16|Stockfish',

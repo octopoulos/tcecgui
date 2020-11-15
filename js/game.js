@@ -4139,7 +4139,7 @@ function game_action_key(code) {
             items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
-            node = items[index],
+            node = items[index] || {},
             tag = node.tagName,
             is_grid = HasClass(node.parentNode, 'grid');
 

@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEV, Exp, exports, Floor, global, HTML, Id, IsArray, IsDigit, Keys,
+Abs, Assign, Atan, Clamp, DEV, Exp, exports, Floor, global, Hide, HTML, Id, IsArray, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';
@@ -125,13 +125,12 @@ function calculate_feature_q(feature, eval_, ply) {
  */
 function close_popups() {
     show_popup();
-    show_popup('about', {node_id: 'popup-about'});
-
     if (virtual_close_popups)
         virtual_close_popups('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(Id('modal'), '');
+    Hide(Id('overlay'));
 }
 
 /**
