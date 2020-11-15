@@ -12,6 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-11-14 : 2020-11-14 : enable pv parsing from livelog
 2020-11-02 : 2020-11-02 : E2 => engine2, E5 => engine + engine4
 2020-11-02 : 2020-09-17 : reuse move order from previous iterations
 2020-11-02 : 2020-11-02 : tt_hits shown in TB table
