@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-14
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -145,7 +145,6 @@ function action_key(code) {
  */
 function adjust_popups() {
     show_popup('', null, {adjust: true});
-    show_popup('about', null, {adjust: true, node_id: 'popup-about'});
 }
 
 /**
@@ -1180,6 +1179,14 @@ function show_archive_live() {
 }
 
 /**
+ * Show the About popup
+ */
+function show_about() {
+    HTML(Id('popup-desc'), HTML(Id('desc')));
+    show_popup('about', true, {center: true, html: HTML(Id('about')), overlay: 1});
+}
+
+/**
  * Show live engines
  */
 function show_live_engines() {
@@ -1305,14 +1312,7 @@ function window_click(e) {
         let id = dataset.id;
         switch (id) {
         case 'about':
-            show_popup('');
-            show_popup(id, true, {
-                center: true,
-                html: HTML(Id('desc')),
-                html_target: Id('popup-desc'),
-                node_id: 'popup-about',
-                overlay: true,
-            });
+            show_about();
             return;
         case 'load_pgn':
             let file = Id('file');
@@ -1338,6 +1338,10 @@ function window_click(e) {
             context_target = target;
 
         if (is_click) {
+            if (HasClass(target, 'popup-close')) {
+                in_modal = false;
+                break;
+            }
             if (HasClass(target, 'tab')) {
                 open_table(target);
                 break;
@@ -1440,14 +1444,7 @@ function set_global_events() {
     C('#banner', function() {
         Hide(this);
     });
-    C('.popup-close', function() {
-        close_popups();
-        let parent = Parent(this, {class_: 'popup', tag: 'div vert'});
-        if (parent)
-            Class(parent, '-popup-enable -popup-show');
-    });
     C('#articles, #download, #info, #navigate, #options', function() {
-        show_popup('about', {node_id: 'popup-about'});
         if (SafeId('modal').dataset.id == this.id)
             show_popup('');
         else
@@ -1808,6 +1805,7 @@ function prepare_settings() {
 
     // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter, &128:h100, &256:w100
     Assign(POPUP_ADJUSTS, {
+        about: 1,
         articles: 1,
         download: 1,
         info: 1,
