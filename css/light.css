@@ -1103,6 +1103,7 @@ grid {
 }
 #live-log {
     font-family: consolas;
+    font-size: 12px;
     max-height: 80vh;
     width: 100%;
 }
