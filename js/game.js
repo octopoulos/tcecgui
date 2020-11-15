@@ -3747,8 +3747,10 @@ function analyse_log(line) {
         }
     }
 
-    // 4) update PV (need chess.wasm)
+    // 4) update PV
     // - don't update if the new PV is a subset of the previous pv
+    if (!Y.log_pv)
+        return;
     let last_move = main.moves.slice(-1)[0],
         pv = info.pv;
     if (prev_pv && prev_pv.slice(0, pv.length) == pv)
