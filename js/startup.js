@@ -25,7 +25,7 @@ POPUP_ADJUSTS, reset_old_settings, reset_settings, resize_bracket, resize_game, 
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
-touch_handle, translate_node, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug,
+touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug,
 update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
 virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
@@ -440,7 +440,7 @@ function check_hash_special(dico) {
     S('.tab[data-x="log"]', is_live, parent);
 
     Attrs('[data-x="sched"] i[data-t]', {'data-t': is_live? 'Schedule': 'Games'});
-    translate_node(Id('table-tabs'));
+    translate_nodes(Id('table-tabs'));
 
     // changed section
     if (ready)
@@ -1001,7 +1001,7 @@ function populate_areas() {
     });
 
     save_option('areas');
-    translate_node('body');
+    translate_nodes('body');
     set_draggable();
     show_archive_live();
     update_shortcuts();
@@ -1115,7 +1115,7 @@ function resize_panels() {
     let node = Id('engine');
     if (node) {
         Attrs(Id('eval'), {'data-t': (node.clientWidth > 330)? 'Evaluation': 'Eval'});
-        translate_node(node);
+        translate_nodes(node);
     }
 
     // column/row mode
@@ -1254,7 +1254,7 @@ function update_shortcuts() {
                 target = _('[data-t]', target);
             if (target) {
                 tab.dataset.t = target.dataset.t;
-                translate_node(tab.parentNode);
+                translate_nodes(tab.parentNode);
                 HTML(Id(`shortcut_${id}`), HTML(Id(`table-${shortcut}`)));
             }
         }

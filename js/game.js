@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2020-11-17
 //
 // Game specific code:
 // - control the board, moves
@@ -23,9 +23,10 @@ Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts
 resize_text, Resource, restore_history, resume_game, Round,
 S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
 slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style, TEXT,
-TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_node, Undefined, update_chart, update_chart_options,
-update_live_chart, update_markers, update_player_charts, update_svg, Upper, virtual_close_popups:true,
-virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, XBoard, Y
+TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
+Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
+Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
+WB_TITLE, window, XBoard, Y
 */
 'use strict';
 
@@ -48,7 +49,7 @@ if (typeof global != 'undefined') {
 let ANALYSIS_URLS = {
         chessdb: 'https://www.chessdb.cn/queryc_en/?{FEN}',
         evalguide: 'https://hxim.github.io/Stockfish-Evaluation-Guide/index.html?p={FEN}',
-        lichess: 'https://lichess.org/analysis/standard/{FEN}',
+        lichess: 'https://lichess.org/analysis/{STANDARD}/{FEN}',
     },
     ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
     BOARD_THEMES = {
@@ -156,6 +157,9 @@ let ANALYSIS_URLS = {
         archive: 'season',
         live: 'stand',
     },
+    DUMMY_OPENINGS = {
+        fischerandom: 1,
+    },
     ENGINE_FEATURES = {
         AllieStein: 1 + 4,              // & 1 => NN engine
         Chat: 256,
@@ -167,6 +171,7 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
+    id_frcs = {},
     game_link,                          // current game link in the archive
     hashes = {
         archive: {},
@@ -995,7 +1000,7 @@ function analyse_crosstable(section, data) {
             widths = [...['4%', '18%', '7%'], ...extras.map(() => width)],
             head = create_table_columns(new_columns, widths, abbrevs, titles);
         HTML('thead', head, node);
-        translate_node(node);
+        translate_nodes(node);
     }
 
     update_table(section, 'cross', cross_rows);
@@ -1252,7 +1257,7 @@ function create_tables() {
             html = create_table(Split(table), is_overview);
         HTML(`#${is_overview? '': 'table-'}${name}`, html);
     });
-    translate_node('body');
+    translate_nodes('body');
 
     // 2) live tables
     for (let [node, box_node] of LIVE_TABLES) {
@@ -1785,7 +1790,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     if (is_same) {
         InsertNodes(body, nodes);
         update_svg(table);
-        translate_node(table);
+        translate_nodes(table);
 
         if (name == 'season')
             set_season_events();
@@ -2220,7 +2225,7 @@ function calculate_event_stats(section, rows) {
 
     let node = Id('table-stats');
     HTML(node, lines.join(''));
-    translate_node(node);
+    translate_nodes(node);
 }
 
 /**
@@ -2437,7 +2442,7 @@ function create_bracket(section, data) {
     lines.push('<div id="svgs"></div></hori>');
     let node = Id('table-brak');
     HTML(node, lines.join(''));
-    translate_node(node);
+    translate_nodes(node);
 
     // 4) swap active in final round
     let nodes = A('.final .match-title');
@@ -2798,6 +2803,29 @@ function extract_threads(options) {
 }
 
 /**
+ * Find the FRC #
+ * @param {Object} board
+ * @param {Object} headers
+ */
+function fix_header_opening(board, headers) {
+    let fen = headers.FEN,
+        opening = headers.Opening;
+    if (!fen || (opening && !DUMMY_OPENINGS[opening]))
+        return;
+
+    fen = headers.FEN = board.chess_load(fen) || fen;
+
+    // generate all 960 FRC openings
+    // - only done once, then it's cached in memory
+    if (!Keys(id_frcs).length) {
+        let chess = board.chess;
+        for (let id = 0; id < 960; id ++)
+            id_frcs[chess.fen960(id)] = id;
+    }
+    headers.Opening = `FRC #${id_frcs[fen] || '???'}`;
+}
+
+/**
  * Parse raw pgn data
  * @param {string} section
  * @param {string|Object} data
@@ -2865,7 +2893,7 @@ function parse_pgn(section, data, mode=7, origin='') {
     let fen = headers.FEN;
     if (fen) {
         let board = xboards[section] || xboards.pva;
-        headers.FEN = board.chess_load(fen) || fen;
+        fix_header_opening(board, headers);
     }
 
     pgn.Headers = headers;
@@ -2980,8 +3008,9 @@ function parse_pgn(section, data, mode=7, origin='') {
     }
 
     // 4) result
-    if (!headers.Opening && headers.Variant)
-        headers.Opening = headers.Variant;
+    let variant = headers.Variant;
+    if (!headers.Opening && variant && !DUMMY_OPENINGS[variant])
+        headers.Opening = variant;
 
     pgn.Moves = moves;
     if (DEV.fen)
@@ -3509,6 +3538,7 @@ function update_pgn(section, data, extras, reset_moves) {
         players = main.players;
 
     if (headers) {
+        fix_header_opening(main, headers);
         if (section == 'archive')
             download_live_evals(headers.Round);
         if (headers.FEN && headers.SetUp)
@@ -4375,8 +4405,12 @@ function change_setting_game(name, value) {
         if (parent) {
             let board = xboards[parent.id],
                 url = ANALYSIS_URLS[name.split('_')[1]];
-            if (board)
-                window.open(url.replace('{FEN}', board.fen), '_blank');
+            if (board) {
+                url = url
+                    .replace('{FEN}', board.fen)
+                    .replace('{STANDARD}', board.frc? 'chess960': 'standard');
+                window.open(url, '_blank');
+            }
         }
         break;
     case 'copy_moves':
