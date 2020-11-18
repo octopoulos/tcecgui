@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-14
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -704,32 +704,48 @@ function translate_expression(text) {
 }
 
 /**
- * Translate a node
+ * Translate a single node
+ * - resolve all data-t, data-t2=target, data-tr=resize
+ * @param {Node} node
+ */
+function translate_node(node) {
+    // 1) skip?
+    if (!node)
+        return;
+    let text = node.dataset.t;
+    if (text == undefined)
+        return;
+
+    // 2) translate
+    let tag = node.tagName,
+        target = node.dataset.t2,
+        translated = translate_expression(text);
+
+    if (!target)
+        if (tag == 'INPUT')
+            target = 'value';
+        else if (tag == 'IMG')
+            target = 'title';
+
+    if (target)
+        node.setAttribute(target, translated);
+    else {
+        let resize = node.dataset.tr;
+        if (resize)
+            translated = resize_text(translated, parseInt(resize));
+        TEXT(node, translated);
+    }
+}
+
+/**
+ * Translate node
  * - resolve all data-t, data-t2=target, data-tr=resize
  * @param {string|Node=} parent CSS selector or node
  */
-function translate_node(parent) {
-    E('[data-t]', node => {
-        let tag = node.tagName,
-            target = node.dataset.t2,
-            text = node.dataset.t,
-            translated = translate_expression(text);
-
-        if (!target)
-            if (tag == 'INPUT')
-                target = 'value';
-            else if (tag == 'IMG')
-                target = 'title';
-
-        if (target)
-            node.setAttribute(target, translated);
-        else {
-            let resize = node.dataset.tr;
-            if (resize)
-                translated = resize_text(translated, parseInt(resize));
-            TEXT(node, translated);
-        }
-    }, _(parent));
+function translate_nodes(parent) {
+    parent = _(parent);
+    E('[data-t]', translate_node, parent);
+    translate_node(parent);
 }
 
 // NODES
@@ -843,7 +859,7 @@ function fill_combo(letter, values, select, dico, no_translate)
     if (letter) {
         let sel = letter_selector(letter);
         HTML(sel, lines.join(''));
-        translate_node(sel);
+        translate_nodes(sel);
     }
     return found.split('|')[0];
 }
@@ -1608,6 +1624,7 @@ function touch_handle(e, full, prevent_default) {
 
             if (virtual_drag_done)
                 virtual_drag_done(sumx, sumy, touch_speed);
+
             cancelAnimationFrame(animation);
             if (drag_target || full_target || scroll_target)
                 animation = AnimationFrame(render_scroll);
@@ -1820,7 +1837,7 @@ function api_translate_get(force, callback) {
             save_storage('trans', translates);
             save_storage('times', api_times);
         }
-        translate_node('body');
+        translate_nodes('body');
         if (callback)
             callback();
     }
@@ -1873,6 +1890,8 @@ function set_engine_events() {
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
         add_history: add_history,
+        add_timeout: add_timeout,
+        clear_timeout: clear_timeout,
         create_field_value: create_field_value,
         create_page_array: create_page_array,
         create_url_list: create_url_list,

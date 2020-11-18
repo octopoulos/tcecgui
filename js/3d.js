@@ -11,8 +11,8 @@ _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
 Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
-LINKS, load_library, LS, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
-S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_node, translates, TYPES,
+LINKS, load_library, LS, Max, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
+S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_nodes, translates, TYPES,
 Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
@@ -1066,7 +1066,7 @@ function change_setting(name, value, close) {
     switch (name) {
     case 'language':
         if (value == 'eng' || translates._lan == value)
-            translate_node('body');
+            translate_nodes('body');
         else if (value != 'eng')
             api_translate_get();
         break;
@@ -1161,7 +1161,7 @@ function show_modal(show, text, title, name) {
     if (IsString(text)) {
         Attrs(Id('modal-title'), {'data-t': title? title: ''});
         HTML(node, text);
-        translate_node(node);
+        translate_nodes(node);
     }
 
     Style(node, `opacity:${show? 1: 0}`);
@@ -1189,10 +1189,11 @@ function show_modal(show, text, title, name) {
  * @param {number=} bar_x width of the scrollbar
  * @param {boolean=} center place the popup in the center of the screen
  * @param {number=} event 0 to disable set_modal_events
- * @param {string=} html
+ * @param {string=} html 0 to skip => keep the current HTML
  * @param {string=} id id of the element that us used for adjust
  * @param {boolean=} instant popup appears instantly
  * @param {number=} margin_y
+ * @param {number=} offset mouse offset from the popup
  * @param {string=} node_id popup id
  * @param {boolean=} overlay dark overlay is used behind the popup
  * @param {string=} setting
@@ -1201,8 +1202,8 @@ function show_modal(show, text, title, name) {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {
-        adjust, bar_x=20, center, event=1, html='', id, instant=true, margin_y=0, node_id, overlay, setting, shadow=1,
-        target, xy}={}) {
+        adjust, bar_x=20, center, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0], overlay,
+        setting, shadow=1, target, xy}={}) {
     // remove the red rectangle
     if (!adjust)
         set_draggable();
@@ -1265,7 +1266,8 @@ function show_popup(name, show, {
 
         if (show) {
             destroy_popup(node, 2);
-            HTML(node, html);
+            if (html !== 0)
+                HTML(node, html);
             // focus?
             let focus = _('[data-f]', node);
             if (focus)
@@ -1277,7 +1279,7 @@ function show_popup(name, show, {
         }
 
         Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
-        translate_node(node);
+        translate_nodes(node);
         update_svg();
 
         if (is_modal) {
@@ -1334,6 +1336,9 @@ function show_popup(name, show, {
                     [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
             }
 
+            x += offset[0];
+            y += offset[1];
+
             // align left doesn't work => try align right, and if not then center
             if (x + width > win_x - bar_x) {
                 if (x2 >= win_x - bar_x)
@@ -1341,11 +1346,11 @@ function show_popup(name, show, {
 
                 if (x2 - width > 0) {
                     px = -100;
-                    x = x2;
+                    x = Max(0, x2 - offset[0]);
                 }
                 else {
                     px = -50;
-                    x = win_x / 2;
+                    x = Max(0, win_x / 2 - offset[0]);
                 }
             }
             // same for y
@@ -1355,11 +1360,11 @@ function show_popup(name, show, {
 
                 if (y2 < win_y && y2 - height > 0) {
                     py = -100;
-                    y = y2;
+                    y = Max(0, y2 - offset[1]);
                 }
                 else {
                     py = -50;
-                    y = win_y / 2;
+                    y = Max(0, win_y / 2 - offset[1]);
                 }
             }
 
@@ -1719,12 +1724,6 @@ function set_3d_events() {
  * @param {Node=} parent
  */
 function set_modal_events(parent) {
-    Events('#overlay .item', '!mouseenter mouseleave', function(e) {
-        Class('#overlay .item.selected', '-selected');
-        if (e.type == 'mouseenter')
-            Class(this, 'selected');
-    });
-
     // settings events
     parent = parent || Id('modal');
     if (parent.dataset.ev == 0)
