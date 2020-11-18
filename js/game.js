@@ -157,6 +157,9 @@ let ANALYSIS_URLS = {
         archive: 'season',
         live: 'stand',
     },
+    DUMMY_OPENINGS = {
+        fischerandom: 1,
+    },
     ENGINE_FEATURES = {
         AllieStein: 1 + 4,              // & 1 => NN engine
         Chat: 256,
@@ -168,6 +171,7 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
+    id_frcs = {},
     game_link,                          // current game link in the archive
     hashes = {
         archive: {},
@@ -2799,6 +2803,29 @@ function extract_threads(options) {
 }
 
 /**
+ * Find the FRC #
+ * @param {Object} board
+ * @param {Object} headers
+ */
+function fix_header_opening(board, headers) {
+    let fen = headers.FEN,
+        opening = headers.Opening;
+    if (!fen || (opening && !DUMMY_OPENINGS[opening]))
+        return;
+
+    fen = headers.FEN = board.chess_load(fen) || fen;
+
+    // generate all 960 FRC openings
+    // - only done once, then it's cached in memory
+    if (!Keys(id_frcs).length) {
+        let chess = board.chess;
+        for (let id = 0; id < 960; id ++)
+            id_frcs[chess.fen960(id)] = id;
+    }
+    headers.Opening = `FRC #${id_frcs[fen] || '???'}`;
+}
+
+/**
  * Parse raw pgn data
  * @param {string} section
  * @param {string|Object} data
@@ -2866,7 +2893,7 @@ function parse_pgn(section, data, mode=7, origin='') {
     let fen = headers.FEN;
     if (fen) {
         let board = xboards[section] || xboards.pva;
-        headers.FEN = board.chess_load(fen) || fen;
+        fix_header_opening(board, headers);
     }
 
     pgn.Headers = headers;
@@ -2981,8 +3008,9 @@ function parse_pgn(section, data, mode=7, origin='') {
     }
 
     // 4) result
-    if (!headers.Opening && headers.Variant)
-        headers.Opening = headers.Variant;
+    let variant = headers.Variant;
+    if (!headers.Opening && variant && !DUMMY_OPENINGS[variant])
+        headers.Opening = variant;
 
     pgn.Moves = moves;
     if (DEV.fen)
@@ -3510,6 +3538,7 @@ function update_pgn(section, data, extras, reset_moves) {
         players = main.players;
 
     if (headers) {
+        fix_header_opening(main, headers);
         if (section == 'archive')
             download_live_evals(headers.Round);
         if (headers.FEN && headers.SetUp)

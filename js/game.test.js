@@ -1300,6 +1300,7 @@ create_chart_data();
                 GameDuration: '00:55:26',
                 GameEndTime: '2019-11-07T20:22:46.486 CST',
                 GameStartTime: '2019-11-07T19:27:20.106 CST',
+                Opening: 'FRC #843',
                 PlyCount: '105',
                 Result: '0-1',
                 Round: '3.1',
