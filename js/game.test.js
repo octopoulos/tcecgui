@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2020-11-20
 /*
 globals
 __dirname, expect, global, require, test
@@ -27,10 +27,10 @@ create_module(IMPORT_PATH, [
 
 let {
     analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-    create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, format_engine,
-    format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults, parse_date_time,
-    parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials, update_pgn,
-    update_player_eval, xboards, Y,
+    create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, fix_header_opening,
+    format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
+    parse_date_time, parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials,
+    update_pgn, update_player_eval, xboards, Y,
 } = require(OUTPUT_MODULE);
 
 Assign(global, {
@@ -288,6 +288,20 @@ create_chart_data();
 ].forEach(([options, answer], id) => {
     test(`extract_threads:${id}`, () => {
         expect(extract_threads(options)).toEqual(answer);
+    });
+});
+
+// fix_header_opening
+[
+    [{FEN: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, 'FRC #518'],
+    [{FEN: 'rqnbbknr/pppppppp/8/8/8/8/PPPPPPPP/RQNBBKNR w KQkq - 0 1'}, 'FRC #505'],
+    [{FEN: 'nrbnkbqr/pppppppp/8/8/8/8/PPPPPPPP/NRBNKBQR w HBhb - 0 1'}, 'FRC #166'],
+
+].forEach(([headers, answer], id) => {
+    test(`fix_header_opening:${id}`, () => {
+        let board = xboards.live;
+        fix_header_opening(board, headers);
+        expect(headers.Opening).toEqual(answer);
     });
 });
 

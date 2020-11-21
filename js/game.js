@@ -2820,9 +2820,9 @@ function fix_header_opening(board, headers) {
     if (!Keys(id_frcs).length) {
         let chess = board.chess;
         for (let id = 0; id < 960; id ++)
-            id_frcs[chess.fen960(id)] = id;
+            id_frcs[chess.fen960(id).split(' ')[0]] = id;
     }
-    headers.Opening = `FRC #${id_frcs[fen] || '???'}`;
+    headers.Opening = `FRC #${id_frcs[fen.split(' ')[0]] || '???'}`;
 }
 
 /**
