@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-17
+// @version 2020-11-20
 //
 // Game specific code:
 // - control the board, moves
@@ -3781,14 +3781,19 @@ function analyse_log(line) {
     // - don't update if the new PV is a subset of the previous pv
     if (!Y.log_pv)
         return;
-    let last_move = main.moves.slice(-1)[0],
+    let no_pv,
+        last_move = main.moves.slice(-1)[0],
         pv = info.pv;
     if (prev_pv && prev_pv.slice(0, pv.length) == pv)
-        return;
+        no_pv = true;
 
-    main.chess.load(last_move? last_move.fen: main.fen);
-    let moves = ArrayJS(main.chess.multiUci(pv));
-    info.moves = moves;
+    if (!no_pv) {
+        main.chess.load(last_move? last_move.fen: main.fen);
+        let moves = ArrayJS(main.chess.multiUci(pv));
+        info.moves = moves;
+    }
+    else
+        delete info.pv;
     update_player_eval('live', info);
 }
 
@@ -4069,12 +4074,17 @@ function update_player_eval(section, data) {
     let is_pva = (section == 'pva'),
         main = xboards[section],
         cur_ply = main.ply,
+        dsd = data.depth,
         engine = data.engine,
         eval_ = data.eval,
         id = Undefined(data.id, data.color),
         mini = _(`.xcolor${id}`, main.node),
         player = main.players[id],
+        sd = data.seldepth,
         short = get_short_name(engine);
+
+    if (!IsString(dsd) || !dsd.includes('/'))
+        dsd = `${dsd}/${sd || dsd}`;
 
     // 1) update the live part on the left
     if (!is_pva) {
@@ -4124,7 +4134,7 @@ function update_player_eval(section, data) {
     // - only if the ply is the currently selected ply + 1
     if (!is_pva && data.ply == cur_ply + 1) {
         let stats = {
-            depth: data.depth,
+            depth: dsd,
             engine: format_engine(data.engine, true, 21),
             eval: format_eval(eval_, true),
             logo: short,
