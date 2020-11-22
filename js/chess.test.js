@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-20
 //
 /*
 globals
@@ -389,15 +389,15 @@ beforeEach(() => {
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O',
-        undefined,
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1',
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w HAha - 0 1',
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b ha - 1 1',
         [4280630151, 3652287715],
     ],
     [
         'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1',
         true, 'O-O-O',
-        undefined,
-        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1',
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w HAha - 0 1',
+        'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b ha - 1 1',
         [3616831701, 1445905011],
     ],
     [
@@ -428,6 +428,13 @@ beforeEach(() => {
         undefined,
         'rnbQk2r/pp1pppbp/5np1/8/8/8/PPP1PPPP/RNBQKBNR b KQkq - 0 5',
         [3455057338, 3847915522],
+    ],
+    [
+        'rknqnbbr/pppppppp/8/8/8/8/PPPPPPPP/RKNQNBBR w KQkq - 0 1',
+        false, '',
+        'rknqnbbr/pppppppp/8/8/8/8/PPPPPPPP/RKNQNBBR w HAha - 0 1',
+        'rknqnbbr/pppppppp/8/8/8/8/PPPPPPPP/RKNQNBBR w HAha - 0 1',
+        [0, 0],
     ],
 ].forEach(([fen, must_hash, moves, answer, new_fen, new_hash], id) => {
     test(`load:${id}`, () => {
