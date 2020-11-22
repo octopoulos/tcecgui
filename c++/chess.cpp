@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-20
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -1687,9 +1687,9 @@ public:
         fen_ply = (move_number << 1) - 3 + turn;
         ply = 0;
 
-        auto start = (!turn && move_number == 1);
+        auto start = (!turn && !half_moves && move_number == 1 && castle.size() == 4);
         if (start)
-            frc = false;
+            frc = (fen_.substr(0, 8) != "rnbqkbnr");
 
         // can detect FRC if castle is not empty
         if (castle != "-") {
@@ -1706,6 +1706,8 @@ public:
                     error = true;
                 if (final == lower)
                     frc = true;
+                else if (frc && start)
+                    error = true;
             }
 
             // fix corrupted FEN (only for the initial board)

@@ -295,6 +295,7 @@ create_chart_data();
 [
     [{FEN: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, 'FRC #518'],
     [{FEN: 'rqnbbknr/pppppppp/8/8/8/8/PPPPPPPP/RQNBBKNR w KQkq - 0 1'}, 'FRC #505'],
+    [{FEN: 'rknqnbbr/pppppppp/8/8/8/8/PPPPPPPP/RKNQNBBR w KQkq - 0 1'}, 'FRC #734'],
     [{FEN: 'nrbnkbqr/pppppppp/8/8/8/8/PPPPPPPP/NRBNKBQR w HBhb - 0 1'}, 'FRC #166'],
 
 ].forEach(([headers, answer], id) => {

@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-03
+// @version 2020-11-20
 //
 /*
 globals
@@ -70,8 +70,8 @@ live.dual = archive;
     [START_FEN, ['d5'], START_FEN],
     [START_FEN, ['d4'], 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
     [START_FEN, ['d4', 'd5'], 'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2'],
-    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 1 1'],
-    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1'],
+    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b ha - 1 1'],
+    ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', ['O-O-O'], 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b ha - 1 1'],
 ].forEach(([fen, moves, answer], id) => {
     test(`chess_fen:${id}`, () => {
         live.chess_load(fen);
@@ -156,7 +156,7 @@ live.dual = archive;
         {capture: 0, fen: '', flag: 1, from: 115, m: 'O-O', ply: 38, promote: 0, san: 'O-O', pv: '', score: 150, to: 119},
     ],
     [
-        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', 'O-O-O', {frc: true},
+        '1r2kb1r/pb1p1p2/1p1q2pn/7p/1PB1P3/3NQ2P/P2N1PP1/1R1K3R w KQ - 0 20', 'O-O-O', {frc: false},
         {capture: 0, fen: '', flag: 0, from: 0, m: '', ply: -2, promote: 0, pv: '', score: 0, to: 0},
     ],
     [

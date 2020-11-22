@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-11-20
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -1648,9 +1648,9 @@ var Chess = function(fen_) {
         fen_ply = (move_number << 1) - 3 + turn;
         ply = 0;
 
-        let start = (!turn && move_number == 1);
+        let start = (!turn && !half_moves && move_number == 1 && tokens[2].length == 4);
         if (start)
-            frc = false;
+            frc = (fen_.substr(0, 8) != "rnbqkbnr");
 
         // can detect FRC if castle is not empty
         if (tokens[2] != "-") {
@@ -1667,6 +1667,8 @@ var Chess = function(fen_) {
                     error = true;
                 if (final == lower)
                     frc = true;
+                else if (frc && start)
+                    error = true;
             }
 
             // fix corrupted FEN (only for the initial board)
