@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2020-11-22
 //
 // game board:
 // - 4 rendering modes:
@@ -318,7 +318,7 @@ class XBoard {
                 if (is_ply)
                     lines.push(`<i class="turn">${move_num}.</i>`);
                 else if (i < 0) {
-                    if (!manual || !_('[data-i="-1"]', this.xmoves))
+                    if (!_('[data-i="-1"]', this.xmoves))
                         for (let [parent, last] of parent_lasts) {
                             let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
                             parent.insertBefore(node, last);
