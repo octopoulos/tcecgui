@@ -268,7 +268,8 @@ class XBoard {
         if (this.check_locked(['move', moves, cur_ply]))
             return;
 
-        let is_empty = !HTML(this.xmoves),
+        let added = A('[data-j]', this.xmoves).length,
+            is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
             lines = [],
             manual = this.manual,
@@ -318,32 +319,47 @@ class XBoard {
                 if (is_ply)
                     lines.push(`<i class="turn">${move_num}.</i>`);
                 else if (i < 0) {
-                    if (!_('[data-i="-1"]', this.xmoves))
+                    if (!_('[data-i="-1"]', this.xmoves)) {
                         for (let [parent, last] of parent_lasts) {
                             let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
                             parent.insertBefore(node, last);
                             for (let j = 0; j < 2; j ++)
                                 parent.insertBefore(CreateNode('b'), last);
                         }
+                    }
                 }
-                else if (!manual || !_(`[data-j="${move_num}"]`, this.xmoves))
+                else if (!manual || !_(`[data-j="${move_num}"]`, this.xmoves)) {
                     for (let [parent, last] of parent_lasts) {
                         let node = CreateNode('i', `${move_num}.`, {class: 'turn', 'data-j': move_num});
                         parent.insertBefore(node, last);
                     }
+                    added ++;
+                }
             }
-            else if (!i && is_ply)
-                lines.push(`<i class="turn">${Floor(move_num)}</i> ..`);
+            // add .. black move
+            else {
+                if (!lines.length && is_ply)
+                    lines.push(`<i class="turn">${Floor(move_num)}</i> ..`);
+                if (!added) {
+                    for (let [parent, last] of parent_lasts) {
+                        let node = CreateNode('i', `${Floor(move_num)} ..`, {class: 'turn', 'data-j': Floor(move_num)});
+                        parent.insertBefore(node, last);
+                    }
+                    added ++;
+                }
+            }
 
             if (move && move.m) {
                 let class_ = `${move.book? 'book': 'real'}${extra}`;
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
-                else
+                else {
                     for (let [parent, last] of parent_lasts) {
                         let node = CreateNode('a', `${move.m}`, {class: class_, 'data-i': ply});
                         parent.insertBefore(node, last);
                     }
+                    added ++;
+                }
             }
         }
 
