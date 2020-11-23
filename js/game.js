@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-11-22
 //
 // Game specific code:
 // - control the board, moves
@@ -22,8 +22,8 @@ listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_c
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
 S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
-slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style, TEXT,
-TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
+slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
+TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
 WB_TITLE, window, XBoard, Y
@@ -188,6 +188,7 @@ let ANALYSIS_URLS = {
         cp: [1, 2],
         depth: [1, 1],
         hashfull: [1, 1],
+        mate: [1, 1],
         nodes: [1, 1],
         nps: [1, 1],
         pv: [-1, 0],
@@ -3753,6 +3754,15 @@ function analyse_log(line) {
         // invert scores when black
         if (key == 'cp')
             info.eval = (value / 100) * (id == 1? -1: 1);
+        else if (key == 'mate') {
+            // convert mate to plies
+            value *= 2;
+            if (value > 0)
+                value --;
+            if (id == 1)
+                value = -value;
+            info.eval = `${value < 0? '-': ''}M${Abs(value)}`;
+        }
         else if (key == 'wdl' && id == 1)
             info.wdl = value.split(' ').reverse().join(' ');
     }

@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2020-11-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1795,6 +1795,7 @@ function prepare_settings() {
         link: 1,
         preset: 1,
         round: 1,
+        s: 1,
         season: 1,
         stage: 1,
         stream: 1,

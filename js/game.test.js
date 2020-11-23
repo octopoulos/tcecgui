@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-11-22
 /*
 globals
 __dirname, expect, global, require, test
@@ -47,21 +47,65 @@ create_chart_data();
 // analyse_log
 [
     [
+        'Q7/8/8/1k3p2/3Q4/3n4/6P1/6K1 b - - 2 73',
+        ['Stockfish 202011101829_nn-c3ca321c51c9', 'Komodo 14.1'],
+        '128877364 Komodo 14.1(71): info depth 91 time 568 nodes 2508046 score mate -4 nps 4407815 hashfull 0 tbhits 123007 pv d3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
+        1,
+        {
+            depth: 91,
+            engine: 'Komodo 14.1',
+            eval: 'M8',
+            hashfull: 0,
+            id: 1,
+            mate: -4,
+            nodes: 2508046,
+            nps: 4407815,
+            ply: 145,
+            pv: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
+            tbhits: 123007,
+            time: 568,
+        },
+        'Nc5 Qb8+ Nb7 Qe8+ Ka6 Qc6+ Ka5 Qcb6#',
+    ],
+    [
+        '8/P6R/3k3P/2nb1pp1/8/5P2/6P1/6K1 w - - 1 65',
+        ['Stockfish 202011101829_nn-c3ca321c51c9', 'Komodo 14.1'],
+        '128814060 Stockfish 202011101829_nn-c3ca321c51c9(70): info depth 77 seldepth 26 multipv 1 score mate 13 wdl 1000 0 0 nodes 575877930 nps 258009825 hashfull 21 tbhits 6492754 time 2232 pv h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5 d6d5 b5b4 c8b7 b4c3 a7a8q c3c4 a8c8',
+        0,
+        {
+            depth: 77,
+            engine: 'Stockfish 202011101829_nn-c3ca321c51c9',
+            eval: 'M25',
+            hashfull: 21,
+            id: 0,
+            mate: 13,
+            nodes: 575877930,
+            nps: 258009825,
+            ply: 128,
+            pv: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5 d6d5 b5b4 c8b7 b4c3 a7a8q c3c4 a8c8',
+            seldepth: 26,
+            tbhits: 6492754,
+            time: 2232,
+            wdl: '1000 0 0',
+        },
+        'Rg7 Ne6 Rg6 Kd7 h7 Nf8 Rg7+ Kd6 h8=Q Ne6 Rg6 Kc5 Rxe6 Kc4 Rd6 f4 Qc8+ Kb5 Rxd5+ Kb4 Qb7+ Kc3 a8=Q Kc4 Qac8#',
+    ],
+    [
         '2kr2rn/ppppb2p/2n1p1b1/8/6B1/2N1P2N/PPPP3P/2KRBR2 w - - 6 11',
         ['Demolito dev-20201019', 'AllieStein v0.8-120f959_net-15.0'],
         '30158367 Demolito dev-20201019(14): info depth 27 score cp -7 time 16216 nodes 1793674384 hashfull 194 pv h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
         0,
         {
-            engine: 'Demolito dev-20201019',
-            id: 0,
-            depth: 27,
             cp: -7,
+            depth: 27,
+            engine: 'Demolito dev-20201019',
             eval: -0.07,
-            time: 16216,
-            nodes: 1793674384,
             hashfull: 194,
-            pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
+            id: 0,
+            nodes: 1793674384,
             ply: 20,
+            pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
+            time: 16216,
         },
         'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6 Re4 Kd7 Kb1 Nge7 Ne3 R5f6 c3 Re6 Rxe6 Kxe6 b4 a6 Kc2 Nf5 Nxf5 Kxf5 Re1 h6',
     ],
