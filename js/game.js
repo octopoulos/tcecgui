@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-22
+// @version 2020-12-13
 //
 // Game specific code:
 // - control the board, moves
@@ -1746,7 +1746,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'start':
                 let [date, time] = FromTimestamp(value);
-                value = `${row.started? '': '<i data-t="{Estd}: "></i>'}${time} <i class="year">20${date}</i>`;
+                value = `${row.started? '': '<i data-t="{Estd}: "></i>'}${time} <i class="year">${date}</i>`;
                 break;
             case 'termination':
                 value = `<i data-t="${value}"></i>`;
@@ -2195,8 +2195,8 @@ function calculate_event_stats(section, rows) {
 
     Assign(stats, {
         //
-        start_time: `${start_time} <i class="year">20${start_date}</i>`,
-        end_time: `${end_time} <i class="year">20${end_date}</i>`,
+        start_time: `${start_time} <i class="year">${start_date}</i>`,
+        end_time: `${end_time} <i class="year">${end_date}</i>`,
         duration: format_hhmmss(stats._duration),
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
