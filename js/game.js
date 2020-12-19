@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-13
+// @version 2020-12-19
 //
 // Game specific code:
 // - control the board, moves
@@ -963,7 +963,7 @@ function analyse_crosstable(section, data) {
                         return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
-                cross_row[`x_${abbrev}`] = count? total / count: 0;
+                cross_row[`x_${abbrev}`] = count? total / count: -1;
             }
         });
         cross_rows.push(cross_row);
@@ -1567,7 +1567,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     let empty = reverse? -1: 1,
-        number_column = NUMBER_COLUMNS[sort],
+        number_column = NUMBER_COLUMNS[sort] || ((sort.slice(0, 2) == 'x_')? -2: undefined),
         is_number = (number_column != undefined);
 
     data.sort((a, b) => {
@@ -1577,7 +1577,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             return empty;
         if (bx == undefined)
             return -empty;
-        if (is_number)
+        if (is_number || (!isNaN(ax) && !isNaN(bx)))
             return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
         return (ax + '').localeCompare(bx + '');
     });
@@ -2941,8 +2941,11 @@ function parse_pgn(section, data, mode=7, origin='') {
             let pos = data.indexOf('}', i + 1);
             if (pos) {
                 info = Assign({}, ...data.slice(i + 1, pos).split(',').map(text => {
-                    let [left, right] = text.split('=');
-                    if (right == undefined)
+                    let items = text.split('='),
+                        left = items[0],
+                        right = items.slice(1).join('=');
+                    // book, => book=true,
+                    if (!right)
                         right = true;
                     else if (isNaN(right) || right.includes('.'))
                         right = right.trim();
