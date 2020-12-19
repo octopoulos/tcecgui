@@ -12,6 +12,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-12-19 : 2020-12-19 : cross table engine sorting
+2020-12-19 : 2020-12-19 : parse_pgn breaks pv at first '='
 2020-11-22 : 2020-11-22 : parse mate from log
 2020-11-20 : 2020-11-20 : improved livelog analysis
 2020-11-17 : 2020-11-17 : show FRC # in the opening

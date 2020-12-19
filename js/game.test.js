@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-22
+// @version 2020-12-19
 /*
 globals
 __dirname, expect, global, require, test
@@ -1371,6 +1371,113 @@ create_chart_data();
                 White: 'AllieStein v0.5_c328142-n11.1',
                 WhiteElo: '3853',
                 WhiteTimeControl: '1800+5.232',
+            },
+        },
+    ],
+    [
+        `
+
+
+        [Event "TCEC Season 20 - QL L4 L3 vs Gull Testing 3"]
+        [Site "https://tcec-chess.com"]
+        [Date "2020.11.30"]
+        [Round "1.2"]
+        [White "Gull_20170410_CCRL 64-bit 4CPU"]
+        [Black "MrBob 1.0.0_dev"]
+        [Result "1-0"]
+        [ECO "A01"]
+        [FEN "6Q1/k7/q6P/8/1p6/1P3P2/6P1/5K2 w - - 0 59"]
+        [GameDuration "00:58:45"]
+        [GameEndTime "2020-11-30T10:50:36.291 UTC"]
+        [GameStartTime "2020-11-30T09:51:51.093 UTC"]
+        [Opening "Nimzovich-Larsen attack"]
+        [PlyCount "128"]
+        [Termination "adjudication"]
+        [TerminationDetails "SyzygyTB"]
+        [TimeControl "1800+5"]
+        [Variation "symmetrical variation"]
+        [WhiteElo "3148"]
+
+        {WhiteEngineOptions: Protocol=uci; Threads=4; Hash=1024; SyzygyPath=/home/syzygy/; OwnBook=false; Ponder=false;, BlackEngineOptions: Protocol=uci; Threads=176; Hash=65536;}
+        1. Qc4 {d=19, sd=33, mt=17109, tl=680589, s=11257078, n=191370334, pv=Qc4 Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Ke2 Qc2+ Ke3 Qc1+ Ke4 Qb1+ Kf4 Qc1+ Kg4 Qc2 Qd4+ Kb8 f4 Qg6+ Kf3 Qh5+ g4 Qh1+ Kg3 Qe1+ Kg2 Qe2+ Kh3 Qf1+ Kh4 Qe1+ Kg5 Qe7+ Kg6 Qe8+ Kf5 Qc8+ Ke4 Qb7+ Qd5 Qh7+ f5 Qh4 Qe5+ Kc8 Qe6+ Kc7 f6 Qe1+ Kf5 Qf2+ Kg6 Qc2+ Kg7 Qf2 f7, tb=679591, h=0.0, ph=0.0, wv=3.25, R50=49, Rd=-11, Rr=-1000, mb=+3+0+0+0+0,}
+        Qxc4+ {d=27, sd=52, mt=6610, tl=116677, s=146562326, n=763882844, pv=Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Kf2 Qc2+ Kg3 Kb7 Qd4 Qh7 c5 Qc7+ Kg4 Qc6 Kf5 Qc7 c6+ Kc8 Qc4 Qh7+ Kf6 Qh6+ Kf7 Qh5+ Ke6 Qg6+ Kd5 Qf7+ Kd4 Qg7+ Kc5 Qa7+ Kd6 Qc7+ Ke6 Kb8 Qe4 Qh2 Kf7 Qh5+ Kf8 Kc7 Kg8, tb=null, h=100.0, ph=0.0, wv=4.24, R50=50, Rd=-11, Rr=-1000, mb=+3+0+0+0-1,}
+        1-0
+        `,
+        7,
+        {
+            BlackEngineOptions: {
+                Hash: '65536',
+                Protocol: 'uci',
+                Threads: '176',
+            },
+            Headers: {
+                Black: 'MrBob 1.0.0_dev',
+                Date: '2020.11.30',
+                ECO: 'A01',
+                Event: 'TCEC Season 20 - QL L4 L3 vs Gull Testing 3',
+                FEN: '6Q1/k7/q6P/8/1p6/1P3P2/6P1/5K2 w - - 0 59',
+                GameDuration: '00:58:45',
+                GameEndTime: '2020-11-30T10:50:36.291 UTC',
+                GameStartTime: '2020-11-30T09:51:51.093 UTC',
+                Opening: 'Nimzovich-Larsen attack',
+                PlyCount: '128',
+                Result: '1-0',
+                Round: '1.2',
+                Site: 'https://tcec-chess.com',
+                Termination: 'adjudication',
+                TerminationDetails: 'SyzygyTB',
+                TimeControl: '1800+5',
+                Variation: 'symmetrical variation',
+                White: 'Gull_20170410_CCRL 64-bit 4CPU',
+                WhiteElo: '3148',
+            },
+            Moves: [
+                {
+                    R50: 49,
+                    Rd: -11,
+                    Rr: -1000,
+                    d: 19,
+                    h: '0.0',
+                    m: 'Qc4',
+                    mb: '+3+0+0+0+0',
+                    mt: 17109,
+                    n: 191370334,
+                    ph: '0.0',
+                    ply: 0,
+                    pv: '1. Qc4 Qxc4+ 2. bxc4 b3 3. h7 b2 4. h8=Q b1=Q+ 5. Ke2 Qc2+ 6. Ke3 Qc1+ 7. Ke4 Qb1+ 8. Kf4 Qc1+ 9. Kg4 Qc2 10. Qd4+ Kb8 11. f4 Qg6+ 12. Kf3 Qh5+ 13. g4 Qh1+ 14. Kg3 Qe1+ 15. Kg2 Qe2+ 16. Kh3 Qf1+ 17. Kh4 Qe1+ 18. Kg5 Qe7+ 19. Kg6 Qe8+ 20. Kf5 Qc8+ 21. Ke4 Qb7+ 22. Qd5 Qh7+ 23. f5 Qh4 24. Qe5+ Kc8 25. Qe6+ Kc7 26. f6 Qe1+ 27. Kf5 Qf2+ 28. Kg6 Qc2+ 29. Kg7 Qf2 30. f7',
+                    s: 11257078,
+                    sd: 33,
+                    tb: 679591,
+                    tl: 680589,
+                    wv: '3.25',
+                },
+                {
+                    R50: 50,
+                    Rd: -11,
+                    Rr: -1000,
+                    d: 27,
+                    h: '100.0',
+                    m: 'Qxc4+',
+                    mb: '+3+0+0+0-1',
+                    mt: 6610,
+                    n: 763882844,
+                    ph: '0.0',
+                    ply: 1,
+                    pv: '1...Qxc4+ 2. bxc4 b3 3. h7 b2 4. h8=Q b1=Q+ 5. Kf2 Qc2+ 6. Kg3 Kb7 7. Qd4 Qh7 8. c5 Qc7+ 9. Kg4 Qc6 10. Kf5 Qc7 11. c6+ Kc8 12. Qc4 Qh7+ 13. Kf6 Qh6+ 14. Kf7 Qh5+ 15. Ke6 Qg6+ 16. Kd5 Qf7+ 17. Kd4 Qg7+ 18. Kc5 Qa7+ 19. Kd6 Qc7+ 20. Ke6 Kb8 21. Qe4 Qh2 22. Kf7 Qh5+ 23. Kf8 Kc7 24. Kg8',
+                    s: 146562326,
+                    sd: 52,
+                    tb: 'null',
+                    tl: 116677,
+                    wv: '4.24',
+                }
+            ],
+            WhiteEngineOptions: {
+                Hash: '1024',
+                OwnBook: 'false',
+                Ponder: 'false',
+                Protocol: 'uci',
+                SyzygyPath: '/home/syzygy/',
+                Threads: '4',
             },
         },
     ],
