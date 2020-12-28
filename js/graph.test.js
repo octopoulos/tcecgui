@@ -1,29 +1,16 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-01
+// @version 2020-12-27
 //
 /*
 globals
-__dirname, expect, global, require, test,
+expect, global, require, test,
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/graph+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    'engine',
-    'global',
-    //
-    'graph',
-], OUTPUT_MODULE, 'Assign chart_data Keys Y');
-
-let {
-    Assign, calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, Keys, Y,
-} = require(OUTPUT_MODULE);
+let {Assign, Keys} = require('./common.js'),
+    {Y} = require('./engine.js'),
+    {calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval} = require('./graph.js');
 
 global.xboards = {
     live: {

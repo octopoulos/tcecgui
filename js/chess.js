@@ -2532,5 +2532,7 @@ var Chess = function(fen_) {
 if (typeof exports != 'undefined')
     Assign(exports, {
         Chess: Chess,
+        EMPTY: EMPTY,
+        SQUARES: SQUARES,
     });
 // >>

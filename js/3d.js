@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2020-12-27
 //
 // general 3d rendering code
 //
@@ -9,8 +9,8 @@
 globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
-DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, Format, full_scroll, get_drop_id, HasClass, HTML,
-Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
+DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, exports, Format, full_scroll, get_drop_id,
+HasClass, HTML, Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
 LINKS, load_library, LS, Max, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
 S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_nodes, translates, TYPES,
 Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
@@ -1829,3 +1829,15 @@ function start_3d() {
 function startup_3d() {
     window.T = window.T || window.THREE || null;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined') {
+    Assign(exports, {
+        AUTO_ON_OFF: AUTO_ON_OFF,
+        POPUP_ADJUSTS: POPUP_ADJUSTS,
+        SHADOW_QUALITIES: SHADOW_QUALITIES,
+    });
+}
+// >>

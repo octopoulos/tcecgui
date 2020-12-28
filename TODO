@@ -12,7 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
-~          : 2020-12-18 : make tests not use create_module anymore
+2020-12-27 : 2020-12-18 : make tests not use create_module anymore
 2020-12-27 : 2020-12-27 : save background image in localStorage + option to clear it
 2020-12-19 : 2020-12-19 : cross table engine sorting
 2020-12-19 : 2020-12-19 : parse_pgn breaks pv at first '='

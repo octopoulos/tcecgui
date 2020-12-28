@@ -1,28 +1,15 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-12-27
 //
 /*
 globals
-__dirname, expect, require, test
+expect, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/xboard+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    'engine',
-    'global',
-    'chess',
-    //
-    'xboard',
-], OUTPUT_MODULE, 'Assign START_FEN XBoard');
-
-let {Assign, START_FEN, XBoard} = require(OUTPUT_MODULE);
+let {Assign} = require('./common.js'),
+    {START_FEN, XBoard} = require('./xboard.js');
 
 let archive = new XBoard({}),
     live = new XBoard({id: 'null'});

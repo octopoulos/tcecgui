@@ -1,37 +1,24 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-19
+// @version 2020-12-27
 /*
 globals
-__dirname, expect, global, require, test
+expect, global, require, test
 */
 'use strict';
 
-let {create_module} = require('./create-module');
-
-let IMPORT_PATH = __dirname.replace(/\\/g, '/'),
-    OUTPUT_MODULE = `${IMPORT_PATH}/test/game+`;
-
-create_module(IMPORT_PATH, [
-    'common',
-    'engine',
-    'global',
-    '3d',
-    'chess',
-    'xboard',
-    'graph',
-    //
-    'game',
-    'startup',
-], OUTPUT_MODULE, 'Assign Keys tour_info xboards Y');
-
-let {
-    analyse_log, Assign, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-    create_boards, create_chart_data, create_game_link, current_archive_link, extract_threads, fix_header_opening,
-    format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name, load_defaults,
-    parse_date_time, parse_pgn, parse_time_control, prepare_settings, tour_info, update_live_eval, update_materials,
-    update_pgn, update_player_eval, xboards, Y,
-} = require(OUTPUT_MODULE);
+let {Assign} = require('./common.js'),
+    {load_defaults, Y} = require('./engine.js'),
+    {
+        analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
+        create_boards, create_game_link, current_archive_link, extract_threads, fix_header_opening,
+        format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
+        parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials,
+        update_pgn, update_player_eval,
+    } = require('./game.js'),
+    {xboards} = require('./global.js'),
+    {create_chart_data} = require('./graph.js'),
+    {prepare_settings} = require('./startup.js');
 
 Assign(global, {
     T: null,

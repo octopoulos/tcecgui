@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-22
+// @version 2020-12-27
 //
 // game board:
 // - 4 rendering modes:
@@ -18,13 +18,48 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
 clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply, Hide,
-HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
+DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
+global, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {_, A, AnimationFrame, ArrayJS, C, CreateNode, Events, Hide, HTML, Id, S, Style, Visible} = req('./common.js'),
+        {Chess, EMPTY, SQUARES} = req('./chess.js'),
+        {clear_timeout, timers, update_svg} = req('./engine.js'),
+        {assign_move, get_fen_ply, get_move_ply, split_move_string} = req('./global.js');
+    Assign(global, {
+        _: _,
+        A: A,
+        AnimationFrame: AnimationFrame,
+        ArrayJS: ArrayJS,
+        assign_move: assign_move,
+        C: C,
+        Chess: Chess,
+        clear_timeout: clear_timeout,
+        CreateNode: CreateNode,
+        EMPTY: EMPTY,
+        Events: Events,
+        get_fen_ply: get_fen_ply,
+        get_move_ply: get_move_ply,
+        Hide: Hide,
+        HTML: HTML,
+        Id: Id,
+        S: S,
+        split_move_string: split_move_string,
+        SQUARES: SQUARES,
+        Style: Style,
+        timers: timers,
+        update_svg: update_svg,
+        Visible: Visible,
+    });
+}
+// >>
 
 let AI = 'ai',
     COLUMN_LETTERS = 'abcdefghijklmnopqrst'.split(''),
@@ -2957,3 +2992,15 @@ class XBoard {
         this.new_move(result);
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        SPRITE_OFFSETS: SPRITE_OFFSETS,
+        START_FEN: START_FEN,
+        WB_TITLE: WB_TITLE,
+        XBoard: XBoard,
+    });
+// >>
