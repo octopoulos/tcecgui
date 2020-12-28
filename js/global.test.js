@@ -1,18 +1,26 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-12-27
 //
 /*
 globals
-expect, require, test
+expect, global, require, test
 */
 'use strict';
 
-let {Y} = require('./engine.js'),
+let {Assign, Keys} = require('./common.js'),
+    {Y} = require('./engine.js'),
     {
         allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
-        leela_cp_to_score, mix_hex_colors, split_move_string, stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score
+        leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl, stockfish_win_rate_model,
+        stoof_cp_to_score
     } = require('./global.js');
+
+global.DEFAULTS = {
+    background_color: '#000000',
+    background_image: '',
+    background_opacity: 0,
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -366,6 +374,23 @@ let {Y} = require('./engine.js'),
 ].forEach(([color1, color2, mix, answer], id) => {
     test(`mix_hex_colors:${id}`, () => {
         expect(mix_hex_colors(color1, color2, mix)).toEqual(answer);
+    });
+});
+
+// reset_defaults
+[
+    [
+        {background_color: '#ff0000', background_image: 'xxyy', background_opacity: 0.5},
+        /^background_/,
+        {background_color: '#000000', background_image: '', background_opacity: 0},
+    ],
+].forEach(([y, pattern, answer], id) => {
+    test(`reset_defaults:${id}`, () => {
+        Assign(Y, y);
+        reset_defaults(pattern);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
+        });
     });
 });
 

@@ -1,6 +1,6 @@
 /*
 light.css
-@version 2020-11-14
+@version 2020-12-27
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -174,7 +174,8 @@ select,
 textarea {
     border: 1px solid #bbb;
     border-radius: 1px;
-    padding: 0.2em;
+    font-size: 16px;
+    padding-left: 0.2em;
     width: calc(100% - 0.5em);
 }
 input,

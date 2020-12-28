@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-12-27
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -21,7 +21,7 @@ guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_se
 is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-POPUP_ADJUSTS, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+POPUP_ADJUSTS, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
@@ -224,6 +224,10 @@ function change_setting_special(name, value, close) {
         break;
     case 'background_color':
     case 'background_opacity':
+        update_background();
+        break;
+    case 'background_reset':
+        reset_defaults(/^background_/);
         update_background();
         break;
     case 'chat_height':
@@ -1231,8 +1235,15 @@ function tab_element(target) {
  */
 function update_background() {
     let color = Y.background_color,
-        opacity = Y.background_opacity;
-    Style('#background', `background-color:${(color == '#000000')? '': color};opacity:${opacity}`);
+        image = Y.background_image,
+        image_url = image? `url(${image})`: '',
+        node = SafeId('background'),
+        opacity = image? Y.background_opacity: 0;
+
+    if (node.style.backgroundImage != image_url)
+        node.style.backgroundImage = image_url;
+
+    Style(node, `background-color:${(color == '#000000')? '': color};opacity:${opacity}`);
 }
 
 /**
@@ -1647,10 +1658,18 @@ function set_global_events() {
         if (id == 'background_image') {
             reader.readAsDataURL(file);
             reader.onloadend = function() {
-                let node = Id('background');
-                node.style.backgroundImage = `url(${reader.result})`;
-                if (!Y.background_opacity)
-                    Y.background_opacity = 0.2;
+                let result = reader.result,
+                    save = (result.length < 1e6),
+                    sopacity = 'background_opacity';
+
+                if (save)
+                    save_option(id, result);
+
+                if (!Y[sopacity]) {
+                    Y[sopacity] = 0.2;
+                    if (save)
+                        save_option(sopacity);
+                }
                 update_background();
             };
             return;
@@ -1855,8 +1874,9 @@ function prepare_settings() {
         },
         video: {
             background_color: [{type: 'color'}, '#000000'],
-            background_image: [{type: 'text'}, ''],
+            background_image: [{type: 'link'}, ''],
             background_opacity: option_number(0, 0, 1, 0.01),
+            background_reset: '1',
             encoding: [['Gamma', 'Linear', 'sRGB'], 'sRGB'],
             exposure: option_number(1, 0.1, 10, 0.1),
             gamma: option_number(1.5, 0, 10, 0.1),

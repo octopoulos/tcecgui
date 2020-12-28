@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-19
+// @version 2020-12-27
 //
 // Game specific code:
 // - control the board, moves
@@ -5164,6 +5164,8 @@ function startup_game() {
     virtual_init_3d_special = init_3d_special;
     virtual_random_position = random_position;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // <<
 if (typeof exports != 'undefined')

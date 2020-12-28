@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-12-27
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -2526,6 +2526,7 @@ var Chess = function(fen_) {
     };
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // <<
 if (typeof exports != 'undefined')

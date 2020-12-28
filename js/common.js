@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-01
+// @version 2020-12-27
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1555,6 +1555,8 @@ function Undefined(value, def) {
     return (value === undefined || Number.isNaN(value))? def: value;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // <<
 if (typeof exports != UNDEFINED) {
     Object.assign(exports, {
@@ -1601,6 +1603,7 @@ if (typeof exports != UNDEFINED) {
         Safe: Safe,
         SafeId: SafeId,
         SetDefault: SetDefault,
+        Sign: Sign,
         Split: Split,
         Stringify: Stringify,
         Title: Title,
