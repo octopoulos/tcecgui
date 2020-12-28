@@ -1,14 +1,34 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-02
+// @version 2020-12-27
 //
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEFAULTS, DEV, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, Id, Keys,
-Log10, LS, Max, Min, Pad, Pow, Round, S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
+DEFAULTS, DEV, exports, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, global, Id, Keys,
+Log10, LS, Max, Min, Pad, Pow, require, Round,
+S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {Clamp, Sign} = req('./common.js'),
+        {DEV, translate_expression, Y} = req('./engine.js'),
+        {calculate_feature_q, get_move_ply, xboards} = req('./global.js');
+    Assign(global, {
+        calculate_feature_q: calculate_feature_q,
+        Clamp: Clamp,
+        DEV: DEV,
+        get_move_ply: get_move_ply,
+        Sign: Sign,
+        translate_expression: translate_expression,
+        xboards: xboards,
+        Y: Y,
+    });
+}
+// >>
 
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
@@ -962,3 +982,23 @@ function init_graph() {
  */
 function startup_graph() {
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined') {
+    Assign(exports, {
+        calculate_win: calculate_win,
+        chart_data: chart_data,
+        check_first_num: check_first_num,
+        clamp_eval: clamp_eval,
+        create_chart_data: create_chart_data,
+        fix_labels: fix_labels,
+        invert_eval: invert_eval,
+        reset_charts: reset_charts,
+        slice_charts: slice_charts,
+        update_live_chart: update_live_chart,
+        update_player_charts: update_player_charts,
+    });
+}
+// >>

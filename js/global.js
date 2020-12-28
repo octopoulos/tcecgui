@@ -56,7 +56,8 @@ let HOST_ARCHIVE,
         users: 5 * 1000,
     },
     VERSION = '20201219',
-    virtual_close_popups;
+    virtual_close_popups,
+    xboards = {};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -437,6 +438,8 @@ if (typeof exports != 'undefined') {
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,
         stoof_cp_to_score: stoof_cp_to_score,
+        VERSION: VERSION,
+        xboards: xboards,
     });
 }
 // >>

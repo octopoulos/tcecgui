@@ -73,7 +73,6 @@ let Abs = Math.abs,
     Sqrt = Math.sqrt,
     Stringify = JSON.stringify,
     Tanh = Math.tanh,
-    UNDEFINED = 'undefined',
     Upper = text => text.toUpperCase();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1405,7 +1404,7 @@ function QueryString({discard, keep, key='search', replace, query, string}={})
         if (parts.length == 2) {
             if ((!keep || keep[parts[0]]) && (!discard || !discard[parts[0]])) {
                 let value = decodeURIComponent(parts[1].replace(/\+/g," "));
-                dico[parts[0]] = (value == UNDEFINED)? undefined: value;
+                dico[parts[0]] = (value == 'undefined')? undefined: value;
             }
         }
     }
@@ -1558,18 +1557,25 @@ function Undefined(value, def) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // <<
-if (typeof exports != UNDEFINED) {
+if (typeof exports != 'undefined') {
     Object.assign(exports, {
+        _: _,
+        A: A,
         Abs: Abs,
+        AnimationFrame: AnimationFrame,
         ArrayJS: ArrayJS,
         Assign: Assign,
         Atan: Atan,
+        C: C,
         Clamp: Clamp,
         Clear: Clear,
         Contain: Contain,
+        CreateNode: CreateNode,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
         DEV: {},
+        E: E,
+        Events: Events,
         Exp: Exp,
         Floor: Floor,
         Format: Format,
@@ -1580,7 +1586,9 @@ if (typeof exports != UNDEFINED) {
         FromTimestamp: FromTimestamp,
         HashText: HashText,
         Hex2RGB: Hex2RGB,
-        Keys: Keys,
+        Hide: Hide,
+        HTML: HTML,
+        Id: Id,
         InvalidEmail: InvalidEmail,
         InvalidPhone: InvalidPhone,
         IsArray: IsArray,
@@ -1589,6 +1597,7 @@ if (typeof exports != UNDEFINED) {
         IsFunction: IsFunction,
         IsObject: IsObject,
         IsString: IsString,
+        Keys: Keys,
         Lower: Lower,
         LS: LS,
         Max: Max,
@@ -1600,14 +1609,18 @@ if (typeof exports != UNDEFINED) {
         Pow: Pow,
         QueryString: QueryString,
         Round: Round,
+        S: S,
         Safe: Safe,
         SafeId: SafeId,
         SetDefault: SetDefault,
         Sign: Sign,
         Split: Split,
         Stringify: Stringify,
+        Style: Style,
         Title: Title,
         Undefined: Undefined,
+        Upper: Upper,
+        Visible: Visible,
     });
 }
 // >>

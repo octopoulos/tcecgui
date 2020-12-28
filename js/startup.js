@@ -16,12 +16,12 @@ ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AU
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
-E, Events, export_settings, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id, get_object,
-guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index, init_graph, init_sockets,
-is_fullscreen, KEY_TIMES, Keys, KEYS,
+E, Events, export_settings, exports, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id,
+get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index,
+init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-POPUP_ADJUSTS, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
@@ -31,6 +31,42 @@ virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_s
 virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    let req = require,
+        {AUTO_ON_OFF, POPUP_ADJUSTS, SHADOW_QUALITIES} = req('./3d.js'),
+        {Assign} = req('./common.js'),
+        {
+            DEFAULTS, DEV_NAMES, device, guess_types, LANGUAGES, load_defaults, merge_settings, NO_IMPORTS, ON_OFF,
+            option_number, THEMES, TRANSLATE_SPECIALS,
+        } = req('./engine.js'),
+        {BOARD_THEMES, PIECE_THEMES, TABLES, TITLES} = req('./game.js'),
+        {VERSION} = req('./global.js');
+    Assign(global, {
+        AUTO_ON_OFF: AUTO_ON_OFF,
+        BOARD_THEMES: BOARD_THEMES,
+        DEFAULTS: DEFAULTS,
+        DEV_NAMES: DEV_NAMES,
+        device: device,
+        guess_types: guess_types,
+        LANGUAGES: LANGUAGES,
+        load_defaults: load_defaults,
+        merge_settings: merge_settings,
+        NO_IMPORTS: NO_IMPORTS,
+        ON_OFF: ON_OFF,
+        option_number: option_number,
+        PIECE_THEMES: PIECE_THEMES,
+        POPUP_ADJUSTS: POPUP_ADJUSTS,
+        SHADOW_QUALITIES: SHADOW_QUALITIES,
+        TABLES: TABLES,
+        THEMES: THEMES,
+        TITLES: TITLES,
+        TRANSLATE_SPECIALS: TRANSLATE_SPECIALS,
+        VERSION: VERSION,
+    });
+}
+// >>
 
 let AD_STYLES = {},
     CHAMPIONS = [],
@@ -2251,3 +2287,12 @@ function startup() {
     init_customs(true);
     resize();
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        prepare_settings: prepare_settings,
+    });
+// >>

@@ -16,7 +16,7 @@ IsDigit, IsFloat, IsObject, IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
 QueryString, require, Resource,
 Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
-UNDEFINED, Upper, Visible, WebSocket, window
+Upper, Visible, WebSocket, window
 */
 'use strict';
 
@@ -24,7 +24,7 @@ UNDEFINED, Upper, Visible, WebSocket, window
 if (typeof global != 'undefined') {
     let req = require,
         {
-            Assign, Clear, DefaultFloat, DefaultInt, IsArray, IsDigit, IsFloat, IsObject, IsString, Keys, Lower,
+            Assign, Clear, DefaultFloat, DefaultInt, E, IsArray, IsDigit, IsFloat, IsObject, IsString, Keys, Lower,
             SetDefault, Stringify,
         } = req('./common.js');
     Assign(global, {
@@ -32,6 +32,7 @@ if (typeof global != 'undefined') {
         Clear: Clear,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
+        E: E,
         IsArray: IsArray,
         IsDigit: IsDigit,
         IsFloat: IsFloat,
@@ -275,7 +276,7 @@ function get_object(name, def) {
  */
 function get_string(name, def) {
     let value = localStorage.getItem(`${__PREFIX}${name}`);
-    return (value == UNDEFINED)? def: (value || def);
+    return (value == 'undefined')? def: (value || def);
 }
 
 /**
@@ -989,7 +990,7 @@ function update_svg(parent) {
  */
 function check_hash(no_special) {
     let string = QueryString({key: 'hash'}),
-        dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == UNDEFINED)? undefined: string[key]})));
+        dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     Assign(Y, dico);
     sanitise_data();
 
@@ -1900,16 +1901,27 @@ if (typeof exports != 'undefined') {
         DEFAULTS: DEFAULTS,
         DEV: DEV,
         DEV_NAMES: DEV_NAMES,
+        device: device,
         guess_types: guess_types,
         import_settings: import_settings,
+        LANGUAGES: LANGUAGES,
+        load_defaults: load_defaults,
         me: me,
         merge_settings: merge_settings,
+        NO_IMPORTS: NO_IMPORTS,
+        ON_OFF: ON_OFF,
+        option_number: option_number,
         parse_dev: parse_dev,
         reset_settings: reset_settings,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
         save_option: save_option,
+        THEMES: THEMES,
+        timers: timers,
+        translate_expression: translate_expression,
+        TRANSLATE_SPECIALS: TRANSLATE_SPECIALS,
         TYPES: TYPES,
+        update_svg: update_svg,
         X_SETTINGS: X_SETTINGS,
         Y: Y,
         y_states: y_states,

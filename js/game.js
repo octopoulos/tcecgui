@@ -26,22 +26,48 @@ slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STA
 TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
-WB_TITLE, window, XBoard, Y
+WB_TITLE, window, XBoard, xboards, Y
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Assign, DEV, Floor, Keys, IsObject, Lower, LS} = req('./common.js');
+        {
+            Assign, DEV, Floor, FormatUnit, FromSeconds, Keys, IsObject, Lower, LS, Now, QueryString, Split, Upper,
+        } = req('./common.js'),
+        {add_timeout} = req('./engine.js'),
+        {fix_move_format, format_eval, LOCALHOST, split_move_string, stockfish_wdl, xboards} = req('./global.js'),
+        {reset_charts, slice_charts, update_live_chart, update_player_charts} = req('./graph.js'),
+        {SPRITE_OFFSETS, WB_TITLE, XBoard} = req('./xboard.js');
     Assign(global, {
+        add_timeout: add_timeout,
         Assign: Assign,
         DEV: DEV,
+        fix_move_format: fix_move_format,
         Floor: Floor,
-        Keys: Keys,
+        format_eval: format_eval,
+        FormatUnit: FormatUnit,
+        FromSeconds: FromSeconds,
         IsObject: IsObject,
+        Keys: Keys,
+        LOCALHOST: LOCALHOST,
         Lower: Lower,
         LS: LS,
+        Now: Now,
+        QueryString: QueryString,
+        reset_charts: reset_charts,
+        slice_charts: slice_charts,
+        split_move_string: split_move_string,
+        Split: Split,
+        SPRITE_OFFSETS: SPRITE_OFFSETS,
+        stockfish_wdl: stockfish_wdl,
+        update_live_chart: update_live_chart,
+        update_player_charts: update_player_charts,
+        Upper: Upper,
+        WB_TITLE: WB_TITLE,
+        XBoard: XBoard,
+        xboards: xboards,
     });
 }
 // >>
@@ -323,8 +349,7 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
-    virtual_opened_table_special,
-    xboards = {};
+    virtual_opened_table_special;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -5170,8 +5195,34 @@ function startup_game() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        analyse_log: analyse_log,
+        BOARD_THEMES: BOARD_THEMES,
+        calculate_h2h: calculate_h2h,
+        calculate_probability: calculate_probability,
+        calculate_score: calculate_score,
         calculate_seeds: calculate_seeds,
+        check_adjudication: check_adjudication,
+        create_boards: create_boards,
+        create_game_link: create_game_link,
+        current_archive_link: current_archive_link,
         extract_threads: extract_threads,
+        fix_header_opening: fix_header_opening,
+        format_engine: format_engine,
+        format_fen: format_fen,
+        format_hhmmss: format_hhmmss,
+        format_opening: format_opening,
+        format_percent: format_percent,
+        get_short_name: get_short_name,
+        parse_date_time: parse_date_time,
         parse_pgn: parse_pgn,
+        parse_time_control: parse_time_control,
+        PIECE_THEMES: PIECE_THEMES,
+        TABLES: TABLES,
+        TITLES: TITLES,
+        tour_info: tour_info,
+        update_live_eval: update_live_eval,
+        update_materials: update_materials,
+        update_pgn: update_pgn,
+        update_player_eval: update_player_eval,
     });
 // >>
