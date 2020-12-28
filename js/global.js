@@ -1,13 +1,13 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-19
+// @version 2020-12-27
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEV, Exp, exports, Floor, global, Hide, HTML, Id, IsArray, IsDigit, Keys,
+Abs, Assign, Atan, Clamp, DEFAULTS, DEV, Exp, exports, Floor, global, Hide, HTML, Id, IsArray, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';
@@ -16,7 +16,7 @@ location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split
 if (typeof global != 'undefined') {
     let req = require,
         {Abs, Assign, Atan, Clamp, Exp, Floor, IsDigit, Max, Min, Pad, Pow, Round} = req('./common.js'),
-        {DEV, Y} = req('./engine.js');
+        {DEV, save_option, Y} = req('./engine.js');
     Assign(global, {
         Abs: Abs,
         Assign: Assign,
@@ -32,6 +32,7 @@ if (typeof global != 'undefined') {
         Pad: Pad,
         Pow: Pow,
         Round: Round,
+        save_option: save_option,
         Y: Y,
     });
 }
@@ -296,6 +297,17 @@ function parse_time(time) {
 }
 
 /**
+ * Reset default settings matching the pattern
+ * @param {RegExp} pattern
+ */
+function reset_defaults(pattern) {
+    Keys(DEFAULTS).forEach(key => {
+        if (pattern.test(key))
+            save_option(key, DEFAULTS[key]);
+    });
+}
+
+/**
  * Reset some settings if the version is too old
  */
 function reset_old_settings() {
@@ -406,6 +418,8 @@ function stoof_cp_to_score(cp) {
     return Atan(cp / 194) / 1.55564;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // <<
 if (typeof exports != 'undefined') {
     Assign(exports, {
@@ -418,6 +432,7 @@ if (typeof exports != 'undefined') {
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
         mix_hex_colors: mix_hex_colors,
+        reset_defaults: reset_defaults,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,
