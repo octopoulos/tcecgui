@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-28
 //
 // Game specific code:
 // - control the board, moves
@@ -4148,10 +4148,12 @@ function update_player_eval(section, data) {
         moves = data.moves;
     if (moves && moves.length) {
         data.ply = moves[0].ply;
-        board.reset();
-        board.instant();
-        let last_move = main.moves.slice(-1)[0];
-        board.set_fen(last_move? last_move.fen: main.fen);
+        if (!board.locked) {
+            board.reset();
+            board.instant();
+            let last_move = main.moves.slice(-1)[0];
+            board.set_fen(last_move? last_move.fen: main.fen);
+        }
         board.add_moves(moves, data.ply);
         if (DEV.ply) {
             LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
@@ -4321,11 +4323,18 @@ function game_action_key(code) {
                     if (select && select.toString())
                         break;
 
-                    if (!copy_moves()) {
+                    // copy to PVA
+                    let pva = xboards.pva;
+                    if (board_target != pva && Y.auto_paste) {
+                        paste_text(copy_pgn(board_target, true, true));
+                        let num_move = pva.moves.length,
+                            ply = board_target.ply;
+                        // try to set the same ply
+                        pva.set_ply((ply < num_move)? ply: num_move - 1);
+                    }
+                    else if (!copy_moves()) {
                         let text = board_target.fen;
                         CopyClipboard(text);
-                        if (board_target.name != 'pva' && Y.auto_paste)
-                            paste_text(copy_pgn(board_target, true, true));
                     }
                 }
                 // paste => try to add the FEN, if fails then moves string
@@ -4615,6 +4624,26 @@ function changed_section() {
 }
 
 /**
+ * Copy moves list to the clipboard
+ * @returns {string}
+ */
+function copy_moves() {
+    let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
+    if (!target)
+        return '';
+
+    let text = target.innerText.replace(/\s/g, ' ');
+    if (text.slice(0, 3) == '0. ')
+        text = text.slice(3);
+    if (text.slice(-2) == ' *')
+        text = text.slice(0, -2);
+    CopyClipboard(text);
+    if (Y.auto_paste)
+        paste_text(text);
+    return text;
+}
+
+/**
  * Copy a minimal PGN from the current context
  * @param {Object} board
  * @param {boolean} download
@@ -4736,8 +4765,8 @@ function copy_pgn(board, download, only_text) {
         if (download) {
             let extra = Keys(move).filter(key => keeps[key]).sort().map(key => {
                     let keep = keeps[key];
-                    return (keep == 2)? key: `${key}=${move[key]}`;
-                }).join(', ');
+                    return (keep == 2)? (move[key]? key: ''): `${key}=${move[key]}`;
+                }).filter(value => value).join(', ');
             if (extra) {
                 text = `${text} {${extra}}\n`;
                 space = '';
@@ -4764,26 +4793,6 @@ function copy_pgn(board, download, only_text) {
         if (Y.auto_paste && board.name != 'pva')
             paste_text(copy_pgn(board, true, true));
     }
-    return text;
-}
-
-/**
- * Copy moves list to the clipboard
- * @returns {string}
- */
-function copy_moves() {
-    let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-    if (!target)
-        return '';
-
-    let text = target.innerText.replace(/\s/g, ' ');
-    if (text.slice(0, 3) == '0. ')
-        text = text.slice(3);
-    if (text.slice(-2) == ' *')
-        text = text.slice(0, -2);
-    CopyClipboard(text);
-    if (Y.auto_paste)
-        paste_text(text);
     return text;
 }
 
