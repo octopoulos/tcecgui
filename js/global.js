@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-28
 //
 // global variables/functions shared across multiple js files
 //
@@ -55,7 +55,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201219',
+    VERSION = '20201228',
     virtual_close_popups,
     xboards = {};
 

@@ -5019,7 +5019,9 @@ function opened_table(node, name, tab) {
         virtual_opened_table_special(node, name, tab);
 
     // switch graphs when PVA is hidden
-    if (board_target.name == 'pva' && !Visible(Id('table-pva')))
+    if (name == 'pva')
+        board_target = xboards.pva;
+    else if (board_target.name == 'pva' && !Visible(Id('table-pva')))
         handle_board_events(xboards[section], 'activate', Id(section));
 }
 
