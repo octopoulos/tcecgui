@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-28
+// @version 2020-12-29
 /*
 globals
 expect, global, require, test
@@ -168,10 +168,12 @@ create_chart_data();
             id: 0,
             nodes: 3285889668,
             nps: 184279613,
+            ply: 62,
+            pv: 'd1d6 e7e6 f1d1 e6d6',
             tbhits: 139607,
             time: 17830,
         },
-        null,
+        'Rd6 Re6 Rfd1 Rxd6',
     ],
     [
         '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
