@@ -1698,6 +1698,7 @@ function set_global_events() {
                     save = (result.length < 1e6),
                     sopacity = 'background_opacity';
 
+                Y[id] = result;
                 if (save)
                     save_option(id, result);
 
