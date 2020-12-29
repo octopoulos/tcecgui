@@ -641,6 +641,8 @@ function set_text(node, text) {
  * @returns {string|null} translated text
  */
 function translate(text) {
+    if (!text)
+        return text;
     if (DEV.translate)
         TRANSLATES[text] = '';
 
@@ -739,7 +741,7 @@ function translate_node(node) {
 }
 
 /**
- * Translate node
+ * Translate nodes
  * - resolve all data-t, data-t2=target, data-tr=resize
  * @param {string|Node=} parent CSS selector or node
  */
@@ -1918,8 +1920,11 @@ if (typeof exports != 'undefined') {
         save_option: save_option,
         THEMES: THEMES,
         timers: timers,
+        translate: translate,
+        translate_default: translate_default,
         translate_expression: translate_expression,
         TRANSLATE_SPECIALS: TRANSLATE_SPECIALS,
+        translates: translates,
         TYPES: TYPES,
         update_svg: update_svg,
         X_SETTINGS: X_SETTINGS,
