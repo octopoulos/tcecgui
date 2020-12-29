@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2020-12-27
 //
 /*
 globals
@@ -11,14 +11,20 @@ expect, require, test
 let {Assign, Keys} = require('./common.js'),
     {
         add_history, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES, guess_types,
-        import_settings, merge_settings, parse_dev, reset_settings, restore_history, sanitise_data, save_option, TYPES,
-        X_SETTINGS, Y, y_states,
+        import_settings, merge_settings, parse_dev, reset_settings, restore_history, sanitise_data, save_option,
+        translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
     E: 'engine',
     S: 'no_socket',
     w: 'wasm',
+});
+
+Assign(translates, {
+    Argentina: 'Argentine',
+    Belgium: 'Belgique',
+    Japan: 'Japon',
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,5 +295,48 @@ Assign(DEV_NAMES, {
     test(`save_option:${id}`, () => {
         save_option(name, value);
         expect(Y[name]).toEqual(value);
+    });
+});
+
+// translate
+[
+    [{}, null, null],
+    [{}, '', ''],
+    [{'language': 'fra'}, 'Italy', null],
+    [{}, 'Japan', 'Japon'],
+].forEach(([y, text, answer], id) => {
+    test(`translate:${id}`, () => {
+        Assign(Y, y);
+        expect(translate(text)).toEqual(answer);
+    });
+});
+
+// translate_default
+[
+    [{}, null, null],
+    [{}, '', ''],
+    [{'language': 'fra'}, 'Italy', 'Italy'],
+    [{}, 'Japan', 'Japon'],
+].forEach(([y, text, answer], id) => {
+    test(`translate_default:${id}`, () => {
+        Assign(Y, y);
+        expect(translate_default(text)).toEqual(answer);
+    });
+});
+
+// translate_expression
+[
+    [{}, null, ''],
+    [{}, '', ''],
+    [{'language': 'fra'}, 'Italy', 'Italy'],
+    [{}, '{unknown}', 'unknown'],
+    [{}, 'Argentina', 'Argentine'],
+    [{}, 'Belgium', 'Belgique'],
+    [{}, '{Belgium} #1', 'Belgique #1'],
+    [{}, '{Japan} vs {Italy}', 'Japon vs Italy'],
+].forEach(([y, text, answer], id) => {
+    test(`translate_expression:${id}`, () => {
+        Assign(Y, y);
+        expect(translate_expression(text)).toEqual(answer);
     });
 });
