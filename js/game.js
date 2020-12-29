@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-28
+// @version 2020-12-29
 //
 // Game specific code:
 // - control the board, moves
@@ -179,6 +179,12 @@ let ANALYSIS_URLS = {
             [0, 'win', [1, 2]],
         ],
     ],
+    // decisive head 2 head
+    DECISIVES = {
+        '0-1|1-0': 3,
+        '1-0|1/2-1/2': 1,
+        '0-1|1/2-1/2': 1,
+    },
     DEFAULT_ACTIVES = {
         archive: 'season',
         live: 'stand',
@@ -958,7 +964,10 @@ function analyse_crosstable(section, data) {
             }
         }
     }
+
+    // keep a SQUARE shape, but also multiple of 2
     let max_column = Max(2, Ceil(Sqrt(max_game)));
+    max_column += (max_column & 1);
 
     for (let name of orders) {
         let dico = dicos[name],
@@ -2166,6 +2175,7 @@ function calculate_seeds(num_team, new_mode) {
  * @param {Object[]=} rows
  */
 function calculate_event_stats(section, rows) {
+    // 1) default = schedule data
     if (!rows) {
         let data_x = table_data[section].sched;
         if (!data_x)
@@ -2173,7 +2183,9 @@ function calculate_event_stats(section, rows) {
         rows = data_x.data;
     }
 
-    let crashes = 0,
+    // 2) collect all stats
+    let // crashes = 0,
+        cross_data = (table_data[section].cross || {}).data || [],
         games = 0,
         length = rows.length,
         max_moves = [-1, 0],
@@ -2181,6 +2193,7 @@ function calculate_event_stats(section, rows) {
         min_moves = [Infinity, 0],
         min_time = [Infinity, 0],
         moves = 0,
+        open_engines = {},
         results = {
             '0-1': 0,
             '1-0': 0,
@@ -2195,12 +2208,14 @@ function calculate_event_stats(section, rows) {
         if (!move)
             continue;
 
-        // 01:04:50 => seconds
-        let time = parse_time(row.duration);
+        let pair = [row.black, row.white].sort().join('|'),
+            result = row.result,
+            // 01:04:50 => seconds
+            time = parse_time(row.duration);
 
         games ++;
         moves += move;
-        results[row.result] = (results[row.result] || 0) + 1;
+        results[result] = (results[result] || 0) + 1;
         seconds += time;
 
         if (max_moves[0] < move)
@@ -2212,8 +2227,34 @@ function calculate_event_stats(section, rows) {
             max_time = [time, game];
         if (min_time[0] > time)
             min_time = [time, game];
+
+        let open_engine = SetDefault(open_engines, row.eco, {});
+        SetDefault(open_engine, pair, []).push(result);
     }
 
+    // 3) encounters
+    let decisives = 0,
+        kills = 0,
+        num_engine = Max(2, cross_data.length),
+        num_half = (num_engine * (num_engine - 1)) / 2,
+        num_pair = 0,
+        reverse = (Floor(games / num_half) & 1)? ' (R)': '';
+
+    Keys(open_engines).forEach(eco => {
+        let open_engine = open_engines[eco];
+        Keys(open_engine).forEach(pair => {
+            let value = open_engine[pair];
+            if (value.length < 2)
+                return;
+
+            let decisive = DECISIVES[value.slice(0, 2).sort().join('|')];
+            decisives += (decisive & 1);
+            kills += (decisive & 2);
+            num_pair ++;
+        });
+    });
+
+    // 4) result object
     let stats = event_stats[section],
         [end_date, end_time] = FromTimestamp(stats._end),
         [start_date, start_time] = FromTimestamp(start);
@@ -2228,6 +2269,10 @@ function calculate_event_stats(section, rows) {
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draws: `${results['1/2-1/2']} [${format_percent(results['1/2-1/2'] / games)}]`,
         //
+        reverses: num_pair,
+        decisive_openings: `${decisives} [${format_percent(decisives / num_pair)}]`,
+        reverse_kills: `${kills} [${format_percent(kills / num_pair)}]`,
+        //
         average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
         max_moves: `${max_moves[0]} [${create_game_link(section, max_moves[1])}]`,
@@ -2238,10 +2283,11 @@ function calculate_event_stats(section, rows) {
         //
         games: `${games}/${length}`,
         progress: length? format_percent(games/length): '-',
-        crashes: crashes,
+        round: `${Ceil(games / num_half) / 2}/${Ceil(length / num_half) / 2}${reverse}`,
+        // crashes: crashes,
     });
 
-    // create the table
+    // 5) create the table
     let lines = Keys(stats)
         .filter(key => (key[0] != '_'))
         .map(key => {
@@ -3738,8 +3784,11 @@ function analyse_log(line) {
         id = 0;
     else if (engine == players[1].name)
         id = 1;
-    else
+    else {
+        if (DEV.log)
+            LS(`unknown engine: ${engine}`);
         return;
+    }
 
     // 2) analyse info
     let info = {
@@ -3822,16 +3871,27 @@ function analyse_log(line) {
     let no_pv,
         last_move = main.moves.slice(-1)[0],
         pv = info.pv;
-    if (prev_pv && prev_pv.slice(0, pv.length) == pv)
-        no_pv = true;
+
+    pos = (prev_pv || '').indexOf(pv);
+    if (pos >= 0) {
+        pv = prev_pv.slice(pos);
+        if (pv == prev_pv) {
+            delete info.pv;
+            no_pv = true;
+        }
+        else
+            info.pv = pv;
+    }
 
     if (!no_pv) {
         main.chess.load(last_move? last_move.fen: main.fen);
         let moves = ArrayJS(main.chess.multiUci(pv));
         info.moves = moves;
     }
-    else
-        delete info.pv;
+    if (DEV.log) {
+        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : prev_pv=${prev_pv}`);
+        LS(info);
+    }
     update_player_eval('live', info);
 }
 
@@ -4106,7 +4166,7 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv || section != section_board())
+    if (!Y.live_pv || section != Y.x)
         return false;
 
     let is_pva = (section == 'pva'),
@@ -4311,7 +4371,7 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
-        // CTRL + c, v, y, z
+        // CTRL+C, v, y, z
         case 67:
         case 86:
         case 89:
@@ -4331,6 +4391,8 @@ function game_action_key(code) {
                             ply = board_target.ply;
                         // try to set the same ply
                         pva.set_ply((ply < num_move)? ply: num_move - 1);
+                        if (Visible(Id('table-pva')))
+                            board_target = pva;
                     }
                     else if (!copy_moves()) {
                         let text = board_target.fen;

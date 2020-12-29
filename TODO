@@ -12,6 +12,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2020-12-29 : 2020-12-29 : decisive openings + reverse kills
+2020-12-29 : 2020-12-29 : fix analyse_log
 2020-12-28 : 2020-12-28 : enter PVA tab => activate PVA board
 2020-12-28 : 2020-12-28 : fix copy moves + locked board
 2020-12-27 : 2020-12-27 : make tests not use create_module anymore

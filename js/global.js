@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-28
+// @version 2020-12-29
 //
 // global variables/functions shared across multiple js files
 //
@@ -15,7 +15,9 @@ location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split
 // <<
 if (typeof global != 'undefined') {
     let req = require,
-        {Abs, Assign, Atan, Clamp, Exp, Floor, IsDigit, Max, Min, Pad, Pow, Round} = req('./common.js'),
+        {
+            Abs, Assign, Atan, Clamp, Exp, Floor, IsDigit, Keys, Max, Min, Pad, Pow, Round, Undefined,
+        } = req('./common.js'),
         {DEV, save_option, Y} = req('./engine.js');
     Assign(global, {
         Abs: Abs,
@@ -26,6 +28,7 @@ if (typeof global != 'undefined') {
         Exp: Exp,
         Floor: Floor,
         IsDigit: IsDigit,
+        Keys: Keys,
         location: {},
         Max: Max,
         Min: Min,
@@ -33,6 +36,7 @@ if (typeof global != 'undefined') {
         Pow: Pow,
         Round: Round,
         save_option: save_option,
+        Undefined: Undefined,
         Y: Y,
     });
 }
@@ -55,7 +59,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20201228',
+    VERSION = '20201229',
     virtual_close_popups,
     xboards = {};
 
@@ -434,6 +438,7 @@ if (typeof exports != 'undefined') {
         leela_cp_to_score: leela_cp_to_score,
         mix_hex_colors: mix_hex_colors,
         reset_defaults: reset_defaults,
+        reset_old_settings: reset_old_settings,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,
