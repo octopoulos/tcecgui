@@ -3738,8 +3738,11 @@ function analyse_log(line) {
         id = 0;
     else if (engine == players[1].name)
         id = 1;
-    else
+    else {
+        if (DEV.log)
+            LS(`unknown engine: ${engine}`);
         return;
+    }
 
     // 2) analyse info
     let info = {
@@ -3822,16 +3825,23 @@ function analyse_log(line) {
     let no_pv,
         last_move = main.moves.slice(-1)[0],
         pv = info.pv;
-    if (prev_pv && prev_pv.slice(0, pv.length) == pv)
-        no_pv = true;
+    if (prev_pv && prev_pv && prev_pv.includes(pv)) {
+        let length = pv.length;
+        if (length < 18 || prev_pv.slice(0, length) == pv) {
+            no_pv = true;
+            delete info.pv;
+        }
+    }
 
     if (!no_pv) {
         main.chess.load(last_move? last_move.fen: main.fen);
         let moves = ArrayJS(main.chess.multiUci(pv));
         info.moves = moves;
     }
-    else
-        delete info.pv;
+    if (DEV.log) {
+        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : prev_pv=${prev_pv}`);
+        LS(info);
+    }
     update_player_eval('live', info);
 }
 
@@ -4106,7 +4116,7 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data) {
-    if (!Y.live_pv || section != section_board())
+    if (!Y.live_pv || section != Y.x)
         return false;
 
     let is_pva = (section == 'pva'),
@@ -4311,7 +4321,7 @@ function game_action_key(code) {
             board_target.hold = 'next';
             board_target.hold_button('next', 0);
             break;
-        // CTRL + c, v, y, z
+        // CTRL+C, v, y, z
         case 67:
         case 86:
         case 89:
@@ -4331,6 +4341,8 @@ function game_action_key(code) {
                             ply = board_target.ply;
                         // try to set the same ply
                         pva.set_ply((ply < num_move)? ply: num_move - 1);
+                        if (Visible(Id('table-pva')))
+                            board_target = pva;
                     }
                     else if (!copy_moves()) {
                         let text = board_target.fen;

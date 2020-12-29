@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-28
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1826,7 +1826,8 @@ function prepare_settings() {
         G: 'global',
         i: 'input',                 // gamepad input
         j: 'json',                  // static json files
-        l: 'load',
+        l: 'log',                   // analyse_log
+        L: 'load',
         m: 'mobil',
         o: 'open',
         n: 'new',                   // new game debugging

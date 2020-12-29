@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-28
 /*
 globals
 expect, global, require, test
@@ -35,7 +35,10 @@ create_chart_data();
 [
     [
         'Q7/8/8/1k3p2/3Q4/3n4/6P1/6K1 b - - 2 73',
-        ['Stockfish 202011101829_nn-c3ca321c51c9', 'Komodo 14.1'],
+        [
+            {name: 'Stockfish 202011101829_nn-c3ca321c51c9'},
+            {name: 'Komodo 14.1'},
+        ],
         '128877364 Komodo 14.1(71): info depth 91 time 568 nodes 2508046 score mate -4 nps 4407815 hashfull 0 tbhits 123007 pv d3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
         1,
         {
@@ -56,7 +59,10 @@ create_chart_data();
     ],
     [
         '8/P6R/3k3P/2nb1pp1/8/5P2/6P1/6K1 w - - 1 65',
-        ['Stockfish 202011101829_nn-c3ca321c51c9', 'Komodo 14.1'],
+        [
+            {name: 'Stockfish 202011101829_nn-c3ca321c51c9'},
+            {name: 'Komodo 14.1'},
+        ],
         '128814060 Stockfish 202011101829_nn-c3ca321c51c9(70): info depth 77 seldepth 26 multipv 1 score mate 13 wdl 1000 0 0 nodes 575877930 nps 258009825 hashfull 21 tbhits 6492754 time 2232 pv h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5 d6d5 b5b4 c8b7 b4c3 a7a8q c3c4 a8c8',
         0,
         {
@@ -79,7 +85,10 @@ create_chart_data();
     ],
     [
         '2kr2rn/ppppb2p/2n1p1b1/8/6B1/2N1P2N/PPPP3P/2KRBR2 w - - 6 11',
-        ['Demolito dev-20201019', 'AllieStein v0.8-120f959_net-15.0'],
+        [
+            {name: 'Demolito dev-20201019'},
+            {name: 'AllieStein v0.8-120f959_net-15.0'},
+        ],
         '30158367 Demolito dev-20201019(14): info depth 27 score cp -7 time 16216 nodes 1793674384 hashfull 194 pv h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
         0,
         {
@@ -96,17 +105,108 @@ create_chart_data();
         },
         'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6 Re4 Kd7 Kb1 Nge7 Ne3 R5f6 c3 Re6 Rxe6 Kxe6 b4 a6 Kc2 Nf5 Nxf5 Kxf5 Re1 h6',
     ],
-].forEach(([fen, names, line, player_id, answer, answer_san], id) => {
+    [
+        '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
+        [
+            {info: {pv: 'd1d6 g8f8 f1d1'}, name: 'KomodoDragon 2647.00'},
+            {name: 'Stockfish 20201225'},
+        ],
+        '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6 f1d1',
+        0,
+        {
+            cp: 226,
+            depth: 32,
+            eval: 2.26,
+            engine: 'KomodoDragon 2647.00',
+            hashfull: 145,
+            id: 0,
+            nodes: 3285889668,
+            nps: 184279613,
+            ply: 62,
+            pv: 'd1d6 e7e6 f1d1',
+            tbhits: 139607,
+            time: 17830,
+        },
+        'Rd6 Re6 Rfd1',
+    ],
+    [
+        '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
+        [
+            {info: {pv: 'd1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {name: 'Stockfish 20201225'},
+        ],
+        '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6 f1d1',
+        0,
+        {
+            cp: 226,
+            depth: 32,
+            eval: 2.26,
+            engine: 'KomodoDragon 2647.00',
+            hashfull: 145,
+            id: 0,
+            nodes: 3285889668,
+            nps: 184279613,
+            tbhits: 139607,
+            time: 17830,
+        },
+        null,
+    ],
+    [
+        '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
+        [
+            {info: {pv: 'e8e7 d1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {name: 'Stockfish 20201225'},
+        ],
+        '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6 f1d1',
+        0,
+        {
+            cp: 226,
+            depth: 32,
+            eval: 2.26,
+            engine: 'KomodoDragon 2647.00',
+            hashfull: 145,
+            id: 0,
+            nodes: 3285889668,
+            nps: 184279613,
+            tbhits: 139607,
+            time: 17830,
+        },
+        null,
+    ],
+    [
+        '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
+        [
+            {info: {pv: 'e8e7 d1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {name: 'Stockfish 20201225'},
+        ],
+        '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6 f1d1 e6d6',
+        0,
+        {
+            cp: 226,
+            depth: 32,
+            eval: 2.26,
+            engine: 'KomodoDragon 2647.00',
+            hashfull: 145,
+            id: 0,
+            nodes: 3285889668,
+            nps: 184279613,
+            ply: 62,
+            pv: 'd1d6 e7e6 f1d1 e6d6',
+            tbhits: 139607,
+            time: 17830,
+        },
+        'Rd6 Re6 Rfd1 Rxd6',
+    ],
+].forEach(([fen, players_, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
         let main = xboards.live,
             players = xboards.live.players;
-        names.forEach((name, id) => {
-            players[id].name = name;
-        });
+        players[0] = players_[0];
+        players[1] = players_[1];
         main.set_fen(fen);
         analyse_log(line);
         let info = players[player_id].info,
-            san_list = info.moves.map(move => move.m).join(' ');
+            san_list = info.moves? info.moves.map(move => move.m).join(' '): null;
         delete info.moves;
         expect(info.id).toEqual(player_id);
         expect(info).toEqual(answer);
