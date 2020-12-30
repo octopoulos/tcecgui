@@ -2249,7 +2249,7 @@ function calculate_event_stats(section, rows) {
 
             let decisive = DECISIVES[value.slice(0, 2).sort().join('|')];
             decisives += (decisive & 1);
-            kills += (decisive & 2);
+            kills += !!(decisive & 2);
             num_pair ++;
         });
     });
@@ -3795,9 +3795,10 @@ function analyse_log(line) {
             engine: engine,
             id: id,
         },
-        items = line.slice(pos2 + 2).split(' '),
+        items = line.slice(pos2 + 2).trim().split(' '),
         num_item = items.length,
-        player = players[id];
+        player = players[id],
+        prev_info = player.info || {};
 
     for (let i = 0; i < num_item; i ++) {
         let key = items[i],
@@ -3844,7 +3845,9 @@ function analyse_log(line) {
             info.wdl = value.split(' ').reverse().join(' ');
     }
 
-    let prev_pv = (player.info || {}).pv;
+    let prev_ply = prev_info.ply,
+        prev_pv = prev_info.pv || '',
+        pv = info.pv || '';
     player.info = info;
     if (Y.x != 'live')
         return;
@@ -3869,30 +3872,33 @@ function analyse_log(line) {
     if (!Y.log_pv)
         return;
     let no_pv,
-        last_move = main.moves.slice(-1)[0],
-        pv = info.pv;
+        ply = main.moves.length;
 
-    pos = (prev_pv || '').indexOf(pv);
-    if (pos >= 0) {
-        pv = prev_pv.slice(pos);
-        if (pv == prev_pv) {
-            delete info.pv;
-            no_pv = true;
-        }
-        else
-            info.pv = pv;
+    pos = prev_pv.indexOf(pv);
+    if (pos == 0) {
+        no_pv = true;
+        info.pv = prev_pv;
+    }
+    else if (pos > 0 && prev_ply >= 0 && ply > prev_ply) {
+        let items = prev_pv.split(' '),
+            pv2 = items.slice(ply - prev_ply).join(' ');
+        if (pv2.indexOf(pv) == 0)
+            info.pv = pv2;
     }
 
     if (!no_pv) {
+        let last_move = main.moves[ply - 1];
         main.chess.load(last_move? last_move.fen: main.fen);
-        let moves = ArrayJS(main.chess.multiUci(pv));
+        let moves = ArrayJS(main.chess.multiUci(info.pv));
         info.moves = moves;
     }
     if (DEV.log) {
-        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : prev_pv=${prev_pv}`);
+        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : info.pv=${info.pv} : prev_pv=${prev_pv}`);
         LS(info);
     }
-    update_player_eval('live', info);
+
+    info.ply = ply;
+    update_player_eval('live', info, no_pv);
 }
 
 /**
@@ -4163,9 +4169,10 @@ function update_live_eval(section, data, id, force_ply) {
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
  * @param {Object} data
+ * @param {boolean=} same_pv true if the pv hasn't changed
  * @returns {boolean}
  */
-function update_player_eval(section, data) {
+function update_player_eval(section, data, same_pv) {
     if (!Y.live_pv || section != Y.x)
         return false;
 
@@ -4204,25 +4211,27 @@ function update_player_eval(section, data) {
     }
 
     // 2) add moves
-    let board = xboards[`pv${id}`],
-        moves = data.moves;
-    if (moves && moves.length) {
-        data.ply = moves[0].ply;
-        if (!board.locked) {
-            board.reset();
-            board.instant();
-            let last_move = main.moves.slice(-1)[0];
-            board.set_fen(last_move? last_move.fen: main.fen);
+    let board = xboards[`pv${id}`];
+    if (!same_pv) {
+        let moves = data.moves;
+        if (moves && moves.length) {
+            data.ply = moves[0].ply;
+            if (!board.locked) {
+                board.reset();
+                board.instant();
+                let last_move = main.moves.slice(-1)[0];
+                board.set_fen(last_move? last_move.fen: main.fen);
+            }
+            board.add_moves(moves, data.ply);
+            if (DEV.ply) {
+                LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
+                LS(board.moves);
+            }
         }
-        board.add_moves(moves, data.ply);
-        if (DEV.ply) {
-            LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
-            LS(board.moves);
+        else if (data.pv) {
+            data.ply = split_move_string(data.pv)[0];
+            board.add_moves_string(data.pv);
         }
-    }
-    else if (data.pv) {
-        data.ply = split_move_string(data.pv)[0];
-        board.add_moves_string(data.pv);
     }
 
     if (DEV.eval) {

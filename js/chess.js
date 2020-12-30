@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-29
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -2024,12 +2024,13 @@ var Chess = function(fen_) {
                 continue;
 
             let obj = moveUci(text, true);
-            if (obj.from != obj.to) {
-                obj.fen = createFen();
-                obj.ply = fen_ply + ply;
-                obj.score = 0;
-                result.push(obj);
-            }
+            if (obj.from == obj.to || !obj.m)
+                break;
+
+            obj.fen = createFen();
+            obj.ply = fen_ply + ply;
+            obj.score = 0;
+            result.push(obj);
         }
         return result;
     }

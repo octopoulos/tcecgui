@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-20
+// @version 2020-12-29
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -2062,12 +2062,13 @@ public:
             if (multi[prev] >= 'A') {
                 auto text = multi.substr(prev, i - prev);
                 auto obj = moveUci(text, true);
-                if (obj.from != obj.to) {
-                    obj.fen = createFen();
-                    obj.ply = fen_ply + ply;
-                    obj.score = 0;
-                    result.emplace_back(obj);
-                }
+                if (obj.from == obj.to || !obj.m.size())
+                    break;
+
+                obj.fen = createFen();
+                obj.ply = fen_ply + ply;
+                obj.score = 0;
+                result.emplace_back(obj);
             }
             prev = i + 1;
         }
