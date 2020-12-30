@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-29
+// @version 2020-12-30
 //
 // Game specific code:
 // - control the board, moves
@@ -230,22 +230,25 @@ let ANALYSIS_URLS = {
         wdl: [3, 1],
     },
     // sort those columns as a number, not string
+    // [default when empty, reverse]
     NUMBER_COLUMNS = {
-        _id: 0,
-        black_ev: 99999,
-        diff: 0,
-        elo: 0,
-        game: 0,
-        games: 0,
-        id: 0,
-        losses: 0,
-        moves: 0,
-        points: 0,
-        rank: 0,
-        sb: 0,
-        start: 0,
-        white_ev: 99999,
-        wins: 0,
+        '%': [0.1, 1],
+        _id: [0, 0],
+        black_ev: [99999, 1],
+        diff: [0, 1],
+        draws: [0, 1],
+        elo: [0, 1],
+        game: [0, 0],
+        games: [0, 1],
+        id: [0, 0],
+        losses: [0, 1],
+        moves: [0, 0],
+        points: [0, 1],
+        rank: [0, 0],
+        sb: [0, 1],
+        start: [0, 0],
+        white_ev: [99999, 1],
+        wins: [0, 1],
     },
     old_cup,
     old_width,
@@ -322,7 +325,7 @@ let ANALYSIS_URLS = {
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|{Wins} [{W/B}]|{Losses} [{W/B}]|Crashes|SB|Elo|{Diff} [{Live}]',
+        stand: 'Rank|Engine|Games|Points|%|{Wins} [{W/B}]|{Losses} [{W/B}]|Draws|Crashes|SB|Elo|{Diff} [{Live}]',
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -997,7 +1000,7 @@ function analyse_crosstable(section, data) {
                         return `${sep}<a href="${link}" data-g="${game.Game}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
-                cross_row[`x_${abbrev}`] = count? total / count: -1;
+                cross_row[`x_${abbrev}`] = count? (total / count + total * 1e-5 - count * 1e-7): -1;
             }
         });
         cross_rows.push(cross_row);
@@ -1601,8 +1604,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     let empty = reverse? -1: 1,
-        number_column = NUMBER_COLUMNS[sort] || ((sort.slice(0, 2) == 'x_')? -2: undefined),
+        [number_column, number_reverse] = NUMBER_COLUMNS[sort] || [((sort.slice(0, 2) == 'x_')? -2: undefined), 0],
         is_number = (number_column != undefined);
+    // LS('sort=', sort, 'number_column=', number_column, 'is_number=', is_number);
 
     data.sort((a, b) => {
         let ax = a[sort],
@@ -1615,7 +1619,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
         return (ax + '').localeCompare(bx + '');
     });
-    if (reverse)
+    if (reverse ^ number_reverse)
         data.reverse();
 
     // 4) handle pagination + filtering
@@ -1699,6 +1703,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
             // special cases
             switch (key) {
+            case '%':
+                if (value == '-' && row.games) {
+                    value = format_percent(row.points / row.games);
+                    row[key] = value;
+                }
+                break;
             case 'action':
             case 'decision':
             case 'reason':
@@ -1714,6 +1724,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'download':
             case 'pgn':
                 value = `<a href="${HOST_ARCHIVE}/${value}"><i data-svg="download"></i></a>`;
+                break;
+            case 'draws':
+                if (value == '-' && row.games) {
+                    value = row.games - DefaultInt(row.wins, 0) - DefaultInt(row.losses, 0);
+                    row[key] = value;
+                }
                 break;
             case 'engine':
             case 'runner':
