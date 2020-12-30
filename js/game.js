@@ -1006,20 +1006,27 @@ function analyse_crosstable(section, data) {
         cross_rows.push(cross_row);
 
         // stand
-        let loss_b = Undefined(dico.LossAsBlack, dico.LossesAsBlack),
-            loss_w = Undefined(dico.LossAsWhite, dico.LossesAsWhite);
+        let games = dico.Games,
+            loss_b = Undefined(dico.LossAsBlack, dico.LossesAsBlack),
+            loss_w = Undefined(dico.LossAsWhite, dico.LossesAsWhite),
+            wins_b = dico.WinsAsBlack,
+            wins_w = dico.WinsAsWhite,
+            draws_b = dico.GamesAsBlack - wins_b - loss_b,
+            draws_w = dico.GamesAsWhite - wins_w - loss_w;
 
         stand_rows.push({
+            '%': format_percent(dico.Score / games),
             crashes: dico.Strikes,
             diff: `${new_elo - elo} [${new_elo}]`,
+            draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
             elo: elo,
             engine: name,
-            games: dico.Games,
+            games: games,
             losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
             points: dico.Score,
             rank: dico.Rank,
             sb: dico.Neustadtl,
-            wins: `${dico.WinsAsWhite + dico.WinsAsBlack} [${dico.WinsAsWhite}/${dico.WinsAsBlack}]`,
+            wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
         });
     }
 
@@ -1703,12 +1710,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
             // special cases
             switch (key) {
-            case '%':
-                if (value == '-' && row.games) {
-                    value = format_percent(row.points / row.games);
-                    row[key] = value;
-                }
-                break;
             case 'action':
             case 'decision':
             case 'reason':
@@ -1724,12 +1725,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'download':
             case 'pgn':
                 value = `<a href="${HOST_ARCHIVE}/${value}"><i data-svg="download"></i></a>`;
-                break;
-            case 'draws':
-                if (value == '-' && row.games) {
-                    value = row.games - DefaultInt(row.wins, 0) - DefaultInt(row.losses, 0);
-                    row[key] = value;
-                }
                 break;
             case 'engine':
             case 'runner':
