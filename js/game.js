@@ -1736,7 +1736,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'winner':
                 if (!is_winner) {
                     td_class = 'tal';
-                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.jpg"><div>${format_engine(value, row.num_break)}</div></hori>`;
+                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.png"><div>${format_engine(value, row.num_break)}</div></hori>`;
                 }
                 break;
             case 'final_fen':
@@ -2445,7 +2445,7 @@ function create_bracket(section, data) {
                         class_,
                         seed?
                         `<hori title="${item.name}">`
-                            + `<img class="match-logo" src="image/engine/${short}.jpg">`
+                            + `<img class="match-logo" src="image/engine/${short}.png">`
                             + `<div class="seed">#${seed}</div><div>${resize_text(short, 17)}</div>`
                         + '</hori>' : '',
                         short,
@@ -3450,7 +3450,7 @@ function update_overview_basic(section, headers) {
             node = Id(`moves-pv${id}`),
             player = players[id],
             short = get_short_name(name),
-            src = `image/engine/${short}.jpg`;
+            src = `image/engine/${short}.png`;
 
         Assign(player, {
             elo: headers[`${title}Elo`],

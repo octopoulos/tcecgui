@@ -35,6 +35,7 @@ debug.bat
 dist/
 dist/js/
 doc/
+engine-big/
 enginerating.json
 Eventcrosstable.json
 gamelist.json
