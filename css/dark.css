@@ -1,6 +1,6 @@
 /*
 dark.css
-@version 2020-11-14
+@version 2020-12-30
 - used in Live mode
 - inherits from light.css
 */
@@ -94,10 +94,10 @@ textarea:hover {
     background: rgba(108, 157, 255, 0.05);
 }
 .scroller tr.active {
-    background: #4c4e4f;
+    background: rgba(200, 200, 200, 0.25);
 }
 .scroller tr.active:hover {
-    background: #535456;
+    background: rgba(200, 200, 200, 0.24);
 }
 #engine > * {
     background: rgba(1, 9, 26, 0.28);
