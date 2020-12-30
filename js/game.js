@@ -170,6 +170,10 @@ let ANALYSIS_URLS = {
         tour: 60,
         winner: 3600 * 24,
     },
+    // need to have at least 1 non empty/0 field for those columns, otherwise: hidden
+    COLUMNS_REQUIRED = {
+        stand: ['crashes'],
+    },
     CONNECTORS = [
         [
             [0, 'win', [1, 1]]
@@ -317,6 +321,8 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
+    TABLE_LIVE = ' <hsub>[{Live}]</hsub>',
+    TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
@@ -325,7 +331,7 @@ let ANALYSIS_URLS = {
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: 'Rank|Engine|Games|Points|%|{Wins} [{W/B}]|{Losses} [{W/B}]|Draws|Crashes|SB|Elo|{Diff} [{Live}]',
+        stand: `Rank|Engine|Games|Points|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -1684,16 +1690,32 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // 5) process all rows => render the HTML
     let columns = From(A('th', table)).map(node => node.dataset.x),
+        hidden = {},
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
         is_winner = (name == 'winner'),
         nodes = [],
+        required = COLUMNS_REQUIRED[name] || [],
         tour_url = tour_info[section].url;
+
+    // hide columns?
+    for (let column of required) {
+        let hide = 1;
+        for (let row of data) {
+            if (row[column]) {
+                hide = 0;
+                break;
+            }
+        }
+        if (hide)
+            hidden[column] = 1;
+        S(`th[data-x="${column}"]`, !hide, table);
+    }
 
     for (let row of data) {
         let row_id = Undefined(row.id, row._id);
 
-        let vector = columns.map(key => {
+        let vector = columns.filter(key => !hidden[key]).map(key => {
             let class_ = '',
                 td_class = '',
                 value = row[key];

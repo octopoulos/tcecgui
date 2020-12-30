@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-30
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -191,17 +191,18 @@ function clear_timeout(name) {
  * @returns {string[]} field, value
  */
 function create_field_value(text) {
-    let items = text.split('=');
-    if (items.length > 1)
-        return [items[0], items.slice(1).join('=')];
+    let field = text,
+        indices = [field.indexOf(' ['), field.indexOf(' <')].filter(pos => pos > 0).sort();
+    if (indices.length)
+        field = field.slice(0, indices[0]);
+
+    let pos = field.indexOf('=');
+    if (pos > 0)
+        return [field.slice(0, pos), field.slice(pos + 1)];
 
     // startTime => start_time
-    let lower = Lower(text.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`)),
-        pos = lower.indexOf(' [');
-    if (pos > 0)
-        lower = lower.slice(0, pos);
-
-    return [lower.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
+    field = Lower(field.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`));
+    return [field.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
 }
 
 // SETTINGS

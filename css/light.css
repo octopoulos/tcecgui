@@ -740,6 +740,11 @@ grid {
 }
 
 /* tables */
+hsub {
+    color: #ccc;
+    font-size: 0.9em;
+    font-weight: 400;
+}
 .scroller,
 #table-log,
 #table-stats {
@@ -913,6 +918,7 @@ grid {
 }
 #tables th {
     cursor: pointer;
+    font-size: 1.05em;
 }
 
 /* engines */
