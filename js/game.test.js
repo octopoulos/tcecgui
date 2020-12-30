@@ -198,6 +198,33 @@ create_chart_data();
         },
         'Nxa3 Rb8',
     ],
+    [
+        '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
+        [
+            {name: 'Stoofvlees II a16'},
+            {info: {ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+        ],
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv ',
+        1,
+        {
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
+            pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+        },
+        null,
+    ],
+    [
+        '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
+        null,
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3',
+        1,
+        {
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
+            pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+        },
+        null,
+    ],
 ].forEach(([fen, players_, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
         let main = xboards.live,
@@ -207,8 +234,10 @@ create_chart_data();
         main.moves.length = 0;
         if (ply >= 0)
             main.moves[ply] = {fen: fen, ply: ply};
-        players[0] = players_[0];
-        players[1] = players_[1];
+        if (players_) {
+            players[0] = players_[0];
+            players[1] = players_[1];
+        }
         main.set_fen(fen);
 
         analyse_log(line);
