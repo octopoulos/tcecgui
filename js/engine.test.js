@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-30
 //
 /*
 globals
@@ -55,6 +55,8 @@ Assign(translates, {
     ['BlackEv', ['black_ev', 'BlackEv']],
     ['# Games', ['games', '# Games']],
     ['{Game}#', ['game', '{Game}#']],
+    ['{Wins} <i>[{W/B}]</i>', ['wins', '{Wins} <i>[{W/B}]</i>']],
+    ['{Wins} <i class="more">[{W/B}]</i>', ['wins', '{Wins} <i class="more">[{W/B}]</i>']],
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
