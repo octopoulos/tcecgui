@@ -2276,6 +2276,10 @@ function calculate_event_stats(section, rows) {
         end_time: `${end_time} <i class="year">${end_date}</i>`,
         duration: format_hhmmss(stats._duration),
         //
+        games: `${games}/${length}`,
+        progress: length? format_percent(games/length): '-',
+        round: `${Ceil(games / num_half) / 2}/${Ceil(length / num_half) / 2}${reverse}`,
+        //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
         draws: `${results['1/2-1/2']} [${format_percent(results['1/2-1/2'] / games)}]`,
@@ -2291,10 +2295,6 @@ function calculate_event_stats(section, rows) {
         average_time: format_hhmmss(seconds / games),
         min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
-        //
-        games: `${games}/${length}`,
-        progress: length? format_percent(games/length): '-',
-        round: `${Ceil(games / num_half) / 2}/${Ceil(length / num_half) / 2}${reverse}`,
         // crashes: crashes,
     });
 
