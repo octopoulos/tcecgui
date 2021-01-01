@@ -1867,7 +1867,7 @@ function prepare_settings() {
         },
         audio: {
             audio_book: [ON_OFF, 1],
-            audio_boom_score: option_number(2.5, 0, 10, 0.1),
+            audio_boom_score: option_number(2.3, 0, 10, 0.1),
             audio_delay: option_number(150, 0, 2000),
             audio_live_archive: [ON_OFF, 0],
             audio_moves: [['none', 'all', 'last'], 'all'],
