@@ -3956,7 +3956,7 @@ function check_boom(section, force) {
             if (!timers.shake)
                 Assign(boom_info, {
                     start: Now(),
-                    transform: body.style.transform,
+                    transform: body? body.style.transform: '',
                 });
             Style(body, 'background-color:#f00');
             add_timeout('body', () => {
