@@ -81,7 +81,7 @@ live.id = 'null';
     [{}, 0, true, 0],
     [{}, -2.8, true, -2.8],
     [{}, 3, true, 3],
-    [{audio_boom: 0}, -5, false, 3],
+    [{sound_boom: 0}, -5, false, 3],
 ].forEach(([y, score, answer, answer_boom], id) => {
     test(`boom:${id}`, () => {
         Assign(Y, y);
