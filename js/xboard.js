@@ -22,13 +22,13 @@ DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, F
 global, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
-update_svg, Upper, Visible, window, Worker, Y
+update_svg, Upper, Visible, window, Worker, X_SETTINGS, Y
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
-    ['chess', 'common', 'engine', 'global'].forEach(key => {
+    ['3d', 'chess', 'common', 'engine', 'global'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
 }
@@ -170,6 +170,7 @@ class XBoard {
         this.vis = Id(options.vis);
 
         // initialisation
+        this.boomed = 0;                                // boom sound happened
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
         this.clicked = false;
@@ -842,6 +843,23 @@ class XBoard {
             .forEach((svg, id) => {
                 Style(svg.svg, `z-index:${id}`);
             });
+    }
+
+    /**
+     * Play a BOOM sound
+     * @returns {boolean}
+     */
+    boom(score) {
+        let key = 'audio_boom',
+            sounds = X_SETTINGS.audio[key][0],
+            sound = Y[key];
+        if (!sound)
+            return false;
+        if (sound == 'random')
+            sound = sounds[RandomInt(2, sounds.length)];
+        this.boomed = score;
+        play_sound(audiobox, sound);
+        return true;
     }
 
     /**
@@ -2181,6 +2199,7 @@ class XBoard {
         this.start_fen = start_fen || START_FEN;
         this.frc = this.start_fen != START_FEN;
 
+        this.boomed = 0;
         this.fen = '';
         this.fen2 = '';
         Clear(this.fens);

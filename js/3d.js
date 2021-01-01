@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2021-01-01
 //
 // general 3d rendering code
 //
@@ -10,12 +10,20 @@ globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, exports, Format, full_scroll, get_drop_id,
-HasClass, HTML, Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
-LINKS, load_library, LS, Max, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD,
+global, HasClass, HTML, Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
+LINKS, load_library, LS, Max, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD, require,
 S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_nodes, translates, TYPES,
 Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    ['common'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
+    });
+}
+// >>
 
 let audiobox = {
         sounds: {},
@@ -1835,7 +1843,9 @@ function startup_3d() {
 // <<
 if (typeof exports != 'undefined') {
     Assign(exports, {
+        audiobox: audiobox,
         AUTO_ON_OFF: AUTO_ON_OFF,
+        play_sound: play_sound,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
         SHADOW_QUALITIES: SHADOW_QUALITIES,
     });

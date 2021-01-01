@@ -11,8 +11,8 @@ let {Assign, FromTimestamp} = require('./common.js'),
     {load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads, fix_header_opening,
-        format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
+        check_boom, copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads,
+        fix_header_opening, format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
         parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials,
         update_pgn, update_player_eval,
     } = require('./game.js'),
@@ -21,9 +21,7 @@ let {Assign, FromTimestamp} = require('./common.js'),
     {prepare_settings} = require('./startup.js'),
     {START_FEN} = require('./xboard.js');
 
-Assign(global, {
-    T: null,
-});
+global.T = null;
 
 let PGN_HEADERS = [
     '[Event "TCEC Event"]',
@@ -42,6 +40,7 @@ let PGN_HEADERS = [
 
 prepare_settings();
 load_defaults();
+Y.volume = 0;
 create_boards('text');
 create_chart_data();
 
@@ -371,6 +370,33 @@ create_chart_data();
 ].forEach(([dico, total_moves, answer], id) => {
     test(`check_adjudication:${id}`, () => {
         expect(check_adjudication(dico, total_moves)).toEqual(answer);
+    });
+});
+
+// check_boom
+[
+    [{x: 'archive'}, {boomed: 0}, [5, 5, 0, 0], false, 0],
+    [{x: 'live'}, {boomed: 0}, [5, 3, 0, 0], true, 4],
+    [{x: 'live'}, {}, [15, 5, 0, 0], false, 4],
+    [{x: 'live'}, {}, [-8, 3, -5, 0], true, -6.5],
+    [{x: 'live'}, {}, [-1, 1, -1, 0], false, -6.5],
+    [{x: 'live'}, {}, [8, 3, 5, 5], true, 5.25],
+    [{x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
+    [{audio_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
+    [{audio_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
+    [{audio_boom_score: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
+].forEach(([y, states, evals, answer, answer_boomed], id) => {
+    test(`check_boom:${id}`, () => {
+        Assign(Y, y);
+        let main = xboards.live,
+            players = main.players;
+        evals.forEach((eval_, id) => {
+            players[id].eval = eval_;
+        });
+        Assign(main, states);
+
+        expect(check_boom(Y.x)).toEqual(answer);
+        expect(main.boomed).toEqual(answer_boomed);
     });
 });
 

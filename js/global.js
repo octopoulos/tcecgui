@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEFAULTS, DEV, Exp, exports, Floor, global, Hide, HTML, Id, IsArray, IsDigit, Keys,
+Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, IsArray, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, X_SETTINGS, Y
 */
 'use strict';

@@ -22,7 +22,7 @@ listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_c
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
 S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
-slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
+Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
 TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
@@ -3522,8 +3522,10 @@ function update_overview_moves(section, headers, moves, is_new) {
             LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
         main.set_last(result);
     }
-    else
+    else {
         main.set_last(main.last);
+        check_boom(section);
+    }
 
     // 4) materials
     // - only update if the ply is the current one
@@ -3902,6 +3904,38 @@ function analyse_log(line) {
 }
 
 /**
+ * Check if we have a BOOM
+ * @param {string} section
+ * - need to have at least 2 engines agree, including a kibitzer
+ * @returns {boolean}
+ */
+function check_boom(section) {
+    if (section != 'live')
+        return false;
+    let threshold = Y.audio_boom_score;
+    if (threshold < 0.1)
+        return false;
+
+    let best = 0,
+        main = xboards[section],
+        scores = main.players.map(player => DefaultFloat(player.eval)).filter(eval_ => !isNaN(eval_)),
+        scores1 = scores.filter(score => score >= threshold),
+        scores2 = scores.filter(score => score <= -threshold);
+
+    if (scores1.length >= 2)
+        best = scores1.reduce((a, b) => a + b) / scores1.length;
+    else if (scores2.length >= 2)
+        best = scores2.reduce((a, b) => a + b) / scores2.length;
+
+    if (best && (!main.boomed || Sign(best * main.boomed) == -1))
+        if (main.boom()) {
+            main.boomed = best;
+            return true;
+        }
+    return false;
+}
+
+/**
  * Clock countdown
  * @param {string} section live, pva
  * @param {number} id
@@ -4114,6 +4148,7 @@ function update_live_eval(section, data, id, force_ply) {
         [ply] = split_move_string(data.pv);
 
     board.evals[ply] = data;
+    main.players[2 + id].eval = eval_;
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
@@ -4266,6 +4301,7 @@ function update_player_eval(section, data, same_pv) {
         update_live_chart([data], id);
         check_missing_moves(data.ply, null, data.pos);
     }
+    check_boom(section);
     return true;
 }
 
@@ -5315,6 +5351,7 @@ if (typeof exports != 'undefined')
         calculate_score: calculate_score,
         calculate_seeds: calculate_seeds,
         check_adjudication: check_adjudication,
+        check_boom: check_boom,
         copy_pgn: copy_pgn,
         create_boards: create_boards,
         create_game_link: create_game_link,

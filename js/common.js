@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2021-01-01
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1609,6 +1609,7 @@ if (typeof exports != 'undefined') {
         ParseJSON: ParseJSON,
         PI: PI,
         Pow: Pow,
+        RandomInt: RandomInt,
         QueryString: QueryString,
         Round: Round,
         S: S,
