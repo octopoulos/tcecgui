@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-31
+// @version 2021-01-01
 //
 // Game specific code:
 // - control the board, moves
@@ -2992,7 +2992,6 @@ function parse_pgn(section, data, mode=7, origin='') {
         info = {},
         moves = [],
         ply = get_fen_ply(fen || START_FEN);
-    LS(`fen=${fen} : ply=${ply}`);
     length = data.length;
     start = 0;
     for (let i = 0 ; i < length; i ++) {
@@ -4743,7 +4742,8 @@ function copy_pgn(board, download, only_text) {
 
     // 2) headers
     let fen = board.start_fen,
-        main_headers = xboards[Y.x].pgn.Headers,
+        main = xboards[Y.x],
+        main_headers = main.pgn.Headers,
         headers = {
             Event: `TCEC Event`,
             Site: 'https://tcec-chess.com',
@@ -4797,11 +4797,10 @@ function copy_pgn(board, download, only_text) {
         }
     }
 
-    Assign(headers, {
-        FEN: fen,
-        SetUp: 1,
-        Annotator: board.name,
-    });
+    if (fen != START_FEN) {
+        headers.FEN = fen;
+        headers.SetUp = 1;
+    }
 
     // 3) moves
     // - download => save full info
@@ -4826,29 +4825,31 @@ function copy_pgn(board, download, only_text) {
         },
         space = '';
 
-    LS(board.name, 'fen:', board.start_fen);
     for (let move of board.moves) {
-        // LS(move);
-        if (!move)
+        if (!move || !move.m)
             continue;
-        // first correct move, copy its FEN unless it's the first move (ply=0), in which case we keep start_fen
+
+        // first correct move => find the FEN of the move before it
         if (!first_fen) {
-            first_fen = move.fen;
-            if (first_fen && move.ply > 0) {
-                fen = first_fen;
+            let ply = move.ply - 1,
+                prev = board.moves[ply] || main.moves[ply];
+            if (prev && prev.fen)
+                fen = prev.fen;
+            else if (ply == -1)
+                fen = board.start_fen;
+            else
+                continue;
+
+            first_fen = fen;
+            if (fen != START_FEN) {
                 headers.FEN = fen;
+                headers.SetUp = 1;
             }
-            if (!first_fen)
-                first_fen = '*';
             board.chess_load(fen);
         }
-        if (!move.m)
-            continue;
 
         // play move because maybe missing info (pv0, pv1)
         let result = board.chess_move(move.m);
-        // LS(result);
-        // LS();
         assign_move(move, result);
         move.fen = board.chess_fen();
         move.ply = get_move_ply(move);
@@ -4875,6 +4876,7 @@ function copy_pgn(board, download, only_text) {
         moves.push('\n*');
 
     // 4) result
+    headers.Annotator = board.name;
     let text = [
         Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'),
         (options.length? `\n{${options.join(', ')}}`: ''),
