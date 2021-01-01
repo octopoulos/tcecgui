@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-29
+// @version 2020-12-30
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -11,20 +11,8 @@ Abs, Assign, DefaultInt, exports, Floor, From, global, Lower, LS, Max, Min, requ
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {Abs, Assign, DefaultInt, Floor, From, Lower, LS, Max, Min, SetDefault, Undefined} = req('./common.js');
-    Assign(global, {
-        Abs: Abs,
-        Assign: Assign,
-        DefaultInt: DefaultInt,
-        Floor: Floor,
-        From: From,
-        Lower: Lower,
-        LS: LS,
-        Max: Max,
-        Min: Min,
-        SetDefault: SetDefault,
-        Undefined: Undefined,
+    ['common'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>

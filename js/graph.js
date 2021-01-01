@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-30
 //
 /*
 globals
@@ -12,20 +12,10 @@ S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards,
 'use strict';
 
 // <<
-if (typeof global != 'undefined') {
-    let req = require,
-        {Clamp, Sign} = req('./common.js'),
-        {DEV, translate_expression, Y} = req('./engine.js'),
-        {calculate_feature_q, get_move_ply, xboards} = req('./global.js');
-    Assign(global, {
-        calculate_feature_q: calculate_feature_q,
-        Clamp: Clamp,
-        DEV: DEV,
-        get_move_ply: get_move_ply,
-        Sign: Sign,
-        translate_expression: translate_expression,
-        xboards: xboards,
-        Y: Y,
+if (typeof global != 'undefined')
+{
+    ['common', 'engine', 'global'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>

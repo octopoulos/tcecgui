@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-30
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1044,7 +1044,8 @@ function CopyClipboard(text, callback) {
         Style(node, `left:-9999px;position:absolute`);
         document.body.appendChild(node);
         node.select();
-        document.execCommand('copy');
+        if (document.execCommand)
+            document.execCommand('copy');
         document.body.removeChild(node);
         if (callback)
             callback();
@@ -1247,7 +1248,7 @@ function FromSeconds(time) {
  */
 function FromTimestamp(stamp) {
     if (!stamp)
-        return '???';
+        stamp = Now();
     let date = new Date(stamp * 1000),
         day = `${date.getFullYear()}-${Pad((date.getMonth() + 1))}-${Pad(date.getDate())}`,
         time = `${Pad(date.getHours())}:${Pad(date.getMinutes())}:${Pad(date.getSeconds())}`;
@@ -1570,6 +1571,7 @@ if (typeof exports != 'undefined') {
         Clamp: Clamp,
         Clear: Clear,
         Contain: Contain,
+        CopyClipboard: CopyClipboard,
         CreateNode: CreateNode,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
