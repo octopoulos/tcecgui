@@ -1873,6 +1873,7 @@ function prepare_settings() {
             audio_moves: [['none', 'all', 'last'], 'all'],
             audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
+            boom_test: '1',
             capture_delay: option_number(-200, -1000, 1000),
             sound_boom: [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'],
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],

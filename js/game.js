@@ -3909,7 +3909,7 @@ function analyse_log(line) {
 /**
  * Check if we have a BOOM
  * @param {string} section
- * @param {boolean=} force for debugging
+ * @param {number=} force for debugging
  * - need to have at least 2 engines agree, including a kibitzer
  * @returns {boolean}
  */
@@ -4623,6 +4623,9 @@ function change_setting_game(name, value) {
                 window.open(url, '_blank');
             }
         }
+        break;
+    case 'boom_test':
+        check_boom('', -10 * (Sign(main.boomed) || 1));
         break;
     case 'copy_moves':
         copy_moves();
