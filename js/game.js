@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2020-12-31
 //
 // Game specific code:
 // - control the board, moves
@@ -15,9 +15,9 @@ _, A, Abs, add_timeout, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calcul
 change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
 CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
-format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_move_ply, get_object, getSelection, global,
-HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, is_overlay_visible, IsArray,
-IsObject, IsString, Keys, KEYS,
+format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
+getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
+is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
 Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
 resize_text, Resource, restore_history, resume_game, Round,
@@ -32,42 +32,8 @@ WB_TITLE, window, XBoard, xboards, Y
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {
-            Assign, DEV, Floor, FormatUnit, FromSeconds, Keys, IsObject, Lower, LS, Now, QueryString, Split, Upper,
-        } = req('./common.js'),
-        {add_timeout} = req('./engine.js'),
-        {fix_move_format, format_eval, LOCALHOST, split_move_string, stockfish_wdl, xboards} = req('./global.js'),
-        {reset_charts, slice_charts, update_live_chart, update_player_charts} = req('./graph.js'),
-        {SPRITE_OFFSETS, WB_TITLE, XBoard} = req('./xboard.js');
-    Assign(global, {
-        add_timeout: add_timeout,
-        Assign: Assign,
-        DEV: DEV,
-        fix_move_format: fix_move_format,
-        Floor: Floor,
-        format_eval: format_eval,
-        FormatUnit: FormatUnit,
-        FromSeconds: FromSeconds,
-        IsObject: IsObject,
-        Keys: Keys,
-        LOCALHOST: LOCALHOST,
-        Lower: Lower,
-        LS: LS,
-        Now: Now,
-        QueryString: QueryString,
-        reset_charts: reset_charts,
-        slice_charts: slice_charts,
-        split_move_string: split_move_string,
-        Split: Split,
-        SPRITE_OFFSETS: SPRITE_OFFSETS,
-        stockfish_wdl: stockfish_wdl,
-        update_live_chart: update_live_chart,
-        update_player_charts: update_player_charts,
-        Upper: Upper,
-        WB_TITLE: WB_TITLE,
-        XBoard: XBoard,
-        xboards: xboards,
+    ['common', 'engine', 'global', 'graph', 'xboard'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>
@@ -733,20 +699,6 @@ function create_boards(mode='html') {
 
     // 3) update themes: this will render the boards too
     update_board_theme(7);
-
-    // 4) pva colors
-    let lines = [0, 1, 2, 3].map(id => {
-        let color = Y[`graph_color_${id}`];
-        return `<div class="color${id? '': ' active'}" data-id="${id < 2? 'pv': 'live'}${id & 1}" style="background:${color}"></div>`;
-    });
-    HTML(Id('colors'), lines.join(''));
-
-    C('.color', function() {
-        let board = xboards[this.dataset.id];
-        xboards.pva.set_fen(board.fen, true);
-        Class('.color', '-active');
-        Class(this, 'active');
-    });
 
     xboards.pva.reset();
 }
@@ -2271,7 +2223,8 @@ function calculate_event_stats(section, rows) {
         num_engine = Max(2, cross_data.length),
         num_half = (num_engine * (num_engine - 1)) / 2,
         num_pair = 0,
-        reverse = (Floor(games / num_half) & 1)? ' (R)': '';
+        num_round = Ceil(length / num_half / 2),
+        reverse = (games >= length)? ' #': ((Floor(games / num_half) & 1)? ' (R)': '');
 
     Keys(open_engines).forEach(eco => {
         let open_engine = open_engines[eco];
@@ -2300,7 +2253,7 @@ function calculate_event_stats(section, rows) {
         //
         games: `${games}/${length}`,
         progress: length? format_percent(games/length): '-',
-        round: `${Ceil(games / num_half) / 2}/${Ceil(length / num_half) / 2}${reverse}`,
+        round: `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
         white_wins: `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
         black_wins: `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
@@ -2917,6 +2870,9 @@ function fix_header_opening(board, headers) {
         opening = headers.Opening;
     if (!fen || (opening && !DUMMY_OPENINGS[opening]))
         return;
+    // continuation
+    if (fen && get_fen_ply(fen) > -1)
+        return;
 
     fen = headers.FEN = board.chess_load(fen) || fen;
 
@@ -3035,7 +2991,8 @@ function parse_pgn(section, data, mode=7, origin='') {
     let has_text,
         info = {},
         moves = [],
-        ply = -1;
+        ply = get_fen_ply(fen || START_FEN);
+    LS(`fen=${fen} : ply=${ply}`);
     length = data.length;
     start = 0;
     for (let i = 0 ; i < length; i ++) {
@@ -3081,13 +3038,21 @@ function parse_pgn(section, data, mode=7, origin='') {
             }
         }
         else if (char == '.') {
+            // handle 42. ... Kd8 | 42... Kd8
+            let dots = 0;
+            while (' .'.includes(data[i + 1])) {
+                if (data[i + 1] == '.')
+                    dots ++;
+                i ++;
+            }
+
             if (has_text) {
-                let number = parseInt(data.slice(start, i));
-                // error detected!!
-                if (number != (ply + 1) / 2 + 1) {
-                    LS(`ERROR: ${origin} : ${ply} : ${number}`);
+                let expected = (ply + (dots? 0: 1)) / 2 + 1,
+                    number = parseInt(data.slice(start, i));
+                    // error detected!!
+                if (number != expected) {
+                    LS(`ERROR: ${origin} : ply=${ply} : ${number} != ${expected} : ${data.slice(start, start + 20)}`);
                     break;
-                    // return false;
                 }
             }
             start = i + 1;
@@ -3646,6 +3611,9 @@ function update_pgn(section, data, extras, reset_moves) {
         players = main.players;
 
     if (headers) {
+        players[0].name = headers.White;
+        players[1].name = headers.Black;
+
         fix_header_opening(main, headers);
         if (section == 'archive')
             download_live_evals(headers.Round);
@@ -4583,6 +4551,9 @@ function change_setting_game(name, value) {
     case 'download_pgn':
         copy_pgn(null, true);
         break;
+    case 'game_PV':
+        S(Id('pva-pv'), value);
+        break;
     case 'graph_color_0':
     case 'graph_color_1':
     case 'graph_color_2':
@@ -4749,9 +4720,9 @@ function copy_moves() {
 
 /**
  * Copy a minimal PGN from the current context
- * @param {Object} board
- * @param {boolean} download
- * @param {boolean} only_text only return the text, no download/clipboard
+ * @param {Object=} board
+ * @param {boolean=} download
+ * @param {boolean=} only_text only return the text, no download/clipboard
  * @returns {string}
  */
 function copy_pgn(board, download, only_text) {
@@ -4772,15 +4743,28 @@ function copy_pgn(board, download, only_text) {
 
     // 2) headers
     let fen = board.start_fen,
+        main_headers = xboards[Y.x].pgn.Headers,
         headers = {
-            FEN: fen,
-            SetUp: 1,
+            Event: `TCEC Event`,
+            Site: 'https://tcec-chess.com',
+            Date: FromTimestamp()[0].replace(/-/g, '.'),
+            Round: '?',
+            White: '?',
+            Black: '?',
+            Result: '*',
         },
         moves = [],
         option_names = WB_TITLE.map(name => `${name}EngineOptions`),
         options = [];
 
-    // downlod => save full info
+    if (main_headers)
+        Keys(headers).forEach(key => {
+            let value = main_headers[key];
+            if (value)
+                headers[key] = value;
+        });
+
+    // download => save full info
     if (download) {
         let pgn = board.pgn,
             pgn_headers = pgn.Headers;
@@ -4800,9 +4784,7 @@ function copy_pgn(board, download, only_text) {
 
             Assign(headers, {
                 Black: players[1].name,
-                Date: FromTimestamp(Now())[0].replace(/-/g, '.'),
                 Opening: `${board.frc? 'FRC': ''} ${fen960}`,
-                Site: 'https://tcec-chess.com',
                 TimeControl: '1800+5',
                 Variation: `${board.frc? 'FRC': ''} ${fen960}`,
                 White: players[0].name,
@@ -4814,6 +4796,12 @@ function copy_pgn(board, download, only_text) {
             });
         }
     }
+
+    Assign(headers, {
+        FEN: fen,
+        SetUp: 1,
+        Annotator: board.name,
+    });
 
     // 3) moves
     // - download => save full info
@@ -4838,7 +4826,9 @@ function copy_pgn(board, download, only_text) {
         },
         space = '';
 
+    LS(board.name, 'fen:', board.start_fen);
     for (let move of board.moves) {
+        // LS(move);
         if (!move)
             continue;
         // first correct move, copy its FEN unless it's the first move (ply=0), in which case we keep start_fen
@@ -4857,6 +4847,8 @@ function copy_pgn(board, download, only_text) {
 
         // play move because maybe missing info (pv0, pv1)
         let result = board.chess_move(move.m);
+        // LS(result);
+        // LS();
         assign_move(move, result);
         move.fen = board.chess_fen();
         move.ply = get_move_ply(move);
@@ -4879,9 +4871,12 @@ function copy_pgn(board, download, only_text) {
         moves.push(text);
     }
 
+    if (moves.length)
+        moves.push('\n*');
+
     // 4) result
     let text = [
-        Keys(headers).sort().map(key => `[${key} "${headers[key]}"]`).join('\n'),
+        Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'),
         (options.length? `\n{${options.join(', ')}}`: ''),
         moves.join(''),
     ].join('\n');
@@ -4890,7 +4885,7 @@ function copy_pgn(board, download, only_text) {
         return text;
 
     if (download)
-        DownloadObject(text, `${FromTimestamp(Now()).join('').replace(/[:-]/g, '')}.pgn`, 2, true);
+        DownloadObject(text, `${FromTimestamp().join('').replace(/[:-]/g, '')}.pgn`, 2, true);
     else {
         // copy => mirror to PVA
         CopyClipboard(text);
@@ -5277,6 +5272,7 @@ function start_game() {
     create_tables();
     create_boards();
     show_board_info('pva', true);
+    S(Id('pva-pv'), Y.game_PV);
 
     Y.wasm = 0;
     if (Y.wasm)
@@ -5317,6 +5313,7 @@ if (typeof exports != 'undefined')
         calculate_score: calculate_score,
         calculate_seeds: calculate_seeds,
         check_adjudication: check_adjudication,
+        copy_pgn: copy_pgn,
         create_boards: create_boards,
         create_game_link: create_game_link,
         current_archive_link: current_archive_link,

@@ -1,28 +1,44 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-29
+// @version 2020-12-31
 /*
 globals
 expect, global, require, test
 */
 'use strict';
 
-let {Assign} = require('./common.js'),
+let {Assign, FromTimestamp} = require('./common.js'),
     {load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        create_boards, create_game_link, current_archive_link, extract_threads, fix_header_opening,
+        copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads, fix_header_opening,
         format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
         parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials,
         update_pgn, update_player_eval,
     } = require('./game.js'),
     {get_fen_ply, xboards} = require('./global.js'),
     {create_chart_data} = require('./graph.js'),
-    {prepare_settings} = require('./startup.js');
+    {prepare_settings} = require('./startup.js'),
+    {START_FEN} = require('./xboard.js');
 
 Assign(global, {
     T: null,
 });
+
+let PGN_HEADER = [
+    '[Event "TCEC Event"]',
+    '[Site "https://tcec-chess.com"]',
+    '[Date "{DATE}"]',
+    '[Round "?"]',
+    '[White "?"]',
+    '[Black "?"]',
+    '[Result "*"]',
+    `[FEN "${START_FEN}"]`,
+    '[SetUp "1"]',
+    '[Annotator "pv0"]',
+    '',
+    '',
+].join('\n');
 
 prepare_settings();
 load_defaults();
@@ -358,6 +374,36 @@ create_chart_data();
     });
 });
 
+// copy_pgn
+[
+    [START_FEN, [], '', ''],
+    [START_FEN, [{m: 'e4', ply: 0}, {m: 'e5', ply: 1}], '', '1. e4 e5\n*'],
+    [
+        START_FEN,
+        [
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', ply: 1},
+            {m: 'Nf3', ply: 2},
+            {m: 'd6', ply: 3},
+        ],
+        'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+        '2. Nf3 d6\n*',
+    ],
+].forEach(([start_fen, moves, fen, answer], id) => {
+    test(`copy_pgn:${id}`, () => {
+        let board = xboards.pv0;
+        board.start_fen = start_fen;
+        board.reset();
+        for (let move of moves)
+            board.moves[move.ply] = move;
+
+        let header = PGN_HEADER
+                .replace('{DATE}', FromTimestamp()[0].replace(/-/g, '.'))
+                .replace(START_FEN, fen || start_fen),
+            text = copy_pgn(board, false, false);
+        expect(text).toEqual(header + answer);
+    });
+});
+
 // create_game_link
 [
     [{}, 'live', 1, '', '<a class="game" href="#game=1">1</a>'],
@@ -464,7 +510,7 @@ create_chart_data();
     [{FEN: 'rqnbbknr/pppppppp/8/8/8/8/PPPPPPPP/RQNBBKNR w KQkq - 0 1'}, 'FRC #505'],
     [{FEN: 'rknqnbbr/pppppppp/8/8/8/8/PPPPPPPP/RKNQNBBR w KQkq - 0 1'}, 'FRC #734'],
     [{FEN: 'nrbnkbqr/pppppppp/8/8/8/8/PPPPPPPP/NRBNKBQR w HBhb - 0 1'}, 'FRC #166'],
-
+    [{FEN: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42'}, undefined],
 ].forEach(([headers, answer], id) => {
     test(`fix_header_opening:${id}`, () => {
         let board = xboards.live;
@@ -1522,7 +1568,7 @@ create_chart_data();
         [WhiteElo "3148"]
 
         {WhiteEngineOptions: Protocol=uci; Threads=4; Hash=1024; SyzygyPath=/home/syzygy/; OwnBook=false; Ponder=false;, BlackEngineOptions: Protocol=uci; Threads=176; Hash=65536;}
-        1. Qc4 {d=19, sd=33, mt=17109, tl=680589, s=11257078, n=191370334, pv=Qc4 Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Ke2 Qc2+ Ke3 Qc1+ Ke4 Qb1+ Kf4 Qc1+ Kg4 Qc2 Qd4+ Kb8 f4 Qg6+ Kf3 Qh5+ g4 Qh1+ Kg3 Qe1+ Kg2 Qe2+ Kh3 Qf1+ Kh4 Qe1+ Kg5 Qe7+ Kg6 Qe8+ Kf5 Qc8+ Ke4 Qb7+ Qd5 Qh7+ f5 Qh4 Qe5+ Kc8 Qe6+ Kc7 f6 Qe1+ Kf5 Qf2+ Kg6 Qc2+ Kg7 Qf2 f7, tb=679591, h=0.0, ph=0.0, wv=3.25, R50=49, Rd=-11, Rr=-1000, mb=+3+0+0+0+0,}
+        59. Qc4 {d=19, sd=33, mt=17109, tl=680589, s=11257078, n=191370334, pv=Qc4 Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Ke2 Qc2+ Ke3 Qc1+ Ke4 Qb1+ Kf4 Qc1+ Kg4 Qc2 Qd4+ Kb8 f4 Qg6+ Kf3 Qh5+ g4 Qh1+ Kg3 Qe1+ Kg2 Qe2+ Kh3 Qf1+ Kh4 Qe1+ Kg5 Qe7+ Kg6 Qe8+ Kf5 Qc8+ Ke4 Qb7+ Qd5 Qh7+ f5 Qh4 Qe5+ Kc8 Qe6+ Kc7 f6 Qe1+ Kf5 Qf2+ Kg6 Qc2+ Kg7 Qf2 f7, tb=679591, h=0.0, ph=0.0, wv=3.25, R50=49, Rd=-11, Rr=-1000, mb=+3+0+0+0+0,}
         Qxc4+ {d=27, sd=52, mt=6610, tl=116677, s=146562326, n=763882844, pv=Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Kf2 Qc2+ Kg3 Kb7 Qd4 Qh7 c5 Qc7+ Kg4 Qc6 Kf5 Qc7 c6+ Kc8 Qc4 Qh7+ Kf6 Qh6+ Kf7 Qh5+ Ke6 Qg6+ Kd5 Qf7+ Kd4 Qg7+ Kc5 Qa7+ Kd6 Qc7+ Ke6 Kb8 Qe4 Qh2 Kf7 Qh5+ Kf8 Kc7 Kg8, tb=null, h=100.0, ph=0.0, wv=4.24, R50=50, Rd=-11, Rr=-1000, mb=+3+0+0+0-1,}
         1-0
         `,
@@ -1566,8 +1612,8 @@ create_chart_data();
                     mt: 17109,
                     n: 191370334,
                     ph: '0.0',
-                    ply: 0,
-                    pv: '1. Qc4 Qxc4+ 2. bxc4 b3 3. h7 b2 4. h8=Q b1=Q+ 5. Ke2 Qc2+ 6. Ke3 Qc1+ 7. Ke4 Qb1+ 8. Kf4 Qc1+ 9. Kg4 Qc2 10. Qd4+ Kb8 11. f4 Qg6+ 12. Kf3 Qh5+ 13. g4 Qh1+ 14. Kg3 Qe1+ 15. Kg2 Qe2+ 16. Kh3 Qf1+ 17. Kh4 Qe1+ 18. Kg5 Qe7+ 19. Kg6 Qe8+ 20. Kf5 Qc8+ 21. Ke4 Qb7+ 22. Qd5 Qh7+ 23. f5 Qh4 24. Qe5+ Kc8 25. Qe6+ Kc7 26. f6 Qe1+ 27. Kf5 Qf2+ 28. Kg6 Qc2+ 29. Kg7 Qf2 30. f7',
+                    ply: 116,
+                    pv: '59. Qc4 Qxc4+ 60. bxc4 b3 61. h7 b2 62. h8=Q b1=Q+ 63. Ke2 Qc2+ 64. Ke3 Qc1+ 65. Ke4 Qb1+ 66. Kf4 Qc1+ 67. Kg4 Qc2 68. Qd4+ Kb8 69. f4 Qg6+ 70. Kf3 Qh5+ 71. g4 Qh1+ 72. Kg3 Qe1+ 73. Kg2 Qe2+ 74. Kh3 Qf1+ 75. Kh4 Qe1+ 76. Kg5 Qe7+ 77. Kg6 Qe8+ 78. Kf5 Qc8+ 79. Ke4 Qb7+ 80. Qd5 Qh7+ 81. f5 Qh4 82. Qe5+ Kc8 83. Qe6+ Kc7 84. f6 Qe1+ 85. Kf5 Qf2+ 86. Kg6 Qc2+ 87. Kg7 Qf2 88. f7',
                     s: 11257078,
                     sd: 33,
                     tb: 679591,
@@ -1585,8 +1631,8 @@ create_chart_data();
                     mt: 6610,
                     n: 763882844,
                     ph: '0.0',
-                    ply: 1,
-                    pv: '1...Qxc4+ 2. bxc4 b3 3. h7 b2 4. h8=Q b1=Q+ 5. Kf2 Qc2+ 6. Kg3 Kb7 7. Qd4 Qh7 8. c5 Qc7+ 9. Kg4 Qc6 10. Kf5 Qc7 11. c6+ Kc8 12. Qc4 Qh7+ 13. Kf6 Qh6+ 14. Kf7 Qh5+ 15. Ke6 Qg6+ 16. Kd5 Qf7+ 17. Kd4 Qg7+ 18. Kc5 Qa7+ 19. Kd6 Qc7+ 20. Ke6 Kb8 21. Qe4 Qh2 22. Kf7 Qh5+ 23. Kf8 Kc7 24. Kg8',
+                    ply: 117,
+                    pv: '59...Qxc4+ 60. bxc4 b3 61. h7 b2 62. h8=Q b1=Q+ 63. Kf2 Qc2+ 64. Kg3 Kb7 65. Qd4 Qh7 66. c5 Qc7+ 67. Kg4 Qc6 68. Kf5 Qc7 69. c6+ Kc8 70. Qc4 Qh7+ 71. Kf6 Qh6+ 72. Kf7 Qh5+ 73. Ke6 Qg6+ 74. Kd5 Qf7+ 75. Kd4 Qg7+ 76. Kc5 Qa7+ 77. Kd6 Qc7+ 78. Ke6 Kb8 79. Qe4 Qh2 80. Kf7 Qh5+ 81. Kf8 Kc7 82. Kg8',
                     s: 146562326,
                     sd: 52,
                     tb: 'null',
@@ -1604,8 +1650,52 @@ create_chart_data();
             },
         },
     ],
+    [
+        `
+        [FEN "2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42"]
+        [Setup "1"]
+
+        42... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *
+        `,
+        7,
+        {
+            Headers: {
+                FEN: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
+                Setup: '1',
+            },
+            Moves: [
+                {m: 'Kd8', ply: 83}, {m: 'Rxd7+', ply: 84}, {m: 'Nxd7', ply: 85}, {m: 'f6', ply: 86},
+                {m: 'Rh8', ply: 87},
+            ],
+        },
+    ],
+    [
+        `
+        [FEN "2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42"]
+        [Setup "1"]
+
+        42. ... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *
+        `,
+        7,
+        {
+            Headers: {
+                FEN: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
+                Setup: '1',
+            },
+            Moves: [
+                {m: 'Kd8', ply: 83}, {m: 'Rxd7+', ply: 84}, {m: 'Nxd7', ply: 85}, {m: 'f6', ply: 86},
+                {m: 'Rh8', ply: 87},
+            ],
+        },
+    ],
 ].forEach(([data, mode, answer], id) => {
     test(`parse_pgn:${id}`, () => {
+        if (answer.Moves) {
+            let moves = [];
+            for (let move of answer.Moves)
+                moves[move.ply] = move;
+            answer.Moves = moves;
+        }
         expect(parse_pgn('archive', data, mode)).toEqual(answer);
     });
 });
