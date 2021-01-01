@@ -3918,7 +3918,7 @@ function check_boom(section, force) {
         section = 'live';
     if (section != 'live')
         return false;
-    let threshold = Y.audio_boom_score;
+    let threshold = Y.boom_threshold;
     if (threshold < 0.1 && !force)
         return false;
 
