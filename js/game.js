@@ -3914,6 +3914,7 @@ function analyse_log(line) {
  * @returns {boolean}
  */
 function check_boom(section, force) {
+    // 1) check threshold
     if (force)
         section = 'live';
     if (section != 'live')
@@ -3922,51 +3923,63 @@ function check_boom(section, force) {
     if (threshold < 0.1 && !force)
         return false;
 
+    // 2) gather score of all engines
     let best = 0,
         main = xboards[section],
         players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
         two = new Set([players[0][1], players[1][1]]);
 
     // if LCZero is a player + kibitzer => don't include the kibitzer
-    for (let id = 3; id >= 2; id --)
+    for (let id = 2; id < players.length; id ++)
         if (players[id] && two.has(players[id][1]))
             players[id] = null;
-    players = players.filter(player => player != null);
+    players = players.filter(player => player);
 
-    // engines must agree
-    let scores = players.map(player => clamp_eval(player[0])).filter(eval_ => !isNaN(eval_)),
+    // 3) engines must agree
+    let boomed = main.boomed,
+        scores = players.map(player => clamp_eval(player[0])),
         scores1 = scores.filter(score => score >= threshold),
         scores2 = scores.filter(score => score <= -threshold);
 
-    if (scores1.length >= 2) {
-        if (scores.every(score => score > 0))
+    if (force)
+        best = force;
+    else if (scores1.length >= 2) {
+        if (scores.every(score => score >= 0))
             best = scores1.reduce((a, b) => a + b) / scores1.length;
     }
     else if (scores2.length >= 2) {
-        if (scores.every(score => score < 0))
+        if (scores.every(score => score <= 0))
             best = scores2.reduce((a, b) => a + b) / scores2.length;
     }
-    if (force)
-        best = force;
 
-    if (best && (!main.boomed || Sign(best * main.boomed) == -1))
-        if (main.boom()) {
-            main.boomed = best;
-            let body = Id('body');
-            if (!timers.shake)
-                Assign(boom_info, {
-                    start: Now(),
-                    transform: body? body.style.transform: '',
-                });
-            Style(body, 'background-color:#f00');
-            add_timeout('body', () => {
-                clear_timeout('shake');
-                Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
-            }, TIMEOUT_boom);
-            add_timeout('shake', shake_screen, TIMEOUT_shake, true);
-            return true;
-        }
-    return false;
+    // 4) play sound, might fail if settings disable it
+    if (!best || Sign(best) == Sign(boomed) || !main.boom(best))
+        return false;
+
+    if (force)
+        main.boomed = boomed;
+
+    // 5) visual stuff
+    let body = Id('body'),
+        visual = Y.boom_visual;
+    // color
+    if (['all', 'color'].includes(visual))
+        Style(body, 'background-color:#f00');
+
+    // shake
+    if (!timers.shake)
+        Assign(boom_info, {
+            start: Now(),
+            transform: body? body.style.transform: '',
+        });
+    if (['all', 'shake'].includes(visual)) {
+        add_timeout('body', () => {
+            clear_timeout('shake');
+            Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
+        }, TIMEOUT_boom);
+        add_timeout('shake', shake_screen, TIMEOUT_shake, true);
+    }
+    return true;
 }
 
 /**
