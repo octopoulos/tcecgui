@@ -850,7 +850,7 @@ class XBoard {
      * @returns {boolean}
      */
     boom(score) {
-        let key = 'audio_boom',
+        let key = 'sound_boom',
             sounds = X_SETTINGS.audio[key][0],
             sound = Y[key];
         if (!sound)

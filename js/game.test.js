@@ -382,8 +382,8 @@ create_chart_data();
     [{x: 'live'}, {}, [-1, 1, -1, 0], false, -6.5],
     [{x: 'live'}, {}, [8, 3, 5, 5], true, 5.25],
     [{x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
-    [{audio_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
-    [{audio_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
+    [{sound_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
+    [{sound_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
     [{audio_boom_score: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
 ].forEach(([y, states, evals, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
