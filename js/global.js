@@ -14,30 +14,8 @@ location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {
-            Abs, Assign, Atan, Clamp, Exp, Floor, IsDigit, Keys, Max, Min, Pad, Pow, Round, Undefined,
-        } = req('./common.js'),
-        {DEV, save_option, Y} = req('./engine.js');
-    Assign(global, {
-        Abs: Abs,
-        Assign: Assign,
-        Atan: Atan,
-        Clamp: Clamp,
-        DEV: DEV,
-        Exp: Exp,
-        Floor: Floor,
-        IsDigit: IsDigit,
-        Keys: Keys,
-        location: {},
-        Max: Max,
-        Min: Min,
-        Pad: Pad,
-        Pow: Pow,
-        Round: Round,
-        save_option: save_option,
-        Undefined: Undefined,
-        Y: Y,
+    ['common', 'engine'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>
@@ -436,6 +414,7 @@ if (typeof exports != 'undefined') {
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
+        LOCALHOST: LOCALHOST,
         mix_hex_colors: mix_hex_colors,
         reset_defaults: reset_defaults,
         reset_old_settings: reset_old_settings,

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2020-12-30
 //
 // game board:
 // - 4 rendering modes:
@@ -28,35 +28,8 @@ update_svg, Upper, Visible, window, Worker, Y
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {_, A, AnimationFrame, ArrayJS, C, CreateNode, Events, Hide, HTML, Id, S, Style, Visible} = req('./common.js'),
-        {Chess, EMPTY, SQUARES} = req('./chess.js'),
-        {clear_timeout, timers, update_svg} = req('./engine.js'),
-        {assign_move, get_fen_ply, get_move_ply, split_move_string} = req('./global.js');
-    Assign(global, {
-        _: _,
-        A: A,
-        AnimationFrame: AnimationFrame,
-        ArrayJS: ArrayJS,
-        assign_move: assign_move,
-        C: C,
-        Chess: Chess,
-        clear_timeout: clear_timeout,
-        CreateNode: CreateNode,
-        EMPTY: EMPTY,
-        Events: Events,
-        get_fen_ply: get_fen_ply,
-        get_move_ply: get_move_ply,
-        Hide: Hide,
-        HTML: HTML,
-        Id: Id,
-        S: S,
-        split_move_string: split_move_string,
-        SQUARES: SQUARES,
-        Style: Style,
-        timers: timers,
-        update_svg: update_svg,
-        Visible: Visible,
+    ['chess', 'common', 'engine', 'global'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>
@@ -198,6 +171,7 @@ class XBoard {
 
         // initialisation
         this.chess = new Chess();
+        this.chess2 = null;                             // used to calculate PV
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
@@ -2790,6 +2764,8 @@ class XBoard {
             return;
         let fen = this.start_fen;
         for (let move of moves) {
+            if (!move)
+                continue;
             let no_load;
             if (!move.fen) {
                 this.chess_load(fen);
@@ -2901,6 +2877,21 @@ class XBoard {
             });
             this.update_mini(color);
             this.eval(this.name, player);
+
+            if (Y.game_PV) {
+                if (!this.chess2)
+                    this.chess2 = new Chess();
+                this.chess2.load(this.fen);
+                let moves = ArrayJS(this.chess2.multiUci(best.pv)),
+                    san_list = moves.map(move => {
+                        let lines = [];
+                        if (!(move.ply & 1))
+                            lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
+                        lines.push(`<i class="real">${move.m}</i>`);
+                        return lines.join('');
+                    }).join('');
+                HTML(Id('pva-pv'), `[d${this.depth}] ${san_list}`);
+            }
         }
 
         // 6) iterative thinking?

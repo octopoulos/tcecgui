@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-28
+// @version 2020-12-31
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -34,36 +34,8 @@ virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {AUTO_ON_OFF, POPUP_ADJUSTS, SHADOW_QUALITIES} = req('./3d.js'),
-        {Assign} = req('./common.js'),
-        {
-            DEFAULTS, DEV_NAMES, device, guess_types, LANGUAGES, load_defaults, merge_settings, NO_IMPORTS, ON_OFF,
-            option_number, THEMES, TRANSLATE_SPECIALS,
-        } = req('./engine.js'),
-        {BOARD_THEMES, PIECE_THEMES, TABLES, TITLES} = req('./game.js'),
-        {VERSION} = req('./global.js');
-    Assign(global, {
-        AUTO_ON_OFF: AUTO_ON_OFF,
-        BOARD_THEMES: BOARD_THEMES,
-        DEFAULTS: DEFAULTS,
-        DEV_NAMES: DEV_NAMES,
-        device: device,
-        guess_types: guess_types,
-        LANGUAGES: LANGUAGES,
-        load_defaults: load_defaults,
-        merge_settings: merge_settings,
-        NO_IMPORTS: NO_IMPORTS,
-        ON_OFF: ON_OFF,
-        option_number: option_number,
-        PIECE_THEMES: PIECE_THEMES,
-        POPUP_ADJUSTS: POPUP_ADJUSTS,
-        SHADOW_QUALITIES: SHADOW_QUALITIES,
-        TABLES: TABLES,
-        THEMES: THEMES,
-        TITLES: TITLES,
-        TRANSLATE_SPECIALS: TRANSLATE_SPECIALS,
-        VERSION: VERSION,
+    ['3d', 'common', 'engine', 'game', 'global'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>
@@ -1895,6 +1867,8 @@ function prepare_settings() {
         },
         audio: {
             audio_book: [ON_OFF, 1],
+            audio_boom: [['off', 'boom', 'wow'], 'wow'],
+            audio_boom_score: option_number(0, 10, 0.1),
             audio_delay: option_number(150, 0, 2000),
             audio_live_archive: [ON_OFF, 0],
             audio_moves: [['none', 'all', 'last'], 'all'],
@@ -2045,6 +2019,7 @@ function prepare_settings() {
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             game_options_white: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
+            game_PV: [ON_OFF, 0],
             game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
             game_think: '1',
             game_time: option_number(5, -1, 120),

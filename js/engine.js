@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2020-12-31
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -22,27 +22,8 @@ Upper, Visible, WebSocket, window
 
 // <<
 if (typeof global != 'undefined') {
-    let req = require,
-        {
-            Assign, Clear, DefaultFloat, DefaultInt, E, IsArray, IsDigit, IsFloat, IsObject, IsString, Keys, Lower,
-            SetDefault, Stringify,
-        } = req('./common.js');
-    Assign(global, {
-        Assign: Assign,
-        Clear: Clear,
-        DefaultFloat: DefaultFloat,
-        DefaultInt: DefaultInt,
-        E: E,
-        IsArray: IsArray,
-        IsDigit: IsDigit,
-        IsFloat: IsFloat,
-        IsObject: IsObject,
-        IsString: IsString,
-        Keys: Keys,
-        Lower: Lower,
-        SetDefault: SetDefault,
-        Stringify: Stringify,
-        WebSocket: {},
+    ['common'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
     });
 }
 // >>
@@ -88,6 +69,9 @@ let __PREFIX = '_',
         import_settings: 2,
         language: 1,
         preset: 1,
+    },
+    NO_TRANSLATES = {
+        '#': 1,
     },
     ON_OFF = ['on', 'off'],
     ping = 0,
