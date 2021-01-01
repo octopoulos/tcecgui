@@ -1874,7 +1874,7 @@ function prepare_settings() {
             audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             capture_delay: option_number(-200, -1000, 1000),
-            sound_boom: [['off', 'random', 'boom', 'wow'], 'random'],
+            sound_boom: [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'],
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],

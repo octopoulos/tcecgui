@@ -375,28 +375,34 @@ create_chart_data();
 
 // check_boom
 [
-    [{x: 'archive'}, {boomed: 0}, [5, 5, 0, 0], false, 0],
-    [{x: 'live'}, {boomed: 0}, [5, 3, 0, 0], true, 4],
-    [{x: 'live'}, {}, [15, 5, 0, 0], false, 4],
-    [{x: 'live'}, {}, [-8, 3, -5, 0], true, -6.5],
-    [{x: 'live'}, {}, [-1, 1, -1, 0], false, -6.5],
-    [{x: 'live'}, {}, [8, 3, 5, 5], true, 5.25],
-    [{x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
-    [{sound_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
-    [{sound_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], true, 5.25],
-    [{audio_boom_score: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], false, 0],
-].forEach(([y, states, evals, answer, answer_boomed], id) => {
+    [{x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
+    [{x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], true, 4],
+    [{x: 'live'}, {}, [15, 5, 0.5, 0.5], [], false, 4],
+    [{x: 'live'}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
+    [{x: 'live'}, {}, [-1, 1, -1, -0.5], [], false, -5.333],
+    [{x: 'live'}, {}, [5, 5, 5, 0], [], false, -5.333],
+    [{x: 'live'}, {}, [5, 5, 5, 1], [], true, 5],
+    [{x: 'live'}, {}, [8, 3, 5, 5], [], false, 5],
+    [{x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [{x: 'live'}, {boomed: 0}, [8, 0.5, 8, 0.5], [], true, 8],
+    [{x: 'live'}, {boomed: 0}, [8, 0.5, 8, 0.5], ['lczero', 'x', 'lczero', 'y'], false, 0],
+    [{x: 'live'}, {boomed: 0}, [8, 0.5, 8, 0.5], ['lczero', 'x', 'allie', 'y'], true, 8],
+    [{sound_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [{sound_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [{audio_boom_score: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+].forEach(([y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
         Assign(Y, y);
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
             players[id].eval = eval_;
+            players[id].short = shorts[id] || `P${id}`;
         });
         Assign(main, states);
 
         expect(check_boom(Y.x)).toEqual(answer);
-        expect(main.boomed).toEqual(answer_boomed);
+        expect(main.boomed).toBeCloseTo(answer_boomed, 3);
     });
 });
 

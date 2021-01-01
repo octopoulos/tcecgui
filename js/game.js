@@ -12,18 +12,18 @@
 /*
 globals
 _, A, Abs, add_timeout, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
-change_setting, charts, check_hash, Clamp, Class, clear_timeout, context_areas, context_target:true, controls,
-CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, context_areas, context_target:true,
+controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
 format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
-Pad, Parent, parse_time, play_sound, push_state, QueryString, redraw_eval_charts, require, reset_charts, resize_3d,
-resize_text, Resource, restore_history, resume_game, Round,
+Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
+resize_3d, resize_text, Resource, restore_history, resume_game, Round,
 S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
 Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
-TEXT, TIMEOUTS, Title, Toggle, touch_handle, translate_default, translate_nodes,
+TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
 WB_TITLE, window, XBoard, xboards, Y
@@ -126,6 +126,7 @@ let ANALYSIS_URLS = {
             size: 24,
         }
     },
+    boom_info = {},
     bracket_link,
     CACHE_TIMEOUTS = {
         brak: 60,
@@ -312,12 +313,14 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
+    TIMEOUT_boom = 3000,
     TIMEOUT_graph = 500,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
+    TIMEOUT_shake = 100,
     TITLES = {
         50: 'Fifty-move rule',
         ECO: 'Encyclopaedia of Chess Openings',
@@ -3906,30 +3909,61 @@ function analyse_log(line) {
 /**
  * Check if we have a BOOM
  * @param {string} section
+ * @param {boolean=} force for debugging
  * - need to have at least 2 engines agree, including a kibitzer
  * @returns {boolean}
  */
-function check_boom(section) {
+function check_boom(section, force) {
+    if (force)
+        section = 'live';
     if (section != 'live')
         return false;
     let threshold = Y.audio_boom_score;
-    if (threshold < 0.1)
+    if (threshold < 0.1 && !force)
         return false;
 
     let best = 0,
         main = xboards[section],
-        scores = main.players.map(player => DefaultFloat(player.eval)).filter(eval_ => !isNaN(eval_)),
+        players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
+        two = new Set([players[0][1], players[1][1]]);
+
+    // if LCZero is a player + kibitzer => don't include the kibitzer
+    for (let id = 3; id >= 2; id --)
+        if (players[id] && two.has(players[id][1]))
+            players[id] = null;
+    players = players.filter(player => player != null);
+
+    // engines must agree
+    let scores = players.map(player => clamp_eval(player[0])).filter(eval_ => !isNaN(eval_)),
         scores1 = scores.filter(score => score >= threshold),
         scores2 = scores.filter(score => score <= -threshold);
 
-    if (scores1.length >= 2)
-        best = scores1.reduce((a, b) => a + b) / scores1.length;
-    else if (scores2.length >= 2)
-        best = scores2.reduce((a, b) => a + b) / scores2.length;
+    if (scores1.length >= 2) {
+        if (scores.every(score => score > 0))
+            best = scores1.reduce((a, b) => a + b) / scores1.length;
+    }
+    else if (scores2.length >= 2) {
+        if (scores.every(score => score < 0))
+            best = scores2.reduce((a, b) => a + b) / scores2.length;
+    }
+    if (force)
+        best = force;
 
     if (best && (!main.boomed || Sign(best * main.boomed) == -1))
         if (main.boom()) {
             main.boomed = best;
+            let body = Id('body');
+            if (!timers.shake)
+                Assign(boom_info, {
+                    start: Now(),
+                    transform: body.style.transform,
+                });
+            Style(body, 'background-color:#f00');
+            add_timeout('body', () => {
+                clear_timeout('shake');
+                Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
+            }, TIMEOUT_boom);
+            add_timeout('shake', shake_screen, TIMEOUT_shake, true);
             return true;
         }
     return false;
@@ -3966,6 +4000,19 @@ function clock_tick(section, id) {
  */
 function set_viewers(count) {
     HTML('#overview td[data-x="viewers"]', count);
+}
+
+/**
+ * Shake the screen
+ */
+function shake_screen() {
+    // translate(15px, 15px) => ['15', '15']
+    let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0));
+    if (coords.length < 2)
+        coords = [0, 0];
+    coords[0] += RandomInt(-10, 11);
+    coords[1] += RandomInt(-10, 11);
+    Style(Id('body'), `transform:translate(${coords[0]}px,${coords[1]}px)`);
 }
 
 /**
