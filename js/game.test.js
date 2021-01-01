@@ -389,7 +389,7 @@ create_chart_data();
     [{x: 'live'}, {boomed: 0}, [8, 0.5, 8, 0.5], ['lczero', 'x', 'allie', 'y'], true, 8],
     [{sound_boom: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
     [{sound_boom: 'random', x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
-    [{audio_boom_score: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [{boom_threshold: 0, x: 'live'}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
 ].forEach(([y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
         Assign(Y, y);
