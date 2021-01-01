@@ -68,6 +68,7 @@ let AI = 'ai',
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
+    last_sound,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -855,10 +856,16 @@ class XBoard {
             sound = Y[key];
         if (!sound)
             return false;
-        if (sound == 'random')
-            sound = sounds[RandomInt(2, sounds.length)];
+        if (sound == 'random') {
+            for (let i = 0; i < 100; i ++) {
+                sound = sounds[RandomInt(2, sounds.length)];
+                if (sound != last_sound)
+                    break;
+            }
+        }
         this.boomed = score;
-        play_sound(audiobox, sound);
+        last_sound = sound;
+        play_sound(audiobox, sound, {interrupt: true});
         return true;
     }
 
