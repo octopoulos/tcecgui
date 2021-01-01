@@ -1,6 +1,6 @@
 /*
 light.css
-@version 2020-12-30
+@version 2021-01-01
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1308,6 +1308,9 @@ hsub {
 }
 
 /* container */
+#body {
+    transition: background-color 1s;
+}
 .area {
     flex: 1;
     width: 100%;
