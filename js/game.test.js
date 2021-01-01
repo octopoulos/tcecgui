@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-31
+// @version 2021-01-01
 /*
 globals
 expect, global, require, test
@@ -25,7 +25,7 @@ Assign(global, {
     T: null,
 });
 
-let PGN_HEADER = [
+let PGN_HEADERS = [
     '[Event "TCEC Event"]',
     '[Site "https://tcec-chess.com"]',
     '[Date "{DATE}"]',
@@ -33,12 +33,12 @@ let PGN_HEADER = [
     '[White "?"]',
     '[Black "?"]',
     '[Result "*"]',
-    `[FEN "${START_FEN}"]`,
-    '[SetUp "1"]',
+    '[FEN "{FEN}"]',                        // 7
+    '[SetUp "1"]',                          // 8
     '[Annotator "pv0"]',
     '',
     '',
-].join('\n');
+];
 
 prepare_settings();
 load_defaults();
@@ -376,10 +376,11 @@ create_chart_data();
 
 // copy_pgn
 [
-    [START_FEN, [], '', ''],
-    [START_FEN, [{m: 'e4', ply: 0}, {m: 'e5', ply: 1}], '', '1. e4 e5\n*'],
+    [START_FEN, [], [], '', ''],
+    [START_FEN, [], [{m: 'e4', ply: 0}, {m: 'e5', ply: 1}], '', '1. e4 e5\n*'],
     [
         START_FEN,
+        [],
         [
             {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', ply: 1},
             {m: 'Nf3', ply: 2},
@@ -388,18 +389,75 @@ create_chart_data();
         'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
         '2. Nf3 d6\n*',
     ],
-].forEach(([start_fen, moves, fen, answer], id) => {
+    [
+        START_FEN,
+        [],
+        [
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', m: 'e5', ply: 1},
+            {m: 'Nf3', ply: 2},
+            {m: 'd6', ply: 3},
+        ],
+        'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+        '2. Nf3 d6\n*',
+    ],
+    [
+        START_FEN,
+        [
+            {fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', m: 'e4', ply: 0},
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2', m: 'e5', ply: 1},
+        ],
+        [
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', m: 'e5', ply: 1},
+            {m: 'Nf3', ply: 2},
+            {m: 'd6', ply: 3},
+        ],
+        'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+        '1... e5 2. Nf3 d6\n*',
+    ],
+    [
+        START_FEN,
+        [
+            {fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', m: 'e4', ply: 0},
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2', m: 'e5', ply: 1},
+        ],
+        [
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2', m: 'Nc3', ply: 2},
+            {m: 'Nf6', ply: 3},
+            {m: 'd3', ply: 4},
+        ],
+        'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
+        '2. Nc3 Nf6 3. d3\n*',
+    ],
+    [
+        START_FEN,
+        [],
+        [
+            {fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2', m: 'Nc3', ply: 2},
+            {m: 'Nf6', ply: 3},
+            {m: 'd3', ply: 4},
+        ],
+        'rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2',
+        '2... Nf6 3. d3\n*',
+    ],
+].forEach(([start_fen, main_moves, board_moves, fen, answer], id) => {
     test(`copy_pgn:${id}`, () => {
-        let board = xboards.pv0;
-        board.start_fen = start_fen;
-        board.reset();
-        for (let move of moves)
-            board.moves[move.ply] = move;
+        Y.x = 'live';
+        for (let [name, moves] of [['live', main_moves], ['pv0', board_moves]]) {
+            let board = xboards[name];
+            board.start_fen = start_fen;
+            board.reset();
+            for (let move of moves)
+                board.moves[move.ply] = move;
+        }
 
-        let header = PGN_HEADER
+        let headers = [...PGN_HEADERS];
+        if (!fen)
+            headers.splice(7, 2);
+
+        let header = headers.join('\n')
                 .replace('{DATE}', FromTimestamp()[0].replace(/-/g, '.'))
-                .replace(START_FEN, fen || start_fen),
-            text = copy_pgn(board, false, false);
+                .replace('{FEN}', fen),
+            text = copy_pgn(xboards.pv0, false, false);
         expect(text).toEqual(header + answer);
     });
 });

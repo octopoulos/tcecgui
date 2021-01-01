@@ -12,7 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
-~          : 2020-12-31 : fix first move or FEN in copy_pgn
+2021-01-01 : 2020-12-31 : fix first move or FEN in copy_pgn
 2020-12-31 : 2020-12-31 : shorter imports
 2020-12-31 : 2020-12-31 : fix round #
 2020-12-31 : 2020-12-31 : parse_pgn handles ...

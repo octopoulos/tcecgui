@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2021-01-01
 //
 // game board:
 // - 4 rendering modes:
@@ -2890,7 +2890,9 @@ class XBoard {
                         lines.push(`<i class="real">${move.m}</i>`);
                         return lines.join('');
                     }).join('');
-                HTML(Id('pva-pv'), `[d${this.depth}] ${san_list}`);
+
+                if (san_list)
+                    HTML(Id('pva-pv'), `[${this.depth}/${moves.length}] ${san_list}`);
             }
         }
 
