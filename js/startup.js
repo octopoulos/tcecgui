@@ -1874,6 +1874,8 @@ function prepare_settings() {
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             boom_test: '1',
             boom_threshold: option_number(2.3, 0, 10, 0.1),
+            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
+            boom_volume: option_number(10, 0, 20, 0.5),
             capture_delay: option_number(-200, -1000, 1000),
             sound_boom: [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'],
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
@@ -1883,7 +1885,7 @@ function prepare_settings() {
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
-            volume: option_number(7, 0, 15),
+            volume: option_number(7, 0, 15, 0.5),
         },
         video: {
             background_color: [{type: 'color'}, '#000000'],

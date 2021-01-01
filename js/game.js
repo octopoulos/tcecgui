@@ -3933,11 +3933,11 @@ function check_boom(section, force) {
     for (let id = 2; id < players.length; id ++)
         if (players[id] && two.has(players[id][1]))
             players[id] = null;
-    players = players.filter(player => player != null);
+    players = players.filter(player => player);
 
     // 3) engines must agree
     let boomed = main.boomed,
-        scores = players.map(player => clamp_eval(player[0])).filter(eval_ => !isNaN(eval_)),
+        scores = players.map(player => clamp_eval(player[0])),
         scores1 = scores.filter(score => score >= threshold),
         scores2 = scores.filter(score => score <= -threshold);
 
@@ -3959,19 +3959,26 @@ function check_boom(section, force) {
     if (force)
         main.boomed = boomed;
 
-    // 5) shake screen
-    let body = Id('body');
+    // 5) visual stuff
+    let body = Id('body'),
+        visual = Y.boom_visual;
+    // color
+    if (['all', 'color'].includes(visual))
+        Style(body, 'background-color:#f00');
+
+    // shake
     if (!timers.shake)
         Assign(boom_info, {
             start: Now(),
             transform: body? body.style.transform: '',
         });
-    Style(body, 'background-color:#f00');
-    add_timeout('body', () => {
-        clear_timeout('shake');
-        Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
-    }, TIMEOUT_boom);
-    add_timeout('shake', shake_screen, TIMEOUT_shake, true);
+    if (['all', 'shake'].includes(visual)) {
+        add_timeout('body', () => {
+            clear_timeout('shake');
+            Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
+        }, TIMEOUT_boom);
+        add_timeout('shake', shake_screen, TIMEOUT_shake, true);
+    }
     return true;
 }
 

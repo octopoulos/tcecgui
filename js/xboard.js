@@ -865,7 +865,7 @@ class XBoard {
         }
         this.boomed = score;
         last_sound = sound;
-        play_sound(audiobox, sound, {interrupt: true});
+        play_sound(audiobox, sound, {interrupt: true, volume: Y.boom_volume / 10});
         return true;
     }
 
