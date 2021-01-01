@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-31
+// @version 2021-01-01
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1867,8 +1867,8 @@ function prepare_settings() {
         },
         audio: {
             audio_book: [ON_OFF, 1],
-            audio_boom: [['off', 'boom', 'wow'], 'wow'],
-            audio_boom_score: option_number(0, 10, 0.1),
+            audio_boom: [['off', 'random', 'boom', 'wow'], 'random'],
+            audio_boom_score: option_number(2.5, 0, 10, 0.1),
             audio_delay: option_number(150, 0, 2000),
             audio_live_archive: [ON_OFF, 0],
             audio_moves: [['none', 'all', 'last'], 'all'],

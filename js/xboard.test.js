@@ -1,31 +1,55 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2021-01-01
 //
 /*
 globals
-expect, require, test
+expect, global, require, test
 */
 'use strict';
 
-let {Assign} = require('./common.js'),
+let {Assign, Keys} = require('./common.js'),
+    {load_defaults, Y} = require('./engine.js'),
+    {create_boards} = require('./game.js'),
+    {xboards} = require('./global.js'),
+    {prepare_settings} = require('./startup.js'),
     {START_FEN, XBoard} = require('./xboard.js');
 
-let archive = new XBoard({}),
-    live = new XBoard({id: 'null'});
+global.T = null;
+
+prepare_settings();
+load_defaults();
+Y.volume = 0;
+create_boards('text');
+
+let archive = xboards.archive,
+    live = xboards.live;
 
 live.initialise();
 live.dual = archive;
+live.id = 'null';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // add_moves_string
 [
-    ['1. d4 Nf6 2. c4 c5 3. d5', 0, [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}]],
+    [
+        '1. d4 Nf6 2. c4 c5 3. d5',
+        0,
+        [
+            0,
+            {
+                fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+                from: 99, m: 'd4', ply: 0, san: 'd4', score: 120, to: 67,
+            },
+            {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'},
+        ],
+    ],
     ['38...Qg7 39. Rf2 Qh6 40. Nxg6', 75, [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}]],
     ['41...Kxg8 42. a8=Q+ Kg7', 81, [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}]],
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
+        live.reset();
         live.add_moves_string(text, cur_ply);
 
         let offset = answer[0],
@@ -49,6 +73,20 @@ live.dual = archive;
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
         expect(live.analyse_fen(fen)).toEqual(answer);
+    });
+});
+
+// boom
+[
+    [{}, 0, true, 0],
+    [{}, -2.8, true, -2.8],
+    [{}, 3, true, 3],
+    [{audio_boom: 0}, -5, false, 3],
+].forEach(([y, score, answer, answer_boom], id) => {
+    test(`boom:${id}`, () => {
+        Assign(Y, y);
+        expect(live.boom(score)).toEqual(answer);
+        expect(live.boomed).toEqual(answer_boom);
     });
 });
 
@@ -217,6 +255,18 @@ live.dual = archive;
         Assign(live, options);
         live.set_fen(fen);
         expect(live.render_text()).toEqual(answer);
+    });
+});
+
+// reset
+[
+    [{boomed: 0}],
+].forEach(([answer], id) => {
+    test(`reset:${id}`, () => {
+        live.reset();
+        Keys(answer).forEach(key => {
+            expect(live[key]).toEqual(answer[key]);
+        });
     });
 });
 

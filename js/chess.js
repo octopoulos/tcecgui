@@ -1,11 +1,11 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2021-01-01
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
 globals
-Abs, Assign, DefaultInt, exports, Floor, From, global, Lower, LS, Max, Min, require, SetDefault, Undefined
+Abs, Assign, DefaultInt, exports, Floor, global, Lower, LS, Max, Min, require
 */
 'use strict';
 
