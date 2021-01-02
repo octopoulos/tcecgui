@@ -1749,12 +1749,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 td_class = 'opening';
                 value = format_opening(value);
                 break;
-            case 'rmobility_score':
-                value = value.toFixed(3);
-                break;
             case 'result':
                 td_class = 'nowrap';
                 value = value.replace(/1\/2/g, '½');
+                break;
+            case 'rmobility_score':
+                value = value.toFixed(3);
                 break;
             case 'score':
                 if (is_winner)
