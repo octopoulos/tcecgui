@@ -1040,7 +1040,7 @@ function analyse_crosstable(section, data) {
 
     // 3) table-cross: might need to update the columns too
     let node = Id('table-cross'),
-        new_columns = [...Split(TABLES.cross), ...abbrevs, ...['points+']],
+        new_columns = [...Split(TABLES.cross), ...abbrevs],
         scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
 
