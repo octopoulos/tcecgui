@@ -201,6 +201,7 @@ class XBoard {
         this.main_manual = this.main || this.manual;
         this.max_time = 0;                              // max time in IT
         this.min_depth = 0;                             // max depth in IT
+        this.moobs = new Set();
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -2217,6 +2218,7 @@ class XBoard {
         this.moves.length = 0;
         this.next = null;
         this.ply = -1;
+        this.moobs.clear();
         this.seen = 0;
         this.text = '';
 
