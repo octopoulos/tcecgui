@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-02
 //
 // game board:
 // - 4 rendering modes:
@@ -175,6 +175,7 @@ class XBoard {
         this.booms = new Set();
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
+        this.click_play_id = `click_play_${this.id}`;   // for timers
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
@@ -399,7 +400,7 @@ class XBoard {
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {
-                if (!timers.click_play) {
+                if (!timers[this.click_play_id]) {
                     this.set_fen(null, true);
                     this.ply = -1;
                     this.play_mode = 'book';
@@ -1279,11 +1280,11 @@ class XBoard {
     delayed_picks(is_delay) {
         if (!this.manual)
             return;
-        if (timers.click_play && this.is_ai())
+        if (timers[this.click_play_id] && this.is_ai())
             return;
 
         AnimationFrame(() => {
-            add_timeout(`pick${this.id}`, () => this.show_picks(true), is_delay? TIMEOUT_pick: 0);
+            add_timeout(`pick_${this.id}`, () => this.show_picks(true), is_delay? TIMEOUT_pick: 0);
         });
     }
 
@@ -1593,7 +1594,7 @@ class XBoard {
         this.hold_time = now;
 
         let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
-        add_timeout(`click_${name}`, () => this.hold_button(name, step + 1), timeout);
+        add_timeout(`click_${name}_${this.id}`, () => this.hold_button(name, step + 1), timeout);
     }
 
     /**
@@ -1963,10 +1964,13 @@ class XBoard {
      * @param {string=} origin
      */
     play(stop, manual, origin) {
+        let key = this.click_play_id,
+            timer = timers[key];
+
         if (DEV.time)
-            LS(`play: ${origin} : stop=${stop} : manual=${manual} : cp=${timers.click_play} : mode=${this.play_mode}`);
-        if (stop || timers.click_play) {
-            clear_timeout(`click_play`);
+            LS(`play: ${origin} : stop=${stop} : manual=${manual} : cp[${key}]=${timer} : mode=${this.play_mode}`);
+        if (stop || timer) {
+            clear_timeout(key);
             stop = true;
             this.play_mode = 'play';
         }
@@ -2304,7 +2308,7 @@ class XBoard {
     set_delayed_ply(ply) {
         this.delayed_ply = ply;
 
-        add_timeout(`dual${this.id}`, () => {
+        add_timeout(`dual_${this.id}`, () => {
             let ply = this.delayed_ply;
             if (DEV.div)
                 LS(`${this.id}: delayed_ply=${ply}`);
@@ -2403,7 +2407,7 @@ class XBoard {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
 
-        clear_timeout(`dual${this.id}`);
+        clear_timeout(`dual_${this.id}`);
         this.clicked = manual;
         this.delayed_ply = -2;
 
@@ -2469,7 +2473,7 @@ class XBoard {
             sounds.sort((a, b) => (a[1] - b[1]));
 
             for (let [name, delay] of sounds)
-                add_timeout(`ply${ply}+${name}`, () => {
+                add_timeout(`ply${ply}+${name}_${this.id}`, () => {
                     play_sound(audiobox, Y[`sound_${name}`], {interrupt: true});
                 }, delay + offset);
         }
@@ -2492,7 +2496,7 @@ class XBoard {
      * @param {boolean=} force
      */
     show_picks(force) {
-        if (!this.manual || timers.click_play)
+        if (!this.manual || timers[this.click_play_id])
             return;
         if (!force && this.fen == this.fen2)
             return;
@@ -2959,7 +2963,7 @@ class XBoard {
                             arrow = color + 2;
                         else
                             arrow = arrow.slice(-1) * 1;
-                        add_timeout('xarrow', () => {
+                        add_timeout(`xarrow_${this.id}`, () => {
                             player.arrow = [arrow, best];
                             this.arrow(arrow, best);
                         }, TIMEOUT_arrow);

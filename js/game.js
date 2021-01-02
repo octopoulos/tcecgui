@@ -139,7 +139,7 @@ let ANALYSIS_URLS = {
     },
     // need to have at least 1 non empty/0 field for those columns, otherwise: hidden
     COLUMNS_REQUIRED = {
-        stand: ['crashes'],
+        stand: ['crashes', 'rmobility_score'],
     },
     CONNECTORS = [
         [
@@ -4602,7 +4602,8 @@ function paste_text(text) {
     // try PGN
     let moves,
         board = board_target.manual? board_target: xboards.pva,
-        pgn = parse_pgn(board.name, text);
+        pgn = parse_pgn(board.name, text),
+        players = board.players;
     if (pgn) {
         board.pgn = pgn;
         let fen = pgn.Headers.FEN;
@@ -4626,9 +4627,10 @@ function paste_text(text) {
     else
         board.add_moves_string(text);
 
-    // moves
+    // moves + make sure the board is paused
     if (moves)
         board.add_moves(moves);
+    board.play(true, false, 'paste_text');
 }
 
 // 3D SCENE

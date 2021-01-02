@@ -12,6 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
+2021-01-02 : 2021-01-02 : stop PVA after paste_text
 2021-01-02 : 2021-01-02 : r-mobility in tables
 2021-01-02 : 2021-01-01 : quick setup: boom sound + visual, theme
 2021-01-01 : 2021-01-01 : boom menu
