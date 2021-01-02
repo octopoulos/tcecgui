@@ -2264,7 +2264,7 @@ function calculate_event_stats(section, rows) {
         //
         reverses: num_pair,
         decisive_openings: `${decisives} [${format_percent(decisives / num_pair)}]`,
-        reverse_kills: `${kills} [${format_percent(kills / num_pair)}]`,
+        double_wins: `${kills} [${format_percent(kills / num_pair)}]`,
         //
         average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
