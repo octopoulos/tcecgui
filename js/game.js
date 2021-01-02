@@ -3965,6 +3965,7 @@ function check_boom(section, force) {
             if (DEV.boom)
                 LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} => ${main.boomed}`);
         }
+        booms.clear();
         return false;
     }
 
