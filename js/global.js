@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-02
 //
 // global variables/functions shared across multiple js files
 //
@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210101d',
+    VERSION = '20210102',
     virtual_close_popups,
     xboards = {};
 
@@ -295,23 +295,9 @@ function reset_defaults(pattern) {
  */
 function reset_old_settings() {
     let version = Undefined(Y.version, '');
-    if (version == VERSION)
+    if (version == VERSION) {
+        save_option('version', VERSION);
         return;
-
-    if (!version) {
-        let updates = ['audio'];
-        for (let update of updates) {
-            let settings = X_SETTINGS[update];
-            if (!settings)
-                continue;
-            LS(`reset ${update} settings ...`);
-
-            Keys(settings).forEach(key => {
-                let value = settings[key];
-                if (IsArray(value))
-                    save_option(key, value[1]);
-            });
-        }
     }
 
     if (version < '20200530') {
@@ -341,7 +327,7 @@ function reset_old_settings() {
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
-    Y.new_version = true;
+    Y.new_version = version;
 }
 
 /**
