@@ -216,6 +216,8 @@ let ANALYSIS_URLS = {
         moves: [0, 0],
         points: [0, 1],
         rank: [0, 0],
+        rmobility_score: [99999, 0],
+        rmobility_result: [80000, 0],
         sb: [0, 1],
         start: [0, 0],
         white_ev: [99999, 1],
@@ -294,11 +296,11 @@ let ANALYSIS_URLS = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: 'Rank|Engine|Points',
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
-        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
+        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
-        sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
+        sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: `Rank|Engine|Games|Points|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
+        stand: `Rank|Engine|Games|Points|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|rmobility_score=rMobility|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -325,6 +327,8 @@ let ANALYSIS_URLS = {
         50: 'Fifty-move rule',
         ECO: 'Encyclopaedia of Chess Openings',
         H2H: 'Head to head',
+        rmobility_result: 'r-Mobility result',
+        rmobility_score: 'r-Mobility score',
         SB: 'Sonneborn–Berger',
         TB: 'Tablebase',
         TC: 'Time control',
@@ -986,6 +990,7 @@ function analyse_crosstable(section, data) {
             losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
             points: dico.Score,
             rank: dico.Rank,
+            rmobility_score: dico.RMobilityScore * 1,
             sb: dico.Neustadtl,
             wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
         });
@@ -1244,7 +1249,7 @@ function create_table_columns(columns, widths, no_translates=[], titles={}) {
     return columns.map((column, id) => {
         let [field, value] = create_field_value(column),
             style = widths? ` style="width:${widths[id]}"`: '',
-            title = titles[value] || TITLES[value],
+            title = titles[value] || TITLES[value] || titles[field] || TITLES[field],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
         title = title? ` title="${title}"`: '';
@@ -1572,8 +1577,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     let empty = reverse? -1: 1,
-        [number_column, number_reverse] = NUMBER_COLUMNS[sort] || [((sort.slice(0, 2) == 'x_')? -2: undefined), 0],
-        is_number = (number_column != undefined);
+        [def, number_reverse] = NUMBER_COLUMNS[sort] || [((sort.slice(0, 2) == 'x_')? -2: undefined), 0],
+        is_number = (def != undefined);
     // LS('sort=', sort, 'number_column=', number_column, 'is_number=', is_number);
 
     data.sort((a, b) => {
@@ -1583,8 +1588,17 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             return empty;
         if (bx == undefined)
             return -empty;
+
+        // special cases:
+        // G5.0 => 5.0
+        if (def == 80000) {
+            ax = (ax[0] == '-')? DefaultFloat(ax.slice(2), def) - 0.001: DefaultFloat(ax.slice(1), def) + 0.001;
+            bx = (bx[0] == '-')? DefaultFloat(bx.slice(2), def) - 0.001: DefaultFloat(bx.slice(1), def) + 0.001;
+            return ax - bx;
+        }
+
         if (is_number || (!isNaN(ax) && !isNaN(bx)))
-            return DefaultFloat(ax, number_column) - DefaultFloat(bx, number_column);
+            return DefaultFloat(ax, def) - DefaultFloat(bx, def);
         return (ax + '').localeCompare(bx + '');
     });
     if (reverse ^ number_reverse)
@@ -1734,6 +1748,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'opening':
                 td_class = 'opening';
                 value = format_opening(value);
+                break;
+            case 'rmobility_score':
+                value = value.toFixed(3);
                 break;
             case 'result':
                 td_class = 'nowrap';
