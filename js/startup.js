@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1021,6 +1021,16 @@ function populate_areas() {
 }
 
 /**
+ * Quick setup when the site is loaded for the first time
+ */
+function quick_setup() {
+    let old = Y.new_version;
+    if (old == undefined || old >= '20210102')
+        return;
+    show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
+}
+
+/**
  * Reset to the default/other settings
  * @param {boolean} is_default
  */
@@ -1779,7 +1789,7 @@ function prepare_settings() {
         twitch_chat: 1,
         twitch_dark: 0,
         twitch_video: 1,
-        version: VERSION,
+        version: '0',
         x: 'live',
     });
     guess_types(DEFAULTS);
@@ -2171,6 +2181,14 @@ function prepare_settings() {
             percent: [ON_OFF, 1],
             single_line: [ON_OFF, 0],
         },
+        quick_setup: {
+            _center: 1,
+            _pop: true,
+            _title: 'Quick setup',
+            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
+            boom_volume: option_number(7, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
+            volume: option_number(7, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
+        },
     });
 
     Assign(TRANSLATE_SPECIALS, {
@@ -2265,6 +2283,7 @@ function startup() {
     start_game();
     init_graph();
     init_hash();
+    quick_setup();
 
     set_global_events();
     set_engine_events();

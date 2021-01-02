@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-02
 //
 // Game specific code:
 // - control the board, moves
@@ -3979,6 +3979,7 @@ function check_boom(section, force) {
     booms.add(ply);
     if (DEV.boom)
         LS(`boomed: ${booms.size} : ${[...booms].join(' ')} => ${best} ~ ${main.boomed}`);
+    moobs.clear();
     if (booms.size < Y.boom_consecutive && !force)
         return false;
 
@@ -3988,7 +3989,6 @@ function check_boom(section, force) {
     if (force)
         main.boomed = boomed;
     booms.clear();
-    moobs.clear();
 
     // 5) visual stuff
     let body = Id('body'),
