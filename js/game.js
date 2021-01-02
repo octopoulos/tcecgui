@@ -2264,7 +2264,7 @@ function calculate_event_stats(section, rows) {
         //
         reverses: num_pair,
         decisive_openings: `${decisives} [${format_percent(decisives / num_pair)}]`,
-        reverse_kills: `${kills} [${format_percent(kills / num_pair)}]`,
+        double_wins: `${kills} [${format_percent(kills / num_pair)}]`,
         //
         average_moves: Round(moves / games),
         min_moves: `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
@@ -3954,28 +3954,41 @@ function check_boom(section, force) {
             best = scores2.reduce((a, b) => a + b) / scores2.length;
     }
 
-    // no boom
+    // check moobs
+    let booms = main.booms,
+        moobs = main.moobs;
     if (!best) {
         if (boomed) {
-            let moobs = main.moobs;
             moobs.add(ply);
             if (moobs.size >= Y.boom_ply_reset)
                 main.boomed = 0;
             if (DEV.boom)
                 LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} => ${main.boomed}`);
         }
+        booms.clear();
         return false;
     }
 
     // 4) play sound, might fail if settings disable it
     if (DEV.boom)
         LS(`BOOM: best=${best} : scores=${scores} : players=${players} : ply=${ply}`);
-    if (ply < Y.boom_start || Sign(best) == Sign(boomed) || !main.boom(best))
+    if (ply < Y.boom_start && !force)
+        return false;
+
+    // check booms
+    booms.add(ply);
+    if (DEV.boom)
+        LS(`boomed: ${booms.size} : ${[...booms].join(' ')} => ${best} ~ ${main.boomed}`);
+    if (booms.size < Y.boom_consecutive && !force)
+        return false;
+
+    if (Sign(best) == Sign(boomed) || !main.boom(best))
         return false;
 
     if (force)
         main.boomed = boomed;
-    main.moobs.clear();
+    booms.clear();
+    moobs.clear();
 
     // 5) visual stuff
     let body = Id('body'),
@@ -4655,7 +4668,7 @@ function change_setting_game(name, value) {
             }
         }
         break;
-    case 'boom_activate_now':
+    case 'boom_reactivate':
         xboards.live.boomed = 0;
         break;
     case 'boom_test':

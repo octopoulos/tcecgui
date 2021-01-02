@@ -1855,7 +1855,7 @@ function prepare_settings() {
         cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
         shortcuts = [...['off'], ...Keys(TABLES)],
-        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'];
+        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5'], 'random'];
 
     merge_settings({
         // new column after 10 items
@@ -1979,15 +1979,16 @@ function prepare_settings() {
         },
         boom: {
             _prefix: 'boom_',
-            boom_activate_now: '1',
-            boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            boom_start: option_number(30, 0, 300, 1, {}, 'boom can only happen after this ply'),
             boom_test: '1',
+            boom_consecutive: option_number(2, 0, 10, 1, {}, 'need X consecutive booms to trigger it'),
+            boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
+            boom_start: option_number(20, 0, 300, 1, {}, 'boom can only happen after this ply'),
             boom_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
             boom_volume: option_number(7, 0, 20, 0.5),
             sound_boom: sound_boom,
+            boom_reactivate: '1',
         },
         control: {
             book_every: option_number(600, 100, 5000, 100),

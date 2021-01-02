@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210101c',
+    VERSION = '20210101d',
     virtual_close_popups,
     xboards = {};
 
@@ -336,6 +336,8 @@ function reset_old_settings() {
         save_option('game_threads', 1);
         save_option('graph_marker_color', '#299bff');
     }
+    if (version < '20210101d')
+        save_option('boom_start', 20);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
