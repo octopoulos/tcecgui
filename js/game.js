@@ -3962,29 +3962,33 @@ function check_boom(section, force) {
             moobs.add(ply);
             if (moobs.size >= Y.boom_ply_reset)
                 main.boomed = 0;
-            if (DEV.boom)
-                LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} => ${main.boomed}`);
+            if (DEV.boom2)
+                LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} : ${scores} => ${main.boomed}`);
         }
         booms.clear();
         return false;
     }
 
     // 4) play sound, might fail if settings disable it
-    if (DEV.boom)
-        LS(`BOOM: best=${best} : scores=${scores} : players=${players} : ply=${ply}`);
     if (ply < Y.boom_start && !force)
         return false;
 
     // check booms
     booms.add(ply);
-    if (DEV.boom)
-        LS(`boomed: ${booms.size} : ${[...booms].join(' ')} => ${best} ~ ${main.boomed}`);
+    if (DEV.boom2)
+        LS(`boomed: ${booms.size} : ${[...booms].join(' ')} : ${scores} => ${main.boomed} ~ ${best}`);
     moobs.clear();
     if (booms.size < Y.boom_consecutive && !force)
         return false;
 
     if (Sign(best) == Sign(boomed) || !main.boom(best))
         return false;
+
+    if (DEV.boom)
+        LS([
+            `BOOM: best=${best} : ply=${ply} : scores=${scores} : players=${players}`,
+            `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
+        ].join(' : '));
 
     if (force)
         main.boomed = boomed;
