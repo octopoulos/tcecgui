@@ -1982,7 +1982,7 @@ function prepare_settings() {
             boom_test: '1',
             boom_consecutive: option_number(2, 0, 10, 1, {}, 'need X consecutive booms to trigger it'),
             boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            boom_start: option_number(24, 0, 300, 1, {}, 'boom can only happen after this ply'),
+            boom_start: option_number(20, 0, 300, 1, {}, 'boom can only happen after this ply'),
             boom_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],

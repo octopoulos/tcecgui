@@ -336,6 +336,8 @@ function reset_old_settings() {
         save_option('game_threads', 1);
         save_option('graph_marker_color', '#299bff');
     }
+    if (version < '20210101d')
+        save_option('boom_start', 20);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
