@@ -1855,7 +1855,7 @@ function prepare_settings() {
         cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
         shortcuts = [...['off'], ...Keys(TABLES)],
-        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'];
+        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5'], 'random'];
 
     merge_settings({
         // new column after 10 items
