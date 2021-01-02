@@ -3945,14 +3945,10 @@ function check_boom(section, force) {
 
     if (force)
         best = force;
-    else if (scores1.length > min_vote) {
-        if (scores.every(score => score >= 0))
-            best = scores1.reduce((a, b) => a + b) / scores1.length;
-    }
-    else if (scores2.length > min_vote) {
-        if (scores.every(score => score <= 0))
-            best = scores2.reduce((a, b) => a + b) / scores2.length;
-    }
+    else if (scores1.length > min_vote && scores[0] > 0 && scores[1] > 0)
+        best = scores1.reduce((a, b) => a + b) / scores1.length;
+    else if (scores2.length > min_vote && scores[0] < 0 && scores[1] < 0)
+        best = scores2.reduce((a, b) => a + b) / scores2.length;
 
     // check moobs
     let booms = main.booms,
