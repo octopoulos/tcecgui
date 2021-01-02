@@ -2182,7 +2182,6 @@ function prepare_settings() {
             single_line: [ON_OFF, 0],
         },
         quick_setup: {
-            _center: 1,
             _pop: true,
             _title: 'Quick setup',
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
