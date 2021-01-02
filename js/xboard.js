@@ -175,7 +175,6 @@ class XBoard {
         this.booms = new Set();
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
-        this.click_play_id = `click_play_${this.id}`;   // for timers
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
@@ -213,6 +212,7 @@ class XBoard {
         this.pgn = {};
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
+        this.play_id = `click_play_${this.id}`;         // for timers
         this.play_mode = 'play';
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = -1;                                  // current ply
@@ -400,7 +400,7 @@ class XBoard {
         else if (this.ply >= num_move - 1) {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {
-                if (!timers[this.click_play_id]) {
+                if (!timers[this.play_id]) {
                     this.set_fen(null, true);
                     this.ply = -1;
                     this.play_mode = 'book';
@@ -1280,7 +1280,7 @@ class XBoard {
     delayed_picks(is_delay) {
         if (!this.manual)
             return;
-        if (timers[this.click_play_id] && this.is_ai())
+        if (timers[this.play_id] && this.is_ai())
             return;
 
         AnimationFrame(() => {
@@ -1964,7 +1964,7 @@ class XBoard {
      * @param {string=} origin
      */
     play(stop, manual, origin) {
-        let key = this.click_play_id,
+        let key = this.play_id,
             timer = timers[key];
 
         if (DEV.time)
@@ -2496,7 +2496,7 @@ class XBoard {
      * @param {boolean=} force
      */
     show_picks(force) {
-        if (!this.manual || timers[this.click_play_id])
+        if (!this.manual || timers[this.play_id])
             return;
         if (!force && this.fen == this.fen2)
             return;
