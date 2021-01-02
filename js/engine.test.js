@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2021-01-02
 //
 /*
 globals
@@ -57,6 +57,11 @@ Assign(translates, {
     ['{Game}#', ['game', '{Game}#']],
     ['{Wins} <i>[{W/B}]</i>', ['wins', '{Wins} <i>[{W/B}]</i>']],
     ['{Wins} <i class="more">[{W/B}]</i>', ['wins', '{Wins} <i class="more">[{W/B}]</i>']],
+    ['rMobility', ['r_mobility', 'rMobility']],
+    ['RMobilityScore', ['rmobility_score', 'RMobilityScore']],
+    ['RMobilityResult', ['rmobility_result', 'RMobilityResult']],
+    ['rmobility_score=rMobility', ['rmobility_score', 'rMobility']],
+    ['rmobility_result=rMobility', ['rmobility_result', 'rMobility']],
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
