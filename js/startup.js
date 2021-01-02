@@ -2186,6 +2186,7 @@ function prepare_settings() {
             _title: 'Quick setup',
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
             boom_volume: option_number(7, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
+            theme: [THEMES, THEMES[0]],
             volume: option_number(7, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
         },
     });
