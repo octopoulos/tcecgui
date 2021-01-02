@@ -3971,7 +3971,7 @@ function check_boom(section, force) {
     // 4) play sound, might fail if settings disable it
     if (DEV.boom)
         LS(`BOOM: best=${best} : scores=${scores} : players=${players} : ply=${ply}`);
-    if (ply < Y.boom_start)
+    if (ply < Y.boom_start && !force)
         return false;
 
     // check booms
