@@ -1986,7 +1986,7 @@ function prepare_settings() {
             boom_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(9, 0, 20, 0.5),
+            boom_volume: option_number(7, 0, 20, 0.5),
             sound_boom: sound_boom,
         },
         control: {

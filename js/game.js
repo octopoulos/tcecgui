@@ -3990,13 +3990,13 @@ function check_boom(section, force) {
             start: Now(),
             transform: body? body.style.transform: '',
         });
-    if (['all', 'shake'].includes(visual)) {
-        add_timeout('body', () => {
-            clear_timeout('shake');
-            Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
-        }, TIMEOUT_boom);
+    if (['all', 'shake'].includes(visual))
         add_timeout('shake', shake_screen, TIMEOUT_shake, true);
-    }
+
+    add_timeout('body', () => {
+        clear_timeout('shake');
+        Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
+    }, TIMEOUT_boom);
     return true;
 }
 
