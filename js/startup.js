@@ -1980,13 +1980,13 @@ function prepare_settings() {
         boom: {
             _prefix: 'boom_',
             boom_activate_now: '1',
-            boom_ply_reset: option_number(10, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
+            boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
             boom_start: option_number(30, 0, 300, 1, {}, 'boom can only happen after this ply'),
             boom_test: '1',
             boom_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(10, 0, 20, 0.5),
+            boom_volume: option_number(9, 0, 20, 0.5),
             sound_boom: sound_boom,
         },
         control: {
