@@ -4667,7 +4667,7 @@ function change_setting_game(name, value) {
             }
         }
         break;
-    case 'boom_activate_now':
+    case 'boom_reactivate':
         xboards.live.boomed = 0;
         break;
     case 'boom_test':
