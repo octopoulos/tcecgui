@@ -215,6 +215,7 @@ let ANALYSIS_URLS = {
         losses: [0, 1],
         moves: [0, 0],
         points: [0, 1],
+        'points+': [0, 1],
         rank: [0, 0],
         rmobility_score: [99999, 0],
         rmobility_result: [80000, 0],
@@ -290,17 +291,18 @@ let ANALYSIS_URLS = {
         archive: {},
         live: {},
     },
+    TABLE_DE = ' <hsub>[{DE}]</hsub>',
     TABLE_LIVE = ' <hsub>[{Live}]</hsub>',
     TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
-        cross: 'Rank|Engine|Points',
+        cross: `Rank|Engine|Points${TABLE_DE}`,
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: `Rank|Engine|Games|Points|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|rmobility_score=rMobility|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
+        stand: `Rank|Engine|Games|Points${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|rmobility_score=rMobility|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -327,6 +329,7 @@ let ANALYSIS_URLS = {
         50: 'Fifty-move rule',
         ECO: 'Encyclopaedia of Chess Openings',
         H2H: 'Head to head',
+        points: 'points + direct encounters',
         rmobility_result: 'r-Mobility result',
         rmobility_score: 'r-Mobility score',
         SB: 'Sonneborn–Berger',
@@ -914,6 +917,10 @@ function analyse_crosstable(section, data) {
 
     let cross_rows = [],
         dicos = data.Table,
+        encounters = {},
+        engine_crosses = {},
+        engine_stands = {},
+        head_opponents = {},
         max_game = 0,
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
@@ -940,19 +947,24 @@ function analyse_crosstable(section, data) {
     for (let name of orders) {
         let dico = dicos[name],
             elo = dico.Rating,
+            head_opponent = SetDefault(head_opponents, name, {}),
             new_elo = Round(elo + (dico.Elo || 0)),
-            results = dico.Results;
+            results = dico.Results,
+            score = dico.Score;
 
         // cross
         let cross_row = {
             abbrev: Lower(dico.Abbreviation),
             engine: name,
             num_break: Floor(max_game / max_column),
-            points: dico.Score,
+            points: score,
+            'points+': score,
             rank: dico.Rank,
         };
         abbrevs.forEach((abbrev, id) => {
-            let games = results[orders[id]];
+            let opponent = orders[id],
+                games = results[opponent];
+
             if (games) {
                 let count = 0,
                     total = 0,
@@ -966,9 +978,12 @@ function analyse_crosstable(section, data) {
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
                 cross_row[`x_${abbrev}`] = count? (total / count + total * 1e-5 - count * 1e-7): -1;
+
+                head_opponent[opponent] = games.H2h;
             }
         });
         cross_rows.push(cross_row);
+        engine_crosses[name] = cross_row;
 
         // stand
         let games = dico.Games,
@@ -979,8 +994,8 @@ function analyse_crosstable(section, data) {
             draws_b = dico.GamesAsBlack - wins_b - loss_b,
             draws_w = dico.GamesAsWhite - wins_w - loss_w;
 
-        stand_rows.push({
-            '%': format_percent(dico.Score / games),
+        let stand_row = {
+            '%': format_percent(score / games),
             crashes: dico.Strikes,
             diff: `${new_elo - elo} [${new_elo}]`,
             draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
@@ -988,19 +1003,44 @@ function analyse_crosstable(section, data) {
             engine: name,
             games: games,
             losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
-            points: dico.Score,
+            points: score,
+            'points+': score,
             rank: dico.Rank,
             rmobility_score: dico.RMobilityScore * 1,
             sb: dico.Neustadtl,
             wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
-        });
+        };
+        engine_stands[name] = stand_row;
+        stand_rows.push(stand_row);
+
+        // encounters
+        SetDefault(encounters, score, {})[name] = 0;
     }
+
+    // 2) direct encounters
+    Keys(encounters).forEach(key => {
+        let engines = encounters[key],
+            names = Keys(engines);
+        if (names.length < 2)
+            return;
+        for (let name of names) {
+            for (let name2 of names)
+                if (name != name2)
+                    engines[name] += head_opponents[name][name2] || 0;
+
+            let de = engines[name];
+            for (let row of [engine_crosses[name], engine_stands[name]]) {
+                row['points+'] = row.points + de * 0.0001;
+                row.points = `${row.points} [${de}]`;
+            }
+        }
+    });
 
     update_table(section, 'stand', stand_rows);
 
-    // 2) table-cross: might need to update the columns too
+    // 3) table-cross: might need to update the columns too
     let node = Id('table-cross'),
-        new_columns = [...Split(TABLES.cross), ...abbrevs],
+        new_columns = [...Split(TABLES.cross), ...abbrevs, ...['points+']],
         scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
 
@@ -1571,10 +1611,16 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // 3) sorting
     let reverse,
         sort = Y.sort || (is_h2h? 'id': '_id');
+    // order
     if (sort[0] == '-') {
         reverse = true;
         sort = sort.slice(1);
     }
+
+    // points => points+
+    let sort2 = `${sort}+`;
+    if (NUMBER_COLUMNS[sort2])
+        sort = sort2;
 
     let empty = reverse? -1: 1,
         [def, number_reverse] = NUMBER_COLUMNS[sort] || [((sort.slice(0, 2) == 'x_')? -2: undefined), 0],
