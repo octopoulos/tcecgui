@@ -375,34 +375,37 @@ create_chart_data();
 
 // check_boom
 [
-    [{boom_start: 0, x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
-    [{x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
-    [{}, {boomed: 0}, [5, 3, 2.5, 0.5], [], true, 3.5],
-    [{}, {}, [15, 5, 0.5, 0.5], [], false, 3.5],
-    [{}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
-    [{}, {}, [-1, 1, -1, -0.5], [], false, -5.333],
-    [{}, {}, [5, 5, 5, -0.1], [], false, -5.333],
-    [{}, {}, [5, 5, 5, 0], [], true, 5],
-    [{}, {}, [-5, -5, -5, 1], [], false, 5],
-    [{}, {}, [8, 3, 5, 5], [], false, 5],
+    [0, {boom_start: 0, x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
+    [0, {boom_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
+    [0, {}, {boomed: 0}, [5, 3, 2.5, 0.5], [], true, 3.5],
+    [0, {}, {}, [15, 5, 0.5, 0.5], [], false, 3.5],
+    [0, {}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
+    [0, {}, {}, [-1, 1, -1, -0.5], [], false, -5.333],
+    [0, {}, {}, [5, 5, 5, -0.1], [], false, -5.333],
+    [0, {}, {}, [5, 5, 5, 0], [], true, 5],
+    [0, {}, {}, [-5, -5, -5, 1], [], false, 5],
+    [0, {}, {}, [8, 3, 5, 5], [], false, 5],
     // 10
-    [{}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
-    [{}, {boomed: 0}, [8, 0.5, 8, 0.5], [], false, 0],
-    [{}, {boomed: 0}, ['M41', 0.5, 8, 0], [], false, 0],
-    [{}, {boomed: 0}, ['M41', 0.5, 8, 5], [], true, 47],
-    [{}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], false, 0],
-    [{}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], true, 6.5],
-    [{}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], true, 6.5],
-    [{}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], true, 7],
-    [{sound_boom: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [{sound_boom: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [0, {}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 0.5], [], false, 0],
+    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 0], [], false, 0],
+    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 5], [], true, 47],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], false, 0],
+    [0, {}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], true, 6.5],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], true, 6.5],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], true, 7],
+    [0, {sound_boom: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [0, {sound_boom: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
     // 20
-    [{boom_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [{boom_threshold: 2.3, boom_start: 10}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
-    [{boom_start: 0}, {}, [5, 5, 5, 0], [], true, 5],
-].forEach(([y, states, evals, shorts, answer, answer_boomed], id) => {
+    [0, {boom_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [0, {boom_threshold: 2.3, boom_start: 10}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
+    [0, {boom_start: 0}, {}, [5, 5, 5, 0], [], true, 5],
+    [0, {boom_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
+    [1, {}, {}, [5, 5, 5, 5], [], false, 0],
+    [2, {}, {}, [5, 5, 5, 5], [], true, 5],
+].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
-        DEV.boom = (id >= 23)? 1: 0;
+        DEV.boom = (id >= 27)? 1: 0;
         Assign(Y, y);
         let main = xboards.live,
             players = main.players;
@@ -410,7 +413,7 @@ create_chart_data();
             players[id].eval = eval_;
             players[id].short = shorts[id] || `P${id}`;
         });
-        main.moves.length = 0;
+        main.moves.length = ply;
         Assign(main, states);
 
         expect(check_boom(Y.x)).toEqual(answer);

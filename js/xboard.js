@@ -172,6 +172,7 @@ class XBoard {
 
         // initialisation
         this.boomed = 0;                                // boom sound happened
+        this.booms = new Set();
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
         this.clicked = false;
@@ -2208,6 +2209,7 @@ class XBoard {
         this.frc = this.start_fen != START_FEN;
 
         this.boomed = 0;
+        this.booms.clear();
         this.fen = '';
         this.fen2 = '';
         Clear(this.fens);
