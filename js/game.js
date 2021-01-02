@@ -3920,13 +3920,14 @@ function check_boom(section, force) {
     if (section != 'live')
         return false;
     let threshold = Y.boom_threshold;
-    if (threshold < 0.1 && !force)
+    if (threshold < 0.1)
         return false;
 
     // 2) gather score of all engines
     let best = 0,
         main = xboards[section],
         players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
+        ply = main.moves.length,
         two = new Set([players[0][1], players[1][1]]);
 
     // if LCZero is a player + kibitzer => don't include the kibitzer
@@ -3939,25 +3940,42 @@ function check_boom(section, force) {
     let boomed = main.boomed,
         scores = players.map(player => clamp_eval(player[0])),
         scores1 = scores.filter(score => score >= threshold),
-        scores2 = scores.filter(score => score <= -threshold);
+        scores2 = scores.filter(score => score <= -threshold),
+        min_vote = scores.length / 2;
 
     if (force)
         best = force;
-    else if (scores1.length >= 2) {
+    else if (scores1.length > min_vote) {
         if (scores.every(score => score >= 0))
             best = scores1.reduce((a, b) => a + b) / scores1.length;
     }
-    else if (scores2.length >= 2) {
+    else if (scores2.length > min_vote) {
         if (scores.every(score => score <= 0))
             best = scores2.reduce((a, b) => a + b) / scores2.length;
     }
 
+    // no boom
+    if (!best) {
+        if (boomed) {
+            let moobs = main.moobs;
+            moobs.add(ply);
+            if (moobs.size >= Y.boom_ply_reset)
+                main.boomed = 0;
+            if (DEV.boom)
+                LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} => ${main.boomed}`);
+        }
+        return false;
+    }
+
     // 4) play sound, might fail if settings disable it
-    if (!best || Sign(best) == Sign(boomed) || !main.boom(best))
+    if (DEV.boom)
+        LS(`BOOM: best=${best} : scores=${scores} : players=${players} : ply=${ply}`);
+    if (ply < Y.boom_start || Sign(best) == Sign(boomed) || !main.boom(best))
         return false;
 
     if (force)
         main.boomed = boomed;
+    main.moobs.clear();
 
     // 5) visual stuff
     let body = Id('body'),
@@ -4636,6 +4654,9 @@ function change_setting_game(name, value) {
                 window.open(url, '_blank');
             }
         }
+        break;
+    case 'boom_activate_now':
+        xboards.live.boomed = 0;
         break;
     case 'boom_test':
         check_boom('', -10 * (Sign(xboards.live.boomed) || 1));

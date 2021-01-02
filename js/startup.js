@@ -1788,6 +1788,7 @@ function prepare_settings() {
         a: 'arrow',
         A: 'ad',                    // disable ads (for development)
         b: 'board',
+        B: 'boom',
         c: 'chart',
         C: 'cup',                   // force loading bracket.json
         d: 'debug',
@@ -1853,11 +1854,12 @@ function prepare_settings() {
         bamboo2 = `${bamboo} - `,
         cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
-        shortcuts = [...['off'], ...Keys(TABLES)];
+        shortcuts = [...['off'], ...Keys(TABLES)],
+        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'];
 
     merge_settings({
         // new column after 10 items
-        _split: 10,
+        _split: 11,
         general: {
             export_settings: '1',
             import_settings: [{text: 'Enter JSON data', type: 'link'}, ''],
@@ -1872,12 +1874,8 @@ function prepare_settings() {
             audio_moves: [['none', 'all', 'last'], 'all'],
             audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
-            boom_test: '1',
-            boom_threshold: option_number(2.3, 0, 10, 0.1),
-            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(10, 0, 20, 0.5),
             capture_delay: option_number(-200, -1000, 1000),
-            sound_boom: [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4'], 'random'],
+            sound_boom: sound_boom,
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
@@ -1978,6 +1976,18 @@ function prepare_settings() {
             target_opacity: option_number(0.7, 0, 1, 0.01),
             turn_color: [{type: 'color'}, '#ff5a00'],
             turn_opacity: option_number(0, 0, 1, 0.01),
+        },
+        boom: {
+            _prefix: 'boom_',
+            boom_activate_now: '1',
+            boom_ply_reset: option_number(10, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
+            boom_start: option_number(30, 0, 300, 1, {}, 'boom can only happen after this ply'),
+            boom_test: '1',
+            boom_threshold:
+                option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
+            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
+            boom_volume: option_number(10, 0, 20, 0.5),
+            sound_boom: sound_boom,
         },
         control: {
             book_every: option_number(600, 100, 5000, 100),

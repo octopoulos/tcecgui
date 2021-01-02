@@ -1575,7 +1575,6 @@ if (typeof exports != 'undefined') {
         CreateNode: CreateNode,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
-        DEV: {},
         E: E,
         Events: Events,
         Exp: Exp,
