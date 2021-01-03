@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-07-05
+// @version 2021-01-03
 /*
 globals
 Buffer, console, process, require
@@ -261,7 +261,7 @@ function merge_stats(result) {
             let line = items.join(' : ');
             if (!prev_items || (sort_event && items[3] != prev_items[3])) {
                 if (sort_event)
-                    header[0] = (items[3].replace(/^(\D+)/, (_match, v1) => REPLACES[v1]) + spaces[0]).slice(0, maxs[0]);
+                    header[0] = (items[3].replace(/^(\D+)/, (_, v1) => REPLACES[v1]) + spaces[0]).slice(0, maxs[0]);
 
                 prefix = [
                     '',

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-02
+// @version 2021-01-03
 //
 // Game specific code:
 // - control the board, moves
@@ -292,20 +292,30 @@ let ANALYSIS_URLS = {
         live: {},
     },
     TABLE_DE = ' <hsub>[{DE}]</hsub>',
+    TABLE_DIFF = ' <hsub>[{Diff}]</hsub>',
     TABLE_LIVE = ' <hsub>[{Live}]</hsub>',
     TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: `Rank|Engine|Points${TABLE_DE}`,
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
-        h2h: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
+        h2h:
+            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility${TABLE_DIFF}|Moves`
+            + `|Duration|Opening|Termination|ECO|Final FEN|Start`,
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
-        sched: '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening|Termination|ECO|Final FEN|Start',
+        sched:
+            '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening'
+            + '|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
-        stand: `Rank|Engine|Games|Points${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}|rmobility_score=rMobility|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
+        stand:
+            `Rank|Engine|Games|Points${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}`
+            + `|rmobility_score=rMobility${TABLE_DIFF}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
+    THIRD_CLICKS = {
+        rmobility_score: 1,
+    },
     THREAD_KEYS = {
         cores: 4,
         cpus: 3,
@@ -956,7 +966,6 @@ function analyse_crosstable(section, data) {
         let cross_row = {
             abbrev: Lower(dico.Abbreviation),
             engine: name,
-            num_break: Floor(max_game / max_column),
             points: score,
             'points+': score,
             rank: dico.Rank,
@@ -992,7 +1001,8 @@ function analyse_crosstable(section, data) {
             wins_b = dico.WinsAsBlack,
             wins_w = dico.WinsAsWhite,
             draws_b = dico.GamesAsBlack - wins_b - loss_b,
-            draws_w = dico.GamesAsWhite - wins_w - loss_w;
+            draws_w = dico.GamesAsWhite - wins_w - loss_w,
+            mob = dico.RMobilityScore * 1;
 
         let stand_row = {
             '%': format_percent(score / games),
@@ -1003,10 +1013,11 @@ function analyse_crosstable(section, data) {
             engine: name,
             games: games,
             losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
+            mob_diff: mob - score,
             points: score,
             'points+': score,
             rank: dico.Rank,
-            rmobility_score: dico.RMobilityScore * 1,
+            rmobility_score: `${mob.toFixed(3)} [${(mob - score).toFixed(3)}]`,
             sb: dico.Neustadtl,
             wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
         };
@@ -1768,7 +1779,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'winner':
                 if (!is_winner) {
                     td_class = 'tal';
-                    value = `<hori><img class="left-image" src="image/engine/${get_short_name(value)}.png"><div>${format_engine(value, row.num_break)}</div></hori>`;
+                    value = [
+                        '<hori>',
+                            `<img class="left-image" src="image/engine/${get_short_name(value)}.png">`,
+                            `<div>${format_engine(value, true)}</div>`,
+                        '</hori>',
+                    ].join('');
                 }
                 break;
             case 'final_fen':
@@ -1782,7 +1798,14 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 if (row.moves || row.reason) {
                     value = create_game_link(section, game);
                     if ((is_h2h || is_sched) && tour_url)
-                        value = `<hori><a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn"><i style="margin-right:1em" data-svg="download"></i></a>${value}</hori>`;
+                        value = [
+                            '<hori>',
+                                `<a href="${HOST_ARCHIVE}/${tour_url}_${game}.pgn">`,
+                                    `<i style="margin-right:1em" data-svg="download"></i>`,
+                                '</a>',
+                                value,
+                            '</hori>',
+                        ].join('');
                 }
                 break;
             case 'name':
@@ -1798,9 +1821,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'result':
                 td_class = 'nowrap';
                 value = value.replace(/1\/2/g, '½');
-                break;
-            case 'rmobility_score':
-                value = value.toFixed(3);
                 break;
             case 'score':
                 if (is_winner)
@@ -2344,7 +2364,11 @@ function calculate_event_stats(section, rows) {
         .filter(key => (key[0] != '_'))
         .map(key => {
             let title = Title(key.replace(/_/g, ' '));
-            return `<vert class="stats faround"><div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div></vert>`;
+            return [
+                '<vert class="stats faround">',
+                    `<div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div>`,
+                '</vert>',
+            ].join('');
         });
 
     let node = Id('table-stats');
@@ -2420,8 +2444,12 @@ function create_bracket(section, data) {
     let game = 1,
         lines = ['<hori id="bracket" class="fastart noselect pr">'],
         matches = data.matchresults || [],
-        forwards = Assign({}, ...matches.map(item => ({[`${item[0].name}|${item[1].name}`]: [item[0].origscore, item[1].origscore]}))),
-        reverses = Assign({}, ...matches.map(item => ({[`${item[1].name}|${item[0].name}`]: [item[1].origscore, item[0].origscore]}))),
+        forwards = Assign({}, ...matches.map(item =>
+            ({[`${item[0].name}|${item[1].name}`]: [item[0].origscore, item[1].origscore]})
+        )),
+        reverses = Assign({}, ...matches.map(item =>
+            ({[`${item[1].name}|${item[0].name}`]: [item[1].origscore, item[0].origscore]})
+        )),
         teams = data.teams,
         num_team = teams.length,
         prev_finished = true,
@@ -2509,14 +2537,14 @@ function create_bracket(section, data) {
 
             let is_current = (prev_finished && !finished),
                 active_class = is_current? ' active': '',
-                done_class = finished? ' done': '',
-                undone_class = finished? '': ' undone';
+                do_class = finished? ' done': '',
+                undo_class = finished? '': ' undone';
 
             lines.push(
                 `<vert class="match fastart" data-n="${names[0]? names[0][2]: ''}|${names[1]? names[1][2]: ''}" data-r="${link}">`
                     // final has 3rd place game too
-                    + `<div class="match-title${active_class || done_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
-                    + `<grid class="match-grid${done_class}">`
+                    + `<div class="match-title${active_class || do_class}">#${game + (number == 1? 1 - i * 2: 0)}</div>`
+                    + `<grid class="match-grid${do_class}">`
             );
 
             for (let id = 0; id < 2; id ++) {
@@ -2541,8 +2569,8 @@ function create_bracket(section, data) {
                     score = is_current? 0: '--';
 
                 lines.push(
-                    `<vert class="name${name_class}${undone_class} fcenter" data-s="${seed}">${name}</vert>`
-                    + `<vert class="score${score_class}${undone_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
+                    `<vert class="name${name_class}${undo_class} fcenter" data-s="${seed}">${name}</vert>`
+                    + `<vert class="score${score_class}${undo_class} fcenter" data-s="${seed}"${place}>${score}</vert>`
                 );
             }
 
@@ -3373,7 +3401,8 @@ function update_move_pv(section, ply, move) {
         player = main.players[id],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
-        status_score = is_book? 'book': calculate_probability(player.short, eval_, ply, move.wdl || (player.info || {}).wdl);
+        status_score =
+            is_book? 'book': calculate_probability(player.short, eval_, ply, move.wdl || (player.info || {}).wdl);
 
     if (Y.eval) {
         for (let child of [box_node, node]) {
@@ -5361,7 +5390,12 @@ function popup_custom(id, name, e, scolor, text) {
             // add engine + version
             lines.splice(0, 0, ['Engine', engine[0]], ['Version', engine.slice(1).join(' ')]);
             lines = lines.map(([left, right]) => {
-                return `<div><div>${resize_text(left, 20)}</div><div class="indent">${resize_text(right, 20) || '&nbsp;'}</div></div>`;
+                return [
+                    '<div>',
+                        `<div>${resize_text(left, 20)}</div>`,
+                        `<div class="indent">${resize_text(right, 20) || '&nbsp;'}</div>`,
+                    '</div>',
+                ].join('');
             });
 
             num_col = Ceil(lines.length / 11);

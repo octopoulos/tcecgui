@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # @authors Aloril <aloril@iki.fi>, octopoulo <polluxyz@gmail.com>
+# @version 2021-01-03
 
 import json
 import os
@@ -46,7 +47,8 @@ class ChatEngine:
         self.sock.sendall(b'{"voting":1,"fen":"%s"}' % self.fen.encode("utf-8"))
 
     def stop_voting(self, best_move: str):
-        self.sock.sendall(b'{"voting":0,"fen":"%s","best_move":"%s"}' % (self.fen.encode("utf-8"), best_move.encode('utf-8')))
+        self.sock.sendall(
+            b'{"voting":0,"fen":"%s","best_move":"%s"}' % (self.fen.encode("utf-8"), best_move.encode('utf-8')))
 
     def read_votes(self) -> List[Any]:
         try:

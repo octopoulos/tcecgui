@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-03
 //
 // general 3d rendering code
 //
@@ -1470,7 +1470,8 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         else if (name) {
             if (!title)
                 title = settings._title || `${Title(name).replace(/_/g, ' ')}${settings._same? '': ' options'}`;
-            lines.push(`<div class="item-title span" data-set="${unique? -1: ''}" data-n="${name}" data-t="${title}"></div>`);
+            lines.push(
+                `<div class="item-title span" data-set="${unique? -1: ''}" data-n="${name}" data-t="${title}"></div>`);
         }
     }
 
@@ -1587,7 +1588,8 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                                 option = splits[1];
                                 value = splits[0];
                             }
-                            return `<option value="${value}"${y_key == value? ' selected': ''} data-t="${option}"></option>`;
+                            let selected = (y_key == value)? ' selected': '';
+                            return `<option value="${value}"${selected} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
                     + '</vert>'
@@ -1629,8 +1631,9 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 lines.push(
                     `<select name="${key}"${focus}>`
                         + Keys(data).map(value => {
-                            let option = data[value];
-                            return `<option value="${value}"${Y[key] == value? ' selected': ''} data-t="${option}"></option>`;
+                            let option = data[value],
+                                selected = (Y[key] == value)? ' selected': '';
+                            return `<option value="${value}"${selected} data-t="${option}"></option>`;
                         }).join('')
                     + '</select>'
                 );
@@ -1652,7 +1655,8 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             );
         }
         else if (name)
-            lines.push(`<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
+            lines.push(
+                `<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
     }
 
     lines.push('</grid>');
