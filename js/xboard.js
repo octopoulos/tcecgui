@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-02
+// @version 2021-01-03
 //
 // game board:
 // - 4 rendering modes:
@@ -805,7 +805,9 @@ class XBoard {
                 if (other_id < 2)
                     Hide(other.svg);
                 else {
-                    AttrsNS(Id(`mk${name}_${other_id}_1`), {fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6)});
+                    AttrsNS(Id(`mk${name}_${other_id}_1`), {
+                        fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6),
+                    });
                     Hide(this.svgs[id].svg);
                     return;
                 }
@@ -1034,10 +1036,12 @@ class XBoard {
 
         let result,
             chess = this.chess,
-            decorate = Undefined(options.decorate, false);
+            decorate = Undefined(options.decorate, false),
+            length = text.length;
 
         // handle UCI: e1g1 = O-O, e7e8q = promotion
-        if (text.length >= 4 && text.length <=5 && IsDigit(text[1]) && IsDigit(text[3]) && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
+        if (length >= 4 && length <= 5 && IsDigit(text[1]) && IsDigit(text[3])
+                && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
             result = chess.moveUci(text, true);
         else
             result = IsString(text)? chess.moveSan(text, decorate, false): chess.moveObject(text, true);
@@ -2133,7 +2137,8 @@ class XBoard {
                             col = ROTATE(rotate, col);
                             row = ROTATE(rotate, row);
 
-                            let style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
+                            let style_transform =
+                                    `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
                                 z_index = (node.style.transform == style_transform)? 2: 3;
 
                             Style(node, `transform:${style_transform};opacity:1;pointer-events:all;z-index:${z_index}`);
@@ -2451,9 +2456,9 @@ class XBoard {
 
         // play sound?
         // - multiple sounds can be played with different delays
-        let audio_moves = Y.audio_moves,
+        let audio = Y.audio_moves,
             is_last = (ply == this.moves.length - 1),
-            can_moves = (audio_moves == 'all' || (is_last && audio_moves == 'last') || (this.play_mode == 'book' && Y.audio_book)),
+            can_moves = (audio == 'all' || (is_last && audio == 'last') || (this.play_mode == 'book' && Y.audio_book)),
             can_source = (this.name == Y.x || (this.main && Y.audio_live_archive) || (this.manual && Y.audio_pva));
 
         if (can_source && can_moves) {
@@ -2461,7 +2466,18 @@ class XBoard {
                 offset = 0,
                 text = move.m || '???',
                 last = text.slice(-1),
-                sounds = [[(last == '#')? 'checkmate': (last == '+')? 'check': (text[0] == Upper(text[0])? 'move': 'move_pawn'), audio_delay]];
+                sound = null;
+
+            if (last == '#')
+                sound = 'checkmate';
+            else if (last == '+')
+                sound = 'check';
+            else if (text[0] == Upper(text[0]))
+                sound = 'move';
+            else
+                sound = 'move_pawn';
+
+            let sounds = [[sound, audio_delay]];
 
             if (text.includes('x')) {
                 let capture_delay = Y.capture_delay;

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-31
+// @version 2021-01-03
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -176,11 +176,13 @@ function clear_timeout(name) {
  */
 function create_field_value(text) {
     let field = text,
-        indices = [field.indexOf(' ['), field.indexOf(' <')].filter(pos => pos > 0).sort();
-    if (indices.length)
+        indices = [field.indexOf(' ['), field.indexOf(' <')].filter(pos => pos > 0).sort(),
+        pos = field.indexOf('=');
+
+    if (indices.length && (pos < 0 || pos > indices[0]))
         field = field.slice(0, indices[0]);
 
-    let pos = field.indexOf('=');
+    pos = field.indexOf('=');
     if (pos > 0)
         return [field.slice(0, pos), field.slice(pos + 1)];
 
@@ -1066,7 +1068,9 @@ function push_state(query, replace, query_key='hash', go=null) {
     query = query || {};
     let changes = [],
         state_keys = STATE_KEYS[Y.x] || STATE_KEYS._ || [],
-        new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x => ({[x]: Undefined(query[x], Y[x])}))),
+        new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x =>
+            ({[x]: Undefined(query[x], Y[x])})
+        )),
         state = history.state,
         url = QueryString({key: null, replace: new_state, string: true});
 

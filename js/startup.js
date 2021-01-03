@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-02
+// @version 2021-01-03
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1051,13 +1051,20 @@ function reset_settings_special(is_default) {
  */
 function resize() {
     Style(
-        '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status, #table-tabs, #top',
+        '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status'
+        + ', #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
-    Style('#chat, #chat2, #shortcut_1, #shortcut_2', `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`);
+    Style(
+        '#chat, #chat2, #shortcut_1, #shortcut_2',
+        `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`,
+    );
 
     let window_width = window.innerWidth;
-    Style(Id('table-stats'), `grid-template-columns:repeat(${window_width < 740? 3: 6}, ${window_width < 330? 102: 115}px)`);
+    Style(
+        Id('table-stats'),
+        `grid-template-columns:repeat(${window_width < 740? 3: 6}, ${window_width < 330? 102: 115}px)`,
+    );
 
     resize_panels();
 

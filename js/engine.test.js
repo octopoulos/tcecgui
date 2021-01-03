@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-02
+// @version 2021-01-03
 //
 /*
 globals
@@ -62,6 +62,7 @@ Assign(translates, {
     ['RMobilityResult', ['rmobility_result', 'RMobilityResult']],
     ['rmobility_score=rMobility', ['rmobility_score', 'rMobility']],
     ['rmobility_result=rMobility', ['rmobility_result', 'rMobility']],
+    ['rmobility_score=rMobility <hsub>[{Diff}]</hsub>', ['rmobility_score', 'rMobility <hsub>[{Diff}]</hsub>']],
 ].forEach(([text, answer], id) => {
     test(`create_field_value:${id}`, () => {
         expect(create_field_value(text)).toEqual(answer);
