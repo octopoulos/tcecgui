@@ -212,12 +212,14 @@ let ANALYSIS_URLS = {
         game: [0, 0],
         games: [0, 1],
         id: [0, 0],
+        live: [0, 1],
         losses: [0, 1],
+        mob_diff: [0, 1],
         moves: [0, 0],
         points: [0, 1],
         'points+': [0, 1],
         rank: [0, 0],
-        rmobility_score: [99999, 0],
+        rmobility_score: [99999, 1],
         rmobility_result: [80000, 0],
         sb: [0, 1],
         start: [0, 0],
@@ -292,16 +294,16 @@ let ANALYSIS_URLS = {
         live: {},
     },
     TABLE_DE = ' <hsub>[{DE}]</hsub>',
-    TABLE_DIFF = ' <hsub>[{Diff}]</hsub>',
-    TABLE_LIVE = ' <hsub>[{Live}]</hsub>',
+    TABLE_DIFF = " <hsub data-x='mob_diff'>[{Diff}]</hsub>",
+    TABLE_LIVE = " <hsub data-x='live'>[{Live}]</hsub>",
     TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
         cross: `Rank|Engine|Points${TABLE_DE}`,
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h:
-            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility${TABLE_DIFF}|Moves`
-            + `|Duration|Opening|Termination|ECO|Final FEN|Start`,
+            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening`
+            + '|Termination|ECO|Final FEN|Start',
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched:
             '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening'
@@ -313,9 +315,6 @@ let ANALYSIS_URLS = {
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
-    THIRD_CLICKS = {
-        rmobility_score: 1,
-    },
     THREAD_KEYS = {
         cores: 4,
         cpus: 3,
@@ -1012,6 +1011,7 @@ function analyse_crosstable(section, data) {
             elo: elo,
             engine: name,
             games: games,
+            live: new_elo,
             losses: `${loss_w + loss_b} [${loss_w}/${loss_b}]`,
             mob_diff: mob - score,
             points: score,
@@ -1945,7 +1945,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         });
 
         // sorting
-        C('th', function() {
+        C('[data-x]', function(e) {
             let column = this.dataset.x,
                 first = is_h2h? 'id': '_id',
                 sort = Y.sort;
@@ -1963,6 +1963,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             Y.sort = (sort == column)? `-${column}`: column;
 
             update_table(section, name);
+            SP(e);
         }, table);
     }
 
