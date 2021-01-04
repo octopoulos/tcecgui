@@ -1560,6 +1560,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_shortcut = true;
         parent = 'quick';
     }
+    // not a real table?
+    if (!TABLES[name])
+        return;
 
     // 2) update table data
     let data_x = SetDefault(table_data[section], name, {data: []}),
@@ -1737,10 +1740,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             hidden[column] = 1;
         S(`th[data-x="${column}"]`, !hide, table);
     }
-
-    // not a real table?
-    if (!data.length && !is_sched && !is_shortcut)
-        return;
 
     for (let row of data) {
         let row_id = Undefined(row.id, row._id);
