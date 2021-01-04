@@ -139,7 +139,7 @@ let ANALYSIS_URLS = {
     },
     // need to have at least 1 non empty/0 field for those columns, otherwise: hidden
     COLUMNS_REQUIRED = {
-        stand: ['crashes', 'rmobility_score'],
+        stand: ['crashes', 'rmobility_score', 'diff'],
     },
     CONNECTORS = [
         [
@@ -924,6 +924,10 @@ function analyse_crosstable(section, data) {
         return;
     SetDefault(table_data, section, {}).crossx = data;
 
+    // 0) get season #
+    let season = (data.Event || '').match(/Season\s+(\d+)/);
+    season = season? season[1] * 1: 0;
+
     let cross_rows = [],
         dicos = data.Table,
         encounters = {},
@@ -931,6 +935,7 @@ function analyse_crosstable(section, data) {
         engine_stands = {},
         head_opponents = {},
         max_game = 0,
+        missing_mob = (season >= 20)? '-': '',
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
         stand_rows = [],
@@ -1007,7 +1012,7 @@ function analyse_crosstable(section, data) {
         let stand_row = {
             '%': format_percent(score / games),
             crashes: dico.Strikes,
-            diff: no_mob? '-': `${new_elo - elo} [${new_elo}]`,
+            diff: no_mob? missing_mob: `${new_elo - elo} [${new_elo}]`,
             draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
             elo: elo,
             engine: name,
@@ -1018,7 +1023,7 @@ function analyse_crosstable(section, data) {
             points: score,
             'points+': score,
             rank: dico.Rank,
-            rmobility_score: no_mob? '': `${mob.toFixed(3)} [${(mob - score).toFixed(3)}]`,
+            rmobility_score: no_mob? missing_mob: `${mob.toFixed(3)} [${(mob - score).toFixed(3)}]`,
             sb: dico.Neustadtl,
             wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
         };
