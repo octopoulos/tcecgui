@@ -1738,6 +1738,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         S(`th[data-x="${column}"]`, !hide, table);
     }
 
+    // not a real table?
+    if (!data.length && !is_sched && !is_shortcut)
+        return;
+
     for (let row of data) {
         let row_id = Undefined(row.id, row._id);
 
@@ -1945,7 +1949,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         });
 
         // sorting
-        C('[data-x]', function(e) {
+        C('tr [data-x]', function(e) {
             let column = this.dataset.x,
                 first = is_h2h? 'id': '_id',
                 sort = Y.sort;
