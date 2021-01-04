@@ -1001,12 +1001,13 @@ function analyse_crosstable(section, data) {
             wins_w = dico.WinsAsWhite,
             draws_b = dico.GamesAsBlack - wins_b - loss_b,
             draws_w = dico.GamesAsWhite - wins_w - loss_w,
-            mob = dico.RMobilityScore * 1;
+            mob = dico.RMobilityScore * 1,
+            no_mob = isNaN(mob);
 
         let stand_row = {
             '%': format_percent(score / games),
             crashes: dico.Strikes,
-            diff: `${new_elo - elo} [${new_elo}]`,
+            diff: no_mob? '-': `${new_elo - elo} [${new_elo}]`,
             draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
             elo: elo,
             engine: name,
@@ -1017,7 +1018,7 @@ function analyse_crosstable(section, data) {
             points: score,
             'points+': score,
             rank: dico.Rank,
-            rmobility_score: `${mob.toFixed(3)} [${(mob - score).toFixed(3)}]`,
+            rmobility_score: no_mob? '-': `${mob.toFixed(3)} [${(mob - score).toFixed(3)}]`,
             sb: dico.Neustadtl,
             wins: `${wins_w + wins_b} [${wins_w}/${wins_b}]`,
         };
