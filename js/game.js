@@ -139,7 +139,7 @@ let ANALYSIS_URLS = {
     },
     // need to have at least 1 non empty/0 field for those columns, otherwise: hidden
     COLUMNS_REQUIRED = {
-        stand: ['crashes', 'rmobility_score', 'diff'],
+        stand: ['crashes', 'rmobility_score'],
     },
     CONNECTORS = [
         [
@@ -1007,7 +1007,7 @@ function analyse_crosstable(section, data) {
         let stand_row = {
             '%': format_percent(score / games),
             crashes: dico.Strikes,
-            diff: no_mob? '': `${new_elo - elo} [${new_elo}]`,
+            diff: no_mob? '-': `${new_elo - elo} [${new_elo}]`,
             draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
             elo: elo,
             engine: name,
