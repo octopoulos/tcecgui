@@ -1741,6 +1741,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         S(`th[data-x="${column}"]`, !hide, table);
     }
 
+    // not a real table?
+    if (!data.length && !is_sched && !is_shortcut)
+        return;
+
     for (let row of data) {
         let row_id = Undefined(row.id, row._id);
 
