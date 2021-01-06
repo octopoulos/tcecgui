@@ -3978,7 +3978,8 @@ function analyse_log(line) {
 
     let prev_ply = prev_info.ply,
         prev_pv = prev_info.pv || '',
-        pv = info.pv || '';
+        pv = info.pv || '',
+        pvs = prev_info.pvs || {};
     player.info = info;
     if (Y.x != 'live')
         return;
@@ -4005,29 +4006,44 @@ function analyse_log(line) {
     let no_pv,
         ply = main.moves.length;
 
-    pos = prev_pv.indexOf(pv);
-    if (pos == 0) {
-        no_pv = true;
-        info.pv = prev_pv;
-    }
-    else if (pos > 0 && prev_ply >= 0 && ply > prev_ply) {
-        let items = prev_pv.split(' '),
-            pv2 = items.slice(ply - prev_ply).join(' ');
-        if (pv2.indexOf(pv) == 0)
-            info.pv = pv2;
+    for (let key of Keys(pvs)) {
+        let prev_pv = pvs[key];
+        pos = prev_pv.indexOf(pv);
+        if (pos == 0) {
+            no_pv = true;
+            info.pv = prev_pv;
+            break;
+        }
+        else if (pos > 0 && prev_ply >= 0 && ply > prev_ply) {
+            let items = prev_pv.split(' '),
+                pv2 = items.slice(ply - prev_ply).join(' ');
+            if (pv2.indexOf(pv) == 0) {
+                info.pv = pv2;
+                break;
+            }
+        }
     }
 
+    let info_pv = info.pv || '',
+        splits = info_pv.split(' '),
+        first = splits[0];
     if (!no_pv) {
         let last_move = main.moves[ply - 1];
         main.chess.load(last_move? last_move.fen: main.fen);
-        let moves = ArrayJS(main.chess.multiUci(info.pv));
+        let moves = ArrayJS(main.chess.multiUci(info_pv));
         info.moves = moves;
-        if (moves.length != info.pv.split(' ').length)
+        if (moves.length != splits.length)
             return check_missing_moves(ply, undefined, undefined, true);
     }
     if (DEV.log) {
-        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : info.pv=${info.pv} : prev_pv=${prev_pv}`);
+        LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : info_pv=${info_pv} : prev_pv=${prev_pv}`);
         LS(info);
+    }
+
+    // multi PVs
+    if (info_pv) {
+        pvs[first] = info_pv;
+        info.pvs = pvs;
     }
 
     // don't update unless we're on the last move
