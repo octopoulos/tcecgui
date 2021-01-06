@@ -18,8 +18,6 @@ from subprocess import run
 from time import time
 from typing import Any
 
-from PIL import Image, ImageFile
-
 from commoner import create_group, default_int, makedirs_safe, pinfo, read_text_safe, write_text_safe
 from css_minify import css_minify
 
@@ -132,40 +130,6 @@ class Sync:
 
     # FILES
     #######
-
-    def combine_pieces(self, folder: str):
-        """Combine chess pieces png files into 1 file
-        """
-        if 'metro' in folder:
-            height = 160
-            width = 160
-        else:
-            height = 80
-            width = 80
-        combined = Image.new('RGBA', (width * 12, height), (0, 255, 0, 0))
-        output = f'{folder}.png'
-
-        i = 0
-        pieces = 'bknpqr'
-        for color in 'bw':
-            for piece in pieces:
-                name = f'{color}{piece}'
-                image = Image.open(join(folder, f'{name}.png'))
-                offset = (i * width, 0)
-                combined.paste(image, offset)
-                i += 1
-
-        combined.save(output, format='png')
-        pinfo('a', end='')
-
-    def combine_themes(self, folder: str):
-        """Combine all pieces of each theme
-        """
-        sources = os.listdir(folder)
-        for source in sources:
-            filename = join(folder, source)
-            if os.path.isdir(filename):
-                self.combine_pieces(filename)
 
     def compress_3d(self, data: str) -> str:
         """Compress THREE javascript
@@ -547,8 +511,6 @@ def main_sync(parser: ArgumentParser=None):
     args_dict = vars(args)
 
     sync = Sync(**args_dict)
-    if 0:
-        sync.combine_themes(join(BASE, 'theme'))
     sync.synchronise()
 
 
