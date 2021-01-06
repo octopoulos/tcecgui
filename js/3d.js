@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-04
 //
 // general 3d rendering code
 //
@@ -977,11 +977,12 @@ function gamepad_update() {
  * @param {number=} cycle end of the cycle
  * @param {boolean=} inside
  * @param {boolean=} interrupt play the sound again even if it's being played
+ * @param {function=} loaded only load the audio
  * @param {number=} start start of the 2nd cycle
  * @param {boolean=} voice
  * @param {number=} volume
  */
-function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0, voice, volume=1}={}) {
+function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded, start=0, voice, volume=1}={}) {
     if (!cube || !cube.sounds || !name)
         return;
 
@@ -1024,11 +1025,21 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, start=0
         audio.currentTime = start;
     }
 
-    // play
+    // set frame + volume
     audio.frame = frame;
     if (volume >= 0 && volume < 1)
         audio.volume = volume;
 
+    // only load, don't play
+    if (loaded) {
+        if (audio.readyState >= 2)
+            loaded();
+        else
+            audio.onloadeddata = loaded;
+        return;
+    }
+
+    // play
     audio.promise = audio.promise.then(() => {
         return Promise.resolve(audio.play());
     })

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-05
 //
 // game board:
 // - 4 rendering modes:
@@ -853,14 +853,12 @@ class XBoard {
 
     /**
      * Play a BOOM sound
-     * @returns {boolean}
+     * @param {function} callback called when the sound is playing
      */
-    boom(score) {
+    boom(score, callback) {
         let key = 'sound_boom',
             sounds = X_SETTINGS.audio[key][0],
             sound = Y[key];
-        if (!sound)
-            return false;
         if (sound == 'random') {
             for (let i = 0; i < 100; i ++) {
                 sound = sounds[RandomInt(2, sounds.length)];
@@ -868,10 +866,15 @@ class XBoard {
                     break;
             }
         }
+
         this.boomed = score;
         last_sound = sound;
-        play_sound(audiobox, sound, {interrupt: true, volume: Y.boom_volume / 10});
-        return true;
+        play_sound(audiobox, sound, {loaded: () => {
+            if (DEV.boom)
+                LS(`sound ${sound} loaded, playing now ...`);
+            play_sound(audiobox, sound, {interrupt: true, volume: Y.boom_volume / 10});
+            callback(sound);
+        }});
     }
 
     /**

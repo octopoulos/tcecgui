@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-04
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -556,6 +556,22 @@ function sanitise_data() {
 
     if (virtual_sanitise_data_special)
         virtual_sanitise_data_special();
+}
+
+/**
+ * Save a Y value + to Local Storage if different from default, otherwise removes it
+ * @param {string} name
+ * @param {*} value value for the name, undefined to save Y[name]
+ */
+function save_default(name, value) {
+    if (value === undefined)
+        value = Y[name];
+    else
+        Y[name] = value;
+    if (value == DEFAULTS[name])
+        remove_storage(name);
+    else
+        save_storage(name, value);
 }
 
 /**
@@ -1906,6 +1922,7 @@ if (typeof exports != 'undefined') {
         reset_settings: reset_settings,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
+        save_default: save_default,
         save_option: save_option,
         THEMES: THEMES,
         timers: timers,

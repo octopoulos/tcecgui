@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-05
 //
 // Game specific code:
 // - control the board, moves
@@ -126,7 +126,24 @@ let ANALYSIS_URLS = {
             size: 24,
         }
     },
+    BOOM_COLORS = {
+        all: 1,
+        color: 1,
+    },
     boom_info = {},
+    // shake_start, shake_duration, red_start, red_duration, magnitude, decay
+    BOOM_PARAMS = {
+        boom: [0, 3800, 120, 1500, 11, 0.93],
+        boom2: [0, 4800, 120, 2400, 15, 0.94],
+        boom3: [0, 5200, 120, 2400, 12, 0.95],
+        boom4: [500, 6000, 620, 2200, 15, 0.95],
+        boom5: [0, 7800, 120, 3000, 8, 0.97],
+        boom6: [5200, 7400, 5320, 2200, 15, 0.96],
+    },
+    BOOM_SHAKES = {
+        all: 1,
+        shake: 1,
+    },
     bracket_link,
     CACHE_TIMEOUTS = {
         brak: 60,
@@ -326,7 +343,6 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
-    TIMEOUT_boom = 3000,
     TIMEOUT_graph = 500,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
@@ -4083,39 +4099,51 @@ function check_boom(section, force) {
     if (booms.size < Y.boom_consecutive && !force)
         return false;
 
-    if (Sign(best) == Sign(boomed) || !main.boom(best))
+    if (Sign(best) == Sign(boomed) || Y.sound_boom == 0)
         return false;
 
-    if (DEV.boom)
-        LS([
-            `BOOM: best=${best} : ply=${ply} : scores=${scores} : players=${players}`,
-            `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
-        ].join(' : '));
+    main.boom(best, sound => {
+        let boom_param = BOOM_PARAMS[sound],
+            [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
+        if (DEV.boom)
+            LS([
+                `BOOM: best=${best} : ply=${ply} : scores=${scores} : ${sound} : ${boom_param}`,
+                `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
+            ].join(' : '));
 
-    if (force)
-        main.boomed = boomed;
-    booms.clear();
+        if (force)
+            main.boomed = boomed;
+        booms.clear();
 
-    // 5) visual stuff
-    let body = Id('body'),
-        visual = Y.boom_visual;
-    // color
-    if (['all', 'color'].includes(visual))
-        Style(body, 'background-color:#f00');
+        // 5) visual stuff
+        let body = Id('body'),
+            visual = Y.boom_visual;
 
-    // shake
-    if (!timers.shake)
+        if (!timers.shake)
+            boom_info.transform = body? body.style.transform: '';
         Assign(boom_info, {
+            decay: decay,
+            shake: magnitude,
             start: Now(),
-            transform: body? body.style.transform: '',
         });
-    if (['all', 'shake'].includes(visual))
-        add_timeout('shake', shake_screen, TIMEOUT_shake, true);
 
-    add_timeout('body', () => {
-        clear_timeout('shake');
-        Style(Id('body'), `background-color:transparent;transform:${boom_info.transform}`);
-    }, TIMEOUT_boom);
+        // color + shake
+        if (BOOM_COLORS[visual])
+            add_timeout('red_start', () => Style(body, 'background-color:#f00'), red_start);
+        if (BOOM_SHAKES[visual])
+            add_timeout('shake_start', () => {
+                add_timeout('shake', shake_screen, TIMEOUT_shake, true);
+            }, shake_start);
+
+        add_timeout('red_end', () => {
+            Style(body, 'background-color:transparent');
+        }, red_start + red_duration);
+        add_timeout('shake_end', () => {
+            clear_timeout('shake');
+            Style(body, `transform:${boom_info.transform}`);
+        }, shake_start + shake_duration);
+    });
+
     return true;
 }
 
@@ -4157,11 +4185,15 @@ function set_viewers(count) {
  */
 function shake_screen() {
     // translate(15px, 15px) => ['15', '15']
-    let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0));
+    let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0)),
+        shake = boom_info.shake;
     if (coords.length < 2)
         coords = [0, 0];
-    coords[0] += RandomInt(-10, 11);
-    coords[1] += RandomInt(-10, 11);
+    coords[0] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
+    coords[1] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
+    if (DEV.boom2)
+        LS(boom_info);
+    boom_info.shake *= boom_info.decay;
     Style(Id('body'), `transform:translate(${coords[0]}px,${coords[1]}px)`);
 }
 

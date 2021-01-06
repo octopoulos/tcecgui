@@ -1,14 +1,16 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-09-30
+# @version 2021-01-04
 
 """
 Sync
 """
 
+from argparse import ArgumentParser
 import gzip
 from logging import getLogger
 import os
+from os.path import join
 import re
 import shutil
 from subprocess import run
@@ -23,10 +25,10 @@ from css_minify import css_minify
 
 # folders, might want to edit these
 BASE = os.path.dirname(os.path.dirname(__file__))
-COMPILER = os.path.join(BASE, 'script/closure-compiler-v20200406.jar')
-CSS_FOLDER = os.path.join(BASE, 'css')
+COMPILER = join(BASE, 'script/closure-compiler-v20200406.jar')
+CSS_FOLDER = join(BASE, 'css')
 JAVA = 'java'
-JS_FOLDER = os.path.join(BASE, 'js')
+JS_FOLDER = join(BASE, 'js')
 LOCAL = BASE
 
 
@@ -106,6 +108,8 @@ SKIP_GZIPS = {
     'theme',
 }
 
+pinfo = print
+
 
 class Sync:
     """Sync
@@ -124,6 +128,9 @@ class Sync:
 
         self.logger = getLogger(self.__class__.__name__)
 
+    # FILES
+    #######
+
     def combine_pieces(self, folder: str):
         """Combine chess pieces png files into 1 file
         """
@@ -141,20 +148,20 @@ class Sync:
         for color in 'bw':
             for piece in pieces:
                 name = f'{color}{piece}'
-                image = Image.open(os.path.join(folder, f'{name}.png'))
+                image = Image.open(join(folder, f'{name}.png'))
                 offset = (i * width, 0)
                 combined.paste(image, offset)
                 i += 1
 
         combined.save(output, format='png')
-        print('a', end='')
+        pinfo('a', end='')
 
     def combine_themes(self, folder: str):
         """Combine all pieces of each theme
         """
         sources = os.listdir(folder)
         for source in sources:
-            filename = os.path.join(folder, source)
+            filename = join(folder, source)
             if os.path.isdir(filename):
                 self.combine_pieces(filename)
 
@@ -177,7 +184,7 @@ class Sync:
         if os.path.isfile(output):
             info = os.stat(output)
             os.utime(filename, (info.st_atime, info.st_mtime))
-            print('g', end='')
+            pinfo('g', end='')
 
     def compress_js(self, filename: str) -> str:
         """Compress javascript
@@ -212,7 +219,7 @@ class Sync:
             if source.startswith(('.', '_')):
                 continue
 
-            filename = os.path.join(folder, source)
+            filename = join(folder, source)
             if os.path.isdir(filename):
                 if source not in SKIP_GZIPS:
                     queues.append(filename)
@@ -230,13 +237,13 @@ class Sync:
                 destin_time = os.path.getmtime(output)
                 if delete:
                     os.unlink(output)
-                    print('d', end='')
+                    pinfo('d', end='')
             else:
                 destin_time = 0
 
             if not delete and source_time != destin_time:
                 self.compress_gzip(filename)
-            print(f"{'  ' * depth}{filename}")
+            pinfo(f"{'  ' * depth}{filename}")
 
         for queue in queues:
             self.gzip_files(queue, depth + 1, delete)
@@ -246,7 +253,7 @@ class Sync:
         """@import {common.js}
         """
         source = match.group(1)
-        filename = os.path.join(JS_FOLDER, source)
+        filename = join(JS_FOLDER, source)
         data = read_text_safe(filename) or ''
         if source.endswith('.js'):
             data = re.sub(r'["\']use strict["\'];?', '', data)
@@ -263,27 +270,32 @@ class Sync:
         if LOCAL[-1] != '/':
             LOCAL += '/'
 
+    # INDEX
+    #######
+
     def create_index(self):
         """Create the new index.html
         """
-        base = os.path.join(LOCAL, 'index_base.html')
+        base = join(LOCAL, 'index_base.html')
         base_time = os.path.getmtime(base)
-        index = os.path.join(LOCAL, 'index.html')
+        index = join(LOCAL, 'index.html')
         index_time = os.path.getmtime(index) if os.path.isfile(index) else 0
         change = 0
         if base_time >= index_time:
             change += 1
 
-        # 1) minimise JS
+        # 1) ...
+
+        # 2) minimise JS
         for js_output, js_files in JS_FILES.items():
-            all_js = os.path.join(JS_FOLDER, f'{js_output}.js')
-            all_min_js = os.path.join(JS_FOLDER, f'{js_output}_.js')
+            all_js = join(JS_FOLDER, f'{js_output}.js')
+            all_min_js = join(JS_FOLDER, f'{js_output}_.js')
             # common/engine changed => need to update, even though we're not using those files
             js_dates = [os.path.abspath(f"{JS_FOLDER}{js_file.strip(':')}.js") for js_file in js_files]
             js_names = [os.path.abspath(f'{JS_FOLDER}{js_file}.js') for js_file in js_files if js_file[0] != ':']
 
             if js_output == 'all':
-                # script_js = os.path.join(JS_FOLDER, 'script.js')
+                # script_js = join(JS_FOLDER, 'script.js')
                 extras = []
             else:
                 extras = []
@@ -297,14 +309,14 @@ class Sync:
                     update |= os.path.isfile(js_date) and os.path.getmtime(js_date) >= all_time
 
             if not update:
-                print('J', end='')
+                pinfo('J', end='')
                 continue
 
             datas = [
                 "'use strict';",
             ]
             for js_name in js_names:
-                print(js_name)
+                pinfo(js_name)
                 script_data = read_text_safe(js_name)
                 if not script_data:
                     continue
@@ -319,7 +331,7 @@ class Sync:
                         script_data = re.sub('// <<.*?// >>', '', script_data, flags=re.S)
 
                     # use HOST
-                    print(f'host={self.host}')
+                    pinfo(f'host={self.host}')
                     if self.host != '/':
                         script_data = script_data.replace("HOST = '/',", f"HOST = '{self.host}',")
 
@@ -332,12 +344,12 @@ class Sync:
 
             write_text_safe(all_js, data)
             self.compress_js(all_js)
-            print('j', end='')
+            pinfo('j', end='')
             change += 1
 
-        # 2) minimise CSS
-        all_css = os.path.join(CSS_FOLDER, 'all.css')
-        all_min_css = os.path.join(CSS_FOLDER, 'all_.css')
+        # 3) minimise CSS
+        all_css = join(CSS_FOLDER, 'all.css')
+        all_min_css = join(CSS_FOLDER, 'all_.css')
         css_names = [os.path.abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
 
         update = True
@@ -357,17 +369,17 @@ class Sync:
             css_data = css_minify(data)
             write_text_safe(all_min_css, css_data)
 
-            print('c', end='')
+            pinfo('c', end='')
             change += 1
         else:
             css_data = read_text_safe(all_min_css) or ''
-            print('C', end='')
+            pinfo('C', end='')
 
         if not change:
-            print('X', end='')
+            pinfo('X', end='')
             return
 
-        # 3) remove BEGIN ... END
+        # 4) remove BEGIN ... END
         html = read_text_safe(base)
         html = re.sub('<!-- BEGIN -->.*?<!-- END -->', '', html, flags=re.S)
         html = re.sub('// BEGIN.*?// END', '', html, flags=re.S)
@@ -381,9 +393,9 @@ class Sync:
             for key, value in replaces.items():
                 html = html.replace(key, value)
 
-        # 4) create the new index.html
+        # 5) create the new index.html
         if not self.no_process:
-            all_min_js = os.path.join(JS_FOLDER, 'all_.js')
+            all_min_js = join(JS_FOLDER, 'all_.js')
             js_data = read_text_safe(all_min_js) or ''
             replaces = {
                 '<!-- {SCRIPT} -->': f'<script>{js_data}</script>',
@@ -395,29 +407,45 @@ class Sync:
             html = re.sub('<!-- .*? -->', '', html, flags=re.S)
 
         html = re.sub(r'\n\s+', '\n', html)
-        filename = os.path.join(LOCAL, 'index.html')
+        filename = join(LOCAL, 'index.html')
         write_text_safe(filename, html)
+    # MAIN
+    ######
 
     def synchronise(self) -> bool:
         """Synchronise the files
         """
-        self.normalise_folders()
-        self.create_index()
         if self.clean:
             self.gzip_files(LOCAL, 0, True)
-        elif self.zip:
-            self.gzip_files(LOCAL, 0, False)
+            return
+
+        self.normalise_folders()
+        self.create_index()
         return True
+
+
+def add_arguments_sync(parser: ArgumentParser):
+    add = create_group(parser, 'sync')
+    add('--clean', action='store_true', help='delete all .gz files')
+    add('--host', nargs='?', default='/', help='host, ex: /seriv/')
+    add('--no-compress', nargs='?', default=0, const=1, type=int, help="don't compress JS")
+    add('--sync', action='store_true', help='create the index.html')
+    add('--target', nargs='?', default='index', help='set the output file, ex: index')
+    add('--zip', action='store_true', help='create .gz files')
+
+
+def main_sync(parser: ArgumentParser=None):
+    if not parser:
+        parser = ArgumentParser(description='Sync', prog='python sync.py')
+        add_arguments_sync(parser)
+
+    sync = Sync()
+    if 0:
+        sync.combine_themes(join(BASE, 'theme'))
+    sync.synchronise()
 
 
 if __name__ == '__main__':
     start = time()
-    sync = Sync()
-
-    if 0:
-        sync.combine_themes(os.path.join(BASE, 'theme'))
-    else:
-        sync.synchronise()
-
-    end = time()
-    print(f'\nELAPSED: {end-start:.3f} seconds')
+    main_sync()
+    pinfo(f'\nELAPSED: {time() - start:.3f} seconds')

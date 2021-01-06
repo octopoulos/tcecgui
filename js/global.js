@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-05
 //
 // global variables/functions shared across multiple js files
 //
@@ -8,7 +8,7 @@
 /*
 globals
 Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, Keys,
-location, LS, Max, Min, Pad, Pow, require, Round, save_option, show_popup, Split, Undefined, Y
+location, LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
 
@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210103',
+    VERSION = '20210105',
     virtual_close_popups,
     xboards = {};
 
@@ -300,30 +300,15 @@ function reset_old_settings() {
         return;
     }
 
-    if (version < '20200530') {
-        save_option('archive_scroll', 1);
-        save_option('wheel_adjust', 63);
-    }
-    if (version < '20200603' && Y.panel_gap < 8)
-        save_option('panel_gap', 8);
-    if (version < '20200605')
-        if (Y.scroll_inertia < 0.95)
-            save_option('scroll_inertia', 0.95);
-    if (version < '20200920') {
-        save_option('game_level', 'amateur');
-        save_option('game_options_black', 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20');
-        save_option('game_options_white', 'd=4 e=att h=1 i=2 q=8 s=ab t=2 x=20');
-        save_option('turn_opacity', 0);
-    }
     if (version < '20200930')
-        save_option('game_wasm', 1);
+        save_default('game_wasm', 1);
     if (version < '20201003b') {
-        save_option('game_every', 100);
-        save_option('game_threads', 1);
-        save_option('graph_marker_color', '#299bff');
+        save_default('game_every', 100);
+        save_default('game_threads', 1);
+        save_default('graph_marker_color', '#299bff');
     }
     if (version < '20210101d')
-        save_option('boom_start', 20);
+        save_default('boom_start', 20);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);
