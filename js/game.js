@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 //
 // Game specific code:
 // - control the board, moves
@@ -20,9 +20,9 @@ getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
 Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
-resize_3d, resize_text, Resource, restore_history, resume_game, Round,
-S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, show_modal,
-Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
+resize_3d, resize_text, Resource, restore_history, Round,
+S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, Sign,
+slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
@@ -199,6 +199,10 @@ let ANALYSIS_URLS = {
     hashes = {
         archive: {},
         live: {},
+    },
+    KEY_NAMES = {
+        37: 'prev',
+        39: 'next',
     },
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
@@ -4583,12 +4587,15 @@ function action_key_no_input(code, active) {
 /**
  * Handle keys, when input is not active
  * @param {number} code hardware keycode
+ * @returns {boolean}
  */
 function game_action_key(code) {
+    let okay;
+
     if (is_overlay_visible()) {
         let changes = 0,
             modal_node = Id('modal'),
-            parent = Visible(modal_node)? modal_node: Id('modal2'),
+            parent = Visible(modal_node)? modal_node: null,
             items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
             index = (items.findIndex(item => HasClass(item, 'selected')) + length) % length,
@@ -4597,15 +4604,6 @@ function game_action_key(code) {
             is_grid = HasClass(node.parentNode, 'grid');
 
         switch (code) {
-        // escape, e
-        // case 27:
-        case 69:
-            LS(`game_action_key: ${code}`);
-            if (Visible(Id('modal2')))
-                show_modal(true);
-            else
-                resume_game();
-            break;
         // enter, space, x
         case 13:
         case 32:
@@ -4668,17 +4666,17 @@ function game_action_key(code) {
     }
     else if (!KEYS[code]) {
         switch (code) {
-        // left
-        case 37:
-            clear_timeout('click_play');
-            board_target.hold = 'prev';
-            board_target.hold_button('prev', 0);
+        case 32:
+            okay = false;
+            board_target.play(false, true, 'game_action_key');
             break;
-        // right
+        // left / right
+        case 37:
         case 39:
-            clear_timeout('click_play');
-            board_target.hold = 'next';
-            board_target.hold_button('next', 0);
+            if (code == 37)
+                board_target.play(true, true, 'game_action_key');
+            board_target.hold = KEY_NAMES[code];
+            board_target.hold_button(KEY_NAMES[code], 0, true);
             break;
         // CTRL+C, v, y, z
         case 67:
@@ -4723,28 +4721,29 @@ function game_action_key(code) {
 
         HTML(Id('keycode'), code);
     }
+
+    return okay;
 }
 
 /**
  * Handle a keyup
  * @param {number} code
+ * @returns {boolean}
  */
 function game_action_keyup(code) {
+    let okay;
+
     switch (code) {
-    // left
+    // left / right
     case 37:
-        clear_timeout('click_prev');
-        break;
-    // right
     case 39:
-        clear_timeout('click_next');
+        clear_timeout(`click_${KEY_NAMES[code]}_${board_target.id}`);
+        if (code == 37)
+            board_target.play(true, true, 'game_action_keyup');
         break;
     }
 
-    if ([37, 39].includes(code))
-        Keys(xboards).forEach(key => {
-            xboards[key].hold = null;
-        });
+    return okay;
 }
 
 /**

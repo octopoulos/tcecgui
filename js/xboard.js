@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 //
 // game board:
 // - 4 rendering modes:
@@ -408,10 +408,11 @@ class XBoard {
                 this.play(false, false, 'add_moves');
             }
             // + play normal moves ALSO 1 by 1, but quicker
-            else if (num_new <= 12) {
+            else if ((moves[0] || {}).ply > 0 || num_new <= 8) {
                 this.play_mode = 'quick';
                 this.play(false, false, 'add_moves');
             }
+            // got 1st move => probably just (re)loaded the page
             else
                 this.set_ply(this.moves.length - 1, {animate: true});
         }
@@ -1319,7 +1320,6 @@ class XBoard {
             Clear(this.replies);
             this.clock(this.name, 0, true);
             this.hide_arrows();
-            this.set_play(true);
         }
     }
 
@@ -1356,7 +1356,7 @@ class XBoard {
                 that.set_locked(true);
                 break;
             case 'play':
-                that.play(false, false, 'event_hook');
+                that.play(false, true, 'event_hook');
                 break;
             case 'rotate':
                 that.rotate = (that.rotate + 1) & 1;
@@ -1379,7 +1379,8 @@ class XBoard {
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
-        Events('[data-x]', 'mousedown mouseleave mousemove mouseup touchend touchmove touchstart', function(e) {
+        Events('[data-x="next"], [data-x="prev"]',
+                'mousedown mouseleave mousemove mouseup touchend touchmove touchstart', function(e) {
             let name = this.dataset.x,
                 type = e.type;
 
@@ -1391,7 +1392,7 @@ class XBoard {
                 let target = Parent(e.target, {class_: 'control', self: true});
                 if (target) {
                     that.rect = target.getBoundingClientRect();
-                    that.hold_button(name, 0);
+                    that.hold_button(name, 0, true);
                 }
             }
             else {
@@ -1498,17 +1499,23 @@ class XBoard {
 
     /**
      * Navigation: next
+     * @params {boolean=} is_manual
      * @returns {boolean}
      */
-    go_next() {
+    go_next(is_manual) {
         let num_move = this.moves.length,
             ply = this.ply + 1;
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
+
         let success = this.set_ply(ply, {animate: true, manual: true});
+        if (!is_manual)
+            return success;
 
         // next to think
-        if (!success && this.manual && ply >= num_move) {
+        if (success)
+            this.set_play(true);
+        else if (ply >= num_move && this.manual) {
             this.set_ai(true);
             success = this.think();
             if (success)
@@ -1570,8 +1577,9 @@ class XBoard {
      * Hold mouse button or touch => repeat the action
      * @param {string} name
      * @param {number} step -1 for no repeat
+     * @param {boolean=} is_manual
      */
-    hold_button(name, step) {
+    hold_button(name, step, is_manual) {
         let is_play = (name == 'play');
 
         if (step == 0)
@@ -1587,7 +1595,8 @@ class XBoard {
             switch (name) {
             case 'next':
             case 'play':
-                if (!this.go_next())
+                this.set_play(false);
+                if (!this.go_next(is_manual))
                     step = -1;
                 break;
             case 'prev':
@@ -1606,7 +1615,7 @@ class XBoard {
         this.hold_time = now;
 
         let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
-        add_timeout(`click_${name}_${this.id}`, () => this.hold_button(name, step + 1), timeout);
+        add_timeout(`click_${name}_${this.id}`, () => this.hold_button(name, step + 1, !is_play), timeout);
     }
 
     /**
@@ -1878,6 +1887,7 @@ class XBoard {
             move.wv = '-';
 
         this.add_moves([move]);
+        this.set_ply(ply);
         this.move_time = now;
         this.eval(this.name, move);
 
@@ -1979,7 +1989,7 @@ class XBoard {
         let key = this.play_id,
             timer = timers[key];
 
-        if (DEV.time)
+        if (DEV.hold)
             LS(`play: ${origin} : stop=${stop} : manual=${manual} : cp[${key}]=${timer} : mode=${this.play_mode}`);
         if (stop || timer) {
             clear_timeout(key);
@@ -1997,7 +2007,7 @@ class XBoard {
         if (stop)
             this.delayed_picks(true);
         else
-            this.hold_button('play', 0);
+            this.hold_button('play', 0, manual);
         this.set_play(stop);
     }
 
@@ -2401,8 +2411,8 @@ class XBoard {
      * @param {boolean} play
      */
     set_play(play) {
-        if (this.hold == 'play')
-            play = false;
+        if (DEV.hold)
+            LS('set_play', play);
         S('[data-x="pause"]', !play, this.node);
         S('[data-x="play"]', play, this.node);
     }
@@ -2466,7 +2476,7 @@ class XBoard {
         // - multiple sounds can be played with different delays
         let audio = Y.audio_moves,
             is_last = (ply == this.moves.length - 1),
-            can_moves = (audio == 'all' || (is_last && audio == 'last') || (this.play_mode == 'book' && Y.audio_book)),
+            can_moves = (audio == 'all' || (is_last && audio == 'last') || (this.play_mode != 'play' && Y.audio_book)),
             can_source = (this.name == Y.x || (this.main && Y.audio_live_archive) || (this.manual && Y.audio_pva));
 
         if (can_source && can_moves) {

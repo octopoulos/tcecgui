@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1150,7 +1150,7 @@ function resize_panels() {
     // column/row mode
     E('.status', node => {
         let area = get_area(node);
-        Style(node, `margin-bottom:1em;margin-top:-0.5em`, area.clientWidth < 390);
+        Style(node, `margin-bottom:1em;margin-top:0`, area.clientWidth < 390);
     });
     Keys(xboards).forEach(key => {
         let board = xboards[key];
@@ -1436,7 +1436,8 @@ function set_global_events() {
 
     // keys
     Events(window, 'keydown keyup', e => {
-        let active = document.activeElement,
+        let okay,
+            active = document.activeElement,
             code = e.keyCode,
             is_game = true,
             type = e.type;
@@ -1452,25 +1453,25 @@ function set_global_events() {
 
         if (type == 'keydown') {
             if (is_game)
-                game_action_key(code);
+                okay = game_action_key(code);
             else
-                action_key_no_input(code, active);
+                okay = action_key_no_input(code, active);
             if (!KEYS[code])
                 KEY_TIMES[code] = Now(true);
             KEYS[code] = 1;
         }
         else {
             if (is_game)
-                game_action_keyup(code);
+                okay = game_action_keyup(code);
             else
-                action_keyup_no_input(code);
+                okay = action_keyup_no_input(code);
             KEYS[code] = 0;
             if (change_queue)
                 change_setting(change_queue[0], change_queue[1], change_queue[2]);
         }
 
         // prevent some default actions
-        if ([9, 112].includes(code))
+        if ([9, 112].includes(code) || okay === false)
             PD(e);
 
         update_debug();
@@ -1814,6 +1815,7 @@ function prepare_settings() {
         E: 'engine',
         f: 'fen',                   // parse_fen
         G: 'global',
+        h: 'hold',                  // hold button
         i: 'input',                 // gamepad input
         j: 'json',                  // static json files
         l: 'log',                   // analyse_log
@@ -2008,11 +2010,11 @@ function prepare_settings() {
             boom_reactivate: '1',
         },
         control: {
-            book_every: option_number(600, 100, 5000, 100, {}, 'opening book play speed'),
+            book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
-            play_every: option_number(1200, 100, 5000, 100, {}, 'speed when clicking on PLAY'),
-            quick_every: option_number(250, 100, 50000, 10, {}, 'live moves play speed'),
+            play_every: option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
+            quick_every: option_number(300, 100, 50000, 10, {}, 'live moves play speed'),
             // wasm: [ON_OFF, 0],
         },
         engine: {
