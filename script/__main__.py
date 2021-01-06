@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-09-07
+# @version 2021-01-05
 
 """
 Main
@@ -10,39 +10,40 @@ from argparse import ArgumentParser
 import os
 from time import time
 
+from commoner import create_group
 from download_json import download_json
-from sync import Sync
+from sync import add_arguments_sync, main_sync
+from util import add_arguments_util, main_util
 
 
 def main():
     """Main
     """
-    parser = ArgumentParser(description='Sync', prog='python __main__.py')
-    add = parser.add_argument
+    parser = ArgumentParser(description='TCEC', prog='python __main__.py')
 
-    add('--clean', action='store_true', help='delete all .gz files')
-    add('--console-debug', nargs='?', default='INFO', help='console debug level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
-    add('--debug', nargs='?', default=0, const=1, type=int, help="keep debug code from the javascript")
+    add = create_group(parser, 'tcec')
     add('--download', action='store_true', help='download JSON files')
-    add('--host', nargs='?', default='/', help='host, ex: /seriv/')
-    add('--inspector', nargs='?', default=0, const=1, type=int, help='run the inspector')
-    add('--no-process', nargs='?', default=0, const=1, type=int, help="don't process the images")
-    add('--zip', action='store_true', help='create .gz files')
+
+    add_arguments_util(parser)
+    add_arguments_sync(parser)
 
     # configure args
     args = parser.parse_args()
     args_dict = vars(args)
+    args_set = set(item for item, value in args_dict.items() if value)
 
     if args.download:
         download_json()
+    # utils
+    if args_set & {'inspector'}:
+        main_util(parser)
     elif args.inspector:
         from inspector import Inspect
         inspector = Inspect()
         inspector.go()
-    else:
-        sync = Sync(**args_dict)
-        sync.synchronise()
+    # sync
+    elif args.sync:
+        main_sync(parser)
 
 
 if __name__ == '__main__':

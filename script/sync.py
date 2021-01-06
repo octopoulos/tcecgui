@@ -1,12 +1,13 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-01-04
+# @version 2021-01-05
 
 """
 Sync
 """
 
 from argparse import ArgumentParser
+from ftplib import FTP
 import gzip
 from logging import getLogger
 import os
@@ -19,18 +20,17 @@ from typing import Any
 
 from PIL import Image, ImageFile
 
-from commoner import makedirs_safe, read_text_safe, write_text_safe
+from commoner import create_group, default_int, makedirs_safe, pinfo, read_text_safe, write_text_safe
 from css_minify import css_minify
 
 
 # folders, might want to edit these
 BASE = os.path.dirname(os.path.dirname(__file__))
-COMPILER = join(BASE, 'script/closure-compiler-v20200406.jar')
+COMPILER = 'closure-compiler-v20200406.jar'
 CSS_FOLDER = join(BASE, 'css')
 JAVA = 'java'
 JS_FOLDER = join(BASE, 'js')
 LOCAL = BASE
-
 
 # edit these files
 CSS_FILES = [
@@ -108,7 +108,7 @@ SKIP_GZIPS = {
     'theme',
 }
 
-pinfo = print
+UPLOAD_SKIPS = {'backup', 'bin', 'css', 'js', 'script'}
 
 
 class Sync:
@@ -121,9 +121,11 @@ class Sync:
 
         self.clean = kwargs.get('clean')                                # type: bool
         self.debug = kwargs.get('debug')                                # type: bool
+        self.ftp_debug = default_int(self.kwargs.get('ftp_debug'), 0)   # type: int
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
-        self.no_process = kwargs.get('no_process')                      # type: bool
+        self.target = kwargs.get('target', 'index')                     # type: str
+        self.upload = kwargs.get('upload')                              # type: int
         self.zip = kwargs.get('zip')                                    # type: bool
 
         self.logger = getLogger(self.__class__.__name__)
@@ -189,6 +191,7 @@ class Sync:
     def compress_js(self, filename: str) -> str:
         """Compress javascript
         """
+        # 1) skip?
         base, ext = os.path.splitext(filename)
         output = f'{base}_{ext}'
 
@@ -196,9 +199,19 @@ class Sync:
             shutil.copy(filename, output)
             return output
 
+        # 2) locate the compiler
+        for base in ('script', 'bin', '../bin'):
+            compiler = os.path.abspath(f'{BASE}/{base}/{COMPILER}')
+            if os.path.isfile(compiler):
+                break
+        else:
+            self.logger.error({'status': 'compress_js__error', 'compiler': COMPILER})
+            return output
+
+        # 3) compress
         args = [
             JAVA,
-            '-jar', COMPILER,
+            '-jar', compiler,
             '--js', filename,
             '--js_output_file', output,
             '--language_in', 'ECMASCRIPT_2018',
@@ -237,13 +250,13 @@ class Sync:
                 destin_time = os.path.getmtime(output)
                 if delete:
                     os.unlink(output)
-                    pinfo('d', end='')
+                    pinfo(f"d{'  ' * depth}{output}")
             else:
                 destin_time = 0
 
             if not delete and source_time != destin_time:
                 self.compress_gzip(filename)
-            pinfo(f"{'  ' * depth}{filename}")
+                pinfo(f"{'  ' * depth}{filename}")
 
         for queue in queues:
             self.gzip_files(queue, depth + 1, delete)
@@ -276,17 +289,16 @@ class Sync:
     def create_index(self):
         """Create the new index.html
         """
+        target = f'{self.target}.html'
         base = join(LOCAL, 'index_base.html')
         base_time = os.path.getmtime(base)
-        index = join(LOCAL, 'index.html')
+        index = join(LOCAL, target)
         index_time = os.path.getmtime(index) if os.path.isfile(index) else 0
         change = 0
         if base_time >= index_time:
             change += 1
 
-        # 1) ...
-
-        # 2) minimise JS
+        # 1) minimise JS
         for js_output, js_files in JS_FILES.items():
             all_js = join(JS_FOLDER, f'{js_output}.js')
             all_min_js = join(JS_FOLDER, f'{js_output}_.js')
@@ -317,8 +329,7 @@ class Sync:
             ]
             for js_name in js_names:
                 pinfo(js_name)
-                script_data = read_text_safe(js_name)
-                if not script_data:
+                if not (script_data := read_text_safe(js_name)):
                     continue
 
                 # process the script.js
@@ -347,7 +358,7 @@ class Sync:
             pinfo('j', end='')
             change += 1
 
-        # 3) minimise CSS
+        # 2) minimise CSS
         all_css = join(CSS_FOLDER, 'all.css')
         all_min_css = join(CSS_FOLDER, 'all_.css')
         css_names = [os.path.abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
@@ -379,7 +390,7 @@ class Sync:
             pinfo('X', end='')
             return
 
-        # 4) remove BEGIN ... END
+        # 3) remove BEGIN ... END
         html = read_text_safe(base)
         html = re.sub('<!-- BEGIN -->.*?<!-- END -->', '', html, flags=re.S)
         html = re.sub('// BEGIN.*?// END', '', html, flags=re.S)
@@ -393,8 +404,8 @@ class Sync:
             for key, value in replaces.items():
                 html = html.replace(key, value)
 
-        # 5) create the new index.html
-        if not self.no_process:
+        # 4) create the new index.html
+        if True:
             all_min_js = join(JS_FOLDER, 'all_.js')
             js_data = read_text_safe(all_min_js) or ''
             replaces = {
@@ -407,8 +418,80 @@ class Sync:
             html = re.sub('<!-- .*? -->', '', html, flags=re.S)
 
         html = re.sub(r'\n\s+', '\n', html)
-        filename = join(LOCAL, 'index.html')
-        write_text_safe(filename, html)
+        write_text_safe(index, html)
+
+    def upload_dir(self, ftp: FTP, local: str, remote: str, depth: int):
+        """Recursively upload files in a directory
+        """
+        local = local.rstrip('/\\')
+        remote = remote.rstrip('/')
+        if not os.path.isdir(local):
+            return
+
+        base_local = os.path.basename(local)
+        splits = remote.split('/')
+        parent = splits[-1]
+
+        # remote files
+        destins = {}
+        infos = ftp.mlsd(remote)
+        for name, info in infos:
+            if name in {'.', '..'}:
+                continue
+            size = info.get('size')
+            time = parse_date_time(info.get('modify'), mode='ts')
+            destins[name] = [time, size, info.get('type')]
+
+        # local files + action
+        sources = set()
+        for source in os.listdir(local):
+            if source.startswith(('.', '_')):
+                continue
+            if source in UPLOAD_SKIPS:
+                continue
+
+            filename = join(local, source)
+            sources.add(source)
+            destin = destins.get(source)
+            target = f'{remote}/{source}'
+            if source not in 'index.html':
+                continue
+            pinfo(f'{filename} => {target}')
+
+            # folder => recurse
+            if os.path.isdir(filename):
+                pass
+            # file
+            else:
+                if destin:
+                    ok = 0
+                    stat = os.stat(filename)
+
+                    # different size => replace it
+                    if int(destin[1]) != stat.st_size:
+                        ok = 1
+                    # more recent file => replace it
+                    elif source.endswith(REPLACE_EXTENSIONS):
+                        time = parse_date_time(stat.st_mtime, mode='ts')
+
+                        # assumption: FTP time is UTC! if not, must change the difference
+                        delta = destin[0] - time
+                        if delta < 0 or int(destin[1]) != stat.st_size:
+                            ok = 1
+
+                    if ok:
+                        pinfo(f'\nUPDATE {target} ' if DEV.url & 1 else ':', end='')
+                else:
+                    ok = 1
+                    pinfo(f'\nADD {target} ' if DEV.url & 1 else '.', end='')
+
+                if ok:
+                    try:
+                        with open(filename, 'rb') as file:
+                            ftp.storbinary(f'STOR {target}', file)
+                    except Exception as e:
+                        self.logger.error({'status': 'upload_dir__error', 'error': e})
+
     # MAIN
     ######
 
@@ -419,18 +502,39 @@ class Sync:
             self.gzip_files(LOCAL, 0, True)
             return
 
+        # 1) create index
         self.normalise_folders()
         self.create_index()
+        if self.zip:
+            self.gzip_files(LOCAL, 0, False)
+
+        # 2) upload the files
+        if not self.upload:
+            return True
+        if is_missing_any({'host', 'password', 'remote', 'user'}, INFO, origin='synchronise'):
+            return False
+
+        ftp = FTP()
+        ftp.set_debuglevel(self.ftp_debug)
+        ftp.connect(INFO['host'], INFO.get('port', 21))
+        ftp.login(INFO['user'], INFO['password'])
+
+        pinfo('')
+        self.upload_dir(ftp, LOCAL, INFO['remote'], 0)
+        ftp.quit()
         return True
 
 
 def add_arguments_sync(parser: ArgumentParser):
     add = create_group(parser, 'sync')
+    add('--advanced', action='store_true', help='advanced javascript compilation')
     add('--clean', action='store_true', help='delete all .gz files')
+    add('--ftp-debug', nargs='?', default=0, const=1, type=int, help='ftp debug level')
     add('--host', nargs='?', default='/', help='host, ex: /seriv/')
     add('--no-compress', nargs='?', default=0, const=1, type=int, help="don't compress JS")
     add('--sync', action='store_true', help='create the index.html')
     add('--target', nargs='?', default='index', help='set the output file, ex: index')
+    add('--upload', nargs='?', default=0, const=1, type=int, help='upload via FTP')
     add('--zip', action='store_true', help='create .gz files')
 
 
@@ -448,4 +552,4 @@ def main_sync(parser: ArgumentParser=None):
 if __name__ == '__main__':
     start = time()
     main_sync()
-    pinfo(f'\nELAPSED: {time() - start:.3f} seconds')
+    print(f'\nELAPSED: {time() - start:.3f} seconds')
