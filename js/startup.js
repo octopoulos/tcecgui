@@ -1817,6 +1817,7 @@ function prepare_settings() {
         G: 'global',
         h: 'hold',                  // hold button
         i: 'input',                 // gamepad input
+        I: 'invert',                // inverting scores
         j: 'json',                  // static json files
         l: 'log',                   // analyse_log
         L: 'load',

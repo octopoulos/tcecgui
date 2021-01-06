@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 //
 /*
 globals
@@ -49,7 +49,7 @@ live.id = 'null';
     ['41...Kxg8 42. a8=Q+ Kg7', 81, [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}]],
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
-        live.reset();
+        live.reset(Y.x);
         live.add_moves_string(text, cur_ply);
 
         let offset = answer[0],
@@ -249,7 +249,7 @@ live.id = 'null';
     [{boomed: 0}],
 ].forEach(([answer], id) => {
     test(`reset:${id}`, () => {
-        live.reset();
+        live.reset(Y.x);
         Keys(answer).forEach(key => {
             expect(live[key]).toEqual(answer[key]);
         });

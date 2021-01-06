@@ -742,7 +742,7 @@ function create_boards(mode='html') {
     // 3) update themes: this will render the boards too
     update_board_theme(7);
 
-    xboards.pva.reset();
+    xboards.pva.reset(Y.x);
 }
 
 /**
@@ -772,13 +772,14 @@ function redraw_arrows() {
 
 /**
  * Reset sub boards
+ * @param {string} section
  * @param {number} mode:
  * - &1: mark board invalid
  * - &2: reset the board completely
  * - &4: reset board evals
  * @param {string=} start_fen
  */
-function reset_sub_boards(mode, start_fen) {
+function reset_sub_boards(section, mode, start_fen) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (board.main_manual)
@@ -787,7 +788,7 @@ function reset_sub_boards(mode, start_fen) {
         if (mode & 1)
             board.valid = false;
         if (mode & 2)
-            board.reset(mode & 4, start_fen);
+            board.reset(section, mode & 4, start_fen);
     });
 }
 
@@ -3451,7 +3452,7 @@ function update_move_pv(section, ply, move) {
     }
 
     // PV should jump directly to a new position, no transition
-    board.reset();
+    board.reset(section);
     board.instant();
 
     if (move.pv) {
@@ -3776,13 +3777,13 @@ function update_pgn(section, data, extras, reset_moves) {
             LS(pgn);
         }
 
-        main.reset(1, pgn.frc);
+        main.reset(section, is_same, pgn.frc);
         if (is_same) {
-            reset_sub_boards(7, pgn.frc);
+            reset_sub_boards(section, 7, pgn.frc);
             if (section == section_board()) {
                 if (DEV.chart)
                     LS(`UP: ${section}`);
-                reset_charts(true);
+                reset_charts(section, true);
             }
         }
         new_game = (main.event && main.round)? 2: 1;
@@ -4377,6 +4378,7 @@ function update_live_eval(section, data, id, force_ply) {
         return false;
 
     let board = xboards[`live${id}`],
+        board_evals = board.evals[section],
         desc = data.desc,
         engine = data.engine,
         main = xboards[section],
@@ -4394,14 +4396,19 @@ function update_live_eval(section, data, id, force_ply) {
     if (moves) {
         // ply is offset by 1
         for (let move of moves) {
-            // LS(`move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
-            board.evals[move.ply - 1] = move;
-            move.invert = true;
+            if (move.pv && !move.seen) {
+                let real = split_move_string(move.pv)[0];
+                // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
+                board_evals[real] = move;
+                move.invert = true;
+                move.ply = real;
+                if (real & 1)
+                    move.eval = invert_eval(move.eval);
+                move.seen = 1;
+            }
         }
         data = moves[moves.length - 1];
     }
-    else if (data)
-        data.invert = force_ply;
 
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
@@ -4409,7 +4416,8 @@ function update_live_eval(section, data, id, force_ply) {
         node = Id(`table-live${id}`),
         [ply] = split_move_string(data.pv);
 
-    board.evals[ply] = data;
+    data.ply = ply;
+    board_evals[ply] = data;
     main.players[2 + id].eval = eval_;
 
     // live engine is not desired?
@@ -4422,10 +4430,6 @@ function update_live_eval(section, data, id, force_ply) {
     engine = engine || data.engine;
     let short = get_short_name(engine);
     update_hardware(section, id + 2, engine, short, desc, [box_node, node]);
-
-    // invert eval for black?
-    if (data.invert && !(data.ply & 1))
-        eval_ = invert_eval(eval_);
 
     if (ply == cur_ply + 1 || force_ply) {
         let is_hide = !Y.eval,
@@ -4516,7 +4520,7 @@ function update_player_eval(section, data, same_pv) {
         if (moves && moves.length) {
             data.ply = moves[0].ply;
             if (!board.locked) {
-                board.reset();
+                board.reset(section);
                 board.instant();
                 let last_move = main.moves.slice(-1)[0];
                 board.set_fen(last_move? last_move.fen: main.fen);
@@ -4557,7 +4561,7 @@ function update_player_eval(section, data, same_pv) {
 
     if (DEV.chart)
         LS(`UPE: ${section}`);
-    board.evals[data.ply] = data;
+    board.evals[section][data.ply] = data;
 
     // no graph plot if the board does not match
     if (section != sboard)
@@ -4758,7 +4762,7 @@ function paste_text(text) {
     let moves,
         board = board_target.manual? board_target: xboards.pva,
         pgn = parse_pgn(board.name, text),
-        players = board.players;
+        section = Y.x;
     if (pgn) {
         board.pgn = pgn;
         let fen = pgn.Headers.FEN;
@@ -4773,9 +4777,9 @@ function paste_text(text) {
     let fen = board.fen;
     if (board.set_fen(text, true)) {
         if (board.fen != fen) {
-            board.reset(true, board.fen);
+            board.reset(section, true, board.fen);
             if (board_target.name == 'pva')
-                reset_charts();
+                reset_charts(section);
         }
     }
     // move string
@@ -4975,10 +4979,11 @@ function changed_section() {
     }
 
     // reset some stuff
-    reset_sub_boards(3);
+    reset_sub_boards(section, 3);
     if (DEV.chart)
         LS(`CS: ${section}`);
-    reset_charts(true);
+    reset_charts(section);
+    redraw_eval_charts(section);
 
     if (section == 'live')
         download_live(redraw_eval_charts);
@@ -5271,13 +5276,13 @@ function handle_board_events(board, type, value, force) {
         if (name == section) {
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
-            reset_sub_boards(1);
+            reset_sub_boards(section, 1);
             update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, value);
 
             // show live engines
-            update_live_eval(section, xboards.live0.evals[cur_ply], 0, cur_ply);
-            update_live_eval(section, xboards.live1.evals[cur_ply], 1, cur_ply);
+            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply);
+            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply);
 
             update_materials(value);
             update_mobility();
@@ -5298,7 +5303,7 @@ function handle_board_events(board, type, value, force) {
     if (new_board != old_board || force) {
         if (DEV.chart)
             LS(`NN: ${old_board} => ${new_board}`);
-        reset_charts(false);
+        reset_charts(section, false);
         if (new_board == 'pva')
             update_player_charts(null, board.moves);
         else {
