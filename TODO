@@ -12,7 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
--          : 2020-01-05 : keep multiple prev_PVs in memory
+2020-01-05 : 2020-01-05 : keep multiple prev_PVs in memory
 2020-01-05 : 2020-01-05 : better ply management
 2020-01-05 : 2020-01-05 : boom audio parameters for each sample
 2020-01-05 : 2020-01-04 : preload audio to avoid delays

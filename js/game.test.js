@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-02
+// @version 2021-01-05
 /*
 globals
 expect, global, require, test
@@ -60,6 +60,7 @@ create_chart_data();
             depth: 91, engine: 'Komodo 14.1', eval: 'M8', hashfull: 0, id: 1, mate: -4, nodes: 2508046, nps: 4407815,
             ply: 145, tbhits: 123007, time: 568,
             pv: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
+            pvs: {d3c5: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6'},
         },
         'Nc5 Qb8+ Nb7 Qe8+ Ka6 Qc6+ Ka5 Qcb6#',
     ],
@@ -69,14 +70,15 @@ create_chart_data();
             {name: 'Stockfish 202011101829_nn-c3ca321c51c9'},
             {name: 'Komodo 14.1'},
         ],
-        '128814060 Stockfish 202011101829_nn-c3ca321c51c9(70): info depth 77 seldepth 26 multipv 1 score mate 13 wdl 1000 0 0 nodes 575877930 nps 258009825 hashfull 21 tbhits 6492754 time 2232 pv h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5 d6d5 b5b4 c8b7 b4c3 a7a8q c3c4 a8c8',
+        '128814060 Stockfish 202011101829_nn-c3ca321c51c9(70): info depth 77 seldepth 26 multipv 1 score mate 13 wdl 1000 0 0 nodes 575877930 nps 258009825 hashfull 21 tbhits 6492754 time 2232 pv h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
         0,
         {
             depth: 77, engine: 'Stockfish 202011101829_nn-c3ca321c51c9', eval: 'M25', hashfull: 21, id: 0, mate: 13,
             nodes: 575877930, nps: 258009825, ply: 128, seldepth: 26, tbhits: 6492754, time: 2232, wdl: '1000 0 0',
-            pv: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5 d6d5 b5b4 c8b7 b4c3 a7a8q c3c4 a8c8',
+            pv: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
+            pvs: {h7g7: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5'},
         },
-        'Rg7 Ne6 Rg6 Kd7 h7 Nf8 Rg7+ Kd6 h8=Q Ne6 Rg6 Kc5 Rxe6 Kc4 Rd6 f4 Qc8+ Kb5 Rxd5+ Kb4 Qb7+ Kc3 a8=Q Kc4 Qac8#',
+        'Rg7 Ne6 Rg6 Kd7 h7 Nf8 Rg7+ Kd6 h8=Q Ne6 Rg6 Kc5 Rxe6 Kc4 Rd6 f4 Qc8+ Kb5',
     ],
     [
         '2kr2rn/ppppb2p/2n1p1b1/8/6B1/2N1P2N/PPPP3P/2KRBR2 w - - 6 11',
@@ -84,14 +86,15 @@ create_chart_data();
             {name: 'Demolito dev-20201019'},
             {name: 'AllieStein v0.8-120f959_net-15.0'},
         ],
-        '30158367 Demolito dev-20201019(14): info depth 27 score cp -7 time 16216 nodes 1793674384 hashfull 194 pv h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
+        '30158367 Demolito dev-20201019(14): info depth 27 score cp -7 time 16216 nodes 1793674384 hashfull 194 pv h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6',
         0,
         {
             cp: -7, depth: 27, engine: 'Demolito dev-20201019', eval: -0.07, hashfull: 194, id: 0, nodes: 1793674384,
             ply: 20, time: 16216,
-            pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6 e1e4 c8d7 c1b1 g6e7 d5e3 f5f6 c2c3 f6e6 e4e6 d7e6 b2b4 a7a6 b1c2 e7f5 e3f5 e6f5 d1e1 h7h6',
+            pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6',
+            pvs: {h3f4: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6'},
         },
-        'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6 Re4 Kd7 Kb1 Nge7 Ne3 R5f6 c3 Re6 Rxe6 Kxe6 b4 a6 Kc2 Nf5 Nxf5 Kxf5 Re1 h6',
+        'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6',
     ],
     [
         '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
@@ -105,6 +108,7 @@ create_chart_data();
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1',
+            pvs: {d1d6: 'd1d6 e7e6 f1d1'},
         },
         'Rd6 Re6 Rfd1',
     ],
@@ -120,6 +124,7 @@ create_chart_data();
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1 e6d6',
+            pvs: {d1d6: 'd1d6 e7e6 f1d1 e6d6'},
         },
         null,
     ],
@@ -135,6 +140,10 @@ create_chart_data();
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6',
+            pvs: {
+                e8e7: 'e8e7 d1d6 e7e6 f1d1 e6d6',
+                d1d6: 'd1d6 e7e6',
+            },
         },
         'Rd6 Re6',
     ],
@@ -150,6 +159,10 @@ create_chart_data();
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1 e6d6',
+            pvs: {
+                h2h4: 'h2h4 e8e7 d1d6 e7e6 f1d1 e6d6',
+                d1d6: 'd1d6 e7e6 f1d1 e6d6',
+            },
         },
         'Rd6 Re6 Rfd1 Rxd6',
     ],
@@ -165,6 +178,10 @@ create_chart_data();
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'h8h7',
+            pvs: {
+                b6c4: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                h8h7: 'h8h7',
+            },
         },
         'Rh7',
     ],
@@ -180,6 +197,10 @@ create_chart_data();
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+            pvs: {
+                b6c4: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+            },
         },
         'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
@@ -189,12 +210,13 @@ create_chart_data();
             {name: 'Stoofvlees II a16'},
             {info: {ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
         ],
-        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3 b1c1',
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 156 pv c4a3 b1c1',
         1,
         {
-            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 156, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
         },
         null,
     ],
@@ -210,6 +232,7 @@ create_chart_data();
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1b8',
+            pvs: {c4a3: 'c4a3 b1b8'},
         },
         'Nxa3 Rb8',
     ],
@@ -225,6 +248,7 @@ create_chart_data();
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
         },
         null,
     ],
@@ -237,6 +261,7 @@ create_chart_data();
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
         },
         null,
     ],
@@ -250,6 +275,14 @@ create_chart_data();
         if (ply >= 0)
             main.moves[ply] = {fen: fen, ply: ply};
         if (players_) {
+            for (let player of players_) {
+                let info = player.info;
+                if (info) {
+                    let pv = info.pv;
+                    if (pv)
+                        info.pvs = {[pv.split(' ')[0]]: pv};
+                }
+            }
             players[0] = players_[0];
             players[1] = players_[1];
         }

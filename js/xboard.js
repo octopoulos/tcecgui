@@ -397,6 +397,9 @@ class XBoard {
             this.compare_duals(cur_ply);
         }
         else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
+            if (DEV.ply)
+                LS(`num_book=${num_book} : num_new=${num_new}`);
+
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {
                 this.set_fen(null, true);
@@ -405,11 +408,12 @@ class XBoard {
                 this.play(false, false, 'add_moves');
             }
             // + play normal moves ALSO 1 by 1, but quicker
-            else {
+            else if (num_new <= 12) {
                 this.play_mode = 'quick';
                 this.play(false, false, 'add_moves');
-                // this.set_ply(last_move, {animate: true});
             }
+            else
+                this.set_ply(this.moves.length - 1, {animate: true});
         }
 
         // next move
