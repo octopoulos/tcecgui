@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-05
 //
 /*
 globals
@@ -73,20 +73,6 @@ live.id = 'null';
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
         expect(live.analyse_fen(fen)).toEqual(answer);
-    });
-});
-
-// boom
-[
-    [{}, 0, true, 0],
-    [{}, -2.8, true, -2.8],
-    [{}, 3, true, 3],
-    [{sound_boom: 0}, -5, false, 3],
-].forEach(([y, score, answer, answer_boom], id) => {
-    test(`boom:${id}`, () => {
-        Assign(Y, y);
-        expect(live.boom(score)).toEqual(answer);
-        expect(live.boomed).toEqual(answer_boom);
     });
 });
 
