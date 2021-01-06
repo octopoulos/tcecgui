@@ -543,7 +543,10 @@ def main_sync(parser: ArgumentParser=None):
         parser = ArgumentParser(description='Sync', prog='python sync.py')
         add_arguments_sync(parser)
 
-    sync = Sync()
+    args = parser.parse_args()
+    args_dict = vars(args)
+
+    sync = Sync(**args_dict)
     if 0:
         sync.combine_themes(join(BASE, 'theme'))
     sync.synchronise()
