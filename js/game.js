@@ -4085,7 +4085,7 @@ function check_boom(section, force) {
     for (let id = 2; id < players.length; id ++)
         if (players[id] && two.has(players[id][1]))
             players[id] = null;
-    players = players.filter(player => player);
+    players = players.filter(player => player && player[1]);
 
     // 3) engines must agree
     let boomed = main.boomed,
