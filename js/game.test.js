@@ -555,7 +555,7 @@ create_chart_data();
         for (let [name, moves] of [['live', main_moves], ['pv0', board_moves]]) {
             let board = xboards[name];
             board.start_fen = start_fen;
-            board.reset();
+            board.reset(Y.x);
             for (let move of moves)
                 board.moves[move.ply] = move;
         }

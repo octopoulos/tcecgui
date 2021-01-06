@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 //
 /*
 globals
@@ -495,12 +495,12 @@ function redraw_eval_charts(section) {
 
     // update existing moves + kibitzer evals (including next move)
     update_player_charts('eval', moves);
-    update_live_chart(xboards.live0.evals, 2);
-    update_live_chart(xboards.live1.evals, 3);
+    update_live_chart(xboards.live0.evals[section], 2);
+    update_live_chart(xboards.live1.evals[section], 3);
 
     // update last received player eval, for the next move
     for (let id = 0; id < 2; id ++) {
-        let move = xboards[`pv${id}`].evals[num_move];
+        let move = xboards[`pv${id}`].evals[section][num_move];
         if (move)
             update_live_chart([move], id);
     }
@@ -525,18 +525,19 @@ function reset_chart(chart, name) {
 
 /**
  * Reset all charts
- * @param {boolean} all reset (live + pv) evals as well
+ * @param {string} section
+ * @param {boolean} reset_evals reset (live + pv) evals as well
  */
-function reset_charts(all)
+function reset_charts(section, reset_evals)
 {
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key], key);
     });
 
-    if (all)
+    if (reset_evals)
         for (let key of ['live0', 'live1', 'pv0', 'pv1'])
-            xboards[key].evals = [];
+            xboards[key].evals[section] = [];
 }
 
 /**
@@ -704,12 +705,6 @@ function update_live_chart(moves, id) {
         check_first_num(num);
         let num2 = num - first_num;
         labels[num2] = num / 2 + 1;
-
-        if (move.invert && !(ply & 1)) {
-            eval_ = invert_eval(eval_);
-            if (DEV.eval2)
-                LS(`inverting black @${ply}: ${move.eval} => ${eval_}`);
-        }
 
         // check update_player_chart to understand
         data[num2] = {

@@ -182,7 +182,11 @@ class XBoard {
         this.depth = 0;                                 // current depth in IT
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
         this.dual = null;
-        this.evals = [];                                // eval history
+        this.evals = {
+            archive: [],
+            live: [],
+            pva: [],
+        };                                              // eval history
         this.fen = '';                                  // current fen
         this.fen2 = '';
         this.fens = {};                                 // fen counter to detect 3-fold repetition
@@ -1824,7 +1828,7 @@ class XBoard {
             fen = START_FEN;
 
         this.destroy_workers(true);
-        this.reset(true, fen);
+        this.reset(Y.x, true, fen);
 
         this.instant();
         this.render(7);
@@ -2225,10 +2229,11 @@ class XBoard {
 
     /**
      * Reset the moves
+     * @param {string} section
      * @param {boolean=} reset_evals
      * @param {string=} start_fen
      */
-    reset(reset_evals, start_fen) {
+    reset(section, reset_evals, start_fen) {
         if (this.check_locked())
             return;
 
@@ -2255,7 +2260,7 @@ class XBoard {
         HTML(this.pv_node, '');
 
         if (reset_evals)
-            this.evals.length = 0;
+            this.evals[section].length = 0;
 
         this.set_fen(null, true);
         this.set_last(this.last);
@@ -2384,7 +2389,7 @@ class XBoard {
         if (!locked && this.locked_obj) {
             let [type, param1, param2] = this.locked_obj;
             this.locked_obj = null;
-            this.reset();
+            this.reset(Y.x);
             if (type == 'move')
                 this.add_moves(param1, param2);
             else if (type == 'text')
