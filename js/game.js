@@ -138,7 +138,7 @@ let ANALYSIS_URLS = {
         boom3: [0, 5200, 120, 2400, 12, 0.95],
         boom4: [500, 6000, 620, 2200, 15, 0.95],
         boom5: [0, 7800, 120, 3000, 8, 0.97],
-        boom6: [5200, 7400, 5320, 2200, 15, 0.96],
+        boom6: [5300, 7400, 5420, 2200, 15, 0.96],
     },
     BOOM_SHAKES = {
         all: 1,
@@ -4121,20 +4121,24 @@ function check_boom(section, force) {
 
         if (!timers.shake)
             boom_info.transform = body? body.style.transform: '';
-        Assign(boom_info, {
-            decay: decay,
-            shake: magnitude,
-            start: Now(),
-        });
 
         // color + shake
-        if (BOOM_COLORS[visual])
+        if (BOOM_COLORS[visual]) {
+            Style(body, 'background-color:transparent');
             add_timeout('red_start', () => Style(body, 'background-color:#f00'), red_start);
-        if (BOOM_SHAKES[visual])
+        }
+        if (BOOM_SHAKES[visual]) {
             add_timeout('shake_start', () => {
+                Assign(boom_info, {
+                    decay: decay,
+                    shake: magnitude,
+                    start: Now(),
+                });
                 add_timeout('shake', shake_screen, TIMEOUT_shake, true);
             }, shake_start);
+        }
 
+        // ending
         add_timeout('red_end', () => {
             Style(body, 'background-color:transparent');
         }, red_start + red_duration);
@@ -4182,11 +4186,12 @@ function set_viewers(count) {
 
 /**
  * Shake the screen
+ * @param {number=} override
  */
-function shake_screen() {
+function shake_screen(override) {
     // translate(15px, 15px) => ['15', '15']
     let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0)),
-        shake = boom_info.shake;
+        shake = Undefined(override, boom_info.shake);
     if (coords.length < 2)
         coords = [0, 0];
     coords[0] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
