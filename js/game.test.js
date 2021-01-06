@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-06
 /*
 globals
 expect, global, require, test
@@ -265,6 +265,36 @@ create_chart_data();
         },
         null,
     ],
+    [
+        START_FEN,
+        [
+            {name: 'One'},
+            {info: {ply: -1, pv: 'e2e4 e7e5 b1c3', pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'}}, name: 'Two'},
+        ],
+        '1000 Two(10): info depth 3 cp 50 pv d2d4',
+        1,
+        {
+            cp: 50, depth: 3, engine: 'Two', eval: -0.5, id: 1, ply: 0,
+            pv: 'd2d4 d7d5 g1f3',
+            pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
+        },
+        null,
+    ],
+    [
+        START_FEN,
+        [
+            {name: 'One'},
+            {info: {ply: -1, pv: 'e2e4 e7e5 b1c3', pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'}}, name: 'Two'},
+        ],
+        '1000 Two(10): info depth 3 cp 50 pv e2e4',
+        1,
+        {
+            cp: 50, depth: 3, engine: 'Two', eval: -0.5, id: 1, ply: 0,
+            pv: 'e2e4 e7e5 b1c3',
+            pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
+        },
+        null,
+    ],
 ].forEach(([fen, players_, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
         let main = xboards.live,
@@ -277,7 +307,7 @@ create_chart_data();
         if (players_) {
             for (let player of players_) {
                 let info = player.info;
-                if (info) {
+                if (info && !info.pvs) {
                     let pv = info.pv;
                     if (pv)
                         info.pvs = {[pv.split(' ')[0]]: pv};
