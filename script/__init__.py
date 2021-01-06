@@ -1,4 +1,6 @@
 # coding: utf-8
+# @author octopoulo <polluxyz@gmail.com>
+# @version 2021-01-05
 
 """
 Init
@@ -12,4 +14,5 @@ __all__ = [
     'download_json',
     'inspector',
     'sync',
+    'util',
 ]

@@ -1,14 +1,39 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-04-13
+# @version 2021-01-05
 
 """
 Common functions
 """
 
+from argparse import ArgumentParser
 import errno
 import logging
 import os
+
+
+def create_group(parser: ArgumentParser, group: str) -> callable:
+    group = parser.add_argument_group(group)
+    return group.add_argument
+
+
+def default_int(value: int or str, default: int=None, origin: str=None, log: bool=False) -> int or None:
+    """Convert a value to an int, on exception, return a default value
+    """
+    if isinstance(value, int):
+        return value
+    if value is None:
+        return default
+
+    try:
+        value = int(float(value))
+    except (TypeError, ValueError):
+        if log:
+            logging.warning({
+                'status': 'default_int__cannot_convert', 'value': value, 'default': default, 'origin': origin})
+        value = default
+
+    return value
 
 
 def makedirs_safe(folder: str) -> bool:
@@ -26,6 +51,9 @@ def makedirs_safe(folder: str) -> bool:
             return True
         logging.error({'status': 'makedirs_safe__error', 'error': e, 'folder': folder})
         return False
+
+
+pinfo = print
 
 
 def read_text_safe(filename: str, locked: bool=False, want_bytes: bool=False) -> str or bytes or None:
