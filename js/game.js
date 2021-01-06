@@ -130,6 +130,8 @@ let ANALYSIS_URLS = {
         all: 1,
         color: 1,
     },
+    BOOM_ELEMENTS = '#adblock, #banner, #body2, #footer, #header, #modal2, #twitch2',
+    BOOM_ELEMENTS2 = `${BOOM_ELEMENTS}, #body`,
     boom_info = {},
     // shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
@@ -140,6 +142,7 @@ let ANALYSIS_URLS = {
         boom5: [0, 7800, 120, 3000, 8, 0.97],
         boom6: [5300, 7400, 5420, 2200, 15, 0.96],
     },
+    BOOM_RED = 'background-color:rgba(255,0,0,0.9)',
     BOOM_SHAKES = {
         all: 1,
         shake: 1,
@@ -2842,8 +2845,9 @@ function check_adjudication(dico, total_moves) {
  * @param {number=} ply
  * @param {string=} round used by live_eval
  * @param {number=} pos used by player_eval, last finished pos, if different then it's a new game
+ * @param {boolean=} force force reload
  */
-function check_missing_moves(ply, round, pos) {
+function check_missing_moves(ply, round, pos, force) {
     if (!Y.reload_missing || LOCALHOST)
         return;
     let section = Y.x;
@@ -2870,7 +2874,7 @@ function check_missing_moves(ply, round, pos) {
         if (DEV.new)
             LS(`round=${main.round} => ${main.round2} : pos=${new_game} => ${main.pos}`);
     }
-    else {
+    else if (!force) {
         let empty = -1,
             moves = main.moves,
             num_move = moves.length;
@@ -4018,14 +4022,18 @@ function analyse_log(line) {
         main.chess.load(last_move? last_move.fen: main.fen);
         let moves = ArrayJS(main.chess.multiUci(info.pv));
         info.moves = moves;
+        if (moves.length != info.pv.split(' ').length)
+            return check_missing_moves(ply, undefined, undefined, true);
     }
     if (DEV.log) {
         LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : info.pv=${info.pv} : prev_pv=${prev_pv}`);
         LS(info);
     }
 
+    // don't update unless we're on the last move
     info.ply = ply;
-    update_player_eval('live', info, no_pv);
+    if (ply >= main.ply + 1)
+        update_player_eval('live', info, no_pv);
 }
 
 /**
@@ -4116,7 +4124,7 @@ function check_boom(section, force) {
         booms.clear();
 
         // 5) visual stuff
-        let body = Id('body'),
+        let body = Id('body2'),
             visual = Y.boom_visual;
 
         if (!timers.shake)
@@ -4124,8 +4132,8 @@ function check_boom(section, force) {
 
         // color + shake
         if (BOOM_COLORS[visual]) {
-            Style(body, 'background-color:transparent');
-            add_timeout('red_start', () => Style(body, 'background-color:#f00'), red_start);
+            Style(BOOM_ELEMENTS2, BOOM_RED, false);
+            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, BOOM_RED), red_start);
         }
         if (BOOM_SHAKES[visual]) {
             add_timeout('shake_start', () => {
@@ -4140,11 +4148,11 @@ function check_boom(section, force) {
 
         // ending
         add_timeout('red_end', () => {
-            Style(body, 'background-color:transparent');
+            Style(BOOM_ELEMENTS2, BOOM_RED, false);
         }, red_start + red_duration);
         add_timeout('shake_end', () => {
             clear_timeout('shake');
-            Style(body, `transform:${boom_info.transform}`);
+            Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
         }, shake_start + shake_duration);
     });
 
@@ -4199,7 +4207,7 @@ function shake_screen(override) {
     if (DEV.boom2)
         LS(boom_info);
     boom_info.shake *= boom_info.decay;
-    Style(Id('body'), `transform:translate(${coords[0]}px,${coords[1]}px)`);
+    Style(BOOM_ELEMENTS, `transform:translate(${coords[0]}px,${coords[1]}px)`);
 }
 
 /**
@@ -4442,7 +4450,9 @@ function update_live_eval(section, data, id, force_ply) {
  * @returns {boolean}
  */
 function update_player_eval(section, data, same_pv) {
-    if (!Y.live_pv || section != Y.x)
+    // allow Y.x even if pva is the board, to update info
+    let sboard = section_board();
+    if (!Y.live_pv || (section != sboard && section != Y.x))
         return false;
 
     let is_pva = (section == 'pva'),
@@ -4528,6 +4538,10 @@ function update_player_eval(section, data, same_pv) {
     if (DEV.chart)
         LS(`UPE: ${section}`);
     board.evals[data.ply] = data;
+
+    // no graph plot if the board does not match
+    if (section != sboard)
+        return true;
 
     if (is_pva)
         update_player_charts(null, [data]);
@@ -5180,8 +5194,9 @@ function copy_pgn(board, download, only_text) {
  * @param {XBoard} board
  * @param {string} type
  * @param {Event|string} value
+ * @param {boolean=} force force graph update
  */
-function handle_board_events(board, type, value) {
+function handle_board_events(board, type, value, force) {
     let move,
         name = board.name,
         old_board = section_board(),
@@ -5265,7 +5280,7 @@ function handle_board_events(board, type, value) {
 
     // changed board => redraw the graph
     let new_board = section_board();
-    if (new_board != old_board) {
+    if (new_board != old_board || force) {
         if (DEV.chart)
             LS(`NN: ${old_board} => ${new_board}`);
         reset_charts(false);
@@ -5398,10 +5413,16 @@ function opened_table(node, name, tab) {
         virtual_opened_table_special(node, name, tab);
 
     // switch graphs when PVA is hidden
-    if (name == 'pva')
+    let target;
+    if (name == 'pva') {
         board_target = xboards.pva;
+        target = 'pva';
+    }
     else if (board_target.name == 'pva' && !Visible(Id('table-pva')))
-        handle_board_events(xboards[section], 'activate', Id(section));
+        target = section;
+
+    if (target)
+        handle_board_events(xboards[target], 'activate', Id(target), true);
 }
 
 /**

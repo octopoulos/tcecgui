@@ -2008,10 +2008,11 @@ function prepare_settings() {
             boom_reactivate: '1',
         },
         control: {
-            book_every: option_number(600, 100, 5000, 100),
+            book_every: option_number(600, 100, 5000, 100, {}, 'opening book play speed'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
-            play_every: option_number(1200, 100, 5000, 100),
+            play_every: option_number(1200, 100, 5000, 100, {}, 'speed when clicking on PLAY'),
+            quick_every: option_number(250, 100, 50000, 10, {}, 'live moves play speed'),
             // wasm: [ON_OFF, 0],
         },
         engine: {

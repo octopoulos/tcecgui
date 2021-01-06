@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-05
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -433,7 +433,7 @@ var Chess = function(fen_) {
         pv_mode = 1,
         prev_pv = [],
         scan_all = false,
-        search_mode = 0,                    // 1:minimax, 2:alpha-beta
+        search_mode = 0,                    // 0:random, 1:minimax, 2:alpha-beta
         sel_depth = 0,
         table = U32(3 * TT_SIZE),           // 12 bytes: hash=4, score=2, bound=1, depth=1, move=4
         trace = '',
@@ -2522,6 +2522,7 @@ if (typeof exports != 'undefined')
     Assign(exports, {
         Chess: Chess,
         EMPTY: EMPTY,
+        I8: I8,
         SQUARES: SQUARES,
     });
 // >>

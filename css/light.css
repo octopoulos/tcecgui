@@ -385,6 +385,7 @@ grid {
     overflow-x: hidden;
     overflow-y: auto;
     padding: 0;
+    pointer-events: all;
 }
 .settings {
     min-width: 270px;
@@ -1308,8 +1309,24 @@ hsub {
 }
 
 /* container */
-#body {
+#adblock,
+#banner,
+#body,
+#body2,
+#footer,
+#header,
+#twitch2 {
     transition: background-color 1.5s;
+}
+#modal2 {
+    background-color: transparent !important;
+    height: 100%;
+    left: 0;
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 99;
 }
 .area {
     flex: 1;
