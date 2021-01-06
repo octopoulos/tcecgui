@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-01
+// @version 2021-01-05
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -50,6 +50,7 @@ let Abs = Math.abs,
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
+    GLOBAL = (typeof global != 'undefined'),
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
     IsFunction = value => (typeof(value) == 'function'),
@@ -1569,6 +1570,7 @@ if (typeof exports != 'undefined') {
         Atan: Atan,
         C: C,
         Clamp: Clamp,
+        Class: Class,
         Clear: Clear,
         Contain: Contain,
         CopyClipboard: CopyClipboard,
@@ -1585,6 +1587,7 @@ if (typeof exports != 'undefined') {
         From: From,
         FromSeconds: FromSeconds,
         FromTimestamp: FromTimestamp,
+        GLOBAL: GLOBAL,
         HashText: HashText,
         Hex2RGB: Hex2RGB,
         Hide: Hide,

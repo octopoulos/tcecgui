@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-30
+// @version 2021-01-05
 //
 /*
 globals
@@ -12,8 +12,7 @@ S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards,
 'use strict';
 
 // <<
-if (typeof global != 'undefined')
-{
+if (typeof global != 'undefined') {
     ['common', 'engine', 'global'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
@@ -985,6 +984,7 @@ if (typeof exports != 'undefined') {
         create_chart_data: create_chart_data,
         fix_labels: fix_labels,
         invert_eval: invert_eval,
+        mark_ply_charts: mark_ply_charts,
         reset_charts: reset_charts,
         slice_charts: slice_charts,
         update_live_chart: update_live_chart,

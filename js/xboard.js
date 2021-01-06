@@ -19,7 +19,7 @@ globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
 clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
-global, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
+global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, X_SETTINGS, Y
@@ -213,7 +213,7 @@ class XBoard {
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_id = `click_play_${this.id}`;         // for timers
-        this.play_mode = 'play';
+        this.play_mode = 'play';                        // book, play, quick
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = -1;                                  // current ply
         this.ply_moves = [];                            // PV moves by real ply
@@ -315,7 +315,7 @@ class XBoard {
             if (move) {
                 move.ply = ply;
                 this.moves[ply] = move;
-                num_book += move.book;
+                num_book += (move.book || 0);
             }
 
             // adding an old move?
@@ -381,7 +381,6 @@ class XBoard {
             for (let [parent] of parent_lasts)
                 HTML(parent, lines.join(''));
 
-        let last_move = this.moves.length - 1;
         this.valid = true;
 
         // update the cursor
@@ -397,18 +396,20 @@ class XBoard {
             }
             this.compare_duals(cur_ply);
         }
-        else if (this.ply >= num_move - 1) {
+        else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
             // play book moves 1 by 1
             if (num_book && num_book >= num_new) {
-                if (!timers[this.play_id]) {
-                    this.set_fen(null, true);
-                    this.ply = -1;
-                    this.play_mode = 'book';
-                    this.play(false, false, 'add_moves');
-                }
+                this.set_fen(null, true);
+                this.ply = -1;
+                this.play_mode = 'book';
+                this.play(false, false, 'add_moves');
             }
-            else
-                this.set_ply(last_move, {animate: true});
+            // + play normal moves ALSO 1 by 1, but quicker
+            else {
+                this.play_mode = 'quick';
+                this.play(false, false, 'add_moves');
+                // this.set_ply(last_move, {animate: true});
+            }
         }
 
         // next move
@@ -2541,7 +2542,8 @@ class XBoard {
      * @returns {boolean} true if the AI was able to play
      */
     think(suggest, step) {
-        if (this.finished)
+        // disable this for tests
+        if (this.finished || GLOBAL)
             return;
 
         let moves, num_move,
@@ -2633,8 +2635,8 @@ class XBoard {
 
         chess.configure(this.frc, options, -1);
         let params = chess.params(),
-            eval_mode = params[1],
             min_depth = params[0],
+            search_mode = params[3],
             max_time = params[4];
 
         Assign(reply, {
@@ -2667,7 +2669,7 @@ class XBoard {
             this.clock(this.name, color);
 
         // 4) pure random + insta move?
-        if (eval_mode == 'rnd' || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
+        if (search_mode == 0 || (!min_depth && !max_time) || num_worker < 1 || num_move < 2) {
             let id = RandomInt(num_move),
                 move = chess.unpackMove(moves[id]);
             Assign(move, {
