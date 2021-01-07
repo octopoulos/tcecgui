@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-07
 //
 // Game specific code:
 // - control the board, moves
@@ -323,19 +323,19 @@ let ANALYSIS_URLS = {
     TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
-        cross: `Rank|Engine|Points${TABLE_DE}`,
+        cross: `Rank|Engine|{Points}${TABLE_DE}`,
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h:
-            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening`
+            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening`
             + '|Termination|ECO|Final FEN|Start',
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched:
-            '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening'
+            '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening'
             + '|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
         stand:
-            `Rank|Engine|Games|Points${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}`
-            + `|rmobility_score=rMobility${TABLE_DIFF}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
+            `Rank|Engine|Games|{Points}${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}`
+            + `|rmobility_score={r-Mobility}${TABLE_DIFF}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -359,9 +359,14 @@ let ANALYSIS_URLS = {
     TIMEOUT_shake = 100,
     TITLES = {
         50: 'Fifty-move rule',
+        'D/SD': '{Depth} / {Selective depth}',
         ECO: 'Encyclopaedia of Chess Openings',
+        Eval: 'Evaluation',
         H2H: 'Head to head',
+        Mob: 'Mobility',
         points: 'points + direct encounters',
+        PV: 'Principal variation',
+        'PV(A)': '{PV}: {analysis}',
         rmobility_result: 'r-Mobility result',
         rmobility_score: 'r-Mobility score',
         SB: 'Sonneborn–Berger',
@@ -1333,8 +1338,12 @@ function create_table_columns(columns, widths, no_translates=[], titles={}) {
             title = titles[value] || TITLES[value] || titles[field] || TITLES[field],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
-        title = title? ` title="${title}"`: '';
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}>${translate? '': value}</th>`;
+        title = title? ` data-t="${title}" data-t2="title"`: '';
+        return [
+            `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${title}>`,
+                `<i${translate}>${translate? '': value}</i>`,
+            '</th>',
+        ].join('');
     }).join('');
 }
 
@@ -4008,19 +4017,17 @@ function analyse_log(line) {
     // - don't update if the new PV is a subset of the previous pv
     if (!Y.log_pv)
         return;
-    let no_pv,
-        ply = main.moves.length;
 
+    let ply = main.moves.length;
     for (let key of Keys(pvs)) {
-        let prev_pv = pvs[key];
-        pos = prev_pv.indexOf(pv);
+        let memory = pvs[key];
+        pos = memory.indexOf(pv);
         if (pos == 0) {
-            no_pv = true;
-            info.pv = prev_pv;
+            info.pv = memory;
             break;
         }
         else if (pos > 0 && prev_ply >= 0 && ply > prev_ply) {
-            let items = prev_pv.split(' '),
+            let items = memory.split(' '),
                 pv2 = items.slice(ply - prev_ply).join(' ');
             if (pv2.indexOf(pv) == 0) {
                 info.pv = pv2;
@@ -4030,6 +4037,7 @@ function analyse_log(line) {
     }
 
     let info_pv = info.pv || '',
+        no_pv = (info_pv == prev_pv),
         splits = info_pv.split(' '),
         first = splits[0];
     if (!no_pv) {
@@ -4846,9 +4854,6 @@ function change_setting_game(name, value) {
             }
         }
         break;
-    case 'boom_reactivate':
-        xboards.live.boomed = 0;
-        break;
     case 'boom_test':
         check_boom('', -10 * (Sign(xboards.live.boomed) || 1));
         break;
@@ -4893,6 +4898,9 @@ function change_setting_game(name, value) {
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
+        break;
+    case 'reactivate':
+        xboards.live.boomed = 0;
         break;
     case 'rows_per_page':
         update_tab = true;

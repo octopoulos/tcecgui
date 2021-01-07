@@ -1,13 +1,13 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-07
 /*
 globals
 expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp} = require('./common.js'),
+let {Assign, FromTimestamp, HTML} = require('./common.js'),
     {DEV, load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
@@ -278,7 +278,7 @@ create_chart_data();
             pv: 'd2d4 d7d5 g1f3',
             pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
         },
-        null,
+        'd4 d5 Nf3',
     ],
     [
         START_FEN,
@@ -466,6 +466,7 @@ create_chart_data();
     [0, {boom_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
     [1, {}, {}, [5, 5, 5, 5], [], false, 0],
     [2, {}, {}, [5, 5, 5, 5], [], true, 5],
+    [76, {}, {boomed: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], true, 8.16],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
         DEV.boom = (id >= 27)? 1: 0;
