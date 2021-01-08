@@ -311,6 +311,7 @@ function change_setting_special(name, value, close) {
     case 'game_level':
         configure_string(value);
         break;
+    case 'game_new_FEN':
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
@@ -2048,6 +2049,7 @@ function prepare_settings() {
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
             game_every: option_number(200, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
+            game_new_FEN: [{type: 'text'}, '', 'FEN to be used for a new game, empty for default'],
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             game_options_white: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],

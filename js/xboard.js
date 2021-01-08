@@ -1794,13 +1794,14 @@ class XBoard {
      * Start a new game
      */
     new_game() {
-        let fen;
-        if (this.frc) {
-            let index = RandomInt(960);
-            fen = this.chess.fen960(index);
-        }
-        else
-            fen = START_FEN;
+        let fen = Y.game_new_FEN;
+        if (!fen)
+            if (this.frc) {
+                let index = RandomInt(960);
+                fen = this.chess.fen960(index);
+            }
+            else
+                fen = START_FEN;
 
         this.destroy_workers(true);
         this.reset(Y.x, true, fen);
