@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-08
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -730,9 +730,6 @@ function init_globals() {
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     }
     load_google_analytics();
-
-    if (Y.log_auto_start || Visible(Id('table-log')))
-        listen_log();
 
     // font size detector
     add_timeout('font', () => {
@@ -1990,7 +1987,7 @@ function prepare_settings() {
             target_opacity: option_number(0.7, 0, 1, 0.01),
             turn_color: [{type: 'color'}, '#ff5a00'],
             turn_opacity: option_number(0, 0, 1, 0.01),
-        },  
+        },
         boom: {
             reactivate: '1',
             boom_increase: option_number(0.8, 0, 10, 0.1, {}, 'minimum absolute increase'),
@@ -1999,7 +1996,7 @@ function prepare_settings() {
             boom_scaling: option_number(1, 0, 10, 0.1, {}, 'maximum reduction of sound/shake by lower booms'),
             boom_sound: boom_sound,
             boom_visual: boom_visual,
-            boom_volume: option_number(7, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
+            boom_volume: option_number(5, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
             boom_test: '1',
             explosion_consecutive: option_number(2, 0, 10, 1, {}, 'need to remain for X consecutive plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),

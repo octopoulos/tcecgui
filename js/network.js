@@ -1,18 +1,26 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-30
+// @version 2021-01-08
 //
 // all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode,
-DEV, From, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
-LOCALHOST, LS, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval, update_pgn,
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
+LOCALHOST, LS, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval, update_pgn,
 update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    ['common', 'engine'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
+    });
+}
+// >>
 
 // modify those values in config.js
 let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com/',
@@ -138,12 +146,13 @@ function insert_log(html) {
 
 /**
  * Listen to the log (or not)
+ * @param {boolean=} force
  */
-function listen_log() {
+function listen_log(force) {
     if (!socket)
         return;
     let new_room = Y.live_log;
-    if (Y.log_auto_start && new_room == 0) {
+    if (!force && Y.log_auto_start && new_room == 0) {
         new_room = 'all';
         Y.live_log = 'all';
     }
@@ -155,7 +164,7 @@ function listen_log() {
         prev_room = 0;
     }
     // 2) enter the next room
-    if (new_room && prev_room != new_room) {
+    if (force || (new_room && prev_room != new_room)) {
         prev_room = new_room;
         socket.emit('room', `room${prev_room}`);
         insert_log(`<div class="win">entered: ${prev_room}</div>`);
@@ -175,6 +184,17 @@ function log_socket(name, data, cache) {
     }
     if (cache)
         socket_data[Y.x][name] = data;
+}
+
+/**
+ * Hack because of socket.io
+ * - won't be needed anymore when socket.io is gone
+ */
+function reconnect_log() {
+    if (!Y.log_auto_start)
+        return;
+    Y.live_log = 'all';
+    listen_log(true);
 }
 
 /**
@@ -249,3 +269,12 @@ function update_twitch(dark, chat_url, only_resize) {
     S('#hide-video, #twitch-vid', src);
     S(Id('show-video'), !src);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        reconnect_log: reconnect_log,
+    });
+// >>

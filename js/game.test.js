@@ -1,13 +1,13 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-08
 /*
 globals
 expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp, HTML} = require('./common.js'),
+let {Assign, FromTimestamp, Keys, Undefined} = require('./common.js'),
     {DEV, load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, boom_reset, calculate_h2h, calculate_probability, calculate_score, calculate_seeds,
@@ -438,18 +438,25 @@ create_chart_data();
 
 // check_boom
 [
-    [0, {}, {}, [], [], false],
+    [11, {}, {}, [{10: 3, 11: 5}], [], 0, 2],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
         if (id == 0)
             boom_reset();
-        DEV.boom = (id >= 27)? 1: 0;
+        DEV.boom = (id >= 0)? 1: 0;
 
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
-            players[id].eval = eval_;
-            players[id].short = shorts[id] || `P${id}`;
+            let player = players[id];
+            Assign(player, {
+                eval: eval_[ply],
+                evals: [],
+                short: Undefined(shorts[id], `P${id}`),
+            });
+            Keys(eval_).forEach(key => {
+                player.evals[key] = eval_[key];
+            });
         });
         main.moves.length = ply;
         Assign(main, states);
@@ -462,46 +469,51 @@ create_chart_data();
 
 // check_explosion
 [
-    [0, {x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
-    [0, {explosion_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
-    [0, {}, {boomed: 0}, [5, 3, 2.5, 0.5], [], true, 3.5],
-    [0, {}, {}, [15, 5, 0.5, 0.5], [], false, 3.5],
-    [0, {}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
-    [0, {}, {}, [-1, 1, -1, -0.5], [], false, -5.333],
-    [0, {}, {}, [5, 5, 5, -10], [], true, 5],
-    [0, {}, {}, [5, 5, 5, 0], [], false, 5],
-    [0, {}, {}, [-5, -5, -5, 1], [], true, -5],
-    [0, {}, {}, [8, 3, 5, 5], [], true, 5.25],
+    [0, {explosion_threshold: 0, x: 'live'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], 1, 0],
+    [0, {explosion_threshold: 2.3, x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], 2, 0],
+    [0, {explosion_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], 2, 0],
+    [0, {}, {boomed: 0, seens: new Set()}, [5, 3, 2.5, 0.5], [], 5, 3.5],
+    [0, {}, {boomed: 0, seens: new Set([-1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
+    [0, {}, {}, [15, 5, 0.5, 0.5], [], 2, 3.5],
+    [0, {}, {}, [-8, -3, -5, -0.5], [], 0, -5.333],
+    [0, {}, {}, [-1, 1, -1, -0.5], [], 2, -5.333],
+    [0, {}, {}, [5, 5, 5, -10], [], 0, 5],
+    [0, {}, {}, [5, 5, 5, 0], [], 4, 5],
     // 10
-    [0, {}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 0.5], [], false, 0],
-    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 0], [], false, 0],
-    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 5], [], true, 47],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], false, 0],
-    [0, {}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], true, 6.5],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], true, 6.5],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], true, 7],
-    [0, {explosion_sound: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {explosion_sound: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [0, {}, {}, [-5, -5, -5, 1], [], 0, -5],
+    [0, {}, {}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {}, {boomed: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 0.5], [], 2, 0],
+    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 0], [], 2, 0],
+    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 5], [], 0, 47],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 2, 0],
+    [0, {}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 0, 6.5],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], 0, 6.5],
+    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], 0, 7],
     // 20
-    [0, {explosion_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {explosion_threshold: 2.3}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
-    [0, {}, {}, [5, 5, 5, 0], [], true, 5],
-    [0, {explosion_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
-    [1, {}, {}, [5, 5, 5, 5], [], false, 0],
-    [2, {}, {}, [5, 5, 5, 5], [], true, 5],
-    [76, {}, {boomed: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], true, 8.16],
+    [0, {explosion_sound: 0}, {boomed: 0}, [8, 3, 5, 5], [], 4, 0],
+    [0, {explosion_sound: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {explosion_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], 1, 0],
+    [0, {explosion_threshold: 2.3}, {boomed: 0}, [5, 5, 5, 0], [], 0, 5],
+    [0, {}, {boomed: 0}, [5, 0, 5, 5], [], 2, 0],
+    [0, {}, {}, [5, 0.1, 5, 5], [], 0, 5],
+    [0, {explosion_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], 3, 0],
+    [1, {}, {}, [5, 5, 5, 5], [], 3, 0],
+    [2, {}, {}, [5, 5, 5, 5], [], 0, 5],
+    [76, {}, {boomed: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], 0, 8.16],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_explosion:${id}`, () => {
         if (id == 0)
             boom_reset();
-        DEV.boom = (id >= 27)? 1: 0;
+        DEV.boom = (id >= 30)? 1: 0;
 
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
-            players[id].eval = eval_;
-            players[id].short = shorts[id] || `P${id}`;
+            Assign(players[id], {
+                eval: eval_,
+                short: Undefined(shorts[id], `P${id}`),
+            });
         });
         main.moves.length = ply;
         Assign(main, states);

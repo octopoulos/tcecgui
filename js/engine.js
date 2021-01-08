@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-08
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1935,6 +1935,7 @@ if (typeof exports != 'undefined') {
         sanitise_data: sanitise_data,
         save_default: save_default,
         save_option: save_option,
+        socket: socket,
         THEMES: THEMES,
         timers: timers,
         translate: translate,

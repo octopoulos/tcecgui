@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-08
 //
 // game board:
 // - 4 rendering modes:
@@ -2538,6 +2538,9 @@ class XBoard {
      * @param {Move} move
      */
     show_pv(move) {
+        if (!move.pv)
+            return;
+
         if (!this.chess2)
             this.chess2 = new Chess();
         if (!move.fen0)
