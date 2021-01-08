@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-07
 //
 // game board:
 // - 4 rendering modes:
@@ -862,11 +862,13 @@ class XBoard {
     }
 
     /**
-     * Play a BOOM sound
+     * Play a BOOM or explosion sound
+     * @param {string} type
+     * @param {number} score
      * @param {function} callback called when the sound is playing
      */
-    boom(score, callback) {
-        let key = 'sound_boom',
+    boom(type, score, callback) {
+        let key = `${type}_boom`,
             sounds = X_SETTINGS.audio[key][0],
             sound = Y[key];
         if (sound == 'random') {
@@ -882,7 +884,7 @@ class XBoard {
         play_sound(audiobox, sound, {loaded: () => {
             if (DEV.boom)
                 LS(`sound ${sound} loaded, playing now ...`);
-            play_sound(audiobox, sound, {interrupt: true, volume: Y.boom_volume / 10});
+            play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10});
             callback(sound);
         }});
     }
@@ -908,6 +910,7 @@ class XBoard {
 
     /**
      * Call this when new moves arrive
+     * @param {Object} object
      * @returns {boolean}
      */
     check_locked(object) {
@@ -1495,7 +1498,7 @@ class XBoard {
 
     /**
      * Navigation: end
-     * @returns {boolean}
+     * @returns {boolean|Move}
      */
     go_end() {
         return this.set_ply(this.moves.length - 1, {manual: true});
@@ -1503,8 +1506,8 @@ class XBoard {
 
     /**
      * Navigation: next
-     * @params {boolean=} is_manual
-     * @returns {boolean}
+     * @param {boolean=} is_manual
+     * @returns {boolean|Move}
      */
     go_next(is_manual) {
         let num_move = this.moves.length,
@@ -1530,7 +1533,7 @@ class XBoard {
 
     /**
      * Navigation: prev
-     * @returns {boolean}
+     * @returns {boolean|Move}
      */
     go_prev() {
         let ply = this.ply - 1,
@@ -1546,7 +1549,7 @@ class XBoard {
 
     /**
      * Navigation: start
-     * @returns {boolean}
+     * @returns {boolean|Move}
      */
     go_start() {
         let num_move = this.moves.length,
@@ -2185,6 +2188,7 @@ class XBoard {
 
     /**
      * 2d text rendering
+     * @returns {string}
      */
     render_text() {
         let grid = this.grid,
@@ -2379,6 +2383,7 @@ class XBoard {
 
     /**
      * Lock/unlock the PV
+     * @param {boolean} locked
      */
     set_locked(locked) {
         this.locked = locked;
@@ -2429,6 +2434,7 @@ class XBoard {
      * @param {boolean=} hold call instant()
      * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
+     * @param {boolean=} render
      * @returns {Move} move, false if no move + no compute, null if failed
      */
     set_ply(ply, {animate, hold, manual, no_compute, render=true}={}) {

@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-07
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1862,19 +1862,13 @@ function prepare_settings() {
         options: 1,
     });
 
-    Assign(TITLES, {
-        'D/SD': '{Depth} / {Selective depth}',
-        'Mob': 'Mobility',
-        'PV': 'Principal variation',
-        'PV(A)': '{PV}: {analysis}',
-    });
-
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
+        boom_sound = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
+        boom_visual = [['off', 'all', 'color', 'shake'], 'all'],
         cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
-        shortcuts = [...['off'], ...Keys(TABLES)],
-        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'];
+        shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
         // new column after 10 items
@@ -1894,7 +1888,6 @@ function prepare_settings() {
             audio_pva: [ON_OFF, 1],
             audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
             capture_delay: option_number(-200, -1000, 1000),
-            sound_boom: sound_boom,
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
@@ -1997,17 +1990,24 @@ function prepare_settings() {
             turn_opacity: option_number(0, 0, 1, 0.01),
         },
         boom: {
-            _prefix: 'boom_',
+            reactivate: '1',
+            boom_absolute: option_number(0.8, 0, 10, 0.1, {}, 'minimum absolute increase'),
+            boom_relative: option_number(1.5, 0, 10, 0.1, {}, 'minimum relative increase'),
+            boom_ply_reset: option_number(4, 0, 100, 1, {}, 'reactivate after X plies'),
+            boom_scale: option_number(1, 0, 10, 0.1, {}, 'maximum reduction of sound/shake by lower booms'),
+            boom_sound: boom_sound,
+            boom_visual: boom_visual,
+            boom_volume: option_number(7, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
             boom_test: '1',
-            boom_consecutive: option_number(2, 0, 10, 1, {}, 'need X consecutive booms to trigger it'),
-            boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            boom_start: option_number(20, 0, 300, 1, {}, 'boom can only happen after this ply'),
-            boom_threshold:
-                option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
-            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(7, 0, 20, 0.5),
-            sound_boom: sound_boom,
-            boom_reactivate: '1',
+            explosion_consecutive: option_number(2, 0, 10, 1, {}, 'need to remain for X consecutive plies'),
+            explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
+            explosion_sound: boom_sound,
+            explosion_start: option_number(20, 0, 300, 1, {}, 'explosion can only happen after this ply'),
+            explosion_threshold:
+                option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
+            explosion_visual: boom_visual,
+            explosion_volume: option_number(7, 0, 20, 0.5),
+            explosion_test: '1',
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),

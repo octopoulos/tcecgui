@@ -12,14 +12,16 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
-2020-01-07 : 2020-01-07 : improved Spanish
-2020-01-06 : 2020-01-06 : fix wrong sign in update_live_eval when kibitzer lags after a new move
-2020-01-06 : 2020-01-06 : fixed play button + new moves played sequentially
-2020-01-05 : 2020-01-05 : keep multiple prev_PVs in memory
-2020-01-05 : 2020-01-05 : better ply management
-2020-01-05 : 2020-01-05 : boom audio parameters for each sample
-2020-01-05 : 2020-01-04 : preload audio to avoid delays
-2021-01-02 : 2020-01-02 : calculate Direct Encounters
+~          : 2021-01-07 : boom + explosion
+2021-01-07 : 2021-01-07 : improve guess_types + fix wrap
+2021-01-07 : 2021-01-07 : improved Spanish
+2021-01-06 : 2021-01-06 : fix wrong sign in update_live_eval when kibitzer lags after a new move
+2021-01-06 : 2021-01-06 : fixed play button + new moves played sequentially
+2021-01-05 : 2021-01-05 : keep multiple prev_PVs in memory
+2021-01-05 : 2021-01-05 : better ply management
+2021-01-05 : 2021-01-05 : boom audio parameters for each sample
+2021-01-05 : 2021-01-04 : preload audio to avoid delays
+2021-01-02 : 2021-01-02 : calculate Direct Encounters
 2021-01-02 : 2021-01-02 : stop PVA after paste_text
 2021-01-02 : 2021-01-02 : r-mobility in tables
 2021-01-02 : 2021-01-01 : quick setup: boom sound + visual, theme

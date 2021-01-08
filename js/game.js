@@ -968,7 +968,8 @@ function analyse_crosstable(section, data) {
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
         stand_rows = [],
-        titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)})));
+        titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)}))),
+        wrap_cross = get_wrap('cross');
 
     // 1) analyse all data => create rows for both tables
     for (let name of orders) {
@@ -984,7 +985,7 @@ function analyse_crosstable(section, data) {
     }
 
     // keep a SQUARE shape, but also multiple of 2
-    let max_column = Max(2, Ceil(Sqrt(max_game)));
+    let max_column = wrap_cross? Max(2, Ceil(Sqrt(max_game))): 0;
     max_column += (max_column & 1);
 
     for (let name of orders) {
@@ -1538,6 +1539,21 @@ function filter_table_rows(parent, text, force) {
 }
 
 /**
+ * Get the text wrap for a table + modify body
+ * @param {string} name
+ * @param {Node=} body table body
+ * @returns {boolean}
+ */
+function get_wrap(name, body) {
+    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
+    if (wrap == 'auto')
+        wrap = Y.wrap;
+    if (body)
+        Style(body, 'white-space:nowrap', !wrap);
+    return wrap;
+}
+
+/**
  * Set the games filter
  * @param {string} text
  */
@@ -1618,12 +1634,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     if (!table)
         return;
-
-    // wrap text?
-    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
-    if (wrap == 'auto')
-        wrap = Y.wrap;
-    Style(body, 'white-space:nowrap', !wrap);
 
     // reset or append?
     // - except if rows is null
@@ -1764,7 +1774,12 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_winner = (name == 'winner'),
         nodes = [],
         required = COLUMNS_REQUIRED[name] || [],
-        tour_url = tour_info[section].url;
+        tour_url = tour_info[section].url,
+        wrap = get_wrap(name, body);
+    if (is_cross) {
+        LS('wrap=', wrap);
+        LS(body);
+    }
 
     // hide columns?
     for (let column of required) {
@@ -1814,7 +1829,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'win';
                 else if (row.result == '1-0')
                     class_ = 'loss';
-                value = format_engine(value);
+                value = format_engine(value, wrap);
                 break;
             case 'download':
             case 'pgn':
@@ -1828,7 +1843,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     value = [
                         '<hori>',
                             `<img class="left-image" src="image/engine/${get_short_name(value)}.png">`,
-                            `<div>${format_engine(value, true)}</div>`,
+                            `<div>${format_engine(value, wrap)}</div>`,
                         '</hori>',
                     ].join('');
                 }
@@ -1907,7 +1922,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'win';
                 else if (row.result == '0-1')
                     class_ = 'loss';
-                value = format_engine(value);
+                value = format_engine(value, wrap);
                 break;
             default:
                 if (IsString(value)) {
@@ -1919,7 +1934,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             }
 
             if (class_)
-                value = `<i class="${class_}">${value}</i>`;
+                value = `<div class="${class_}">${value}</div>`;
             if (td_class)
                 td_class = ` class="${td_class}"`;
 
@@ -3667,7 +3682,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     }
     else {
         main.set_last(main.last);
-        check_boom(section);
+        check_explosion_boom(section);
     }
 
     // 4) materials
@@ -4066,25 +4081,79 @@ function analyse_log(line) {
 }
 
 /**
+ * Create a boom effect: sound + color + shake
+ * @param {string} type
+ * @param {number} best
+ * @param {number[]} scores
+ * @param {function=} callback
+ */
+function boom_effect(type, best, scores, callback) {
+    let main = xboards.live,
+        booms = main.booms,
+        moobs = main.moobs;
+
+    main.boom(type, best, sound => {
+        let boom_param = BOOM_PARAMS[sound],
+            [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
+        if (DEV.boom)
+            LS([
+                `BOOM: best=${best} : ply=${main.moves.length} : scores=${scores} : ${sound} : ${boom_param}`,
+                `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
+            ].join(' : '));
+
+        booms.clear();
+
+        // 5) visual stuff
+        let body = Id('body2'),
+            visual = Y.explosion_visual;
+
+        if (!timers.shake)
+            boom_info.transform = body? body.style.transform: '';
+
+        // color + shake
+        if (BOOM_COLORS[visual]) {
+            Style(BOOM_ELEMENTS2, BOOM_RED, false);
+            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, BOOM_RED), red_start);
+        }
+        if (BOOM_SHAKES[visual]) {
+            add_timeout('shake_start', () => {
+                Assign(boom_info, {
+                    decay: decay,
+                    shake: magnitude,
+                    start: Now(),
+                });
+                add_timeout('shake', shake_screen, TIMEOUT_shake, true);
+            }, shake_start);
+        }
+
+        // ending
+        add_timeout('red_end', () => {
+            Style(BOOM_ELEMENTS2, BOOM_RED, false);
+        }, red_start + red_duration);
+        add_timeout('shake_end', () => {
+            clear_timeout('shake');
+            Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
+        }, shake_start + shake_duration);
+
+        if (callback)
+            callback();
+    });
+}
+
+/**
  * Check if we have a BOOM
- * @param {string} section
  * @param {number=} force for debugging
- * - need to have at least 2 engines agree, including a kibitzer
  * @returns {boolean}
  */
-function check_boom(section, force) {
+function check_boom(force) {
     // 1) check threshold
-    if (force)
-        section = 'live';
-    if (section != 'live')
-        return false;
-    let threshold = Y.boom_threshold;
+    let threshold = Y.explosion_threshold;
     if (threshold < 0.1)
         return false;
 
     // 2) gather score of all engines
     let best = 0,
-        main = xboards[section],
+        main = xboards.live,
         players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
         ply = main.moves.length,
         two = new Set([players[0][1], players[1][1]]);
@@ -4115,7 +4184,7 @@ function check_boom(section, force) {
     if (!best) {
         if (boomed) {
             moobs.add(ply);
-            if (moobs.size >= Y.boom_ply_reset)
+            if (moobs.size >= Y.explosion_ply_reset)
                 main.boomed = 0;
             if (DEV.boom2)
                 LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} : ${scores} => ${main.boomed}`);
@@ -4125,7 +4194,7 @@ function check_boom(section, force) {
     }
 
     // 4) play sound, might fail if settings disable it
-    if (ply < Y.boom_start && !force)
+    if (ply < Y.explosion_start && !force)
         return false;
 
     // check booms
@@ -4133,59 +4202,50 @@ function check_boom(section, force) {
     if (DEV.boom2)
         LS(`boomed: ${booms.size} : ${[...booms].join(' ')} : ${scores} => ${main.boomed} ~ ${best}`);
     moobs.clear();
-    if (booms.size < Y.boom_consecutive && !force)
+    if (booms.size < Y.explosion_consecutive && !force)
         return false;
 
-    if (Sign(best) == Sign(boomed) || Y.sound_boom == 0)
+    if (Sign(best) == Sign(boomed) || !Y.sound_boom)
         return false;
 
-    main.boom(best, sound => {
-        let boom_param = BOOM_PARAMS[sound],
-            [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
-        if (DEV.boom)
-            LS([
-                `BOOM: best=${best} : ply=${ply} : scores=${scores} : ${sound} : ${boom_param}`,
-                `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
-            ].join(' : '));
-
+    boom_effect('boom', best, scores, () => {
         if (force)
             main.boomed = boomed;
-        booms.clear();
-
-        // 5) visual stuff
-        let body = Id('body2'),
-            visual = Y.boom_visual;
-
-        if (!timers.shake)
-            boom_info.transform = body? body.style.transform: '';
-
-        // color + shake
-        if (BOOM_COLORS[visual]) {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, BOOM_RED), red_start);
-        }
-        if (BOOM_SHAKES[visual]) {
-            add_timeout('shake_start', () => {
-                Assign(boom_info, {
-                    decay: decay,
-                    shake: magnitude,
-                    start: Now(),
-                });
-                add_timeout('shake', shake_screen, TIMEOUT_shake, true);
-            }, shake_start);
-        }
-
-        // ending
-        add_timeout('red_end', () => {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-        }, red_start + red_duration);
-        add_timeout('shake_end', () => {
-            clear_timeout('shake');
-            Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
-        }, shake_start + shake_duration);
     });
-
     return true;
+}
+
+/**
+ * Check if we have an explosion
+ * @param {number=} force for debugging
+ * @returns {boolean}
+ */
+function check_explosion(force) {
+    if (!force)
+        return false;
+
+    let best = 0,
+        main = xboards.live,
+        scores = [];
+
+    boom_effect('explosion', best, scores);
+    return true;
+}
+
+/**
+ * Check explosion + boom
+ * @param {string} section
+ * @returns {number} 1:boom, 2:explosion
+ */
+function check_explosion_boom(section) {
+    if (section != 'live')
+        return 0;
+
+    if (check_explosion())
+        return 2;
+    if (check_boom())
+        return 1;
+    return 0;
 }
 
 /**
@@ -4581,7 +4641,7 @@ function update_player_eval(section, data, same_pv) {
         update_live_chart([data], id);
         check_missing_moves(data.ply, null, data.pos);
     }
-    check_boom(section);
+    check_explosion_boom(section);
     return true;
 }
 
@@ -4855,7 +4915,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'boom_test':
-        check_boom('', -10 * (Sign(xboards.live.boomed) || 1));
+        check_boom(-10 * (Sign(xboards.live.boomed) || 1));
         break;
     case 'copy_moves':
         copy_moves();
@@ -4865,6 +4925,9 @@ function change_setting_game(name, value) {
         break;
     case 'download_pgn':
         copy_pgn(null, true);
+        break;
+    case 'explosion_test':
+        check_explosion(-10 * (Sign(xboards.live.boomed) || 1));
         break;
     case 'game_PV':
         S(Id('pva-pv'), value);
@@ -5648,6 +5711,8 @@ if (typeof exports != 'undefined')
         calculate_seeds: calculate_seeds,
         check_adjudication: check_adjudication,
         check_boom: check_boom,
+        check_explosion: check_explosion,
+        check_explosion_boom: check_explosion_boom,
         copy_pgn: copy_pgn,
         create_boards: create_boards,
         create_game_link: create_game_link,

@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-07
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1345,7 +1345,7 @@ function LoadLibrary(url, callback, extra) {
 
 /**
  * Get the timestamp in seconds
- * @params {boolean=} as_float get seconds as float instead of int
+ * @param {boolean=} as_float get seconds as float instead of int
  * @returns {number} seconds
  * @example
  * Now(true)    // 1573706158.324 = sec
