@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-07
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -44,7 +44,7 @@ let BISHOP = 3,
     MoveCapture = move => (move >> 10) & 7,
     MoveFlag = move => (move >> 13) & 3,
     MoveFrom = move => (move >> 15) & 127,
-    moveOrder = move => (move & 1023),
+    MoveOrder = move => (move & 1023),
     MovePromote = move => (move >> 22) & 7,
     MoveTo = move => (move >> 25) & 127,
     NONE = 0,

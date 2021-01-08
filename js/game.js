@@ -26,7 +26,7 @@ slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STA
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
-WB_TITLE, window, XBoard, xboards, Y
+WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
 */
 'use strict';
 
@@ -132,16 +132,18 @@ let ANALYSIS_URLS = {
     },
     BOOM_ELEMENTS = '#adblock, #banner, #body2, #footer, #header, #modal2, #twitch2',
     BOOM_ELEMENTS2 = `${BOOM_ELEMENTS}, #body`,
+    boom_evals = [0, 0, 0, 0],
     boom_info = {},
     // shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
         boom: [0, 3800, 120, 1500, 11, 0.93],
         boom2: [0, 4800, 120, 2400, 15, 0.94],
-        boom3: [0, 5200, 120, 2400, 12, 0.95],
+        boom3: [0, 4900, 120, 2400, 12, 0.945],
         boom4: [500, 6000, 620, 2200, 15, 0.95],
         boom5: [0, 7800, 120, 3000, 8, 0.97],
-        boom6: [5300, 7400, 5420, 2200, 15, 0.96],
+        boom6: [5300, 6000, 5420, 2200, 15, 0.95],
     },
+    boom_ply = -1,
     BOOM_RED = 'background-color:rgba(255,0,0,0.9)',
     BOOM_SHAKES = {
         all: 1,
@@ -204,6 +206,7 @@ let ANALYSIS_URLS = {
         37: 'prev',
         39: 'next',
     },
+    last_sound,
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
@@ -1776,10 +1779,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         required = COLUMNS_REQUIRED[name] || [],
         tour_url = tour_info[section].url,
         wrap = get_wrap(name, body);
-    if (is_cross) {
-        LS('wrap=', wrap);
-        LS(body);
-    }
 
     // hide columns?
     for (let column of required) {
@@ -3802,6 +3801,7 @@ function update_pgn(section, data, extras, reset_moves) {
         }
 
         main.reset(section, is_same, pgn.frc);
+        boom_reset();
         if (is_same) {
             reset_sub_boards(section, 7, pgn.frc);
             if (section == section_board()) {
@@ -4092,12 +4092,12 @@ function boom_effect(type, best, scores, callback) {
         booms = main.booms,
         moobs = main.moobs;
 
-    main.boom(type, best, sound => {
+    boom_sound(type, sound => {
         let boom_param = BOOM_PARAMS[sound],
             [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
         if (DEV.boom)
             LS([
-                `BOOM: best=${best} : ply=${main.moves.length} : scores=${scores} : ${sound} : ${boom_param}`,
+                `${type}: best=${best} : ply=${main.moves.length} : scores=${scores} : ${sound} : ${boom_param}`,
                 `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
             ].join(' : '));
 
@@ -4141,11 +4141,69 @@ function boom_effect(type, best, scores, callback) {
 }
 
 /**
- * Check if we have a BOOM
+ * Rest boom variables
+ */
+function boom_reset() {
+    LS('boom_reset');
+    boom_evals.fill(0);
+    boom_ply = -1;
+}
+
+/**
+ * Play a BOOM or explosion sound
+ * @param {string} type
+ * @param {function} callback called when the sound is playing
+ */
+function boom_sound(type, callback) {
+    let key = `${type}_sound`,
+        sounds = X_SETTINGS.boom[key][0],
+        sound = Y[key];
+    if (sound == 'random') {
+        for (let i = 0; i < 100; i ++) {
+            sound = sounds[RandomInt(2, sounds.length)];
+            if (sound != last_sound)
+                break;
+        }
+    }
+
+    last_sound = sound;
+    play_sound(audiobox, sound, {loaded: () => {
+        if (DEV.boom)
+            LS(`sound ${sound} loaded, playing now ...`);
+        play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10});
+        callback(sound);
+    }});
+}
+
+/**
+ * Check if we have an BOOM
+ * - individual check for every engine
  * @param {number=} force for debugging
  * @returns {boolean}
  */
 function check_boom(force) {
+    if (!force)
+        return false;
+
+    let best = 0,
+        main = xboards.live,
+        players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
+        ply = main.moves.length,
+        scores = [];
+
+
+
+    boom_effect('boom', best, scores);
+    return true;
+}
+
+/**
+ * Check if we have an explosion
+ * - need a majority of engines to agree
+ * @param {number=} force for debugging
+ * @returns {boolean}
+ */
+function check_explosion(force) {
     // 1) check threshold
     let threshold = Y.explosion_threshold;
     if (threshold < 0.1)
@@ -4180,53 +4238,38 @@ function check_boom(force) {
 
     // check moobs
     let booms = main.booms,
-        moobs = main.moobs;
+        moobs = main.moobs,
+        seens = main.seens;
+    seens.add(ply);
+
     if (!best) {
         if (boomed) {
             moobs.add(ply);
             if (moobs.size >= Y.explosion_ply_reset)
                 main.boomed = 0;
             if (DEV.boom2)
-                LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} : ${scores} => ${main.boomed}`);
+                LS(`defused: ${moobs.size} : ${[...moobs].join(' ')} : ${scores} => ${main.boomed}`);
         }
         booms.clear();
         return false;
     }
 
     // 4) play sound, might fail if settings disable it
-    if (ply < Y.explosion_start && !force)
-        return false;
-
     // check booms
     booms.add(ply);
     if (DEV.boom2)
-        LS(`boomed: ${booms.size} : ${[...booms].join(' ')} : ${scores} => ${main.boomed} ~ ${best}`);
+        LS(`exploded: ${booms.size} : ${[...booms].join(' ')} : ${scores} => ${main.boomed} ~ ${best}`);
     moobs.clear();
     if (booms.size < Y.explosion_consecutive && !force)
         return false;
 
-    if (Sign(best) == Sign(boomed) || !Y.sound_boom)
+    if (Sign(best) == Sign(boomed) || !Y.explosion_sound)
         return false;
 
-    boom_effect('boom', best, scores, () => {
-        if (force)
-            main.boomed = boomed;
-    });
-    return true;
-}
-
-/**
- * Check if we have an explosion
- * @param {number=} force for debugging
- * @returns {boolean}
- */
-function check_explosion(force) {
-    if (!force)
+    main.boomed = force? boomed: best;
+    // don't explode if we just loaded the page
+    if (seens.size < 2)
         return false;
-
-    let best = 0,
-        main = xboards.live,
-        scores = [];
 
     boom_effect('explosion', best, scores);
     return true;
@@ -4235,16 +4278,19 @@ function check_explosion(force) {
 /**
  * Check explosion + boom
  * @param {string} section
- * @returns {number} 1:boom, 2:explosion
+ * @param {number} mode &1:explosion, &2:boom
+ * @returns {number} &1:explosion, &2:boom
  */
-function check_explosion_boom(section) {
+function check_explosion_boom(section, mode=3) {
     if (section != 'live')
         return 0;
+    if (xboards.live.moves.length < 8)
+        return 0;
 
-    if (check_explosion())
-        return 2;
-    if (check_boom())
+    if ((mode & 1) && check_explosion())
         return 1;
+    if ((mode & 2) && check_boom())
+        return 2;
     return 0;
 }
 
@@ -5343,6 +5389,8 @@ function handle_board_events(board, type, value, force) {
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
             mark_ply_charts(cur_ply, board.moves.length - 1);
+            if (board.name == 'pva')
+                board.show_pv(value);
         }
         if (name == section) {
             // show PV's
@@ -5705,6 +5753,7 @@ if (typeof exports != 'undefined')
     Assign(exports, {
         analyse_log: analyse_log,
         BOARD_THEMES: BOARD_THEMES,
+        boom_reset: boom_reset,
         calculate_h2h: calculate_h2h,
         calculate_probability: calculate_probability,
         calculate_score: calculate_score,
