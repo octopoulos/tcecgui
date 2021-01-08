@@ -4144,7 +4144,6 @@ function boom_effect(type, best, scores, callback) {
  * Rest boom variables
  */
 function boom_reset() {
-    LS('boom_reset');
     boom_evals.fill(0);
     boom_ply = -1;
 }
