@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-29
+// @version 2021-01-07
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -51,7 +51,7 @@ constexpr uint8_t   MAX_DEPTH = 64;
 constexpr Piece     MoveCapture(Move move) {return (move >> 10) & 7;};
 constexpr uint8_t   MoveFlag(Move move) {return (move >> 13) & 3;};
 constexpr Square    MoveFrom(Move move) {return (move >> 15) & 127;};
-constexpr uint8_t   moveOrder(Move move) {return (move & 1023);};
+constexpr uint8_t   MoveOrder(Move move) {return (move & 1023);};
 constexpr Piece     MovePromote(Move move) {return (move >> 22) & 7;};
 constexpr Square    MoveTo(Move move) {return (move >> 25) & 127;};
 constexpr Piece     NONE = 0;

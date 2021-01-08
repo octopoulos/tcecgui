@@ -10,11 +10,11 @@ expect, global, require, test
 let {Assign, FromTimestamp, HTML} = require('./common.js'),
     {DEV, load_defaults, Y} = require('./engine.js'),
     {
-        analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        check_boom, copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads,
-        fix_header_opening, format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
-        parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials,
-        update_pgn, update_player_eval,
+        analyse_log, boom_reset, calculate_h2h, calculate_probability, calculate_score, calculate_seeds,
+        check_adjudication, check_boom, check_explosion, copy_pgn, create_boards, create_game_link,
+        current_archive_link, extract_threads, fix_header_opening, format_engine, format_fen, format_hhmmss,
+        format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, parse_time_control, tour_info,
+        update_live_eval, update_materials, update_pgn, update_player_eval,
     } = require('./game.js'),
     {get_fen_ply, xboards} = require('./global.js'),
     {create_chart_data} = require('./graph.js'),
@@ -438,8 +438,32 @@ create_chart_data();
 
 // check_boom
 [
-    [0, {boom_start: 0, x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
-    [0, {boom_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
+    [0, {}, {}, [], [], false],
+].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
+    test(`check_boom:${id}`, () => {
+        if (id == 0)
+            boom_reset();
+        DEV.boom = (id >= 27)? 1: 0;
+
+        let main = xboards.live,
+            players = main.players;
+        evals.forEach((eval_, id) => {
+            players[id].eval = eval_;
+            players[id].short = shorts[id] || `P${id}`;
+        });
+        main.moves.length = ply;
+        Assign(main, states);
+        Assign(Y, y);
+
+        expect(check_boom()).toEqual(answer);
+        expect(main.boomed).toBeCloseTo(answer_boomed, 3);
+    });
+});
+
+// check_explosion
+[
+    [0, {x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
+    [0, {explosion_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
     [0, {}, {boomed: 0}, [5, 3, 2.5, 0.5], [], true, 3.5],
     [0, {}, {}, [15, 5, 0.5, 0.5], [], false, 3.5],
     [0, {}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
@@ -457,20 +481,22 @@ create_chart_data();
     [0, {}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], true, 6.5],
     [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], true, 6.5],
     [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], true, 7],
-    [0, {sound_boom: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {sound_boom: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [0, {explosion_sound: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [0, {explosion_sound: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
     // 20
-    [0, {boom_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {boom_threshold: 2.3, boom_start: 10}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
-    [0, {boom_start: 0}, {}, [5, 5, 5, 0], [], true, 5],
-    [0, {boom_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
+    [0, {explosion_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
+    [0, {explosion_threshold: 2.3}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
+    [0, {}, {}, [5, 5, 5, 0], [], true, 5],
+    [0, {explosion_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
     [1, {}, {}, [5, 5, 5, 5], [], false, 0],
     [2, {}, {}, [5, 5, 5, 5], [], true, 5],
     [76, {}, {boomed: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], true, 8.16],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
-    test(`check_boom:${id}`, () => {
+    test(`check_explosion:${id}`, () => {
+        if (id == 0)
+            boom_reset();
         DEV.boom = (id >= 27)? 1: 0;
-        Assign(Y, y);
+
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
@@ -479,8 +505,9 @@ create_chart_data();
         });
         main.moves.length = ply;
         Assign(main, states);
+        Assign(Y, y);
 
-        expect(check_boom()).toEqual(answer);
+        expect(check_explosion()).toEqual(answer);
         expect(main.boomed).toBeCloseTo(answer_boomed, 3);
     });
 });

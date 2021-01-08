@@ -18,11 +18,11 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
 clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, get_fen_ply, get_move_ply,
-global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, MoveFrom, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
+DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, GaussianRandom,
+get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
+Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
-update_svg, Upper, Visible, window, Worker, X_SETTINGS, Y
+update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -68,7 +68,6 @@ let AI = 'ai',
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
-    last_sound,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -172,7 +171,7 @@ class XBoard {
 
         // initialisation
         this.boomed = 0;                                // boom sound happened
-        this.booms = new Set();
+        this.booms = new Set();                         // consecutive explosion plies
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
         this.clicked = false;
@@ -206,7 +205,7 @@ class XBoard {
         this.main_manual = this.main || this.manual;
         this.max_time = 0;                              // max time in IT
         this.min_depth = 0;                             // max depth in IT
-        this.moobs = new Set();
+        this.moobs = new Set();                         // consecutive defuse plies
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -229,6 +228,7 @@ class XBoard {
         this.replies = {};                              // worker replies
         this.scores = {};                               // iterative search: used for move ordering
         this.seen = 0;                                  // last seen move -> used to show the counter
+        this.seens = new Set();                         // seen plies for boom/explode
         this.shared = null;
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
         this.squares = {};                              // square nodes
@@ -859,34 +859,6 @@ class XBoard {
             .forEach((svg, id) => {
                 Style(svg.svg, `z-index:${id}`);
             });
-    }
-
-    /**
-     * Play a BOOM or explosion sound
-     * @param {string} type
-     * @param {number} score
-     * @param {function} callback called when the sound is playing
-     */
-    boom(type, score, callback) {
-        let key = `${type}_boom`,
-            sounds = X_SETTINGS.audio[key][0],
-            sound = Y[key];
-        if (sound == 'random') {
-            for (let i = 0; i < 100; i ++) {
-                sound = sounds[RandomInt(2, sounds.length)];
-                if (sound != last_sound)
-                    break;
-            }
-        }
-
-        this.boomed = score;
-        last_sound = sound;
-        play_sound(audiobox, sound, {loaded: () => {
-            if (DEV.boom)
-                LS(`sound ${sound} loaded, playing now ...`);
-            play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10});
-            callback(sound);
-        }});
     }
 
     /**
@@ -2258,6 +2230,7 @@ class XBoard {
         this.ply = -1;
         this.moobs.clear();
         this.seen = 0;
+        this.seens.clear();
         this.text = '';
 
         HTML(this.xmoves, '');
@@ -2561,6 +2534,30 @@ class XBoard {
     }
 
     /**
+     * Show PV in pva mode
+     * @param {Move} move
+     */
+    show_pv(move) {
+        if (!this.chess2)
+            this.chess2 = new Chess();
+        if (!move.fen0)
+            move.fen0 = this.fen;
+        this.chess2.load(move.fen0);
+
+        let moves = ArrayJS(this.chess2.multiUci(move.pv)),
+            san_list = moves.map(move => {
+                let lines = [];
+                if (!(move.ply & 1))
+                    lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
+                lines.push(`<i class="real">${move.m}</i>`);
+                return lines.join('');
+            }).join('');
+
+        if (san_list)
+            HTML(Id('pva-pv'), `[${this.depth}/${moves.length}] ${san_list}`);
+    }
+
+    /**
      * Think ...
      * @param {boolean} suggest
      * @param {number=} step used in iterative mode
@@ -2604,6 +2601,9 @@ class XBoard {
             num_move = moves.length;
             if (!num_move)
                 return false;
+
+            // shuffle a bit
+            moves.sort((a, b) => MoveOrder(b) - MoveOrder(a) + GaussianRandom() * 16 - 8);
 
             // check for 3-fold moves
             let fen_set = new Set(Keys(this.fens).filter(key => this.fens[key] >= 2));
@@ -2675,7 +2675,7 @@ class XBoard {
         });
 
         if (!step) {
-            this.depth = 3;
+            this.depth = 4;
             this.min_depth = min_depth;
             this.max_time = max_time;
             Assign(reply, {
@@ -2958,22 +2958,8 @@ class XBoard {
             this.update_mini(color);
             this.eval(this.name, player);
 
-            if (Y.game_PV) {
-                if (!this.chess2)
-                    this.chess2 = new Chess();
-                this.chess2.load(this.fen);
-                let moves = ArrayJS(this.chess2.multiUci(best.pv)),
-                    san_list = moves.map(move => {
-                        let lines = [];
-                        if (!(move.ply & 1))
-                            lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
-                        lines.push(`<i class="real">${move.m}</i>`);
-                        return lines.join('');
-                    }).join('');
-
-                if (san_list)
-                    HTML(Id('pva-pv'), `[${this.depth}/${moves.length}] ${san_list}`);
-            }
+            if (Y.game_PV)
+                this.show_pv(best);
         }
 
         // 6) iterative thinking?
@@ -3054,6 +3040,7 @@ class XBoard {
         Assign(result, {
             _fixed: 2,
             d: (reply.avg_depth / (reply.nodes + 1)).toFixed(0),
+            fen0: best.fen0,
             mt: Floor(elapsed2 * 1000 + 0.5),
             n: nodes2,
             pv: best.pv,

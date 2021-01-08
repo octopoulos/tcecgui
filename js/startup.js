@@ -2004,7 +2004,6 @@ function prepare_settings() {
             explosion_consecutive: option_number(2, 0, 10, 1, {}, 'need to remain for X consecutive plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
             explosion_sound: boom_sound,
-            explosion_start: option_number(20, 0, 300, 1, {}, 'explosion can only happen after this ply'),
             explosion_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
             explosion_visual: boom_visual,
