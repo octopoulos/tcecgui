@@ -1022,10 +1022,11 @@ function populate_areas() {
 
 /**
  * Quick setup when the site is loaded for the first time
+ * - except if #seen=1, or if in the archive
  */
 function quick_setup() {
     let old = Y.new_version;
-    if (old == undefined || old >= '20210102')
+    if (old == undefined || old >= '20210102' || Y.seen || Y.x == 'archive')
         return;
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
@@ -1785,8 +1786,9 @@ function prepare_settings() {
         live_log: 'all',
         order: 'left|center|right',         // main panes order
         round: '',                          // archive link + live round
-        season: '',                         // archive link
         scales: {},
+        season: '',                         // archive link
+        seen: 0,                            // show quick setup?
         stage: '',                          // archive link
         stream: 0,
         table_tab: {
@@ -1895,7 +1897,7 @@ function prepare_settings() {
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
             sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
-            volume: option_number(7, 0, 15, 0.5),
+            volume: option_number(10, 0, 20, 0.5),
         },
         video: {
             background_color: [{type: 'color'}, '#000000'],
@@ -2196,8 +2198,10 @@ function prepare_settings() {
             _title: 'Quick setup',
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
             boom_volume: option_number(7, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
+            explosion_visual: [['off', 'all', 'color', 'shake'], 'all'],
+            explosion_volume: option_number(7, 0, 20, 0.5, {}, 'explosion volume, 10: 100%'),
             theme: [THEMES, THEMES[0]],
-            volume: option_number(7, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
+            volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
         },
     });
 
@@ -2293,7 +2297,6 @@ function startup() {
     start_game();
     init_graph();
     init_hash();
-    quick_setup();
 
     set_global_events();
     set_engine_events();
@@ -2305,6 +2308,7 @@ function startup() {
     init_sockets();
     init_globals();
     init_customs(true);
+    quick_setup();
     resize();
 }
 
