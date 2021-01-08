@@ -13,6 +13,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 ~          : 2021-01-07 : boom + explosion
+2021-01-08 : 2021-01-08 : set custom FEN in PV(A)
 2021-01-07 : 2021-01-07 : shake_screen should use AnimationFrame
 2021-01-07 : 2021-01-07 : no explosion if just loaded the page
 2021-01-07 : 2021-01-07 : #seen=1 or archive => skip quick setup

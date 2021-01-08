@@ -160,7 +160,7 @@
 "final":"finale",
 "first":"premier",
 "from":"source",
-"game options":"options de jeu",F
+"game options":"options de jeu",
 "game":"partie",
 "Games are played strictly between computer chess engines created by different programmers.":"Les parties sont jouées strictement entre moteurs d'échecs informatiques créés par différents programmeurs.",
 "games":"parties",
@@ -254,6 +254,7 @@
 "moves":"coups",
 "navigate":"naviguer",
 "never":"jamais",
+"new FEN":"nouveau FEN",
 "new game":"nouvelle partie",
 "nodes":"nœuds",
 "none":"aucun",
