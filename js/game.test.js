@@ -480,7 +480,7 @@ create_chart_data();
         main.moves.length = ply;
         Assign(main, states);
 
-        expect(check_boom(Y.x)).toEqual(answer);
+        expect(check_boom()).toEqual(answer);
         expect(main.boomed).toBeCloseTo(answer_boomed, 3);
     });
 });

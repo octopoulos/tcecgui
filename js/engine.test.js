@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-07
 //
 /*
 globals
@@ -10,9 +10,9 @@ expect, require, test
 
 let {Assign, Keys} = require('./common.js'),
     {
-        add_history, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES, guess_types,
-        import_settings, merge_settings, parse_dev, reset_settings, restore_history, sanitise_data, save_option,
-        translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
+        add_history, AUTO_ON_OFF, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES,
+        guess_types, import_settings, merge_settings, ON_OFF, parse_dev, reset_settings, restore_history, sanitise_data,
+        save_option, translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
@@ -153,6 +153,16 @@ Assign(translates, {
             ratio2: 'f',
             width: 'i',
             width2: 'i',
+        },
+    ],
+    [
+        {
+            wrap: [ON_OFF, 1],
+            wrap_cross: [AUTO_ON_OFF, 'auto'],
+        },
+        {
+            wrap: 'i',
+            wrap_cross: 'i',
         },
     ],
 ].forEach(([settings, answer], id) => {

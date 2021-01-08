@@ -1,6 +1,6 @@
 /*
 light.css
-@version 2021-01-05
+@version 2021-01-07
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -894,7 +894,7 @@ hsub {
     border-radius: 0.2em;
     color: #555;
     font-size: 0.95em;
-    height: 5.5em;
+    height: 6em;
     margin: 2.5px;
     padding: 8px;
     text-align: center;
