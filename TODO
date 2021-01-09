@@ -12,7 +12,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
-~          : 2021-01-07 : boom + explosion
+~          : 2021-01-08 : boom should scale the volume + shake + duration
+2021-01-08 : 2021-01-07 : boom + explosion
 2021-01-08 : 2021-01-08 : set custom FEN in PV(A)
 2021-01-07 : 2021-01-07 : shake_screen should use AnimationFrame
 2021-01-07 : 2021-01-07 : no explosion if just loaded the page
@@ -50,6 +51,7 @@ DONE         CREATED      DESCRIPTION
 2020-11-22 : 2020-11-22 : parse mate from log
 2020-11-20 : 2020-11-20 : improved livelog analysis
 2020-11-17 : 2020-11-17 : show FRC # in the opening
+2020-11-17 : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 2020-11-14 : 2020-11-14 : About works again
 2020-11-14 : 2020-11-14 : enable pv parsing from livelog
 2020-11-02 : 2020-11-02 : E2 => engine2, E5 => engine + engine4
@@ -504,7 +506,6 @@ lowest:
 -          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-05-23 : dynamic pagination and search nodes
 -          : 2020-09-08 : remove socket.io
--          : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
 -          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
