@@ -146,7 +146,10 @@ let ANALYSIS_URLS = {
         boom6: [5300, 6000, 5420, 2200, 15, 0.95],
     },
     boom_ply = -1,
-    BOOM_RED = 'background-color:rgba(255,0,0,0.9)',
+    BOOM_REDS = {
+        boom: 'background-color:rgba(255,0,0,0.25)',
+        explosion: 'background-color:rgba(255,0,0,0.9)',
+    },
     BOOM_SHAKES = {
         all: 1,
         shake: 1,
@@ -3819,8 +3822,6 @@ function update_pgn(section, data, extras, reset_moves) {
         for (let id in [0, 1]) {
             update_move_info(section, id, {});
             Assign(players[id], {
-                boom_ply: 0,
-                boomed: 0,
                 evals: [],
                 info: {},
             });
@@ -4103,7 +4104,7 @@ function boom_effect(type, best, scores, params, callback) {
         booms = main.booms,
         moobs = main.moobs;
 
-    boom_sound(type, sound => {
+    boom_sound(type, params.volume, sound => {
         let boom_param = BOOM_PARAMS[sound],
             [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
         if (DEV.boom)
@@ -4116,6 +4117,7 @@ function boom_effect(type, best, scores, params, callback) {
 
         // 5) visual stuff
         let body = Id('body2'),
+            red = BOOM_REDS[type],
             visual = Y.explosion_visual;
 
         if (shake_animation == null)
@@ -4123,8 +4125,8 @@ function boom_effect(type, best, scores, params, callback) {
 
         // color + shake
         if (BOOM_COLORS[visual]) {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, BOOM_RED), red_start);
+            Style(BOOM_ELEMENTS2, red, false);
+            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
         }
         if (BOOM_SHAKES[visual]) {
             add_timeout('shake_start', () => {
@@ -4145,8 +4147,8 @@ function boom_effect(type, best, scores, params, callback) {
 
         // ending
         add_timeout('red_end', () => {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-        }, red_start + red_duration);
+            Style(BOOM_ELEMENTS2, red, false);
+        }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
 
         if (callback)
             callback();
@@ -4164,9 +4166,10 @@ function boom_reset() {
 /**
  * Play a BOOM or explosion sound
  * @param {string} type
+ * @param {number} volume volume multiplier, from 0 to 1
  * @param {function} callback called when the sound is playing
  */
-function boom_sound(type, callback) {
+function boom_sound(type, volume, callback) {
     let key = `${type}_sound`,
         sounds = X_SETTINGS.boom[key][0],
         sound = Y[key];
@@ -4182,68 +4185,98 @@ function boom_sound(type, callback) {
     play_sound(audiobox, sound, {loaded: () => {
         if (DEV.boom)
             LS(`sound ${sound} loaded, playing now ...`);
-        play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10});
+        play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10 * volume});
         callback(sound);
     }});
 }
 
 /**
  * Check if we have an BOOM
- * - individual check for every engine
+ * - individual check for every player
+ * - ignore kibitzers
  * @param {number=} force for debugging
  * @returns {number} 0 on success
  */
 function check_boom(force) {
     // 1) gather all evals
-    let best = [0, 0, 0],
+    let best = null,
+        increase = Y.boom_increase,
         main = xboards.live,
-        players = main.players.map(player => [player.eval, player.short || get_short_name(player.name), player.evals]),
+        multiplier = Y.boom_multiplier,
+        players = main.players.slice(0, 2),
         ply = main.moves.length;
-    players = players.filter(player => player && player[1]);
 
     // 2) compare eval with previous eval for every engine
+    // !! [1.83, 1.45, -1.54, empty × 2, 2.05] => no boom, just a glitch => check X moves back
     players.forEach((player, id) => {
-        let evals = player[2];
+        // get the eval
+        let evals = player.evals;
         if (!evals)
             return;
         let eval_ = evals[ply];
-        if (eval_ == undefined || Abs(eval_) < 1)
+        if (eval_ == undefined)
+            return;
+        eval_ = Clamp(clamp_eval(eval_), -10, 10);
+        if (Abs(eval_) < 1)
             return;
 
-        let prev_eval;
+        // check diff + ratio with X previous evals
+        let prev_eval,
+            count = 0,
+            worst = null;
         for (let prev = ply - 1; prev >= BOOM_MIN_PLY - 1 && prev >= ply - 10; prev --) {
             prev_eval = evals[prev];
             if (prev_eval == undefined)
                 continue;
+            prev_eval = Clamp(clamp_eval(prev_eval), -10, 10);
 
-            let diff = Abs(eval_ - prev_eval);
-
-            if (diff >= Y.boom_increase) {
-                let floor = (eval_ >= 0)? Max(0.1, prev_eval): Min(-0.1, prev_eval),
-                    ratio = eval_ / floor;
-                if (ratio >= Y.boom_multiplier) {
-                    let score = ratio * diff;
-                    LS('BOOM? floor=', floor, 'prev=', prev_eval, 'eval=', eval_, 'score=', score);
-                    if (score > best[0])
-                        best = [score, diff, ratio];
-
-                }
+            let diff = Abs(eval_ - prev_eval),
+                floor = (eval_ >= 0)? Max(0.5, prev_eval): Min(-0.5, prev_eval),
+                ratio = eval_ / floor,
+                score = ratio * diff;
+            if (!worst || score < worst[0]) {
+                worst = [score, prev_eval, eval_, diff, ratio];
+                if (DEV.boom2)
+                    LS('worst=', ply, id, worst);
             }
-            break;
+
+            count ++;
+            if (count >= 3)
+                break;
+        }
+
+        if (count >= 3 && worst && (!best || worst[0] > best[0]) && worst[3] >= increase && worst[4] >= multiplier) {
+            best = worst;
+            if (DEV.boom)
+                LS('best=', ply, id, best);
         }
     });
 
-    // 3) effect if a boom was detected
-    if (best[0]) {
-        LS(best);
-        boom_effect('boom', best, [], {});
+    if (!best && !force)
+        return 1;
+
+    // 3) scaling:
+    // - every: 1/60s for short effect, 1/20 for long ones
+    // - red_coeff: from 0.1 to 0.75
+    // - volume: from 0.1 to 1
+
+    // 4) effect if a boom was detected
+    if (!force) {
+        main.boomed = best[0];
+        boom_ply = ply;
     }
+    boom_effect('boom', best, [], {
+        every: 1/40,
+        red_coeff: 0.25,
+        volume: 1,
+    });
     return 0;
 }
 
 /**
  * Check if we have an explosion
  * - need a majority of engines to agree
+ * - include kibitzers
  * @param {number=} force for debugging
  * @returns {number} 0 on success
  */
@@ -4314,7 +4347,11 @@ function check_explosion(force) {
     if (!force && seens.size < 2)
         return 5;
 
-    boom_effect('explosion', best, scores, {});
+    boom_effect('explosion', best, scores, {
+        every: 1/20,
+        red_coeff: 0.75,
+        volume: 1,
+    });
     return 0;
 }
 
@@ -4378,7 +4415,7 @@ function shake_screen() {
         now = Now(true);
     if (now > boom_info.end)
         dead = 2;
-    else if (now < boom_info.last + boom_info.every)
+    else if (now + 1/120 < boom_info.last + boom_info.every)
         dead = 1;
 
     // translate(15px, 15px) => ['15', '15']

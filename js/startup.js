@@ -1864,8 +1864,8 @@ function prepare_settings() {
 
     let bamboo = 'grand bamboo',
         bamboo2 = `${bamboo} - `,
-        boom_sound = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
-        boom_visual = [['off', 'all', 'color', 'shake'], 'all'],
+        boom_sounds = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
+        boom_visuals = [['off', 'all', 'color', 'shake'], 'all'],
         cores = navigator.hardwareConcurrency,
         old = 'old - move.mp3',
         shortcuts = [...['off'], ...Keys(TABLES)];
@@ -1992,20 +1992,20 @@ function prepare_settings() {
         boom: {
             reactivate: '1',
             boom_increase: option_number(0.8, 0, 10, 0.1, {}, 'minimum absolute increase'),
-            boom_multiplier: option_number(1.5, 0, 10, 0.1, {}, 'minimum relative increase'),
+            boom_multiplier: option_number(1.4, 0, 10, 0.1, {}, 'minimum relative increase'),
             boom_ply_reset: option_number(4, 0, 100, 1, {}, 'reactivate after X plies'),
             boom_scaling: option_number(1, 0, 10, 0.1, {}, 'maximum reduction of sound/shake by lower booms'),
-            boom_sound: boom_sound,
-            boom_visual: boom_visual,
-            boom_volume: option_number(5, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
+            boom_sound: boom_sounds,
+            boom_visual: boom_visuals,
+            boom_volume: option_number(2, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
             boom_test: '1',
             explosion_consecutive: option_number(2, 0, 10, 1, {}, 'need to remain for X consecutive plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            explosion_sound: boom_sound,
+            explosion_sound: boom_sounds,
             explosion_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
-            explosion_visual: boom_visual,
-            explosion_volume: option_number(7, 0, 20, 0.5),
+            explosion_visual: boom_visuals,
+            explosion_volume: option_number(5, 0, 20, 0.5),
             explosion_test: '1',
         },
         control: {
@@ -2195,11 +2195,11 @@ function prepare_settings() {
             _pop: true,
             _title: 'Quick setup',
             boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(7, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
+            boom_volume: option_number(2, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
             explosion_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            explosion_volume: option_number(7, 0, 20, 0.5, {}, 'explosion volume, 10: 100%'),
+            explosion_volume: option_number(5, 0, 20, 0.5, {}, 'explosion volume, 10: 100%'),
             theme: [THEMES, THEMES[0]],
-            volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
+            volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds'),
         },
     });
 
