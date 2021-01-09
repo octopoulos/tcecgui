@@ -158,7 +158,7 @@ function adjust_popups() {
 
 /**
  * Use an audio set
- * @param {string} set custom, grand bamboo
+ * @param {string} set custom, bamboo
  */
 function audio_set(set) {
     let audio_settings = X_SETTINGS.audio,
@@ -1865,12 +1865,12 @@ function prepare_settings() {
         options: 1,
     });
 
-    let bamboo = 'grand bamboo',
+    let bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
         boom_sounds = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
         boom_visuals = [['off', 'all', 'color', 'shake'], 'all'],
         cores = navigator.hardwareConcurrency,
-        old = 'old - move.mp3',
+        old = 'move',
         shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
@@ -1889,14 +1889,14 @@ function prepare_settings() {
             audio_live_archive: [ON_OFF, 0],
             audio_moves: [['none', 'all', 'last'], 'all'],
             audio_pva: [ON_OFF, 1],
-            audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
+            audio_set: [['custom', bamboo, 'kan'], 'custom'],
             capture_delay: option_number(-200, -1000, 1000),
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
             sound_draw: [['off', 'draw', 'win'], 'draw'],
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
-            sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
+            sound_move_pawn: [['off', `${bamboo2}pawn`, 'kan - move', old], `${bamboo2}pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
             volume: option_number(10, 0, 20, 0.5),
         },
@@ -1995,7 +1995,7 @@ function prepare_settings() {
         boom: {
             boom_test: '1',
             boom_sound: boom_sounds,
-            boom_threshold: option_number(0.8, 0, 10, 0.1, {}, 'threshold to exceed in graph scale => boom'),
+            boom_threshold: option_number(0.5, 0, 10, 0.1, {}, 'threshold to exceed in graph scale => boom'),
             boom_visual: boom_visuals,
             boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             moob_test: '1',
