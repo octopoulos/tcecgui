@@ -174,7 +174,6 @@
   "board_theme_pva": "uscf",
   "book_every": 600,
   "boom_buildup": 2,
-  "boom_ply_reset": 8,
   "boom_sound": "random",
   "boom_threshold": 2.3,
   "boom_visual": "all",

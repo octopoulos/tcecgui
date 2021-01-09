@@ -4228,7 +4228,7 @@ function check_boom(force) {
                 break;
         }
 
-        if (count >= 3 && worst && (!best || worst[0] > best[0]) && worst[3] >= increase && worst[4] >= multiplier) {
+        if (count >= 3 && worst && (!best || worst[0] > best[0])) { // && worst[3] >= increase && worst[4] >= multiplier) {
             best = worst;
             if (DEV.boom)
                 LS('best=', ply, id, best);
@@ -4237,6 +4237,7 @@ function check_boom(force) {
 
     if (!best && !force)
         return 1;
+    let type = (Abs(force || best) >= 0.1)? 'boom': 'moob';
 
     // 3) scaling:
     // - every: 1/60s for short effect, 1/20 for long ones
@@ -4245,10 +4246,10 @@ function check_boom(force) {
 
     // 4) effect if a boom was detected
     if (!force) {
-        main.boomed = best[0];
-        boom_ply = ply;
+        // main.boomed = best[0];
+        // boom_ply = ply;
     }
-    boom_effect('boom', best, {
+    boom_effect(type, best, {
         every: 1/40,
         red_coeff: 0.25,
         volume: 1,
@@ -4915,10 +4916,11 @@ function game_action_key(code) {
                         if (Visible(Id('table-pva')))
                             board_target = pva;
                     }
-                    else if (!copy_moves()) {
-                        let text = board_target.fen;
-                        CopyClipboard(text);
-                    }
+                    else if (copy_moves())
+                        break;
+
+                    let text = board_target.fen;
+                    CopyClipboard(text);
                 }
                 // paste => try to add the FEN, if fails then moves string
                 else if (code == 86) {
@@ -5056,6 +5058,12 @@ function change_setting_game(name, value) {
             }
         }
         break;
+    case 'boom_enabled':
+        if (!value) {
+            save_option('boom_sound', 0);
+            save_option('boom_visual', 0);
+        }
+        break;
     case 'boom_test':
         check_boom(10);
         break;
@@ -5067,6 +5075,12 @@ function change_setting_game(name, value) {
         break;
     case 'download_pgn':
         copy_pgn(null, true);
+        break;
+    case 'explosion_enabled':
+        if (!value) {
+            save_option('explosion_sound', 0);
+            save_option('explosion_visual', 0);
+        }
         break;
     case 'explosion_test':
         check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
@@ -5103,6 +5117,15 @@ function change_setting_game(name, value) {
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
+        break;
+    case 'moob_enabled':
+        if (!value) {
+            save_option('moob_sound', 0);
+            save_option('moob_visual', 0);
+        }
+        break;
+    case 'moob_test':
+        check_boom(0.01);
         break;
     case 'reactivate':
         xboards.live.exploded = 0;
