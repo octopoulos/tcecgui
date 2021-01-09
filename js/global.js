@@ -303,12 +303,9 @@ function reset_old_settings() {
     if (version < '20200930')
         save_default('game_wasm', 1);
     if (version < '20201003b') {
-        save_default('game_every', 100);
         save_default('game_threads', 1);
         save_default('graph_marker_color', '#299bff');
     }
-    if (version < '20210101d')
-        save_default('boom_start', 20);
 
     LS(`version: ${version} => ${VERSION}`);
     save_option('version', VERSION);

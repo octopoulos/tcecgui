@@ -106,6 +106,7 @@ let AD_STYLES = {},
     resume_time = Now(),
     SCALES = [
         '4=eval',
+        '16=boom',
         '0=linear',
         '1=logarithmic',
         '10=split auto',
@@ -1814,6 +1815,7 @@ function prepare_settings() {
         e: 'eval',                  // live eval
         E: 'engine',
         f: 'fen',                   // parse_fen
+        F: 'effect',
         G: 'global',
         h: 'hold',                  // hold button
         i: 'input',                 // gamepad input
@@ -1832,6 +1834,7 @@ function prepare_settings() {
         U: 'ui',                    // UI events
         w: 'wasm',
         W: 'worker',                // web worker
+        X: 'explode',
         y: 'ply',
     });
 
@@ -1991,15 +1994,14 @@ function prepare_settings() {
         },
         boom: {
             reactivate: '1',
-            boom_increase: option_number(0.8, 0, 10, 0.1, {}, 'minimum absolute increase'),
-            boom_multiplier: option_number(1.4, 0, 10, 0.1, {}, 'minimum relative increase'),
             boom_ply_reset: option_number(4, 0, 100, 1, {}, 'reactivate after X plies'),
-            boom_scaling: option_number(1, 0, 10, 0.1, {}, 'maximum reduction of sound/shake by lower booms'),
             boom_sound: boom_sounds,
+            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 'random'],
+            boom_threshold: option_number(0.8, 0, 10, 0.1, {}, 'threshold to exceed in graph scale => boom'),
             boom_visual: boom_visuals,
             boom_volume: option_number(2, 0, 20, 0.5, {}, 'maximum volume, it can be divided by boom_scale'),
             boom_test: '1',
-            explosion_consecutive: option_number(2, 0, 10, 1, {}, 'need to remain for X consecutive plies'),
+            explosion_buildup: option_number(2, 0, 10, 1, {}, 'need to exceed the threshold for X plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
             explosion_sound: boom_sounds,
             explosion_threshold:

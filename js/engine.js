@@ -70,6 +70,7 @@ let __PREFIX = '_',
         import_settings: 2,
         language: 1,
         preset: 1,
+        seen: 2,
     },
     NO_TRANSLATES = {
         '#': 1,
@@ -234,10 +235,12 @@ function get_float(name, def) {
  * Local Storage - get int/bool
  * @param {string} name
  * @param {number|boolean} def also used if the value cannot be converted to an `int`
+ * @param {boolean=} force force int, otherwise keep the string
  * @returns {number|boolean}
  */
-function get_int(name, def) {
-    let value = DefaultInt(get_string(name), def);
+function get_int(name, def, force) {
+    let text = get_string(name),
+        value = DefaultInt(text, force? def: (text || def));
     if (typeof(def) == 'boolean')
         value = !!value;
     return value;
@@ -560,8 +563,9 @@ function sanitise_data() {
 
         if (type == 'f')
             Y[key] = DefaultFloat(value, def);
+        // new: allow int to be string sometimes
         else if (type == 'i')
-            Y[key] = DefaultInt(value, def);
+            Y[key] = DefaultInt(value, value);
     });
 
     if (virtual_sanitise_data_special)
