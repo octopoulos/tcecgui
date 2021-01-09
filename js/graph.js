@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-08
 //
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEFAULTS, DEV, exports, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, global, Id, Keys,
-Log10, LS, Max, Min, Pad, Pow, require, Round,
+DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, global, Id, Keys,
+Log, Log10, LS, Max, Min, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
@@ -60,7 +60,8 @@ let cached_percents = {},
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
     FormatEval = value => value? value.toFixed(2): 0,
-    queued_charts = [];
+    queued_charts = [],
+    scale_boom = x => (x >= 0)? 10 * (1 - Exp(-x * 0.16)): -10 * (1 - Exp(x * 0.16));
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -603,6 +604,8 @@ function update_chart(name) {
         update_scale_custom(chart);
     else if (scale & 4)
         update_scale_eval(chart);
+    else if (scale & 16)
+        update_scale_boom(chart);
 
     if (DEV.chart)
         LS(`UC: ${name}`);
@@ -838,6 +841,24 @@ function update_player_charts(name, moves) {
 }
 
 /**
+ * Update the boom scale
+ * f(x) = 10 * (1 - exp(-x * 0.16))
+ * g(x) = -ln((10 - x)/10) / 0.16
+ * https://www.symbolab.com/solver/function-inverse-calculator
+ * @param {Object} chart
+ */
+function update_scale_boom(chart) {
+    let scale = chart.scales['y-axis-0'];
+    scale.options.funcs = (Y.graph_eval_mode == 'percent') ? [
+        x => x,
+        y => y,
+    ]:[
+        scale_boom,
+        y => (y >= 0)? -Log(1 - y / 10) / 0.16: Log(1 + y / 10) / 0.16,
+    ];
+}
+
+/**
  * Update the custom scale
  * @param {Object} chart
  */
@@ -910,7 +931,9 @@ function update_scale_custom(chart) {
 
 /**
  * Update the eval scale
- * - 12 - 84/(x+7)
+ * f(x) = 12 - 84 / (x + 7)
+ * g(x) = -7 * x / (x - 12)
+ * https://www.symbolab.com/solver/function-inverse-calculator
  * @param {Object} chart
  */
 function update_scale_eval(chart) {
@@ -981,6 +1004,7 @@ if (typeof exports != 'undefined') {
         invert_eval: invert_eval,
         mark_ply_charts: mark_ply_charts,
         reset_charts: reset_charts,
+        scale_boom: scale_boom,
         slice_charts: slice_charts,
         update_live_chart: update_live_chart,
         update_player_charts: update_player_charts,

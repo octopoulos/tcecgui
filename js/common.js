@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-08
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -57,6 +57,7 @@ let Abs = Math.abs,
     IsObject = value => (value != null && typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
+    Log = Math.log,
     Log10 = Math.log10,
     Lower = text => text.toLowerCase(),
     LS = console.log,
@@ -1602,6 +1603,7 @@ if (typeof exports != 'undefined') {
         IsObject: IsObject,
         IsString: IsString,
         Keys: Keys,
+        Log: Log,
         Lower: Lower,
         LS: LS,
         Max: Max,

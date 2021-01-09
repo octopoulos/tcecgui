@@ -170,13 +170,12 @@ class XBoard {
         this.vis = Id(options.vis);
 
         // initialisation
-        this.boomed = 0;                                // boom sound happened
-        this.booms = new Set();                         // consecutive explosion plies
         this.chess = new Chess();
         this.chess2 = null;                             // used to calculate PV
         this.clicked = false;
         this.colors = ['#eee', '#111'];
         this.coords = {};
+        this.defuses = new Set();                       // consecutive defuse plies
         this.delayed_ply = -2;
         this.depth = 0;                                 // current depth in IT
         this.dirty = 3;                                 // &1:board/notation, &2:pieces, &4:theme change
@@ -186,6 +185,8 @@ class XBoard {
             live: [],
             pva: [],
         };                                              // eval history
+        this.exploded = 0;                              // explosion sound happened
+        this.explodes = new Set();                      // consecutive explosion plies
         this.fen = '';                                  // current fen
         this.fen2 = '';
         this.fens = {};                                 // fen counter to detect 3-fold repetition
@@ -205,7 +206,6 @@ class XBoard {
         this.main_manual = this.main || this.manual;
         this.max_time = 0;                              // max time in IT
         this.min_depth = 0;                             // max depth in IT
-        this.moobs = new Set();                         // consecutive defuse plies
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         this.moves = [];                                // move list
@@ -2217,8 +2217,9 @@ class XBoard {
         this.start_fen = start_fen || START_FEN;
         this.frc = this.start_fen != START_FEN;
 
-        this.boomed = 0;
-        this.booms.clear();
+        this.defuses.clear();
+        this.exploded = 0;
+        this.explodes.clear();
         this.fen = '';
         this.fen2 = '';
         Clear(this.fens);
@@ -2229,7 +2230,6 @@ class XBoard {
         this.moves.length = 0;
         this.next = null;
         this.ply = -1;
-        this.moobs.clear();
         this.seen = 0;
         this.seens.clear();
         this.text = '';

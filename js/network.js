@@ -9,8 +9,8 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
-LOCALHOST, LS, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval, update_pgn,
-update_player_eval, update_table, update_twitch, Y
+LOCALHOST, LS, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
+update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
 
@@ -31,6 +31,7 @@ let prev_room = 0,
         archive: {},
         live: {},
     },
+    TIMEOUT_log = 500,
     virtual_resize;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,8 +194,12 @@ function log_socket(name, data, cache) {
 function reconnect_log() {
     if (!Y.log_auto_start)
         return;
-    Y.live_log = 'all';
-    listen_log(true);
+    for (let id = 0; id < 2; id ++) {
+        add_timeout(`log${id}`, () => {
+            Y.live_log = id? 'all': 0;
+            listen_log();
+        }, TIMEOUT_log * (id + 1) + RandomInt(100));
+    }
 }
 
 /**
