@@ -146,6 +146,7 @@ let ANALYSIS_URLS = {
     },
     BOOM_REDS = {
         boom: 'background-color:rgba(255,0,0,0.25)',
+        mood: 'background-color:rgba(0,0,255,0.25)',
         explosion: 'background-color:rgba(255,0,0,0.9)',
     },
     BOOM_SHAKES = {
@@ -4212,13 +4213,9 @@ function check_boom(force) {
                 continue;
             prev_eval = scale_boom(clamp_eval(prev_eval));
 
-            let average = Abs(eval_ + prev_eval) / 2,
-                diff = Abs(eval_ - prev_eval),
-                floor = (eval_ >= 0)? Max(0.5, prev_eval): Min(-0.5, prev_eval),
-                ratio = eval_ / floor,
-                score = ratio * diff;
-            if (!worst || score < worst[0]) {
-                worst = [score, prev_eval, eval_, diff, ratio];
+            let diff = Abs(eval_ - prev_eval);
+            if (!worst || diff < worst[0]) {
+                worst = [diff, prev_eval, eval_, Abs(eval_) < Abs(prev_eval)];
                 if (DEV.boom2)
                     LS('worst=', ply, id, worst);
             }
@@ -4228,16 +4225,18 @@ function check_boom(force) {
                 break;
         }
 
-        if (count >= 3 && worst && (!best || worst[0] > best[0])) { // && worst[3] >= increase && worst[4] >= multiplier) {
+        if (count >= 3 && worst && (!best || worst[0] > best[0]) && worst[0] >= threshold) {
             best = worst;
             if (DEV.boom)
                 LS('best=', ply, id, best);
+            player.boomed = best[0];
+            player.boom_ply = ply;
         }
     });
 
     if (!best && !force)
         return 1;
-    let type = (Abs(force || best) >= 0.1)? 'boom': 'moob';
+    let type = ((force && Abs(force) < 0.1) || best[3])? 'moob': 'boom';
 
     // 3) scaling:
     // - every: 1/60s for short effect, 1/20 for long ones
@@ -4245,16 +4244,10 @@ function check_boom(force) {
     // - volume: from 0.1 to 1
 
     // 4) effect if a boom was detected
-    if (!force) {
-        // main.boomed = best[0];
-        // boom_ply = ply;
-    }
     boom_effect(type, best, {
         every: 1/40,
         red_coeff: 0.25,
         volume: 1,
-    }, () => {
-
     });
     return 0;
 }
