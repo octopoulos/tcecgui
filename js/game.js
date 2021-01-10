@@ -4695,7 +4695,6 @@ function update_live_eval(section, data, id, force_ply) {
             LS(`ULE: ${section}`);
         update_live_chart(moves || [data], id + 2);
         check_missing_moves(ply, round);
-        check_explosion_boom(section);
     }
     return true;
 }
@@ -4792,7 +4791,7 @@ function update_player_eval(section, data, same_pv) {
         HTML(`.xshort`, short, mini);
         HTML(`.xeval`, format_eval(eval_), mini);
         if (data.nodes > 1)
-            SetDefault(player, 'evals', [])[cur_ply] = eval_;
+            SetDefault(player, 'evals', [])[ply] = eval_;
     }
 
     if (DEV.chart)
