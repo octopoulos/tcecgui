@@ -3501,6 +3501,9 @@ function update_move_pv(section, ply, move) {
             board.set_ply(ply);
         }
     }
+
+    if (eval_ != undefined)
+        SetDefault(player, 'evals', [])[ply] = eval_;
 }
 
 /**
@@ -3686,10 +3689,8 @@ function update_overview_moves(section, headers, moves, is_new) {
             LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
         main.set_last(result);
     }
-    else {
+    else
         main.set_last(main.last);
-        check_explosion_boom(section);
-    }
 
     // 4) materials
     // - only update if the ply is the current one
@@ -3701,6 +3702,8 @@ function update_overview_moves(section, headers, moves, is_new) {
             update_move_pv(section, ply2, move);
         }
         update_materials(move);
+        check_explosion_boom(section, -2, 1);
+        check_explosion_boom(section, -1, 3);
     }
 
     return finished;
@@ -4187,15 +4190,16 @@ function boom_sound(type, volume, intensities, callback) {
  * Check if we have an BOOM
  * - individual check for every player
  * - ignore kibitzers
+ * @param {number} offset ply offset
  * @param {number=} force for debugging
  * @returns {number[]} [0] on success
  */
-function check_boom(force) {
+function check_boom(offset, force) {
     // 1) gather all evals
     let best = [0, 0, 0, 0],
         main = xboards.live,
         players = main.players.slice(0, 2),
-        ply = main.moves.length,
+        ply = main.moves.length + offset,
         threshold = Y.boom_threshold;
 
     // 2) compare eval with previous eval for every engine
@@ -4325,9 +4329,7 @@ function check_explosion(force) {
 
     // check defuses
     let defuses = main.defuses,
-        explodes = main.explodes,
-        seens = main.seens;
-    seens.add(ply);
+        explodes = main.explodes;
 
     if (!best) {
         if (exploded) {
@@ -4355,7 +4357,7 @@ function check_explosion(force) {
 
     main.exploded = force? exploded: best;
     // don't explode if we just loaded the page
-    if (!force && seens.size < 2)
+    if (!force && main.seens.size < 2)
         return 5;
 
     boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
@@ -4371,16 +4373,31 @@ function check_explosion(force) {
 /**
  * Check explosion + boom
  * @param {string} section
+ * @param {number} offset ply offset
  * @param {number} mode &1:boom, &2:explosion
  * @returns {number} &1:boom, &2:explosion
  */
-function check_explosion_boom(section, mode=3) {
+function check_explosion_boom(section, offset, mode=3) {
     if (section != 'live')
         return 0;
-    if (xboards.live.moves.length < BOOM_MIN_PLY)
+    let main = xboards.live,
+        ply = main.moves.length,
+        seens = main.seens;
+    if (ply < BOOM_MIN_PLY)
         return 0;
 
-    if ((mode & 1) && !check_boom()[0])
+    // mark ply as seen?
+    if (offset) {
+        ply += offset;
+        if (ply >= 0) {
+            if (seens.has(ply))
+                return 0;
+            seens.add(ply);
+        }
+    }
+
+    // check boom + explosion
+    if ((mode & 1) && !check_boom(offset)[0])
         return 1;
     if ((mode & 2) && !check_explosion())
         return 2;
@@ -4808,7 +4825,9 @@ function update_player_eval(section, data, same_pv) {
         update_live_chart([data], id);
         check_missing_moves(ply, null, data.pos);
     }
-    check_explosion_boom(section);
+
+    // TODO: activate this later if the evals are stabilizing
+    // check_explosion_boom(section, 0);
     return true;
 }
 
@@ -5089,7 +5108,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'boom_test':
-        check_boom(10);
+        check_boom(0, 10);
         break;
     case 'copy_moves':
         copy_moves();
@@ -5149,7 +5168,7 @@ function change_setting_game(name, value) {
         }
         break;
     case 'moob_test':
-        check_boom(0.01);
+        check_boom(0, 0.01);
         break;
     case 'reactivate':
         xboards.live.exploded = 0;

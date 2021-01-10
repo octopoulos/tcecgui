@@ -7,14 +7,14 @@ expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp, Keys, Undefined} = require('./common.js'),
+let {Assign, FromTimestamp, IsArray, Keys, Undefined} = require('./common.js'),
     {DEV, load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        check_boom, check_explosion, copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads,
-        fix_header_opening, format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
-        parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials, update_pgn,
-        update_player_eval,
+        check_boom, check_explosion, check_explosion_boom, copy_pgn, create_boards, create_game_link,
+        current_archive_link, extract_threads, fix_header_opening, format_engine, format_fen, format_hhmmss,
+        format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, parse_time_control, tour_info,
+        update_live_eval, update_materials, update_pgn, update_player_eval,
     } = require('./game.js'),
     {get_fen_ply, xboards} = require('./global.js'),
     {create_chart_data} = require('./graph.js'),
@@ -43,6 +43,24 @@ load_defaults();
 Y.volume = 0;
 create_boards('text');
 create_chart_data();
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function init_players(ply, players, evals) {
+    evals.forEach((eval_, id) => {
+        let player = players[id];
+        Assign(player, {
+            boom_ply: -1,
+            boomed: 0,
+            eval: eval_[ply],
+            evals: [],
+            short: `P${id}`,
+        });
+        Keys(eval_).forEach(key => {
+            player.evals[key] = eval_[key];
+        });
+    });
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -475,24 +493,12 @@ create_chart_data();
         DEV.boom = (id >= 30)? 3: 0;
         let main = xboards.live,
             players = main.players;
-        evals.forEach((eval_, id) => {
-            let player = players[id];
-            Assign(player, {
-                boom_ply: -1,
-                boomed: 0,
-                eval: eval_[ply],
-                evals: [],
-                short: `P${id}`,
-            });
-            Keys(eval_).forEach(key => {
-                player.evals[key] = eval_[key];
-            });
-        });
+        init_players(ply, players, evals);
         main.moves.length = ply;
         Assign(Y, y);
 
         let player = players[0],
-            result = check_boom();
+            result = check_boom(0);
         expect(result[0]).toEqual(answer);
         expect(player.boomed).toBeCloseTo(answer_boomed, 3);
         if (player.boomed)
@@ -511,7 +517,7 @@ create_chart_data();
     [0, {explosion_threshold: 2.3, x: 'archive'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 2, 0],
     [0, {explosion_buildup: 1, x: 'live'}, {exploded: 0}, [5, 3, 0.5, 0.5], [], 2, 0],
     [0, {}, {exploded: 0, seens: new Set()}, [5, 3, 2.5, 0.5], [], 5, 3.5],
-    [0, {}, {exploded: 0, seens: new Set([-1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
+    [0, {}, {exploded: 0, seens: new Set([-2, -1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
     [0, {}, {}, [15, 5, 0.5, 0.5], [], 2, 3.5],
     [0, {}, {}, [-8, -3, -5, -0.5], [], 0, -5.333],
     [0, {}, {}, [-1, 1, -1, -0.5], [], 2, -5.333],
@@ -556,6 +562,36 @@ create_chart_data();
 
         expect(check_explosion()).toEqual(answer);
         expect(main.exploded).toBeCloseTo(answer_boomed, 3);
+    });
+});
+
+// check_explosion_boom
+[
+    [1, 11, {boom_threshold: 0.45, x: 'archive'}, 0, 3, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 0, 0],
+    [1, 11, {x: 'live'}, 0, 3, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 1, 0.4757],
+    [0, 11, {}, 0, 3, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 1, 0.4757],
+    [0, 11, {}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 0, 0],
+    [0, 12, {}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 1, 0.4757],
+    [0, 12, {}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 8.9}], 0, 0],
+    [1, 12, {}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 8.9}], 1, 3.780],
+    [0, 13, {}, -2, 3, [{8: 3, 9: 3, 10: 3, 11: 8.9}], 0, 0],
+    [0, 13, {}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 8.9, 12: 14.5}], 1, 1.4248],
+].forEach(([reset, ply, y, offset, mode, evals, answer, answer_boomed], id) => {
+    test(`check_explosion_boom:${id}`, () => {
+        let main = xboards.live,
+            players = main.players;
+        init_players(ply, players, evals);
+        main.moves.length = ply;
+        Assign(Y, y);
+        if (reset)
+            main.seens.clear();
+
+        let player = players[0],
+            result = check_explosion_boom(Y.x, offset, mode);
+        if (IsArray(result))
+            result = result[0];
+        expect(result).toEqual(answer);
+        expect(player.boomed).toBeCloseTo(answer_boomed, 3);
     });
 });
 
