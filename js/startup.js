@@ -2004,7 +2004,7 @@ function prepare_settings() {
             boom_visual: [boom_visuals, 0],
             boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             moob_test: '1',
-            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 'off'],
+            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 0],
             moob_visual: [ON_OFF, 0],
             moob_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             explosion_test: '1',
