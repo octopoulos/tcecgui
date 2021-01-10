@@ -309,7 +309,7 @@ function reset_old_settings() {
         Keys(DEFAULTS).filter(key => key.slice(0, 6) == 'sound_').map(key => {
             keys.push(key);
         });
-        keys.push('boom_threshold boom_volume');
+        keys.push('boom_volume');
     }
     if (version < '20210109e')
         keys.push('boom_threshold');
