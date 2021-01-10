@@ -1,6 +1,6 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-10
 //
 /*
 globals
@@ -136,6 +136,8 @@ global.xboards = {
     ['#-18', -128],
     ['M19', 128],
     ['-M19', -128],
+    ['book', 0],
+    ['-', 0],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
         expect(clamp_eval(eval_)).toEqual(answer);

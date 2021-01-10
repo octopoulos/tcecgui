@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-10
 //
 /*
 globals
@@ -21,7 +21,11 @@ if (typeof global != 'undefined') {
 
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
-    ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'];
+    ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
+    ZERO_EVALS = {
+        '-': 1,
+        book: 1,
+    };
 
 let cached_percents = {},
     chart_data = {},
@@ -145,7 +149,9 @@ function clamp_eval(eval_)
         return eval_;
     }
 
-    if (eval_ && eval_.includes('-'))
+    if (ZERO_EVALS[eval_])
+        eval_ = 0;
+    else if (eval_ && eval_.includes('-'))
         eval_ = -EVAL_CLAMP;
     else if (eval_ != undefined)
         eval_ = EVAL_CLAMP;

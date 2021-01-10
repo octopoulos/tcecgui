@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-10
 //
 // Game specific code:
 // - control the board, moves
@@ -5205,7 +5205,12 @@ function change_setting_game(name, value) {
  */
 function changed_hash() {
     if (DEV.global)
-        window.xboards = xboards;
+        Assign(window, {
+            DEV: DEV,
+            LS: LS,
+            xboards: xboards,
+            Y: Y,
+        });
 
     let section = Y.x;
     show_tables(section, tour_info[section].cup);
