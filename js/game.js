@@ -5051,7 +5051,7 @@ function change_setting_game(name, value) {
             }
         }
         break;
-    case 'boom_enabled':
+    case 'boom_effect':
         if (!value) {
             save_option('boom_sound', 0);
             save_option('boom_visual', 0);
@@ -5069,7 +5069,7 @@ function change_setting_game(name, value) {
     case 'download_pgn':
         copy_pgn(null, true);
         break;
-    case 'explosion_enabled':
+    case 'explosion_effect':
         if (!value) {
             save_option('explosion_sound', 0);
             save_option('explosion_visual', 0);
@@ -5111,7 +5111,7 @@ function change_setting_game(name, value) {
     case 'material_color':
         update_materials(main.moves[main.ply]);
         break;
-    case 'moob_enabled':
+    case 'moob_effect':
         if (!value) {
             save_option('moob_sound', 0);
             save_option('moob_visual', 0);

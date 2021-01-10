@@ -439,8 +439,8 @@ create_chart_data();
 // check_boom
 [
     [12, {boom_threshold: 0.5}, {}, [{9: 3, 10: 3, 11: 5, 12: 5.5}], [], 1, 0],
-    // [11, {}, {}, [{10: 3, 11: 5}], [], 1, 0],
-    // [11, {}, {}, [{8: 3, 9: 3, 10: 3, 11: 5}], [], 0, 3.333],
+    [11, {}, {}, [{10: 3, 11: 5}], [], 1, 0],
+    [11, {}, {}, [{8: 3, 9: 3, 10: 3, 11: 5}], [], 0, 3.333],
     // [13, {}, {}, [{12: 1.11, 13: 2.17}], [], 1, 3.333],
     // [13, {}, {}, [{11: 1, 12: 1.11, 13: 2.17}], [], 1, 3.333],
     // [13, {}, {}, [{10: 1, 11: 1, 12: 1.11, 13: 2.17}], [], 0, 2.072],
@@ -472,13 +472,15 @@ create_chart_data();
     // [46, {}, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -5.0}], [], 0, 95],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_boom:${id}`, () => {
-        DEV.boom = (id >= 30)? 1: 0;
+        DEV.boom = (id >= 0)? 3: 0;
 
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
             let player = players[id];
             Assign(player, {
+                boom_ply: -1,
+                boomed: 0,
                 eval: eval_[ply],
                 evals: [],
                 short: Undefined(shorts[id], `P${id}`),
@@ -492,7 +494,10 @@ create_chart_data();
         Assign(Y, y);
 
         expect(check_boom()).toEqual(answer);
-        expect(main.boomed).toBeCloseTo(answer_boomed, 3);
+        let player = players[0];
+        expect(player.boomed).toBeCloseTo(answer_boomed, 3);
+        if (player.boomed)
+            expect(player.boom_ply).toEqual(ply);
     });
 });
 
