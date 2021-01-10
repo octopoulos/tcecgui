@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-08
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -106,6 +106,7 @@ let AD_STYLES = {},
     resume_time = Now(),
     SCALES = [
         '4=eval',
+        '16=boom',
         '0=linear',
         '1=logarithmic',
         '10=split auto',
@@ -157,7 +158,7 @@ function adjust_popups() {
 
 /**
  * Use an audio set
- * @param {string} set custom, grand bamboo
+ * @param {string} set custom, bamboo
  */
 function audio_set(set) {
     let audio_settings = X_SETTINGS.audio,
@@ -311,6 +312,7 @@ function change_setting_special(name, value, close) {
     case 'game_level':
         configure_string(value);
         break;
+    case 'game_new_FEN':
     case 'game_new_game':
         pva.frc = Y.game_960;
         pva.new_game();
@@ -731,9 +733,6 @@ function init_globals() {
     }
     load_google_analytics();
 
-    if (Y.log_auto_start || Visible(Id('table-log')))
-        listen_log();
-
     // font size detector
     add_timeout('font', () => {
         let font_height = SafeId('text').offsetHeight;
@@ -1022,10 +1021,11 @@ function populate_areas() {
 
 /**
  * Quick setup when the site is loaded for the first time
+ * - except if #seen=1, or if in the archive
  */
 function quick_setup() {
     let old = Y.new_version;
-    if (old == undefined || old >= '20210102')
+    if (old == undefined || old >= '20210102' || Y.seen || Y.x == 'archive')
         return;
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
@@ -1785,8 +1785,9 @@ function prepare_settings() {
         live_log: 'all',
         order: 'left|center|right',         // main panes order
         round: '',                          // archive link + live round
-        season: '',                         // archive link
         scales: {},
+        season: '',                         // archive link
+        seen: 0,                            // show quick setup?
         stage: '',                          // archive link
         stream: 0,
         table_tab: {
@@ -1814,6 +1815,7 @@ function prepare_settings() {
         e: 'eval',                  // live eval
         E: 'engine',
         f: 'fen',                   // parse_fen
+        F: 'effect',
         G: 'global',
         h: 'hold',                  // hold button
         i: 'input',                 // gamepad input
@@ -1832,6 +1834,7 @@ function prepare_settings() {
         U: 'ui',                    // UI events
         w: 'wasm',
         W: 'worker',                // web worker
+        X: 'explode',
         y: 'ply',
     });
 
@@ -1848,7 +1851,8 @@ function prepare_settings() {
         season: 1,
         stage: 1,
         stream: 1,
-        twitch_video: 1,
+        twitch_chat: 2,
+        twitch_video: 2,
         version: 1,
         x: 1,
     });
@@ -1862,19 +1866,13 @@ function prepare_settings() {
         options: 1,
     });
 
-    Assign(TITLES, {
-        'D/SD': '{Depth} / {Selective depth}',
-        'Mob': 'Mobility',
-        'PV': 'Principal variation',
-        'PV(A)': '{PV}: {analysis}',
-    });
-
-    let bamboo = 'grand bamboo',
+    let bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
+        boom_sounds = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
+        boom_visuals = [['off', 'all', 'color', 'shake'], 'all'],
         cores = navigator.hardwareConcurrency,
-        old = 'old - move.mp3',
-        shortcuts = [...['off'], ...Keys(TABLES)],
-        sound_boom = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'];
+        old = 'move',
+        shortcuts = [...['off'], ...Keys(TABLES)];
 
     merge_settings({
         // new column after 10 items
@@ -1892,17 +1890,16 @@ function prepare_settings() {
             audio_live_archive: [ON_OFF, 0],
             audio_moves: [['none', 'all', 'last'], 'all'],
             audio_pva: [ON_OFF, 1],
-            audio_set: [['custom', bamboo, 'kan', 'old'], 'custom'],
+            audio_set: [['custom', bamboo, 'kan'], 'custom'],
             capture_delay: option_number(-200, -1000, 1000),
-            sound_boom: sound_boom,
             sound_capture: [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             sound_check: [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             sound_checkmate: [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
             sound_draw: [['off', 'draw', 'win'], 'draw'],
             sound_move: [['off', `${bamboo2}move`, 'kan - move', old], `${bamboo2}move`],
-            sound_move_pawn: [['off', `${bamboo2}move pawn`, 'kan - move', old], `${bamboo2}move pawn`],
+            sound_move_pawn: [['off', `${bamboo2}pawn`, 'kan - move', old], `${bamboo2}pawn`],
             sound_win: [['off', 'draw', 'win'], 'win'],
-            volume: option_number(7, 0, 15, 0.5),
+            volume: option_number(10, 0, 20, 0.5),
         },
         video: {
             background_color: [{type: 'color'}, '#000000'],
@@ -1997,17 +1994,24 @@ function prepare_settings() {
             turn_opacity: option_number(0, 0, 1, 0.01),
         },
         boom: {
-            _prefix: 'boom_',
             boom_test: '1',
-            boom_consecutive: option_number(2, 0, 10, 1, {}, 'need X consecutive booms to trigger it'),
-            boom_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            boom_start: option_number(20, 0, 300, 1, {}, 'boom can only happen after this ply'),
-            boom_threshold:
-                option_number(2.3, 0, 10, 0.1, {}, 'boom if a majority of engines + kibitzers above threshold'),
-            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(7, 0, 20, 0.5),
-            sound_boom: sound_boom,
-            boom_reactivate: '1',
+            boom_sound: boom_sounds,
+            boom_threshold: option_number(0.45, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
+            boom_visual: boom_visuals,
+            boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
+            moob_test: '1',
+            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 'random'],
+            moob_visual: [ON_OFF, 1],
+            moob_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
+            explosion_test: '1',
+            explosion_buildup: option_number(2, 0, 10, 1, {}, 'need to exceed the threshold for X plies'),
+            explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
+            explosion_sound: boom_sounds,
+            explosion_threshold:
+                option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
+            explosion_visual: boom_visuals,
+            explosion_volume: option_number(5, 0, 20, 0.5),
+            reactivate: '1',
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
@@ -2050,6 +2054,7 @@ function prepare_settings() {
             game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
             game_every: option_number(200, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
+            game_new_FEN: [{type: 'text'}, '', 'FEN to be used for a new game, empty for default'],
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             game_options_white: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
@@ -2194,10 +2199,12 @@ function prepare_settings() {
         quick_setup: {
             _pop: true,
             _title: 'Quick setup',
-            boom_visual: [['off', 'all', 'color', 'shake'], 'all'],
-            boom_volume: option_number(7, 0, 20, 0.5, {}, 'boom volume, 10: 100%'),
+            boom_effect: [ON_OFF, 1],
+            moob_effect: [ON_OFF, 1],
+            explosion_effect: [ON_OFF, 1],
+            language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],
-            volume: option_number(7, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds including boom'),
+            volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds'),
         },
     });
 
@@ -2293,7 +2300,6 @@ function startup() {
     start_game();
     init_graph();
     init_hash();
-    quick_setup();
 
     set_global_events();
     set_engine_events();
@@ -2305,6 +2311,7 @@ function startup() {
     init_sockets();
     init_globals();
     init_customs(true);
+    quick_setup();
     resize();
 }
 

@@ -1,18 +1,26 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-10-30
+// @version 2021-01-08
 //
 // all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Class, create_cup, CreateNode,
-DEV, From, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
-LOCALHOST, LS, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval, update_pgn,
-update_player_eval, update_table, update_twitch, Y
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
+LOCALHOST, LS, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
+update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
+
+// <<
+if (typeof global != 'undefined') {
+    ['common', 'engine'].forEach(key => {
+        Object.assign(global, require(`./${key}.js`));
+    });
+}
+// >>
 
 // modify those values in config.js
 let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com/',
@@ -23,6 +31,7 @@ let prev_room = 0,
         archive: {},
         live: {},
     },
+    TIMEOUT_log = 500,
     virtual_resize;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,12 +147,13 @@ function insert_log(html) {
 
 /**
  * Listen to the log (or not)
+ * @param {boolean=} force
  */
-function listen_log() {
+function listen_log(force) {
     if (!socket)
         return;
     let new_room = Y.live_log;
-    if (Y.log_auto_start && new_room == 0) {
+    if (!force && Y.log_auto_start && new_room == 0) {
         new_room = 'all';
         Y.live_log = 'all';
     }
@@ -155,7 +165,7 @@ function listen_log() {
         prev_room = 0;
     }
     // 2) enter the next room
-    if (new_room && prev_room != new_room) {
+    if (force || (new_room && prev_room != new_room)) {
         prev_room = new_room;
         socket.emit('room', `room${prev_room}`);
         insert_log(`<div class="win">entered: ${prev_room}</div>`);
@@ -175,6 +185,21 @@ function log_socket(name, data, cache) {
     }
     if (cache)
         socket_data[Y.x][name] = data;
+}
+
+/**
+ * Hack because of socket.io
+ * - won't be needed anymore when socket.io is gone
+ */
+function reconnect_log() {
+    if (!Y.log_auto_start)
+        return;
+    for (let id = 0; id < 2; id ++) {
+        add_timeout(`log${id}`, () => {
+            Y.live_log = id? 'all': 0;
+            listen_log();
+        }, TIMEOUT_log * (id + 1) + RandomInt(100));
+    }
 }
 
 /**
@@ -249,3 +274,12 @@ function update_twitch(dark, chat_url, only_resize) {
     S('#hide-video, #twitch-vid', src);
     S(Id('show-video'), !src);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// <<
+if (typeof exports != 'undefined')
+    Assign(exports, {
+        reconnect_log: reconnect_log,
+    });
+// >>

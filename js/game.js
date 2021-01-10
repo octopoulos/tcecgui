@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-09
 //
 // Game specific code:
 // - control the board, moves
@@ -11,28 +11,29 @@
 // included after: common, engine, global, 3d, xboard
 /*
 globals
-_, A, Abs, add_timeout, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q, cannot_click, Ceil,
-change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, context_areas, context_target:true,
-controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
-format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
+cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, context_areas,
+context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode,
+CreateSVG, cube:true,
+DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
+Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
-Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
-resize_3d, resize_text, Resource, restore_history, Round,
-S, SafeId, save_option, save_storage, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show, Sign,
-slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
+Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, reconnect_log, redraw_eval_charts, require,
+reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
+S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
+Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
-WB_TITLE, window, XBoard, xboards, Y
+WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
-    ['common', 'engine', 'global', 'graph', 'xboard'].forEach(key => {
+    ['common', 'engine', 'global', 'graph', 'network', 'xboard'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
 }
@@ -127,22 +128,29 @@ let ANALYSIS_URLS = {
         }
     },
     BOOM_COLORS = {
+        1: 1,
         all: 1,
         color: 1,
     },
     BOOM_ELEMENTS = '#adblock, #banner, #body2, #footer, #header, #modal2, #twitch2',
     BOOM_ELEMENTS2 = `${BOOM_ELEMENTS}, #body`,
     boom_info = {},
-    // shake_start, shake_duration, red_start, red_duration, magnitude, decay
+    BOOM_MIN_PLY = 8,
+    // intensity, shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
-        boom: [0, 3800, 120, 1500, 11, 0.93],
-        boom2: [0, 4800, 120, 2400, 15, 0.94],
-        boom3: [0, 5200, 120, 2400, 12, 0.95],
-        boom4: [500, 6000, 620, 2200, 15, 0.95],
-        boom5: [0, 7800, 120, 3000, 8, 0.97],
-        boom6: [5300, 7400, 5420, 2200, 15, 0.96],
+        _: [2, 0, 2000, 100, 2000, 3, 0.96],
+        boom: [1, 0, 3800, 100, 1500, 11, 0.93],
+        boom2: [3, 0, 4800, 100, 2400, 15, 0.94],
+        boom3: [3, 0, 4900, 100, 2400, 12, 0.945],
+        boom4: [5, 500, 6000, 600, 2200, 15, 0.95],
+        boom5: [4, 0, 7800, 100, 3000, 8, 0.97],
+        boom6: [10, 5450, 6000, 5550, 2200, 15, 0.95],
     },
-    BOOM_RED = 'background-color:rgba(255,0,0,0.9)',
+    BOOM_REDS = {
+        boom: 'background-color:rgba(255,0,0,{ALPHA})',
+        moob: 'background-color:rgba(0,0,255,{ALPHA})',
+        explosion: 'background-color:rgba(255,0,0,0.9)',
+    },
     BOOM_SHAKES = {
         all: 1,
         shake: 1,
@@ -204,6 +212,7 @@ let ANALYSIS_URLS = {
         37: 'prev',
         39: 'next',
     },
+    last_sound,
     LIVE_TABLES = [
         ['#table-live0', '#box-live0 .status'],
         ['#table-live1', '#box-live1 .status'],
@@ -313,6 +322,7 @@ let ANALYSIS_URLS = {
         1: 'win',
         '=': 'draw',
     },
+    shake_animation,
     table_data = {
         archive: {},
         live: {},
@@ -323,19 +333,19 @@ let ANALYSIS_URLS = {
     TABLE_WB = ' <hsub>[{W/B}]</hsub>',
     TABLES = {
         crash: 'gameno={Game}#|White|Black|Reason|decision=Final decision|action=Action taken|Result|Log',
-        cross: `Rank|Engine|Points${TABLE_DE}`,
+        cross: `Rank|Engine|{Points}${TABLE_DE}`,
         event: 'Round|Winner|Points|runner=Runner-up|# {Games}|Score',
         h2h:
-            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening`
+            `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening`
             + '|Termination|ECO|Final FEN|Start',
         overview: 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
         sched:
-            '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=rMobility|Moves|Duration|Opening'
+            '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening'
             + '|Termination|ECO|Final FEN|Start',
         season: 'Season|Download',
         stand:
-            `Rank|Engine|Games|Points${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}`
-            + `|rmobility_score=rMobility${TABLE_DIFF}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
+            `Rank|Engine|Games|{Points}${TABLE_DE}|%|{Wins}${TABLE_WB}|{Losses}${TABLE_WB}|{Draws}${TABLE_WB}`
+            + `|rmobility_score={r-Mobility}${TABLE_DIFF}|Crashes|SB|Elo|{Diff}${TABLE_LIVE}`,
         winner: 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
@@ -356,12 +366,16 @@ let ANALYSIS_URLS = {
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
-    TIMEOUT_shake = 100,
     TITLES = {
         50: 'Fifty-move rule',
+        'D/SD': '{Depth} / {Selective depth}',
         ECO: 'Encyclopaedia of Chess Openings',
+        Eval: 'Evaluation',
         H2H: 'Head to head',
+        Mob: 'Mobility',
         points: 'points + direct encounters',
+        PV: 'Principal variation',
+        'PV(A)': '{PV}: {analysis}',
         rmobility_result: 'r-Mobility result',
         rmobility_score: 'r-Mobility score',
         SB: 'Sonneborn–Berger',
@@ -963,7 +977,8 @@ function analyse_crosstable(section, data) {
         orders = data.Order,
         abbrevs = orders.map(name => dicos[name].Abbreviation),
         stand_rows = [],
-        titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)})));
+        titles = Assign({}, ...orders.map(name => ({[dicos[name].Abbreviation]: get_short_name(name)}))),
+        wrap_cross = get_wrap('cross');
 
     // 1) analyse all data => create rows for both tables
     for (let name of orders) {
@@ -979,7 +994,7 @@ function analyse_crosstable(section, data) {
     }
 
     // keep a SQUARE shape, but also multiple of 2
-    let max_column = Max(2, Ceil(Sqrt(max_game)));
+    let max_column = wrap_cross? Max(2, Ceil(Sqrt(max_game))): 0;
     max_column += (max_column & 1);
 
     for (let name of orders) {
@@ -1333,8 +1348,12 @@ function create_table_columns(columns, widths, no_translates=[], titles={}) {
             title = titles[value] || TITLES[value] || titles[field] || TITLES[field],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
-        title = title? ` title="${title}"`: '';
-        return `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${translate}${title}>${translate? '': value}</th>`;
+        title = title? ` data-t="${title}" data-t2="title"`: '';
+        return [
+            `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${title}>`,
+                `<i${translate}>${translate? '': value}</i>`,
+            '</th>',
+        ].join('');
     }).join('');
 }
 
@@ -1529,6 +1548,21 @@ function filter_table_rows(parent, text, force) {
 }
 
 /**
+ * Get the text wrap for a table + modify body
+ * @param {string} name
+ * @param {Node=} body table body
+ * @returns {boolean}
+ */
+function get_wrap(name, body) {
+    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
+    if (wrap == 'auto')
+        wrap = Y.wrap;
+    if (body)
+        Style(body, 'white-space:nowrap', !wrap);
+    return wrap;
+}
+
+/**
  * Set the games filter
  * @param {string} text
  */
@@ -1609,12 +1643,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     if (!table)
         return;
-
-    // wrap text?
-    let wrap = Undefined(Y[`wrap_${name}`], Y.wrap);
-    if (wrap == 'auto')
-        wrap = Y.wrap;
-    Style(body, 'white-space:nowrap', !wrap);
 
     // reset or append?
     // - except if rows is null
@@ -1755,7 +1783,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_winner = (name == 'winner'),
         nodes = [],
         required = COLUMNS_REQUIRED[name] || [],
-        tour_url = tour_info[section].url;
+        tour_url = tour_info[section].url,
+        wrap = get_wrap(name, body);
 
     // hide columns?
     for (let column of required) {
@@ -1805,7 +1834,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'win';
                 else if (row.result == '1-0')
                     class_ = 'loss';
-                value = format_engine(value);
+                value = format_engine(value, wrap);
                 break;
             case 'download':
             case 'pgn':
@@ -1819,7 +1848,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     value = [
                         '<hori>',
                             `<img class="left-image" src="image/engine/${get_short_name(value)}.png">`,
-                            `<div>${format_engine(value, true)}</div>`,
+                            `<div>${format_engine(value, wrap)}</div>`,
                         '</hori>',
                     ].join('');
                 }
@@ -1898,7 +1927,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'win';
                 else if (row.result == '0-1')
                     class_ = 'loss';
-                value = format_engine(value);
+                value = format_engine(value, wrap);
                 break;
             default:
                 if (IsString(value)) {
@@ -1910,7 +1939,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             }
 
             if (class_)
-                value = `<i class="${class_}">${value}</i>`;
+                value = `<div class="${class_}">${value}</div>`;
             if (td_class)
                 td_class = ` class="${td_class}"`;
 
@@ -3658,7 +3687,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     }
     else {
         main.set_last(main.last);
-        check_boom(section);
+        check_explosion_boom(section);
     }
 
     // 4) materials
@@ -3790,13 +3819,21 @@ function update_pgn(section, data, extras, reset_moves) {
         main.event = headers.Event;
         main.round = headers.Round;
 
-        update_move_info(section, 0, {});
-        update_move_info(section, 1, {});
-        players[0].info = {};
-        players[1].info = {};
+        for (let id in [0, 1]) {
+            update_move_info(section, id, {});
+            Assign(players[id], {
+                boom_ply: -1,
+                boomed: 0,
+                evals: [],
+                info: {},
+            });
+        }
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
+
+        // hack because of socket.io
+        reconnect_log();
     }
     // can happen after resume
     else if (reset_moves) {
@@ -4008,19 +4045,17 @@ function analyse_log(line) {
     // - don't update if the new PV is a subset of the previous pv
     if (!Y.log_pv)
         return;
-    let no_pv,
-        ply = main.moves.length;
 
+    let ply = main.moves.length;
     for (let key of Keys(pvs)) {
-        let prev_pv = pvs[key];
-        pos = prev_pv.indexOf(pv);
+        let memory = pvs[key];
+        pos = memory.indexOf(pv);
         if (pos == 0) {
-            no_pv = true;
-            info.pv = prev_pv;
+            info.pv = memory;
             break;
         }
         else if (pos > 0 && prev_ply >= 0 && ply > prev_ply) {
-            let items = prev_pv.split(' '),
+            let items = memory.split(' '),
                 pv2 = items.slice(ply - prev_ply).join(' ');
             if (pv2.indexOf(pv) == 0) {
                 info.pv = pv2;
@@ -4030,6 +4065,7 @@ function analyse_log(line) {
     }
 
     let info_pv = info.pv || '',
+        no_pv = (info_pv == prev_pv),
         splits = info_pv.split(' '),
         first = splits[0];
     if (!no_pv) {
@@ -4058,25 +4094,212 @@ function analyse_log(line) {
 }
 
 /**
- * Check if we have a BOOM
- * @param {string} section
- * @param {number=} force for debugging
- * - need to have at least 2 engines agree, including a kibitzer
- * @returns {boolean}
+ * Create a boom effect: sound + color + shake
+ * @param {string} type
+ * @param {number} volume
+ * @param {[number, number]} intensities
+ * @param {*} info
+ * @param {Object} params
+ * @param {function=} callback
  */
-function check_boom(section, force) {
-    // 1) check threshold
-    if (force)
-        section = 'live';
-    if (section != 'live')
-        return false;
-    let threshold = Y.boom_threshold;
-    if (threshold < 0.1)
-        return false;
+function boom_effect(type, info, volume, intensities, params, callback) {
+    let main = xboards.live;
 
-    // 2) gather score of all engines
+    boom_sound(type, volume, intensities, sound => {
+        let boom_param = BOOM_PARAMS[sound] || BOOM_PARAMS._,
+            [_, shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
+        if (DEV.effect)
+            LS(`${type}: ply=${main.moves.length} : ${sound} : ${boom_param} : ${info}`);
+
+        // 5) visual stuff
+        let body = Id('body2'),
+            red = BOOM_REDS[type].replace('{ALPHA}', (0.4 * volume).toFixed(3)),
+            visual = Y.explosion_visual;
+
+        if (shake_animation == null)
+            boom_info.transform = body? body.style.transform: '';
+
+        // color + shake
+        if (BOOM_COLORS[visual]) {
+            Style(BOOM_ELEMENTS2, red, false);
+            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
+        }
+        if (BOOM_SHAKES[visual]) {
+            add_timeout('shake_start', () => {
+                let now = Now(true);
+                Assign(boom_info, {
+                    decay: decay,
+                    end: now + shake_duration,
+                    every: 0.1,
+                    last: now,
+                    shake: magnitude,
+                    start: now,
+                });
+                Assign(boom_info, params);
+                if (shake_animation == null)
+                    shake_animation = AnimationFrame(shake_screen);
+            }, shake_start);
+        }
+
+        // ending
+        add_timeout('red_end', () => {
+            Style(BOOM_ELEMENTS2, red, false);
+        }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
+
+        if (callback)
+            callback();
+    });
+}
+
+/**
+ * Play a BOOM or explosion sound
+ * @param {string} type
+ * @param {number} volume volume multiplier, from 0 to 1
+ * @param {[number, number]} intensities
+ * @param {function} callback called when the sound is playing
+ */
+function boom_sound(type, volume, intensities, callback) {
+    let key = `${type}_sound`,
+        sounds = X_SETTINGS.boom[key][0],
+        sound = Y[key];
+
+    // random => don't play last played sound + filter by intensity
+    if (sound == 'random') {
+        let availables = sounds.slice(2).filter(sound => {
+            if (sound == last_sound)
+                return false;
+            let params = BOOM_PARAMS[sound] || BOOM_PARAMS._,
+                intensity = params[0];
+            return (intensity >= intensities[0] && intensity <= intensities[1]);
+        });
+        sound = availables[RandomInt(0, availables.length)];
+    }
+
+    last_sound = sound;
+    play_sound(audiobox, sound, {loaded: () => {
+        if (DEV.effect)
+            LS(`sound ${sound} loaded, playing now ...`);
+        play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10 * volume});
+        callback(sound);
+    }});
+}
+
+/**
+ * Check if we have an BOOM
+ * - individual check for every player
+ * - ignore kibitzers
+ * @param {number=} force for debugging
+ * @returns {number[]} [0] on success
+ */
+function check_boom(force) {
+    // 1) gather all evals
+    let best = [0, 0, 0, 0],
+        main = xboards.live,
+        players = main.players.slice(0, 2),
+        ply = main.moves.length,
+        threshold = Y.boom_threshold;
+
+    // 2) compare eval with previous eval for every engine
+    // !! [1.83, 1.45, -1.54, empty × 2, 2.05] => no boom, just a glitch => check X moves back
+    players.forEach((player, id) => {
+        // already boomed => skip
+        if (player.boom_ply == ply)
+            return;
+
+        // get the eval
+        let evals = player.evals;
+        if (!evals)
+            return;
+        let eval_ = evals[ply];
+        if (eval_ == undefined)
+            return;
+        eval_ = scale_boom(clamp_eval(eval_));
+
+        // check diff + ratio with X previous evals
+        let prev_eval,
+            count = 0,
+            worst = null;
+        for (let prev = ply - 1; prev >= BOOM_MIN_PLY - 1 && prev >= ply - 10; prev --) {
+            prev_eval = evals[prev];
+            if (prev_eval == undefined)
+                continue;
+            prev_eval = scale_boom(clamp_eval(prev_eval));
+
+            let diff = Abs(eval_ - prev_eval);
+            if (!worst || diff < worst[0]) {
+                worst = [diff, prev_eval, eval_, Abs(eval_) < Abs(prev_eval), id];
+                if (DEV.boom2)
+                    LS('worst=', ply, id, worst);
+            }
+
+            count ++;
+            if (count >= 3)
+                break;
+        }
+
+        if (count >= 3 && worst && worst[0] > best[0] && worst[0] >= threshold) {
+            best = worst;
+            if (DEV.boom)
+                LS('best=', ply, id, best);
+            Assign(player, {
+                boomed: best[3]? -best[0]: best[0],
+                boom_ply: ply,
+            });
+        }
+    });
+
+    if (!force && best[0] < threshold)
+        return [1];
+    let is_moob = ((force && Abs(force) < 0.1) || best[3]),
+        type = is_moob? 'moob': 'boom';
+
+    // 3) scaling with intensity:
+    // - every    : 0.4 => 1/60, 3+ => 1/20
+    // - red_coeff: 0.4 =>  0.1, 3+ => 0.75
+    // - volume   : 0.4 =>  0.1, 3+ => 1
+    let every = 1/40,
+        intensities = [1, 10],
+        red_coeff = 0.4,
+        volume = 1;
+    if (!force) {
+        let delta = best[0] - threshold,
+            scale = 1 - Exp(-delta * 0.5);
+        every = 1/60 * (1 - scale) + 1/20 * scale;
+        red_coeff = 0.1 * (1 - scale) + 0.75 * scale;
+        volume = 0.1 * (1 - scale) + 1 * scale;
+
+        // filter too quiet/loud sounds
+        if (scale > 0.4)
+            intensities[0] = 2;
+        if (scale < 0.7)
+            intensities[1] = 9;
+    }
+
+    // 4) effect if a boom was detected
+    boom_effect(type, best, volume, intensities, {
+        every: every,
+        red_coeff: red_coeff,
+    });
+    if (DEV.boom4)
+        LS([every, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
+    return [0, every, red_coeff, volume, intensities];
+}
+
+/**
+ * Check if we have an explosion
+ * - need a majority of engines to agree
+ * - include kibitzers
+ * @param {number=} force for debugging
+ * @returns {number} 0 on success
+ */
+function check_explosion(force) {
+    let threshold = Y.explosion_threshold;
+    if (threshold < 0.1)
+        return 1;
+
+    // 1) gather score of all engines
     let best = 0,
-        main = xboards[section],
+        main = xboards.live,
         players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
         ply = main.moves.length,
         two = new Set([players[0][1], players[1][1]]);
@@ -4087,8 +4310,8 @@ function check_boom(section, force) {
             players[id] = null;
     players = players.filter(player => player && player[1]);
 
-    // 3) engines must agree
-    let boomed = main.boomed,
+    // 2) engines must agree
+    let exploded = main.exploded,
         scores = players.map(player => clamp_eval(player[0])),
         scores1 = scores.filter(score => score >= threshold),
         scores2 = scores.filter(score => score <= -threshold),
@@ -4101,83 +4324,68 @@ function check_boom(section, force) {
     else if (scores2.length > min_vote && scores[0] < 0 && scores[1] < 0)
         best = scores2.reduce((a, b) => a + b) / scores2.length;
 
-    // check moobs
-    let booms = main.booms,
-        moobs = main.moobs;
+    // check defuses
+    let defuses = main.defuses,
+        explodes = main.explodes,
+        seens = main.seens;
+    seens.add(ply);
+
     if (!best) {
-        if (boomed) {
-            moobs.add(ply);
-            if (moobs.size >= Y.boom_ply_reset)
-                main.boomed = 0;
-            if (DEV.boom2)
-                LS(`moobed: ${moobs.size} : ${[...moobs].join(' ')} : ${scores} => ${main.boomed}`);
+        if (exploded) {
+            defuses.add(ply);
+            if (defuses.size >= Y.explosion_ply_reset)
+                main.exploded = 0;
+            if (DEV.explode)
+                LS(`defused: ${defuses.size} : ${[...defuses].join(' ')} : ${scores} => ${main.exploded}`);
         }
-        booms.clear();
-        return false;
+        explodes.clear();
+        return 2;
     }
 
-    // 4) play sound, might fail if settings disable it
-    if (ply < Y.boom_start && !force)
-        return false;
-
+    // 3) play sound, might fail if settings disable it
     // check booms
-    booms.add(ply);
-    if (DEV.boom2)
-        LS(`boomed: ${booms.size} : ${[...booms].join(' ')} : ${scores} => ${main.boomed} ~ ${best}`);
-    moobs.clear();
-    if (booms.size < Y.boom_consecutive && !force)
-        return false;
+    explodes.add(ply);
+    if (DEV.explode)
+        LS(`exploded: ${explodes.size} : ${[...explodes].join(' ')} : ${scores} => ${main.exploded} ~ ${best}`);
+    defuses.clear();
+    if (!force && explodes.size < Y.explosion_buildup)
+        return 3;
 
-    if (Sign(best) == Sign(boomed) || Y.sound_boom == 0)
-        return false;
+    if (Sign(best) == Sign(exploded) || !Y.explosion_sound)
+        return 4;
 
-    main.boom(best, sound => {
-        let boom_param = BOOM_PARAMS[sound],
-            [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
-        if (DEV.boom)
-            LS([
-                `BOOM: best=${best} : ply=${ply} : scores=${scores} : ${sound} : ${boom_param}`,
-                `moobs=${moobs.size}=${[...moobs].join(' ')} : booms=${booms.size}=${[...booms].join('')}`
-            ].join(' : '));
+    main.exploded = force? exploded: best;
+    // don't explode if we just loaded the page
+    if (!force && seens.size < 2)
+        return 5;
 
-        if (force)
-            main.boomed = boomed;
-        booms.clear();
-
-        // 5) visual stuff
-        let body = Id('body2'),
-            visual = Y.boom_visual;
-
-        if (!timers.shake)
-            boom_info.transform = body? body.style.transform: '';
-
-        // color + shake
-        if (BOOM_COLORS[visual]) {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, BOOM_RED), red_start);
-        }
-        if (BOOM_SHAKES[visual]) {
-            add_timeout('shake_start', () => {
-                Assign(boom_info, {
-                    decay: decay,
-                    shake: magnitude,
-                    start: Now(),
-                });
-                add_timeout('shake', shake_screen, TIMEOUT_shake, true);
-            }, shake_start);
-        }
-
-        // ending
-        add_timeout('red_end', () => {
-            Style(BOOM_ELEMENTS2, BOOM_RED, false);
-        }, red_start + red_duration);
-        add_timeout('shake_end', () => {
-            clear_timeout('shake');
-            Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
-        }, shake_start + shake_duration);
+    boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
+        every: 1/20,
+        red_coeff: 0.75,
+    }, () => {
+        defuses.clear();
+        explodes.clear();
     });
+    return 0;
+}
 
-    return true;
+/**
+ * Check explosion + boom
+ * @param {string} section
+ * @param {number} mode &1:boom, &2:explosion
+ * @returns {number} &1:boom, &2:explosion
+ */
+function check_explosion_boom(section, mode=3) {
+    if (section != 'live')
+        return 0;
+    if (xboards.live.moves.length < BOOM_MIN_PLY)
+        return 0;
+
+    if ((mode & 1) && check_boom())
+        return 1;
+    if ((mode & 2) && check_explosion())
+        return 2;
+    return 0;
 }
 
 /**
@@ -4215,20 +4423,43 @@ function set_viewers(count) {
 
 /**
  * Shake the screen
- * @param {number=} override
  */
-function shake_screen(override) {
+function shake_screen() {
+    let dead,
+        now = Now(true);
+    if (now > boom_info.end)
+        dead = 2;
+    else if (now + 1/120 < boom_info.last + boom_info.every)
+        dead = 1;
+
     // translate(15px, 15px) => ['15', '15']
-    let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0)),
-        shake = Undefined(override, boom_info.shake);
-    if (coords.length < 2)
-        coords = [0, 0];
-    coords[0] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
-    coords[1] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
-    if (DEV.boom2)
-        LS(boom_info);
-    boom_info.shake *= boom_info.decay;
-    Style(BOOM_ELEMENTS, `transform:translate(${coords[0]}px,${coords[1]}px)`);
+    if (!dead) {
+        let coords = (boom_info.transform || '').replace(/[a-z,()]/g, '').trim().split(' ').map(x => DefaultInt(x, 0)),
+            shake = boom_info.shake;
+        if (coords.length < 2)
+            coords = [0, 0];
+        coords[0] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
+        coords[1] += RandomInt(-shake * 2, shake * 2 + 1) / 2;
+
+        if (DEV.effect2)
+            LS(boom_info);
+        shake *= boom_info.decay;
+        Style(BOOM_ELEMENTS, `transform:translate(${coords[0]}px,${coords[1]}px)`);
+
+        // stop when it's not shaking anymore
+        boom_info.last = now;
+        boom_info.shake = shake;
+        if (Abs(shake) < 0.6)
+            dead = 2;
+    }
+
+    // continue or end + restore translation
+    if (dead != 2)
+        AnimationFrame(shake_screen);
+    else {
+        shake_animation = null;
+        Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
+    }
 }
 
 /**
@@ -4383,6 +4614,7 @@ function update_live_eval(section, data, id, force_ply) {
         engine = data.engine,
         main = xboards[section],
         moves = data.moves,
+        player = main.players[id + 2],
         round = data.round,
         wdl = data.wdl;
 
@@ -4418,7 +4650,9 @@ function update_live_eval(section, data, id, force_ply) {
 
     data.ply = ply;
     board_evals[ply] = data;
-    main.players[2 + id].eval = eval_;
+    player.eval = eval_;
+    if (data.nodes > 1)
+        SetDefault(player, 'evals', [])[ply] = eval_;
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
@@ -4461,6 +4695,7 @@ function update_live_eval(section, data, id, force_ply) {
             LS(`ULE: ${section}`);
         update_live_chart(moves || [data], id + 2);
         check_missing_moves(ply, round);
+        check_explosion_boom(section);
     }
     return true;
 }
@@ -4494,25 +4729,6 @@ function update_player_eval(section, data, same_pv) {
     if (!IsString(dsd) || !dsd.includes('/'))
         dsd = `${dsd}/${sd || dsd}`;
 
-    // 1) update the live part on the left
-    if (!is_pva) {
-        let dico = {
-                eval: format_eval(eval_),
-                score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
-            },
-            node = Id(`moves-pv${id}`);
-
-        // update engine name if it has changed
-        update_hardware(section, id, engine, short, null, [node]);
-
-        Keys(dico).forEach(key => {
-            HTML(`[data-x="${key}"]`, dico[key], node);
-        });
-
-        HTML(`.xshort`, short, mini);
-        HTML(`.xeval`, format_eval(eval_), mini);
-    }
-
     // 2) add moves
     let board = xboards[`pv${id}`];
     if (!same_pv) {
@@ -4537,14 +4753,15 @@ function update_player_eval(section, data, same_pv) {
         }
     }
 
+    let ply = data.ply;
     if (DEV.eval) {
-        LS(`PE#${id} : cur_ply=${cur_ply} : ply=${data.ply}`);
+        LS(`PE#${id} : cur_ply=${cur_ply} : ply=${ply}`);
         LS(data);
     }
 
     // 3) update the engine info in the center
     // - only if the ply is the currently selected ply + 1
-    if (!is_pva && data.ply == cur_ply + 1) {
+    if (!is_pva && ply == cur_ply + 1) {
         let stats = {
             depth: dsd,
             engine: format_engine(data.engine, true, 21),
@@ -4557,11 +4774,30 @@ function update_player_eval(section, data, same_pv) {
         Keys(stats).forEach(key => {
             HTML(Id(`${key}${id}`), stats[key]);
         });
+
+        // update the live part on the left
+        let dico = {
+                eval: format_eval(eval_),
+                score: calculate_probability(short, eval_, cur_ply, data.wdl || (player.info || {}).wdl),
+            },
+            node = Id(`moves-pv${id}`);
+
+        // update engine name if it has changed
+        update_hardware(section, id, engine, short, null, [node]);
+
+        Keys(dico).forEach(key => {
+            HTML(`[data-x="${key}"]`, dico[key], node);
+        });
+
+        HTML(`.xshort`, short, mini);
+        HTML(`.xeval`, format_eval(eval_), mini);
+        if (data.nodes > 1)
+            SetDefault(player, 'evals', [])[cur_ply] = eval_;
     }
 
     if (DEV.chart)
         LS(`UPE: ${section}`);
-    board.evals[section][data.ply] = data;
+    board.evals[section][ply] = data;
 
     // no graph plot if the board does not match
     if (section != sboard)
@@ -4571,9 +4807,9 @@ function update_player_eval(section, data, same_pv) {
         update_player_charts(null, [data]);
     else {
         update_live_chart([data], id);
-        check_missing_moves(data.ply, null, data.pos);
+        check_missing_moves(ply, null, data.pos);
     }
-    check_boom(section);
+    check_explosion_boom(section);
     return true;
 }
 
@@ -4705,10 +4941,11 @@ function game_action_key(code) {
                         if (Visible(Id('table-pva')))
                             board_target = pva;
                     }
-                    else if (!copy_moves()) {
-                        let text = board_target.fen;
-                        CopyClipboard(text);
-                    }
+                    else if (copy_moves())
+                        break;
+
+                    let text = board_target.fen;
+                    CopyClipboard(text);
                 }
                 // paste => try to add the FEN, if fails then moves string
                 else if (code == 86) {
@@ -4846,11 +5083,14 @@ function change_setting_game(name, value) {
             }
         }
         break;
-    case 'boom_reactivate':
-        xboards.live.boomed = 0;
+    case 'boom_effect':
+        if (!value) {
+            save_option('boom_sound', 0);
+            save_option('boom_visual', 0);
+        }
         break;
     case 'boom_test':
-        check_boom('', -10 * (Sign(xboards.live.boomed) || 1));
+        check_boom(10);
         break;
     case 'copy_moves':
         copy_moves();
@@ -4860,6 +5100,15 @@ function change_setting_game(name, value) {
         break;
     case 'download_pgn':
         copy_pgn(null, true);
+        break;
+    case 'explosion_effect':
+        if (!value) {
+            save_option('explosion_sound', 0);
+            save_option('explosion_visual', 0);
+        }
+        break;
+    case 'explosion_test':
+        check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
         break;
     case 'game_PV':
         S(Id('pva-pv'), value);
@@ -4893,6 +5142,18 @@ function change_setting_game(name, value) {
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
+        break;
+    case 'moob_effect':
+        if (!value) {
+            save_option('moob_sound', 0);
+            save_option('moob_visual', 0);
+        }
+        break;
+    case 'moob_test':
+        check_boom(0.01);
+        break;
+    case 'reactivate':
+        xboards.live.exploded = 0;
         break;
     case 'rows_per_page':
         update_tab = true;
@@ -5272,6 +5533,8 @@ function handle_board_events(board, type, value, force) {
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
             mark_ply_charts(cur_ply, board.moves.length - 1);
+            if (board.name == 'pva')
+                board.show_pv(value);
         }
         if (name == section) {
             // show PV's
@@ -5640,6 +5903,8 @@ if (typeof exports != 'undefined')
         calculate_seeds: calculate_seeds,
         check_adjudication: check_adjudication,
         check_boom: check_boom,
+        check_explosion: check_explosion,
+        check_explosion_boom: check_explosion_boom,
         copy_pgn: copy_pgn,
         create_boards: create_boards,
         create_game_link: create_game_link,

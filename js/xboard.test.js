@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-08
 //
 /*
 globals
@@ -246,9 +246,10 @@ live.id = 'null';
 
 // reset
 [
-    [{boomed: 0}],
-].forEach(([answer], id) => {
+    [{exploded: 5.5}, {exploded: 0}],
+].forEach(([states, answer], id) => {
     test(`reset:${id}`, () => {
+        Assign(live, states);
         live.reset(Y.x);
         Keys(answer).forEach(key => {
             expect(live[key]).toEqual(answer[key]);

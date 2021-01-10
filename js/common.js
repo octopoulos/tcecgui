@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-05
+// @version 2021-01-08
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -57,6 +57,7 @@ let Abs = Math.abs,
     IsObject = value => (value != null && typeof(value) == 'object'),
     IsString = value => (typeof(value) == 'string'),
     Keys = Object.keys,
+    Log = Math.log,
     Log10 = Math.log10,
     Lower = text => text.toLowerCase(),
     LS = console.log,
@@ -1345,7 +1346,7 @@ function LoadLibrary(url, callback, extra) {
 
 /**
  * Get the timestamp in seconds
- * @params {boolean=} as_float get seconds as float instead of int
+ * @param {boolean=} as_float get seconds as float instead of int
  * @returns {number} seconds
  * @example
  * Now(true)    // 1573706158.324 = sec
@@ -1602,6 +1603,7 @@ if (typeof exports != 'undefined') {
         IsObject: IsObject,
         IsString: IsString,
         Keys: Keys,
+        Log: Log,
         Lower: Lower,
         LS: LS,
         Max: Max,

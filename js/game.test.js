@@ -1,20 +1,20 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-06
+// @version 2021-01-09
 /*
 globals
 expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp} = require('./common.js'),
+let {Assign, FromTimestamp, Keys, Undefined} = require('./common.js'),
     {DEV, load_defaults, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        check_boom, copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads,
+        check_boom, check_explosion, copy_pgn, create_boards, create_game_link, current_archive_link, extract_threads,
         fix_header_opening, format_engine, format_fen, format_hhmmss, format_opening, format_percent, get_short_name,
-        parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials,
-        update_pgn, update_player_eval,
+        parse_date_time, parse_pgn, parse_time_control, tour_info, update_live_eval, update_materials, update_pgn,
+        update_player_eval,
     } = require('./game.js'),
     {get_fen_ply, xboards} = require('./global.js'),
     {create_chart_data} = require('./graph.js'),
@@ -278,7 +278,7 @@ create_chart_data();
             pv: 'd2d4 d7d5 g1f3',
             pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
         },
-        null,
+        'd4 d5 Nf3',
     ],
     [
         START_FEN,
@@ -438,49 +438,124 @@ create_chart_data();
 
 // check_boom
 [
-    [0, {boom_start: 0, x: 'archive'}, {boomed: 0}, [5, 5, 0.5, 0.5], [], false, 0],
-    [0, {boom_consecutive: 1, x: 'live'}, {boomed: 0}, [5, 3, 0.5, 0.5], [], false, 0],
-    [0, {}, {boomed: 0}, [5, 3, 2.5, 0.5], [], true, 3.5],
-    [0, {}, {}, [15, 5, 0.5, 0.5], [], false, 3.5],
-    [0, {}, {}, [-8, -3, -5, -0.5], [], true, -5.333],
-    [0, {}, {}, [-1, 1, -1, -0.5], [], false, -5.333],
-    [0, {}, {}, [5, 5, 5, -10], [], true, 5],
-    [0, {}, {}, [5, 5, 5, 0], [], false, 5],
-    [0, {}, {}, [-5, -5, -5, 1], [], true, -5],
-    [0, {}, {}, [8, 3, 5, 5], [], true, 5.25],
+    [12, {boom_threshold: 0.45}, [{9: 3, 10: 3, 11: 5, 12: 5.5}], 1, 0, null],
+    [11, {}, [{10: 3, 11: 5}], 1, 0, null],
+    [11, {}, [{8: 3, 9: 3, 10: 3, 11: 3.5}], 0, 0.4757, [0.017, 0.108, 0.112]],
+    [11, {}, [{8: 5, 9: 5, 10: 5, 11: 4}], 0, -0.7796345, [0.022, 0.199, 0.237]],
+    [13, {}, [{11: 1, 12: 1.11, 13: 2.17}], 1, 0, null],
+    [13, {}, [{10: 1, 11: 1, 12: 1.11, 13: 2.17}], 0, 1.306, [0.028, 0.326, 0.413]],
+    [13, {}, [{10: 1, 11: 1, 12: 1.11, 13: 2.17}, {10: 1, 11: 1, 12: 1.12, 13: 3.45}], 0, 1.306, [0.039, 0.528, 0.693]],
+    [43, {}, [{35: 2.13, 36: 1.96, 37: 1.96, 38: 1.83, 39: 1.45, 40: -1.54, 43: 2.05}], 1, 0, null],
+    [40, {}, [{37: 10.55, 38: 10.53, 39: 12.44, 40: 7.69}], 0, -1.0669, [0.026, 0.273, 0.339]],
+    [41, {}, [{38: 8.37, 39: 8.53, 40: 9.36, 41: 9.62}], 1, 0, null],
     // 10
-    [0, {}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 0.5], [], false, 0],
-    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 0], [], false, 0],
-    [0, {}, {boomed: 0}, ['M41', 0.5, 8, 5], [], true, 47],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], false, 0],
-    [0, {}, {boomed: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], true, 6.5],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], true, 6.5],
-    [0, {}, {boomed: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], true, 7],
-    [0, {sound_boom: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {sound_boom: 'random'}, {boomed: 0}, [8, 3, 5, 5], [], true, 5.25],
+    [41, {}, [{38: 7.69, 39: 9.15, 40: 9.31, 41: 17.37}], 0, 1.6337, [0.032, 0.390, 0.502]],
+    [46, {}, [{38: 7.69, 39: 9.15, 40: 9.31, 41: 17.37, 45: 8.54, 46: 'M19'}], 0, 0.6209, [0.019, 0.153, 0.174]],
+    [46, {}, [{40: 5.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 0, 4.1478, [0.045, 0.648, 0.858]],
+    [46, {}, [{40: 7.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 0, 3.2628, [0.042, 0.591, 0.779]],
+    [46, {}, [{40: 10.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 0, 2.01897, [0.035, 0.453, 0.589]],
+    [46, {}, [{40: 15.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 0, 0.90718, [0.023, 0.233, 0.284]],
+    [46, {}, [{40: 18.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 0, 0.5613, [0.018, 0.135, 0.149]],
+    [46, {}, [{40: 20.0, 41: 4.5, 45: 5.5, 46: 'M19'}], 1, 0, null],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: '-M19'}], 0, 15.1325, [0.050, 0.750, 0.999]],
+    [47, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 'M19', 47: '-M19'}], 0, 15.1325, [0.050, 0.750, 0.999]],
     // 20
-    [0, {boom_threshold: 0}, {boomed: 0}, [8, 3, 5, 5], [], false, 0],
-    [0, {boom_threshold: 2.3, boom_start: 10}, {boomed: 0}, [5, 5, 5, 0], [], false, 0],
-    [0, {boom_start: 0}, {}, [5, 5, 5, 0], [], true, 5],
-    [0, {boom_consecutive: 3}, {boomed: 0}, [5, 5, 5, 5], [], false, 0],
-    [1, {}, {}, [5, 5, 5, 5], [], false, 0],
-    [2, {}, {}, [5, 5, 5, 5], [], true, 5],
-].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
+    [47, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: '-M19', 47: -5}], 0, -4.4933, [0.046, 0.664, 0.881]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 5.0}], 1, 0, null],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 3.0}], 0, -1.3203, [0.028, 0.329, 0.418]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 2.0}], 0, -2.39397, [0.037, 0.504, 0.660]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 1.0}], 0, -3.6539, [0.043, 0.619, 0.819]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: 0.0}], 0, -5.1325, [0.047, 0.687, 0.913]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -1.0}], 0, -6.6110, [0.048, 0.720, 0.959]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -2.0}], 0, -7.87099, [0.049, 0.734, 0.978]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -3.0}], 0, -8.9446, [0.050, 0.741, 0.987]],
+    [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -5.0}], 0, 10.6392, [0.050, 0.746, 0.994]],
+].forEach(([ply, y, evals, answer, answer_boomed, answer_more], id) => {
     test(`check_boom:${id}`, () => {
-        DEV.boom = (id >= 27)? 1: 0;
-        Assign(Y, y);
+        DEV.boom = (id >= 30)? 3: 0;
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
-            players[id].eval = eval_;
-            players[id].short = shorts[id] || `P${id}`;
+            let player = players[id];
+            Assign(player, {
+                boom_ply: -1,
+                boomed: 0,
+                eval: eval_[ply],
+                evals: [],
+                short: `P${id}`,
+            });
+            Keys(eval_).forEach(key => {
+                player.evals[key] = eval_[key];
+            });
+        });
+        main.moves.length = ply;
+        Assign(Y, y);
+
+        let player = players[0],
+            result = check_boom();
+        expect(result[0]).toEqual(answer);
+        expect(player.boomed).toBeCloseTo(answer_boomed, 3);
+        if (player.boomed)
+            expect(player.boom_ply).toEqual(ply);
+        if (answer_more) {
+            result = result.slice(1, -1);
+            for (let i = 0; i < result.length; i ++)
+                expect(result[i]).toBeCloseTo(answer_more[i] || 0, 2);
+        }
+    });
+});
+
+// check_explosion
+[
+    [0, {explosion_threshold: 0, x: 'live'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 1, 0],
+    [0, {explosion_threshold: 2.3, x: 'archive'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 2, 0],
+    [0, {explosion_buildup: 1, x: 'live'}, {exploded: 0}, [5, 3, 0.5, 0.5], [], 2, 0],
+    [0, {}, {exploded: 0, seens: new Set()}, [5, 3, 2.5, 0.5], [], 5, 3.5],
+    [0, {}, {exploded: 0, seens: new Set([-1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
+    [0, {}, {}, [15, 5, 0.5, 0.5], [], 2, 3.5],
+    [0, {}, {}, [-8, -3, -5, -0.5], [], 0, -5.333],
+    [0, {}, {}, [-1, 1, -1, -0.5], [], 2, -5.333],
+    [0, {}, {}, [5, 5, 5, -10], [], 0, 5],
+    [0, {}, {}, [5, 5, 5, 0], [], 4, 5],
+    // 10
+    [0, {}, {}, [-5, -5, -5, 1], [], 0, -5],
+    [0, {}, {}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {}, {exploded: 0}, [8, 0.5, 8, 0.5], [], 2, 0],
+    [0, {}, {exploded: 0}, ['M41', 0.5, 8, 0], [], 2, 0],
+    [0, {}, {exploded: 0}, ['M41', 0.5, 8, 5], [], 0, 47],
+    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 2, 0],
+    [0, {}, {exploded: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 0, 6.5],
+    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], 0, 6.5],
+    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], 0, 7],
+    // 20
+    [0, {explosion_sound: 0}, {exploded: 0}, [8, 3, 5, 5], [], 4, 0],
+    [0, {explosion_sound: 'random'}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, {explosion_threshold: 0}, {exploded: 0}, [8, 3, 5, 5], [], 1, 0],
+    [0, {explosion_threshold: 2.3}, {exploded: 0}, [5, 5, 5, 0], [], 0, 5],
+    [0, {}, {exploded: 0}, [5, 0, 5, 5], [], 2, 0],
+    [0, {}, {}, [5, 0.1, 5, 5], [], 0, 5],
+    [0, {explosion_buildup: 3}, {exploded: 0}, [5, 5, 5, 5], [], 3, 0],
+    [1, {}, {}, [5, 5, 5, 5], [], 3, 0],
+    [2, {}, {}, [5, 5, 5, 5], [], 0, 5],
+    [76, {}, {exploded: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], 0, 8.16],
+].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
+    test(`check_explosion:${id}`, () => {
+        DEV.explode = (id >= 30)? 1: 0;
+        let main = xboards.live,
+            players = main.players;
+        evals.forEach((eval_, id) => {
+            Assign(players[id], {
+                eval: eval_,
+                short: Undefined(shorts[id], `P${id}`),
+            });
         });
         main.moves.length = ply;
         Assign(main, states);
+        Assign(Y, y);
 
-        expect(check_boom(Y.x)).toEqual(answer);
-        expect(main.boomed).toBeCloseTo(answer_boomed, 3);
+        expect(check_explosion()).toEqual(answer);
+        expect(main.exploded).toBeCloseTo(answer_boomed, 3);
     });
 });
 

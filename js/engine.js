@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-04
+// @version 2021-01-08
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -33,6 +33,7 @@ let __PREFIX = '_',
     animation,
     api = {},
     api_times = {},
+    AUTO_ON_OFF = ['auto', 'on', 'off'],
     DEFAULTS = {
         language: '',
         theme: '',
@@ -69,6 +70,7 @@ let __PREFIX = '_',
         import_settings: 2,
         language: 1,
         preset: 1,
+        seen: 2,
     },
     NO_TRANSLATES = {
         '#': 1,
@@ -233,10 +235,12 @@ function get_float(name, def) {
  * Local Storage - get int/bool
  * @param {string} name
  * @param {number|boolean} def also used if the value cannot be converted to an `int`
+ * @param {boolean=} force force int, otherwise keep the string
  * @returns {number|boolean}
  */
-function get_int(name, def) {
-    let value = DefaultInt(get_string(name), def);
+function get_int(name, def, force) {
+    let text = get_string(name),
+        value = DefaultInt(text, force? def: (text || def));
     if (typeof(def) == 'boolean')
         value = !!value;
     return value;
@@ -278,20 +282,28 @@ function guess_types(settings, keys) {
     keys.forEach(key => {
         let type,
             def = DEFAULTS[key],
-            def_type = typeof(def);
+            def_type = typeof(def),
+            setting = settings[key];
 
         if (def_type == 'boolean')
             type = 'b';
         else if (def_type == 'object')
             type = 'o';
-        else if (def_type == 'string')
+        else if (def_type == 'string') {
             type = 's';
+            // auto, on, off => i
+            if (IsArray(setting)) {
+                let first = setting[0],
+                    is_array = IsArray(first);
+                if (is_array && first.length && first.includes(ON_OFF[1]))
+                    type = 'i';
+            }
+        }
         else if (IsFloat(def))
             type = 'f';
         // integer default could still be a float type
         else {
-            let setting = settings[key],
-                obj_type = typeof(setting);
+            let obj_type = typeof(setting);
 
             if (IsArray(setting)) {
                 let first = setting[0],
@@ -310,7 +322,8 @@ function guess_types(settings, keys) {
                         type = 'o';
                     }
                 }
-                else if (first.length == 2 && first[0] == ON_OFF[0] && first[1] == ON_OFF[1])
+                // contains 'off'?
+                else if (first.length && first.includes(ON_OFF[1]))
                     type = 'i';
 
                 if (!type && is_array) {
@@ -550,8 +563,9 @@ function sanitise_data() {
 
         if (type == 'f')
             Y[key] = DefaultFloat(value, def);
+        // new: allow int to be string sometimes
         else if (type == 'i')
-            Y[key] = DefaultInt(value, def);
+            Y[key] = DefaultInt(value, value);
     });
 
     if (virtual_sanitise_data_special)
@@ -1901,6 +1915,7 @@ if (typeof exports != 'undefined') {
     Object.assign(exports, {
         add_history: add_history,
         add_timeout: add_timeout,
+        AUTO_ON_OFF: AUTO_ON_OFF,
         clear_timeout: clear_timeout,
         create_field_value: create_field_value,
         create_page_array: create_page_array,
@@ -1924,6 +1939,7 @@ if (typeof exports != 'undefined') {
         sanitise_data: sanitise_data,
         save_default: save_default,
         save_option: save_option,
+        socket: socket,
         THEMES: THEMES,
         timers: timers,
         translate: translate,

@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-04
+// @version 2021-01-07
 //
 // general 3d rendering code
 //
@@ -28,7 +28,6 @@ if (typeof global != 'undefined') {
 let audiobox = {
         sounds: {},
     },
-    AUTO_ON_OFF = ['auto', 'on', 'off'],
     axes = [0, 0, 0, 0],
     AXIS_DEAD_ZONE = 0.2,
     AXIS_MAPPING = [
@@ -1859,7 +1858,6 @@ function startup_3d() {
 if (typeof exports != 'undefined') {
     Assign(exports, {
         audiobox: audiobox,
-        AUTO_ON_OFF: AUTO_ON_OFF,
         play_sound: play_sound,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
         SHADOW_QUALITIES: SHADOW_QUALITIES,

@@ -1,6 +1,6 @@
 // graph.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2021-01-08
 //
 /*
 globals
@@ -10,7 +10,9 @@ expect, global, require, test,
 
 let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
-    {calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval} = require('./graph.js');
+    {
+        calculate_win, chart_data, check_first_num, clamp_eval, fix_labels, invert_eval, scale_boom,
+    } = require('./graph.js');
 
 global.xboards = {
     live: {
@@ -132,6 +134,8 @@ global.xboards = {
     ['-M#33', -128],
     ['#18', 128],
     ['#-18', -128],
+    ['M19', 128],
+    ['-M19', -128],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
         expect(clamp_eval(eval_)).toEqual(answer);
@@ -167,5 +171,33 @@ global.xboards = {
 ].forEach(([eval_, answer], id) => {
     test(`invert_eval:${id}`, () => {
         expect(invert_eval(eval_)).toEqual(answer);
+    });
+});
+
+// scale_boom
+[
+    [0, 0],
+    [1, 1.4785621103378865],
+    [2, 2.7385096292630906],
+    [3, 3.8121660819385914],
+    [4, 4.727075759569514],
+    [5, 5.506710358827784],
+    [6, 6.17107114024888],
+    [7, 6.737202053769606],
+    [8, 7.219626995468058],
+    [9, 7.630722413178782],
+    [10, 7.981034820053447],
+    [15, 9.092820467105875],
+    [50, 9.996645373720975],
+    ['M19', 9.999999987245923],
+    ['-M19', -9.999999987245923],
+    [255, 10],
+    [-255, -10],
+    [-15, -9.092820467105875],
+    [-1, -1.4785621103378865],
+].forEach(([x, answer], id) => {
+    test(`scale_boom:${id}`, () => {
+        let clamp = clamp_eval(x);
+        expect(scale_boom(clamp)).toBeCloseTo(answer, 5);
     });
 });
