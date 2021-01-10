@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-08
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -210,7 +210,7 @@ function AttrsNS(sel, attrs, parent) {
  * @param {function} callback (event)
  * @param {Node=} parent
  * @example
- * C('img', () => LS(this.src))  // print the URL of the image being clicked
+ * C('img', function() {LS(this.src)})  // print the URL of the image being clicked
  */
 function C(sel, callback, parent) {
     if (!sel) return;
