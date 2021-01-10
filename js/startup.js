@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-10
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -20,8 +20,8 @@ E, Events, export_settings, exports, FileReader, From, game_action_key, game_act
 get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index,
 init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
-navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, parse_dev, PD, PIECE_THEMES,
-POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
+require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
@@ -778,14 +778,6 @@ function insert_google_ad(id) {
 }
 
 /**
- * Check hash for the first time
- */
-function init_hash() {
-    check_hash();
-    parse_dev();
-}
-
-/**
  * Insert google ads after some time
  */
 function insert_google_ads() {
@@ -1040,7 +1032,7 @@ function quick_setup(force) {
 function reset_settings_special(is_default) {
     if (is_default) {
         load_settings();
-        init_hash();
+        check_hash();
         init_globals();
     }
 
@@ -1425,10 +1417,7 @@ function set_global_events() {
     Events(window, 'resize', resize);
     Events(window, 'scroll', adjust_popups);
     // it won't be triggered by pushState and replaceState
-    Events(window, 'hashchange', () => {
-        check_hash();
-        parse_dev();
-    });
+    Events(window, 'hashchange', check_hash);
     Events(window, 'popstate', e => {
         let state = e.state;
         if (!state)
@@ -2302,7 +2291,7 @@ function startup() {
     load_settings();
     start_game();
     init_graph();
-    init_hash();
+    check_hash();
 
     set_global_events();
     set_engine_events();

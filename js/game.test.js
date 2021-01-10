@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-10
 /*
 globals
 expect, global, require, test
@@ -488,6 +488,8 @@ function init_players(ply, players, evals) {
     [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -2.0}], 0, -10.6882, [0.050, 0.744, 0.993]],
     [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -3.0}], 0, -12.0298, [0.050, 0.747, 0.996]],
     [46, {}, [{40: 7.5, 41: 4.5, 45: 5.5, 46: -5.0}], 0, 13.8884, [0.050, 0.749, 0.999]],
+    // 30
+    [6, {}, [{0: 'book', 2: 'book', 4: 'book', 6: "0.92"}], 2, 0, null],
 ].forEach(([ply, y, evals, answer, answer_boomed, answer_more], id) => {
     test(`check_boom:${id}`, () => {
         DEV.boom = (id >= 30)? 3: 0;
@@ -579,6 +581,7 @@ function init_players(ply, players, evals) {
     [1, 13, {boom_threshold: 0.5}, -1, 3, [{8: 3, 9: 3, 10: 3, 11: 8.9, 12: 'M25'}], 1, 1.0807],
 ].forEach(([reset, ply, y, offset, mode, evals, answer, answer_boomed], id) => {
     test(`check_explosion_boom:${id}`, () => {
+        DEV.boom = 0;
         let main = xboards.live,
             players = main.players;
         init_players(ply, players, evals);
