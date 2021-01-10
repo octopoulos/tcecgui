@@ -4380,9 +4380,9 @@ function check_explosion_boom(section, mode=3) {
     if (xboards.live.moves.length < BOOM_MIN_PLY)
         return 0;
 
-    if ((mode & 1) && check_boom())
+    if ((mode & 1) && !check_boom()[0])
         return 1;
-    if ((mode & 2) && check_explosion())
+    if ((mode & 2) && !check_explosion())
         return 2;
     return 0;
 }
@@ -5192,6 +5192,9 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    if (DEV.global)
+        window.xboards = xboards;
+
     let section = Y.x;
     show_tables(section, tour_info[section].cup);
 
