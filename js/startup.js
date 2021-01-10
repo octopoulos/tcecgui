@@ -2198,9 +2198,10 @@ function prepare_settings() {
         quick_setup: {
             _pop: true,
             _title: 'Quick setup',
-            boom_enabled: [ON_OFF, 1],
-            moob_enabled: [ON_OFF, 1],
-            explosion_enabled: [ON_OFF, 1],
+            boom_effect: [ON_OFF, 1],
+            moob_effect: [ON_OFF, 1],
+            explosion_effect: [ON_OFF, 1],
+            language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],
             volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds'),
         },
