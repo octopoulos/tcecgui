@@ -1417,7 +1417,7 @@ function set_global_events() {
     Events(window, 'resize', resize);
     Events(window, 'scroll', adjust_popups);
     // it won't be triggered by pushState and replaceState
-    Events(window, 'hashchange', check_hash);
+    Events(window, 'hashchange', () => check_hash());
     Events(window, 'popstate', e => {
         let state = e.state;
         if (!state)
