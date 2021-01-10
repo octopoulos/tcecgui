@@ -22,10 +22,7 @@ if (typeof global != 'undefined') {
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
     ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
-    ZERO_EVALS = {
-        '-': 1,
-        book: 1,
-    };
+    NON_EVALS = new Set([undefined, '', '-', 'book']);
 
 let cached_percents = {},
     chart_data = {},
@@ -64,8 +61,7 @@ let cached_percents = {},
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
     FormatEval = value => value? value.toFixed(2): 0,
-    queued_charts = [],
-    scale_boom = x => (x >= 0)? 10 * (1 - Exp(-x * 0.25)): -10 * (1 - Exp(x * 0.25));
+    queued_charts = [];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -142,6 +138,9 @@ function check_first_num(num) {
  */
 function clamp_eval(eval_)
 {
+    if (NON_EVALS.has(eval_))
+        return undefined;
+
     if (!isNaN(eval_)) {
         eval_ *= 1;
         if (!Number.isFinite(eval_))
@@ -149,9 +148,7 @@ function clamp_eval(eval_)
         return eval_;
     }
 
-    if (ZERO_EVALS[eval_])
-        eval_ = 0;
-    else if (eval_ && eval_.includes('-'))
+    if (eval_ && eval_.includes('-'))
         eval_ = -EVAL_CLAMP;
     else if (eval_ != undefined)
         eval_ = EVAL_CLAMP;
@@ -545,6 +542,17 @@ function reset_charts(section, reset_evals)
     if (reset_evals)
         for (let key of ['live0', 'live1', 'pv0', 'pv1'])
             xboards[key].evals[section] = [];
+}
+
+/**
+ * Scale boom
+ * @param {number|undefined} x
+ * @returns {number|undefined}
+ */
+function scale_boom(x) {
+    if (x === undefined)
+        return undefined;
+    return (x >= 0)? 10 * (1 - Exp(-x * 0.25)): -10 * (1 - Exp(x * 0.25));
 }
 
 /**

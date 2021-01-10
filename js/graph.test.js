@@ -117,9 +117,13 @@ global.xboards = {
 
 // clamp_eval
 [
-    ['', 0],
+    [undefined, undefined],
+    ['', undefined],
+    ['-', undefined],
+    ['book', undefined],
     [NaN, 128],
     [Infinity, 128],
+    [-Infinity, -128],
     [-5.2, -5.2],
     [-19, -19],
     [3.14, 3.14],
@@ -136,8 +140,6 @@ global.xboards = {
     ['#-18', -128],
     ['M19', 128],
     ['-M19', -128],
-    ['book', 0],
-    ['-', 0],
 ].forEach(([eval_, answer], id) => {
     test(`clamp_eval:${id}`, () => {
         expect(clamp_eval(eval_)).toEqual(answer);
@@ -178,6 +180,10 @@ global.xboards = {
 
 // scale_boom
 [
+    [undefined, undefined],
+    ['', undefined],
+    ['-', undefined],
+    ['book', undefined],
     [0, 0],
     [1, 2.211992169285951],
     [2, 3.9346934028736658],
@@ -193,13 +199,21 @@ global.xboards = {
     [50, 9.99996273346828],
     ['M19', 9.999999999999874],
     ['-M19', -9.999999999999874],
+    [Infinity, 9.999999999999874],
+    [-Infinity, -9.999999999999874],
+    ['hello', 9.999999999999874],
+    ['-hello', -9.999999999999874],
     [255, 10],
     [-255, -10],
     [-15, -9.764822541439909],
     [-1, -2.211992169285951],
 ].forEach(([x, answer], id) => {
     test(`scale_boom:${id}`, () => {
-        let clamp = clamp_eval(x);
-        expect(scale_boom(clamp)).toBeCloseTo(answer, 5);
+        let clamp = clamp_eval(x),
+            result = scale_boom(clamp);
+        if (isNaN(result))
+            expect(result).toEqual(answer);
+        else
+            expect(result).toBeCloseTo(answer, 5);
     });
 });
