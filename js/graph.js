@@ -550,7 +550,7 @@ function reset_charts(section, reset_evals)
  * @returns {number|undefined}
  */
 function scale_boom(x) {
-    if (x === undefined)
+    if (x == undefined)
         return undefined;
     return (x >= 0)? 10 * (1 - Exp(-x * 0.25)): -10 * (1 - Exp(x * 0.25));
 }
