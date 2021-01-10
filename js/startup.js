@@ -1995,7 +1995,7 @@ function prepare_settings() {
         boom: {
             boom_test: '1',
             boom_sound: boom_sounds,
-            boom_threshold: option_number(0.5, 0, 10, 0.1, {}, 'threshold to exceed in graph scale => boom'),
+            boom_threshold: option_number(0.45, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
             boom_visual: boom_visuals,
             boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             moob_test: '1',

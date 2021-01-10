@@ -12,7 +12,7 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
-~          : 2021-01-08 : boom should scale the volume + shake + duration
+2021-01-09 : 2021-01-08 : boom should scale the volume + shake + duration
 2021-01-08 : 2021-01-08 : graph scale: boom
 2021-01-08 : 2021-01-07 : boom + explosion
 2021-01-08 : 2021-01-08 : set custom FEN in PV(A)
