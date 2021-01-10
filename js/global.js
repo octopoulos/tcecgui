@@ -311,6 +311,8 @@ function reset_old_settings() {
         });
         keys.push('boom_threshold boom_volume');
     }
+    if (version < '20210109e')
+        keys.push('boom_threshold');
 
     let changes = [];
     for (let key of keys)

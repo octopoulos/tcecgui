@@ -2000,7 +2000,7 @@ function prepare_settings() {
             disable_everything: [ON_OFF, 0],
             boom_test: '1',
             boom_sound: [boom_sounds, 0],
-            boom_threshold: option_number(0.45, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
+            boom_threshold: option_number(1.2, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
             boom_visual: [boom_visuals, 0],
             boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             moob_test: '1',

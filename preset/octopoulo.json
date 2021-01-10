@@ -175,7 +175,7 @@
   "book_every": 600,
   "boom_effect": 1,
   "boom_sound": "random",
-  "boom_threshold": 0.45,
+  "boom_threshold": 1.2,
   "boom_visual": "all",
   "boom_volume": 3,
   "capture_delay": -200,

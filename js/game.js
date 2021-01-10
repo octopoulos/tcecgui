@@ -4272,7 +4272,7 @@ function check_boom(offset, force) {
             scale = 1 - Exp(-delta * 0.5);
         every = 1/60 * (1 - scale) + 1/20 * scale;
         red_coeff = 0.1 * (1 - scale) + 0.75 * scale;
-        volume = 0.1 * (1 - scale) + 1 * scale;
+        volume = 0.2 * (1 - scale) + 1 * scale;
 
         // filter too quiet/loud sounds
         if (scale > 0.4)
