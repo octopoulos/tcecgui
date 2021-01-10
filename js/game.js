@@ -4216,20 +4216,17 @@ function check_boom(offset, force) {
         let evals = player.evals;
         if (!evals)
             return;
-        let eval_ = evals[ply];
+        let eval_ = scale_boom(clamp_eval(evals[ply]));
         if (eval_ == undefined)
             return;
-        eval_ = scale_boom(clamp_eval(eval_));
 
         // check diff + ratio with X previous evals
-        let prev_eval,
-            count = 0,
+        let count = 0,
             worst = null;
-        for (let prev = ply - 1; prev >= BOOM_MIN_PLY - 1 && prev >= ply - 10; prev --) {
-            prev_eval = evals[prev];
+        for (let prev = ply - 1; prev >= BOOM_MIN_PLY - 1 && prev >= ply - 12; prev --) {
+            let prev_eval = scale_boom(clamp_eval(evals[prev]));
             if (prev_eval == undefined)
                 continue;
-            prev_eval = scale_boom(clamp_eval(prev_eval));
 
             let diff = Abs(eval_ - prev_eval);
             if (!worst || diff < worst[0]) {
