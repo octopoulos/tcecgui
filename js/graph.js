@@ -61,7 +61,7 @@ let cached_percents = {},
     FormatAxis = value => FormatUnit(value),
     FormatEval = value => value? value.toFixed(2): 0,
     queued_charts = [],
-    scale_boom = x => (x >= 0)? 10 * (1 - Exp(-x * 0.16)): -10 * (1 - Exp(x * 0.16));
+    scale_boom = x => (x >= 0)? 10 * (1 - Exp(-x * 0.25)): -10 * (1 - Exp(x * 0.25));
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -854,7 +854,7 @@ function update_scale_boom(chart) {
         y => y,
     ]:[
         scale_boom,
-        y => (y >= 0)? -Log(1 - y / 10) / 0.16: Log(1 + y / 10) / 0.16,
+        y => (y >= 0)? -Log(1 - y / 10) / 0.25: Log(1 + y / 10) / 0.25,
     ];
 }
 

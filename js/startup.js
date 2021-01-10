@@ -124,6 +124,7 @@ let AD_STYLES = {},
         tb: 'TB',
     },
     TIMEOUT_font = 200,
+    TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000;
 
@@ -256,6 +257,7 @@ function change_setting_special(name, value, close) {
         break;
     case 'click_here_to_RESET_everything':
         reset_settings(true);
+        add_timeout('quick', () => quick_setup(true), TIMEOUT_quick);
         break;
     case 'custom_black':
     case 'custom_black_pv':
@@ -1022,10 +1024,11 @@ function populate_areas() {
 /**
  * Quick setup when the site is loaded for the first time
  * - except if #seen=1, or if in the archive
+ * @param {boolean=} force
  */
-function quick_setup() {
+function quick_setup(force) {
     let old = Y.new_version;
-    if (old == undefined || old >= '20210102' || Y.seen || Y.x == 'archive')
+    if (!force && (old == undefined || old >= '20210109e' || Y.seen || Y.x == 'archive'))
         return;
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
@@ -1868,8 +1871,8 @@ function prepare_settings() {
 
     let bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
-        boom_sounds = [['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'], 'random'],
-        boom_visuals = [['off', 'all', 'color', 'shake'], 'all'],
+        boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
+        boom_visuals = ['off', 'all', 'color', 'shake'],
         cores = navigator.hardwareConcurrency,
         old = 'move',
         shortcuts = [...['off'], ...Keys(TABLES)];
@@ -1994,24 +1997,24 @@ function prepare_settings() {
             turn_opacity: option_number(0, 0, 1, 0.01),
         },
         boom: {
+            disable_everything: [ON_OFF, 0],
             boom_test: '1',
-            boom_sound: boom_sounds,
-            boom_threshold: option_number(0.45, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
-            boom_visual: boom_visuals,
+            boom_sound: [boom_sounds, 0],
+            boom_threshold: option_number(1.2, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
+            boom_visual: [boom_visuals, 0],
             boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             moob_test: '1',
-            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 'random'],
-            moob_visual: [ON_OFF, 1],
+            moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 0],
+            moob_visual: [ON_OFF, 0],
             moob_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
             explosion_test: '1',
             explosion_buildup: option_number(2, 0, 10, 1, {}, 'need to exceed the threshold for X plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
-            explosion_sound: boom_sounds,
+            explosion_sound: [boom_sounds, 'random'],
             explosion_threshold:
                 option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
-            explosion_visual: boom_visuals,
+            explosion_visual: [boom_visuals, 'all'],
             explosion_volume: option_number(5, 0, 20, 0.5),
-            reactivate: '1',
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
@@ -2199,8 +2202,8 @@ function prepare_settings() {
         quick_setup: {
             _pop: true,
             _title: 'Quick setup',
-            boom_effect: [ON_OFF, 1],
-            moob_effect: [ON_OFF, 1],
+            boom_effect: [ON_OFF, 0],
+            moob_effect: [ON_OFF, 0],
             explosion_effect: [ON_OFF, 1],
             language: [LANGUAGES, ''],
             theme: [THEMES, THEMES[0]],

@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210109c',
+    VERSION = '20210109e',
     virtual_close_popups,
     xboards = {};
 
@@ -311,6 +311,8 @@ function reset_old_settings() {
         });
         keys.push('boom_threshold boom_volume');
     }
+    if (version < '20210109e')
+        keys.push('boom_threshold');
 
     let changes = [];
     for (let key of keys)
