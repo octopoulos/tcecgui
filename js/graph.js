@@ -22,7 +22,7 @@ if (typeof global != 'undefined') {
 // modify those values in config.js
 let CHART_JS = 'js/libs/chart-quick.js',
     ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
-    NON_EVALS = new Set([undefined, '', '-', 'book']);
+    NON_EVALS = new Set([undefined, null, '', '-', 'book']);
 
 let cached_percents = {},
     chart_data = {},

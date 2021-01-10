@@ -118,6 +118,7 @@ global.xboards = {
 // clamp_eval
 [
     [undefined, undefined],
+    [null, undefined],
     ['', undefined],
     ['-', undefined],
     ['book', undefined],
@@ -181,6 +182,7 @@ global.xboards = {
 // scale_boom
 [
     [undefined, undefined],
+    [null, undefined],
     ['', undefined],
     ['-', undefined],
     ['book', undefined],
