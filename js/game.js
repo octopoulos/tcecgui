@@ -4195,6 +4195,9 @@ function boom_sound(type, volume, intensities, callback) {
  * @returns {number[]} [0] on success
  */
 function check_boom(offset, force) {
+    if (Y.disable_everything)
+        return [1];
+
     // 1) gather all evals
     let best = [0, 0, 0, 0],
         main = xboards.live,
@@ -4252,7 +4255,7 @@ function check_boom(offset, force) {
     });
 
     if (!force && best[0] < threshold)
-        return [1];
+        return [2];
     let is_moob = ((force && Abs(force) < 0.1) || best[3]),
         type = is_moob? 'moob': 'boom';
 
@@ -4297,7 +4300,7 @@ function check_boom(offset, force) {
  */
 function check_explosion(force) {
     let threshold = Y.explosion_threshold;
-    if (threshold < 0.1)
+    if (threshold < 0.1 || Y.disable_everything)
         return 1;
 
     // 1) gather score of all engines
@@ -5102,10 +5105,8 @@ function change_setting_game(name, value) {
         }
         break;
     case 'boom_effect':
-        if (!value) {
-            save_option('boom_sound', 0);
-            save_option('boom_visual', 0);
-        }
+        save_option('boom_sound', value? 'random': 0);
+        save_option('boom_visual', value? 'all': 0);
         break;
     case 'boom_test':
         check_boom(0, 10);
@@ -5120,10 +5121,8 @@ function change_setting_game(name, value) {
         copy_pgn(null, true);
         break;
     case 'explosion_effect':
-        if (!value) {
-            save_option('explosion_sound', 0);
-            save_option('explosion_visual', 0);
-        }
+        save_option('explosion_sound', value? 'random': 0);
+        save_option('explosion_visual', value? 'all': 0);
         break;
     case 'explosion_test':
         check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
@@ -5162,16 +5161,11 @@ function change_setting_game(name, value) {
         update_materials(main.moves[main.ply]);
         break;
     case 'moob_effect':
-        if (!value) {
-            save_option('moob_sound', 0);
-            save_option('moob_visual', 0);
-        }
+        save_option('moob_sound', value? 'random': 0);
+        save_option('moob_visual', value? 'all': 0);
         break;
     case 'moob_test':
         check_boom(0, 0.01);
-        break;
-    case 'reactivate':
-        xboards.live.exploded = 0;
         break;
     case 'rows_per_page':
         update_tab = true;

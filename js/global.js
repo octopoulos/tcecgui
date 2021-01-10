@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210109d',
+    VERSION = '20210109e',
     virtual_close_popups,
     xboards = {};
 
