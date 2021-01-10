@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -718,7 +718,7 @@ function init_globals() {
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    add_timeout('three', set_3d_scene, TIMEOUTS.three);
+    add_timeout('three', () => set_3d_scene, TIMEOUTS.three);
 
     // google ads
     if (!Y.no_ad && !DEV.ad && !LOCALHOST) {

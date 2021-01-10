@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // game board:
 // - 4 rendering modes:
@@ -1325,7 +1325,7 @@ class XBoard {
             case 'copy':
                 CopyClipboard(that.fen, () => {
                     Class(this, 'copied');
-                    add_timeout('fen', Class(this, '-copied'), 1000);
+                    add_timeout('fen', () => Class(this, '-copied'), 1000);
                 });
                 break;
             case 'end':
