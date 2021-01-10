@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // all socket functions are here
 //
@@ -9,7 +9,7 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
-LOCALHOST, LS, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
+LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
 update_pgn, update_player_eval, update_table, update_twitch, Y
 */
 'use strict';
@@ -26,11 +26,14 @@ if (typeof global != 'undefined') {
 let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com/',
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
-let prev_room = 0,
+let log_time = 0,
+    num_listen = 0,
+    prev_room = 0,
     socket_data = {
         archive: {},
         live: {},
     },
+    TIMEOUT_check = 60,
     TIMEOUT_log = 500,
     virtual_resize;
 
@@ -47,6 +50,8 @@ function init_sockets() {
 
     // live_log
     socket.on('htmlread', data => {
+        log_time = Now();
+
         log_socket('htmlread', data);
         let data_ = data.data,
             date = new Date().toLocaleTimeString(),
@@ -126,6 +131,14 @@ function init_sockets() {
 
     //
     add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUTS.users);
+    add_timeout('check', () => {
+        if (!Y.log_auto_start)
+            return;
+        if (Now() > log_time + TIMEOUT_check - 1) {
+            listen_log(0);
+            add_timeout('log', () => listen_log('all'), TIMEOUT_log);
+        }
+    }, TIMEOUT_check * 1000 + RandomInt(10), true);
 }
 
 /**
@@ -147,16 +160,18 @@ function insert_log(html) {
 
 /**
  * Listen to the log (or not)
- * @param {boolean=} force
+ * @param {string|number} new_room
  */
-function listen_log(force) {
+function listen_log(new_room) {
     if (!socket)
         return;
-    let new_room = Y.live_log;
-    if (!force && Y.log_auto_start && new_room == 0) {
+    if (new_room == undefined)
+        new_room = Y.live_log;
+    if (!num_listen && Y.log_auto_start && new_room == 0) {
         new_room = 'all';
         Y.live_log = 'all';
     }
+    num_listen ++;
 
     // 1) leave the previous room
     if (prev_room && prev_room != new_room) {
@@ -165,11 +180,12 @@ function listen_log(force) {
         prev_room = 0;
     }
     // 2) enter the next room
-    if (force || (new_room && prev_room != new_room)) {
+    if (new_room && prev_room != new_room) {
         prev_room = new_room;
-        socket.emit('room', `room${prev_room}`);
-        insert_log(`<div class="win">entered: ${prev_room}</div>`);
+        socket.emit('room', `room${new_room}`);
+        insert_log(`<div class="win">entered: ${new_room}</div>`);
     }
+    Id('nlog').value = prev_room;
 }
 
 /**
@@ -185,21 +201,6 @@ function log_socket(name, data, cache) {
     }
     if (cache)
         socket_data[Y.x][name] = data;
-}
-
-/**
- * Hack because of socket.io
- * - won't be needed anymore when socket.io is gone
- */
-function reconnect_log() {
-    if (!Y.log_auto_start)
-        return;
-    for (let id = 0; id < 2; id ++) {
-        add_timeout(`log${id}`, () => {
-            Y.live_log = id? 'all': 0;
-            listen_log();
-        }, TIMEOUT_log * (id + 1) + RandomInt(100));
-    }
 }
 
 /**
@@ -280,6 +281,6 @@ function update_twitch(dark, chat_url, only_resize) {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
-        reconnect_log: reconnect_log,
+        listen_log: listen_log,
     });
 // >>

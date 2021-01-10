@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -116,7 +116,7 @@ let __PREFIX = '_',
     virtual_set_combo_special,
     virtual_socket_message,
     virtual_socket_open,
-    WS = WebSocket,
+    WS = (typeof WebSocket != 'undefined')? WebSocket: null,
     X_SETTINGS = {},
     Y = {},                                             // params
     y_index = -1,
@@ -579,7 +579,7 @@ function sanitise_data() {
  */
 function save_default(name, value) {
     if (value === undefined)
-        value = Y[name];
+        value = DEFAULTS[name];
     else
         Y[name] = value;
     if (value == DEFAULTS[name])
