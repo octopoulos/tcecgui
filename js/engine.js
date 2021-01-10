@@ -116,7 +116,7 @@ let __PREFIX = '_',
     virtual_set_combo_special,
     virtual_socket_message,
     virtual_socket_open,
-    WS = WebSocket,
+    WS = (typeof WebSocket != 'undefined')? WebSocket: null,
     X_SETTINGS = {},
     Y = {},                                             // params
     y_index = -1,
