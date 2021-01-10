@@ -4202,6 +4202,10 @@ function check_boom(force) {
     // 2) compare eval with previous eval for every engine
     // !! [1.83, 1.45, -1.54, empty × 2, 2.05] => no boom, just a glitch => check X moves back
     players.forEach((player, id) => {
+        // already boomed => skip
+        if (player.boom_ply == ply)
+            return;
+
         // get the eval
         let evals = player.evals;
         if (!evals)
