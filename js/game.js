@@ -17,11 +17,11 @@ context_target:true, controls, CopyClipboard, create_field_value, create_page_ar
 CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
-getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
+getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
-Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, reconnect_log, redraw_eval_charts, require,
-reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
+Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
+resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
@@ -152,6 +152,7 @@ let ANALYSIS_URLS = {
         explosion: 'background-color:rgba(255,0,0,0.9)',
     },
     BOOM_SHAKES = {
+        1: 1,
         all: 1,
         shake: 1,
     },
@@ -3819,7 +3820,7 @@ function update_pgn(section, data, extras, reset_moves) {
         main.event = headers.Event;
         main.round = headers.Round;
 
-        for (let id in [0, 1]) {
+        for (let id of [0, 1]) {
             update_move_info(section, id, {});
             Assign(players[id], {
                 boom_ply: -1,
@@ -3831,9 +3832,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
-
-        // hack because of socket.io
-        reconnect_log();
+        listen_log();
     }
     // can happen after resume
     else if (reset_moves) {
@@ -4114,7 +4113,7 @@ function boom_effect(type, info, volume, intensities, params, callback) {
         // 5) visual stuff
         let body = Id('body2'),
             red = BOOM_REDS[type].replace('{ALPHA}', (0.4 * volume).toFixed(3)),
-            visual = Y.explosion_visual;
+            visual = Y[`${type}_visual`];
 
         if (shake_animation == null)
             boom_info.transform = body? body.style.transform: '';
@@ -4410,7 +4409,8 @@ function clock_tick(section, id) {
 
     player.elapsed = elapsed;
     update_clock(section, id);
-    add_timeout(`clock-${section}${id}`, () => clock_tick(section, id, now), timeout);
+    if (!GLOBAL)
+        add_timeout(`clock-${section}${id}`, () => clock_tick(section, id, now), timeout);
 }
 
 /**

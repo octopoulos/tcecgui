@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // global variables/functions shared across multiple js files
 //
@@ -37,7 +37,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210108',
+    VERSION = '20210109',
     virtual_close_popups,
     xboards = {};
 
@@ -300,14 +300,27 @@ function reset_old_settings() {
         return;
     }
 
+    let keys = [];
     if (version < '20200930')
-        save_default('game_wasm', 1);
-    if (version < '20201003b') {
-        save_default('game_threads', 1);
-        save_default('graph_marker_color', '#299bff');
+        keys.push('game_wasm');
+    if (version < '20201003b')
+        keys.push('game_threads graph_marker_color');
+    if (version < '20210109') {
+        Keys(DEFAULTS).filter(key => key.slice(0, 6) == 'sound_').map(key => {
+            keys.push(key);
+        });
+        keys.push('boom_threshold boom_volume');
     }
 
-    LS(`version: ${version} => ${VERSION}`);
+    let changes = [];
+    for (let key of keys)
+        for (let item of key.split(' '))
+            if (Y[item] != DEFAULTS[item]) {
+                changes.push(item);
+                save_default(item);
+            }
+
+    LS(`version: ${version} => ${VERSION} : ${changes}`);
     save_option('version', VERSION);
     Y.new_version = version;
 }
