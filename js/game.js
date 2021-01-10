@@ -138,7 +138,7 @@ let ANALYSIS_URLS = {
     BOOM_MIN_PLY = 8,
     // intensity, shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
-        _: [2, 0, 2000, 100, 1000, 4, 0.96],
+        _: [2, 0, 2000, 100, 2000, 3, 0.96],
         boom: [1, 0, 3800, 100, 1500, 11, 0.93],
         boom2: [3, 0, 4800, 100, 2400, 15, 0.94],
         boom3: [3, 0, 4900, 100, 2400, 12, 0.945],
@@ -147,8 +147,8 @@ let ANALYSIS_URLS = {
         boom6: [10, 5450, 6000, 5550, 2200, 15, 0.95],
     },
     BOOM_REDS = {
-        boom: 'background-color:rgba(255,0,0,0.25)',
-        moob: 'background-color:rgba(0,0,255,0.25)',
+        boom: 'background-color:rgba(255,0,0,{ALPHA})',
+        moob: 'background-color:rgba(0,0,255,{ALPHA})',
         explosion: 'background-color:rgba(255,0,0,0.9)',
     },
     BOOM_SHAKES = {
@@ -4113,7 +4113,7 @@ function boom_effect(type, info, volume, intensities, params, callback) {
 
         // 5) visual stuff
         let body = Id('body2'),
-            red = BOOM_REDS[type],
+            red = BOOM_REDS[type].replace('{ALPHA}', (0.4 * volume).toFixed(3)),
             visual = Y.explosion_visual;
 
         if (shake_animation == null)
@@ -4274,7 +4274,7 @@ function check_boom(force) {
     // 4) effect if a boom was detected
     boom_effect(type, best, volume, intensities, {
         every: every,
-        red_coeff: is_moob? 0.8: 0.4,
+        red_coeff: red_coeff,
     });
     if (DEV.boom4)
         LS([every, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
