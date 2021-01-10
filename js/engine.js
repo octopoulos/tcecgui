@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-10
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1012,6 +1012,7 @@ function check_hash(no_special) {
         dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     Assign(Y, dico);
     sanitise_data();
+    parse_dev();
 
     if (!no_special && virtual_check_hash_special)
         virtual_check_hash_special(dico);
