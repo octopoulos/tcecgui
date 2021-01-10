@@ -1851,7 +1851,8 @@ function prepare_settings() {
         season: 1,
         stage: 1,
         stream: 1,
-        twitch_video: 1,
+        twitch_chat: 2,
+        twitch_video: 2,
         version: 1,
         x: 1,
     });
