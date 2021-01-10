@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-09
 //
 // Game specific code:
 // - control the board, moves
@@ -15,8 +15,8 @@ _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, aud
 cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, context_areas,
 context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode,
 CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, exports, fill_combo, fix_move_format, Floor,
-format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
+DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
+Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
@@ -128,6 +128,7 @@ let ANALYSIS_URLS = {
         }
     },
     BOOM_COLORS = {
+        1: 1,
         all: 1,
         color: 1,
     },
@@ -135,18 +136,19 @@ let ANALYSIS_URLS = {
     BOOM_ELEMENTS2 = `${BOOM_ELEMENTS}, #body`,
     boom_info = {},
     BOOM_MIN_PLY = 8,
-    // shake_start, shake_duration, red_start, red_duration, magnitude, decay
+    // intensity, shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
-        boom: [0, 3800, 100, 1500, 11, 0.93],
-        boom2: [0, 4800, 100, 2400, 15, 0.94],
-        boom3: [0, 4900, 100, 2400, 12, 0.945],
-        boom4: [500, 6000, 600, 2200, 15, 0.95],
-        boom5: [0, 7800, 100, 3000, 8, 0.97],
-        boom6: [5450, 6000, 5550, 2200, 15, 0.95],
+        _: [2, 0, 2000, 100, 1000, 4, 0.96],
+        boom: [1, 0, 3800, 100, 1500, 11, 0.93],
+        boom2: [3, 0, 4800, 100, 2400, 15, 0.94],
+        boom3: [3, 0, 4900, 100, 2400, 12, 0.945],
+        boom4: [5, 500, 6000, 600, 2200, 15, 0.95],
+        boom5: [4, 0, 7800, 100, 3000, 8, 0.97],
+        boom6: [10, 5450, 6000, 5550, 2200, 15, 0.95],
     },
     BOOM_REDS = {
         boom: 'background-color:rgba(255,0,0,0.25)',
-        mood: 'background-color:rgba(0,0,255,0.25)',
+        moob: 'background-color:rgba(0,0,255,0.25)',
         explosion: 'background-color:rgba(255,0,0,0.9)',
     },
     BOOM_SHAKES = {
@@ -4094,16 +4096,18 @@ function analyse_log(line) {
 /**
  * Create a boom effect: sound + color + shake
  * @param {string} type
+ * @param {number} volume
+ * @param {[number, number]} intensities
  * @param {*} info
  * @param {Object} params
  * @param {function=} callback
  */
-function boom_effect(type, info, params, callback) {
+function boom_effect(type, info, volume, intensities, params, callback) {
     let main = xboards.live;
 
-    boom_sound(type, params.volume, sound => {
-        let boom_param = BOOM_PARAMS[sound],
-            [shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
+    boom_sound(type, volume, intensities, sound => {
+        let boom_param = BOOM_PARAMS[sound] || BOOM_PARAMS._,
+            [_, shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
         if (DEV.effect)
             LS(`${type}: ply=${main.moves.length} : ${sound} : ${boom_param} : ${info}`);
 
@@ -4151,18 +4155,24 @@ function boom_effect(type, info, params, callback) {
  * Play a BOOM or explosion sound
  * @param {string} type
  * @param {number} volume volume multiplier, from 0 to 1
+ * @param {[number, number]} intensities
  * @param {function} callback called when the sound is playing
  */
-function boom_sound(type, volume, callback) {
+function boom_sound(type, volume, intensities, callback) {
     let key = `${type}_sound`,
         sounds = X_SETTINGS.boom[key][0],
         sound = Y[key];
+
+    // random => don't play last played sound + filter by intensity
     if (sound == 'random') {
-        for (let i = 0; i < 100; i ++) {
-            sound = sounds[RandomInt(2, sounds.length)];
-            if (sound != last_sound)
-                break;
-        }
+        let availables = sounds.slice(2).filter(sound => {
+            if (sound == last_sound)
+                return false;
+            let params = BOOM_PARAMS[sound] || BOOM_PARAMS._,
+                intensity = params[0];
+            return (intensity >= intensities[0] && intensity <= intensities[1]);
+        });
+        sound = availables[RandomInt(0, availables.length)];
     }
 
     last_sound = sound;
@@ -4179,11 +4189,11 @@ function boom_sound(type, volume, callback) {
  * - individual check for every player
  * - ignore kibitzers
  * @param {number=} force for debugging
- * @returns {number} 0 on success
+ * @returns {number[]} [0] on success
  */
 function check_boom(force) {
     // 1) gather all evals
-    let best = null,
+    let best = [0, 0, 0, 0],
         main = xboards.live,
         players = main.players.slice(0, 2),
         ply = main.moves.length,
@@ -4200,8 +4210,6 @@ function check_boom(force) {
         if (eval_ == undefined)
             return;
         eval_ = scale_boom(clamp_eval(eval_));
-        if (Abs(eval_) < 1)
-            return;
 
         // check diff + ratio with X previous evals
         let prev_eval,
@@ -4215,7 +4223,7 @@ function check_boom(force) {
 
             let diff = Abs(eval_ - prev_eval);
             if (!worst || diff < worst[0]) {
-                worst = [diff, prev_eval, eval_, Abs(eval_) < Abs(prev_eval)];
+                worst = [diff, prev_eval, eval_, Abs(eval_) < Abs(prev_eval), id];
                 if (DEV.boom2)
                     LS('worst=', ply, id, worst);
             }
@@ -4225,31 +4233,52 @@ function check_boom(force) {
                 break;
         }
 
-        if (count >= 3 && worst && (!best || worst[0] > best[0]) && worst[0] >= threshold) {
+        if (count >= 3 && worst && worst[0] > best[0] && worst[0] >= threshold) {
             best = worst;
             if (DEV.boom)
                 LS('best=', ply, id, best);
-            player.boomed = best[0];
-            player.boom_ply = ply;
+            Assign(player, {
+                boomed: best[3]? -best[0]: best[0],
+                boom_ply: ply,
+            });
         }
     });
 
-    if (!best && !force)
-        return 1;
-    let type = ((force && Abs(force) < 0.1) || best[3])? 'moob': 'boom';
+    if (!force && best[0] < threshold)
+        return [1];
+    let is_moob = ((force && Abs(force) < 0.1) || best[3]),
+        type = is_moob? 'moob': 'boom';
 
-    // 3) scaling:
-    // - every: 1/60s for short effect, 1/20 for long ones
-    // - red_coeff: from 0.1 to 0.75
-    // - volume: from 0.1 to 1
+    // 3) scaling with intensity:
+    // - every    : 0.4 => 1/60, 3+ => 1/20
+    // - red_coeff: 0.4 =>  0.1, 3+ => 0.75
+    // - volume   : 0.4 =>  0.1, 3+ => 1
+    let every = 1/40,
+        intensities = [1, 10],
+        red_coeff = 0.4,
+        volume = 1;
+    if (!force) {
+        let delta = best[0] - threshold,
+            scale = 1 - Exp(-delta * 0.5);
+        every = 1/60 * (1 - scale) + 1/20 * scale;
+        red_coeff = 0.1 * (1 - scale) + 0.75 * scale;
+        volume = 0.1 * (1 - scale) + 1 * scale;
+
+        // filter too quiet/loud sounds
+        if (scale > 0.4)
+            intensities[0] = 2;
+        if (scale < 0.7)
+            intensities[1] = 9;
+    }
 
     // 4) effect if a boom was detected
-    boom_effect(type, best, {
-        every: 1/40,
-        red_coeff: 0.25,
-        volume: 1,
+    boom_effect(type, best, volume, intensities, {
+        every: every,
+        red_coeff: is_moob? 0.8: 0.4,
     });
-    return 0;
+    if (DEV.boom4)
+        LS([every, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
+    return [0, every, red_coeff, volume, intensities];
 }
 
 /**
@@ -4326,10 +4355,9 @@ function check_explosion(force) {
     if (!force && seens.size < 2)
         return 5;
 
-    boom_effect('explosion', `best=${best} : scores=${scores}`, {
+    boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
         every: 1/20,
         red_coeff: 0.75,
-        volume: 1,
     }, () => {
         defuses.clear();
         explodes.clear();
