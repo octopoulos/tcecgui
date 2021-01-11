@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-10
+// @version 2021-01-11
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1564,67 +1564,71 @@ function set_global_events() {
     }, {passive: true});
 
     // context menus
-    if (!DEV.popup) {
-        Keys(CONTEXT_MENUS).forEach(key => {
-            Events(key, 'contextmenu', function(e) {
-                context_target = e.target;
+    Keys(CONTEXT_MENUS).forEach(key => {
+        Events(key, 'contextmenu', function(e) {
+            if (!Y.popup_right_click)
+                return;
+            context_target = e.target;
 
-                // skip some elements
-                let tag = context_target.tagName;
-                if (['INPUT', 'SELECT'].includes(tag))
-                    return;
-                if (tag == 'A' && context_target.href)
-                    return;
+            // skip some elements
+            let tag = context_target.tagName;
+            if (['INPUT', 'SELECT'].includes(tag))
+                return;
+            if (tag == 'A' && context_target.href)
+                return;
 
-                show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
-                PD(e);
-            });
+            show_popup('options', true, {setting: CONTEXT_MENUS[key], xy: [e.clientX, e.clientY]});
+            PD(e);
         });
-        Events(
-            '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
-            + '#table-live0, #table-live1', 'contextmenu', function(e) {
-            let is_pv = '01'.includes(this.id.slice(-1)),
-                is_pva = (this.id == 'pva'),
-                target = e.target;
+    });
+    Events(
+        '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
+        + '#table-live0, #table-live1', 'contextmenu', function(e) {
+        if (!Y.popup_right_click)
+            return;
+        let is_pv = '01'.includes(this.id.slice(-1)),
+            is_pva = (this.id == 'pva'),
+            target = e.target;
 
-            while (target) {
-                let dataset = target.dataset,
-                    name;
-                if (dataset && ['next', 'prev'].includes(dataset.x))
-                    return;
-                else if (HasClasses(target, 'hardware|live-basic|live-more'))
-                    name = 'eval';
-                else if (HasClass(target, 'live-pv'))
-                    name = 'live';
-                else if (HasClass(target, 'xbottom'))
-                    return;
-                else if (HasClass(target, 'xcontain'))
-                    name = is_pva? 'game': (is_pv? 'board_pv': 'board');
-                else if (HasClass(target, 'xcontrol'))
-                    name = 'control';
-                else if (HasClass(target, 'xmoves'))
-                    name = `copy${is_pva? '_pva': (is_pv? '_pv': '')}`;
+        while (target) {
+            let dataset = target.dataset,
+                name;
+            if (dataset && ['next', 'prev'].includes(dataset.x))
+                return;
+            else if (HasClasses(target, 'hardware|live-basic|live-more'))
+                name = 'eval';
+            else if (HasClass(target, 'live-pv'))
+                name = 'live';
+            else if (HasClass(target, 'xbottom'))
+                return;
+            else if (HasClass(target, 'xcontain'))
+                name = is_pva? 'game': (is_pv? 'board_pv': 'board');
+            else if (HasClass(target, 'xcontrol'))
+                name = 'control';
+            else if (HasClass(target, 'xmoves'))
+                name = `copy${is_pva? '_pva': (is_pv? '_pv': '')}`;
 
-                if (name) {
-                    context_target = target;
-                    show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
-                    PD(e);
-                    return;
-                }
-                target = target.parentNode;
-            }
-        });
-        Events(window, 'contextmenu', e => {
-            let target = e.target;
-            if (HasClasses(target, 'tab drop')) {
-                let id = target.dataset.x,
-                    name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
+            if (name) {
                 context_target = target;
                 show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
                 PD(e);
+                return;
             }
-        });
-    }
+            target = target.parentNode;
+        }
+    });
+    Events(window, 'contextmenu', e => {
+        if (!Y.popup_right_click)
+            return;
+        let target = e.target;
+        if (HasClasses(target, 'tab drop')) {
+            let id = target.dataset.x,
+                name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
+            context_target = target;
+            show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
+            PD(e);
+        }
+    });
 
     // drag and drop
     Events(window, 'dragstart', e => {
@@ -1817,7 +1821,6 @@ function prepare_settings() {
         m: 'mobil',
         o: 'open',
         n: 'new',                   // new game debugging
-        P: 'popup',                 // disable popups
         q: 'queue',
         s: 'socket',                // socket messages
         S: 'no_socket',
@@ -1939,6 +1942,7 @@ function prepare_settings() {
             controls: [ON_OFF, 1],
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
+            draw_right_click: [ON_OFF, 0],
             highlight_color: [{type: 'color'}, '#ffff00'],
             // 1100 looks good too
             highlight_delay: option_number(0, -100, 1500, 100),
@@ -2024,6 +2028,8 @@ function prepare_settings() {
             log_auto_start: [ON_OFF, 1],
             log_history: option_number(100, -1, 1000),
             log_pv: [ON_OFF, 1, 'use livelog pv'],
+            popup_icon: [ON_OFF, 0],
+            popup_right_click: [ON_OFF, 1, 'right click on elements for a popup menu'],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100, 1000], 10],
             scroll_inertia: option_number(0.95, 0, 0.99, 0.01),
@@ -2234,6 +2240,7 @@ function startup() {
 
     // VB=viewBox=; PFC=path fill="currentColor"
     ICONS = {
+        burger: 'viewBox="0 0 448 512"><PFC d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/>',
         calendar: 'VB="0 0 448 512"><PFC d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-196c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM192 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM64 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z"/>',
         cog: 'VB="0 0 512 512"><PFC d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7v-49.2c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.5-5.5-.7-11.3-5.6-14.1zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z"/>',
         compress: 'VB="0 0 448 512"><PFC d="M436 192H312c-13.3 0-24-10.7-24-24V44c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v84h84c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm-276-24V44c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v84H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h124c13.3 0 24-10.7 24-24zm0 300V344c0-13.3-10.7-24-24-24H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h84v84c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-84h84c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12H312c-13.3 0-24 10.7-24 24v124c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12z"/>',
