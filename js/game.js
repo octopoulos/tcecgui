@@ -12,9 +12,9 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, context_areas,
-context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode,
-CreateSVG, cube:true,
+cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, close_popups,
+context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
+CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
@@ -45,6 +45,10 @@ let ANALYSIS_URLS = {
         lichess: 'https://lichess.org/analysis/{STANDARD}/{FEN}',
     },
     ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
+    BOARD_MATCHES = {
+        board_pva: 'pva',
+        game: 'pva',
+    },
     BOARD_THEMES = {
         blue: ['#e0e0e0', '#87a6bc'],
         brown: ['#eaded0', '#927b6d'],
@@ -5078,6 +5082,7 @@ function random_position() {
  */
 function change_setting_game(name, value) {
     let update_tab,
+        board = get_context_board(),
         prefix = name.split('_')[0],
         sboard = section_board(),
         section = Y.x,
@@ -5088,40 +5093,36 @@ function change_setting_game(name, value) {
     case 'analysis_chessdb':
     case 'analysis_evalguide':
     case 'analysis_lichess':
-        let parent = Parent(context_target, {class_: 'xboard'});
-        if (parent) {
-            let board = xboards[parent.id],
-                url = ANALYSIS_URLS[name.split('_')[1]];
-            if (board) {
-                url = url
-                    .replace('{FEN}', board.fen)
-                    .replace('{STANDARD}', board.frc? 'chess960': 'standard');
-                window.open(url, '_blank');
-            }
+        if (board) {
+            let url = ANALYSIS_URLS[name.split('_')[1]]
+                .replace('{FEN}', board.fen)
+                .replace('{STANDARD}', board.frc? 'chess960': 'standard');
+            window.open(url, '_blank');
         }
+        close_popups();
         break;
     case 'boom_effect':
         save_option('boom_sound', value? 'random': 0);
         save_option('boom_visual', value? 'all': 0);
         break;
-    case 'boom_test':
-        check_boom(0, [3, 0, 0, false]);
+    case 'copy_download':
+    case 'download_pgn':
+        copy_pgn(board, true);
+        break;
+    case 'copy_fen':
+        CopyClipboard(board.fen);
+        close_popups();
         break;
     case 'copy_moves':
         copy_moves();
         break;
     case 'copy_pgn':
-        copy_pgn();
-        break;
-    case 'download_pgn':
-        copy_pgn(null, true);
+        copy_pgn(board);
+        close_popups();
         break;
     case 'explosion_effect':
         save_option('explosion_sound', value? 'random': 0);
         save_option('explosion_visual', value? 'all': 0);
-        break;
-    case 'explosion_test':
-        check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
         break;
     case 'game_PV':
         S(Id('pva-pv'), value);
@@ -5160,9 +5161,6 @@ function change_setting_game(name, value) {
         save_option('moob_sound', value? 'random': 0);
         save_option('moob_visual', value? 'all': 0);
         break;
-    case 'moob_test':
-        check_boom(0, [3, 0, 0, true]);
-        break;
     case 'rows_per_page':
         update_tab = true;
         break;
@@ -5178,6 +5176,15 @@ function change_setting_game(name, value) {
         break;
     case 'status_pva':
         show_board_info('pva');
+        break;
+    case 'test_boom':
+        check_boom(0, [3, 0, 0, false]);
+        break;
+    case 'test_explosion':
+        check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
+        break;
+    case 'test_moob':
+        check_boom(0, [3, 0, 0, true]);
         break;
     }
 
@@ -5316,15 +5323,7 @@ function copy_moves() {
 function copy_pgn(board, download, only_text) {
     // 1) get the matching board
     if (!board) {
-        if (!context_target)
-            return '';
-        let parent = Parent(context_target, {class_: 'xboard', self: true});
-        if (!parent) {
-            parent = Parent(context_target, {class_: 'drag', self: true});
-            if (!parent)
-                return '';
-        }
-        board = xboards[parent.id.split('-').slice(-1)[0]];
+        board = get_context_board();
         if (!board)
             return '';
     }
@@ -5484,6 +5483,41 @@ function copy_pgn(board, download, only_text) {
             paste_text(copy_pgn(board, true, true));
     }
     return text;
+}
+
+/**
+ * Get the board:
+ * - for which the modal popup is associated
+ * - or ... on which we right clicked
+ * @returns {Object}
+ */
+function get_context_board() {
+    // 1) modal is visible => try to get board
+    let target, target2,
+        modal = Id('modal');
+    if (HasClass(modal, 'popup-show')) {
+        let title = _('div.item-title', modal);
+        if (title) {
+            let name = title.dataset.n;
+            if (name == 'board')
+                target2 = xboards[Y.x];
+            else {
+                name = BOARD_MATCHES[name];
+                if (name)
+                    target = xboards[name];
+            }
+        }
+    }
+
+    // 2) right click was recorded
+    if (!target && context_target) {
+        let parent = Parent(context_target, {class_: 'xboard', self: true});
+        if (!parent)
+            parent = Parent(context_target, {class_: 'drag', self: true});
+        if (parent)
+            target = xboards[parent.id.split('-').slice(-1)[0]];
+    }
+    return target || target2;
 }
 
 /**
