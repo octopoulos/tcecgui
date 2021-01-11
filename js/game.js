@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-10
+// @version 2021-01-11
 //
 // Game specific code:
 // - control the board, moves
@@ -4191,7 +4191,7 @@ function boom_sound(type, volume, intensities, callback) {
  * - individual check for every player
  * - ignore kibitzers
  * @param {number} offset ply offset
- * @param {number=} force for debugging
+ * @param {number[]=} force for debugging
  * @returns {number[]} [0] on success
  */
 function check_boom(offset, force) {
@@ -4199,7 +4199,7 @@ function check_boom(offset, force) {
         return [1];
 
     // 1) gather all evals
-    let best = [0, 0, 0, 0],
+    let best = force || [0, 0, 0, 0],
         main = xboards.live,
         players = main.players.slice(0, 2),
         ply = main.moves.length + offset,
@@ -4209,7 +4209,7 @@ function check_boom(offset, force) {
     // !! [1.83, 1.45, -1.54, empty × 2, 2.05] => no boom, just a glitch => check X moves back
     players.forEach((player, id) => {
         // already boomed => skip
-        if (player.boom_ply == ply)
+        if (player.boom_ply == ply || force)
             return;
 
         // get the eval
@@ -4260,32 +4260,31 @@ function check_boom(offset, force) {
     // - every    : 0.4 => 1/60, 3+ => 1/20
     // - red_coeff: 0.4 =>  0.1, 3+ => 0.75
     // - volume   : 0.4 =>  0.1, 3+ => 1
-    let every = 1/40,
-        intensities = [1, 10],
+    let intensities = [1, 10],
+        rate = 40,
         red_coeff = 0.4,
         volume = 1;
-    if (!force) {
-        let delta = best[0] - threshold,
-            scale = 1 - Exp(-delta * 0.5);
-        every = 1/60 * (1 - scale) + 1/20 * scale;
-        red_coeff = 0.1 * (1 - scale) + 0.75 * scale;
-        volume = 0.2 * (1 - scale) + 1 * scale;
 
-        // filter too quiet/loud sounds
-        if (scale > 0.4)
-            intensities[0] = 2;
-        if (scale < 0.7)
-            intensities[1] = 9;
-    }
+    let delta = best[0] - threshold,
+        scale = 1 - Exp(-delta * 0.5);
+    rate = 60 * (1 - scale) + (is_moob? 35: 20) * scale;
+    red_coeff = 0.1 * (1 - scale) + 0.75 * scale;
+    volume = 0.2 * (1 - scale) + 1 * scale;
+
+    // filter too quiet/loud sounds
+    if (scale > 0.4)
+        intensities[0] = 2;
+    if (scale < 0.7)
+        intensities[1] = 9;
 
     // 4) effect if a boom was detected
     boom_effect(type, best, volume, intensities, {
-        every: every,
+        every: 1 / rate,
         red_coeff: red_coeff,
     });
     if (DEV.boom4)
-        LS([every, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
-    return [0, every, red_coeff, volume, intensities];
+        LS([rate, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
+    return [0, rate, red_coeff, volume, intensities];
 }
 
 /**
@@ -5106,7 +5105,7 @@ function change_setting_game(name, value) {
         save_option('boom_visual', value? 'all': 0);
         break;
     case 'boom_test':
-        check_boom(0, 10);
+        check_boom(0, [3, 0, 0, false]);
         break;
     case 'copy_moves':
         copy_moves();
@@ -5162,7 +5161,7 @@ function change_setting_game(name, value) {
         save_option('moob_visual', value? 'all': 0);
         break;
     case 'moob_test':
-        check_boom(0, 0.01);
+        check_boom(0, [3, 0, 0, true]);
         break;
     case 'rows_per_page':
         update_tab = true;
