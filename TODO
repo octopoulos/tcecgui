@@ -14,6 +14,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-10 : enable/disable show popup menu icon
+2021-01-11 : 2021-01-11 : moob vibrates faster than boom
 2021-01-11 : 2021-01-10 : enable/disable right click for popup menu
 2021-01-09 : 2021-01-08 : boom should scale the volume + shake + duration
 2021-01-08 : 2021-01-08 : graph scale: boom
