@@ -1,6 +1,6 @@
 /*
 light.css
-@version 2021-01-07
+@version 2021-01-11
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -441,6 +441,11 @@ grid {
 }
 .item2.active:hover {
     background: rgba(208, 208, 224, 0.9);
+}
+.item3 {
+    font-variant: small-caps;
+    padding: 0.3em 0.4em;
+    width: auto;
 }
 .span {
     grid-column: 1/3;

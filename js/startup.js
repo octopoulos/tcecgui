@@ -365,6 +365,8 @@ function change_setting_special(name, value, close) {
     case 'moves_copy':
         populate_areas();
         break;
+    case 'popup_icon':
+        break;
     case 'preset':
         load_preset(value);
         break;
@@ -1861,7 +1863,8 @@ function prepare_settings() {
         options: 1,
     });
 
-    let bamboo = 'bamboo',
+    let analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}, ''],
+        bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
@@ -1933,9 +1936,7 @@ function prepare_settings() {
             arrow_width: option_number(1.6, 0, 5, 0.01),
         },
         board: {
-            analysis_chessdb: '4',
-            analysis_evalguide: '4',
-            analysis_lichess: '4',
+            analysis: analyses,
             animate: [ON_OFF, 1],
             arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
@@ -1953,9 +1954,7 @@ function prepare_settings() {
         },
         board_pv: {
             _suffix: '_pv',
-            analysis_chessdb: '4',
-            analysis_evalguide: '4',
-            analysis_lichess: '4',
+            analysis: analyses,
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             controls_pv: [ON_OFF, 1],
@@ -2042,8 +2041,7 @@ function prepare_settings() {
         },
         game: {
             _prefix: 'game_',
-            analysis_evalguide: '1',
-            analysis_lichess: '1',
+            analysis: analyses,
             board_pva: '',
             game_960: [ON_OFF, 1],
             game_advice: '1',
