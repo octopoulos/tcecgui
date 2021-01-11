@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-11
 //
 // general 3d rendering code
 //
@@ -1622,22 +1622,46 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             if (auto)
                 auto = ` autocomplete="${auto}"`;
 
-            if (type == 'area')
+            let found = true;
+            switch (type) {
+            case 'area':
                 lines.push(`<textarea name="${key}"${class_}${holder}${auto}${focus}>${y_key}</textarea>`);
-            else if (type == 'info' || type == 'upper')
+                break;
+            case 'info':
+            case 'upper':
                 lines.push(`<div class="${type}" name="${key}" data-t="${data.text || ''}"></div>`);
-            else if (type == 'number')
-                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
-            else if (type == 'link') {
+                break;
+            case 'link':
                 if (data.text)
                     lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}>`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
                 Attrs(Id('file'), {'data-x': key});
+                break;
+            case 'list':
+                lines.push([
+                    '<hori class="w100">',
+                    data.list.map(item => {
+                        let parts = item.split('='),
+                            name = parts[0],
+                            title = parts[1]? ` title="${name}"`: '';
+                        return `<a class="item item3" name="${key}_${name}"${title}>${parts[1] || name}</a>`;
+                    }).join(''),
+                    '</hori>',
+                ].join(''));
+                break;
+            case 'number':
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
+                break;
+            default:
+                found = false;
+            }
+
+            if (found) {
             }
             else if (type)
                 lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}>`);
             // dictionary
-            else
+            else {
                 lines.push(
                     `<select name="${key}"${focus}>`
                         + Keys(data).map(value => {
@@ -1647,6 +1671,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                         }).join('')
                     + '</select>'
                 );
+            }
 
             lines.push('</vert>');
         }
