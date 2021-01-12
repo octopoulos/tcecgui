@@ -4183,12 +4183,15 @@ function boom_sound(type, volume, intensities, callback) {
     }
 
     last_sound = sound;
-    play_sound(audiobox, sound, {loaded: () => {
+    let gonna_play = play_sound(audiobox, sound, {loaded: () => {
         if (DEV.effect)
             LS(`sound ${sound} loaded, playing now ...`);
         play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10 * volume});
         callback(sound);
     }});
+
+    if (!gonna_play)
+        callback();
 }
 
 /**
@@ -4355,19 +4358,19 @@ function check_explosion(force) {
         LS(`exploded: ${explodes.size} : ${[...explodes].join(' ')} : ${scores} => ${main.exploded} ~ ${best}`);
     defuses.clear();
 
-    if (Sign(best) == Sign(exploded) || !Y.explosion_sound)
-        return 3;
-
-    if (!force && explodes.size < Y.explosion_buildup) {
+    if (!force) {
+        if (Sign(best) == Sign(exploded))
+            return 3;
+        if (explodes.size < Y.explosion_buildup) {
+            if (num_seen < 3)
+                main.exploded = best;
+            return 4;
+        }
+        main.exploded = best;
+        // don't explode if we just loaded the page
         if (num_seen < 3)
-            main.exploded = best;
-        return 4;
+            return 5;
     }
-
-    main.exploded = force? exploded: best;
-    // don't explode if we just loaded the page
-    if (!force && num_seen < 3)
-        return 5;
 
     boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
         every: 1/20,
@@ -5467,14 +5470,14 @@ function copy_pgn(board, download, only_text) {
     }
 
     if (moves.length)
-        moves.push('*');
+        moves.push('\n*');
 
     // 4) result
     headers.Annotator = board.name;
     let text = [
         Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'),
         (options.length? `\n{${options.join(', ')}}`: ''),
-        moves.join(''),
+        moves.join('').replace(/\n\n/g, '\n'),
     ].join('\n');
 
     if (only_text)

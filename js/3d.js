@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-11
+// @version 2021-01-12
 //
 // general 3d rendering code
 //
@@ -980,10 +980,11 @@ function gamepad_update() {
  * @param {number=} start start of the 2nd cycle
  * @param {boolean=} voice
  * @param {number=} volume
+ * @returns {boolean}
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded, start=0, voice, volume=1}={}) {
     if (!cube || !cube.sounds || !name)
-        return;
+        return false;
 
     // ext can be in the name
     let items = name.split('.');
@@ -993,7 +994,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
     if (audio && frame && audio.frame == frame)
-        return;
+        return false;
 
     // play sounds weaker depending on the distance
     // - distance between 2 segments is ~1500 units
@@ -1010,7 +1011,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
     if (volume < 0.001) {
         if (audio)
             audio.pause();
-        return;
+        return false;
     }
 
     // load & seek
@@ -1035,7 +1036,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
             loaded();
         else
             audio.onloadeddata = loaded;
-        return;
+        return true;
     }
 
     // play
@@ -1045,6 +1046,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
     .catch(() => {
         audio.pause();
     });
+    return true;
 }
 
 // UI
