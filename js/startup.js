@@ -365,8 +365,6 @@ function change_setting_special(name, value, close) {
     case 'moves_copy':
         populate_areas();
         break;
-    case 'popup_icon':
-        break;
     case 'preset':
         load_preset(value);
         break;
@@ -1947,7 +1945,6 @@ function prepare_settings() {
             custom_white: [{type: 'color'}, '#ffffff'],
             draw_right_click: [ON_OFF, 0],
             highlight_color: [{type: 'color'}, '#ffff00'],
-            // 1100 looks good too
             highlight_delay: option_number(0, -100, 1500, 100),
             highlight_size: option_number(0.055, 0, 0.4, 0.001),
             notation: [ON_OFF, 1],
@@ -2028,7 +2025,6 @@ function prepare_settings() {
             log_auto_start: [ON_OFF, 1],
             log_history: option_number(100, -1, 1000),
             log_pv: [ON_OFF, 1, 'use livelog pv'],
-            popup_icon: [ON_OFF, 0],
             popup_right_click: [ON_OFF, 1, 'right click on elements for a popup menu'],
             reload_missing: [ON_OFF, 1],
             rows_per_page: [[10, 20, 50, 100, 1000], 10],
@@ -2048,20 +2044,16 @@ function prepare_settings() {
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
             board_pva: '',
             copy: copies,
-            game_depth: option_number(4, 0, 8),
-            game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
             game_every: option_number(200, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
             game_new_FEN: [{type: 'text'}, '', 'FEN to be used for a new game, empty for default'],
             game_new_game: '1',
             game_options_black: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             game_options_white: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
-            game_PV: [ON_OFF, 0],
-            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
+            parameters: '',
+            game_PV: [ON_OFF, 1],
             game_think: '1',
             game_time: option_number(5, -1, 120),
-            game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
-            game_wasm: [ON_OFF, 1],
         },
         graph: {
             _prefix: 'graph_',
@@ -2193,6 +2185,17 @@ function prepare_settings() {
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
             single_line: [ON_OFF, 0],
+        },
+        parameters: {
+            _pop: true,
+            _prefix: 'game_',
+            game_depth: option_number(4, 0, 8),
+            game_evaluation: [['null', 'mat', 'mob', 'hce', 'att', 'sq', 'nn'], 'att'],
+            game_options_black: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
+            game_options_white: [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
+            game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
+            game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
+            game_wasm: [ON_OFF, 1],
         },
         quick_setup: {
             _pop: true,
