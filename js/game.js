@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-11
+// @version 2021-01-12
 //
 // Game specific code:
 // - control the board, moves
@@ -4126,14 +4126,18 @@ function boom_effect(type, info, volume, intensities, params, callback) {
         if (shake_animation == null)
             boom_info.transform = body? body.style.transform: '';
 
-        // color + shake
-        if (BOOM_COLORS[visual]) {
-            Style(BOOM_ELEMENTS2, red, false);
-            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
-        }
+        // color
+        color_screen(visual, red, red_start, red_duration);
+
         if (BOOM_SHAKES[visual]) {
-            add_timeout('shake_start', () => {
-                let now = Now(true);
+            add_timeout(`shake_start_${sound}`, () => {
+                // color again?
+                let delta = red_start - shake_start,
+                    now = Now(true);
+                if (delta >= 0)
+                    color_screen(visual, red, delta, red_duration);
+
+                // shake
                 Assign(boom_info, {
                     decay: decay,
                     end: now + shake_duration,
@@ -4147,11 +4151,6 @@ function boom_effect(type, info, volume, intensities, params, callback) {
                     shake_animation = AnimationFrame(shake_screen);
             }, shake_start);
         }
-
-        // ending
-        add_timeout('red_end', () => {
-            Style(BOOM_ELEMENTS2, red, false);
-        }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
 
         if (callback)
             callback();
@@ -4183,12 +4182,15 @@ function boom_sound(type, volume, intensities, callback) {
     }
 
     last_sound = sound;
-    play_sound(audiobox, sound, {loaded: () => {
+    let gonna_play = play_sound(audiobox, sound, {loaded: () => {
         if (DEV.effect)
             LS(`sound ${sound} loaded, playing now ...`);
         play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10 * volume});
         callback(sound);
     }});
+
+    if (!gonna_play)
+        callback();
 }
 
 /**
@@ -4333,7 +4335,8 @@ function check_explosion(force) {
 
     // check defuses
     let defuses = main.defuses,
-        explodes = main.explodes;
+        explodes = main.explodes,
+        num_seen = main.seens.size;
 
     if (!best) {
         if (exploded) {
@@ -4353,16 +4356,20 @@ function check_explosion(force) {
     if (DEV.explode)
         LS(`exploded: ${explodes.size} : ${[...explodes].join(' ')} : ${scores} => ${main.exploded} ~ ${best}`);
     defuses.clear();
-    if (!force && explodes.size < Y.explosion_buildup)
-        return 3;
 
-    if (Sign(best) == Sign(exploded) || !Y.explosion_sound)
-        return 4;
-
-    main.exploded = force? exploded: best;
-    // don't explode if we just loaded the page
-    if (!force && main.seens.size < 2)
-        return 5;
+    if (!force) {
+        if (Sign(best) == Sign(exploded))
+            return 3;
+        if (explodes.size < Y.explosion_buildup) {
+            if (num_seen < 3)
+                main.exploded = best;
+            return 4;
+        }
+        main.exploded = best;
+        // don't explode if we just loaded the page
+        if (num_seen < 3)
+            return 5;
+    }
 
     boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
         every: 1/20,
@@ -4432,6 +4439,23 @@ function clock_tick(section, id) {
     update_clock(section, id);
     if (!GLOBAL)
         add_timeout(`clock-${section}${id}`, () => clock_tick(section, id, now), timeout);
+}
+
+/**
+ * Color the screen
+ * @param {string} visual
+ * @param {string} red style
+ * @param {number} red_start
+ * @param {number} red_duration
+ */
+function color_screen(visual, red, red_start, red_duration) {
+    if (BOOM_COLORS[visual]) {
+        Style(BOOM_ELEMENTS2, red, false);
+        add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
+    }
+    add_timeout('red_end', () => {
+        Style(BOOM_ELEMENTS2, red, false);
+    }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
 }
 
 /**
@@ -5358,7 +5382,7 @@ function copy_pgn(board, download, only_text) {
         let pgn = board.pgn,
             pgn_headers = pgn.Headers;
         if (pgn_headers) {
-            headers = pgn_headers;
+            Assign(headers, pgn_headers);
             for (let name of option_names) {
                 let dico = pgn[name];
                 if (dico) {
@@ -5469,7 +5493,7 @@ function copy_pgn(board, download, only_text) {
     let text = [
         Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'),
         (options.length? `\n{${options.join(', ')}}`: ''),
-        moves.join(''),
+        moves.join('').replace(/\n\n/g, '\n'),
     ].join('\n');
 
     if (only_text)
@@ -5548,7 +5572,8 @@ function handle_board_events(board, type, value, e, force) {
         board_target = board;
         if (value == 'burger') {
             context_target = board.node;
-            show_popup('options', true, {setting: (name == 'pva')? 'game': 'board', xy: [e.clientX, e.clientY]});
+            let setting = (name == 'pva')? 'game': 'board';
+            show_popup('options', 'toggle', {id: name, setting: setting, xy: [e.clientX, e.clientY]});
         }
         else if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';

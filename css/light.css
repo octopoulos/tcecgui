@@ -927,7 +927,7 @@ hsub {
     background: rgba(0, 0, 0, 0.04);
     text-align: center;
 }
-#engine [data-t] {
+.einfo {
     font-size: 0.85em;
     padding-top: 0.4em;
 }
@@ -1571,7 +1571,7 @@ svg.down {
 
 /* media */
 @media (max-width: 330px) {
-    #engine [data-t] {
+    .einfo {
         font-size: 0.75em;
     }
     #header,
@@ -1592,7 +1592,7 @@ svg.down {
     }
 }
 @media (max-width: 360px) {
-    #engine [data-t] {
+    .einfo {
         font-size: 0.8em;
     }
     .live-more {

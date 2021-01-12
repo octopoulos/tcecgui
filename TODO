@@ -13,6 +13,11 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2021-01-10 : right click to draw lines
+-          : 2021-01-11 : count kibitzers only if they have enough nodes
+2021-01-12 : 2021-01-11 : recreate color timeout inside shake timeout if doesn't exist
+2021-01-12 : 2020-01-11 : boom/moob/explosion don't produce visuals if sound is off
+2021-01-12 : 2021-01-11 : download PGN: wrong order for headers + bad engine options + empty line before *
+2021-01-12 : 2021-01-12 : fix: no explosion if just loaded the page
 2021-01-11 : 2021-01-10 : popup menu icon for main board + PVA => good for iPhone
 2021-01-11 : 2021-01-11 : make "analysis" option more compact: integrate all 3 choices
 2021-01-11 : 2021-01-11 : moob vibrates faster than boom
