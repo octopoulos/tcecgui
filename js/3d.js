@@ -1646,7 +1646,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                         let parts = item.split('='),
                             name = parts[0],
                             title = parts[1]? ` title="${name}"`: '';
-                        return `<a class="item item3" name="${key}_${name}"${title}>${parts[1] || name}</a>`;
+                        return `<a class="item item3" name="${key}_${name}"${title} data-t="${parts[1] || name}"></a>`;
                     }).join(''),
                     '</hori>',
                 ].join(''));
