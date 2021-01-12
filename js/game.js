@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-11
+// @version 2021-01-12
 //
 // Game specific code:
 // - control the board, moves
@@ -4333,7 +4333,8 @@ function check_explosion(force) {
 
     // check defuses
     let defuses = main.defuses,
-        explodes = main.explodes;
+        explodes = main.explodes,
+        num_seen = main.seens.size;
 
     if (!best) {
         if (exploded) {
@@ -4353,15 +4354,19 @@ function check_explosion(force) {
     if (DEV.explode)
         LS(`exploded: ${explodes.size} : ${[...explodes].join(' ')} : ${scores} => ${main.exploded} ~ ${best}`);
     defuses.clear();
-    if (!force && explodes.size < Y.explosion_buildup)
-        return 3;
 
     if (Sign(best) == Sign(exploded) || !Y.explosion_sound)
+        return 3;
+
+    if (!force && explodes.size < Y.explosion_buildup) {
+        if (num_seen < 3)
+            main.exploded = best;
         return 4;
+    }
 
     main.exploded = force? exploded: best;
     // don't explode if we just loaded the page
-    if (!force && main.seens.size < 2)
+    if (!force && num_seen < 3)
         return 5;
 
     boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
