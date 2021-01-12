@@ -5548,7 +5548,8 @@ function handle_board_events(board, type, value, e, force) {
         board_target = board;
         if (value == 'burger') {
             context_target = board.node;
-            show_popup('options', true, {setting: (name == 'pva')? 'game': 'board', xy: [e.clientX, e.clientY]});
+            let setting = (name == 'pva')? 'game': 'board';
+            show_popup('options', 'toggle', {id: name, setting: setting, xy: [e.clientX, e.clientY]});
         }
         else if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';
