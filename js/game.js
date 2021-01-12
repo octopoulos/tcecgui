@@ -5363,7 +5363,7 @@ function copy_pgn(board, download, only_text) {
         let pgn = board.pgn,
             pgn_headers = pgn.Headers;
         if (pgn_headers) {
-            headers = pgn_headers;
+            Assign(headers, pgn_headers);
             for (let name of option_names) {
                 let dico = pgn[name];
                 if (dico) {
@@ -5467,7 +5467,7 @@ function copy_pgn(board, download, only_text) {
     }
 
     if (moves.length)
-        moves.push('\n*');
+        moves.push('*');
 
     // 4) result
     headers.Annotator = board.name;
