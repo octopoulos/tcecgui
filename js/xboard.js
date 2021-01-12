@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-11
 //
 // game board:
 // - 4 rendering modes:
@@ -21,7 +21,7 @@ clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
-S, SetDefault, Show, Sign, socket, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
+S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
@@ -1310,7 +1310,7 @@ class XBoard {
         let that = this;
 
         C(this.node, e => {
-            callback(that, 'activate', e.target);
+            callback(that, 'activate', e.target, e);
         });
 
         // disable right click
@@ -1319,7 +1319,7 @@ class XBoard {
         }, {}, this.node);
 
         // controls
-        C('[data-x]', function() {
+        C('[data-x]', function(e) {
             let name = this.dataset.x;
             switch (name) {
             case 'copy':
@@ -1341,7 +1341,7 @@ class XBoard {
                 that.rotate = (that.rotate + 1) & 1;
                 that.instant();
                 that.render(7);
-                callback(that, 'control', name);
+                callback(that, 'control', name, e);
                 break;
             case 'start':
                 that.go_start();
@@ -1350,11 +1350,12 @@ class XBoard {
                 that.set_locked(false);
                 break;
             default:
-                callback(that, 'control', name);
+                callback(that, 'control', name, e);
             }
 
             if (CONTROL_STOPS[name])
                 that.play(true, true, 'hook');
+            SP(e);
         }, this.node);
 
         // holding mouse/touch on prev/next => keep moving
@@ -1620,7 +1621,7 @@ class XBoard {
         let controls2 = Assign({}, CONTROLS);
         if (this.main_manual) {
             delete controls2.lock;
-            controls2.cube = 'Change view';
+            controls2.burger = '';  // Change view';
         }
 
         // create elements

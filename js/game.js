@@ -23,7 +23,8 @@ listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_c
 Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
 resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
-Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS, stockfish_wdl, Style,
+show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
+stockfish_wdl, Style,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
 Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
@@ -5524,10 +5525,11 @@ function get_context_board() {
  * Handle xboard events
  * @param {XBoard} board
  * @param {string} type
- * @param {Event|string} value
+ * @param {*} value
+ * @param {Event} e
  * @param {boolean=} force force graph update
  */
-function handle_board_events(board, type, value, force) {
+function handle_board_events(board, type, value, e, force) {
     let move,
         name = board.name,
         old_board = section_board(),
@@ -5544,7 +5546,11 @@ function handle_board_events(board, type, value, force) {
     // controls: play, next, ...
     case 'control':
         board_target = board;
-        if (value == 'cube') {
+        if (value == 'burger') {
+            context_target = board.node;
+            show_popup('options', true, {setting: (name == 'pva')? 'game': 'board', xy: [e.clientX, e.clientY]});
+        }
+        else if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';
             board.render(3);
         }
@@ -5755,7 +5761,7 @@ function opened_table(node, name, tab) {
         target = section;
 
     if (target)
-        handle_board_events(xboards[target], 'activate', Id(target), true);
+        handle_board_events(xboards[target], 'activate', Id(target), null, true);
 }
 
 /**
