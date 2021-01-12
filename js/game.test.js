@@ -492,7 +492,7 @@ function init_players(ply, players, evals) {
     [6, {}, [{0: 'book', 2: 'book', 4: 'book', 6: "0.92"}], 2, 0, null],
 ].forEach(([ply, y, evals, answer, answer_boomed, answer_more], id) => {
     test(`check_boom:${id}`, () => {
-        DEV.boom = (id >= 30)? 3: 0;
+        DEV.boom = (id >= 31)? 3: 0;
         let main = xboards.live,
             players = main.players;
         init_players(ply, players, evals);
@@ -550,7 +550,7 @@ function init_players(ply, players, evals) {
     [76, {}, {exploded: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], 0, 8.16],
 ].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_explosion:${id}`, () => {
-        DEV.explode = (id >= 30)? 1: 0;
+        DEV.explode = (id >= 31)? 1: 0;
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {

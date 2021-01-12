@@ -4126,14 +4126,18 @@ function boom_effect(type, info, volume, intensities, params, callback) {
         if (shake_animation == null)
             boom_info.transform = body? body.style.transform: '';
 
-        // color + shake
-        if (BOOM_COLORS[visual]) {
-            Style(BOOM_ELEMENTS2, red, false);
-            add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
-        }
+        // color
+        color_screen(visual, red, red_start, red_duration);
+
         if (BOOM_SHAKES[visual]) {
-            add_timeout('shake_start', () => {
-                let now = Now(true);
+            add_timeout(`shake_start_${sound}`, () => {
+                // color again?
+                let delta = red_start - shake_start,
+                    now = Now(true);
+                if (delta >= 0)
+                    color_screen(visual, red, delta, red_duration);
+
+                // shake
                 Assign(boom_info, {
                     decay: decay,
                     end: now + shake_duration,
@@ -4147,11 +4151,6 @@ function boom_effect(type, info, volume, intensities, params, callback) {
                     shake_animation = AnimationFrame(shake_screen);
             }, shake_start);
         }
-
-        // ending
-        add_timeout('red_end', () => {
-            Style(BOOM_ELEMENTS2, red, false);
-        }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
 
         if (callback)
             callback();
@@ -4440,6 +4439,23 @@ function clock_tick(section, id) {
     update_clock(section, id);
     if (!GLOBAL)
         add_timeout(`clock-${section}${id}`, () => clock_tick(section, id, now), timeout);
+}
+
+/**
+ * Color the screen
+ * @param {string} visual
+ * @param {string} red style
+ * @param {number} red_start
+ * @param {number} red_duration
+ */
+function color_screen(visual, red, red_start, red_duration) {
+    if (BOOM_COLORS[visual]) {
+        Style(BOOM_ELEMENTS2, red, false);
+        add_timeout('red_start', () => Style(BOOM_ELEMENTS2, red), red_start);
+    }
+    add_timeout('red_end', () => {
+        Style(BOOM_ELEMENTS2, red, false);
+    }, red_start + red_duration * Undefined(boom_info.red_coeff, 1));
 }
 
 /**
