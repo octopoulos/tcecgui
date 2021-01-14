@@ -14,6 +14,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
+2021-01-13 : 2021-01-13 : explosion can be directly triggered by a boom
 2021-01-13 : 2021-01-13 : improved copy fen/pgn/moves
 2021-01-12 : 2021-01-11 : recreate color timeout inside shake timeout if doesn't exist
 2021-01-12 : 2020-01-11 : boom/moob/explosion don't produce visuals if sound is off

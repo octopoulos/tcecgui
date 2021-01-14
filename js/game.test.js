@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-12
+// @version 2021-01-13
 /*
 globals
 expect, global, require, test
@@ -514,43 +514,44 @@ function init_players(ply, players, evals) {
 
 // check_explosion
 [
-    [0, {explosion_threshold: 0, x: 'live'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 1, 0],
-    [0, {explosion_threshold: 2.3, x: 'archive'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 2, 0],
-    [0, {explosion_buildup: 1, x: 'live'}, {exploded: 0}, [5, 3, 0.5, 0.5], [], 2, 0],
-    [0, {}, {exploded: 0, seens: new Set()}, [5, 3, 2.5, 0.5], [], 5, 3.5],
-    [0, {}, {exploded: 0, seens: new Set([-4, -3, -2, -1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
-    [0, {}, {}, [15, 5, 0.5, 0.5], [], 2, 3.5],
-    [0, {}, {}, [-8, -3, -5, -0.5], [], 0, -5.333],
-    [0, {}, {}, [-1, 1, -1, -0.5], [], 2, -5.333],
-    [0, {}, {}, [5, 5, 5, -10], [], 0, 5],
-    [0, {}, {}, [5, 5, 5, 0], [], 3, 5],
+    [0, 0, {explosion_threshold: 0, x: 'live'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 1, 0],
+    [0, 0, {explosion_threshold: 2.3, x: 'archive'}, {exploded: 0}, [5, 5, 0.5, 0.5], [], 2, 0],
+    [0, 0, {explosion_buildup: 1, x: 'live'}, {exploded: 0}, [5, 3, 0.5, 0.5], [], 2, 0],
+    [0, 0, {}, {exploded: 0, seens: new Set()}, [5, 3, 2.5, 0.5], [], 5, 3.5],
+    [0, 0, {}, {exploded: 0, seens: new Set([-4, -3, -2, -1])}, [5, 3, 2.5, 0.5], [], 0, 3.5],
+    [0, 0, {}, {}, [15, 5, 0.5, 0.5], [], 2, 3.5],
+    [0, 0, {}, {}, [-8, -3, -5, -0.5], [], 0, -5.333],
+    [0, 0, {}, {}, [-1, 1, -1, -0.5], [], 2, -5.333],
+    [0, 0, {}, {}, [5, 5, 5, -10], [], 0, 5],
+    [0, 0, {}, {}, [5, 5, 5, 0], [], 3, 5],
     // 10
-    [0, {}, {}, [-5, -5, -5, 1], [], 0, -5],
-    [0, {}, {}, [8, 3, 5, 5], [], 0, 5.25],
-    [0, {}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
-    [0, {}, {exploded: 0}, [8, 0.5, 8, 0.5], [], 2, 0],
-    [0, {}, {exploded: 0}, ['M41', 0.5, 8, 0], [], 2, 0],
-    [0, {}, {exploded: 0}, ['M41', 0.5, 8, 5], [], 0, 47],
-    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 2, 0],
-    [0, {}, {exploded: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 0, 6.5],
-    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], 0, 6.5],
-    [0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], 0, 7],
+    [0, 0, {}, {}, [-5, -5, -5, 1], [], 0, -5],
+    [0, 0, {}, {}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, 0, {}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, 0, {}, {exploded: 0}, [8, 0.5, 8, 0.5], [], 2, 0],
+    [0, 0, {}, {exploded: 0}, ['M41', 0.5, 8, 0], [], 2, 0],
+    [0, 0, {}, {exploded: 0}, ['M41', 0.5, 8, 5], [], 0, 47],
+    [0, 0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 2, 0],
+    [0, 0, {}, {exploded: 0}, [8, 5, 8, 5], ['lczero', 'x', 'lczero', 'lczero'], 0, 6.5],
+    [0, 0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'lczero', 'y'], 0, 6.5],
+    [0, 0, {}, {exploded: 0}, [8, 0.5, 8, 5], ['lczero', 'x', 'allie', 'y'], 0, 7],
     // 20
-    [0, {explosion_sound: 0}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
-    [0, {explosion_sound: 'random'}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
-    [0, {explosion_threshold: 0}, {exploded: 0}, [8, 3, 5, 5], [], 1, 0],
-    [0, {explosion_threshold: 2.3}, {exploded: 0}, [5, 5, 5, 0], [], 0, 5],
-    [0, {}, {exploded: 0}, [5, 0, 5, 5], [], 2, 0],
-    [0, {}, {}, [5, 0.1, 5, 5], [], 0, 5],
-    [0, {explosion_buildup: 3}, {exploded: 0}, [5, 5, 5, 5], [], 4, 0],
-    [1, {}, {}, [5, 5, 5, 5], [], 4, 0],
-    [2, {}, {}, [5, 5, 5, 5], [], 0, 5],
-    [2, {explosion_buildup: 1}, {}, [5, 5, 5, 5], [], 3, 5],
+    [0, 0, {explosion_sound: 0}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, 0, {explosion_sound: 'random'}, {exploded: 0}, [8, 3, 5, 5], [], 0, 5.25],
+    [0, 0, {explosion_threshold: 0}, {exploded: 0}, [8, 3, 5, 5], [], 1, 0],
+    [0, 0, {explosion_threshold: 2.3}, {exploded: 0}, [5, 5, 5, 0], [], 0, 5],
+    [0, 0, {}, {exploded: 0}, [5, 0, 5, 5], [], 2, 0],
+    [0, 0, {}, {}, [5, 0.1, 5, 5], [], 0, 5],
+    [0, 0, {explosion_buildup: 3}, {exploded: 0}, [5, 5, 5, 5], [], 4, 0],
+    [1, 0, {}, {}, [5, 5, 5, 5], [], 4, 0],
+    [2, 0, {}, {}, [5, 5, 5, 5], [], 0, 5],
+    [2, 1, {}, {exploded: 0}, [8, 8, 8, 8], [], 0, 8],
     // 30
-    [76, {}, {exploded: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], 0, 8.16],
-].forEach(([ply, y, states, evals, shorts, answer, answer_boomed], id) => {
+    [2, 0, {explosion_buildup: 1}, {}, [5, 5, 5, 5], [], 3, 8],
+    [76, 0, {}, {exploded: 0}, ['10.01', '1.56', 10.92, 6.31], ['LCZero', 'Stoofvlees', 'LCZero', 'Crystal'], 0, 8.16],
+].forEach(([ply, is_boom, y, states, evals, shorts, answer, answer_boomed], id) => {
     test(`check_explosion:${id}`, () => {
-        DEV.explode = (id >= 31)? 1: 0;
+        DEV.explode = (id >= 32)? 1: 0;
         let main = xboards.live,
             players = main.players;
         evals.forEach((eval_, id) => {
@@ -563,7 +564,7 @@ function init_players(ply, players, evals) {
         Assign(main, states);
         Assign(Y, y);
 
-        expect(check_explosion()).toEqual(answer);
+        expect(check_explosion(is_boom)).toEqual(answer);
         expect(main.exploded).toBeCloseTo(answer_boomed, 3);
     });
 });

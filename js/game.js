@@ -4199,9 +4199,10 @@ function boom_sound(type, volume, intensities, callback) {
  * - ignore kibitzers
  * @param {number} offset ply offset
  * @param {number[]=} force for debugging
+ * @param {boolean=} only_check only check if a boom should occur
  * @returns {number[]} [0] on success
  */
-function check_boom(offset, force) {
+function check_boom(offset, force, only_check) {
     if (Y.disable_everything)
         return [1];
 
@@ -4260,6 +4261,9 @@ function check_boom(offset, force) {
 
     if (!force && best[0] < threshold)
         return [2];
+    if (only_check)
+        return [0, best];
+
     let is_moob = ((force && Abs(force) < 0.1) || best[3]),
         type = is_moob? 'moob': 'boom';
 
@@ -4298,10 +4302,11 @@ function check_boom(offset, force) {
  * Check if we have an explosion
  * - need a majority of engines to agree
  * - include kibitzers
+ * @param {boolean=} is_boom boom occured at the same time?
  * @param {number=} force for debugging
  * @returns {number} 0 on success
  */
-function check_explosion(force) {
+function check_explosion(is_boom, force) {
     let threshold = Y.explosion_threshold;
     if (threshold < 0.1 || Y.disable_everything)
         return 1;
@@ -4360,7 +4365,8 @@ function check_explosion(force) {
     if (!force) {
         if (Sign(best) == Sign(exploded))
             return 3;
-        if (explodes.size < Y.explosion_buildup) {
+        // boom => explosion happens without buildup
+        if (!is_boom && explodes.size < Y.explosion_buildup) {
             if (num_seen < 3)
                 main.exploded = best;
             return 4;
@@ -4408,10 +4414,16 @@ function check_explosion_boom(section, offset, mode=3) {
     }
 
     // check boom + explosion
-    if ((mode & 1) && !check_boom(offset)[0])
-        return 1;
-    if ((mode & 2) && !check_explosion())
+    // - if boom happens during an explosion buildup => explosion is triggered instantly
+    let best,
+        error = 1;
+    if (mode & 1)
+        [error, best] = check_boom(offset, undefined, true);
+
+    if ((mode & 2) && !check_explosion(!error))
         return 2;
+    if (!error && !check_boom(offset, best)[0])
+        return 1;
     return 0;
 }
 
@@ -5205,7 +5217,7 @@ function change_setting_game(name, value) {
         check_boom(0, [3, 0, 0, false]);
         break;
     case 'test_explosion':
-        check_explosion(-10 * (Sign(xboards.live.exploded) || 1));
+        check_explosion(0, -10 * (Sign(xboards.live.exploded) || 1));
         break;
     case 'test_moob':
         check_boom(0, [3, 0, 0, true]);
