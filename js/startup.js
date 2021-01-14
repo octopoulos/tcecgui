@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-11
+// @version 2021-01-13
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1867,7 +1867,8 @@ function prepare_settings() {
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
         cores = navigator.hardwareConcurrency,
-        copies = [{list: ['fen', 'pgn', 'download'], type: 'list'}, ''],
+        copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}, ''],
+        copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}, ''],
         old = 'move',
         shortcuts = [...['off'], ...Keys(TABLES)];
 
@@ -1940,7 +1941,7 @@ function prepare_settings() {
             arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
             controls: [ON_OFF, 1],
-            copy: copies,
+            copy: copy_download,
             custom_black: [{type: 'color'}, '#000000'],
             custom_white: [{type: 'color'}, '#ffffff'],
             draw_right_click: [ON_OFF, 0],
@@ -1957,7 +1958,7 @@ function prepare_settings() {
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
             controls_pv: [ON_OFF, 1],
-            copy: copies,
+            copy: copy_download,
             custom_black_pv: [{type: 'color'}, '#000000'],
             custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
@@ -2022,6 +2023,7 @@ function prepare_settings() {
         extra: {
             archive_scroll: [ON_OFF, 1],
             drag_and_drop: [ON_OFF, 0],
+            join_next: [ON_OFF, 0],
             log_auto_start: [ON_OFF, 1],
             log_history: option_number(100, -1, 1000),
             log_pv: [ON_OFF, 1, 'use livelog pv'],
@@ -2043,7 +2045,7 @@ function prepare_settings() {
             analysis: analyses,
             game_arrow: [['none', 'color', 'kibitz', 'color 0', 'color 1', 'color 2', 'color 3'], 'kibitz'],
             board_pva: '',
-            copy: copies,
+            copy: copy_download,
             game_every: option_number(200, 50, 5000, 50),
             game_level: [Keys(LEVELS), 'amateur'],
             game_new_FEN: [{type: 'text'}, '', 'FEN to be used for a new game, empty for default'],
@@ -2093,9 +2095,8 @@ function prepare_settings() {
             single_line: [ON_OFF, 0],
         },
         live: {
-            copy_moves: '4',
-            copy_pgn: '4',
-            download_pgn: '4',
+            copy: copy_moves,
+            download_PGN: '1',
             grid_live: option_number(0, 0, 10),
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
@@ -2143,9 +2144,8 @@ function prepare_settings() {
         // popup only
         copy: {
             _pop: true,
-            copy_moves: '1',
-            copy_pgn: '1',
-            download_pgn: '1',
+            copy: copy_moves,
+            download_PGN: '1',
             grid: option_number(0, 0, 10),
             move_height: option_number(5.2, 3, 100, 0.05),
             moves: [ON_OFF, 1],
@@ -2153,7 +2153,8 @@ function prepare_settings() {
         },
         copy_copy: {
             _pop: true,
-            copy_moves: '1',
+            copy: copy_moves,
+            download_PGN: '1',
             grid_copy: option_number(2, 0, 10),
             move_height_copy: option_number(20, 3, 100, 0.05),
             moves: [ON_OFF, 1],
@@ -2161,18 +2162,16 @@ function prepare_settings() {
         },
         copy_pv: {
             _pop: true,
-            copy_moves: '1',
-            copy_pgn: '1',
-            download_pgn: '1',
+            copy: copy_moves,
+            download_PGN: '1',
             grid_pv: option_number(0, 0, 10),
             move_height_pv: option_number(5, 3, 100, 0.05),
             moves_pv: [ON_OFF, 1],
         },
         copy_pva: {
             _pop: true,
-            copy_moves: '1',
-            copy_pgn: '1',
-            download_pgn: '1',
+            copy: copy_moves,
+            download_PGN: '1',
             grid_pva: option_number(0, 0, 10),
             move_height_pva: option_number(5, 3, 100, 0.05),
             moves_pva: [ON_OFF, 1],
@@ -2196,6 +2195,14 @@ function prepare_settings() {
             game_search: [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
             game_threads: option_number(1, 1, cores),   // Max(1, cores / 2)
             game_wasm: [ON_OFF, 1],
+        },
+        quick_copy: {
+            _flag: 4,
+            _pop: true,
+            _title: 'Copy',
+            copy: copy_moves,
+            download_PGN: '1',
+            load_PGN: {_id: 'load_pgn', _value: ''},
         },
         quick_setup: {
             _pop: true,

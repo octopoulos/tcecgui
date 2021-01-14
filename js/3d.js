@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-12
+// @version 2021-01-13
 //
 // general 3d rendering code
 //
@@ -1502,6 +1502,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         let sclass = setting._class,
             scolor = setting._color,
             sflag = setting._flag,
+            sid = setting._id,
             son = setting._on,
             sset = setting._set,
             sspan = setting._span,
@@ -1512,7 +1513,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             return;
         if (son && !son())
             return;
-        if (svalue)
+        if (svalue != undefined)
             setting = svalue;
 
         // separator
@@ -1542,6 +1543,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             more_class = ` ${sclass}`;
         else if (sspan)
             more_class = ' item-title span';
+        sid = sid? ` data-id="${sid}"`: '';
 
         if (IsFunction(third) && !third())
             return;
@@ -1574,7 +1576,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         lines.push(
             `<a${is_string} class="${item_class}${more_class}${title === 0? ' off': ''}"${more_data}${title2}>`
                 + (ssvg? `<i class="icon" data-svg="${ssvg}"></i>`: '')
-                + `<i data-t="${Title(clean).replace(/_/g, ' ')}${ssyn}"${style}></i>`
+                + `<i${sid} data-t="${Title(clean).replace(/_/g, ' ')}${ssyn}"${style}></i>`
                 + ((setting == '')? ' ...': '')
             + '</a>'
         );
@@ -1681,7 +1683,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
     // -1 to close the popup
     if (!(flag & 2)) {
-        if (parent_id) {
+        if (parent_id && !(flag & 4) && Y.join_next) {
             let context_area = context_areas[parent_id] || {};
             lines.push(
                 `<hori class="span">`

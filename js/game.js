@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-12
+// @version 2021-01-13
 //
 // Game specific code:
 // - control the board, moves
@@ -4987,8 +4987,6 @@ function game_action_key(code) {
                         if (Visible(Id('table-pva')))
                             board_target = pva;
                     }
-                    else if (copy_moves())
-                        break;
 
                     let text = board_target.fen;
                     CopyClipboard(text);
@@ -5131,17 +5129,18 @@ function change_setting_game(name, value) {
         save_option('boom_visual', value? 'all': 0);
         break;
     case 'copy_download':
-    case 'download_pgn':
+    case 'download_PGN':
         copy_pgn(board, true);
         break;
-    case 'copy_fen':
+    case 'copy_FEN':
         CopyClipboard(board.fen);
         close_popups();
         break;
     case 'copy_moves':
-        copy_moves();
+        copy_pgn(board, false, false, 4);
+        close_popups();
         break;
-    case 'copy_pgn':
+    case 'copy_PGN':
         copy_pgn(board);
         close_popups();
         break;
@@ -5319,33 +5318,14 @@ function changed_section() {
 }
 
 /**
- * Copy moves list to the clipboard
- * @returns {string}
- */
-function copy_moves() {
-    let target = Parent(context_target, {class_: 'live-pv|xmoves', self: true});
-    if (!target)
-        return '';
-
-    let text = target.innerText.replace(/\s/g, ' ');
-    if (text.slice(0, 3) == '0. ')
-        text = text.slice(3);
-    if (text.slice(-2) == ' *')
-        text = text.slice(0, -2);
-    CopyClipboard(text);
-    if (Y.auto_paste)
-        paste_text(text);
-    return text;
-}
-
-/**
  * Copy a minimal PGN from the current context
  * @param {Object=} board
  * @param {boolean=} download
  * @param {boolean=} only_text only return the text, no download/clipboard
+ * @param {number=} flag &1:header, &2:info, &4:moves
  * @returns {string}
  */
-function copy_pgn(board, download, only_text) {
+function copy_pgn(board, download, only_text, flag=7) {
     // 1) get the matching board
     if (!board) {
         board = get_context_board();
@@ -5490,21 +5470,24 @@ function copy_pgn(board, download, only_text) {
 
     // 4) result
     headers.Annotator = board.name;
-    let text = [
-        Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'),
-        (options.length? `\n{${options.join(', ')}}`: ''),
-        moves.join('').replace(/\n\n/g, '\n'),
-    ].join('\n');
+    let text = [];
+    if (flag & 1)
+        text.push(Keys(headers).map(key => `[${key} "${headers[key]}"]`).join('\n'));
+    if (flag & 2)
+        text.push((options.length? `\n{${options.join(', ')}}`: ''));
+    if (flag & 4)
+        text.push(moves.join('').replace(/\n\n/g, '\n'));
 
+    text = text.join('\n');
     if (only_text)
         return text;
 
     if (download)
         DownloadObject(text, `${FromTimestamp().join('').replace(/[:-]/g, '')}.pgn`, 2, true);
     else {
-        // copy => mirror to PVA
         CopyClipboard(text);
-        if (Y.auto_paste && board.name != 'pva')
+        // copy => mirror to PVA
+        if (Y.auto_paste && board.name != 'pva' && (flag & 1))
             paste_text(copy_pgn(board, true, true));
     }
     return text;
@@ -5574,6 +5557,10 @@ function handle_board_events(board, type, value, e, force) {
             context_target = board.node;
             let setting = (name == 'pva')? 'game': 'board';
             show_popup('options', 'toggle', {id: name, setting: setting, xy: [e.clientX, e.clientY]});
+        }
+        else if (value == 'copy') {
+            context_target = board.node;
+            show_popup('options', 'toggle', {id: name, setting: 'quick_copy', xy: [e.clientX, e.clientY]});
         }
         else if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';
