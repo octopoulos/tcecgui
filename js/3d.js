@@ -1061,7 +1061,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
 function change_setting(name, value, close) {
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
-        if (TYPES[name] == 'i' && !isNaN(value))
+        if ('fi'.includes(TYPES[name]) && !isNaN(value))
             value *= 1;
 
         let no_import = NO_IMPORTS[name] || 0;

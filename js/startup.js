@@ -1861,14 +1861,14 @@ function prepare_settings() {
         options: 1,
     });
 
-    let analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}, ''],
+    let analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}],
         bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
         cores = navigator.hardwareConcurrency,
-        copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}, ''],
-        copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}, ''],
+        copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}],
+        copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}],
         old = 'move',
         shortcuts = [...['off'], ...Keys(TABLES)];
 
@@ -2005,7 +2005,7 @@ function prepare_settings() {
                 option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
             explosion_visual: [boom_visuals, 'all'],
             explosion_volume: option_number(5, 0, 20, 0.5),
-            test: [{list: ['boom', 'moob', 'explosion'], type: 'list'}, ''],
+            test: [{list: ['boom', 'moob', 'explosion'], type: 'list'}],
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
