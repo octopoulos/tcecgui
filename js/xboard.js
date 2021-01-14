@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-11
+// @version 2021-01-13
 //
 // game board:
 // - 4 rendering modes:
@@ -1322,12 +1322,6 @@ class XBoard {
         C('[data-x]', function(e) {
             let name = this.dataset.x;
             switch (name) {
-            case 'copy':
-                CopyClipboard(that.fen, () => {
-                    Class(this, 'copied');
-                    add_timeout('fen', () => Class(this, '-copied'), 1000);
-                });
-                break;
             case 'end':
                 that.go_end();
                 break;

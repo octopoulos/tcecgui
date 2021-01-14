@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-10
+// @version 2021-01-13
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -287,7 +287,7 @@ function guess_types(settings, keys) {
 
         if (def_type == 'boolean')
             type = 'b';
-        else if (def_type == 'object')
+        else if (def_type == 'object' && def != undefined)
             type = 'o';
         else if (def_type == 'string') {
             type = 's';
@@ -317,6 +317,9 @@ function guess_types(settings, keys) {
                     case 'color':
                     case 'text':
                         type = 's';
+                        break;
+                    case 'list':
+                        type = 'u';
                         break;
                     default:
                         type = 'o';
@@ -393,6 +396,8 @@ function load_defaults() {
         case 's':
             value = get_string(key, def);
             break;
+        case 'u':
+            return;
         default:
             LS(`unknown type: ${key} : ${def}`);
         }
