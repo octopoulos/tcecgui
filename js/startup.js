@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-15
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -102,7 +102,7 @@ let AD_STYLES = {},
         'stream',
         'terjeweiss',
     ],
-    ready,
+    ready = 0,
     resume_time = Now(),
     SCALES = [
         '4=eval',
@@ -577,6 +577,26 @@ function configure_string(name) {
 }
 
 /**
+ * Create the swap elements for each panel
+ */
+function create_swaps() {
+    let swaps = ['next', 'next', 'minus', 'plus'].map((svg, id) => {
+        return [
+            `<div class="swap${id? '': ' mirror'}">`,
+                `<i data-svg="${svg}"></i>`,
+            '</div>',
+        ].join('');
+    });
+
+    let html = [
+        swaps.join(''),
+        '<div class="swap size dn"></div>',
+    ].join('');
+
+    HTML('.swaps', html);
+}
+
+/**
  * Handle a drop event
  * @param {Event} e
  */
@@ -756,6 +776,9 @@ function init_globals() {
             resume_sleep(resume_time);
         resume_time = now;
     }, TIMEOUT_resume, true);
+
+    if (ready == 1)
+        create_swaps();
 }
 
 /**
@@ -1981,13 +2004,22 @@ function prepare_settings() {
             highlight_size_pva: option_number(0.055, 0, 0.4, 0.001),
             notation_pva: [ON_OFF, 1],
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
-            source_color: [{type: 'color'}, '#ffb400'],
-            source_opacity: option_number(0.7, 0, 1, 0.01),
+            source_color: {
+                _multi: 2,
+                source_color: [{type: 'color'}, '#ffb400'],
+                source_opacity: option_number(0.7, 0, 1, 0.01),
+            },
             status_pva: [ON_OFF, 1],
-            target_color: [{type: 'color'}, '#ff5a00'],
-            target_opacity: option_number(0.7, 0, 1, 0.01),
-            turn_color: [{type: 'color'}, '#ff5a00'],
-            turn_opacity: option_number(0, 0, 1, 0.01),
+            target_color: {
+                _multi: 2,
+                target_color: [{type: 'color'}, '#ff5a00'],
+                target_opacity: option_number(0.7, 0, 1, 0.01),
+            },
+            turn_color: {
+                _multi: 2,
+                turn_color: [{type: 'color'}, '#ff5a00'],
+                turn_opacity: option_number(0, 0, 1, 0.01),
+            },
         },
         boom: {
             disable_everything: [ON_OFF, 0],
@@ -2067,8 +2099,11 @@ function prepare_settings() {
             graph_eval_clamp: option_number(10, 0, 256, 0.5, {}, 'works with scale=linear'),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
-            graph_marker_color: [{type: 'color'}, '#299bff'],
-            graph_marker_opacity: option_number(0.5, 0, 1, 0.01),
+            marker_color: {
+                _multi: 2,
+                marker_color: [{type: 'color'}, '#299bff'],
+                marker_opacity: option_number(0.5, 0, 1, 0.01),
+            },
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(1.2, 0, 10, 0.1),
             graph_scale: [SCALES, 0, '!', null, () => {
@@ -2120,6 +2155,11 @@ function prepare_settings() {
             column_bottom: option_number(4, 1, 8),
             column_top: option_number(2, 1, 8),
             default_positions: '1',
+            center: {
+                _multi: 2,
+                max_center: option_number(500, -1, 1200),
+                max_left: option_number(500, -1, 1200),
+            },
             max_center: option_number(500, -1, 1200),
             max_left: option_number(500, -1, 1200),
             max_right: option_number(500, -1, 1200),
@@ -2197,9 +2237,8 @@ function prepare_settings() {
             game_wasm: [ON_OFF, 1],
         },
         quick_copy: {
-            _flag: 4,
+            _flag: 3,
             _pop: true,
-            _title: 'Copy',
             copy: copy_moves,
             download_PGN: '1',
             load_PGN: {_id: 'load_pgn', _value: ''},
@@ -2315,13 +2354,14 @@ function startup() {
     set_game_events();
     startup_graph();
     add_history();
-    ready = true;
+    ready ++;
 
     init_sockets();
     init_globals();
     init_customs(true);
     quick_setup();
     resize();
+    ready ++;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
