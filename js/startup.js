@@ -28,7 +28,8 @@ startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Ti
 touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug,
 update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
-virtual_resize:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_resize:true, virtual_set_modal_events_special: true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS,
+xboards, Y
 */
 'use strict';
 
@@ -388,6 +389,10 @@ function change_setting_special(name, value, close) {
     default:
         result = change_setting_game(name, value);
     }
+
+    // show custom colors
+    if (name.includes('board_theme'))
+        show_custom_colors(name);
 
     add_history();
     return result;
@@ -1211,6 +1216,14 @@ function set_3d_scene(three) {
     if (three)
         start_3d();
 }
+/**
+ *
+ * Show the About popup
+ */
+function show_about() {
+    HTML(Id('popup-desc'), HTML(Id('desc')));
+    show_popup('about', true, {center: true, html: HTML(Id('about')), overlay: 1});
+}
 
 /**
  * Show / hide the archive/live boards
@@ -1226,11 +1239,20 @@ function show_archive_live() {
 }
 
 /**
- * Show the About popup
+ * Show/hide custom white & black
+ * @param {string} name
  */
-function show_about() {
-    HTML(Id('popup-desc'), HTML(Id('desc')));
-    show_popup('about', true, {center: true, html: HTML(Id('about')), overlay: 1});
+function show_custom_colors(name) {
+    let modal = Id('modal'),
+        show = (Y[name] == 'custom');
+    for (let color of WB_LOWER) {
+        let node = _(`[data-t="Custom ${color}"]`, modal);
+        if (!node)
+            continue;
+        node = node.parentNode;
+        S(node, show);
+        S(node.nextElementSibling, show);
+    }
 }
 
 /**
@@ -1433,6 +1455,19 @@ function window_click(e) {
 /////////
 
 /**
+ * Happens after a popup is displayed
+ */
+function set_modal_events_special() {
+    let modal = Id('modal'),
+        node = _('[data-t="Board theme"]', modal);
+    if (!node)
+        return;
+    node = _('select', node.parentNode.nextElementSibling);
+    if (node)
+        show_custom_colors(node.name);
+}
+
+/**
  * Global events
  */
 function set_global_events() {
@@ -1517,7 +1552,7 @@ function set_global_events() {
     });
 
     // swap panes
-    Events('#center, #left, #right', 'mouseenter mouseleave', function(e) {
+    Events('#center, #left, #left_2, #right, #right_2', 'mouseenter mouseleave', function(e) {
         if (Y.panel_adjust)
             Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
@@ -1889,9 +1924,10 @@ function prepare_settings() {
         bamboo2 = `${bamboo} - `,
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
-        cores = navigator.hardwareConcurrency,
         copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}],
         copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}],
+        cores = navigator.hardwareConcurrency,
+        min_max = 'min and max values, hidden if both are 0',
         old = 'move',
         shortcuts = [...['off'], ...Keys(TABLES)],
         show_plies = [['first', 'diverging', 'last'], 'diverging'];
@@ -1964,10 +2000,16 @@ function prepare_settings() {
             animate: [ON_OFF, 1],
             arrow: '',
             board_theme: [Keys(BOARD_THEMES), 'chess24'],
+            custom_black: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#000000'],
+            },
+            custom_white: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#ffffff'],
+            },
             controls: [ON_OFF, 1],
             copy: copy_download,
-            custom_black: [{type: 'color'}, '#000000'],
-            custom_white: [{type: 'color'}, '#ffffff'],
             draw_right_click: [ON_OFF, 0],
             highlight_color: [{type: 'color'}, '#ffff00'],
             highlight_delay: option_number(0, -100, 1500, 100),
@@ -1981,10 +2023,16 @@ function prepare_settings() {
             analysis: analyses,
             animate_pv: [ON_OFF, 1],
             board_theme_pv: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pv: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#000000'],
+            },
+            custom_white_pv: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#ffffff'],
+            },
             controls_pv: [ON_OFF, 1],
             copy: copy_download,
-            custom_black_pv: [{type: 'color'}, '#000000'],
-            custom_white_pv: [{type: 'color'}, '#ffffff'],
             highlight_color_pv: [{type: 'color'}, '#ffff00'],
             highlight_size_pv: option_number(0.088, 0, 0.4, 0.001),
             notation_pv: [ON_OFF, 1],
@@ -1998,9 +2046,15 @@ function prepare_settings() {
             animate_pva: [ON_OFF, 1],
             auto_paste: [ON_OFF, 1],
             board_theme_pva: [Keys(BOARD_THEMES), 'uscf'],
+            custom_black_pva: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#000000'],
+            },
+            custom_white_pva: {
+                _class: 'dn',
+                _value: [{type: 'color'}, '#ffffff'],
+            },
             controls_pva: [ON_OFF, 1],
-            custom_black_pva: [{type: 'color'}, '#000000'],
-            custom_white_pva: [{type: 'color'}, '#ffffff'],
             highlight_color_pva: [{type: 'color'}, '#ffff00'],
             highlight_size_pva: option_number(0.055, 0, 0.4, 0.001),
             notation_pva: [ON_OFF, 1],
@@ -2157,19 +2211,38 @@ function prepare_settings() {
             column_bottom: option_number(4, 1, 8),
             column_top: option_number(2, 1, 8),
             default_positions: '1',
-            center: {
+            left_2: {
                 _multi: 2,
-                max_center: option_number(500, -1, 1200),
+                _title: min_max,
+                min_left_2: option_number(0, -1, 1200),
+                max_left_2: option_number(0, -1, 1200),
+            },
+            left: {
+                _multi: 2,
+                _title: min_max,
+                min_left: option_number(300, -1, 1200),
                 max_left: option_number(500, -1, 1200),
             },
-            max_center: option_number(500, -1, 1200),
-            max_left: option_number(500, -1, 1200),
-            max_right: option_number(500, -1, 1200),
-            min_center: option_number(300, -1, 1200),
-            min_left: option_number(300, -1, 1200),
-            min_right: option_number(300, -1, 1200),
+            center: {
+                _multi: 2,
+                _title: min_max,
+                min_center: option_number(300, -1, 1200),
+                max_center: option_number(500, -1, 1200),
+            },
+            right: {
+                _multi: 2,
+                _title: min_max,
+                min_right: option_number(300, -1, 1200),
+                max_right: option_number(500, -1, 1200),
+            },
+            right_2: {
+                _multi: 2,
+                _title: min_max,
+                min_right_2: option_number(0, -1, 1200),
+                max_right_2: option_number(0, -1, 1200),
+            },
             max_window: option_number(1920, 256, 32000),
-            panel_adjust: [ON_OFF, 0],
+            panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
             unhide: '1',
         },
@@ -2339,6 +2412,7 @@ function startup() {
     virtual_opened_table_special = opened_table_special;
     virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;
+    virtual_set_modal_events_special = set_modal_events_special;
 
     // pre-process
     detect_device();
