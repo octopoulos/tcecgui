@@ -1893,7 +1893,8 @@ function prepare_settings() {
         copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}],
         copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}],
         old = 'move',
-        shortcuts = [...['off'], ...Keys(TABLES)];
+        shortcuts = [...['off'], ...Keys(TABLES)],
+        show_plies = [['first', 'diverging', 'last'], 'diverging'];
 
     merge_settings({
         // new column after 10 items
@@ -1989,7 +1990,7 @@ function prepare_settings() {
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
             show_delay: option_number(500, 0, 2000, 10),
-            show_ply: [['first', 'diverging', 'last'], 'diverging'],
+            show_ply: show_plies,
             status_pv: [ON_OFF, 1],
         },
         board_pva: {
@@ -2138,6 +2139,7 @@ function prepare_settings() {
             live_pv: [ON_OFF, 1],
             move_height_live: option_number(3.6, 3, 100, 0.05),
             moves_live: [ON_OFF, 1],
+            show_ply: show_plies,
         },
         moves: {
             grid: option_number(0, 0, 10),
@@ -2207,6 +2209,7 @@ function prepare_settings() {
             grid_pv: option_number(0, 0, 10),
             move_height_pv: option_number(5, 3, 100, 0.05),
             moves_pv: [ON_OFF, 1],
+            show_ply: show_plies,
         },
         copy_pva: {
             _pop: true,

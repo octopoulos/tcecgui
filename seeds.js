@@ -4,8 +4,8 @@ require
 */
 'use strict';
 
-let {LS} = require('./js/common'),
-    {calculate_seeds} = require('./js/game');
+let {LS} = require('./js/common.js'),
+    {calculate_seeds} = require('./js/game.js');
 
 let engines_full = [
     "Stockfish",

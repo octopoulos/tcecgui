@@ -1356,6 +1356,10 @@ function create_table_columns(columns, widths, no_translates=[], titles={}) {
             title = titles[value] || TITLES[value] || titles[field] || TITLES[field],
             translate = no_translates.includes(value)? '': ` data-t="${value}"`;
 
+        // [DE] => add a copy
+        if (translate && value.includes(TABLE_DE))
+            translate = `${translate} data-t0="${value}"`;
+
         title = title? ` data-t="${title}" data-t2="title"`: '';
         return [
             `<th${style} ${id? '': 'class="rounded" '}data-x="${field}"${title}>`,
@@ -1788,6 +1792,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         hidden = {},
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
+        is_stand = (name == 'stand'),
         is_winner = (name == 'winner'),
         nodes = [],
         required = COLUMNS_REQUIRED[name] || [],
@@ -1806,6 +1811,16 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         if (hide)
             hidden[column] = 1;
         S(`th[data-x="${column}"]`, !hide, table);
+    }
+
+    // hide [DE]?
+    if (is_cross || is_stand) {
+        let node = _('th[data-x="points"] i', table);
+        if (node) {
+            let dataset = node.dataset;
+            if (dataset)
+                dataset.t = (data.length > 2)? dataset.t0: 'Points';
+        }
     }
 
     // not a real table?
