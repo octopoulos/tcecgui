@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-03
+// @version 2021-01-14
 /*
 globals
 Buffer, console, process, require
@@ -10,7 +10,9 @@ Buffer, console, process, require
 let fs = require('fs'),
     glob = require('glob'),
     unzipper = require('unzipper'),
-    {Assign, DefaultInt, Floor, FormatUnit, Keys, LS, Max, Now, Pad, SetDefault} = require('./js/common'),
+    {
+        Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, Keys, LS, Max, Now, Pad, SetDefault,
+    } = require('./js/common'),
     {fix_move_format} = require('./js/global'),
     {extract_threads, parse_pgn} = require('./js/game');
 
@@ -342,13 +344,26 @@ function open_file(filename, result, callback) {
  * @param {string[]} filenames
  */
 function done(result, filenames) {
-    let text = merge_stats(result),
+    let day = FromTimestamp()[0],
+        text = merge_stats(result),
         lines = [
             '```',
             filenames.map(name => name.split(/[/\\]/).slice(-1)[0]).sort().join(', '),
             text,
             '```',
         ].join('\n');
+
+    text = [
+        `Updated on ${day}`,
+        '',
+        'How nps is calculated for each game:',
+        '- nps = total nodes / total time, so, moves with a long thinking time have a lot of impact',
+        "- the last 20% moves are discarded because they're less relevant (too many transpositions)",
+        '- the interquartile range (IQR) is used to remove outliers => adds a lot of stability',
+        "- moves with very low thinking time or nodes are not counted because they're very noisy",
+        '',
+        text,
+    ].join('\n');
 
     LS(lines);
     fs.writeFile('analyse_pgn.txt', text, () => {

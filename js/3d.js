@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-15
 //
 // general 3d rendering code
 //
@@ -10,7 +10,7 @@ globals
 _, Abs, add_timeout, AnimationFrame, api_translate_get, Assign, Attrs, Audio, C, CameraControls, cannot_click, Class,
 clear_timeout, create_url_list,
 DefaultInt, DEFAULTS, DEV, device, document, done_touch, Events, Exp, exports, Format, full_scroll, get_drop_id,
-global, HasClass, HTML, Id, Input, IsArray, IsDigit, IsFunction, IsString, KEY_TIMES, Keys, KEYS,
+global, HasClass, HTML, Id, Input, IsArray, IsDigit, IsFunction, IsObject, IsString, KEY_TIMES, Keys, KEYS,
 LINKS, load_library, LS, Max, navigator, NO_IMPORTS, Now, ON_OFF, Parent, PD, require,
 S, save_option, set_draggable, Show, SP, Stats, Style, T:true, THREE, Title, translate_nodes, translates, TYPES,
 Undefined, update_svg, update_theme, Visible, window, X_SETTINGS, Y
@@ -1208,6 +1208,7 @@ function show_modal(show, text, title, name) {
  * @param {boolean=} adjust only change its position
  * @param {number=} bar_x width of the scrollbar
  * @param {boolean=} center place the popup in the center of the screen
+ * @param {string=} class_ extra class
  * @param {number=} event 0 to disable set_modal_events
  * @param {string=} html 0 to skip => keep the current HTML
  * @param {string=} id id of the element that us used for adjust
@@ -1222,8 +1223,8 @@ function show_modal(show, text, title, name) {
  * @param {number[]]=} xy
  */
 function show_popup(name, show, {
-        adjust, bar_x=20, center, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0], overlay,
-        setting, shadow=1, target, xy}={}) {
+        adjust, bar_x=20, center, class_, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0],
+        overlay, setting, shadow=1, target, xy}={}) {
     // remove the red rectangle
     if (!adjust)
         set_draggable();
@@ -1401,7 +1402,8 @@ function show_popup(name, show, {
         if (is_modal) {
             if (instant != undefined)
                 Class(node, 'instant', instant);
-            Class(node, 'popup-show popup-enable', !!show);
+            class_ = class_? ` ${class_}`: '';
+            Class(node, `popup-show popup-enable${class_}`, !!show);
 
             // remember which popup it is, so if we click again on the same id => it closes it
             dataset.id = show? (id || ''): '';
@@ -1504,6 +1506,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             sflag = setting._flag,
             sid = setting._id,
             son = setting._on,
+            smulti = setting._multi,
             sset = setting._set,
             sspan = setting._span,
             ssvg = setting._svg,
@@ -1528,7 +1531,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             data = setting[0],
             fourth = setting[4],
             is_string = IsString(data)? ` name="${key}"`: '',
-            more_class = (split || (data && !is_string))? '': ' span',
+            more_class = (split || (data && !is_string) || smulti)? '': ' span',
             more_data = data? '': ` data-set="${sset || key}"`,
             string_digit = is_string? data * 1: 0,
             third = setting[3],
@@ -1584,32 +1587,51 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         if (is_string)
             return;
 
-        if (IsArray(data)) {
-            if (data == ON_OFF)
-                lines.push(
-                    '<vert class="fcenter fastart">'
-                        + `<input name="${key}" type="checkbox" ${y_key? 'checked': ''}>`
-                    + '</vert>'
-                );
-            else
-                lines.push(
-                    '<vert class="fcenter">'
-                    + `<select name="${key}">`
-                        + data.map(option => {
-                            let splits = (option + '').split('='),
-                                value = Undefined({off: 0, on: 1}[option], option);
-                            if (splits.length > 1) {
-                                option = splits[1];
-                                value = splits[0];
-                            }
-                            let selected = (y_key == value)? ' selected': '';
-                            return `<option value="${value}"${selected} data-t="${option}"></option>`;
-                        }).join('')
-                    + '</select>'
-                    + '</vert>'
-                );
-        }
-        else if (data) {
+        // multi data? ex: center min-max
+        let datas = smulti? setting: {key: data},
+            id = -1;
+
+        Keys(datas).forEach(key => {
+            let data = datas[key];
+            if (!data || key[0] == '_')
+                return;
+            id ++;
+            LS(key, 'id=', id, 'smulti=', smulti, '??', id == smulti - 1);
+
+            // multi
+            if (smulti) {
+                data = data[0];
+                data.class = 'two';
+            }
+
+            // create element
+            if (IsArray(data)) {
+                if (data == ON_OFF)
+                    lines.push(
+                        '<vert class="fcenter fastart">'
+                            + `<input name="${key}" type="checkbox" ${y_key? 'checked': ''}>`
+                        + '</vert>'
+                    );
+                else
+                    lines.push(
+                        '<vert class="fcenter">'
+                        + `<select name="${key}">`
+                            + data.map(option => {
+                                let splits = (option + '').split('='),
+                                    value = Undefined({off: 0, on: 1}[option], option);
+                                if (splits.length > 1) {
+                                    option = splits[1];
+                                    value = splits[0];
+                                }
+                                let selected = (y_key == value)? ' selected': '';
+                                return `<option value="${value}"${selected} data-t="${option}"></option>`;
+                            }).join('')
+                        + '</select>'
+                        + '</vert>'
+                    );
+                return;
+            }
+
             let auto = data.auto || '',
                 class_ = data.class || '',
                 focus = data.focus || '',
@@ -1618,7 +1640,9 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             class_ = ` class="setting${class_? ' ': ''}${class_}"`;
             if (focus)
                 focus = ` data-f="${focus}"`;
-            lines.push('<vert class="fcenter">');
+
+            if (id == 0)
+                lines.push(smulti? '<hori class="faround">': '<vert class="fcenter">');
 
             // placeholder + autocomplete
             if (holder)
@@ -1656,6 +1680,9 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             case 'number':
                 lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
                 break;
+            case 'two':
+                lines.push('HELLO');
+                break;
             default:
                 found = false;
             }
@@ -1677,8 +1704,9 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 );
             }
 
-            lines.push('</vert>');
-        }
+            if (!smulti || id == smulti - 1)
+                lines.push(smulti? '</hori>': '</vert>');
+        });
     });
 
     // -1 to close the popup

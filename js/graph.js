@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-10
+// @version 2021-01-14
 //
 /*
 globals
@@ -740,7 +740,7 @@ function update_live_chart(moves, id) {
  * Update the marker color+opacity
  */
 function update_markers() {
-    Style('.cmarker', `background:${Y.graph_marker_color};opacity:${Y.graph_marker_opacity}`);
+    Style('.cmarker', `background:${Y.marker_color};opacity:${Y.marker_opacity}`);
 }
 
 /**

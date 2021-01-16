@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-13
+@version 2021-01-15
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -255,6 +255,9 @@ grid {
 .grid3 {
     grid-template-columns: 37% 26% 37%;
 }
+.settings2 grid {
+    grid-template-columns: 1fr;
+}
 
 /* drag & drop */
 .drag {
@@ -391,6 +394,9 @@ grid {
 .settings {
     min-width: 270px;
 }
+.settings2 {
+    min-width: 240px;
+}
 .options {
     width: 100%;
 }
@@ -455,6 +461,9 @@ grid {
     color: #999;
     font-size: 80%;
     font-variant: small-caps;
+}
+input.two {
+    width: calc(50% - 0.5em);
 }
 
 /* board */

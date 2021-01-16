@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-15
 //
 // Game specific code:
 // - control the board, moves
@@ -1055,7 +1055,7 @@ function analyse_crosstable(section, data) {
             no_mob = isNaN(mob);
 
         let stand_row = {
-            '%': format_percent(score / games),
+            '%': games? format_percent(score / games): '-',
             crashes: dico.Strikes,
             diff: no_mob? missing_mob: `${new_elo - elo} [${new_elo}]`,
             draws: `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
@@ -1080,23 +1080,25 @@ function analyse_crosstable(section, data) {
     }
 
     // 2) direct encounters
-    Keys(encounters).forEach(key => {
-        let engines = encounters[key],
-            names = Keys(engines);
-        if (names.length < 2)
-            return;
-        for (let name of names) {
-            for (let name2 of names)
-                if (name != name2)
-                    engines[name] += head_opponents[name][name2] || 0;
+    // - skip if only 2 engines
+    if (orders.length > 2)
+        Keys(encounters).forEach(key => {
+            let engines = encounters[key],
+                names = Keys(engines);
+            if (names.length < 2)
+                return;
+            for (let name of names) {
+                for (let name2 of names)
+                    if (name != name2)
+                        engines[name] += head_opponents[name][name2] || 0;
 
-            let de = engines[name];
-            for (let row of [engine_crosses[name], engine_stands[name]]) {
-                row['points+'] = row.points + de * 0.0001;
-                row.points = `${row.points} [${de}]`;
+                let de = engines[name];
+                for (let row of [engine_crosses[name], engine_stands[name]]) {
+                    row['points+'] = row.points + de * 0.0001;
+                    row.points = `${row.points} [${de}]`;
+                }
             }
-        }
-    });
+        });
 
     update_table(section, 'stand', stand_rows);
 
@@ -3036,7 +3038,7 @@ function extract_threads(options) {
 function fix_header_opening(board, headers) {
     let fen = headers.FEN,
         opening = headers.Opening;
-    if (!fen || (opening && !DUMMY_OPENINGS[opening]))
+    if (!fen || !board || (opening && !DUMMY_OPENINGS[opening]))
         return;
     // continuation
     if (fen && get_fen_ply(fen) > -1)
@@ -3186,7 +3188,7 @@ function parse_pgn(section, data, mode=7, origin='') {
                 // pv: Be3 b5 dxc5 Nxc5
                 // => 16. Be3 b5 17. dxc5 Nxc5
                 let pv = info.pv;
-                if (pv && !pv.includes('.')) {
+                if (IsString(pv) && !pv.includes('.')) {
                     pv = pv.split(' ').map((item, id) => {
                         let curr = id + ply,
                             is_white = !(curr & 1),
@@ -5177,10 +5179,6 @@ function change_setting_game(name, value) {
     case 'graph_eval_mode':
         redraw_eval_charts(sboard);
         break;
-    case 'graph_marker_color':
-    case 'graph_marker_opacity':
-        update_markers();
-        break;
     case 'graph_scale':
         let target = ((context_target || {}).id || '').split('-')[1];
         if (charts[target]) {
@@ -5189,6 +5187,10 @@ function change_setting_game(name, value) {
             set_scale_func(target);
             update_chart(target);
         }
+        break;
+    case 'marker_color':
+    case 'marker_opacity':
+        update_markers();
         break;
     case 'material_color':
         update_materials(main.moves[main.ply]);
@@ -5572,7 +5574,8 @@ function handle_board_events(board, type, value, e, force) {
         }
         else if (value == 'copy') {
             context_target = board.node;
-            show_popup('options', 'toggle', {id: name, setting: 'quick_copy', xy: [e.clientX, e.clientY]});
+            show_popup('options', 'toggle', {
+                class_: 'settings2', id: name, setting: 'quick_copy', xy: [e.clientX, e.clientY]});
         }
         else if (value == 'cube') {
             board.mode = (board.mode == 'html')? 'text': 'html';
