@@ -193,6 +193,9 @@ input[type="checkbox"] {
     transform: scale(1.35);
     width: auto;
 }
+input[type="color"] {
+    padding-left: unset;
+}
 input[type="image"] {
     width: auto;
 }

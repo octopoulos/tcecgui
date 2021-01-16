@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-15
 //
 /*
 globals
@@ -11,8 +11,9 @@ expect, require, test
 let {Assign, Keys} = require('./common.js'),
     {
         add_history, AUTO_ON_OFF, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES,
-        guess_types, import_settings, merge_settings, ON_OFF, parse_dev, reset_settings, restore_history, sanitise_data,
-        save_option, translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
+        guess_types, import_settings, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, restore_history,
+        sanitise_data, save_option, translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS,
+        Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
@@ -218,6 +219,62 @@ Assign(translates, {
         },
         {debug: undefined, key_time: 0, music: 0, volume: 5},
         {debug: undefined, key_time: 'i', music: 'i', volume: 'i'},
+    ],
+    [
+        {
+            board_pva: {
+                controls_pva: [ON_OFF, 1],
+                custom_white_pv: {
+                    _class: 'dn',
+                    _value: [{type: 'color'}, '#ffffff'],
+                },
+                source_color: {
+                    _multi: 2,
+                    source_color: [{type: 'color'}, '#ffb400'],
+                    source_opacity: option_number(0.7, 0, 1, 0.01),
+                },
+                turn_color: {
+                    _multi: 2,
+                    turn_color: [{type: 'color'}, '#ff5a00'],
+                    turn_opacity: option_number(0, 0, 1, 0.01),
+                },
+            },
+        },
+        {
+            advanced: {
+                debug: '',
+                key_time: [{min: 0, max: 1000, type: 'number'}, 0],
+            },
+            audio: {
+                music: [['on', 'off'], 0],
+                volume: [{min: 0, max: 10, type: 'number'}, 5],
+            },
+            board_pva: {
+                controls_pva: [ON_OFF, 1],
+                custom_white_pv: {
+                    _class: 'dn',
+                    _value: [{type: 'color'}, '#ffffff'],
+                },
+                source_color: {
+                    _multi: 2,
+                    source_color: [{type: 'color'}, '#ffb400'],
+                    source_opacity: option_number(0.7, 0, 1, 0.01),
+                },
+                turn_color: {
+                    _multi: 2,
+                    turn_color: [{type: 'color'}, '#ff5a00'],
+                    turn_opacity: option_number(0, 0, 1, 0.01),
+                },
+            },
+        },
+        {
+            controls_pva: 1, custom_white_pv: '#ffffff', source_color: '#ffb400', source_opacity: 0.7,
+            turn_color: '#ff5a00', turn_opacity: 0,
+        },
+        {
+            controls_pva: 'i', custom_white_pv: 's', source_color: 's', source_opacity: 'f', turn_color: 's',
+            turn_opacity: 'f',
+        },
     ],
 ].forEach(([x_settings, answer, answer_def, answer_type], id) => {
     test(`merge_settings:${id}`, () => {

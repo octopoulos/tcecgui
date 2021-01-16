@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-15
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -9,13 +9,13 @@
 // included after: common
 /*
 globals
-_, A, Abs, AnimationFrame, Assign, Attrs, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval, clearTimeout,
-CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, From, global, Hide, history, HTML, Id, IsArray,
-IsDigit, IsFloat, IsObject, IsString, Keys,
+_, A, Abs, AnimationFrame, Assign, Attrs, C, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
+clearTimeout, CreateNode,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, From, global, HasClass, Hide, history, HTML,
+Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
 QueryString, require, Resource,
-Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
+S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
 Upper, Visible, WebSocket, window
 */
 'use strict';
@@ -34,6 +34,10 @@ let __PREFIX = '_',
     api = {},
     api_times = {},
     AUTO_ON_OFF = ['auto', 'on', 'off'],
+    change_queue,
+    click_target,
+    context_areas = {},
+    context_target,
     DEFAULTS = {
         language: '',
         theme: '',
@@ -63,6 +67,7 @@ let __PREFIX = '_',
         sv: 'swe',
     },
     libraries = {},
+    LINKS = {},
     MAX_HISTORY = 20,
     me = {},
     // &1:no import, &2:no export
@@ -78,6 +83,7 @@ let __PREFIX = '_',
     ON_OFF = ['on', 'off'],
     ping = 0,
     pong = 0,
+    POPUP_ADJUSTS = {},
     QUERY_KEYS = {
         '': '?',
         hash: '#',
@@ -106,6 +112,7 @@ let __PREFIX = '_',
     TRANSLATES = {},
     TYPES = {},
     // virtual functions, can be assigned
+    virtual_change_setting_special,
     virtual_check_hash_special,
     virtual_drag_done,
     virtual_import_settings,
@@ -114,6 +121,7 @@ let __PREFIX = '_',
     virtual_reset_settings_special,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
+    virtual_set_modal_events_special,
     virtual_socket_message,
     virtual_socket_open,
     WS = (typeof WebSocket != 'undefined')? WebSocket: null,
@@ -208,6 +216,62 @@ function add_history() {
     y_states.length = y_index + 1;
     if (y_states.length > MAX_HISTORY)
         y_states.shift();
+}
+
+/**
+ * Change a setting
+ * @param {string} name
+ * @param {string|number} value
+ * @param {boolean=} close close the popup
+ */
+function change_setting(name, value, close) {
+    if (value != undefined) {
+        // TODO: clamp the value if min/max are defined
+        if ('fi'.includes(TYPES[name]) && !isNaN(value))
+            value *= 1;
+
+        let no_import = NO_IMPORTS[name] || 0;
+        if (!(no_import & 2)) {
+            if (no_import & 4)
+                Y[name] = value;
+            else
+                save_option(name, value);
+        }
+    }
+
+    // holding down a key => skip
+    if (KEYS[38] || KEYS[40]) {
+        change_queue = [name, value, close];
+        return;
+    }
+    change_queue = null;
+
+    if (virtual_change_setting_special && virtual_change_setting_special(name, value, close))
+        return;
+
+    switch (name) {
+    case 'language':
+        if (value == 'eng' || translates._lan == value)
+            translate_nodes('body');
+        else if (value != 'eng')
+            api_translate_get();
+        break;
+    case 'theme':
+        update_theme([value]);
+        break;
+    }
+}
+
+/**
+ * Destroy a popup content + style
+ * @param {Node} node
+ * @param {number} &1:html, &2:style
+ */
+function destroy_popup(node, flag) {
+    if (flag & 1)
+        HTML(node, '');
+    if (flag & 2)
+        Style(node, 'height:unset;transform:unset;width:unset');
 }
 
 /**
@@ -451,13 +515,42 @@ function merge_settings(x_settings) {
     // update defaults
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
-        if (IsObject(settings)) {
-            let keys = Keys(settings).filter(key => key[0] != '_' && IsObject(settings[key]));
-            Assign(DEFAULTS, Assign({}, ...keys.map(key => ({[key]: settings[key][1]}))));
+        if (!IsObject(settings))
+            return;
 
-            // update types
-            guess_types(settings, keys);
-        }
+        let dico = {},
+            sub_settings = {};
+
+        Keys(settings).forEach(key => {
+            if (key[0] == '_')
+                return;
+            let setting = settings[key];
+            if (!IsObject(setting))
+                return;
+
+            // support {_value: [...]}
+            if (setting._value)
+                setting = setting._value;
+
+            // support {_multi: 2, a: [...], b: [...]}
+            if (setting._multi) {
+                Keys(setting).forEach(sub_key => {
+                    if (sub_key[0] == '_')
+                        return;
+                    let sub = setting[sub_key];
+                    dico[sub_key] = sub[1];
+                    sub_settings[sub_key] = sub;
+                });
+            }
+            else {
+                dico[key] = setting[1];
+                sub_settings[key] = setting;
+            }
+        });
+
+        // update defaults + types
+        Assign(DEFAULTS, dico);
+        guess_types(sub_settings, Keys(dico));
     });
 }
 
@@ -622,6 +715,546 @@ function save_storage(name, value) {
         value = 0;
 
     localStorage.setItem(`${__PREFIX}${name}`, value);
+}
+
+/**
+ * Show/hide popup
+ * @param {string=} name
+ * @param {boolean|string=} show
+ * @param {boolean=} adjust only change its position
+ * @param {number=} bar_x width of the scrollbar
+ * @param {boolean=} center place the popup in the center of the screen
+ * @param {string=} class_ extra class
+ * @param {number=} event 0 to disable set_modal_events
+ * @param {string=} html 0 to skip => keep the current HTML
+ * @param {string=} id id of the element that us used for adjust
+ * @param {boolean=} instant popup appears instantly
+ * @param {number=} margin_y
+ * @param {number=} offset mouse offset from the popup
+ * @param {string=} node_id popup id
+ * @param {boolean=} overlay dark overlay is used behind the popup
+ * @param {string=} setting
+ * @param {number=} shadow 0:none, 1:normal, 2:light
+ * @param {Node=} target element that was clicked
+ * @param {number[]]=} xy
+ */
+function show_popup(name, show, {
+        adjust, bar_x=20, center, class_, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0],
+        overlay, setting, shadow=1, target, xy}={}) {
+    // remove the red rectangle
+    if (!adjust)
+        set_draggable();
+    else if (device.iphone)
+        return;
+
+    // if clicked on home-form => make sure to reset click_target
+    let is_toggle = (show == 'toggle');
+    if (is_toggle || show == undefined)
+        click_target = null;
+
+    // find the modal
+    let node = click_target || Id(node_id || 'modal');
+    if (!node)
+        return;
+
+    let dataset = node.dataset,
+        data_id = dataset.id,
+        data_name = dataset.name,
+        is_modal = (node.id == 'modal'),
+        popup_adjust = POPUP_ADJUSTS[name] || POPUP_ADJUSTS[data_id || data_name];
+    if (adjust && !popup_adjust)
+        adjust = false;
+    if (center == undefined)
+        center = dataset.center || '';
+
+    // smart toggle
+    if (is_toggle)
+        show = (data_id != (id || name) || !HasClass(node, 'popup-show') || (xy && xy + '' != dataset.xy));
+
+    if (!adjust && overlay != undefined)
+        S(Id('overlay'), show && overlay);
+
+    if (show || adjust) {
+        let px = 0,
+            py = 0,
+            win_x = window.innerWidth - 16,
+            win_y = window.innerHeight,
+            x = 0,
+            x2 = 0,
+            y = 0,
+            y2 = 0;
+
+        if (show)
+            click_target = Parent(target, {class_: 'popup', self: true});
+
+        // create the html
+        switch (name) {
+        case 'options':
+            if (!xy)
+                context_target = null;
+            html = show_settings(setting, {xy: xy});
+            break;
+        default:
+            let link = LINKS[name];
+            if (link)
+                html = create_url_list(LINKS[name]);
+            break;
+        }
+
+        if (show) {
+            destroy_popup(node, 2);
+            if (html !== 0)
+                HTML(node, html);
+            // focus?
+            let focus = _('[data-f]', node);
+            if (focus)
+                focus.focus();
+        }
+        else {
+            id = data_id;
+            name = data_name;
+        }
+
+        Class(node, 'settings', !!(name == 'options' && (adjust || setting)));
+        translate_nodes(node);
+        update_svg();
+
+        if (is_modal) {
+            // make sure the popup remains inside the window
+            let height = node.clientHeight,
+                width = node.clientWidth;
+
+            // center?
+            if (center) {
+                x = win_x / 2 - width / 2;
+                y = win_y / 2 - height / 2;
+            }
+            else {
+                let target = Id(id),
+                    rect = target? target.getBoundingClientRect(): null;
+
+                // align the popup with the target, if any
+                if (adjust) {
+                    // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter
+                    if (rect && popup_adjust > 1) {
+                        if (popup_adjust & 2)
+                            y = rect.top;
+                        if (popup_adjust & 4)
+                            x = rect.right;
+                        if (popup_adjust & 8)
+                            y = rect.bottom;
+                        if (popup_adjust & 16)
+                            x = rect.left;
+                        if (popup_adjust & 32)
+                            y = (rect.top + rect.bottom) / 2;
+                        if (popup_adjust & 64)
+                            x = (rect.left + rect.right) / 2;
+                        xy = [x, y];
+                    }
+                    else if (!xy) {
+                        let item = dataset.xy;
+                        if (item)
+                            xy = item.split(',').map(item => item * 1);
+                    }
+
+                    let data_margin = dataset.my;
+                    if (data_margin)
+                        margin_y = data_margin * 1;
+                }
+
+                // xy[2] => can align to the rect.right
+                if (xy) {
+                    x = xy[0];
+                    y = xy[1];
+                    x2 = xy[2] || x;
+                    y2 = xy[3] || y;
+                }
+                else if (name && !px && rect)
+                    [x, y, x2, y2] = [rect.left, rect.bottom, rect.right, rect.top];
+            }
+
+            x += offset[0];
+            y += offset[1];
+
+            // align left doesn't work => try align right, and if not then center
+            if (x + width > win_x - bar_x) {
+                if (x2 >= win_x - bar_x)
+                    x2 = win_x - bar_x;
+
+                if (x2 - width > 0) {
+                    px = -100;
+                    x = Max(0, x2 - offset[0]);
+                }
+                else {
+                    px = -50;
+                    x = Max(0, win_x / 2 - offset[0]);
+                }
+            }
+            // same for y
+            if (y + height + margin_y > win_y) {
+                if (y2 >= win_y - 1)
+                    y2 = win_y - 1;
+
+                if (y2 < win_y && y2 - height > 0) {
+                    py = -100;
+                    y = Max(0, y2 - offset[1]);
+                }
+                else {
+                    py = -50;
+                    y = Max(0, win_y / 2 - offset[1]);
+                }
+            }
+
+            dataset.center = center || '';
+            dataset.my = margin_y || '';
+            dataset.xy = xy || '';
+            x += full_scroll.x;
+            y += full_scroll.y;
+            Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
+        }
+    }
+
+    if (!adjust) {
+        if (is_modal) {
+            if (instant != undefined)
+                Class(node, 'instant', instant);
+            class_ = class_? ` ${class_}`: '';
+            Class(node, `popup-show popup-enable${class_}`, !!show);
+
+            // remember which popup it is, so if we click again on the same id => it closes it
+            dataset.id = show? (id || ''): '';
+            dataset.name = show? name: '';
+            if (!show)
+                destroy_popup(node, 3);
+        }
+        if (show) {
+            dataset.ev = event;
+            let height = 'unset',
+                width = 'unset';
+            if (popup_adjust) {
+                if (popup_adjust & 128)
+                    height = '100%';
+                if (popup_adjust & 256)
+                    width = '100%';
+            }
+            Style(node, `height:${height};width:${width}`);
+
+            // shadow
+            Class(node, `${shadow == 0? '': '-'}shadow0 ${shadow == 2? '': '-'}shadow2`);
+        }
+        else {
+            dataset.center = '';
+            dataset.my = '';
+            dataset.xy = '';
+        }
+
+        set_modal_events(node);
+        Show(node);
+    }
+}
+
+/**
+ * Show a settings page
+ * @param {string} name
+ * @param {number=} flag &1:title &2:OK
+ * @param {string=} grid_class
+ * @param {string=} item_class
+ * @param {string=} title
+ * @param {boolean=} unique true if the dialog comes from a contextual popup, otherwise from main options
+ * @param {boolean=} xy
+ * @returns {string} html
+ */
+function show_settings(name, {flag, grid_class='options', item_class='item', title, unique, xy}={}) {
+    let settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
+        class_ = settings._class || '',
+        keys = Keys(settings),
+        lines = [`<grid class="${grid_class}${class_? ' ': ''}${class_}">`],
+        parent_id = get_drop_id(context_target)[1],
+        prefix = settings._prefix,
+        split = settings._split,
+        suffix = settings._suffix;
+
+    flag = Undefined(flag, settings._flag) || 0;
+
+    // set multiple columns
+    if (split) {
+        let new_keys = [],
+            offset = split;
+        keys = keys.filter(key => (key != '_split' && !settings[key]._pop));
+
+        for (let i = 0; i < split; i ++) {
+            new_keys.push(keys[i]);
+            if (keys[i][0] == '_')
+                new_keys.push('');
+            else {
+                new_keys.push(keys[offset] || '');
+                offset ++;
+            }
+        }
+        keys = new_keys;
+    }
+
+    if (!(flag & 1)) {
+        if (parent_id)
+            lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
+        else if (name) {
+            if (!title)
+                title = settings._title || `${Title(name).replace(/_/g, ' ')}${settings._same? '': ' options'}`;
+            lines.push(
+                `<div class="item-title span" data-set="${unique? -1: ''}" data-n="${name}" data-t="${title}"></div>`);
+        }
+    }
+
+    keys.forEach(key => {
+        if (!key && split) {
+            lines.push('<div></div>');
+            return;
+        }
+
+        // only in popup
+        let setting = settings[key];
+        if (setting._pop)
+            return;
+
+        // extra _keys: class, color, flag, on, span, value
+        let sclass = setting._class,
+            scolor = setting._color,
+            sflag = setting._flag,
+            sid = setting._id,
+            son = setting._on,
+            smulti = setting._multi,
+            sset = setting._set,
+            sspan = setting._span,
+            ssvg = setting._svg,
+            ssyn = setting._syn || '',
+            stitle = setting._title,
+            svalue = setting._value;
+        if (sflag && sflag & flag)
+            return;
+        if (son && !son())
+            return;
+        if (svalue != undefined)
+            setting = svalue;
+
+        // separator
+        if (key[0] == '_') {
+            if (parseInt(key[1]))
+                lines.push(`<hr${split? '': ' class="span"'}>`);
+            return;
+        }
+
+        // link or list
+        let clean = key,
+            data = setting[0],
+            fourth = setting[4],
+            is_string = IsString(data)? ` name="${key}"`: '',
+            more_class = (split || (data && !is_string) || smulti)? '': ' span',
+            more_data = data? '': ` data-set="${sset || key}"`,
+            string_digit = is_string? data * 1: 0,
+            third = setting[3],
+            title = setting[2] || stitle,
+            y_key = Y[key];
+
+        // only in popup2?
+        if (!xy && (string_digit & 4))
+            return;
+
+        if (sclass)
+            more_class = ` ${sclass}`;
+        else if (sspan)
+            more_class = ' item-title span';
+        sid = sid? ` data-id="${sid}"`: '';
+
+        if (IsFunction(third) && !third())
+            return;
+        if (IsFunction(fourth))
+            y_key = fourth();
+
+        // only contextual actions?
+        if (title && title[0] == '!') {
+            if (!parent_id)
+                return;
+            title = title.slice(1);
+        }
+
+        // remove prefix and suffix
+        if (clean.length == 2 && IsDigit(clean[1]))
+            clean = '';
+        else {
+            if (suffix && clean.slice(-suffix.length) == suffix)
+                clean = clean.slice(0, -suffix.length);
+            if (prefix && clean.slice(0, prefix.length) == prefix)
+                clean = clean.slice(prefix.length);
+        }
+
+        // TODO: improve that part, it can be customised better
+        if (string_digit & 2)
+            scolor = '#f00';
+        let style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
+            title2 = title? `data-t="${title}" data-t2="title"`: '';
+
+        lines.push(
+            `<a${is_string} class="${item_class}${more_class}${title === 0? ' off': ''}"${more_data}${title2}>`
+                + (ssvg? `<i class="icon" data-svg="${ssvg}"></i>`: '')
+                + `<i${sid} data-t="${Title(clean).replace(/_/g, ' ')}${ssyn}"${style}></i>`
+                + ((setting == '')? ' ...': '')
+            + '</a>'
+        );
+
+        if (is_string)
+            return;
+
+        // multi data? ex: center min-max
+        let datas = smulti? setting: {[key]: data},
+            id = -1;
+
+        Keys(datas).forEach(key => {
+            // a) get data info
+            let data = datas[key];
+            if (!data || key[0] == '_')
+                return;
+            id ++;
+
+            // multi
+            if (smulti) {
+                third = data[3];
+                fourth = data[4];
+                data = data[0];
+                data.class = 'two';
+                y_key = Y[key];
+
+                if (IsFunction(third) && !third())
+                    return;
+                if (IsFunction(fourth))
+                    y_key = fourth();
+            }
+
+            // b) create element
+            let iclass = sclass? ` ${sclass}`: '';
+
+            if (IsArray(data)) {
+                if (data == ON_OFF)
+                    lines.push(
+                        `<vert class="fcenter fastart${iclass}">`
+                            + `<input name="${key}" type="checkbox" ${y_key? 'checked': ''}>`
+                        + '</vert>'
+                    );
+                else
+                    lines.push(
+                        `<vert class="fcenter${iclass}">`
+                        + `<select name="${key}">`
+                            + data.map(option => {
+                                let splits = (option + '').split('='),
+                                    value = Undefined({off: 0, on: 1}[option], option);
+                                if (splits.length > 1) {
+                                    option = splits[1];
+                                    value = splits[0];
+                                }
+                                let selected = (y_key == value)? ' selected': '';
+                                return `<option value="${value}"${selected} data-t="${option}"></option>`;
+                            }).join('')
+                        + '</select>'
+                        + '</vert>'
+                    );
+                return;
+            }
+
+            let auto = data.auto || '',
+                class_ = data.class || '',
+                focus = data.focus || '',
+                holder = data.text || '',
+                type = data.type || '';
+            class_ = ` class="setting${class_? ' ': ''}${class_}"`;
+            if (focus)
+                focus = ` data-f="${focus}"`;
+
+            if (id == 0)
+                lines.push(smulti? `<hori class="faround${iclass}">`: `<vert class="fcenter${iclass}">`);
+
+            // c) placeholder + autocomplete
+            if (holder)
+                holder = ` data-t="${data.text}" data-t2="placeholder"`;
+            if (auto)
+                auto = ` autocomplete="${auto}"`;
+
+            let found = true;
+            switch (type) {
+            case 'area':
+                lines.push(`<textarea name="${key}"${class_}${holder}${auto}${focus}>${y_key}</textarea>`);
+                break;
+            case 'info':
+            case 'upper':
+                lines.push(`<div class="${type}" name="${key}" data-t="${data.text || ''}"></div>`);
+                break;
+            case 'link':
+                if (data.text)
+                    lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}>`);
+                lines.push('<label for="file" data-t="Choose file"></label>');
+                Attrs(Id('file'), {'data-x': key});
+                break;
+            case 'list':
+                lines.push([
+                    '<hori class="w100">',
+                    data.list.map(item => {
+                        let parts = item.split('='),
+                            name = parts[0],
+                            title = parts[1]? ` title="${name}"`: '';
+                        return `<a class="item item3" name="${key}_${name}"${title} data-t="${parts[1] || name}"></a>`;
+                    }).join(''),
+                    '</hori>',
+                ].join(''));
+                break;
+            case 'number':
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
+                break;
+            case 'two':
+                lines.push('HELLO');
+                break;
+            default:
+                found = false;
+            }
+
+            if (found) {
+            }
+            else if (type)
+                lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}>`);
+            // dictionary
+            else {
+                lines.push(
+                    `<select name="${key}"${focus}>`
+                        + Keys(data).map(value => {
+                            let option = data[value],
+                                selected = (Y[key] == value)? ' selected': '';
+                            return `<option value="${value}"${selected} data-t="${option}"></option>`;
+                        }).join('')
+                    + '</select>'
+                );
+            }
+
+            if (!smulti || id == smulti - 1)
+                lines.push(smulti? '</hori>': '</vert>');
+        });
+    });
+
+    // -1 to close the popup
+    if (!(flag & 2)) {
+        if (parent_id && !(flag & 4) && Y.join_next) {
+            let context_area = context_areas[parent_id] || {};
+            lines.push(
+                `<hori class="span">`
+                    + `<div class="item2" data-set="-1" data-t="ok"></div>`
+                    + `<div class="item2${context_area[1]? ' active': ''}" data-t="join next"></div>`
+                    + `<div class="item2" data-t="hide"></div>`
+                + '</hori>'
+            );
+        }
+        else if (name)
+            lines.push(
+                `<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
+    }
+
+    lines.push('</grid>');
+    return lines.join('');
 }
 
 // TRANSLATIONS
@@ -1914,6 +2547,100 @@ function set_engine_events() {
     });
 }
 
+/**
+ * Used when showing a modal
+ * @param {Node=} parent
+ */
+function set_modal_events(parent) {
+    // settings events
+    parent = parent || Id('modal');
+    if (parent.dataset.ev == 0)
+        return;
+
+    // click on item => toggle if possible
+    C('.item', function() {
+        // button
+        let name = this.name;
+        if (name || HasClass(this, 'item-title')) {
+            click_target = Parent(this, {class_: 'popup', self: true});
+            change_setting(name, undefined, (this.dataset.set == '-1' || HasClass(this, 'span'))? 2: 0);
+            return;
+        }
+
+        // input + select
+        let next = this.nextElementSibling;
+        if (!next)
+            return;
+        next = _('input, select', next);
+        if (!next)
+            return;
+        switch (next.tagName) {
+        case 'INPUT':
+            if (next.type == 'checkbox') {
+                next.checked = !next.checked;
+                change_setting(next.name, next.checked * 1);
+            }
+            break;
+        case 'SELECT':
+            if (next.options.length == 2) {
+                next.selectedIndex ^= 1;
+                change_setting(next.name, next.value);
+            }
+            break;
+        }
+    }, parent);
+    C('.item2', function() {
+        let name = this.dataset.t;
+        change_setting(name? name.replace(/ /g, '_'): name);
+    }, parent);
+
+    // right click on item => reset to default
+    Events('.item', 'contextmenu', function(e) {
+        let next = this.nextElementSibling;
+        if (next) {
+            next = _('input, select, textarea', next);
+            if (next) {
+                let name = next.name,
+                    def = DEFAULTS[name];
+                if (def != undefined) {
+                    if (next.type == 'checkbox')
+                        next.checked = def? true: false;
+                    else
+                        next.value = def;
+                    save_option(name, def);
+                    change_setting(name, def);
+                }
+            }
+        }
+        PD(e);
+        SP(e);
+    }, parent);
+
+    // inputs
+    Events('input, select, textarea', 'change', function() {
+        done_touch();
+        change_setting(this.name, (this.type == 'checkbox')? this.checked * 1: this.value);
+    }, {}, parent);
+    //
+    Input('input, select, textarea', function() {
+        done_touch();
+        change_setting();
+    }, parent);
+    //
+    C('input, select, textarea', function() {
+        if (cannot_click())
+            return;
+        change_setting();
+    }, parent);
+    //
+    C('div[name]', function() {
+        change_setting(this.getAttribute('name'));
+    }, parent);
+
+    if (virtual_set_modal_events_special)
+        virtual_set_modal_events_special();
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // <<
@@ -1940,6 +2667,7 @@ if (typeof exports != 'undefined') {
         ON_OFF: ON_OFF,
         option_number: option_number,
         parse_dev: parse_dev,
+        POPUP_ADJUSTS: POPUP_ADJUSTS,
         reset_settings: reset_settings,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
