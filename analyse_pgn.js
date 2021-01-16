@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-14
+// @version 2021-01-15
 /*
 globals
 Buffer, console, process, require
@@ -12,9 +12,9 @@ let fs = require('fs'),
     unzipper = require('unzipper'),
     {
         Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, Keys, LS, Max, Now, Pad, SetDefault,
-    } = require('./js/common'),
-    {fix_move_format} = require('./js/global'),
-    {extract_threads, parse_pgn} = require('./js/game');
+    } = require('./js/common.js'),
+    {fix_move_format} = require('./js/global.js'),
+    {extract_threads, parse_pgn} = require('./js/game.js');
 
 let OPTIONS = {},
     REPLACES = {

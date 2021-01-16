@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-15
 //
 // game board:
 // - 4 rendering modes:
@@ -17,7 +17,7 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
-clear_timeout, COLOR, CopyClipboard, CreateNode, CreateSVG,
+clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,

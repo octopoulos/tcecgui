@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-29
+// @version 2021-01-15
 //
 /*
 globals
@@ -9,8 +9,8 @@ beforeEach, describe, expect, require, test
 'use strict';
 
 let {Chess} = require('./chess.js'),
-    {ArrayJS, Assign, IsArray, IsString, Keys, LS, Undefined} = require('./common'),
-    {get_move_ply} = require('./global');
+    {ArrayJS, Assign, IsArray, IsString, Keys, LS, Undefined} = require('./common.js'),
+    {get_move_ply} = require('./global.js');
 
 let chess = new Chess(),
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';

@@ -22,7 +22,6 @@ if (typeof global != 'undefined') {
 
 // modify those values in config.js
 let HOST_ARCHIVE,
-    LINKS = {},
     LOCALHOST = (typeof location == 'object') && location.port == 8080,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
