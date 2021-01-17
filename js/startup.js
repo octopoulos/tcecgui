@@ -1370,6 +1370,8 @@ function tab_element(target) {
         for (let vector of areas[key])
             if (vector[0] == id) {
                 vector[1] = vector[1]? 0: 1;
+                // update the modal
+                Class('#modal .item2[data-t="join next"]', 'active', vector[1]);
                 break;
             }
     });
