@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-16
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1424,7 +1424,7 @@ function QueryString({discard, keep, key='search', replace, query, string}={})
         return vector.join('&');
     }
 
-    // {'language': 'eng', 'section': '1'}
+    // {language: 'eng', section: '1'}
     Keys(dico).forEach(key => {
         vector.push([key, dico[key]]);
     });

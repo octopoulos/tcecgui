@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-14
+// @version 2021-01-16
 //
 /*
 globals
@@ -697,6 +697,8 @@ function update_chart_options(name, mode) {
 function update_live_chart(moves, id) {
     if (DEV.chart)
         LS('ULC');
+    if (!moves)
+        return;
     // library hasn't loaded yet => queue
     let data_c = chart_data.eval;
     if (!data_c) {

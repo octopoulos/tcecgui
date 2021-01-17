@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-16
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -240,9 +240,9 @@ let EVAL_MODES = {
         k: 14,
     },
     SEARCH_MODES = {
-        'ab': 2,
-        'mm': 1,
-        'rnd': 0,
+        ab: 2,
+        mm: 1,
+        rnd: 0,
     },
     SQUARES = {
         a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,

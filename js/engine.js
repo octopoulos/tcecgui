@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-16
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -2598,19 +2598,18 @@ function set_modal_events(parent) {
     Events('.item', 'contextmenu', function(e) {
         let next = this.nextElementSibling;
         if (next) {
-            next = _('input, select, textarea', next);
-            if (next) {
-                let name = next.name,
+            E('input, select, textarea', node => {
+                let name = node.name,
                     def = DEFAULTS[name];
-                if (def != undefined) {
-                    if (next.type == 'checkbox')
-                        next.checked = def? true: false;
-                    else
-                        next.value = def;
-                    save_option(name, def);
-                    change_setting(name, def);
-                }
-            }
+                if (def == undefined)
+                    return;
+                if (node.type == 'checkbox')
+                    node.checked = def? true: false;
+                else
+                    node.value = def;
+                save_option(name, def);
+                change_setting(name, def);
+            }, next);
         }
         PD(e);
         SP(e);
