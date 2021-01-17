@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -290,10 +290,6 @@ function change_setting_special(name, value, close) {
         break;
     case 'drag_and_drop':
         set_draggable();
-        if (value) {
-            save_option('join_next', 1);
-            Safe('input[name="join_next"]').checked = true;
-        }
         break;
     case 'eval':
     case 'eval_left':
@@ -2159,6 +2155,8 @@ function prepare_settings() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
+            drag_and_drop: [ON_OFF, 0],
+            join_next: [ON_OFF, 0],
             log_auto_start: [ON_OFF, 1],
             log_history: option_number(100, -1, 1000),
             log_pv: [ON_OFF, 1, 'use livelog pv'],
@@ -2261,7 +2259,6 @@ function prepare_settings() {
             column_top: option_number(2, 1, 8),
             default_positions: '1',
             drag_and_drop: [ON_OFF, 0],
-            join_next: [ON_OFF, 0],
             left_2: {
                 _multi: 2,
                 _title: min_max,

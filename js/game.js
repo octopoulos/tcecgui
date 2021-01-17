@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 // Game specific code:
 // - control the board, moves
@@ -1929,11 +1929,17 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 if (row.sub) {
                     lines.push('<grid class="dn">');
                     let subs = row.sub.sort((a, b) => (b.dno + '').localeCompare(a.dno + ''));
-                    for (let sub of subs)
-                        lines.push(
-                            `<a class="sub" data-u="${sub.url}">${sub.menu}</a>`
-                            + `<a href="${HOST_ARCHIVE}/${sub.abb}.pgn.zip"><i data-svg="download"></i></a>`
+                    for (let sub of subs) {
+                        let text = sub.menu || '';
+                        // -= new section =-
+                        if (text.slice(0, 2) == '-=')
+                            lines.push(`<div class="sub sub2">${text}</div><div></div>`);
+                        else
+                            lines.push(
+                                `<a class="sub" data-u="${sub.url}">${text}</a>`
+                                + `<a href="${HOST_ARCHIVE}/${sub.abb}.pgn.zip"><i data-svg="download"></i></a>`
                         );
+                    }
                     lines.push('</grid>');
                 }
                 value = lines.join('');

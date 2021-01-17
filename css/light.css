@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-16
+@version 2021-01-17
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -891,6 +891,10 @@ hsub {
     font-size: 0.9em;
     font-style: italic;
     padding: 0.5em 0 0 2em;
+}
+.sub2 {
+    color: #c30;
+    margin-top: 1.2em;
 }
 .name.win,
 .url,
