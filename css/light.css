@@ -946,7 +946,7 @@ hsub {
 }
 .einfo {
     font-size: 0.85em;
-    padding-top: 0.4em;
+    padding-top: 0.4em !important;
 }
 .version {
     font-size: 0.85em;

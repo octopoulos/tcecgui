@@ -2166,6 +2166,7 @@ function prepare_settings() {
         engine: {
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
+            moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
         },
         extra: {
