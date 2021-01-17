@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 // game board:
 // - 4 rendering modes:
@@ -22,13 +22,13 @@ DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, F
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
-update_svg, Upper, Visible, window, Worker, Y
+update_live_chart, update_player_chart, update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
 // <<
 if (typeof global != 'undefined') {
-    ['3d', 'chess', 'common', 'engine', 'global'].forEach(key => {
+    ['3d', 'chess', 'common', 'engine', 'global', 'graph'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
 }
@@ -1132,8 +1132,8 @@ class XBoard {
         if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
 
-        this.set_marker(ply, agree);
-        dual.set_marker(ply, agree);
+        this.set_marker(ply, agree, num_ply);
+        dual.set_marker(ply, agree, num_ply);
 
         if (show_ply == 'first') {
             this.set_ply(num_ply, {hold: true});
@@ -2381,11 +2381,24 @@ class XBoard {
     }
 
     /**
-     * Set the @ marker
+     * Set the @ marker + agree length
      * @param {number} ply
      * @param {number} agree
+     * @param {number} cur_ply
      */
-    set_marker(ply, agree) {
+    set_marker(ply, agree, cur_ply) {
+        // update agree in chart
+        let move = this.moves[cur_ply];
+        if (move) {
+            move.agree = agree;
+            move.ply = cur_ply;
+            if (this.name.slice(0, 2) == 'pv')
+                update_player_chart('agree', [move]);
+            else
+                update_live_chart('agree', [move], 1);
+        }
+
+        // update the @ marker + agree length
         [this.xmoves, this.pv_node].forEach((parent, id) => {
             let child = _(`[data-i="${ply}"]`, parent);
             if (child && !(ply & 1))

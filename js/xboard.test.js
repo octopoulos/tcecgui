@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-08
+// @version 2021-01-17
 //
 /*
 globals
@@ -39,14 +39,14 @@ live.id = 'null';
         [
             0,
             {
-                fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+                agree: 0, fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
                 from: 99, m: 'd4', ply: 0, san: 'd4', score: 120, to: 67,
             },
             {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'},
         ],
     ],
-    ['38...Qg7 39. Rf2 Qh6 40. Nxg6', 75, [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}]],
-    ['41...Kxg8 42. a8=Q+ Kg7', 81, [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}]],
+    ['38...Qg7 39. Rf2 Qh6 40. Nxg6', 75, [75, {agree: 0, m: 'Qg7', ply: 75}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}]],
+    ['41...Kxg8 42. a8=Q+ Kg7', 81, [81, {agree: 0, m: 'Kxg8', ply: 81}, {m: 'a8=Q+'}, {m: 'Kg7'}]],
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
         live.reset(Y.x);

@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 /*
 globals
@@ -162,57 +162,49 @@ function clamp_eval(eval_)
  * Create all chart data
  */
 function create_chart_data() {
-    Assign(chart_data, {
-        depth: {
-            datasets: [
-                new_dataset('depth', Y.graph_color_0),
-                new_dataset('depth', Y.graph_color_1),
-                new_dataset('selective', Y.graph_color_0, '', {borderDash: [5, 5]}),
-                new_dataset('selective', Y.graph_color_1, '', {borderDash: [5, 5]}),
-            ],
+    let datasets = {
+        agree: [
+            new_dataset('{white} + {black}', Y.graph_color_0),
+            new_dataset('{blue} + {red}', Y.graph_color_2),
+        ],
+        depth: [
+            new_dataset('depth', Y.graph_color_0),
+            new_dataset('depth', Y.graph_color_1),
+            new_dataset('selective', Y.graph_color_0, '', {borderDash: [5, 5]}),
+            new_dataset('selective', Y.graph_color_1, '', {borderDash: [5, 5]}),
+        ],
+        eval: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
+        mobil: [
+            new_dataset('mobility', Y.graph_color_0),
+            new_dataset('mobility', Y.graph_color_1),
+            new_dataset('r-mobility', '#007f7f', '', {borderDash: [10, 5]}),
+        ],
+        node: [
+            new_dataset('w', Y.graph_color_0),
+            new_dataset('b', Y.graph_color_1),
+        ],
+        speed: [
+            new_dataset('w',Y.graph_color_0),
+            new_dataset('b', Y.graph_color_1),
+        ],
+        tb: [
+            new_dataset('w', Y.graph_color_0),
+            new_dataset('b', Y.graph_color_1),
+        ],
+        time: [
+            new_dataset('w', Y.graph_color_0),
+            new_dataset('b', Y.graph_color_1),
+        ],
+    };
+
+    // assign all
+    Keys(datasets).forEach(key => {
+        chart_data[key] = {
+            datasets: datasets[key],
             labels: [],
-        },
-        eval: {
-            datasets: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
-            labels: [],
-        },
-        mobil: {
-            datasets: [
-                new_dataset('mobility', Y.graph_color_0),
-                new_dataset('mobility', Y.graph_color_1),
-                new_dataset('r-mobility', '#007f7f', '', {borderDash: [10, 5]}),
-            ],
-            labels: [],
-        },
-        node: {
-            datasets: [
-                new_dataset('w', Y.graph_color_0),
-                new_dataset('b', Y.graph_color_1),
-            ],
-            labels: [],
-        },
-        speed: {
-            datasets: [
-                new_dataset('w',Y.graph_color_0),
-                new_dataset('b', Y.graph_color_1),
-            ],
-            labels: [],
-        },
-        tb: {
-            datasets: [
-                new_dataset('w', Y.graph_color_0),
-                new_dataset('b', Y.graph_color_1),
-            ],
-            labels: [],
-        },
-        time: {
-            datasets: [
-                new_dataset('w', Y.graph_color_0),
-                new_dataset('b', Y.graph_color_1),
-            ],
-            labels: [],
-        },
+        };
     });
+
 }
 
 /**
@@ -223,6 +215,7 @@ function create_chart_data() {
 function create_charts()
 {
     // 1) create all charts
+    new_chart('agree', true, FormatAxis, 0);
     new_chart('depth', true, FormatAxis, 10);
     new_chart('eval', true, FormatEval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
@@ -495,18 +488,19 @@ function redraw_eval_charts(section) {
         return;
 
     let moves = board.moves,
+        name = 'eval',
         num_move = moves.length;
 
     // update existing moves + kibitzer evals (including next move)
-    update_player_charts('eval', moves);
-    update_live_chart(xboards.live0.evals[section], 2);
-    update_live_chart(xboards.live1.evals[section], 3);
+    update_player_charts(name, moves);
+    update_live_chart(name, xboards.live0.evals[section], 2);
+    update_live_chart(name, xboards.live1.evals[section], 3);
 
     // update last received player eval, for the next move
     for (let id = 0; id < 2; id ++) {
         let move = xboards[`pv${id}`].evals[section][num_move];
         if (move)
-            update_live_chart([move], id);
+            update_live_chart(name, [move], id);
     }
 }
 
@@ -691,18 +685,20 @@ function update_chart_options(name, mode) {
 
 /**
  * Update the eval chart from a Live source
+ * @param {string} name eval, agree
  * @param {Move[]} moves
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
-function update_live_chart(moves, id) {
+function update_live_chart(name, moves, id) {
     if (DEV.chart)
         LS('ULC');
     if (!moves)
         return;
+
     // library hasn't loaded yet => queue
-    let data_c = chart_data.eval;
+    let data_c = chart_data[name];
     if (!data_c) {
-        queued_charts.push([moves, id]);
+        queued_charts.push([name, moves, id]);
         return;
     }
 
@@ -726,16 +722,25 @@ function update_live_chart(moves, id) {
         labels[num2] = num / 2 + 1;
 
         // check update_player_chart to understand
-        data[num2] = {
-            eval: eval_,
+        let dico = {
             ply: ply,
             x: num / 2 + 1,
-            y: is_percent? calculate_win(id, eval_, ply): clamp_eval(eval_),
         };
+        switch (name) {
+        case 'agree':
+            dico.y = move.agree;
+            break;
+        case 'eval':
+            dico.eval = eval_;
+            dico.y = is_percent? calculate_win(id, eval_, ply): clamp_eval(eval_);
+            break;
+        }
+
+        data[num2] = dico;
     }
 
     fix_labels(labels);
-    update_chart('eval');
+    update_chart(name);
 }
 
 /**
@@ -795,6 +800,10 @@ function update_player_chart(name, moves) {
             continue;
 
         switch (name) {
+        case 'agree':
+            id = 0;
+            dico.y = move.agree;
+            break;
         case 'depth':
             if (!isNaN(move.sd))
                datasets[2 + (ply & 1)].data[num2] = Assign({y: move.sd}, dico);
@@ -993,8 +1002,8 @@ function init_graph() {
     create_charts();
     update_player_charts(null, xboards[Y.x].moves);
 
-    for (let [moves, id] of queued_charts)
-        update_live_chart(moves, id);
+    for (let [name, moves, id] of queued_charts)
+        update_live_chart(name, moves, id);
     queued_charts = [];
     update_markers();
 }
@@ -1023,6 +1032,7 @@ if (typeof exports != 'undefined') {
         scale_boom: scale_boom,
         slice_charts: slice_charts,
         update_live_chart: update_live_chart,
+        update_player_chart: update_player_chart,
         update_player_charts: update_player_charts,
     });
 }
