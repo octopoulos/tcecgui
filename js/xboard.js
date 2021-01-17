@@ -290,7 +290,7 @@ class XBoard {
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = [],
+            lines = ['<i class="agree"></i>'],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -466,7 +466,7 @@ class XBoard {
 
         // 2) update the moves
         let first_ply = -1,
-            lines = [],
+            lines = ['<i class="agree"></i>'],
             moves = [],
             ply = new_ply;
 
@@ -1091,6 +1091,7 @@ class XBoard {
      * @param {number} num_ply current ply in the real game (not played yet)
      */
     compare_duals(num_ply) {
+        // 0) skip?
         if (this.locked)
             return;
         this.clicked = false;
@@ -1102,14 +1103,15 @@ class XBoard {
         let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
             show_ply = Y.show_ply;
 
-        // first, or if no dual
-        if (show_ply == 'first' || !dual || !dual.valid || dual.locked) {
+        // no dual
+        if (!dual || !dual.valid || dual.locked) {
             this.set_ply(num_ply, {hold: true});
             return;
         }
 
-        // diverging + last  => compare the moves
-        let duals = dual.moves,
+        // 1) first + diverging + last  => compare the moves
+        let agree = 0,
+            duals = dual.moves,
             moves = this.moves,
             num_move = Min(duals.length, moves.length),
             ply = num_ply;
@@ -1124,15 +1126,21 @@ class XBoard {
             ply = i;
             if (dual_m != move_m)
                 break;
+            agree ++;
         }
 
         if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
 
-        this.set_marker(ply);
-        dual.set_marker(ply);
+        this.set_marker(ply, agree);
+        dual.set_marker(ply, agree);
 
-        // render: jump directly to the position
+        if (show_ply == 'first') {
+            this.set_ply(num_ply, {hold: true});
+            return;
+        }
+
+        // 2) render: jump directly to the position
         for (let board of [this, dual]) {
             if (board.clicked)
                 continue;
@@ -2375,14 +2383,19 @@ class XBoard {
     /**
      * Set the @ marker
      * @param {number} ply
+     * @param {number} agree
      */
-    set_marker(ply) {
+    set_marker(ply, agree) {
         [this.xmoves, this.pv_node].forEach((parent, id) => {
             let child = _(`[data-i="${ply}"]`, parent);
             if (child && !(ply & 1))
                 child = child.previousElementSibling;
             if (child)
                 parent.insertBefore(this.markers[id], child);
+
+            let node = _('i.agree', parent);
+            if (node)
+                HTML(node, Y.agree_length? `[${agree}]`: '');
         });
     }
 

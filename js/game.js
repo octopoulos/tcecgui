@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-16
 //
 // Game specific code:
 // - control the board, moves
@@ -4658,7 +4658,7 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
         if (node && node.title != full_engine) {
-            HTML(node, short);
+            HTML(node, resize_text(short, 15));
             Attrs(node, {title: full_engine});
             Assign(player, {
                 feature: Undefined(ENGINE_FEATURES[short], 0),
@@ -5142,6 +5142,14 @@ function change_setting_game(name, value) {
 
     // using exact name
     switch (name) {
+    case 'agree_length':
+    case 'show_ply':
+        Keys(xboards).forEach(key => {
+            let board = xboards[key];
+            if (!board.main)
+                board.compare_duals(main.ply);
+        });
+        break;
     case 'analysis_chessdb':
     case 'analysis_evalguide':
     case 'analysis_lichess':
@@ -5216,13 +5224,6 @@ function change_setting_game(name, value) {
         break;
     case 'rows_per_page':
         update_tab = true;
-        break;
-    case 'show_ply':
-        Keys(xboards).forEach(key => {
-            let board = xboards[key];
-            if (!board.main)
-                board.compare_duals(main.ply);
-        });
         break;
     case 'status':
         show_board_info(Y.x);

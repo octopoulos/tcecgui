@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-15
+@version 2021-01-16
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -947,13 +947,18 @@ hsub {
     font-size: 0.85em;
     white-space: nowrap;
 }
+.engine,
 .version-small {
     -ms-overflow-style: none;
-    font-size: 0.75em;
-    max-width: calc(100% - 8px);
+    max-width: 100%;
     overflow: scroll;
     scrollbar-width: none;
 }
+.version-small {
+    font-size: 0.75em;
+    max-width: calc(100% - 8px);
+}
+.engine::-webkit-scrollbar,
 .version-small::-webkit-scrollbar {
     display: none;
 }
@@ -1307,6 +1312,7 @@ hsub {
     color: #444;
     font-size: 0.85em;
     order: 3;
+    white-space: nowrap;
 }
 #box-live0 .engine,
 #table-live0 .engine {
