@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -436,6 +436,8 @@ function import_settings(data, reset) {
 
     if (reset)
         reset_settings();
+    if (virtual_import_settings)
+        virtual_import_settings();
 }
 
 /**
@@ -643,8 +645,7 @@ function restore_history(dir) {
     let data = JSON.parse(y_copy);
     Assign(Y, data);
 
-    if (virtual_import_settings)
-        virtual_import_settings(data, true);
+    import_settings(data, true);
 }
 
 /**
@@ -1244,7 +1245,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
     // -1 to close the popup
     if (!(flag & 2)) {
-        if (parent_id && !(flag & 4) && Y.join_next) {
+        if (parent_id && !(flag & 4) && (Y.join_next || Y.drag_and_drop)) {
             let context_area = context_areas[parent_id] || {};
             lines.push(
                 `<hori class="span">`

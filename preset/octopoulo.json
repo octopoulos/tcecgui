@@ -1,4 +1,5 @@
 {
+  "agree_length": 1,
   "animate": 1,
   "animate_pv": 1,
   "animate_pva": 1,
@@ -139,7 +140,11 @@
         0,
         1
       ]
-    ]
+    ],
+    "bottom": [],
+    "left_20": [],
+    "right_20": [],
+    "top": []
   },
   "arrow_base_border": 0,
   "arrow_base_color": "#a5a5a5",
@@ -259,14 +264,20 @@
   "log_auto_start": 1,
   "log_history": 100,
   "log_pv": 1,
+  "marker_color": "#299bff",
+  "marker_opacity": 0.5,
   "material_color": "normal",
   "max_center": 500,
   "max_left": 500,
+  "max_left_2": 0,
   "max_right": 500,
+  "max_right_2": 0,
   "max_window": 1920,
   "min_center": 300,
   "min_left": 300,
+  "min_left_2": 0,
   "min_right": 300,
+  "min_right_2": 0,
   "mobility": 1,
   "moob_effect": 1,
   "moob_sound": "random",

@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-17
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -290,10 +290,6 @@ function change_setting_special(name, value, close) {
         break;
     case 'drag_and_drop':
         set_draggable();
-        if (value) {
-            save_option('join_next', 1);
-            Safe('input[name="join_next"]').checked = true;
-        }
         break;
     case 'eval':
     case 'eval_left':
@@ -648,6 +644,19 @@ function create_swaps() {
 }
 
 /**
+ * Fix old settings:
+ * - areas
+ */
+function fix_old_settings() {
+    let areas = Y.areas,
+        default_areas = DEFAULTS.areas;
+    Keys(default_areas).forEach(key => {
+        if (!areas[key])
+            areas[key] = default_areas[key];
+    });
+}
+
+/**
  * Handle a drop event
  * @param {Event} e
  */
@@ -753,6 +762,13 @@ function hide_element(target) {
 
     Hide(node);
     populate_areas();
+}
+
+/**
+ * Happens after the settings are imported
+ */
+function import_settings_special() {
+    fix_old_settings();
 }
 
 /**
@@ -1114,7 +1130,7 @@ function populate_areas() {
  */
 function quick_setup(force) {
     let old = Y.new_version;
-    if (!force && (old == undefined || old >= '20210109e' || Y.seen || Y.x == 'archive'))
+    if (!force && (old == undefined || old >= '20210109e' || Y.seen || Y.x == 'archive' || Y.stream))
         return;
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
@@ -1825,14 +1841,7 @@ function load_settings() {
     load_defaults();
     Y.preset = 'custom';
     reset_old_settings();
-
-    // add missing areas
-    let areas = Y.areas,
-        default_areas = DEFAULTS.areas;
-    Keys(default_areas).forEach(key => {
-        if (!areas[key])
-            areas[key] = default_areas[key];
-    });
+    fix_old_settings();
 
     api_times = get_object('times') || {};
     translates = get_object('trans') || {};
@@ -2131,10 +2140,10 @@ function prepare_settings() {
             boom_sound: [boom_sounds, 0],
             boom_threshold: option_number(1.2, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
             boom_visual: [boom_visuals, 0],
-            boom_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
+            boom_volume: option_number(3.5, 0, 20, 0.5, {}, 'maximum volume'),
             moob_sound: [['off', 'random', 'moob', 'moob2', 'moob3'], 0],
             moob_visual: [ON_OFF, 0],
-            moob_volume: option_number(3, 0, 20, 0.5, {}, 'maximum volume'),
+            moob_volume: option_number(3.5, 0, 20, 0.5, {}, 'maximum volume'),
             explosion_buildup: option_number(2, 0, 10, 1, {}, 'need to exceed the threshold for X plies'),
             explosion_ply_reset: option_number(8, 0, 100, 1, {}, 'reactivate after X plies under threshold'),
             explosion_sound: [boom_sounds, 'random'],
@@ -2460,7 +2469,7 @@ function startup() {
     // assign virtual functions
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
-    virtual_import_settings = import_settings;
+    virtual_import_settings = import_settings_special;
     virtual_opened_table_special = opened_table_special;
     virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;
