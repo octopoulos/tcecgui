@@ -5261,6 +5261,8 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    if (DEV.ad)
+        Hide('#ad0, #ad1');
     if (DEV.global)
         Assign(window, {
             DEV: DEV,
