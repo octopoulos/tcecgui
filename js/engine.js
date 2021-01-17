@@ -924,7 +924,6 @@ function show_popup(name, show, {
             let removes = [...popup_classes].filter(item => item != class_).map(item => ` -${item}`).join(''),
                 sclass = class_? ` ${class_}`: '';
             Class(node, `popup-show popup-enable${sclass}${removes}`, !!show);
-            popup_classes.clear();
             if (class_)
                 popup_classes.add(class_);
 
