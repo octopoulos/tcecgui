@@ -644,16 +644,53 @@ function create_swaps() {
 }
 
 /**
- * Fix old settings:
- * - areas
+ * Find an element in areas
+ * @params {string} name
+ * @returns {[string, number]}
+ */
+function find_area(name) {
+    let areas = Y.areas;
+    for (let key of Keys(areas)) {
+        let vector = areas[key];
+        for (let i = 0; i < vector.length ; i ++)
+            if (vector[i][0] == name)
+                return [key, i];
+    }
+    return ['', -1];
+}
+
+/**
+ * Fix old settings
  */
 function fix_old_settings() {
+    // 1) add missing panel
     let areas = Y.areas,
         default_areas = DEFAULTS.areas;
     Keys(default_areas).forEach(key => {
         if (!areas[key])
             areas[key] = default_areas[key];
     });
+
+    // 2) insert "agree" somewhere if doesn't exist
+    let found = find_area('table-agree');
+    if (found[1] < 0) {
+        for (let key of Keys(areas)) {
+            let id = -1,
+                vector = areas[key];
+
+            for (let i = vector.length - 1; i >= 0; i --) {
+                let item = vector[i];
+                if ((item[1] & 1) && (item[2] & 1) && item[0].slice(0, 6) == 'table-') {
+                    id = i;
+                    break;
+                }
+            }
+            if (id >= 0) {
+                vector.splice(id + 1, 0, ['table-agree', 1, 1]);
+                break;
+            }
+        }
+    }
 }
 
 /**
@@ -1869,6 +1906,7 @@ function prepare_settings() {
                 ['table-speed', 1, 1],
                 ['table-node', 1, 1],
                 ['table-tb', 1, 1],
+                ['table-agree', 1, 1],
                 ['table-kibitz', 0, 1],
             ],
             left_20: [],
@@ -2510,6 +2548,8 @@ function startup() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        find_area: find_area,
+        move_pane: move_pane,
         prepare_settings: prepare_settings,
     });
 // >>

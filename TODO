@@ -15,7 +15,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-17 : check the arrows code, sometimes they don't update correctly if at all
--          : 2021-01-17 : "Agree" graph for the 2 players, no kibitzers
+2021-01-17 : 2021-01-17 : "Agree" graph for players + kibitzers
 2021-01-17 : 2021-01-17 : show movesleft somewhere?
 2021-01-16 : 2021-01-16 : info => agree length
 2021-01-16 : 2021-01-16 : redo the swap_panels code: the panels should not change order, but their data should

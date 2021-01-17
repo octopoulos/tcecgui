@@ -3861,6 +3861,7 @@ function update_pgn(section, data, extras, reset_moves) {
                 info: {},
             });
         }
+        HTML(Id('movesleft'), '');
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
@@ -4774,7 +4775,7 @@ function update_live_eval(section, data, id, force_ply) {
     if (section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
-        update_live_chart(moves || [data], id + 2);
+        update_live_chart('eval', moves || [data], id + 2);
         check_missing_moves(ply, round);
     }
     return true;
@@ -4876,7 +4877,7 @@ function update_player_eval(section, data, same_pv) {
 
         // moves left
         if (Y.moves_left && data.movesleft != undefined)
-            HTML(Id('movesleft'), `${data.movesleft} ML`);
+            HTML(Id('movesleft'), `#${data.movesleft}`);
     }
 
     if (DEV.chart)
@@ -4890,7 +4891,7 @@ function update_player_eval(section, data, same_pv) {
     if (is_pva)
         update_player_charts(null, [data]);
     else {
-        update_live_chart([data], id);
+        update_live_chart('eval', [data], id);
         check_missing_moves(ply, null, data.pos);
     }
 
