@@ -644,6 +644,19 @@ function create_swaps() {
 }
 
 /**
+ * Fix old settings:
+ * - areas
+ */
+function fix_old_settings() {
+    let areas = Y.areas,
+        default_areas = DEFAULTS.areas;
+    Keys(default_areas).forEach(key => {
+        if (!areas[key])
+            areas[key] = default_areas[key];
+    });
+}
+
+/**
  * Handle a drop event
  * @param {Event} e
  */
@@ -749,6 +762,13 @@ function hide_element(target) {
 
     Hide(node);
     populate_areas();
+}
+
+/**
+ * Happens after the settings are imported
+ */
+function import_settings_special() {
+    fix_old_settings();
 }
 
 /**
@@ -1110,7 +1130,7 @@ function populate_areas() {
  */
 function quick_setup(force) {
     let old = Y.new_version;
-    if (!force && (old == undefined || old >= '20210109e' || Y.seen || Y.x == 'archive'))
+    if (!force && (old == undefined || old >= '20210109e' || Y.seen || Y.x == 'archive' || Y.stream))
         return;
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
@@ -1821,14 +1841,7 @@ function load_settings() {
     load_defaults();
     Y.preset = 'custom';
     reset_old_settings();
-
-    // add missing areas
-    let areas = Y.areas,
-        default_areas = DEFAULTS.areas;
-    Keys(default_areas).forEach(key => {
-        if (!areas[key])
-            areas[key] = default_areas[key];
-    });
+    fix_old_settings();
 
     api_times = get_object('times') || {};
     translates = get_object('trans') || {};
@@ -2456,7 +2469,7 @@ function startup() {
     // assign virtual functions
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
-    virtual_import_settings = import_settings;
+    virtual_import_settings = import_settings_special;
     virtual_opened_table_special = opened_table_special;
     virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;

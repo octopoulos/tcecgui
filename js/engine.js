@@ -436,6 +436,8 @@ function import_settings(data, reset) {
 
     if (reset)
         reset_settings();
+    if (virtual_import_settings)
+        virtual_import_settings();
 }
 
 /**
@@ -643,8 +645,7 @@ function restore_history(dir) {
     let data = JSON.parse(y_copy);
     Assign(Y, data);
 
-    if (virtual_import_settings)
-        virtual_import_settings(data, true);
+    import_settings(data, true);
 }
 
 /**
