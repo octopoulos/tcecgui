@@ -225,12 +225,13 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
-    // number items, type (0:string, 1:int, 2:float)
+    // number_items, type (0:string, 1:int, 2:float)
     LOG_KEYS = {
         cp: [1, 2],
         depth: [1, 1],
         hashfull: [1, 1],
         mate: [1, 1],
+        movesleft: [1, 1],
         nodes: [1, 1],
         nps: [1, 1],
         pv: [-1, 0],
@@ -4872,6 +4873,10 @@ function update_player_eval(section, data, same_pv) {
         HTML(`.xeval`, format_eval(eval_), mini);
         if (data.nodes > 1)
             SetDefault(player, 'evals', [])[ply] = eval_;
+
+        // moves left
+        if (Y.moves_left && data.movesleft != undefined)
+            HTML(Id('movesleft'), `${data.movesleft} ML`);
     }
 
     if (DEV.chart)
@@ -5227,6 +5232,9 @@ function change_setting_game(name, value) {
     case 'moob_effect':
         save_option('moob_sound', value? 'random': 0);
         save_option('moob_visual', value? 'all': 0);
+        break;
+    case 'moves_left':
+        Class(Id('movesleft'), 'hidden', !value);
         break;
     case 'rows_per_page':
         update_tab = true;
