@@ -84,6 +84,7 @@ let __PREFIX = '_',
     ping = 0,
     pong = 0,
     POPUP_ADJUSTS = {},
+    popup_classes = new Set(),
     QUERY_KEYS = {
         '': '?',
         hash: '#',
@@ -918,8 +919,14 @@ function show_popup(name, show, {
         if (is_modal) {
             if (instant != undefined)
                 Class(node, 'instant', instant);
-            class_ = class_? ` ${class_}`: '';
-            Class(node, `popup-show popup-enable${class_}`, !!show);
+
+            // update classes
+            let removes = [...popup_classes].filter(item => item != class_).map(item => ` -${item}`).join(''),
+                sclass = class_? ` ${class_}`: '';
+            Class(node, `popup-show popup-enable${sclass}${removes}`, !!show);
+            popup_classes.clear();
+            if (class_)
+                popup_classes.add(class_);
 
             // remember which popup it is, so if we click again on the same id => it closes it
             dataset.id = show? (id || ''): '';
