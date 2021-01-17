@@ -2214,6 +2214,7 @@ function prepare_settings() {
             use_for_arrow: '1',
         },
         info: {
+            agree_length: [ON_OFF, 1, 'show how many plies are in agreement between 2 players / kibitzers'],
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
             hardware: [ON_OFF, 1],
