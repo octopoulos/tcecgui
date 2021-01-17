@@ -194,6 +194,7 @@ input[type="checkbox"] {
     width: auto;
 }
 input[type="color"] {
+    min-width: 80px;
     padding-left: unset;
 }
 input[type="image"] {
