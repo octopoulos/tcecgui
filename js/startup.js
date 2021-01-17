@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-16
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -22,14 +22,14 @@ init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
-S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
-SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d, startup_config,
-startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen,
-touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, Undefined, update_board_theme, update_debug,
-update_pgn, update_theme, update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true,
-virtual_import_settings:true, virtual_opened_table_special:true, virtual_reset_settings_special:true,
-virtual_resize:true, virtual_set_modal_events_special: true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS,
-xboards, Y
+S, Safe, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events,
+SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d,
+startup_config, startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES,
+toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true,
+Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
+virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
+virtual_set_modal_events_special: true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -79,11 +79,11 @@ let AD_STYLES = {},
         },
     },
     LEVELS = {
-        'custom': '',
-        'dog': 'd=3 e=hce h=1 q=0 s=ab t=0',
+        custom: '',
+        dog: 'd=3 e=hce h=1 q=0 s=ab t=0',
         'ninja dog': 'd=4 e=hce h=1 q=0 s=ab t=0',
-        'novice': 'd=4 e=hce h=1 o=2 q=5 s=ab t=0 x=20',
-        'amateur': 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20',
+        novice: 'd=4 e=hce h=1 o=2 q=5 s=ab t=0 x=20',
+        amateur: 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20',
         'engine maker': 'd=5 e=att h=1 o=2 q=12 s=ab t=5 x=20',
         'chess player': 'd=6 e=att h=1 o=2 q=15 s=ab t=10 x=20',
         'chess teacher': 'd=7 e=att h=1 o=2 q=20 s=ab t=12 x=20',
@@ -93,6 +93,13 @@ let AD_STYLES = {},
     old_stream = 0,
     old_window_height,
     old_x,
+    PANES = {
+        left_2: 0,
+        left: 1,
+        center: 2,
+        right: 3,
+        right_2: 4,
+    },
     PRESETS = [
         'custom',
         'default settings',
@@ -247,12 +254,16 @@ function change_setting_special(name, value, close) {
     case 'controls':
     case 'graph_min_width':
     case 'max_center':
+    case 'max_left_2':
     case 'max_left':
+    case 'max_right_2':
     case 'max_right':
-    case 'min_center':
-    case 'min_left':
-    case 'min_right':
     case 'max_window':
+    case 'min_center':
+    case 'min_left_2':
+    case 'min_left':
+    case 'min_right_2':
+    case 'min_right':
     case 'panel_gap':
         resize();
         break;
@@ -279,6 +290,10 @@ function change_setting_special(name, value, close) {
         break;
     case 'drag_and_drop':
         set_draggable();
+        if (value) {
+            save_option('join_next', 1);
+            Safe('input[name="join_next"]').checked = true;
+        }
         break;
     case 'eval':
     case 'eval_left':
@@ -585,10 +600,11 @@ function configure_string(name) {
  * Create the swap elements for each panel
  */
 function create_swaps() {
-    let swaps = ['next', 'next', 'minus', 'plus'].map((svg, id) => {
+    let swaps = ['end|1', 'next|1', 'next', 'end', 'minus', 'plus'].map(svg => {
+        let items = svg.split('|');
         return [
-            `<div class="swap${id? '': ' mirror'}">`,
-                `<i data-svg="${svg}"></i>`,
+            `<div class="swap${items[1]? ' mirror': ''}">`,
+                `<i data-svg="${items[0]}"></i>`,
             '</div>',
         ].join('');
     });
@@ -599,6 +615,36 @@ function create_swaps() {
     ].join('');
 
     HTML('.swaps', html);
+
+    // events
+    C('.swap', function(e) {
+        let index = Index(this),
+            node = this.parentNode.parentNode;
+        // 1, 2, 3, 4 => <<[-3] <[-1] >[1] >>[3]
+        if (index <= 4)
+            move_pane(node, index * 2 - 5);
+        // 5, 6 => -[-1] +[1]
+        else if (index <= 6) {
+            let add = index * 2 - 11,
+                name = `max_${node.id}`,
+                sizer = _('.size', node),
+                value = Y[name];
+
+            if (add > 0)
+                value += (value < 0)? 1: add * 10;
+            else if (value > 0 && value < 10)
+                value = 0;
+            else
+                value += add * 10;
+
+            save_option(name, Clamp(value, -1, 1200));
+            HTML(sizer, Y[name]);
+            Show(sizer);
+            add_timeout('size', () => Hide('.size'), TIMEOUT_size);
+            resize();
+        }
+        SP(e);
+    });
 }
 
 /**
@@ -716,7 +762,6 @@ function hide_element(target) {
 function init_customs(initial) {
     add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
     change_theme();
-    move_pane();
     resize_move_lists();
     show_live_engines();
     set_draggable();
@@ -832,27 +877,50 @@ function load_google_analytics() {
 
 /**
  * Move a pane left or right, swapping it with another
- * - call without arguments to initialise the panes at startup
- * @param {Node=} node
- * @param {number=} dir -1, 1
+ * @param {Node} node
+ * @param {number} dir <<[-3] <[-1] >[1] >>[3]
  */
 function move_pane(node, dir) {
-    let names = Split(Y.order);
+    // 1) gather pane info
+    let areas = Y.areas,
+        index = -1,
+        panes = Keys(PANES)
+            .filter(pane => Y[`min_${pane}`] > 0 || Y[`max_${pane}`] > 0)
+            .map((pane, id) => {
+                if (pane == node.id)
+                    index = id;
+                return [pane, [...areas[`${pane}0`]]];
+            }),
+        num_pane = panes.length,
+        orders = panes.map(pane => pane[0]);
 
-    if (node) {
-        let id = node.id,
-            curr = names.indexOf(id),
-            target = (curr + dir + 3) % 3;
-        names[curr] = names[target];
-        names[target] = id;
+    // 2) move pane, but skip if already where it should be
+    if ((dir == -3 && !index) || (dir == 3 && index == num_pane - 1))
+        return;
+
+    let pane = panes.splice(index, 1)[0],
+        target = (dir == -3)? 0: (dir == 3)? num_pane - 1: index + dir;
+    if (target < 0 || target >= num_pane)
+        return;
+    panes.splice(target, 0, pane);
+
+    // 3) update sizes
+    let dico = {};
+    panes.forEach((pane, id) => {
+        let order = orders[id];
+        dico[`max_${order}`] = Y[`max_${pane[0]}`];
+        dico[`min_${order}`] = Y[`min_${pane[0]}`];
+    });
+    Assign(Y, dico);
+    for (let order of orders) {
+        save_option(`max_${order}`);
+        save_option(`min_${order}`);
     }
 
-    names.forEach((name, id) => {
-        Style(Id(name), `order:${id}`);
-    });
-
-    if (node)
-        save_option('order', names.join('|'));
+    // 4) update areas
+    let new_areas = Assign({}, ...panes.map((pane, id) => ({[`${orders[id]}0`]: pane[1]})));
+    Assign(areas, new_areas);
+    populate_areas();
 }
 
 /**
@@ -891,11 +959,9 @@ function populate_areas() {
             return;
 
         // a) add missing defaults
-        for (let vector of default_areas[key]) {
-            if (!context_areas[vector[0]]) {
+        for (let vector of default_areas[key])
+            if (!context_areas[vector[0]])
                 areas[key].push(vector);
-            }
-        }
 
         // b) check if we already have the correct order, if yes then skip
         let prev_tab, tabs,
@@ -1556,34 +1622,6 @@ function set_global_events() {
         if (Y.panel_adjust)
             Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
     });
-    C('.swap', function(e) {
-        let index = Index(this),
-            node = this.parentNode.parentNode;
-        // 1, 2 => < >
-        if (index <= 2)
-            move_pane(node, index * 2 - 3);
-        // 3, 4 => - +
-        else if (index <= 4) {
-            let add = index * 2 - 7,
-                name = `max_${node.id}`,
-                sizer = _('.size', node),
-                value = Y[name];
-
-            if (add > 0)
-                value += (value < 0)? 1: add * 10;
-            else if (value > 0 && value < 10)
-                value = 0;
-            else
-                value += add * 10;
-
-            save_option(name, Clamp(value, -1, 1200));
-            HTML(sizer, Y[name]);
-            Show(sizer);
-            add_timeout('size', () => Hide('.size'), TIMEOUT_size);
-            resize();
-        }
-        SP(e);
-    });
 
     // theme + twitch
     C('#theme0, #theme1', function() {
@@ -1814,6 +1852,7 @@ function prepare_settings() {
                 ['table-tb', 1, 1],
                 ['table-kibitz', 0, 1],
             ],
+            left_20: [],
             left0: [
                 ['archive', 0, 1],
                 ['live', 0, 1],
@@ -1822,6 +1861,7 @@ function prepare_settings() {
                 ['table-live0', 0, 1],
                 ['table-live1', 0, 1],
             ],
+            right_20: [],
             right0: [
                 ['quick-pagin', 0, 1],
                 ['table-chat', 1, 3],
@@ -1837,7 +1877,6 @@ function prepare_settings() {
         game: 0,
         link: '',                           // live link
         live_log: 'all',
-        order: 'left|center|right',         // main panes order
         round: '',                          // archive link + live round
         scales: {},
         season: '',                         // archive link
@@ -2061,17 +2100,20 @@ function prepare_settings() {
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: {
                 _multi: 2,
+                _title: 'clicked piece: color + opacity',
                 source_color: [{type: 'color'}, '#ffb400'],
                 source_opacity: option_number(0.7, 0, 1, 0.01),
             },
             status_pva: [ON_OFF, 1],
             target_color: {
                 _multi: 2,
+                _title: 'legal squares: color + opacity',
                 target_color: [{type: 'color'}, '#ff5a00'],
                 target_opacity: option_number(0.7, 0, 1, 0.01),
             },
             turn_color: {
                 _multi: 2,
+                _title: 'legal pieces: color + opacity',
                 turn_color: [{type: 'color'}, '#ff5a00'],
                 turn_opacity: option_number(0, 0, 1, 0.01),
             },
@@ -2332,11 +2374,11 @@ function prepare_settings() {
     });
 
     Assign(TRANSLATE_SPECIALS, {
-        'CODER': 'octopoulo',
-        'SPONSOR': 'Noobpwnftw',
-        'TCEC': '<b>TCEC</b> (Top Chess Engine Championship)',
-        'TCEC_URL': '<i class="nowrap">https://tcec-chess.com</i>',
-        'UI': '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
+        CODER: 'octopoulo',
+        SPONSOR: 'Noobpwnftw',
+        TCEC: '<b>TCEC</b> (Top Chess Engine Championship)',
+        TCEC_URL: '<i class="nowrap">https://tcec-chess.com</i>',
+        UI: '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
     });
 }
 

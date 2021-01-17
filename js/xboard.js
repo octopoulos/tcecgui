@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-16
 //
 // game board:
 // - 4 rendering modes:
@@ -184,6 +184,7 @@ class XBoard {
             archive: [],
             live: [],
             pva: [],
+            three: [],
         };                                              // eval history
         this.exploded = 0;                              // explosion sound happened
         this.explodes = new Set();                      // consecutive explosion plies

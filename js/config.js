@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-14
+// @version 2021-01-16
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -44,7 +44,7 @@ function startup_config() {
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'
     LINKS = {
         articles: {
-            '_ext': '.pdf',
+            _ext: '.pdf',
             'Super Final 19 by GM Sadler.pdf': 'articles/Sufi_19_-_Sadler.pdf',
             'Super Final 18 by GM Sadler.pdf': 'articles/Sufi_18_-_Sadler.pdf',
             'Super Final 17 by GM Sadler.pdf': 'articles/Sufi_17_-_Sadler.pdf',
@@ -52,9 +52,9 @@ function startup_config() {
             'Super Final 15 by GM Sadler.pdf': 'articles/Sufi_15_-_Sadler.pdf',
             'Super Final 14 by GM Sadler.pdf': 'articles/Sufi_14_-_Sadler.pdf',
             // separator
-            'a': 0,
+            a: 0,
             // grid of 2 columns
-            '_a1': 2,
+            _a1: 2,
             'TCEC_18.pdf': 'articles/TCEC_18.pdf',
             'TCEC_17.pdf': 'articles/TCEC_17.pdf',
             'TCEC_16.pdf': 'articles/TCEC_16.pdf',
@@ -65,10 +65,10 @@ function startup_config() {
             'TCEC_11.pdf': 'articles/TCEC_11.pdf',
             'TCEC_10.pdf': 'articles/TCEC_10.pdf',
             // end the grid
-            '_a2': 0,
+            _a2: 0,
             // again
-            'b': 0,
-            '_b1': 2,
+            b: 0,
+            _b1: 2,
             'TCEC_Cup_7.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_7.pdf',
             'TCEC_Cup_6.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_6.pdf',
             'TCEC_Cup_5.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_5.pdf',
@@ -76,7 +76,7 @@ function startup_config() {
             'TCEC_Cup_3.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_3.pdf',
             'TCEC_Cup_2.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_2.pdf',
             'TCEC_Cup_1.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_1.pdf',
-            '_b2': 0,
+            _b2: 0,
         },
         download: {
             Crosstable: 'crosstable.json',
@@ -89,7 +89,7 @@ function startup_config() {
             About: '',
             Rules: 'https://wiki.chessdom.org/Rules',
             'Book FAQ': 'articles/TCEC_Openings_FAQ.html',
-            'a': 0,
+            a: 0,
             Coverage: 'https://wiki.chessdom.org/Category:Coverage',
             'Notable games': 'https://wiki.chessdom.org/Category:Notable_game',
         },

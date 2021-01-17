@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-16
 //
 /*
 globals
@@ -113,7 +113,6 @@ Assign(translates, {
         {
             div: '',
             game: 0,
-            order: 'left|center|right',
             table_tab: {
                 archive: 'season',
                 live: 'stand',
@@ -124,7 +123,6 @@ Assign(translates, {
         {
             div: 's',
             game: 'i',
-            order: 's',
             table_tab: 'o',
             timeout: 'f',
             useful: 'b',
