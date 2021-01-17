@@ -2262,6 +2262,7 @@ function prepare_settings() {
             column_bottom: option_number(4, 1, 8),
             column_top: option_number(2, 1, 8),
             default_positions: '1',
+            drag_and_drop: [ON_OFF, 0],
             left_2: {
                 _multi: 2,
                 _title: min_max,
