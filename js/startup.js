@@ -1826,6 +1826,14 @@ function load_settings() {
     Y.preset = 'custom';
     reset_old_settings();
 
+    // add missing areas
+    let areas = Y.areas,
+        default_areas = DEFAULTS.areas;
+    Keys(default_areas).forEach(key => {
+        if (!areas[key])
+            areas[key] = default_areas[key];
+    });
+
     api_times = get_object('times') || {};
     translates = get_object('trans') || {};
 }
