@@ -23,13 +23,13 @@ LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, Safe, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events,
-SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, Split, start_3d, start_game, startup_3d,
+SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d,
 startup_config, startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES,
 toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
 virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
-virtual_set_modal_events_special: true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_set_modal_events_special:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
