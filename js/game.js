@@ -5231,6 +5231,8 @@ function change_setting_game(name, value) {
     // using exact name
     switch (name) {
     case 'agree_length':
+        handle_board_events(main, 'ply', main.moves[main.ply]);
+        break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
             let board = xboards[key];

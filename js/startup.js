@@ -2028,7 +2028,8 @@ function prepare_settings() {
         options: 1,
     });
 
-    let analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}],
+    let agree_length = [ON_OFF, 1, 'show how many plies are in agreement between 2 players / kibitzers'],
+        analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}],
         bamboo = 'bamboo',
         bamboo2 = `${bamboo} - `,
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
@@ -2286,7 +2287,6 @@ function prepare_settings() {
             use_for_arrow: '1',
         },
         info: {
-            agree_length: [ON_OFF, 1, 'show how many plies are in agreement between 2 players / kibitzers'],
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
             hardware: [ON_OFF, 1],
@@ -2300,6 +2300,7 @@ function prepare_settings() {
             single_line: [ON_OFF, 0],
         },
         live: {
+            agree_length: agree_length,
             copy: copy_moves,
             download_PGN: '1',
             grid_live: option_number(0, 0, 10),
@@ -2311,6 +2312,7 @@ function prepare_settings() {
             show_ply: show_plies,
         },
         moves: {
+            agree_length: agree_length,
             grid: option_number(0, 0, 10),
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
@@ -2394,6 +2396,7 @@ function prepare_settings() {
         },
         copy_pv: {
             _pop: true,
+            agree_length: agree_length,
             copy: copy_moves,
             download_PGN: '1',
             grid_pv: option_number(0, 0, 10),
