@@ -2411,10 +2411,7 @@ class XBoard {
         if (move) {
             move.agree = agree;
             move.ply = cur_ply;
-            if (this.name.slice(0, 2) == 'pv')
-                update_player_chart('agree', [move]);
-            else
-                update_live_chart('agree', [move], 1);
+            this.hook(this, 'agree', move);
         }
 
         // update the @ marker + agree length
