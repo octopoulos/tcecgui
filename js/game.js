@@ -12,9 +12,9 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, close_popups,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
-CreateNode, CreateSVG, cube:true,
+cannot_click, Ceil, change_setting, charts, check_hash, check_sockets, Clamp, clamp_eval, Class, clear_timeout,
+close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array,
+create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
@@ -5352,6 +5352,7 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    // 1) global stuff
     if (DEV.ad)
         Hide('#ad0, #ad1');
     if (DEV.global)
@@ -5361,7 +5362,9 @@ function changed_hash() {
             xboards: xboards,
             Y: Y,
         });
+    check_sockets();
 
+    // section changed?
     let section = Y.x;
     show_tables(section, tour_info[section].cup);
 

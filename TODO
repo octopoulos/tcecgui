@@ -14,8 +14,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
--          : 2021-01-18 : fix grid layout
--          : 2021-01-18 : download live AFTER pgn
+2021-01-18 : 2021-01-18 : fix grid layout
+2021-01-18 : 2021-01-18 : download live AFTER pgn
 2021-01-18 : 2021-01-18 : SI units
 2021-01-18 : 2021-01-17 : check the arrows code, sometimes they don't update correctly if at all
 2021-01-18 : 2021-01-17 : fix populate_areas

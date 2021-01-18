@@ -688,6 +688,9 @@ input.two {
 #pv1 .real {
     color: #7ce
 }
+.agree {
+    grid-column: 1/4;
+}
 .turn {
     color: #222;
     font-size: 13px;

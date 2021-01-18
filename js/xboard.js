@@ -18,11 +18,11 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
 clear_timeout, COLOR, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, GaussianRandom,
+DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
-update_live_chart, update_player_chart, update_svg, Upper, Visible, window, Worker, Y
+update_svg, Upper, Visible, window, Worker, Y
 */
 'use strict';
 
@@ -290,7 +290,7 @@ class XBoard {
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = ['<i class="agree"></i>'],
+            lines = ['<i class="agree X"></i>'],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -357,8 +357,8 @@ class XBoard {
             }
             // add .. black move
             else {
-                if (!lines.length && is_ply)
-                    lines.push(`<i class="turn">${Floor(move_num)}</i> ..`);
+                if (lines.length < 2 && is_ply)
+                    lines.push(`<i class="turn">${Floor(move_num)}</i>...`);
                 if (!added) {
                     for (let [parent, last] of parent_lasts) {
                         let node = CreateNode('i', `${Floor(move_num)} ..`, {class: 'turn', 'data-j': Floor(move_num)});
@@ -464,7 +464,7 @@ class XBoard {
 
         // 2) update the moves
         let first_ply = -1,
-            lines = ['<i class="agree"></i>'],
+            lines = ['<i class="agree Y"></i>'],
             moves = [],
             ply = new_ply;
 
@@ -2992,10 +2992,10 @@ class XBoard {
                 depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(0)}/${Floor(reply.sel_depth + 0.5)}`,
                 eval: format_eval(best_score),
                 id: color,
-                node: FormatUnit(nodes2, '-'),
+                node: format_unit(nodes2, '-'),
                 pv: best.pv,
                 ply: ply + 1,
-                speed: `${FormatUnit(nps)}nps`,
+                speed: `${format_unit(nps)}nps`,
                 wv: format_eval(best_score),
             });
             this.update_mini(color);
