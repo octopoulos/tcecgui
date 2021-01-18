@@ -26,9 +26,9 @@ S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_e
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
 stockfish_wdl, Style,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
-Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
-Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
-WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
+Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_chart,
+update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
+virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
 */
 'use strict';
 
@@ -1606,7 +1606,7 @@ function show_tables(section, is_cup) {
         return;
     old_cup = is_cup;
 
-    let active = get_active_tab('table')[0],
+    let [active] = get_active_tab('table'),
         parent = Id('tables'),
         target = (active == 'sched')? active: (is_cup? 'brak': 'stand');
     S('[data-x="brak"], [data-x="event"]', is_cup, parent);
@@ -3337,6 +3337,66 @@ function resize_game() {
 }
 
 /**
+ * Calculate agree for all moves
+ * @param {string} section
+ * @param {number} id -1, 0, 1, 2, 3
+ * @returns {number} # changes
+ */
+function update_agree(section, id) {
+    if (section != Y.x)
+        return;
+    let moves0, moves1, offset,
+        changes = 0,
+        main = xboards[section];
+
+    // players => compare ply with ply - 1
+    if (id == -1) {
+        moves0 = main.moves;
+        moves1 = moves0;
+        offset = -1;
+    }
+    // live => compare direct plies
+    else {
+        moves0 = xboards.live0.evals[section];
+        moves1 = xboards.live1.evals[section];
+        offset = 0;
+    }
+
+    // TODO: accelerate the process if repeated multiple times in succession
+    let ply = moves0.length;
+    while (ply > 0) {
+        ply --;
+        let move0 = moves0[ply],
+            move1 = moves1[ply + offset];
+        if (!move0 || !move1 || (move0.agree != undefined && move1.agree != undefined))
+            continue;
+
+        let [ply0, splits0] = split_move_string(move0.pv, true),
+            [ply1, splits1] = split_move_string(move1.pv, true);
+
+        // calculate agree
+        let agree = 0,
+            i = ply - ply0,
+            j = ply - ply1;
+
+        while (splits0[i] && splits0[i] == splits1[j]) {
+            agree ++;
+            i ++;
+            j ++;
+        }
+        moves0[ply].agree = agree;
+        moves1[ply].agree = agree;
+        changes ++;
+    }
+
+    if (id == -1)
+        update_player_chart('agree', moves0);
+    else
+        update_live_chart('agree', moves0, 1);
+    return changes;
+}
+
+/**
  * Update material info
  * mb=+2+0+0+0+0, => +p+n+b+r+q
  * @param {Move} move
@@ -3735,6 +3795,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         check_explosion_boom(section, -1, 3);
     }
 
+    update_agree(section, -1);
     return finished;
 }
 
@@ -4711,7 +4772,7 @@ function update_live_eval(section, data, id, force_ply) {
         // ply is offset by 1
         for (let move of moves) {
             if (move.pv && !move.seen) {
-                let real = split_move_string(move.pv)[0];
+                let [real] = split_move_string(move.pv);
                 // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
                 board_evals[real] = move;
                 move.invert = true;
@@ -4778,6 +4839,8 @@ function update_live_eval(section, data, id, force_ply) {
         update_live_chart('eval', moves || [data], id + 2);
         check_missing_moves(ply, round);
     }
+
+    update_agree(section, id + 2);
     return true;
 }
 
@@ -4894,9 +4957,6 @@ function update_player_eval(section, data, same_pv) {
         update_live_chart('eval', [data], id);
         check_missing_moves(ply, null, data.pos);
     }
-
-    // TODO: activate this later if the evals are stabilizing
-    // check_explosion_boom(section, 0);
     return true;
 }
 
@@ -5362,6 +5422,8 @@ function changed_section() {
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
+
+    update_agree(section, 2);
 }
 
 /**

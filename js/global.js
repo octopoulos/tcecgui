@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, Keys,
+Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
@@ -328,15 +328,20 @@ function reset_old_settings() {
 
 /**
  * Split a PV string into ply + array of strings
+ * - formula: (move - 1) * 2 = ply
  * @param {string} text
+ * @param {boolean=} no_number remove the numbers
  * @returns {[number, string[]]}
  */
-function split_move_string(text) {
+function split_move_string(text, no_number) {
     if (!text)
         return [-2, []];
 
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
         ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
+
+    if (no_number)
+        items = items.filter(item => !IsDigit(item[0]) && item != '...');
     return [ply, items];
 }
 

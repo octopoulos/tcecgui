@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-01-17
 /*
 globals
 Buffer, console, process, require
@@ -344,7 +344,7 @@ function open_file(filename, result, callback) {
  * @param {string[]} filenames
  */
 function done(result, filenames) {
-    let day = FromTimestamp()[0],
+    let [day] = FromTimestamp(),
         text = merge_stats(result),
         lines = [
             '```',
