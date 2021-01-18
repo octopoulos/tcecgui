@@ -14,7 +14,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
-~          : 2021-01-17 : check the arrows code, sometimes they don't update correctly if at all
+2021-01-18 : 2021-01-17 : check the arrows code, sometimes they don't update correctly if at all
 2021-01-18 : 2021-01-17 : fix populate_areas
 2020-01-17 : 2020-01-17 : lock sub boards when not last move on main board
 2021-01-17 : 2020-01-17 : scan all the moves to update "agree"
