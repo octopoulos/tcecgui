@@ -3349,7 +3349,7 @@ function resize_game() {
  * @returns {number} # changes
  */
 function update_agree(section, id) {
-    if (section != Y.x)
+    if (section != section_board())
         return;
     let moves0, moves1, offset,
         changes = 0,
@@ -3379,8 +3379,8 @@ function update_agree(section, id) {
 
         let pv0 = move0.pv,
             pv1 = move1.pv,
-            [ply0, splits0] = IsObject(pv0)? [move0.ply, pv0.San.split(' ')]: split_move_string(pv0, true),
-            [ply1, splits1] = IsObject(pv1)? [move1.ply, pv1.San.split(' ')]: split_move_string(pv1, true);
+            [ply0, splits0] = IsObject(pv0)? [move0.ply, pv0.San.split(' ')]: split_move_string(pv0, true, move0.ply),
+            [ply1, splits1] = IsObject(pv1)? [move1.ply, pv1.San.split(' ')]: split_move_string(pv1, true, move1.ply);
 
         // calculate agree
         let agree = 0,
@@ -3402,6 +3402,15 @@ function update_agree(section, id) {
     else
         update_live_chart('agree', moves0, 1);
     return changes;
+}
+
+/**
+ * Update agree for players + kibitzers
+ * @param {string} section
+ */
+function update_agrees(section) {
+    update_agree(section, -1);
+    update_agree(section, 2);
 }
 
 /**
@@ -5427,8 +5436,7 @@ function changed_section() {
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
-
-    update_agree(section, 2);
+    update_agrees(section);
 }
 
 /**
@@ -5715,8 +5723,10 @@ function handle_board_events(board, type, value, e, force) {
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
             mark_ply_charts(cur_ply, board.moves.length - 1);
-            if (board.name == 'pva')
+            if (board.name == 'pva') {
                 board.show_pv(value);
+                update_agree('pva', -1);
+            }
         }
         if (name == section) {
             // unlock sub boards
@@ -5758,6 +5768,7 @@ function handle_board_events(board, type, value, e, force) {
         update_player_charts(board.moves);
         if (new_board != 'pva')
             redraw_eval_charts(name);
+        update_agrees(section);
     }
 }
 

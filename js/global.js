@@ -331,9 +331,10 @@ function reset_old_settings() {
  * - formula: (move - 1) * 2 = ply
  * @param {string} text
  * @param {boolean=} no_number remove the numbers
+ * @param {number=} def_ply default ply
  * @returns {[number, string[]]}
  */
-function split_move_string(text, no_number) {
+function split_move_string(text, no_number, def_ply) {
     if (!text)
         return [-2, []];
 
@@ -342,7 +343,7 @@ function split_move_string(text, no_number) {
 
     if (no_number)
         items = items.filter(item => !IsDigit(item[0]) && item != '...');
-    return [ply, items];
+    return [isNaN(ply)? def_ply: ply, items];
 }
 
 /**
