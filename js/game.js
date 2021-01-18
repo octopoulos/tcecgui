@@ -4120,17 +4120,15 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (!DEV.wasm) {
-        if (Y.eval && info.eval != undefined) {
-            let box_node = _(`#box-pv${id} .status`),
-                node = Id(`moves-pv${id}`),
-                status_eval = format_eval(info.eval),
-                status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
+    if (Y.eval && info.eval != undefined) {
+        let box_node = _(`#box-pv${id} .status`),
+            node = Id(`moves-pv${id}`),
+            status_eval = format_eval(info.eval),
+            status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
 
-            for (let child of [box_node, node]) {
-                HTML(`[data-x="eval"]`, status_eval, child);
-                HTML(`[data-x="score"]`, status_score, child);
-            }
+        for (let child of [box_node, node]) {
+            HTML(`[data-x="eval"]`, status_eval, child);
+            HTML(`[data-x="score"]`, status_score, child);
         }
     }
 
@@ -4879,7 +4877,7 @@ function update_player_eval(section, data, same_pv) {
         let moves = data.moves;
         if (moves && moves.length) {
             data.ply = moves[0].ply;
-            if (!board.locked) {
+            if (!board.locked && data.ply == cur_ply + 1) {
                 board.reset(section);
                 board.instant();
                 let last_move = main.moves.slice(-1)[0];
@@ -4893,7 +4891,8 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data.pv) {
             data.ply = split_move_string(data.pv)[0];
-            board.add_moves_string(data.pv);
+            if (data.ply == cur_ply + 1)
+                board.add_moves_string(data.pv);
         }
     }
 
