@@ -290,7 +290,7 @@ class XBoard {
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = ['<i class="agree X"></i>'],
+            lines = Y.agree_length? ['<i class="agree X"></i>']: [],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -464,7 +464,7 @@ class XBoard {
 
         // 2) update the moves
         let first_ply = -1,
-            lines = ['<i class="agree Y"></i>'],
+            lines = Y.agree_length? ['<i class="agree Y"></i>']: [],
             moves = [],
             ply = new_ply;
 
