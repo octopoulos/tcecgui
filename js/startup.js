@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -729,18 +729,12 @@ function handle_drop(e) {
 
         // 2) insert before or after
         if (child) {
-            // same tabs parent => if source is before: insert after, otherwise insert before
-            if (in_tab == 3 || (!in_tab && parent_areas.size == 1))
-                next = (Index(drag_source) < Index(child));
-            else {
-                // this part can be improved
-                if (parent.tagName == 'HORIS' || (in_tab & 2)) {
-                    if (e.clientX >= rect.left + rect.width / 2)
-                        next = true;
-                }
-                else if (e.clientY >= rect.top + rect.height / 2)
+            if (parent.tagName == 'HORIS' || (in_tab & 2)) {
+                if (e.clientX >= rect.left + rect.width / 2)
                     next = true;
             }
+            else if (e.clientY >= rect.top + rect.height / 2)
+                next = true;
         }
         parent.insertBefore(drag_source, next? child.nextElementSibling: child);
 
@@ -1022,7 +1016,8 @@ function populate_areas() {
             children = parent.children,
             child = children[0],
             child_id = 0,
-            error = '';
+            error = '',
+            sorder = areas[key].map(item => item[0]).join(' ');
 
         for (let [id, tab, show] of areas[key]) {
             let node = Id(id);
@@ -1034,10 +1029,14 @@ function populate_areas() {
                 if (show & 1) {
                     if (!prev_tab || !tabs) {
                         tabs = child;
+                        // check if in the tabs and in the right order
                         if (!HasClass(child, 'tabs')) {
                             error = 'tabs';
                             break;
                         }
+                        let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
+                        if (!sorder.includes(torder))
+                            error = 'sub';
 
                         child_id ++;
                         child = children[child_id];
@@ -1076,7 +1075,7 @@ function populate_areas() {
                 return;
         }
         if (DEV.ui) {
-            LS(`populate ${key} : ${error}`);
+            LS(key, `populate ${key} : ${error}`);
             LS(child);
         }
 
@@ -1803,7 +1802,8 @@ function set_global_events() {
         else if (!child)
             child = Parent(e.target, {class_: 'area', self: true});
 
-        draw_rectangle(child, 1, e.clientX, e.clientY);
+        // tab=drop => vertical bar, otherwise horizontal
+        draw_rectangle(child, HasClass(child, 'drop')? 1: 2, e.clientX, e.clientY);
         if (!child)
             return;
 
