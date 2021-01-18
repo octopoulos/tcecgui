@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // game board:
 // - 4 rendering modes:
@@ -812,7 +812,8 @@ class XBoard {
         let shead,
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
-            scolor = Y[`arrow_color_${id}`];
+            scolor = Y[`arrow_color_${id}`],
+            shown = true;
 
         for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
             let other_id = other.id;
@@ -824,8 +825,8 @@ class XBoard {
                     AttrsNS(Id(`mk${name}_${other_id}_1`), {
                         fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6),
                     });
-                    Hide(this.svgs[id].svg);
-                    return;
+                    shown = false;
+                    break;
                 }
             }
             else {
@@ -857,7 +858,7 @@ class XBoard {
         svg.dist = delta_x + delta_y;
         svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity}`);
-        Show(body);
+        S(body, shown);
         if (DEV.arrow)
             LS(id, 'drew arrow');
 
