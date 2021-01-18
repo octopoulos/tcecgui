@@ -43,7 +43,7 @@ let log_time = 0,
 /**
  * Connect/disconnect the socket
  */
-function check_sockets() {
+function check_socket_io() {
     // 1) disconnect?
     if (DEV.no_socket) {
         if (socket && socket.connected)
@@ -301,7 +301,7 @@ function update_twitch(dark, chat_url, only_resize) {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
-        check_sockets: check_sockets,
+        check_socket_io: check_socket_io,
         listen_log: listen_log,
     });
 // >>

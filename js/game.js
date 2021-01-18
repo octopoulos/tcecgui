@@ -12,7 +12,7 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, check_sockets, Clamp, clamp_eval, Class, clear_timeout,
+cannot_click, Ceil, change_setting, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class, clear_timeout,
 close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array,
 create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
@@ -5362,7 +5362,7 @@ function changed_hash() {
             xboards: xboards,
             Y: Y,
         });
-    check_sockets();
+    check_socket_io();
 
     // section changed?
     let section = Y.x;
