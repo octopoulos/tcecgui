@@ -316,7 +316,7 @@
   "show_delay": 500,
   "show_ply": "diverging",
   "single_line": 0,
-  "small_decimal": ">= 100",
+  "small_decimal": 100,
   "sort": "",
   "sound_capture": "bamboo - capture",
   "sound_check": "bamboo - check",

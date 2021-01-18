@@ -327,7 +327,7 @@
   "show_delay": 500,
   "show_ply": "diverging",
   "single_line": 0,
-  "small_decimal": "always",
+  "small_decimal": 1,
   "sort": "",
   "sound_capture": "bamboo - capture",
   "sound_check": "bamboo - check",

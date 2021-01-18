@@ -1,78 +1,12 @@
 {
+  "SI_units": 1,
   "agree_length": 1,
-  "animate": 0,
+  "animate": 1,
   "animate_pv": 1,
   "animate_pva": 1,
   "archive_scroll": 1,
   "areas": {
     "center0": [
-      [
-        "engine",
-        1,
-        3
-      ],
-      [
-        "table-pv",
-        1,
-        1
-      ],
-      [
-        "table-pva",
-        0,
-        1
-      ],
-      [
-        "table-eval",
-        1,
-        3
-      ],
-      [
-        "table-mobil",
-        1,
-        1
-      ],
-      [
-        "table-time",
-        1,
-        1
-      ],
-      [
-        "table-depth",
-        1,
-        1
-      ],
-      [
-        "table-speed",
-        1,
-        1
-      ],
-      [
-        "table-node",
-        1,
-        1
-      ],
-      [
-        "table-tb",
-        1,
-        1
-      ],
-      [
-        "table-kibitz",
-        0,
-        1
-      ],
-      [
-        "moves-archive",
-        0,
-        1
-      ],
-      [
-        "moves-live",
-        0,
-        1
-      ]
-    ],
-    "left0": [
       [
         "archive",
         0,
@@ -84,17 +18,44 @@
         1
       ],
       [
-        "moves-pv0",
+        "table-pv",
         0,
-        1
+        3
+      ]
+    ],
+    "left0": [
+      [
+        "engine",
+        0,
+        3
+      ],
+      [
+        "table-pva",
+        1,
+        2
+      ],
+      [
+        "table-kibitz",
+        0,
+        2
+      ],
+      [
+        "moves-archive",
+        0,
+        2
       ],
       [
         "moves-pv1",
         0,
-        1
+        0
       ],
       [
-        "table-live0",
+        "moves-pv0",
+        0,
+        0
+      ],
+      [
+        "moves-live",
         0,
         1
       ],
@@ -102,47 +63,84 @@
         "table-live1",
         0,
         1
+      ],
+      [
+        "table-live0",
+        0,
+        3
       ]
     ],
     "right0": [
       [
-        "quick-pagin",
-        0,
-        1
-      ],
-      [
         "table-chat",
-        0,
+        1,
         3
       ],
       [
         "table-winner",
         1,
-        0
+        1
       ],
       [
         "table-info",
         1,
-        0
-      ],
-      [
-        "shortcut_1",
-        1,
-        0
+        1
       ],
       [
         "shortcut_2",
-        0,
-        0
+        1,
+        1
       ],
       [
-        "quick-search",
+        "shortcut_1",
         0,
         1
       ]
     ],
-    "bottom": [],
-    "left_20": [],
+    "bottom": [
+      [
+        "table-node",
+        0,
+        2
+      ],
+      [
+        "table-tb",
+        1,
+        2
+      ],
+      [
+        "table-mobil",
+        1,
+        2
+      ]
+    ],
+    "left_20": [
+      [
+        "table-eval",
+        0,
+        3
+      ],
+      [
+        "table-time",
+        0,
+        3
+      ],
+      [
+        "table-speed",
+        0,
+        3
+      ],
+      [
+        "table-depth",
+        0,
+        2
+      ],
+      [
+        "table-agree",
+        0,
+        3
+      ]
+    ],
     "right_20": [],
     "top": []
   },
@@ -150,159 +148,160 @@
   "arrow_base_color": "#a5a5a5",
   "arrow_base_mix": 0.7,
   "arrow_base_size": 2.05,
-  "arrow_color_0": "#cdcdbe",
+  "arrow_color_0": "#ffffff",
   "arrow_color_1": "#000000",
   "arrow_color_2": "#236ad6",
   "arrow_color_3": "#eb282d",
-  "arrow_combine_23": "#800080",
+  "arrow_combine_23": "#007700",
   "arrow_from": "all",
   "arrow_head_border": 0.5,
   "arrow_head_color": "#a5a5a5",
-  "arrow_head_mix": 1,
+  "arrow_head_mix": 0.7,
   "arrow_head_size": 2.05,
   "arrow_history_lag": 1300,
   "arrow_moves": "all",
-  "arrow_opacity": 0.8,
-  "arrow_width": 1.5,
+  "arrow_opacity": 0.7,
+  "arrow_width": 1.6,
   "audio_book": 1,
   "audio_delay": 150,
   "audio_live_archive": 1,
-  "audio_moves": "all",
+  "audio_moves": "last",
   "audio_pva": 1,
   "audio_set": "custom",
   "auto_paste": 1,
   "background_color": "#000000",
   "background_image": "",
   "background_opacity": 0,
-  "board_theme": "blue",
-  "board_theme_pv": "dark",
+  "board_theme": "uscf",
+  "board_theme_pv": "uscf",
   "board_theme_pva": "uscf",
-  "book_every": 600,
-  "boom_effect": 1,
-  "boom_sound": "random",
+  "book_every": 1200,
+  "boom_effect": 0,
+  "boom_sound": 0,
   "boom_threshold": 1.2,
-  "boom_visual": "all",
-  "boom_volume": 3.5,
+  "boom_visual": 0,
+  "boom_volume": 0,
   "capture_delay": -200,
-  "chat_height": 802,
-  "column_bottom": 4,
-  "column_top": 2,
-  "controls": 0,
+  "chat_height": 933,
+  "column_bottom": 5,
+  "column_top": 5,
+  "controls": 1,
   "controls_pv": 1,
   "controls_pva": 1,
-  "custom_black": "#bdff24",
+  "custom_black": "#000000",
   "custom_black_pv": "#000000",
   "custom_black_pva": "#000000",
-  "custom_white": "#11ff23",
+  "custom_white": "#ffffff",
   "custom_white_pv": "#ffffff",
   "custom_white_pva": "#ffffff",
-  "disable_everything": 0,
-  "drag_and_drop": 0,
+  "disable_everything": 1,
+  "drag_and_drop": 1,
   "draw_right_click": 0,
   "encoding": "sRGB",
   "eval": 1,
   "eval_left": 1,
-  "explosion_buildup": 2,
+  "explosion_buildup": 0,
   "explosion_effect": 1,
   "explosion_ply_reset": 8,
-  "explosion_sound": "random",
+  "explosion_sound": 0,
   "explosion_threshold": 2.3,
-  "explosion_visual": "all",
-  "explosion_volume": 5,
+  "explosion_visual": 0,
+  "explosion_volume": 0,
   "exposure": 1,
   "game_960": 1,
   "game_PV": 1,
   "game_arrow": "kibitz",
   "game_depth": 4,
   "game_evaluation": "att",
-  "game_every": 200,
+  "game_every": 100,
   "game_level": "amateur",
   "game_new_FEN": "",
   "game_options_black": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_options_white": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_search": "ab",
+  "game_options_white": "d=4 e=att h=1 i=2 q=8 s=ab t=2 x=20",
+  "game_search": "AlphaBeta",
   "game_threads": 1,
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": "1.41",
+  "graph_aspect_ratio": 1.79,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
-  "graph_color_3": "#b91115",
-  "graph_eval_clamp": 10,
+  "graph_color_3": "#eb282d",
+  "graph_eval_clamp": 16,
   "graph_eval_mode": "score",
-  "graph_line": 1.8,
+  "graph_line": 1,
   "graph_marker_color": "#299bff",
   "graph_marker_opacity": 0.5,
-  "graph_min_width": 400,
-  "graph_radius": 2.2,
-  "graph_scale": 4,
+  "graph_min_width": 240,
+  "graph_radius": 2,
+  "graph_scale": 0,
   "graph_tension": 0,
-  "graph_text": 10,
+  "graph_text": 9,
   "grid": 4,
-  "grid_copy": 2,
-  "grid_live": 3,
+  "grid_copy": 3,
+  "grid_live": 4,
   "grid_pv": 2,
-  "grid_pva": 1,
-  "hardware": 0,
+  "grid_pva": 0,
+  "hardware": 1,
   "highlight_color": "#ffff00",
   "highlight_color_pv": "#ffff00",
   "highlight_color_pva": "#ffff00",
   "highlight_delay": 0,
-  "highlight_size": 0.04,
+  "highlight_size": 0.055,
   "highlight_size_pv": 0.088,
   "highlight_size_pva": 0.055,
   "join_next": 0,
-  "key_repeat": 70,
+  "key_repeat": 120,
   "key_repeat_initial": 500,
   "lighting": "high",
   "live_engine_1": 1,
   "live_engine_2": 1,
   "live_log": "all",
-  "live_pv": 0,
+  "live_pv": 1,
   "log_auto_start": 1,
   "log_history": 100,
   "log_pv": 1,
   "marker_color": "#299bff",
   "marker_opacity": 0.5,
   "material_color": "normal",
-  "max_center": 500,
-  "max_left": 490,
-  "max_left_2": 0,
-  "max_right": 500,
+  "max_center": 510,
+  "max_left": 390,
+  "max_left_2": 400,
+  "max_right": 570,
   "max_right_2": 0,
   "max_window": 1920,
   "min_center": 300,
   "min_left": 300,
-  "min_left_2": 0,
+  "min_left_2": 390,
   "min_right": 300,
   "min_right_2": 0,
-  "mobility": 1,
-  "moob_effect": 1,
-  "moob_sound": "random",
-  "moob_visual": 1,
-  "moob_volume": 3.5,
+  "mobility": 0,
+  "moob_effect": 0,
+  "moob_sound": 0,
+  "moob_visual": 0,
+  "moob_volume": 0,
   "more": 1,
-  "move_height": 6,
-  "move_height_copy": 20,
-  "move_height_live": "4.35",
-  "move_height_pv": 5,
+  "move_height": 5,
+  "move_height_copy": 12.5,
+  "move_height_live": 10,
+  "move_height_pv": 10,
   "move_height_pva": 5,
-  "moves": 1,
-  "moves_copy": 0,
+  "moves": 0,
+  "moves_copy": 1,
+  "moves_left": 1,
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
   "new_version": "0",
-  "notation": 0,
+  "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
   "order": "left|center|right",
   "panel_adjust": 0,
-  "panel_gap": 12,
-  "percent": 0,
-  "piece_theme": "chess24",
+  "panel_gap": 8,
+  "percent": 1,
+  "piece_theme": "alpha",
   "piece_theme_pv": "chess24",
   "piece_theme_pva": "chess24",
   "play_every": 1200,
@@ -310,7 +309,7 @@
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",
-  "rows_per_page": 20,
+  "rows_per_page": 100,
   "scales": {
     "depth": 10,
     "eval": 4,
@@ -318,15 +317,17 @@
     "node": 10,
     "speed": 10,
     "tb": 1,
-    "time": 0
+    "time": 0,
+    "agree": 0
   },
+  "scroll": "",
   "scroll_inertia": 0.95,
   "shadow": "high",
-  "shortcut_1": "0",
-  "shortcut_2": "0",
+  "shortcut_1": "stand",
+  "shortcut_2": "sched",
   "show_delay": 500,
   "show_ply": "diverging",
-  "single_line": 1,
+  "single_line": 0,
   "small_decimal": 1,
   "sort": "",
   "sound_capture": "bamboo - capture",
@@ -338,13 +339,14 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": "auto",
+  "status": 0,
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {
     "archive": "sched",
     "live": "stand"
   },
+  "tabs_per_row": 7,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",
@@ -353,9 +355,9 @@
   "turn_color": "#ff5a00",
   "turn_opacity": 0,
   "twitch_dark": 1,
-  "volume": 7,
+  "volume": 10,
   "wasm": 0,
-  "wheel_adjust": 70,
+  "wheel_adjust": 63,
   "wrap": 1,
   "wrap_cross": "auto",
   "wrap_h2h": "auto",
