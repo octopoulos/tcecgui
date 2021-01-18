@@ -220,7 +220,6 @@ class XBoard {
         this.play_mode = 'play';                        // book, play, quick
         this.players = [{}, {}, {}, {}];                // current 2 players + 2 live engines
         this.ply = -1;                                  // current ply
-        this.ply_moves = [];                            // PV moves by real ply
         this.pv_string = '';                            // last pv_string used
         this.pv_strings = {};                           // iterative search: pv lists per move
         this.pv_node = _(this.pv_id);
@@ -497,7 +496,6 @@ class XBoard {
             }
         });
 
-        this.ply_moves[new_ply] = moves;
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
