@@ -807,6 +807,7 @@ hsub {
     pointer-events: none;
 }
 #table-tabs > .tab {
+    flex-basis: 14% !important;
     white-space: normal;
 }
 .subscribe {
