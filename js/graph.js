@@ -61,7 +61,14 @@ let cached_percents = {},
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
     FormatEval = value => value? value.toFixed(2): 0,
-    queued_charts = [];
+    // &1: no_kibitzer, &2: 01=>0, 23=>1
+    LIVE_GRAPHS = {
+        agree: 2,
+        eval: 0,
+        speed: 1,
+    },
+    queued_charts = [],
+    SUB_BOARDS = ['live0', 'live1', 'pv0', 'pv1'];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -493,7 +500,7 @@ function redraw_eval_charts(section) {
         num_move = moves.length;
 
     // update existing moves + kibitzer evals (including next move)
-    update_player_charts(name, moves);
+    update_player_chart(name, moves);
     update_live_chart(name, xboards.live0.evals[section], 2);
     update_live_chart(name, xboards.live1.evals[section], 3);
 
@@ -535,7 +542,7 @@ function reset_charts(section, reset_evals)
     });
 
     if (reset_evals)
-        for (let key of ['live0', 'live1', 'pv0', 'pv1'])
+        for (let key of SUB_BOARDS)
             xboards[key].evals[section] = [];
 }
 
@@ -685,14 +692,14 @@ function update_chart_options(name, mode) {
 }
 
 /**
- * Update the eval chart from a Live source
- * @param {string} name eval, agree
+ * Update a chart from a Live source
+ * @param {string} name agree, eval, speed
  * @param {Move[]} moves
  * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
 function update_live_chart(name, moves, id) {
     if (DEV.chart)
-        LS('ULC');
+        LS(`ULC: ${name} : ${id}`);
     if (!moves)
         return;
 
@@ -735,6 +742,10 @@ function update_live_chart(name, moves, id) {
             dico.eval = eval_;
             dico.y = is_percent? calculate_win(id, eval_, ply): clamp_eval(eval_);
             break;
+        case 'speed':
+            dico.nodes = move.nodes;
+            dico.y = move.nps;
+            break;
         }
 
         data[num2] = dico;
@@ -742,6 +753,29 @@ function update_live_chart(name, moves, id) {
 
     fix_labels(labels);
     update_chart(name);
+}
+
+/**
+ * Update charts from a Live source
+ * @param {Move[]} moves
+ * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
+ */
+function update_live_charts(moves, id) {
+    if (DEV.chart)
+        LS(`ULC+: ${id}`);
+    Keys(LIVE_GRAPHS).forEach(name => {
+        let flag = LIVE_GRAPHS[name],
+            id2 = id;
+
+        // speed => no kibitzer
+        if ((flag & 1) && id >= 2)
+            return;
+        // agree: 01 => 0, 23 => 1
+        if (flag & 2)
+            id2 = (id >= 2)? 1: 0;
+
+        update_live_chart(name, moves, id2);
+    });
 }
 
 /**
@@ -851,19 +885,14 @@ function update_player_chart(name, moves) {
 /**
  * Update a player charts using new moves
  * - designed for white & black, not live
- * @param {string} name empty => update all charts
  * @param {Move[]} moves
  */
-function update_player_charts(name, moves) {
+function update_player_charts(moves) {
     if (DEV.chart)
         LS('UPC+');
-    if (!name) {
-        Keys(charts).forEach(key => {
-            update_player_chart(key, moves);
-        });
-    }
-    else
-        update_player_chart(name, moves);
+    Keys(charts).forEach(key => {
+        update_player_chart(key, moves);
+    });
 }
 
 /**
@@ -894,8 +923,11 @@ function update_scale_custom(chart) {
     // 1) calculate the 2 regions + center
     let datasets = scale.chart.data.datasets,
         data0 = datasets[0].data.filter(item => item != null).map(item => item.y),
-        data1 = datasets[1].data.filter(item => item != null).map(item => item.y),
-        max0 = Max(...data0),
+        data1 = datasets[1].data.filter(item => item != null).map(item => item.y);
+    if (!data0.length || !data1.length)
+        return;
+
+    let max0 = Max(...data0),
         max1 = Max(...data1),
         min0 = Min(...data0),
         min1 = Min(...data1),
@@ -1001,7 +1033,7 @@ function init_graph() {
         LS('IG');
     create_chart_data();
     create_charts();
-    update_player_charts(null, xboards[Y.x].moves);
+    update_player_charts(xboards[Y.x].moves);
 
     for (let [name, moves, id] of queued_charts)
         update_live_chart(name, moves, id);
@@ -1032,7 +1064,9 @@ if (typeof exports != 'undefined') {
         reset_charts: reset_charts,
         scale_boom: scale_boom,
         slice_charts: slice_charts,
+        SUB_BOARDS: SUB_BOARDS,
         update_live_chart: update_live_chart,
+        update_live_charts: update_live_charts,
         update_player_chart: update_player_chart,
         update_player_charts: update_player_charts,
     });
