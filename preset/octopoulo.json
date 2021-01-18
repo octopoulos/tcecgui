@@ -22,12 +22,17 @@
         1
       ],
       [
-        "table-tb",
+        "table-mobil",
         1,
         1
       ],
       [
-        "table-mobil",
+        "table-time",
+        1,
+        1
+      ],
+      [
+        "table-tb",
         0,
         1
       ],
@@ -37,7 +42,12 @@
         3
       ],
       [
-        "table-kibitz",
+        "moves-archive",
+        1,
+        2
+      ],
+      [
+        "table-agree",
         1,
         1
       ],
@@ -57,12 +67,7 @@
         1
       ],
       [
-        "table-time",
-        0,
-        1
-      ],
-      [
-        "moves-archive",
+        "table-kibitz",
         0,
         1
       ],
@@ -213,19 +218,19 @@
   "game_960": 1,
   "game_PV": 1,
   "game_arrow": "kibitz",
-  "game_depth": 4,
+  "game_depth": 5,
   "game_evaluation": "att",
   "game_every": 200,
-  "game_level": "amateur",
+  "game_level": "engine maker",
   "game_new_FEN": "",
-  "game_options_black": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_options_white": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
+  "game_options_black": "d=5 e=att h=1 o=2 q=12 s=ab t=5 x=20",
+  "game_options_white": "d=5 e=att h=1 o=2 q=12 s=ab t=5 x=20",
   "game_search": "ab",
   "game_threads": 1,
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.53,
+  "graph_aspect_ratio": 1.525,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -233,8 +238,6 @@
   "graph_eval_clamp": 10,
   "graph_eval_mode": "score",
   "graph_line": 2.2,
-  "graph_marker_color": "#299bff",
-  "graph_marker_opacity": 0.5,
   "graph_min_width": 240,
   "graph_radius": 1,
   "graph_scale": "4",
@@ -291,14 +294,13 @@
   "move_height_pva": 6,
   "moves": 1,
   "moves_copy": 0,
+  "moves_left": 1,
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
-  "new_version": "0",
   "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
-  "order": "center|left|right",
   "panel_adjust": 0,
   "panel_gap": 8,
   "percent": 1,
@@ -318,7 +320,8 @@
     "node": 10,
     "speed": 10,
     "tb": 1,
-    "time": 0
+    "time": 0,
+    "agree": 0
   },
   "scroll_inertia": 0.95,
   "shadow": "high",
@@ -342,9 +345,10 @@
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {
-    "archive": "season",
+    "archive": "sched",
     "live": "stand"
   },
+  "tabs_per_row": 8,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // Game specific code:
 // - control the board, moves
@@ -12,11 +12,11 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, close_popups,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
-CreateNode, CreateSVG, cube:true,
+cannot_click, Ceil, change_setting, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class, clear_timeout,
+close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array,
+create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
-Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
+Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
@@ -24,11 +24,11 @@ Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_
 resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
-stockfish_wdl, Style,
+stockfish_wdl, Style, SUB_BOARDS,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
-Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_charts, update_svg,
-Upper, virtual_close_popups:true, virtual_init_3d_special:true, virtual_random_position:true, Visible, WB_LOWER,
-WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
+Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
+update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
+virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
 */
 'use strict';
 
@@ -225,12 +225,13 @@ let ANALYSIS_URLS = {
         ['#moves-pv0', '#box-pv0 .status'],
         ['#moves-pv1', '#box-pv1 .status'],
     ],
-    // number items, type (0:string, 1:int, 2:float)
+    // number_items, type (0:string, 1:int, 2:float)
     LOG_KEYS = {
         cp: [1, 2],
         depth: [1, 1],
         hashfull: [1, 1],
         mate: [1, 1],
+        movesleft: [1, 1],
         nodes: [1, 1],
         nps: [1, 1],
         pv: [-1, 0],
@@ -673,7 +674,10 @@ function check_draw_arrow(board) {
     let id = board.live_id,
         main = xboards[Y.x];
 
-    if (id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
+    // 0) skip?
+    if (id == undefined)
+        return;
+    if (!['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
         return;
 
     let draw = false,
@@ -682,6 +686,9 @@ function check_draw_arrow(board) {
         next = board.next,
         ply = main.ply,
         next_ply = ply + 1;
+
+    if (Y.arrow_moves != 'all' && ply < main.moves.length - 1)
+        return;
 
     // wrong color?
     if (board.name.slice(0, 2) == 'pv' && (next_ply & 1) != (id & 1))
@@ -1399,9 +1406,8 @@ function create_tables() {
 
 /**
  * Download live data when the graph is ready
- * @param {function} callback called when all data has been loaded
  */
-function download_live(callback) {
+function download_live() {
     let left = 4,
         section = 'live';
     if (section != Y.x)
@@ -1409,8 +1415,8 @@ function download_live(callback) {
 
     function _done() {
         left --;
-        if (!left && callback)
-            callback();
+        if (!left)
+            redraw_eval_charts();
     }
 
     // evals
@@ -1526,10 +1532,8 @@ function download_tables(only_cache, no_live) {
         download_gamelist();
 
     let section = 'live';
-    if (!only_cache && !no_live) {
-        download_pgn(section, 'live.pgn');
-        download_live();
-    }
+    if (!only_cache && !no_live)
+        download_pgn(section, 'live.pgn', false, download_live);
 
     let dico = {only_cache: only_cache};
     download_table(section, 'crosstable.json', 'cross', data => {
@@ -1605,7 +1609,7 @@ function show_tables(section, is_cup) {
         return;
     old_cup = is_cup;
 
-    let active = get_active_tab('table')[0],
+    let [active] = get_active_tab('table'),
         parent = Id('tables'),
         target = (active == 'sched')? active: (is_cup? 'brak': 'stand');
     S('[data-x="brak"], [data-x="event"]', is_cup, parent);
@@ -2959,12 +2963,12 @@ function check_missing_moves(ply, round, pos, force) {
 
     add_timeout(section, () => {
         Y.scroll = '';
-        download_pgn(section, 'live.pgn', true);
+        download_pgn(section, 'live.pgn', true, download_live);
     }, TIMEOUT_live_delay * 1000);
 }
 
 /**
- * Download live evals for the current even + a given round
+ * Download live evals for the current event + a given round
  * @param {number} round
  */
 function download_live_evals(round) {
@@ -2990,8 +2994,9 @@ function download_live_evals(round) {
  * @param {string} section archive, live
  * @param {string} url live.pgn, live.json
  * @param {boolean=} reset_moves triggered by check_missing_moves
+ * @param {function} callback
  */
-function download_pgn(section, url, reset_moves) {
+function download_pgn(section, url, reset_moves, callback) {
     if (DEV.new)
         LS(`download_pgn: ${section} : ${url} : ${reset_moves}`);
 
@@ -3018,6 +3023,8 @@ function download_pgn(section, url, reset_moves) {
 
         if (section == 'archive' && Y.scroll)
             scroll_adjust(Y.scroll);
+        if (callback)
+            callback();
     }, {type: 'text'});
 }
 
@@ -3185,7 +3192,7 @@ function parse_pgn(section, data, mode=7, origin='') {
         ply = get_fen_ply(fen || START_FEN);
     length = data.length;
     start = 0;
-    for (let i = 0 ; i < length; i ++) {
+    for (let i = 0; i < length; i ++) {
         let char = data[i];
 
         if (char == '{') {
@@ -3336,6 +3343,77 @@ function resize_game() {
 }
 
 /**
+ * Calculate agree for all moves
+ * @param {string} section
+ * @param {number} id -1, 0, 1, 2, 3
+ * @returns {number} # changes
+ */
+function update_agree(section, id) {
+    if (section != section_board())
+        return;
+    let moves0, moves1, offset,
+        changes = 0,
+        main = xboards[section];
+
+    // players => compare ply with ply - 1
+    if (id == -1) {
+        moves0 = main.moves;
+        moves1 = moves0;
+        offset = -1;
+    }
+    // live => compare direct plies
+    else {
+        moves0 = xboards.live0.evals[section];
+        moves1 = xboards.live1.evals[section];
+        offset = 0;
+    }
+
+    // TODO: accelerate the process if repeated multiple times in succession
+    let ply = moves0.length;
+    while (ply > 0) {
+        ply --;
+        let move0 = moves0[ply],
+            move1 = moves1[ply + offset];
+        if (!move0 || !move1 || (move0.agree != undefined && move1.agree != undefined))
+            continue;
+
+        let pv0 = move0.pv,
+            pv1 = move1.pv,
+            [ply0, splits0] = IsObject(pv0)? [move0.ply, pv0.San.split(' ')]: split_move_string(pv0, true, move0.ply),
+            [ply1, splits1] = IsObject(pv1)? [move1.ply, pv1.San.split(' ')]: split_move_string(pv1, true, move1.ply);
+
+        // calculate agree
+        let agree = 0,
+            i = ply - ply0,
+            j = ply - ply1;
+
+        while (splits0[i] && splits0[i] == splits1[j]) {
+            agree ++;
+            i ++;
+            j ++;
+        }
+        moves0[ply].agree = agree;
+        moves1[ply].agree = agree;
+        changes ++;
+    }
+
+    if (id == -1)
+        update_player_chart('agree', moves0);
+    else
+        update_live_chart('agree', moves0, 1);
+    return changes;
+}
+
+/**
+ * Update agree for players + kibitzers
+ * @param {string} section
+ */
+function update_agrees(section) {
+    update_agree(section, -1);
+    update_agree(section, 2);
+}
+
+/**
  * Update material info
  * mb=+2+0+0+0+0, => +p+n+b+r+q
  * @param {Move} move
@@ -3443,9 +3521,9 @@ function update_move_info(section, ply, move, fresh) {
         stats = {
             depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
             eval: format_eval(eval_, true),
-            node: is_book? '-': FormatUnit(move.n, '-'),
-            speed: is_book? '-': `${FormatUnit(move.s, '0')}nps`,
-            tb: is_book? '-': FormatUnit(move.tb, '-'),
+            node: is_book? '-': format_unit(move.n, '-'),
+            speed: is_book? '-': `${format_unit(move.s, '0')}nps`,
+            tb: is_book? '-': format_unit(move.tb, '-'),
         };
 
     // pva?
@@ -3495,6 +3573,7 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
+        cur_ply = main.ply,
         player = main.players[id],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
@@ -3515,9 +3594,9 @@ function update_move_pv(section, ply, move) {
 
     if (move.pv) {
         if (IsString(move.pv))
-            board.add_moves_string(move.pv, main.ply, true);
+            board.add_moves_string(move.pv, cur_ply, true);
         else
-            board.add_moves(move.pv.Moves, main.ply);
+            board.add_moves(move.pv.Moves, cur_ply);
     }
     else {
         // no pv available =>
@@ -3698,7 +3777,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     if (section == section_board()) {
         if (DEV.chart)
             LS(`UOM: ${section}`);
-        update_player_charts(null, moves);
+        update_player_charts(moves);
     }
 
     // 3) check adjudication
@@ -3734,6 +3813,7 @@ function update_overview_moves(section, headers, moves, is_new) {
         check_explosion_boom(section, -1, 3);
     }
 
+    update_agree(section, -1);
     return finished;
 }
 
@@ -3811,8 +3891,6 @@ function update_pgn(section, data, extras, reset_moves) {
         players[1].name = headers.Black;
 
         fix_header_opening(main, headers);
-        if (section == 'archive')
-            download_live_evals(headers.Round);
         if (headers.FEN && headers.SetUp)
             pgn.frc = headers.FEN;
     }
@@ -3860,6 +3938,7 @@ function update_pgn(section, data, extras, reset_moves) {
                 info: {},
             });
         }
+        HTML(Id('movesleft'), '');
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
@@ -3928,6 +4007,10 @@ function update_pgn(section, data, extras, reset_moves) {
             players[who].time = 0;
         start_clock(section, who, finished, pgn.elapsed || 0);
     }
+
+    // 6) download more files
+    if (headers && section == 'archive')
+        download_live_evals(headers.Round);
     return true;
 }
 
@@ -4057,17 +4140,15 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (!DEV.wasm) {
-        if (Y.eval && info.eval != undefined) {
-            let box_node = _(`#box-pv${id} .status`),
-                node = Id(`moves-pv${id}`),
-                status_eval = format_eval(info.eval),
-                status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
+    if (Y.eval && info.eval != undefined) {
+        let box_node = _(`#box-pv${id} .status`),
+            node = Id(`moves-pv${id}`),
+            status_eval = format_eval(info.eval),
+            status_score = calculate_probability(player.short, info.eval, main.moves.length, info.wdl);
 
-            for (let child of [box_node, node]) {
-                HTML(`[data-x="eval"]`, status_eval, child);
-                HTML(`[data-x="score"]`, status_score, child);
-            }
+        for (let child of [box_node, node]) {
+            HTML(`[data-x="eval"]`, status_eval, child);
+            HTML(`[data-x="score"]`, status_score, child);
         }
     }
 
@@ -4117,10 +4198,9 @@ function analyse_log(line) {
         info.pvs = pvs;
     }
 
-    // don't update unless we're on the last move
+    // update info
     info.ply = ply;
-    if (ply >= main.ply + 1)
-        update_player_eval('live', info, no_pv);
+    update_player_eval('live', info, no_pv);
 }
 
 /**
@@ -4708,16 +4788,16 @@ function update_live_eval(section, data, id, force_ply) {
     if (moves) {
         // ply is offset by 1
         for (let move of moves) {
-            if (move.pv && !move.seen) {
-                let real = split_move_string(move.pv)[0];
-                // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
-                board_evals[real] = move;
-                move.invert = true;
-                move.ply = real;
-                if (real & 1)
-                    move.eval = invert_eval(move.eval);
-                move.seen = 1;
-            }
+            if (!move.pv || move.seen)
+                continue;
+            let [real] = split_move_string(move.pv);
+            // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
+            board_evals[real] = move;
+            move.invert = true;
+            move.ply = real;
+            if (real & 1)
+                move.eval = invert_eval(move.eval);
+            move.seen = 1;
         }
         data = moves[moves.length - 1];
     }
@@ -4725,6 +4805,7 @@ function update_live_eval(section, data, id, force_ply) {
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
         eval_ = data.eval,
+        last_ply = main.moves.length - 1,
         node = Id(`table-live${id}`),
         [ply] = split_move_string(data.pv);
 
@@ -4745,15 +4826,15 @@ function update_live_eval(section, data, id, force_ply) {
     let short = get_short_name(engine);
     update_hardware(section, id + 2, engine, short, desc, [box_node, node]);
 
-    if (ply == cur_ply + 1 || force_ply) {
+    if (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply)) {
         let is_hide = !Y.eval,
             dico = {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
-                node: FormatUnit(data.nodes),
+                node: format_unit(data.nodes),
                 score: is_hide? 'hide*': calculate_probability(short, eval_, ply, wdl),
                 speed: data.speed,
-                tb: FormatUnit(data.tbhits),
+                tb: format_unit(data.tbhits),
             };
 
         Keys(dico).forEach(key => {
@@ -4768,14 +4849,16 @@ function update_live_eval(section, data, id, force_ply) {
 
     if (force_ply)
         board.text = '';
-    board.add_moves_string(data.pv, force_ply);
+    board.add_moves_string(data.pv, cur_ply, force_ply);
 
     if (section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
-        update_live_chart(moves || [data], id + 2);
+        update_live_charts(moves || [data], id + 2);
         check_missing_moves(ply, round);
     }
+
+    update_agree(section, id + 2);
     return true;
 }
 
@@ -4814,12 +4897,10 @@ function update_player_eval(section, data, same_pv) {
         let moves = data.moves;
         if (moves && moves.length) {
             data.ply = moves[0].ply;
-            if (!board.locked) {
-                board.reset(section);
-                board.instant();
-                let last_move = main.moves.slice(-1)[0];
-                board.set_fen(last_move? last_move.fen: main.fen);
-            }
+            board.reset(section);
+            board.instant();
+            let last_move = main.moves.slice(-1)[0];
+            board.set_fen(last_move? last_move.fen: main.fen);
             board.add_moves(moves, data.ply);
             if (DEV.ply) {
                 LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
@@ -4828,7 +4909,7 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data.pv) {
             data.ply = split_move_string(data.pv)[0];
-            board.add_moves_string(data.pv);
+            board.add_moves_string(data.pv, cur_ply);
         }
     }
 
@@ -4846,9 +4927,9 @@ function update_player_eval(section, data, same_pv) {
             engine: format_engine(data.engine, true, 21),
             eval: format_eval(eval_, true),
             logo: short,
-            node: FormatUnit(data.nodes),
-            speed: (data.nps != undefined)? `${FormatUnit(data.nps)}nps`: data.speed,
-            tb: FormatUnit(data.tbhits),
+            node: format_unit(data.nodes),
+            speed: (data.nps != undefined)? `${format_unit(data.nps)}nps`: data.speed,
+            tb: format_unit(data.tbhits),
         };
         Keys(stats).forEach(key => {
             HTML(Id(`${key}${id}`), stats[key]);
@@ -4872,6 +4953,10 @@ function update_player_eval(section, data, same_pv) {
         HTML(`.xeval`, format_eval(eval_), mini);
         if (data.nodes > 1)
             SetDefault(player, 'evals', [])[ply] = eval_;
+
+        // moves left
+        if (Y.moves_left && data.movesleft != undefined)
+            HTML(Id('movesleft'), `#${data.movesleft}`);
     }
 
     if (DEV.chart)
@@ -4883,14 +4968,11 @@ function update_player_eval(section, data, same_pv) {
         return true;
 
     if (is_pva)
-        update_player_charts(null, [data]);
+        update_player_charts([data]);
     else {
-        update_live_chart([data], id);
+        update_live_charts([data], id);
         check_missing_moves(ply, null, data.pos);
     }
-
-    // TODO: activate this later if the evals are stabilizing
-    // check_explosion_boom(section, 0);
     return true;
 }
 
@@ -5228,6 +5310,9 @@ function change_setting_game(name, value) {
         save_option('moob_sound', value? 'random': 0);
         save_option('moob_visual', value? 'all': 0);
         break;
+    case 'moves_left':
+        Class(Id('movesleft'), 'hidden', !value);
+        break;
     case 'rows_per_page':
         update_tab = true;
         break;
@@ -5267,6 +5352,7 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    // 1) global stuff
     if (DEV.ad)
         Hide('#ad0, #ad1');
     if (DEV.global)
@@ -5276,7 +5362,9 @@ function changed_hash() {
             xboards: xboards,
             Y: Y,
         });
+    check_socket_io();
 
+    // section changed?
     let section = Y.x;
     show_tables(section, tour_info[section].cup);
 
@@ -5332,7 +5420,7 @@ function changed_section() {
     redraw_eval_charts(section);
 
     if (section == 'live')
-        download_live(redraw_eval_charts);
+        download_live();
     else {
         let hash = hashes[section];
         if (Y.archive_scroll && !hash.game) {
@@ -5353,6 +5441,7 @@ function changed_section() {
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
+    update_agrees(section);
 }
 
 /**
@@ -5575,7 +5664,7 @@ function get_context_board() {
  * @param {boolean=} force force graph update
  */
 function handle_board_events(board, type, value, e, force) {
-    let move,
+    let agree, move,
         name = board.name,
         old_board = section_board(),
         section = Y.x;
@@ -5587,6 +5676,9 @@ function handle_board_events(board, type, value, e, force) {
         // used for CTRL+C
         context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
         move = board.moves[board.ply];
+        break;
+    case 'agree':
+        agree = true;
         break;
     // controls: play, next, ...
     case 'control':
@@ -5624,8 +5716,7 @@ function handle_board_events(board, type, value, e, force) {
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
-        if (!xboards[section].hold)
-            check_draw_arrow(board);
+        add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -5640,10 +5731,16 @@ function handle_board_events(board, type, value, e, force) {
             update_move_info(name, prev_ply, prev_move);
             update_move_info(name, cur_ply, value);
             mark_ply_charts(cur_ply, board.moves.length - 1);
-            if (board.name == 'pva')
+            if (board.name == 'pva') {
                 board.show_pv(value);
+                update_agree('pva', -1);
+            }
         }
         if (name == section) {
+            // unlock sub boards
+            for (let sub of SUB_BOARDS)
+                xboards[sub].set_locked(false);
+
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
             reset_sub_boards(section, 1);
@@ -5656,10 +5753,12 @@ function handle_board_events(board, type, value, e, force) {
 
             update_materials(value);
             update_mobility();
-            if (Y.arrow_moves == 'all')
-                add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
-
             update_time_control(section, (cur_ply + 1) & 1);
+
+            // lock sub boards?
+            if (cur_ply < board.moves.length - 1)
+                for (let sub of SUB_BOARDS)
+                    xboards[sub].set_locked(true);
         }
         break;
     }
@@ -5674,13 +5773,14 @@ function handle_board_events(board, type, value, e, force) {
         if (DEV.chart)
             LS(`NN: ${old_board} => ${new_board}`);
         reset_charts(section, false);
-        if (new_board == 'pva')
-            update_player_charts(null, board.moves);
-        else {
-            update_player_charts(null, board.moves);
+        update_player_charts(board.moves);
+        if (new_board != 'pva')
             redraw_eval_charts(name);
-        }
+        agree = true;
     }
+
+    if (agree)
+        update_agrees(section);
 }
 
 /**
@@ -5762,7 +5862,7 @@ function opened_table(node, name, tab) {
 
     // 2) special cases
     if (is_chart && charts[name] && main) {
-        update_player_charts(name, main.moves);
+        update_player_chart(name, main.moves);
         update_chart_options(name, 3);
     }
 

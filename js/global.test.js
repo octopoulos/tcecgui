@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2021-01-18
 //
 /*
 globals
@@ -11,9 +11,9 @@ expect, global, require, test
 let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
     {
-        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
-        leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl, stockfish_win_rate_model,
-        stoof_cp_to_score
+        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, format_unit, get_fen_ply,
+        get_move_ply, leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl,
+        stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
 
 global.DEFAULTS = {
@@ -301,6 +301,22 @@ global.DEFAULTS = {
     });
 });
 
+// format_unit
+[
+    [true, 1000000000, undefined, undefined, '1G'],
+    [false, 1000000000, undefined, undefined, '1B'],
+    [false, 1000000000, undefined, true, '1.0B'],
+    [false, '58335971', undefined, undefined, '58.3M'],
+    [false, 318315, undefined, undefined, '318.3k'],
+    [true, NaN, undefined, undefined, 'N/A'],
+    [true, undefined, '-', undefined, '-'],
+].forEach(([is_si, number, def, keep_decimal, answer], id) => {
+    test(`format_unit:${id}`, () => {
+        Y.SI_units = is_si;
+        expect(format_unit(number, def, keep_decimal)).toEqual(answer);
+    });
+});
+
 // get_fen_ply
 [
     [null, -2],
@@ -396,14 +412,23 @@ global.DEFAULTS = {
 
 // split_move_string
 [
-    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', [17, ['9', '...', 'd5', '10.', 'O-O-O', 'dxe4', '11.', 'g5', 'Nd5']]],
-    ['23. Qd2 Nf6 24. f3 Ra6', [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
-    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
-    ['22...f5 23. Qd2', [43, ['22', '...', 'f5', '23.', 'Qd2']]],
-    ['22. Kh1 Ra6 23. Qg3 Nf6', [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
-].forEach(([text, answer], id) => {
+    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', 0, [17, ['9', '...', 'd5', '10.', 'O-O-O', 'dxe4', '11.', 'g5', 'Nd5']]],
+    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', 1, [17, ['d5', 'O-O-O', 'dxe4', 'g5', 'Nd5']]],
+    ['23. Qd2 Nf6 24. f3 Ra6', 0, [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
+    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', 0, [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
+    ['22...f5 23. Qd2', 0, [43, ['22', '...', 'f5', '23.', 'Qd2']]],
+    ['22. Kh1 Ra6 23. Qg3 Nf6', 0, [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
+    ['2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4', 0, [2, ['2.', 'Nf3', 'd6', '3.', 'd4', 'Nf6', '4.', 'Nc3', 'cxd4']]],
+    ['2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4', 1, [2, ['Nf3', 'd6', 'd4', 'Nf6', 'Nc3', 'cxd4']]],
+    ['2...Nc6 3. Bb5', 0, [3, ['2', '...', 'Nc6', '3.', 'Bb5']]],
+    ['2...Nc6 3. Bb5', 1, [3, ['Nc6', 'Bb5']]],
+    ['2...d6 3. d4 Nf6 4. Nc3 cxd4', 0, [3, ['2', '...', 'd6', '3.', 'd4', 'Nf6', '4.', 'Nc3', 'cxd4']]],
+    ['2...d6 3. d4 Nf6 4. Nc3 cxd4', 1, [3, ['d6', 'd4', 'Nf6', 'Nc3', 'cxd4']]],
+    ['2...Nc6 3. Bb5', 0, [3, ['2', '...', 'Nc6', '3.', 'Bb5']]],
+    ['2...Nc6 3. Bb5', 1, [3, ['Nc6', 'Bb5']]],
+].forEach(([text, no_number, answer], id) => {
     test(`split_move_string:${id}`, () => {
-        expect(split_move_string(text)).toEqual(answer);
+        expect(split_move_string(text, no_number)).toEqual(answer);
     });
 });
 

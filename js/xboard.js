@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-18
 //
 // game board:
 // - 4 rendering modes:
@@ -18,7 +18,7 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
 clear_timeout, COLOR, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, FormatUnit, From, FromSeconds, GaussianRandom,
+DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
@@ -28,7 +28,7 @@ update_svg, Upper, Visible, window, Worker, Y
 
 // <<
 if (typeof global != 'undefined') {
-    ['3d', 'chess', 'common', 'engine', 'global'].forEach(key => {
+    ['3d', 'chess', 'common', 'engine', 'global', 'graph'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
 }
@@ -290,7 +290,7 @@ class XBoard {
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = ['<i class="agree"></i>'],
+            lines = ['<i class="agree X"></i>'],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -357,8 +357,8 @@ class XBoard {
             }
             // add .. black move
             else {
-                if (!lines.length && is_ply)
-                    lines.push(`<i class="turn">${Floor(move_num)}</i> ..`);
+                if (lines.length < 2 && is_ply)
+                    lines.push(`<i class="turn">${Floor(move_num)}</i>...`);
                 if (!added) {
                     for (let [parent, last] of parent_lasts) {
                         let node = CreateNode('i', `${Floor(move_num)} ..`, {class: 'turn', 'data-j': Floor(move_num)});
@@ -462,11 +462,9 @@ class XBoard {
             // return;
         }
 
-        this.text = text;
-
         // 2) update the moves
         let first_ply = -1,
-            lines = ['<i class="agree"></i>'],
+            lines = ['<i class="agree Y"></i>'],
             moves = [],
             ply = new_ply;
 
@@ -503,7 +501,9 @@ class XBoard {
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
-        let is_current = (new_ply == cur_ply || force || this.manual);
+        let last_ply = this.real? this.real.moves.length - 1: -1,
+            is_current = (new_ply == cur_ply || force || this.manual || (cur_ply == last_ply && new_ply > last_ply));
+
         if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
@@ -512,9 +512,11 @@ class XBoard {
         if (is_current) {
             this.moves = moves;
 
+            // update the HTML
             let html = lines.join('');
             for (let parent of [this.xmoves, this.pv_node])
                 HTML(parent, html);
+            this.text = text;
 
             // 3) update the cursor
             // live engine => show an arrow for the next move
@@ -744,6 +746,9 @@ class XBoard {
      * @param {Object} dico contains move info, if null then hide the arrow
      */
     arrow_html(id, dico) {
+        if (DEV.arrow)
+            LS('arrow', id, dico);
+
         // 1) no move => hide the arrow
         // TODO: maybe some restoration is needed here
         if (!dico || !dico.from || !Y.arrow_opacity) {
@@ -807,7 +812,8 @@ class XBoard {
         let shead,
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
-            scolor = Y[`arrow_color_${id}`];
+            scolor = Y[`arrow_color_${id}`],
+            shown = true;
 
         for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
             let other_id = other.id;
@@ -819,8 +825,8 @@ class XBoard {
                     AttrsNS(Id(`mk${name}_${other_id}_1`), {
                         fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6),
                     });
-                    Hide(this.svgs[id].svg);
-                    return;
+                    shown = false;
+                    break;
                 }
             }
             else {
@@ -852,7 +858,9 @@ class XBoard {
         svg.dist = delta_x + delta_y;
         svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity}`);
-        Show(body);
+        S(body, shown);
+        if (DEV.arrow)
+            LS(id, 'drew arrow');
 
         // 5) shorter distances above
         [...this.svgs]
@@ -869,7 +877,8 @@ class XBoard {
     changed_ply(move) {
         if (this.hook)
             this.hook(this, 'ply', move);
-        this.destroy_workers(true);
+        if (this.manual)
+            this.destroy_workers(true);
     }
 
     /**
@@ -1088,7 +1097,7 @@ class XBoard {
      * Compare plies from the duals
      * - set the ply for both the board and the dual board
      * - called from add_moves and add_moves_string
-     * @param {number} num_ply current ply in the real game (not played yet)
+     * @param {number} num_ply current ply in the real game (in live mode: not played yet)
      */
     compare_duals(num_ply) {
         // 0) skip?
@@ -1096,12 +1105,11 @@ class XBoard {
             return;
         this.clicked = false;
 
+        // 1) compare the moves if there's a dual
         let dual = this.dual,
             real = this.real;
         if (!real)
             return;
-        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
-            show_ply = Y.show_ply;
 
         // no dual
         if (!dual || !dual.valid || dual.locked) {
@@ -1109,7 +1117,7 @@ class XBoard {
             return;
         }
 
-        // 1) first + diverging + last  => compare the moves
+        // first + diverging + last  => compare the moves
         let agree = 0,
             duals = dual.moves,
             moves = this.moves,
@@ -1121,8 +1129,12 @@ class XBoard {
                 move_m = (moves[i] || {}).m;
             if (DEV.div)
                 LS(`${this.id} : i=${i} < ${num_move} : ${dual_m == move_m} : ${dual_m} = ${move_m}`);
-            if (!dual_m || !move_m)
+            if (!dual_m || !move_m) {
+                // first move might be void
+                if (i == num_ply && dual_m == move_m)
+                    continue;
                 break;
+            }
             ply = i;
             if (dual_m != move_m)
                 break;
@@ -1132,15 +1144,20 @@ class XBoard {
         if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
 
-        this.set_marker(ply, agree);
-        dual.set_marker(ply, agree);
+        // set marker + agree
+        this.set_marker(ply, agree, num_ply);
+        dual.set_marker(ply, agree, num_ply);
+
+        // 2) set ply?
+        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
+            show_ply = Y.show_ply;
 
         if (show_ply == 'first') {
             this.set_ply(num_ply, {hold: true});
             return;
         }
 
-        // 2) render: jump directly to the position
+        // render: jump directly to the position
         for (let board of [this, dual]) {
             if (board.clicked)
                 continue;
@@ -2336,6 +2353,8 @@ class XBoard {
     set_fen(fen, render) {
         if (DEV.board)
             LS(`${this.id} set_fen: ${fen}`);
+        if (this.check_locked())
+            return false;
         if (fen == null)
             fen = this.start_fen;
 
@@ -2381,11 +2400,21 @@ class XBoard {
     }
 
     /**
-     * Set the @ marker
+     * Set the @ marker + agree length
      * @param {number} ply
      * @param {number} agree
+     * @param {number} cur_ply
      */
-    set_marker(ply, agree) {
+    set_marker(ply, agree, cur_ply) {
+        // update agree in chart
+        let move = this.moves[cur_ply];
+        if (move) {
+            move.agree = agree;
+            move.ply = cur_ply;
+            this.hook(this, 'agree', move);
+        }
+
+        // update the @ marker + agree length
         [this.xmoves, this.pv_node].forEach((parent, id) => {
             let child = _(`[data-i="${ply}"]`, parent);
             if (child && !(ply & 1))
@@ -2466,6 +2495,9 @@ class XBoard {
 
         this.set_fen(move.fen, true);
 
+        // new move => remove arrows from the past
+        this.hide_arrows();
+
         // play sound?
         // - multiple sounds can be played with different delays
         let audio = Y.audio_moves,
@@ -2508,9 +2540,6 @@ class XBoard {
 
         if (manual)
             this.changed_ply(move);
-
-        // new move => remove arrows from the past
-        this.hide_arrows();
 
         this.update_cursor(ply);
         if (animate == undefined && (!this.smooth || is_last))
@@ -2859,6 +2888,7 @@ class XBoard {
         for (let move of moves) {
             if (!move)
                 continue;
+
             let no_load;
             if (!move.fen) {
                 this.chess_load(fen);
@@ -2962,10 +2992,10 @@ class XBoard {
                 depth: `${(reply.avg_depth / (reply.nodes + 1)).toFixed(0)}/${Floor(reply.sel_depth + 0.5)}`,
                 eval: format_eval(best_score),
                 id: color,
-                node: FormatUnit(nodes2, '-'),
+                node: format_unit(nodes2, '-'),
                 pv: best.pv,
                 ply: ply + 1,
-                speed: `${FormatUnit(nps)}nps`,
+                speed: `${format_unit(nps)}nps`,
                 wv: format_eval(best_score),
             });
             this.update_mini(color);

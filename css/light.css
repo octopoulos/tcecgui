@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-17
+@version 2021-01-18
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -688,6 +688,9 @@ input.two {
 #pv1 .real {
     color: #7ce
 }
+.agree {
+    grid-column: 1/4;
+}
 .turn {
     color: #222;
     font-size: 13px;
@@ -807,6 +810,7 @@ hsub {
     pointer-events: none;
 }
 #table-tabs > .tab {
+    flex-basis: 14% !important;
     white-space: normal;
 }
 .subscribe {
@@ -946,7 +950,7 @@ hsub {
 }
 .einfo {
     font-size: 0.85em;
-    padding-top: 0.4em;
+    padding-top: 0.4em !important;
 }
 .version {
     font-size: 0.85em;
@@ -1389,7 +1393,7 @@ hsub {
     background-position: center;
 }
 #canvas {
-    pointer-events: all;
+    pointer-events: none;
 }
 #banners {
     margin: 0.15em 0 2em 0;
@@ -1442,6 +1446,7 @@ hsub {
 }
 .tabs > .tab {
     flex: 1;
+    flex-basis: 20%;
 }
 .swaps {
     width: 100%;

@@ -1,13 +1,13 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, Keys,
+Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
@@ -36,7 +36,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210117c',
+    VERSION = '20210118b',
     virtual_close_popups,
     xboards = {};
 
@@ -198,6 +198,17 @@ function format_eval(value, process) {
 }
 
 /**
+ * Utility for FormatUnit
+ * @param {number} number
+ * @param {string=} def default value used when number is not a number
+ * @param {boolean=} keep_decimal keep 1 decimal even if it's .0
+ * @returns {string}
+ */
+function format_unit(number, def, keep_decimal) {
+    return FormatUnit(number, def, keep_decimal, Y.SI_units);
+}
+
+/**
  * Get the ply from the FEN
  * @param {string} fen
  * @returns {number}
@@ -328,16 +339,22 @@ function reset_old_settings() {
 
 /**
  * Split a PV string into ply + array of strings
+ * - formula: (move - 1) * 2 = ply
  * @param {string} text
+ * @param {boolean=} no_number remove the numbers
+ * @param {number=} def_ply default ply
  * @returns {[number, string[]]}
  */
-function split_move_string(text) {
+function split_move_string(text, no_number, def_ply) {
     if (!text)
         return [-2, []];
 
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
         ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
-    return [ply, items];
+
+    if (no_number)
+        items = items.filter(item => !IsDigit(item[0]) && item != '...');
+    return [isNaN(ply)? def_ply: ply, items];
 }
 
 /**
@@ -395,6 +412,7 @@ if (typeof exports != 'undefined') {
         calculate_feature_q: calculate_feature_q,
         fix_move_format: fix_move_format,
         format_eval: format_eval,
+        format_unit: format_unit,
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,

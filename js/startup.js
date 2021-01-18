@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -14,18 +14,19 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
+changed_section, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
+context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
-E, Events, export_settings, exports, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id,
-get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
+get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
+Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
-S, Safe, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events,
-SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d,
-startup_config, startup_game, startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES,
-toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true,
+S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
+SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
+startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
+translate_nodes, TRANSLATE_SPECIALS, translates:true,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
 virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
@@ -64,7 +65,8 @@ let AD_STYLES = {},
         '.pagin, #table-tabs': 'extra',
         '.status': 'hide',
         '#table-chat': 'quick',
-        '#table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time': 'graph',
+        '#table-agree, #table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time':
+            'graph',
         '.swaps': 'panel',
     },
     drag_source,
@@ -207,7 +209,8 @@ function change_setting_special(name, value, close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
-    let pva = xboards.pva,
+    let main = xboards[Y.x],
+        pva = xboards.pva,
         result = true;
 
     add_history();
@@ -265,6 +268,7 @@ function change_setting_special(name, value, close) {
     case 'min_right_2':
     case 'min_right':
     case 'panel_gap':
+    case 'tabs_per_row':
         resize();
         break;
     case 'click_here_to_RESET_everything':
@@ -383,6 +387,10 @@ function change_setting_special(name, value, close) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
+        break;
+    // refresh the Engine tab
+    case 'SI_units':
+        handle_board_events(main, 'ply', main.moves[main.ply]);
         break;
     case 'theme':
         change_theme(value);
@@ -644,16 +652,53 @@ function create_swaps() {
 }
 
 /**
- * Fix old settings:
- * - areas
+ * Find an element in areas
+ * @params {string} name
+ * @returns {[string, number]}
+ */
+function find_area(name) {
+    let areas = Y.areas;
+    for (let key of Keys(areas)) {
+        let vector = areas[key];
+        for (let i = 0; i < vector.length; i ++)
+            if (vector[i][0] == name)
+                return [key, i];
+    }
+    return ['', -1];
+}
+
+/**
+ * Fix old settings
  */
 function fix_old_settings() {
+    // 1) add missing panel
     let areas = Y.areas,
         default_areas = DEFAULTS.areas;
     Keys(default_areas).forEach(key => {
         if (!areas[key])
             areas[key] = default_areas[key];
     });
+
+    // 2) insert "agree" somewhere if doesn't exist
+    let found = find_area('table-agree');
+    if (found[1] < 0) {
+        for (let key of Keys(areas)) {
+            let id = -1,
+                vector = areas[key];
+
+            for (let i = vector.length - 1; i >= 0; i --) {
+                let item = vector[i];
+                if ((item[1] & 1) && (item[2] & 1) && item[0].slice(0, 6) == 'table-') {
+                    id = i;
+                    break;
+                }
+            }
+            if (id >= 0) {
+                vector.splice(id + 1, 0, ['table-agree', 1, 1]);
+                break;
+            }
+        }
+    }
 }
 
 /**
@@ -691,18 +736,12 @@ function handle_drop(e) {
 
         // 2) insert before or after
         if (child) {
-            // same tabs parent => if source is before: insert after, otherwise insert before
-            if (in_tab == 3 || (!in_tab && parent_areas.size == 1))
-                next = (Index(drag_source) < Index(child));
-            else {
-                // this part can be improved
-                if (parent.tagName == 'HORIS' || (in_tab & 2)) {
-                    if (e.clientX >= rect.left + rect.width / 2)
-                        next = true;
-                }
-                else if (e.clientY >= rect.top + rect.height / 2)
+            if (parent.tagName == 'HORIS' || (in_tab & 2)) {
+                if (e.clientX >= rect.left + rect.width / 2)
                     next = true;
             }
+            else if (e.clientY >= rect.top + rect.height / 2)
+                next = true;
         }
         parent.insertBefore(drag_source, next? child.nextElementSibling: child);
 
@@ -984,7 +1023,8 @@ function populate_areas() {
             children = parent.children,
             child = children[0],
             child_id = 0,
-            error = '';
+            error = '',
+            sorder = areas[key].map(item => item[0]).join(' ');
 
         for (let [id, tab, show] of areas[key]) {
             let node = Id(id);
@@ -996,10 +1036,14 @@ function populate_areas() {
                 if (show & 1) {
                     if (!prev_tab || !tabs) {
                         tabs = child;
+                        // check if in the tabs and in the right order
                         if (!HasClass(child, 'tabs')) {
                             error = 'tabs';
                             break;
                         }
+                        let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
+                        if (!sorder.includes(torder))
+                            error = 'sub';
 
                         child_id ++;
                         child = children[child_id];
@@ -1038,7 +1082,7 @@ function populate_areas() {
                 return;
         }
         if (DEV.ui) {
-            LS(`populate ${key} : ${error}`);
+            LS(key, `populate ${key} : ${error}`);
             LS(child);
         }
 
@@ -1155,6 +1199,8 @@ function reset_settings_special(is_default) {
  * Resize the window => resize some other elements
  */
 function resize() {
+    Style('.tabs > .tab', `flex-basis:${Floor(200 / Y.tabs_per_row) / 2}%`);
+
     Style(
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status'
         + ', #table-tabs, #top',
@@ -1241,7 +1287,7 @@ function resize_panels() {
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
 
-    Style('.area > *', 'max-width:100%');
+    Style('.area > *', 'max-width:100%;min-width:calc(100% - 8px)');
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
@@ -1370,6 +1416,8 @@ function tab_element(target) {
         for (let vector of areas[key])
             if (vector[0] == id) {
                 vector[1] = vector[1]? 0: 1;
+                // update the modal
+                Class('#modal .item2[data-t="join next"]', 'active', vector[1]);
                 break;
             }
     });
@@ -1400,7 +1448,7 @@ function update_background() {
  * TODO: delete this
  */
 function update_shortcuts() {
-    for (let id = 1; id <= 2 ; id ++) {
+    for (let id = 1; id <= 2; id ++) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
         if (!tab)
@@ -1763,7 +1811,8 @@ function set_global_events() {
         else if (!child)
             child = Parent(e.target, {class_: 'area', self: true});
 
-        draw_rectangle(child, 1, e.clientX, e.clientY);
+        // tab=drop => vertical bar, otherwise horizontal
+        draw_rectangle(child, HasClass(child, 'drop')? 1: 2, e.clientX, e.clientY);
         if (!child)
             return;
 
@@ -1867,6 +1916,7 @@ function prepare_settings() {
                 ['table-speed', 1, 1],
                 ['table-node', 1, 1],
                 ['table-tb', 1, 1],
+                ['table-agree', 1, 1],
                 ['table-kibitz', 0, 1],
             ],
             left_20: [],
@@ -2164,7 +2214,9 @@ function prepare_settings() {
         engine: {
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
+            moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
+            SI_units: [ON_OFF, 1],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
@@ -2305,6 +2357,7 @@ function prepare_settings() {
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
+            tabs_per_row: option_number(7, 1, 100),
             unhide: '1',
         },
         quick: {
@@ -2494,7 +2547,7 @@ function startup() {
     add_history();
     ready ++;
 
-    init_sockets();
+    check_socket_io();
     init_globals();
     init_customs(true);
     quick_setup();
@@ -2507,6 +2560,8 @@ function startup() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        find_area: find_area,
+        move_pane: move_pane,
         prepare_settings: prepare_settings,
     });
 // >>

@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-09
+// @version 2021-01-18
 //
 // all socket functions are here
 //
@@ -33,6 +33,7 @@ let log_time = 0,
         archive: {},
         live: {},
     },
+    socket_ready = false,
     TIMEOUT_check = 60,
     TIMEOUT_log = 500,
     virtual_resize;
@@ -40,14 +41,31 @@ let log_time = 0,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initialise sockets
+ * Connect/disconnect the socket
+ */
+function check_socket_io() {
+    // 1) disconnect?
+    if (DEV.no_socket) {
+        if (socket && socket.connected)
+            socket.close();
+        return;
+    }
+
+    // 2) connect
+    if (!socket)
+        socket = io.connect(HOST);
+    else if (!socket.connected)
+        socket.connect(HOST);
+
+    if (!socket_ready)
+        event_sockets(false);
+}
+
+/**
+ * Initialise socket events
  * + handle all messages
  */
-function init_sockets() {
-    if (DEV.no_socket)
-        return;
-    socket = io.connect(HOST);
-
+function event_sockets() {
     // live_log
     socket.on('htmlread', data => {
         log_time = Now();
@@ -139,6 +157,8 @@ function init_sockets() {
             add_timeout('log', () => listen_log('all'), TIMEOUT_log);
         }
     }, TIMEOUT_check * 1000 + RandomInt(10), true);
+
+    socket_ready = true;
 }
 
 /**
@@ -281,6 +301,7 @@ function update_twitch(dark, chat_url, only_resize) {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
+        check_socket_io: check_socket_io,
         listen_log: listen_log,
     });
 // >>
