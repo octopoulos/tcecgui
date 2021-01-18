@@ -18,6 +18,21 @@
       ],
       [
         "table-pva",
+        1,
+        1
+      ],
+      [
+        "table-mobil",
+        1,
+        1
+      ],
+      [
+        "table-time",
+        1,
+        1
+      ],
+      [
+        "table-tb",
         0,
         1
       ],
@@ -27,7 +42,12 @@
         3
       ],
       [
-        "table-kibitz",
+        "moves-archive",
+        1,
+        2
+      ],
+      [
+        "table-agree",
         1,
         1
       ],
@@ -42,32 +62,12 @@
         1
       ],
       [
-        "table-tb",
-        1,
-        1
-      ],
-      [
-        "table-mobil",
-        1,
-        1
-      ],
-      [
-        "table-agree",
-        1,
-        1
-      ],
-      [
         "table-node",
         1,
         1
       ],
       [
-        "table-time",
-        0,
-        1
-      ],
-      [
-        "moves-archive",
+        "table-kibitz",
         0,
         1
       ],
@@ -218,19 +218,19 @@
   "game_960": 1,
   "game_PV": 1,
   "game_arrow": "kibitz",
-  "game_depth": 4,
+  "game_depth": 5,
   "game_evaluation": "att",
   "game_every": 200,
-  "game_level": "amateur",
+  "game_level": "engine maker",
   "game_new_FEN": "",
-  "game_options_black": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_options_white": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
+  "game_options_black": "d=5 e=att h=1 o=2 q=12 s=ab t=5 x=20",
+  "game_options_white": "d=5 e=att h=1 o=2 q=12 s=ab t=5 x=20",
   "game_search": "ab",
   "game_threads": 1,
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.68,
+  "graph_aspect_ratio": 1.525,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -348,6 +348,7 @@
     "archive": "sched",
     "live": "stand"
   },
+  "tabs_per_row": 8,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",
