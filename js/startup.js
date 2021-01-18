@@ -16,9 +16,9 @@ ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AU
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
-E, Events, export_settings, exports, FileReader, From, game_action_key, game_action_keyup, get_area, get_drop_id,
-get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id, import_settings, Index,
-init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
+get_drop_id, get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id,
+import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -266,6 +266,7 @@ function change_setting_special(name, value, close) {
     case 'min_right_2':
     case 'min_right':
     case 'panel_gap':
+    case 'tabs_per_row':
         resize();
         break;
     case 'click_here_to_RESET_everything':
@@ -1192,6 +1193,8 @@ function reset_settings_special(is_default) {
  * Resize the window => resize some other elements
  */
 function resize() {
+    Style('.tabs > .tab', `flex-basis:${Floor(200 / Y.tabs_per_row) / 2}%`);
+
     Style(
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status'
         + ', #table-tabs, #top',
@@ -2347,6 +2350,7 @@ function prepare_settings() {
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
+            tabs_per_row: option_number(5, 1, 100),
             unhide: '1',
         },
         quick: {
