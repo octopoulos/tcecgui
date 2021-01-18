@@ -336,7 +336,8 @@ function mark_ply_chart(name, ply, max_ply) {
 
     if (ply < max_ply) {
         let invert_wb = (name == 'mobil') * 1,
-            dataset = chart.data.datasets[(ply + invert_wb) & 1].data;
+            id = (name == 'agree')? 0: (ply + invert_wb) & 1,
+            dataset = chart.data.datasets[id].data;
         for (let i = 0; i < 2; i ++) {
             let first = dataset[i];
             if (first) {

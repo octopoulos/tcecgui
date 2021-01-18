@@ -1088,7 +1088,7 @@ class XBoard {
      * Compare plies from the duals
      * - set the ply for both the board and the dual board
      * - called from add_moves and add_moves_string
-     * @param {number} num_ply current ply in the real game (not played yet)
+     * @param {number} num_ply current ply in the real game (in live mode: not played yet)
      */
     compare_duals(num_ply) {
         // 0) skip?
@@ -1096,12 +1096,11 @@ class XBoard {
             return;
         this.clicked = false;
 
+        // 1) compare the moves if there's a dual
         let dual = this.dual,
             real = this.real;
         if (!real)
             return;
-        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
-            show_ply = Y.show_ply;
 
         // no dual
         if (!dual || !dual.valid || dual.locked) {
@@ -1109,7 +1108,7 @@ class XBoard {
             return;
         }
 
-        // 1) first + diverging + last  => compare the moves
+        // first + diverging + last  => compare the moves
         let agree = 0,
             duals = dual.moves,
             moves = this.moves,
@@ -1132,15 +1131,20 @@ class XBoard {
         if (DEV.div)
             LS(`${this.id} => ply=${ply}`);
 
+        // set marker + agree
         this.set_marker(ply, agree, num_ply);
         dual.set_marker(ply, agree, num_ply);
+
+        // 2) set ply?
+        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
+            show_ply = Y.show_ply;
 
         if (show_ply == 'first') {
             this.set_ply(num_ply, {hold: true});
             return;
         }
 
-        // 2) render: jump directly to the position
+        // render: jump directly to the position
         for (let board of [this, dual]) {
             if (board.clicked)
                 continue;
@@ -2872,6 +2876,7 @@ class XBoard {
         for (let move of moves) {
             if (!move)
                 continue;
+
             let no_load;
             if (!move.fen) {
                 this.chess_load(fen);

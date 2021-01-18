@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-12-27
+// @version 2021-01-17
 //
 /*
 globals
@@ -396,14 +396,23 @@ global.DEFAULTS = {
 
 // split_move_string
 [
-    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', [17, ['9', '...', 'd5', '10.', 'O-O-O', 'dxe4', '11.', 'g5', 'Nd5']]],
-    ['23. Qd2 Nf6 24. f3 Ra6', [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
-    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
-    ['22...f5 23. Qd2', [43, ['22', '...', 'f5', '23.', 'Qd2']]],
-    ['22. Kh1 Ra6 23. Qg3 Nf6', [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
-].forEach(([text, answer], id) => {
+    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', 0, [17, ['9', '...', 'd5', '10.', 'O-O-O', 'dxe4', '11.', 'g5', 'Nd5']]],
+    ['9...d5 10. O-O-O dxe4 11. g5 Nd5', 1, [17, ['d5', 'O-O-O', 'dxe4', 'g5', 'Nd5']]],
+    ['23. Qd2 Nf6 24. f3 Ra6', 0, [44, ['23.', 'Qd2', 'Nf6', '24.', 'f3', 'Ra6']]],
+    ['22...Ra6 23. Qg3 Nf6 24. Bd3 Bc4', 0, [43, ['22', '...', 'Ra6', '23.', 'Qg3', 'Nf6', '24.', 'Bd3', 'Bc4']]],
+    ['22...f5 23. Qd2', 0, [43, ['22', '...', 'f5', '23.', 'Qd2']]],
+    ['22. Kh1 Ra6 23. Qg3 Nf6', 0, [42, ['22.', 'Kh1', 'Ra6', '23.', 'Qg3', 'Nf6']]],
+    ['2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4', 0, [2, ['2.', 'Nf3', 'd6', '3.', 'd4', 'Nf6', '4.', 'Nc3', 'cxd4']]],
+    ['2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4', 1, [2, ['Nf3', 'd6', 'd4', 'Nf6', 'Nc3', 'cxd4']]],
+    ['2...Nc6 3. Bb5', 0, [3, ['2', '...', 'Nc6', '3.', 'Bb5']]],
+    ['2...Nc6 3. Bb5', 1, [3, ['Nc6', 'Bb5']]],
+    ['2...d6 3. d4 Nf6 4. Nc3 cxd4', 0, [3, ['2', '...', 'd6', '3.', 'd4', 'Nf6', '4.', 'Nc3', 'cxd4']]],
+    ['2...d6 3. d4 Nf6 4. Nc3 cxd4', 1, [3, ['d6', 'd4', 'Nf6', 'Nc3', 'cxd4']]],
+    ['2...Nc6 3. Bb5', 0, [3, ['2', '...', 'Nc6', '3.', 'Bb5']]],
+    ['2...Nc6 3. Bb5', 1, [3, ['Nc6', 'Bb5']]],
+].forEach(([text, no_number, answer], id) => {
     test(`split_move_string:${id}`, () => {
-        expect(split_move_string(text)).toEqual(answer);
+        expect(split_move_string(text, no_number)).toEqual(answer);
     });
 });
 
