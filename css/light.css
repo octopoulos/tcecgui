@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-17
+@version 2021-01-18
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1442,6 +1442,7 @@ hsub {
 }
 .tabs > .tab {
     flex: 1;
+    flex-basis: 20%;
 }
 .swaps {
     width: 100%;
