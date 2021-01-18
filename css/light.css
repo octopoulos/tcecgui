@@ -1389,7 +1389,7 @@ hsub {
     background-position: center;
 }
 #canvas {
-    pointer-events: all;
+    pointer-events: none;
 }
 #banners {
     margin: 0.15em 0 2em 0;
