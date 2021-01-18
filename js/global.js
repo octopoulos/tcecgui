@@ -7,7 +7,7 @@
 // included after: common, engine
 /*
 globals
-Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, global, Hide, HTML, Id, IsDigit, Keys,
+Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
 location, LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
@@ -36,7 +36,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210118',
+    VERSION = '20210118b',
     virtual_close_popups,
     xboards = {};
 
@@ -195,6 +195,17 @@ function format_eval(value, process) {
             return text;
     }
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
+}
+
+/**
+ * Utility for FormatUnit
+ * @param {number} number
+ * @param {string=} def default value used when number is not a number
+ * @param {boolean=} keep_decimal keep 1 decimal even if it's .0
+ * @returns {string}
+ */
+function format_unit(number, def, keep_decimal) {
+    return FormatUnit(number, def, keep_decimal, Y.SI_units);
 }
 
 /**
@@ -401,6 +412,7 @@ if (typeof exports != 'undefined') {
         calculate_feature_q: calculate_feature_q,
         fix_move_format: fix_move_format,
         format_eval: format_eval,
+        format_unit: format_unit,
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,

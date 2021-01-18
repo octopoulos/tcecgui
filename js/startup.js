@@ -14,11 +14,12 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
+changed_section, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
+context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
-get_drop_id, get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id,
-import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
+Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -208,7 +209,8 @@ function change_setting_special(name, value, close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
-    let pva = xboards.pva,
+    let main = xboards[Y.x],
+        pva = xboards.pva,
         result = true;
 
     add_history();
@@ -385,6 +387,10 @@ function change_setting_special(name, value, close) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
+        break;
+    // refresh the Engine tab
+    case 'SI_units':
+        handle_board_events(main, 'ply', main.moves[main.ply]);
         break;
     case 'theme':
         change_theme(value);
@@ -1281,7 +1287,7 @@ function resize_panels() {
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
 
-    Style('.area > *', 'max-width:100%');
+    Style('.area > *', 'max-width:100%;min-width:calc(100% - 8px)');
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
@@ -2210,6 +2216,7 @@ function prepare_settings() {
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
+            SI_units: [ON_OFF, 1],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
@@ -2350,7 +2357,7 @@ function prepare_settings() {
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
-            tabs_per_row: option_number(5, 1, 100),
+            tabs_per_row: option_number(7, 1, 100),
             unhide: '1',
         },
         quick: {
@@ -2540,7 +2547,7 @@ function startup() {
     add_history();
     ready ++;
 
-    init_sockets();
+    check_socket_io();
     init_globals();
     init_customs(true);
     quick_setup();

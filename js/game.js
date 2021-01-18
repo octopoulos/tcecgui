@@ -12,11 +12,11 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, Clamp, clamp_eval, Class, clear_timeout, close_popups,
-context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array, create_svg_icon,
-CreateNode, CreateSVG, cube:true,
+cannot_click, Ceil, change_setting, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class, clear_timeout,
+close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array,
+create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
-Floor, format_eval, FormatUnit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
+Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
@@ -1406,9 +1406,8 @@ function create_tables() {
 
 /**
  * Download live data when the graph is ready
- * @param {function} callback called when all data has been loaded
  */
-function download_live(callback) {
+function download_live() {
     let left = 4,
         section = 'live';
     if (section != Y.x)
@@ -1416,8 +1415,8 @@ function download_live(callback) {
 
     function _done() {
         left --;
-        if (!left && callback)
-            callback();
+        if (!left)
+            redraw_eval_charts();
     }
 
     // evals
@@ -1533,10 +1532,8 @@ function download_tables(only_cache, no_live) {
         download_gamelist();
 
     let section = 'live';
-    if (!only_cache && !no_live) {
-        download_pgn(section, 'live.pgn');
-        download_live();
-    }
+    if (!only_cache && !no_live)
+        download_pgn(section, 'live.pgn', false, download_live);
 
     let dico = {only_cache: only_cache};
     download_table(section, 'crosstable.json', 'cross', data => {
@@ -2966,12 +2963,12 @@ function check_missing_moves(ply, round, pos, force) {
 
     add_timeout(section, () => {
         Y.scroll = '';
-        download_pgn(section, 'live.pgn', true);
+        download_pgn(section, 'live.pgn', true, download_live);
     }, TIMEOUT_live_delay * 1000);
 }
 
 /**
- * Download live evals for the current even + a given round
+ * Download live evals for the current event + a given round
  * @param {number} round
  */
 function download_live_evals(round) {
@@ -2997,8 +2994,9 @@ function download_live_evals(round) {
  * @param {string} section archive, live
  * @param {string} url live.pgn, live.json
  * @param {boolean=} reset_moves triggered by check_missing_moves
+ * @param {function} callback
  */
-function download_pgn(section, url, reset_moves) {
+function download_pgn(section, url, reset_moves, callback) {
     if (DEV.new)
         LS(`download_pgn: ${section} : ${url} : ${reset_moves}`);
 
@@ -3025,6 +3023,8 @@ function download_pgn(section, url, reset_moves) {
 
         if (section == 'archive' && Y.scroll)
             scroll_adjust(Y.scroll);
+        if (callback)
+            callback();
     }, {type: 'text'});
 }
 
@@ -3521,9 +3521,9 @@ function update_move_info(section, ply, move, fresh) {
         stats = {
             depth: is_book? '-': `${depth}/${Undefined(move.sd, depth)}`,
             eval: format_eval(eval_, true),
-            node: is_book? '-': FormatUnit(move.n, '-'),
-            speed: is_book? '-': `${FormatUnit(move.s, '0')}nps`,
-            tb: is_book? '-': FormatUnit(move.tb, '-'),
+            node: is_book? '-': format_unit(move.n, '-'),
+            speed: is_book? '-': `${format_unit(move.s, '0')}nps`,
+            tb: is_book? '-': format_unit(move.tb, '-'),
         };
 
     // pva?
@@ -3891,8 +3891,6 @@ function update_pgn(section, data, extras, reset_moves) {
         players[1].name = headers.Black;
 
         fix_header_opening(main, headers);
-        if (section == 'archive')
-            download_live_evals(headers.Round);
         if (headers.FEN && headers.SetUp)
             pgn.frc = headers.FEN;
     }
@@ -4009,6 +4007,10 @@ function update_pgn(section, data, extras, reset_moves) {
             players[who].time = 0;
         start_clock(section, who, finished, pgn.elapsed || 0);
     }
+
+    // 6) download more files
+    if (headers && section == 'archive')
+        download_live_evals(headers.Round);
     return true;
 }
 
@@ -4786,16 +4788,16 @@ function update_live_eval(section, data, id, force_ply) {
     if (moves) {
         // ply is offset by 1
         for (let move of moves) {
-            if (move.pv && !move.seen) {
-                let [real] = split_move_string(move.pv);
-                // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
-                board_evals[real] = move;
-                move.invert = true;
-                move.ply = real;
-                if (real & 1)
-                    move.eval = invert_eval(move.eval);
-                move.seen = 1;
-            }
+            if (!move.pv || move.seen)
+                continue;
+            let [real] = split_move_string(move.pv);
+            // LS(`${id} : move.ply=${move.ply} : ${split_move_string(move.pv)[0]}`);
+            board_evals[real] = move;
+            move.invert = true;
+            move.ply = real;
+            if (real & 1)
+                move.eval = invert_eval(move.eval);
+            move.seen = 1;
         }
         data = moves[moves.length - 1];
     }
@@ -4829,10 +4831,10 @@ function update_live_eval(section, data, id, force_ply) {
             dico = {
                 depth: data.depth,
                 eval: is_hide? 'hide*': format_eval(eval_),
-                node: FormatUnit(data.nodes),
+                node: format_unit(data.nodes),
                 score: is_hide? 'hide*': calculate_probability(short, eval_, ply, wdl),
                 speed: data.speed,
-                tb: FormatUnit(data.tbhits),
+                tb: format_unit(data.tbhits),
             };
 
         Keys(dico).forEach(key => {
@@ -4925,9 +4927,9 @@ function update_player_eval(section, data, same_pv) {
             engine: format_engine(data.engine, true, 21),
             eval: format_eval(eval_, true),
             logo: short,
-            node: FormatUnit(data.nodes),
-            speed: (data.nps != undefined)? `${FormatUnit(data.nps)}nps`: data.speed,
-            tb: FormatUnit(data.tbhits),
+            node: format_unit(data.nodes),
+            speed: (data.nps != undefined)? `${format_unit(data.nps)}nps`: data.speed,
+            tb: format_unit(data.tbhits),
         };
         Keys(stats).forEach(key => {
             HTML(Id(`${key}${id}`), stats[key]);
@@ -5350,6 +5352,7 @@ function change_setting_game(name, value) {
  * Hash was changed => check if we should load a game
  */
 function changed_hash() {
+    // 1) global stuff
     if (DEV.ad)
         Hide('#ad0, #ad1');
     if (DEV.global)
@@ -5359,7 +5362,9 @@ function changed_hash() {
             xboards: xboards,
             Y: Y,
         });
+    check_socket_io();
 
+    // section changed?
     let section = Y.x;
     show_tables(section, tour_info[section].cup);
 
@@ -5415,7 +5420,7 @@ function changed_section() {
     redraw_eval_charts(section);
 
     if (section == 'live')
-        download_live(redraw_eval_charts);
+        download_live();
     else {
         let hash = hashes[section];
         if (Y.archive_scroll && !hash.game) {

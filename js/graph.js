@@ -5,7 +5,7 @@
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
-DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, FormatUnit, FromSeconds, get_move_ply, global, Id, Keys,
+DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
 Log, Log10, LS, Max, Min, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
@@ -59,7 +59,7 @@ let cached_percents = {},
     DEFAULT_SCALES = {},
     EVAL_CLAMP = 128,
     first_num = -1,
-    FormatAxis = value => FormatUnit(value),
+    FormatAxis = value => format_unit(value),
     FormatEval = value => value? value.toFixed(2): 0,
     // &1: no_kibitzer
     LIVE_GRAPHS = {
@@ -230,17 +230,17 @@ function create_charts()
     });
     new_chart('mobil', true, FormatAxis, 0);
     new_chart('node', false, FormatAxis, 10, (item, data) => {
-        let nodes = FormatUnit(get_tooltip_data(item, data).nodes);
+        let nodes = format_unit(get_tooltip_data(item, data).nodes);
         return nodes;
     });
     new_chart('speed', false, FormatAxis, 10, (item, data) => {
         let point = get_tooltip_data(item, data),
-            nodes = FormatUnit(point.nodes),
-            speed = FormatUnit(point.y);
+            nodes = format_unit(point.nodes),
+            speed = format_unit(point.y);
         return `${speed}nps (${nodes} nodes)`;
     });
     new_chart('tb', false, FormatAxis, 1, (item, data) => {
-        let hits = FormatUnit(get_tooltip_data(item, data).y);
+        let hits = format_unit(get_tooltip_data(item, data).y);
         return hits;
     });
     new_chart('time', false, FormatAxis, 0, (item, data) => {
@@ -382,7 +382,7 @@ function mark_ply_charts(ply, max_ply) {
  * - an element with id="chart-{name}" must exist
  * @param {string} name
  * @param {boolean} has_legend
- * @param {function|Object=} y_ticks FormatUnit, {...}
+ * @param {function|Object=} y_ticks format_unit, {...}
  * @param {number=} scale 1:log, 2:custom, 4:eval
  * @param {function=} tooltip_callback
  * @param {Object=} dico

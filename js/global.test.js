@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 /*
 globals
@@ -11,9 +11,9 @@ expect, global, require, test
 let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
     {
-        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, get_fen_ply, get_move_ply,
-        leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl, stockfish_win_rate_model,
-        stoof_cp_to_score
+        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, format_unit, get_fen_ply,
+        get_move_ply, leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl,
+        stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
 
 global.DEFAULTS = {
@@ -298,6 +298,22 @@ global.DEFAULTS = {
     test(`format_eval:${id}`, () => {
         Y.small_decimal = small_decimal;
         expect(format_eval(value, process)).toEqual(answer);
+    });
+});
+
+// format_unit
+[
+    [true, 1000000000, undefined, undefined, '1G'],
+    [false, 1000000000, undefined, undefined, '1B'],
+    [false, 1000000000, undefined, true, '1.0B'],
+    [false, '58335971', undefined, undefined, '58.3M'],
+    [false, 318315, undefined, undefined, '318.3k'],
+    [true, NaN, undefined, undefined, 'N/A'],
+    [true, undefined, '-', undefined, '-'],
+].forEach(([is_si, number, def, keep_decimal, answer], id) => {
+    test(`format_unit:${id}`, () => {
+        Y.SI_units = is_si;
+        expect(format_unit(number, def, keep_decimal)).toEqual(answer);
     });
 });
 
