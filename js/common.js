@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-18
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -1184,9 +1184,10 @@ function FormatFloat(text, align) {
  * @param {number} number
  * @param {string=} def default value used when number is not a number
  * @param {boolean=} keep_decimal keep 1 decimal even if it's .0
+ * @param {boolean=} is_si use SI units
  * @returns {number}
  */
-function FormatUnit(number, def, keep_decimal)
+function FormatUnit(number, def, keep_decimal, is_si=true)
 {
     let unit = '';
 
@@ -1205,7 +1206,7 @@ function FormatUnit(number, def, keep_decimal)
     else {
         if (number >= 1e9) {
             number /= 1e8;
-            unit = 'B';
+            unit = is_si? 'G': 'B';
         }
         else if (number >= 1e6) {
             number /= 1e5;
