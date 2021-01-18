@@ -24,10 +24,10 @@ Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_
 resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
-stockfish_wdl, Style,
+stockfish_wdl, Style, SUB_BOARDS,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
-Undefined, update_chart, update_chart_options, update_live_chart, update_markers, update_player_chart,
-update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
+Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
+update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
 */
 'use strict';
@@ -674,7 +674,10 @@ function check_draw_arrow(board) {
     let id = board.live_id,
         main = xboards[Y.x];
 
-    if (id == undefined || !['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
+    // 0) skip?
+    if (id == undefined)
+        return;
+    if (!['all', id < 2? 'player': 'kibitzer'].includes(Y.arrow_from))
         return;
 
     let draw = false,
@@ -683,6 +686,9 @@ function check_draw_arrow(board) {
         next = board.next,
         ply = main.ply,
         next_ply = ply + 1;
+
+    if (Y.arrow_moves != 'all' && ply < main.moves.length - 1)
+        return;
 
     // wrong color?
     if (board.name.slice(0, 2) == 'pv' && (next_ply & 1) != (id & 1))
@@ -3371,8 +3377,10 @@ function update_agree(section, id) {
         if (!move0 || !move1 || (move0.agree != undefined && move1.agree != undefined))
             continue;
 
-        let [ply0, splits0] = split_move_string(move0.pv, true),
-            [ply1, splits1] = split_move_string(move1.pv, true);
+        let pv0 = move0.pv,
+            pv1 = move1.pv,
+            [ply0, splits0] = IsObject(pv0)? [move0.ply, pv0.San.split(' ')]: split_move_string(pv0, true),
+            [ply1, splits1] = IsObject(pv1)? [move1.ply, pv1.San.split(' ')]: split_move_string(pv1, true);
 
         // calculate agree
         let agree = 0,
@@ -3556,6 +3564,7 @@ function update_move_pv(section, ply, move) {
         board = xboards[`pv${id}`],
         box_node = _(`#box-pv${id} .status`),
         main = xboards[section],
+        cur_ply = main.ply,
         player = main.players[id],
         node = Id(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move.wv),
@@ -3576,9 +3585,9 @@ function update_move_pv(section, ply, move) {
 
     if (move.pv) {
         if (IsString(move.pv))
-            board.add_moves_string(move.pv, main.ply, true);
+            board.add_moves_string(move.pv, cur_ply, true);
         else
-            board.add_moves(move.pv.Moves, main.ply);
+            board.add_moves(move.pv.Moves, cur_ply);
     }
     else {
         // no pv available =>
@@ -3759,7 +3768,7 @@ function update_overview_moves(section, headers, moves, is_new) {
     if (section == section_board()) {
         if (DEV.chart)
             LS(`UOM: ${section}`);
-        update_player_charts(null, moves);
+        update_player_charts(moves);
     }
 
     // 3) check adjudication
@@ -4178,10 +4187,9 @@ function analyse_log(line) {
         info.pvs = pvs;
     }
 
-    // don't update unless we're on the last move
+    // update info
     info.ply = ply;
-    if (ply >= main.ply + 1)
-        update_player_eval('live', info, no_pv);
+    update_player_eval('live', info, no_pv);
 }
 
 /**
@@ -4786,6 +4794,7 @@ function update_live_eval(section, data, id, force_ply) {
     let box_node = _(`#box-live${id} .status`),
         cur_ply = main.ply,
         eval_ = data.eval,
+        last_ply = main.moves.length - 1,
         node = Id(`table-live${id}`),
         [ply] = split_move_string(data.pv);
 
@@ -4806,7 +4815,7 @@ function update_live_eval(section, data, id, force_ply) {
     let short = get_short_name(engine);
     update_hardware(section, id + 2, engine, short, desc, [box_node, node]);
 
-    if (ply == cur_ply + 1 || force_ply) {
+    if (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply)) {
         let is_hide = !Y.eval,
             dico = {
                 depth: data.depth,
@@ -4829,12 +4838,12 @@ function update_live_eval(section, data, id, force_ply) {
 
     if (force_ply)
         board.text = '';
-    board.add_moves_string(data.pv, force_ply);
+    board.add_moves_string(data.pv, cur_ply, force_ply);
 
     if (section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
-        update_live_chart('eval', moves || [data], id + 2);
+        update_live_charts(moves || [data], id + 2);
         check_missing_moves(ply, round);
     }
 
@@ -4877,12 +4886,10 @@ function update_player_eval(section, data, same_pv) {
         let moves = data.moves;
         if (moves && moves.length) {
             data.ply = moves[0].ply;
-            if (!board.locked && data.ply == cur_ply + 1) {
-                board.reset(section);
-                board.instant();
-                let last_move = main.moves.slice(-1)[0];
-                board.set_fen(last_move? last_move.fen: main.fen);
-            }
+            board.reset(section);
+            board.instant();
+            let last_move = main.moves.slice(-1)[0];
+            board.set_fen(last_move? last_move.fen: main.fen);
             board.add_moves(moves, data.ply);
             if (DEV.ply) {
                 LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
@@ -4891,8 +4898,7 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data.pv) {
             data.ply = split_move_string(data.pv)[0];
-            if (data.ply == cur_ply + 1)
-                board.add_moves_string(data.pv);
+            board.add_moves_string(data.pv, cur_ply);
         }
     }
 
@@ -4951,9 +4957,9 @@ function update_player_eval(section, data, same_pv) {
         return true;
 
     if (is_pva)
-        update_player_charts(null, [data]);
+        update_player_charts([data]);
     else {
-        update_live_chart('eval', [data], id);
+        update_live_charts([data], id);
         check_missing_moves(ply, null, data.pos);
     }
     return true;
@@ -5694,8 +5700,7 @@ function handle_board_events(board, type, value, e, force) {
     // PV list was updated => next move is sent
     // - if move is null, then hide the arrow
     case 'next':
-        if (!xboards[section].hold)
-            check_draw_arrow(board);
+        add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
         break;
     // ply was set
     // !! make sure it's set manually
@@ -5714,6 +5719,10 @@ function handle_board_events(board, type, value, e, force) {
                 board.show_pv(value);
         }
         if (name == section) {
+            // unlock sub boards
+            for (let sub of SUB_BOARDS)
+                xboards[sub].set_locked(false);
+
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
             reset_sub_boards(section, 1);
@@ -5726,10 +5735,12 @@ function handle_board_events(board, type, value, e, force) {
 
             update_materials(value);
             update_mobility();
-            if (Y.arrow_moves == 'all')
-                add_timeout('arrow', redraw_arrows, Y.arrow_history_lag);
-
             update_time_control(section, (cur_ply + 1) & 1);
+
+            // lock sub boards?
+            if (cur_ply < board.moves.length - 1)
+                for (let sub of SUB_BOARDS)
+                    xboards[sub].set_locked(true);
         }
         break;
     }
@@ -5744,12 +5755,9 @@ function handle_board_events(board, type, value, e, force) {
         if (DEV.chart)
             LS(`NN: ${old_board} => ${new_board}`);
         reset_charts(section, false);
-        if (new_board == 'pva')
-            update_player_charts(null, board.moves);
-        else {
-            update_player_charts(null, board.moves);
+        update_player_charts(board.moves);
+        if (new_board != 'pva')
             redraw_eval_charts(name);
-        }
     }
 }
 
@@ -5832,7 +5840,7 @@ function opened_table(node, name, tab) {
 
     // 2) special cases
     if (is_chart && charts[name] && main) {
-        update_player_charts(name, main.moves);
+        update_player_chart(name, main.moves);
         update_chart_options(name, 3);
     }
 

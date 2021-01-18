@@ -462,8 +462,6 @@ class XBoard {
             // return;
         }
 
-        this.text = text;
-
         // 2) update the moves
         let first_ply = -1,
             lines = ['<i class="agree"></i>'],
@@ -503,7 +501,9 @@ class XBoard {
         this.valid = true;
 
         // only update if this is the current ply + 1, or if we want a specific ply
-        let is_current = (new_ply == cur_ply || force || this.manual);
+        let last_ply = this.real? this.real.moves.length - 1: -1,
+            is_current = (new_ply == cur_ply || force || this.manual || (cur_ply == last_ply && new_ply > last_ply));
+
         if (!is_current && this.real) {
             Assign(SetDefault(moves, this.real.ply, {}), {fen: this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
@@ -512,9 +512,11 @@ class XBoard {
         if (is_current) {
             this.moves = moves;
 
+            // update the HTML
             let html = lines.join('');
             for (let parent of [this.xmoves, this.pv_node])
                 HTML(parent, html);
+            this.text = text;
 
             // 3) update the cursor
             // live engine => show an arrow for the next move
@@ -744,6 +746,9 @@ class XBoard {
      * @param {Object} dico contains move info, if null then hide the arrow
      */
     arrow_html(id, dico) {
+        if (DEV.arrow)
+            LS('arrow', id, dico);
+
         // 1) no move => hide the arrow
         // TODO: maybe some restoration is needed here
         if (!dico || !dico.from || !Y.arrow_opacity) {
@@ -853,6 +858,8 @@ class XBoard {
         svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity}`);
         Show(body);
+        if (DEV.arrow)
+            LS(id, 'drew arrow');
 
         // 5) shorter distances above
         [...this.svgs]
@@ -869,7 +876,8 @@ class XBoard {
     changed_ply(move) {
         if (this.hook)
             this.hook(this, 'ply', move);
-        this.destroy_workers(true);
+        if (this.manual)
+            this.destroy_workers(true);
     }
 
     /**
@@ -1120,8 +1128,12 @@ class XBoard {
                 move_m = (moves[i] || {}).m;
             if (DEV.div)
                 LS(`${this.id} : i=${i} < ${num_move} : ${dual_m == move_m} : ${dual_m} = ${move_m}`);
-            if (!dual_m || !move_m)
+            if (!dual_m || !move_m) {
+                // first move might be void
+                if (i == num_ply && dual_m == move_m)
+                    continue;
                 break;
+            }
             ply = i;
             if (dual_m != move_m)
                 break;
@@ -2340,6 +2352,8 @@ class XBoard {
     set_fen(fen, render) {
         if (DEV.board)
             LS(`${this.id} set_fen: ${fen}`);
+        if (this.check_locked())
+            return false;
         if (fen == null)
             fen = this.start_fen;
 
@@ -2483,6 +2497,9 @@ class XBoard {
 
         this.set_fen(move.fen, true);
 
+        // new move => remove arrows from the past
+        this.hide_arrows();
+
         // play sound?
         // - multiple sounds can be played with different delays
         let audio = Y.audio_moves,
@@ -2525,9 +2542,6 @@ class XBoard {
 
         if (manual)
             this.changed_ply(move);
-
-        // new move => remove arrows from the past
-        this.hide_arrows();
 
         this.update_cursor(ply);
         if (animate == undefined && (!this.smooth || is_last))
