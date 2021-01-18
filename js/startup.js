@@ -2357,7 +2357,7 @@ function prepare_settings() {
             max_window: option_number(1920, 256, 32000),
             panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
-            tabs_per_row: option_number(5, 1, 100),
+            tabs_per_row: option_number(7, 1, 100),
             unhide: '1',
         },
         quick: {
