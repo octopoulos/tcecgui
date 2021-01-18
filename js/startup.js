@@ -209,7 +209,8 @@ function change_setting_special(name, value, close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
-    let pva = xboards.pva,
+    let main = xboards[Y.x],
+        pva = xboards.pva,
         result = true;
 
     add_history();
@@ -389,7 +390,7 @@ function change_setting_special(name, value, close) {
         break;
     // refresh the Engine tab
     case 'SI_units':
-        handle_board_events(xboards[Y.x], 'ply');
+        handle_board_events(main, 'ply', main.moves[main.ply]);
         break;
     case 'theme':
         change_theme(value);
