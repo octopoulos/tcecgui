@@ -653,7 +653,7 @@ function find_area(name) {
     let areas = Y.areas;
     for (let key of Keys(areas)) {
         let vector = areas[key];
-        for (let i = 0; i < vector.length ; i ++)
+        for (let i = 0; i < vector.length; i ++)
             if (vector[i][0] == name)
                 return [key, i];
     }
@@ -1439,7 +1439,7 @@ function update_background() {
  * TODO: delete this
  */
 function update_shortcuts() {
-    for (let id = 1; id <= 2 ; id ++) {
+    for (let id = 1; id <= 2; id ++) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
         if (!tab)

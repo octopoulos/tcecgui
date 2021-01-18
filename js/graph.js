@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 /*
 globals
@@ -61,9 +61,8 @@ let cached_percents = {},
     first_num = -1,
     FormatAxis = value => FormatUnit(value),
     FormatEval = value => value? value.toFixed(2): 0,
-    // &1: no_kibitzer, &2: 01=>0, 23=>1
+    // &1: no_kibitzer
     LIVE_GRAPHS = {
-        agree: 2,
         eval: 0,
         speed: 1,
     },
@@ -124,12 +123,12 @@ function check_first_num(num) {
             let data = chart_data[key];
 
             // labels
-            for (let ply = first_num - 1 ; ply >= num; ply --)
+            for (let ply = first_num - 1; ply >= num; ply --)
                 data.labels.unshift(ply / 2 + 1);
 
             // datasets
             for (let dataset of data.datasets) {
-                for (let ply = first_num - 1 ; ply >= num; ply --)
+                for (let ply = first_num - 1; ply >= num; ply --)
                     dataset.data.unshift(undefined);
             }
         });
@@ -764,17 +763,10 @@ function update_live_charts(moves, id) {
     if (DEV.chart)
         LS(`ULC+: ${id}`);
     Keys(LIVE_GRAPHS).forEach(name => {
-        let flag = LIVE_GRAPHS[name],
-            id2 = id;
-
-        // speed => no kibitzer
-        if ((flag & 1) && id >= 2)
+        let flag = LIVE_GRAPHS[name];
+        if (flag && id >= 2)
             return;
-        // agree: 01 => 0, 23 => 1
-        if (flag & 2)
-            id2 = (id >= 2)? 1: 0;
-
-        update_live_chart(name, moves, id2);
+        update_live_chart(name, moves, id);
     });
 }
 
@@ -813,7 +805,7 @@ function update_player_chart(name, moves) {
         offset ++;
 
     // 2) add data
-    for (let i = offset; i < num_move ; i ++) {
+    for (let i = offset; i < num_move; i ++) {
         let move = moves[i],
             ply = get_move_ply(move),
             num = ply;

@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 /*
 globals
@@ -54,7 +54,7 @@ live.id = 'null';
 
         let offset = answer[0],
             array = new Array(offset);
-        for (let i = 1; i < answer.length ; i ++)
+        for (let i = 1; i < answer.length; i ++)
             array[offset + i - 1] = answer[i];
 
         expect(live.moves).toEqual(array);

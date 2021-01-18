@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-18
 //
 // Game specific code:
 // - control the board, moves
@@ -3192,7 +3192,7 @@ function parse_pgn(section, data, mode=7, origin='') {
         ply = get_fen_ply(fen || START_FEN);
     length = data.length;
     start = 0;
-    for (let i = 0 ; i < length; i ++) {
+    for (let i = 0; i < length; i ++) {
         let char = data[i];
 
         if (char == '{') {
@@ -5659,7 +5659,7 @@ function get_context_board() {
  * @param {boolean=} force force graph update
  */
 function handle_board_events(board, type, value, e, force) {
-    let move,
+    let agree, move,
         name = board.name,
         old_board = section_board(),
         section = Y.x;
@@ -5671,6 +5671,9 @@ function handle_board_events(board, type, value, e, force) {
         // used for CTRL+C
         context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
         move = board.moves[board.ply];
+        break;
+    case 'agree':
+        agree = true;
         break;
     // controls: play, next, ...
     case 'control':
@@ -5768,8 +5771,11 @@ function handle_board_events(board, type, value, e, force) {
         update_player_charts(board.moves);
         if (new_board != 'pva')
             redraw_eval_charts(name);
-        update_agrees(section);
+        agree = true;
     }
+
+    if (agree)
+        update_agrees(section);
 }
 
 /**
