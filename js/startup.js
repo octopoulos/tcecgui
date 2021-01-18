@@ -17,8 +17,8 @@ cannot_click, change_page, change_queue, change_setting, change_setting_game, ch
 changed_section, check_hash, Clamp, Class, clear_timeout, close_popups, context_areas, context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
-get_drop_id, get_object, global, guess_types, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true, Id,
-import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
+Id, import_settings, Index, init_graph, init_sockets, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
@@ -385,6 +385,10 @@ function change_setting_special(name, value, close) {
     case 'shortcut_1':
     case 'shortcut_2':
         update_shortcuts();
+        break;
+    // refresh the Engine tab
+    case 'SI_units':
+        handle_board_events(xboards[Y.x], 'ply');
         break;
     case 'theme':
         change_theme(value);
@@ -1281,7 +1285,7 @@ function resize_panels() {
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
 
-    Style('.area > *', 'max-width:100%');
+    Style('.area > *', 'max-width:100%;min-width:calc(100% - 8px)');
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 
@@ -2210,6 +2214,7 @@ function prepare_settings() {
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
             small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
+            SI_units: [ON_OFF, 1],
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
