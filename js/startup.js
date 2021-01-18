@@ -107,8 +107,10 @@ let AD_STYLES = {},
         'default settings',
         'jerehmia',
         'kanchess',
+        'low battery',
         'minimal',
         'octopoulo',
+        'sopel',
         'stream',
         'terjeweiss',
     ],
@@ -390,6 +392,7 @@ function change_setting_special(name, value, close) {
         break;
     // refresh the Engine tab
     case 'SI_units':
+    case 'small_decimal':
         handle_board_events(main, 'ply', main.moves[main.ply]);
         break;
     case 'theme':
@@ -2215,7 +2218,7 @@ function prepare_settings() {
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
-            small_decimal: [['always', 'never', '>= 10', '>= 100'], '>= 100', 'decimals format for the eval'],
+            small_decimal: [['on', 'off', 10, 100], 100, 'decimals format for the eval'],
             SI_units: [ON_OFF, 1],
         },
         extra: {

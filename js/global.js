@@ -36,7 +36,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210118b',
+    VERSION = '20210118c',
     virtual_close_popups,
     xboards = {};
 
@@ -182,16 +182,16 @@ function format_eval(value, process) {
     let small_decimal = Y.small_decimal,
         text = float.toFixed(2);
 
-    if (!process || small_decimal == 'never')
+    if (!process || !small_decimal)
         return text;
 
     let items = text.split('.');
 
-    if (small_decimal != 'always') {
+    if (small_decimal != 1) {
         let abs = Abs(float);
-        if (abs < 10 && small_decimal == '>= 10')
+        if (abs < 10 && small_decimal == 10)
             return text;
-        if (abs < 100 && small_decimal == '>= 100')
+        if (abs < 100 && small_decimal == 100)
             return text;
     }
     return `<i>${items[0]}.</i><i class="smaller">${items[1]}</i>`;
