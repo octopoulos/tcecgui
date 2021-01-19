@@ -1,7 +1,7 @@
 {
   "SI_units": 1,
   "agree_length": 1,
-  "animate": 1,
+  "animate": 0,
   "animate_pv": 1,
   "animate_pva": 1,
   "archive_scroll": 1,
