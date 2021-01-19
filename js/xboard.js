@@ -392,7 +392,7 @@ class XBoard {
         if (is_ply) {
             // live engine => show an arrow for the next move
             if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(cur_ply, {hold: true, render: false});
+                let move = this.set_ply(cur_ply, {instant: true, render: false});
                 if (this.hook) {
                     this.next = move;
                     this.hook(this, 'next', move);
@@ -519,7 +519,7 @@ class XBoard {
             // 3) update the cursor
             // live engine => show an arrow for the next move
             if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(new_ply, {hold: true, render: false});
+                let move = this.set_ply(new_ply, {instant: true, render: false});
                 if (this.hook) {
                     this.next = move;
                     this.hook(this, 'next', move);
@@ -1111,7 +1111,7 @@ class XBoard {
 
         // no dual
         if (!dual || !dual.valid || dual.locked) {
-            this.set_ply(num_ply, {hold: true});
+            this.set_ply(num_ply, {instant: true});
             return;
         }
 
@@ -1151,7 +1151,7 @@ class XBoard {
             show_ply = Y.show_ply;
 
         if (show_ply == 'first') {
-            this.set_ply(num_ply, {hold: true});
+            this.set_ply(num_ply, {instant: true});
             return;
         }
 
@@ -1163,13 +1163,13 @@ class XBoard {
                 ply = board.moves.length - 1;
 
             if (ply == num_ply)
-                board.set_ply(ply, {hold: true});
+                board.set_ply(ply, {instant: true});
             // try to get to the ply without compute, if fails, then render the next ply + compute later
-            else if (board.set_ply(ply, {hold: true}) == false) {
+            else if (board.set_ply(ply, {instant: true}) == false) {
                 if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
 
-                board.set_ply(show_delay? num_ply: ply, {hold: true});
+                board.set_ply(show_delay? num_ply: ply, {instant: true});
                 if (show_delay)
                     this.set_delayed_ply(ply);
             }
@@ -1823,7 +1823,7 @@ class XBoard {
                 fen = START_FEN;
 
         this.destroy_workers(true);
-        this.reset(Y.x, true, fen);
+        this.reset(Y.x, {evals: true, start_fen: fen});
 
         this.instant();
         this.render(7);
@@ -2226,10 +2226,11 @@ class XBoard {
     /**
      * Reset the moves
      * @param {string} section
-     * @param {boolean=} reset_evals
+     * @param {boolean=} evals reset evals
+     * @param {boolean=} instant call instant()
      * @param {string=} start_fen
      */
-    reset(section, reset_evals, start_fen) {
+    reset(section, {evals, instant, start_fen}={}) {
         if (this.check_locked())
             return;
 
@@ -2256,7 +2257,7 @@ class XBoard {
         HTML(this.xmoves, '');
         HTML(this.pv_node, '');
 
-        if (reset_evals)
+        if (evals)
             this.evals[section].length = 0;
 
         this.set_fen(null, true);
@@ -2278,14 +2279,18 @@ class XBoard {
                 });
             }
         }
+
+        if (instant)
+            this.instant();
     }
 
     /**
      * Resize the board to a desired width
      * @param {number=} width
      * @param {boolean=} render
+     * @param {boolean=} instant
      */
-    resize(width, render=true) {
+    resize(width, {instant, render=true}={}) {
         let node = this.node;
         if (!width) {
             if (!node)
@@ -2313,6 +2318,8 @@ class XBoard {
         Style('.xcontain', `left:${border}px;min-height:${min_height}px;top:${border}px`, true, node);
 
         this.size = size;
+        if (instant)
+            this.instant();
         if (render)
             this.render(2);
     }
@@ -2338,7 +2345,7 @@ class XBoard {
             if (DEV.div)
                 LS(`${this.id}: delayed_ply=${ply}`);
             if (ply > -2)
-                this.set_ply(this.delayed_ply, {hold: true});
+                this.set_ply(this.delayed_ply, {instant: true});
         }, Y.show_delay);
     }
 
@@ -2442,13 +2449,13 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
-     * @param {boolean=} hold call instant()
+     * @param {boolean=} instant call instant()
      * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
      * @param {boolean=} render
      * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, {animate, hold, manual, no_compute, render=true}={}) {
+    set_ply(ply, {animate, instant, manual, no_compute, render=true}={}) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
 
@@ -2456,7 +2463,7 @@ class XBoard {
         this.clicked = manual;
         this.delayed_ply = -2;
 
-        if (hold)
+        if (instant)
             this.instant();
 
         // special case: initial board

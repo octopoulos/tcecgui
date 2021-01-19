@@ -759,7 +759,7 @@ function create_boards(mode='html') {
 
         xboard.initialise();
         // make sure not to render => false
-        xboard.resize(options.size * 8 + options.border * 2, false);
+        xboard.resize(options.size * 8 + options.border * 2, {render: false});
         xboards[key] = xboard;
     });
 
@@ -815,7 +815,7 @@ function reset_sub_boards(section, mode, start_fen) {
         if (mode & 1)
             board.valid = false;
         if (mode & 2)
-            board.reset(section, mode & 4, start_fen);
+            board.reset(section, {evals: mode & 4, start_fen: start_fen});
     });
 }
 
@@ -3331,8 +3331,7 @@ function resize_game() {
         let area = get_area(board.node),
             width = area.clientWidth,
             size = Clamp(width / Max(board.sub, 1) - 4, 196);
-        board.instant();
-        board.resize(size);
+        board.resize(size, {instant: true, render: true});
     });
 
     show_board_info(Y.x);
@@ -3588,8 +3587,7 @@ function update_move_pv(section, ply, move) {
     }
 
     // PV should jump directly to a new position, no transition
-    board.reset(section);
-    board.instant();
+    board.reset(section, {instant: true});
 
     if (move.pv) {
         if (IsString(move.pv))
@@ -3915,7 +3913,7 @@ function update_pgn(section, data, extras, reset_moves) {
             LS(pgn);
         }
 
-        main.reset(section, is_same, pgn.frc);
+        main.reset(section, {evals: is_same, start_fen: pgn.frc});
         if (is_same) {
             reset_sub_boards(section, 7, pgn.frc);
             if (section == section_board()) {
@@ -4896,8 +4894,7 @@ function update_player_eval(section, data, same_pv) {
         let moves = data.moves;
         if (moves && moves.length) {
             data.ply = moves[0].ply;
-            board.reset(section);
-            board.instant();
+            board.reset(section, {instant: true});
             let last_move = main.moves.slice(-1)[0];
             board.set_fen(last_move? last_move.fen: main.fen);
             board.add_moves(moves, data.ply);
@@ -5174,7 +5171,7 @@ function paste_text(text) {
     let fen = board.fen;
     if (board.set_fen(text, true)) {
         if (board.fen != fen) {
-            board.reset(section, true, board.fen);
+            board.reset(section, {evals: true, start_fen: board.fen});
             if (board_target.name == 'pva')
                 reset_charts(section);
         }
