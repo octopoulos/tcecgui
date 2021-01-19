@@ -14,9 +14,9 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
+changed_section, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
 context_target:true, CreateNode,
-DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
+DEFAULT_SCALES, DefaultInt, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
 Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
@@ -186,6 +186,13 @@ function audio_set(set) {
             _(`select[name="${key}"]`).value = choice;
         }
     });
+}
+
+/**
+ * Check if we can't right click to popup
+ */
+function cannot_popup() {
+    return !Y.popup_right_click || KEYS[17];
 }
 
 /**
@@ -1253,19 +1260,30 @@ function resize_move_lists() {
     let scrollbar = device.mobile? 5: 25;
 
     for (let [sel, height, grid] of styles) {
-        let iwidth = '1fr',
-            ratio = 1,
-            width = Max(...From(A(sel)).map(node => node.clientWidth));
+        E(sel, node => {
+            let drag = Parent(node, {class_: 'drag'}),
+                iwidth = '1fr',
+                ratio = 1,
+                wextra = '',
+                width = node.clientWidth;
+            if (HasClass(node, 'column')) {
+                width = drag.clientWidth + Y.panel_gap - DefaultInt(node.style.maxWidth, width);
+                if (width > 0)
+                    wextra = `${width}px`;
+            }
+            else
+                wextra = '100%';
 
-        // normal size: 20 + 36 + 36 = 92
-        if (grid && width > scrollbar) {
-            ratio = Min(1.2, (width - scrollbar) / grid / 92);
-            iwidth = `minmax(${36 * ratio}px, 1fr)`;
-        }
+            // normal size: 20 + 36 + 36 = 92
+            if (grid && width > scrollbar) {
+                ratio = Min(1.2, (width - scrollbar) / grid / 92);
+                iwidth = `minmax(${36 * ratio}px, 1fr)`;
+            }
 
-        let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
-        Style(sel, `font-size:${13 * ratio}px;min-height:${height}em;${extra}`);
-        Class(sel, 'grid', grid);
+            let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
+            Style(node, `font-size:${13 * ratio}px;min-height:${height}em;${extra};width:${wextra}`);
+            Class(node, 'grid', grid);
+        });
     }
 }
 
@@ -1334,6 +1352,7 @@ function resize_panels() {
     });
 
     order_boards();
+    resize_move_lists();
 
     // resize all charts
     E('.chart', node => {
@@ -1519,6 +1538,7 @@ function update_visible() {
  * @param {Event} e
  */
 function window_click(e) {
+    Clear(KEYS);
     let cannot = cannot_click();
     if (cannot == 1)
         return;
@@ -1742,7 +1762,7 @@ function set_global_events() {
     // context menus
     Keys(CONTEXT_MENUS).forEach(key => {
         Events(key, 'contextmenu', function(e) {
-            if (!Y.popup_right_click)
+            if (cannot_popup())
                 return;
             context_target = e.target;
 
@@ -1760,7 +1780,7 @@ function set_global_events() {
     Events(
         '#archive, #live, #live0, #live1, #moves-archive, #moves-live, #moves-pv0, #moves-pv1, #pv0, #pv1, #pva,'
         + '#table-live0, #table-live1', 'contextmenu', function(e) {
-        if (!Y.popup_right_click)
+        if (cannot_popup())
             return;
         let is_pv = '01'.includes(this.id.slice(-1)),
             is_pva = (this.id == 'pva'),
@@ -1794,7 +1814,7 @@ function set_global_events() {
         }
     });
     Events(window, 'contextmenu', e => {
-        if (!Y.popup_right_click)
+        if (cannot_popup())
             return;
         let target = e.target;
         if (HasClasses(target, 'tab drop')) {
