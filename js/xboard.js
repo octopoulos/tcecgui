@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-19
 //
 // game board:
 // - 4 rendering modes:
@@ -21,6 +21,7 @@ clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
+resize_text,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
@@ -334,8 +335,9 @@ class XBoard {
 
             let move_num = 1 + ply / 2;
             if (!(ply & 1)) {
+                let text = resize_text(move_num, 2);
                 if (is_ply)
-                    lines.push(`<i class="turn">${move_num}.</i>`);
+                    lines.push(`<i class="turn">${text}.</i>`);
                 else if (i < 0) {
                     if (!_('[data-i="-1"]', this.xmoves)) {
                         for (let [parent, last] of parent_lasts) {
@@ -348,7 +350,7 @@ class XBoard {
                 }
                 else if (!manual || !_(`[data-j="${move_num}"]`, this.xmoves)) {
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${move_num}.`, {class: 'turn', 'data-j': move_num});
+                        let node = CreateNode('i', `${text}.`, {class: 'turn', 'data-j': move_num});
                         parent.insertBefore(node, last);
                     }
                     added ++;
@@ -356,11 +358,14 @@ class XBoard {
             }
             // add .. black move
             else {
+                let number = Floor(move_num),
+                    text = resize_text(number, 2);
+
                 if (lines.length < 2 && is_ply)
-                    lines.push(`<i class="turn">${Floor(move_num)}</i>...`);
+                    lines.push(`<i class="turn">${text}</i>...`);
                 if (!added) {
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${Floor(move_num)} ..`, {class: 'turn', 'data-j': Floor(move_num)});
+                        let node = CreateNode('i', `${text} ..`, {class: 'turn', 'data-j': number});
                         parent.insertBefore(node, last);
                     }
                     added ++;
@@ -368,12 +373,13 @@ class XBoard {
             }
 
             if (move && move.m) {
-                let class_ = `${move.book? 'book': 'real'}${extra}`;
+                let class_ = `${move.book? 'book': 'real'}${extra}`,
+                    text = resize_text(move.m, 4);
                 if (is_ply)
-                    lines.push(`<a class="${class_}" data-i="${ply}">${move.m}</a>`);
+                    lines.push(`<a class="${class_}" data-i="${ply}">${text}</a>`);
                 else {
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('a', `${move.m}`, {class: class_, 'data-i': ply});
+                        let node = CreateNode('a', `${text}`, {class: class_, 'data-i': ply});
                         parent.insertBefore(node, last);
                     }
                     added ++;
@@ -483,7 +489,7 @@ class XBoard {
             if (IsDigit(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
-                lines.push(`<i class="turn" data-j="${turn}">${turn}.</i>`);
+                lines.push(`<i class="turn" data-j="${turn}">${resize_text(turn, 2)}.</i>`);
                 return;
             }
             // normal move
@@ -491,7 +497,8 @@ class XBoard {
                 moves[ply] = {
                     m: item,
                 };
-                lines.push(`<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${item}</a>`);
+                lines.push(
+                    `<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${resize_text(item, 4)}</a>`);
                 ply ++;
             }
         });
@@ -2597,7 +2604,7 @@ class XBoard {
                 let lines = [];
                 if (!(move.ply & 1))
                     lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
-                lines.push(`<i class="real">${move.m}</i>`);
+                lines.push(`<i class="real">${resize_text(move.m, 5)}</i>`);
                 return lines.join('');
             }).join('');
 

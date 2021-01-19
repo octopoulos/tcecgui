@@ -8,28 +8,6 @@
   "areas": {
     "center0": [
       [
-        "engine",
-        0,
-        1
-      ],
-      [
-        "table-eval",
-        0,
-        1
-      ],
-      [
-        "table-pva",
-        0,
-        0
-      ],
-      [
-        "table-kibitz",
-        0,
-        0
-      ]
-    ],
-    "left0": [
-      [
         "archive",
         0,
         1
@@ -65,7 +43,34 @@
         1
       ]
     ],
+    "left0": [
+      [
+        "engine",
+        0,
+        1
+      ],
+      [
+        "table-eval",
+        0,
+        1
+      ],
+      [
+        "table-pva",
+        0,
+        0
+      ],
+      [
+        "table-kibitz",
+        0,
+        0
+      ]
+    ],
     "right0": [
+      [
+        "quick-pagin",
+        0,
+        1
+      ],
       [
         "table-chat",
         1,
@@ -102,7 +107,6 @@
         1
       ]
     ],
-    "top": [],
     "bottom": [
       [
         "table-depth",
@@ -141,7 +145,8 @@
       ]
     ],
     "left_20": [],
-    "right_20": []
+    "right_20": [],
+    "top": []
   },
   "arrow_base_border": 0,
   "arrow_base_color": "#a5a5a5",
@@ -290,11 +295,9 @@
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
-  "new_version": "0",
   "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
-  "order": "right|left|center",
   "panel_adjust": 0,
   "panel_gap": 10,
   "percent": 1,
@@ -334,7 +337,7 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": "0",
+  "status": 0,
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {
@@ -350,7 +353,7 @@
   "turn_color": "#ff5a00",
   "turn_opacity": 0,
   "twitch_dark": 0,
-  "volume": 7,
+  "volume": 10,
   "wasm": 0,
   "wheel_adjust": 63,
   "wrap": 1,
