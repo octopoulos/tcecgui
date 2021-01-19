@@ -231,8 +231,6 @@
   "graph_eval_clamp": 16,
   "graph_eval_mode": "score",
   "graph_line": 1,
-  "graph_marker_color": "#299bff",
-  "graph_marker_opacity": 0.5,
   "graph_min_width": 240,
   "graph_radius": 2,
   "graph_scale": 0,

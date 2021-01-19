@@ -1,7 +1,7 @@
 {
   "SI_units": 1,
   "agree_length": 1,
-  "animate": 0,
+  "animate": 1,
   "animate_pv": 1,
   "animate_pva": 1,
   "archive_scroll": 1,
@@ -9,7 +9,7 @@
     "center0": [
       [
         "engine",
-        1,
+        0,
         2
       ],
       [
@@ -71,6 +71,11 @@
         "moves-live",
         0,
         1
+      ],
+      [
+        "table-agree",
+        1,
+        2
       ]
     ],
     "left0": [
@@ -180,7 +185,7 @@
   "board_theme_pva": "blue",
   "book_every": 600,
   "boom_effect": 0,
-  "boom_sound": "random",
+  "boom_sound": "boom",
   "boom_threshold": 1.2,
   "boom_visual": "all",
   "boom_volume": 3.5,
@@ -206,7 +211,7 @@
   "explosion_buildup": 2,
   "explosion_effect": 1,
   "explosion_ply_reset": 8,
-  "explosion_sound": "random",
+  "explosion_sound": "boom",
   "explosion_threshold": 2.3,
   "explosion_visual": "all",
   "explosion_volume": 5,
@@ -234,11 +239,9 @@
   "graph_eval_clamp": 10,
   "graph_eval_mode": "percent",
   "graph_line": 2.2,
-  "graph_marker_color": "#299bff",
-  "graph_marker_opacity": 0.5,
   "graph_min_width": 240,
   "graph_radius": 1,
-  "graph_scale": 4,
+  "graph_scale": "4",
   "graph_tension": 0.1,
   "graph_text": 10,
   "grid": 0,
@@ -296,11 +299,9 @@
   "moves_live": 0,
   "moves_pv": 1,
   "moves_pva": 1,
-  "new_version": "0",
   "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
-  "order": "left|center|right",
   "panel_adjust": 0,
   "panel_gap": 8,
   "percent": 1,
@@ -320,9 +321,9 @@
     "node": 10,
     "speed": 10,
     "tb": 1,
-    "time": 0
+    "time": 0,
+    "agree": 0
   },
-  "scroll": "",
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
@@ -341,7 +342,7 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": "1",
+  "status": 1,
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {
