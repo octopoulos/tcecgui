@@ -356,7 +356,7 @@ class XBoard {
                     added ++;
                 }
             }
-            // add .. black move
+            // add ... black move
             else {
                 let number = Floor(move_num),
                     text = resize_text(number, 2);
@@ -365,7 +365,9 @@ class XBoard {
                     lines.push(`<i class="turn">${text}</i>...`);
                 if (!added) {
                     for (let [parent, last] of parent_lasts) {
-                        let node = CreateNode('i', `${text} ..`, {class: 'turn', 'data-j': number});
+                        let node = CreateNode('i', text, {class: 'turn', 'data-j': number});
+                        parent.insertBefore(node, last);
+                        node = CreateNode('a', '...', {class: 'real', 'data-i': ply - 1});
                         parent.insertBefore(node, last);
                     }
                     added ++;
