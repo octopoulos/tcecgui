@@ -1,4 +1,5 @@
 {
+  "SI_units": 1,
   "agree_length": 1,
   "animate": 1,
   "animate_pv": 1,
@@ -138,6 +139,11 @@
         3
       ],
       [
+        "table-agree",
+        0,
+        3
+      ],
+      [
         "table-mobil",
         0,
         1
@@ -186,7 +192,7 @@
   "boom_volume": 3.5,
   "capture_delay": -200,
   "chat_height": 669,
-  "column_bottom": 7,
+  "column_bottom": 8,
   "column_top": 2,
   "controls": 1,
   "controls_pv": 1,
@@ -290,6 +296,7 @@
   "move_height_pva": 6,
   "moves": 1,
   "moves_copy": 0,
+  "moves_left": 1,
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
@@ -343,6 +350,7 @@
     "archive": "season",
     "live": "stand"
   },
+  "tabs_per_row": 7,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",

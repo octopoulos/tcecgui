@@ -1,4 +1,5 @@
 {
+  "SI_units": 1,
   "agree_length": 1,
   "animate": 1,
   "animate_pv": 1,
@@ -114,6 +115,11 @@
         1
       ],
       [
+        "table-agree",
+        0,
+        1
+      ],
+      [
         "table-node",
         0,
         1
@@ -176,7 +182,7 @@
   "boom_volume": 3.5,
   "capture_delay": -200,
   "chat_height": 590,
-  "column_bottom": 6,
+  "column_bottom": 7,
   "column_top": 2,
   "controls": 0,
   "controls_pv": 1,
@@ -188,7 +194,7 @@
   "custom_white_pv": "#ffffff",
   "custom_white_pva": "#ffffff",
   "disable_everything": 0,
-  "drag_and_drop": 1,
+  "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
   "eval": 1,
@@ -280,6 +286,7 @@
   "move_height_pva": 5,
   "moves": 1,
   "moves_copy": 0,
+  "moves_left": 1,
   "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
@@ -334,6 +341,7 @@
     "archive": "season",
     "live": "stand"
   },
+  "tabs_per_row": 8,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",
