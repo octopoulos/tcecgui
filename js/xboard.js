@@ -2346,12 +2346,13 @@ class XBoard {
      * Set a new FEN
      * @param {string} fen null for start_fen
      * @param {boolean=} render
+     * @param {boolean=} force do it even if locked
      * @returns {boolean}
      */
-    set_fen(fen, render) {
+    set_fen(fen, render, force) {
         if (DEV.board)
             LS(`${this.id} set_fen: ${fen}`);
-        if (this.check_locked())
+        if (!force && this.check_locked())
             return false;
         if (fen == null)
             fen = this.start_fen;
@@ -2461,7 +2462,7 @@ class XBoard {
         // special case: initial board
         if (ply == -1 && this.main_manual) {
             this.ply = -1;
-            this.set_fen(null, true);
+            this.set_fen(null, true, true);
             this.hide_arrows();
             this.update_cursor(ply);
             this.animate({}, animate);
@@ -2491,7 +2492,7 @@ class XBoard {
         if (!render)
             return move;
 
-        this.set_fen(move.fen, true);
+        this.set_fen(move.fen, true, true);
 
         // new move => remove arrows from the past
         this.hide_arrows();
