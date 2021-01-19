@@ -192,7 +192,11 @@ function audio_set(set) {
  * Check if we can't right click to popup
  */
 function cannot_popup() {
-    return !Y.popup_right_click || KEYS[17];
+    let is_control = KEYS[17],
+        cannot = !Y.popup_right_click || is_control;
+    if (cannot && is_control)
+        KEYS[17] = 0;
+    return cannot;
 }
 
 /**
