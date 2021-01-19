@@ -2676,6 +2676,7 @@ if (typeof exports != 'undefined') {
         parse_dev: parse_dev,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
         reset_settings: reset_settings,
+        resize_text: resize_text,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
         save_default: save_default,

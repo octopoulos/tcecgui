@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-01-19
 //
 /*
 globals
@@ -11,9 +11,9 @@ expect, require, test
 let {Assign, Keys} = require('./common.js'),
     {
         add_history, AUTO_ON_OFF, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES,
-        guess_types, import_settings, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, restore_history,
-        sanitise_data, save_option, translate, translate_default, translate_expression, translates, TYPES, X_SETTINGS,
-        Y, y_states,
+        guess_types, import_settings, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, resize_text,
+        restore_history, sanitise_data, save_option, translate, translate_default, translate_expression, translates,
+        TYPES, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
@@ -319,6 +319,21 @@ Assign(translates, {
         Keys(answer).forEach(key => {
             expect(Y).toHaveProperty(key, answer[key]);
         });
+    });
+});
+
+// resize_text
+[
+    [null, 4, null],
+    [123456, 4, 123456],
+    ['Qxc6', 4, 'Qxc6'],
+    ['QXC6', 4, '<span class="resize">QXC6</span>'],
+    ['Qxc6+', 4, '<span class="resize">Qxc6+</span>'],
+    ['KomodoDragonArmageddon', 0, 'KomodoDragonArmageddon'],
+    ['KomodoDragonArmageddon', 15, '<span class="resize">KomodoDragonArmageddon</span>'],
+].forEach(([text, resize, answer], id) => {
+    test(`resize_text:${id}`, () => {
+        expect(resize_text(text, resize)).toEqual(answer);
     });
 });
 
