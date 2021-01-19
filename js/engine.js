@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-19
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -2215,12 +2215,13 @@ function touch_handle(e, full, prevent_default) {
         if (drag_target && !full_target) {
             // maybe the object is already fully visible?
             // TODO: limit x and y directions individually
-            let child = drag_target.firstElementChild,
-                child_height = child.clientHeight,
-                child_width = child.clientWidth;
-
-            if (child_height <= drag_target.clientHeight && child_width <= drag_target.clientWidth)
-                return;
+            let child = drag_target.firstElementChild;
+            if (child) {
+                let child_height = child.clientHeight,
+                    child_width = child.clientWidth;
+                if (child_height <= drag_target.clientHeight && child_width <= drag_target.clientWidth)
+                    return;
+            }
         }
 
         drag = [change, stamp];

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-19
 //
 // Game specific code:
 // - control the board, moves
@@ -2355,8 +2355,7 @@ function calculate_event_stats(section, rows) {
     }
 
     // 2) collect all stats
-    let // crashes = 0,
-        cross_data = (table_data[section].cross || {}).data || [],
+    let cross_data = (table_data[section].cross || {}).data || [],
         games = 0,
         length = rows.length,
         max_moves = [-1, 0],
@@ -2364,6 +2363,7 @@ function calculate_event_stats(section, rows) {
         min_moves = [Infinity, 0],
         min_time = [Infinity, 0],
         moves = 0,
+        num_engine = Max(2, cross_data.length),
         open_engines = {},
         results = {
             '0-1': 0,
@@ -2381,8 +2381,9 @@ function calculate_event_stats(section, rows) {
 
         let pair = [row.black, row.white].sort().join('|'),
             result = row.result,
-            // 01:04:50 => seconds
-            time = parse_time(row.duration);
+            time = parse_time(row.duration),
+            // ideally, this should be the starting FEN after the book
+            unique = (num_engine <= 2)? 'x': row.eco;
 
         games ++;
         moves += move;
@@ -2399,14 +2400,13 @@ function calculate_event_stats(section, rows) {
         if (min_time[0] > time)
             min_time = [time, game];
 
-        let open_engine = SetDefault(open_engines, row.eco, {});
+        let open_engine = SetDefault(open_engines, unique, {});
         SetDefault(open_engine, pair, []).push(result);
     }
 
     // 3) encounters
     let decisives = 0,
         kills = 0,
-        num_engine = Max(2, cross_data.length),
         num_half = (num_engine * (num_engine - 1)) / 2,
         num_pair = 0,
         num_round = Ceil(length / num_half / 2),
@@ -2456,7 +2456,6 @@ function calculate_event_stats(section, rows) {
         average_time: format_hhmmss(seconds / games),
         min_time: `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         max_time: `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
-        // crashes: crashes,
     });
 
     // 5) create the table
