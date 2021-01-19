@@ -1261,7 +1261,7 @@ function resize_move_lists() {
         if (grid && width > scrollbar) {
             ratio = Min(1.2, (width - scrollbar) / grid / 92);
             if (ratio < 1.2)
-                iwidth = `${36 * ratio}px`;
+                iwidth = `minmax(${36 * ratio}px, 1fr)`;
         }
 
         let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
