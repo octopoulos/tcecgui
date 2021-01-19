@@ -71,6 +71,11 @@
         "moves-live",
         0,
         1
+      ],
+      [
+        "table-agree",
+        1,
+        2
       ]
     ],
     "left0": [
@@ -234,11 +239,9 @@
   "graph_eval_clamp": 10,
   "graph_eval_mode": "percent",
   "graph_line": 2.2,
-  "graph_marker_color": "#299bff",
-  "graph_marker_opacity": 0.5,
   "graph_min_width": 240,
   "graph_radius": 1,
-  "graph_scale": 4,
+  "graph_scale": "4",
   "graph_tension": 0.1,
   "graph_text": 10,
   "grid": 0,
@@ -296,11 +299,9 @@
   "moves_live": 0,
   "moves_pv": 1,
   "moves_pva": 1,
-  "new_version": "0",
   "notation": 1,
   "notation_pv": 1,
   "notation_pva": 1,
-  "order": "left|center|right",
   "panel_adjust": 0,
   "panel_gap": 8,
   "percent": 1,
@@ -320,9 +321,9 @@
     "node": 10,
     "speed": 10,
     "tb": 1,
-    "time": 0
+    "time": 0,
+    "agree": 0
   },
-  "scroll": "",
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
@@ -341,7 +342,7 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": "1",
+  "status": 1,
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {

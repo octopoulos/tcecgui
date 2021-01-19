@@ -36,7 +36,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210118d',
+    VERSION = '20210118e',
     virtual_close_popups,
     xboards = {};
 
@@ -314,7 +314,7 @@ function reset_old_settings() {
     if (version < '20200930')
         keys.push('game_wasm');
     if (version < '20201003b')
-        keys.push('game_threads graph_marker_color');
+        keys.push('game_threads');
     if (version < '20210109') {
         Keys(DEFAULTS).filter(key => key.slice(0, 6) == 'sound_').map(key => {
             keys.push(key);
