@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-19
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -20,7 +20,7 @@ DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, downl
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
 Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
+LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings, Min,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
@@ -1249,9 +1249,23 @@ function resize_move_lists() {
         ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
     ];
 
+    // ~25px for the scrollbar
+    let scrollbar = device.mobile? 5: 25;
+
     for (let [sel, height, grid] of styles) {
-        let extra = grid? `grid-template-columns: repeat(${grid}, 2em 1fr 1fr)`: '';
-        Style(sel, `min-height:${height}em;${extra}`);
+        let iwidth = '1fr',
+            ratio = 1,
+            width = Max(...From(A(sel)).map(node => node.clientWidth));
+
+        // normal size: 20 + 36 + 36 = 92
+        if (grid && width > scrollbar) {
+            ratio = Min(1.2, (width - scrollbar) / grid / 92);
+            if (ratio < 1.2)
+                iwidth = `${36 * ratio}px`;
+        }
+
+        let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
+        Style(sel, `font-size:${13 * ratio}px;min-height:${height}em;${extra}`);
         Class(sel, 'grid', grid);
     }
 }
@@ -2009,6 +2023,7 @@ function prepare_settings() {
         import_settings: 2,
         language: 1,
         link: 1,
+        new_version: 2,
         preset: 1,
         round: 1,
         s: 1,

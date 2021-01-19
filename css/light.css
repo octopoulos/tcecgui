@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-18
+@version 2021-01-19
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -684,6 +684,9 @@ input.two {
 .real {
     color: #07f;
 }
+.real .resize {
+    font-size: 0.9em;
+}
 #moves-pv1 .real,
 #pv1 .real {
     color: #7ce
@@ -693,7 +696,9 @@ input.two {
 }
 .turn {
     color: #222;
-    font-size: 13px;
+}
+.turn .resize {
+    font-size: 0.75em;
 }
 #moves-pv1 .turn,
 #pv1 .turn {
@@ -719,7 +724,7 @@ input.two {
 #live1 .turn,
 #pv0 .turn,
 #pv1 .turn {
-    font-size: 11px;
+    font-size: 0.85em;
 }
 #popup-fen {
     border-radius: 0;
