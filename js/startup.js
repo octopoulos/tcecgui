@@ -1290,7 +1290,7 @@ function resize_panels() {
     S('.swap', Y.panel_adjust);
     Style('.swaps', 'min-height:0.6em', !Y.panel_adjust);
 
-    Style('.area > *', 'max-width:100%;min-width:calc(100% - 8px)');
+    Style('.area > *', 'max-width:100%');
     Style('#bottom > *', `max-width:calc(${(100 / Y.column_bottom)}% - ${Y.column_bottom * 2}px)`);
     Style('#top > *', `max-width:calc(${(100 / Y.column_top)}% - ${Y.column_top * 2}px)`);
 

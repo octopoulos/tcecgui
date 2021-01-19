@@ -2416,13 +2416,13 @@ function calculate_event_stats(section, rows) {
         let open_engine = open_engines[eco];
         Keys(open_engine).forEach(pair => {
             let value = open_engine[pair];
-            if (value.length < 2)
-                return;
-
-            let decisive = DECISIVES[value.slice(0, 2).sort().join('|')];
-            decisives += (decisive & 1);
-            kills += !!(decisive & 2);
-            num_pair ++;
+            for (let i = 0; i < value.length; i += 2)
+                if (value[i + 1]) {
+                    let decisive = DECISIVES[value.slice(i, i + 2).sort().join('|')];
+                    decisives += (decisive & 1);
+                    kills += !!(decisive & 2);
+                    num_pair ++;
+                }
         });
     });
 

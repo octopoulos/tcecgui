@@ -1,4 +1,4 @@
-Updated on 2021-01-18
+Updated on 2021-01-19
 
 How nps is calculated for each game:
 - nps = total nodes / total time, so, moves with a long thinking time have a lot of impact
