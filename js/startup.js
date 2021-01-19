@@ -1808,14 +1808,16 @@ function set_global_events() {
     Events(window, 'dragenter dragover', e => {
         if (!Y.drag_and_drop)
             return;
-        let [child] = get_drop_id(e.target);
+        let [child] = get_drop_id(e.target),
+            parent = Parent(e.target, {class_: 'area', self: true});
         if (child == drag_source)
             child = null;
         else if (!child)
-            child = Parent(e.target, {class_: 'area', self: true});
+            child = parent;
 
-        // tab=drop => vertical bar, otherwise horizontal
-        draw_rectangle(child, HasClass(child, 'drop')? 1: 2, e.clientX, e.clientY);
+        // tab=drop or top/bottom area => vertical bar, otherwise horizontal
+        let orient = ((parent && ['bottom', 'top'].includes(parent.id)) || HasClass(child, 'drop'))? 1: 2;
+        draw_rectangle(child, orient, e.clientX, e.clientY);
         if (!child)
             return;
 

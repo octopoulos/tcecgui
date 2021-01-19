@@ -195,7 +195,7 @@
   "custom_white_pv": "#ffffff",
   "custom_white_pva": "#ffffff",
   "disable_everything": 1,
-  "drag_and_drop": 1,
+  "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
   "eval": 1,
