@@ -1,4 +1,5 @@
 {
+  "SI_units": 1,
   "agree_length": 1,
   "animate": 1,
   "animate_pv": 1,
@@ -6,6 +7,33 @@
   "archive_scroll": 1,
   "areas": {
     "center0": [
+      [
+        "archive",
+        0,
+        1
+      ],
+      [
+        "live",
+        0,
+        1
+      ],
+      [
+        "moves-pv0",
+        0,
+        1
+      ],
+      [
+        "moves-pv1",
+        0,
+        1
+      ],
+      [
+        "table-live0",
+        0,
+        1
+      ]
+    ],
+    "left0": [
       [
         "engine",
         1,
@@ -73,33 +101,6 @@
       ],
       [
         "moves-live",
-        0,
-        1
-      ]
-    ],
-    "left0": [
-      [
-        "archive",
-        0,
-        1
-      ],
-      [
-        "live",
-        0,
-        1
-      ],
-      [
-        "moves-pv0",
-        0,
-        1
-      ],
-      [
-        "moves-pv1",
-        0,
-        1
-      ],
-      [
-        "table-live0",
         0,
         1
       ]
@@ -330,7 +331,7 @@
   "show_delay": 500,
   "show_ply": "diverging",
   "single_line": 1,
-  "small_decimal": 100,
+  "small_decimal": ">= 100",
   "sort": "",
   "sound_capture": "bamboo - capture",
   "sound_check": "bamboo - check",
