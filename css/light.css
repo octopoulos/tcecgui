@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-19
+@version 2021-01-20
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -942,19 +942,20 @@ hsub {
 
 /* engines */
 #engine {
+    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) 90%, transparent 90%, transparent 100%);
+    font-size: 15px;
     margin-bottom: 0.7em;
     width: 100%;
     z-index: 1;
 }
 #engine > div {
-    padding: 0.2em;
+    padding: 0.1em;
 }
 #engine > * {
-    background: rgba(0, 0, 0, 0.04);
     text-align: center;
 }
 .einfo {
-    font-size: 0.85em;
+    font-size: 0.9em;
     padding-top: 0.4em !important;
 }
 .version {
@@ -1024,7 +1025,7 @@ hsub {
 }
 #time0,
 #time1 {
-    font-size: 0.8em;
+    font-size: 0.85em;
     padding-bottom: 0.5em !important;
 }
 #cog0,
@@ -1605,7 +1606,7 @@ svg.down {
 /* media */
 @media (max-width: 330px) {
     .einfo {
-        font-size: 0.75em;
+        font-size: 0.8em;
     }
     #header,
     #table-tabs {
@@ -1626,7 +1627,7 @@ svg.down {
 }
 @media (max-width: 360px) {
     .einfo {
-        font-size: 0.8em;
+        font-size: 0.85em;
     }
     .live-more {
         font-size: 0.7em;

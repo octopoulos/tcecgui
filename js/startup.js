@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -297,6 +297,7 @@ function change_setting_special(name, value, close) {
     case 'drag_and_drop':
         set_draggable();
         break;
+    case 'engine_height':
     case 'eval':
     case 'eval_left':
     case 'graph_aspect_ratio':
@@ -1365,6 +1366,8 @@ function resize_panels() {
     order_boards();
     resize_move_lists();
 
+    Style(Id('engine'), `height:${Y.engine_height}px`);
+
     // resize all charts
     E('.chart', node => {
         let area = get_area(node);
@@ -2264,6 +2267,7 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
+            engine_height: option_number(414.5, 390, 818, 0.5),
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
@@ -2309,7 +2313,7 @@ function prepare_settings() {
         },
         graph: {
             _prefix: 'graph_',
-            graph_aspect_ratio: option_number(1.5, 0.5, 5, 0.005),
+            graph_aspect_ratio: option_number(1.52, 0.5, 5, 0.005),
             graph_color_0: [{type: 'color'}, '#fefdde'],
             graph_color_1: [{type: 'color'}, '#02031e'],
             graph_color_2: [{type: 'color'}, '#236ad6'],
@@ -2414,7 +2418,7 @@ function prepare_settings() {
             unhide: '1',
         },
         quick: {
-            chat_height: option_number(900, 100, 1600, 0.5),
+            chat_height: option_number(678, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'sched'],
         },

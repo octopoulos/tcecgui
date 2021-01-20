@@ -8,7 +8,7 @@ expect, require, test
 */
 'use strict';
 
-let {Assign, Keys, Now} = require('./common.js'),
+let {Assign, Keys} = require('./common.js'),
     {
         add_history, AUTO_ON_OFF, cannot_click, cannot_popup, create_field_value, create_page_array, create_url_list,
         DEFAULTS, DEV, DEV_NAMES, done_touch, guess_types, import_settings, KEYS, merge_settings, ON_OFF, option_number,

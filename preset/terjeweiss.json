@@ -25,7 +25,7 @@
       [
         "table-eval",
         1,
-        1
+        3
       ],
       [
         "table-mobil",
@@ -65,7 +65,7 @@
       [
         "table-kibitz",
         0,
-        3
+        1
       ],
       [
         "moves-archive",
@@ -190,7 +190,7 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 780,
+  "chat_height": 849,
   "column_bottom": 4,
   "column_top": 2,
   "controls": 0,
@@ -206,6 +206,7 @@
   "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
+  "engine_height": 414.5,
   "eval": 1,
   "eval_left": 1,
   "explosion_buildup": 2,
@@ -231,7 +232,7 @@
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.33,
+  "graph_aspect_ratio": 1.36,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -290,7 +291,7 @@
   "more": 1,
   "move_height": 71,
   "move_height_copy": 260,
-  "move_height_live": 53.5,
+  "move_height_live": 48,
   "move_height_pv": 107,
   "move_height_pva": 65,
   "moves": 1,
@@ -323,7 +324,6 @@
     "tb": 1,
     "time": 0
   },
-  "scroll": "",
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "0",

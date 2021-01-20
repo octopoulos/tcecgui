@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-17
+@version 2021-01-20
 - used in Live mode
 - inherits from light.css
 */
@@ -100,8 +100,8 @@ textarea:hover {
 .scroller tr.active:hover {
     background: rgba(200, 200, 200, 0.24);
 }
-#engine > * {
-    background: rgba(1, 9, 26, 0.28);
+#engine {
+    background: linear-gradient(rgba(1, 9, 26, 0.28) 0%, rgba(1, 9, 26, 0.28) 90%, transparent 90%, transparent 100%);
 }
 #table-season a {
     color: #fff;
