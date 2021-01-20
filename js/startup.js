@@ -2269,8 +2269,8 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
-            engine_font: option_number(15.5, 8, 24, 0.25),
-            engine_spacing: option_number(0.14, 0, 5, 0.005),
+            engine_font: option_number(15, 8, 24, 0.25),
+            engine_spacing: option_number(0.18, 0, 5, 0.005),
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
