@@ -207,6 +207,7 @@
   "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
+  "engine_font": 15,
   "engine_height": 427,
   "eval": 1,
   "eval_left": 1,
