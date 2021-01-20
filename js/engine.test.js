@@ -8,12 +8,12 @@ expect, require, test
 */
 'use strict';
 
-let {Assign, Keys} = require('./common.js'),
+let {Assign, Keys, Now} = require('./common.js'),
     {
-        add_history, AUTO_ON_OFF, create_field_value, create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES,
-        guess_types, import_settings, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, resize_text,
-        restore_history, sanitise_data, save_option, translate, translate_default, translate_expression, translates,
-        TYPES, X_SETTINGS, Y, y_states,
+        add_history, AUTO_ON_OFF, cannot_click, cannot_popup, create_field_value, create_page_array, create_url_list,
+        DEFAULTS, DEV, DEV_NAMES, done_touch, guess_types, import_settings, KEYS, merge_settings, ON_OFF, option_number,
+        parse_dev, reset_settings, resize_text, restore_history, sanitise_data, save_option, touch_done, translate,
+        translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
@@ -39,6 +39,33 @@ Assign(translates, {
         Assign(Y, y);
         add_history();
         expect(y_states.length).toBe(length + 1);
+    });
+});
+
+// cannot_click
+[
+    [0, true],
+    [-0.4, true],
+    [-0.6, false],
+    [-1, false],
+].forEach(([delta, answer], id) => {
+    test(`cannot_click:${id}`, () => {
+        done_touch(delta);
+        expect(cannot_click()).toBe(answer);
+    });
+});
+
+// cannot_popup
+[
+    [{popup_right_click: 0}, {17: 0}, true],
+    [{popup_right_click: 0}, {17: 1}, true],
+    [{popup_right_click: 1}, {17: 0}, false],
+    [{popup_right_click: 1}, {17: 1}, true],
+].forEach(([y, keys, answer], id) => {
+    test(`cannot_popup:${id}`, () => {
+        Assign(Y, y);
+        Assign(KEYS, keys);
+        expect(!!cannot_popup()).toBe(answer);
     });
 });
 

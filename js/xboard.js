@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, Chess, Class, Clear,
-clear_timeout, COLOR, CreateNode, CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cannot_popup, Chess, Class,
+Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
@@ -1348,6 +1348,10 @@ class XBoard {
 
         // disable right click
         Events('[data-x]', 'contextmenu', e => {
+            if (cannot_popup()) {
+                SP(e);
+                return;
+            }
             e.preventDefault();
         }, {}, this.node);
 

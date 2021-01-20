@@ -13,7 +13,7 @@
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
-cannot_click, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
+cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
 context_target:true, CreateNode,
 DEFAULT_SCALES, DefaultInt, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
@@ -186,17 +186,6 @@ function audio_set(set) {
             _(`select[name="${key}"]`).value = choice;
         }
     });
-}
-
-/**
- * Check if we can't right click to popup
- */
-function cannot_popup() {
-    let is_control = KEYS[17],
-        cannot = !Y.popup_right_click || is_control;
-    if (cannot && is_control)
-        KEYS[17] = 0;
-    return cannot;
 }
 
 /**
