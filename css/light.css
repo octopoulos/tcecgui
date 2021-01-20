@@ -478,6 +478,7 @@ input.two {
     position: relative;
 }
 .xcontain {
+    margin-bottom: 0.2em;
     position: relative;
 }
 .xframe {
@@ -584,7 +585,6 @@ input.two {
 .xcontrol {
     color: #007bff;
     font-size: 0.34em;
-    margin-bottom: 0.2em;
     width: calc(100% - 4px);
 }
 .control {

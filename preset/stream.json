@@ -74,7 +74,7 @@
       [
         "table-chat",
         1,
-        2
+        0
       ],
       [
         "table-winner",
@@ -89,7 +89,7 @@
       [
         "shortcut_1",
         0,
-        1
+        3
       ],
       [
         "shortcut_2",
@@ -186,7 +186,7 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 554,
+  "chat_height": 575,
   "column_bottom": 7,
   "column_top": 2,
   "controls": 0,
@@ -229,7 +229,7 @@
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.66,
+  "graph_aspect_ratio": 1.54,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -286,9 +286,9 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
-  "move_height": 74,
+  "move_height": 96,
   "move_height_copy": 260,
-  "move_height_live": 54,
+  "move_height_live": 57,
   "move_height_pv": 65,
   "move_height_pva": 65,
   "moves": 1,
