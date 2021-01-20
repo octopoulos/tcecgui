@@ -1930,10 +1930,23 @@ function cannot_click() {
 }
 
 /**
- * Finished touching which means we cannot click for a bit
+ * Check if we can't right click to popup
+ * @returns {boolean}
  */
-function done_touch() {
-    touch_done = Now(true);
+function cannot_popup() {
+    let is_control = KEYS[17],
+        cannot = !Y.popup_right_click || is_control;
+    if (cannot && is_control)
+        KEYS[17] = 0;
+    return cannot;
+}
+
+/**
+ * Finished touching which means we cannot click for a bit
+ * @param {number=} delta
+ */
+function done_touch(delta=0) {
+    touch_done = Now(true) + delta;
 }
 
 /**
@@ -2656,6 +2669,8 @@ if (typeof exports != 'undefined') {
         add_history: add_history,
         add_timeout: add_timeout,
         AUTO_ON_OFF: AUTO_ON_OFF,
+        cannot_click: cannot_click,
+        cannot_popup: cannot_popup,
         clear_timeout: clear_timeout,
         create_field_value: create_field_value,
         create_page_array: create_page_array,
@@ -2664,8 +2679,10 @@ if (typeof exports != 'undefined') {
         DEV: DEV,
         DEV_NAMES: DEV_NAMES,
         device: device,
+        done_touch: done_touch,
         guess_types: guess_types,
         import_settings: import_settings,
+        KEYS: KEYS,
         LANGUAGES: LANGUAGES,
         load_defaults: load_defaults,
         me: me,
