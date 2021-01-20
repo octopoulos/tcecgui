@@ -955,8 +955,8 @@ hsub {
     text-align: center;
 }
 .einfo {
-    font-size: 0.9em;
-    padding-top: 0.4em !important;
+    font-size: 0.88em;
+    margin-top: 0.22em;
 }
 .version {
     font-size: 0.85em;
@@ -1607,7 +1607,7 @@ svg.down {
 /* media */
 @media (max-width: 330px) {
     .einfo {
-        font-size: 0.8em;
+        font-size: 0.75em;
     }
     #header,
     #table-tabs {
@@ -1628,7 +1628,7 @@ svg.down {
 }
 @media (max-width: 360px) {
     .einfo {
-        font-size: 0.85em;
+        font-size: 0.8em;
     }
     .live-more {
         font-size: 0.7em;
