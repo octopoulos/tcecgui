@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 // game board:
 // - 4 rendering modes:
@@ -1092,8 +1092,11 @@ class XBoard {
      */
     clicked_move_list(e, callback) {
         let target = e.target,
-            ply = target.dataset.i;
+            parent = Parent(target, {self: true, tag: 'a'});
+        if (!parent)
+            return;
 
+        let ply = parent.dataset.i;
         if (ply != undefined)
             this.set_ply(ply * 1, {animate: true, manual: true});
 

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -70,12 +70,12 @@ let __PREFIX = '_',
     LINKS = {},
     MAX_HISTORY = 20,
     me = {},
-    // &1:no import, &2:no export
+    // &1:no import/export, &2:no change setting
     NO_IMPORTS = {
         import_settings: 2,
         language: 1,
         preset: 1,
-        seen: 2,
+        seen: 1,
     },
     NO_TRANSLATES = {
         '#': 1,
@@ -1280,7 +1280,7 @@ function resize_text(text, resize)
 
     let len = text.length;
     if (Upper(text) == text)
-        len *= 3/2;
+        len *= 4/3;
 
     if (len > resize)
         text = `<span class="resize">${text}</span>`;

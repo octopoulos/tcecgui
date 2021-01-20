@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -26,7 +26,7 @@ require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, res
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
-translate_nodes, TRANSLATE_SPECIALS, translates:true,
+translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
 virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
@@ -105,6 +105,7 @@ let AD_STYLES = {},
     PRESETS = [
         'custom',
         'default settings',
+        '4 columns',
         'jerehmia',
         'kanchess',
         'low battery',
@@ -297,6 +298,8 @@ function change_setting_special(name, value, close) {
     case 'drag_and_drop':
         set_draggable();
         break;
+    case 'engine_font':
+    case 'engine_spacing':
     case 'eval':
     case 'eval_left':
     case 'graph_aspect_ratio':
@@ -702,6 +705,14 @@ function fix_old_settings() {
             }
         }
     }
+
+    // 3) move height from em => px
+    // - guess, min height is 39px normally, so anything under that = old setting, but will miss values over
+    Keys(Y).filter(key => key.slice(0, 11) == 'move_height').forEach(key => {
+        let value = Y[key];
+        if (value < 39)
+            save_option(key, Floor(value * 26) / 2);
+    });
 }
 
 /**
@@ -811,6 +822,7 @@ function hide_element(target) {
  */
 function import_settings_special() {
     fix_old_settings();
+    resize();
 }
 
 /**
@@ -1110,6 +1122,7 @@ function populate_areas() {
                     if (!prev_tab || !tabs) {
                         tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
                         parent.appendChild(tabs);
+                        exist ++;
                     }
 
                     let text = id.split('-');
@@ -1135,15 +1148,18 @@ function populate_areas() {
                 }
                 show = show & 2;
             }
-            else
+            if (!tab) {
+                prev_tab = null;
                 tabs = null;
+            }
 
             parent.appendChild(node);
             S(node, show & 1);
             S('.label', !tab && !prev_tab, node);
 
             context_areas[id] = vector;
-            exist ++;
+            if (show & 1)
+                exist ++;
         }
     });
 
@@ -1203,16 +1219,21 @@ function reset_settings_special(is_default) {
  */
 function resize() {
     Style('.tabs > .tab', `flex-basis:${Floor(200 / Y.tabs_per_row) / 2}%`);
-
     Style(
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status'
         + ', #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
-    Style(
-        '#chat, #chat2, #shortcut_1, #shortcut_2',
-        `height:${Clamp(Y.chat_height, 350, window.height)}px;width:100%`,
-    );
+
+    // chat height => resize all sibling tabs
+    let chat_height = Clamp(Y.chat_height, 350, window.height),
+        chat_tab = _('.tab[data-x="table-chat"]'),
+        parent = Parent(chat_tab),
+        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner';
+    if (parent)
+        siblings = From(parent.children).map(child => `#${child.dataset.x}`).join(', ');
+    Style(siblings, `height:${chat_height + 32}px;width:100%`);
+    Style('#chat, #chat2', `height:${chat_height}px;width:100%`);
 
     let window_width = window.innerWidth;
     Style(
@@ -1244,8 +1265,8 @@ function resize_move_lists() {
     let styles = [
         ['#archive .xmoves, #live .xmoves', Y.move_height, Y.grid],
         ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
-        ['#pva .xmoves', Y.move_height_pva, Y.grid_pva],
         ['.live-pv', Y.move_height_live, Y.grid_live],
+        ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
         ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
     ];
 
@@ -1274,7 +1295,7 @@ function resize_move_lists() {
             }
 
             let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
-            Style(node, `font-size:${13 * ratio}px;min-height:${height}em;${extra};width:${wextra}`);
+            Style(node, `font-size:${13 * ratio}px;min-height:${height}px;${extra};width:${wextra}`);
             Class(node, 'grid', grid);
         });
     }
@@ -1346,6 +1367,9 @@ function resize_panels() {
 
     order_boards();
     resize_move_lists();
+
+    Style(Id('engine'), `font-size:${Y.engine_font}px`);
+    Style('#engine > div', `padding:${Y.engine_spacing}em`);
 
     // resize all charts
     E('.chart', node => {
@@ -1935,8 +1959,8 @@ function prepare_settings() {
         areas: {
             bottom: [],
             center0: [
-                ['moves-archive', 0, 1],
-                ['moves-live', 0, 1],
+                ['moves-archive', 0, 0],
+                ['moves-live', 0, 0],
                 ['engine', 1, 3],
                 ['table-pv', 1, 1],
                 ['table-pva', 0, 1],
@@ -2035,15 +2059,16 @@ function prepare_settings() {
         import_settings: 2,
         language: 1,
         link: 1,
-        new_version: 2,
+        new_version: 1,
         preset: 1,
         round: 1,
         s: 1,
+        scroll: 1,
         season: 1,
         stage: 1,
         stream: 1,
-        twitch_chat: 2,
-        twitch_video: 2,
+        twitch_chat: 1,
+        twitch_video: 1,
         version: 1,
         x: 1,
     });
@@ -2245,6 +2270,8 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
+            engine_font: option_number(16, 8, 24, 0.25),
+            engine_spacing: option_number(0.2, 0, 5, 0.005),
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
@@ -2336,7 +2363,7 @@ function prepare_settings() {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
-            move_height_live: option_number(3.6, 3, 100, 0.05),
+            move_height_live: option_number(52, 39, 1600, 0.5),
             moves_live: [ON_OFF, 1],
             show_ply: show_plies,
         },
@@ -2345,13 +2372,13 @@ function prepare_settings() {
             grid: option_number(0, 0, 10),
             grid_copy: option_number(2, 0, 10),
             grid_live: option_number(0, 0, 10),
-            grid_pv: option_number(0, 0, 10),
+            grid_pv: option_number(2, 0, 10),
             grid_pva: option_number(0, 0, 10),
-            move_height: option_number(5.2, 3, 100, 0.05),
-            move_height_copy: option_number(20, 3, 100, 0.05),
-            move_height_live: option_number(3.6, 3, 100, 0.05),
-            move_height_pv: option_number(5, 5, 100, 0.05),
-            move_height_pva: option_number(5, 5, 100, 0.05),
+            move_height: option_number(70, 3, 1600, 0.5),
+            move_height_copy: option_number(260, 39, 1600, 0.5),
+            move_height_live: option_number(52, 39, 1600, 0.5),
+            move_height_pv: option_number(91, 65, 1600, 0.5),
+            move_height_pva: option_number(70, 65, 1600, 0.5),
         },
         panel: {
             column_bottom: option_number(4, 1, 8),
@@ -2388,14 +2415,15 @@ function prepare_settings() {
                 min_right_2: option_number(0, -1, 1200),
                 max_right_2: option_number(0, -1, 1200),
             },
-            max_window: option_number(1920, 256, 32000),
+            max_window: option_number(2560, 256, 32000),
             panel_adjust: [ON_OFF, 0, 'show the < > - + above the panel'],
             panel_gap: option_number(device.mobile? 5: 10, 0, 100),
+            quick: '',
             tabs_per_row: option_number(7, 1, 100),
             unhide: '1',
         },
         quick: {
-            chat_height: option_number(600, 100, 1600),
+            chat_height: option_number(770, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'sched'],
         },
@@ -2410,7 +2438,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid: option_number(0, 0, 10),
-            move_height: option_number(5.2, 3, 100, 0.05),
+            move_height: option_number(70, 39, 1600, 0.5),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
         },
@@ -2419,7 +2447,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid_copy: option_number(2, 0, 10),
-            move_height_copy: option_number(20, 3, 100, 0.05),
+            move_height_copy: option_number(260, 39, 1600, 0.5),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
         },
@@ -2428,8 +2456,8 @@ function prepare_settings() {
             agree_length: agree_length,
             copy: copy_moves,
             download_PGN: '1',
-            grid_pv: option_number(0, 0, 10),
-            move_height_pv: option_number(5, 3, 100, 0.05),
+            grid_pv: option_number(2, 0, 10),
+            move_height_pv: option_number(91, 39, 1600, 0.5),
             moves_pv: [ON_OFF, 1],
             show_ply: show_plies,
         },
@@ -2438,7 +2466,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid_pva: option_number(0, 0, 10),
-            move_height_pva: option_number(5, 3, 100, 0.05),
+            move_height_pva: option_number(70, 39, 1600, 0.5),
             moves_pva: [ON_OFF, 1],
         },
         eval: {
@@ -2478,6 +2506,10 @@ function prepare_settings() {
             theme: [THEMES, THEMES[0]],
             volume: option_number(10, 0, 15, 0.5, {}, 'general volume, 10: 100%, affects all sounds'),
         },
+    });
+
+    Assign(TYPES, {
+        graph_scale: 'i',
     });
 
     Assign(TRANSLATE_SPECIALS, {

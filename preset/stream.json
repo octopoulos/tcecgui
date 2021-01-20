@@ -74,7 +74,7 @@
       [
         "table-chat",
         1,
-        2
+        0
       ],
       [
         "table-winner",
@@ -89,7 +89,7 @@
       [
         "shortcut_1",
         0,
-        1
+        3
       ],
       [
         "shortcut_2",
@@ -186,7 +186,7 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 590,
+  "chat_height": 575,
   "column_bottom": 7,
   "column_top": 2,
   "controls": 0,
@@ -202,6 +202,8 @@
   "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
+  "engine_font": 16,
+  "engine_spacing": 0.18,
   "eval": 1,
   "eval_left": 1,
   "explosion_buildup": 2,
@@ -227,7 +229,7 @@
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.6,
+  "graph_aspect_ratio": 1.54,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -284,11 +286,11 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
-  "move_height": 5.2,
-  "move_height_copy": 20,
-  "move_height_live": 4.25,
-  "move_height_pv": 5,
-  "move_height_pva": 5,
+  "move_height": 96,
+  "move_height_copy": 260,
+  "move_height_live": 57,
+  "move_height_pv": 65,
+  "move_height_pva": 65,
   "moves": 1,
   "moves_copy": 0,
   "moves_left": 1,

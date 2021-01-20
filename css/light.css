@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-19
+@version 2021-01-20
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -478,6 +478,7 @@ input.two {
     position: relative;
 }
 .xcontain {
+    margin-bottom: 0.2em;
     position: relative;
 }
 .xframe {
@@ -584,7 +585,6 @@ input.two {
 .xcontrol {
     color: #007bff;
     font-size: 0.34em;
-    margin-bottom: 0.2em;
     width: calc(100% - 4px);
 }
 .control {
@@ -647,7 +647,7 @@ input.two {
 }
 .moves,
 .xmoves {
-    height: 5em;
+    height: 4.5em;
     overflow-y: auto;
 }
 .moves a:hover,
@@ -942,20 +942,21 @@ hsub {
 
 /* engines */
 #engine {
+    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) calc(100% - 48px), transparent calc(100% - 48px), transparent 100%);
+    font-size: 15px;
     margin-bottom: 0.7em;
     width: 100%;
     z-index: 1;
 }
 #engine > div {
-    padding: 0.2em;
+    padding: 0.18em;
 }
 #engine > * {
-    background: rgba(0, 0, 0, 0.04);
     text-align: center;
 }
 .einfo {
-    font-size: 0.85em;
-    padding-top: 0.4em !important;
+    font-size: 0.87em;
+    margin-top: 0.22em;
 }
 .version {
     font-size: 0.85em;
@@ -1024,7 +1025,7 @@ hsub {
 }
 #time0,
 #time1 {
-    font-size: 0.8em;
+    font-size: 0.85em;
     padding-bottom: 0.5em !important;
 }
 #cog0,
@@ -1051,7 +1052,6 @@ hsub {
     align-content: start;
     background: transparent !important;
     height: 50px;
-    margin-top: -0.4em;
 }
 #material0 img,
 #material1 img {
@@ -1564,6 +1564,7 @@ hsub {
 pre,
 .scroller,
 .stats,
+#table-info,
 .xbottom,
 .xmoves,
 .xmoves > a,

@@ -6,62 +6,83 @@
   "animate_pva": 1,
   "archive_scroll": 1,
   "areas": {
-    "center0": [
-      [
-        "engine",
-        1,
-        2
-      ],
-      [
-        "table-pv",
-        1,
-        2
-      ],
-      [
-        "table-pva",
-        1,
-        2
-      ],
+    "bottom": [
       [
         "table-tb",
-        1,
-        2
+        0,
+        3
+      ],
+      [
+        "table-depth",
+        0,
+        3
+      ],
+      [
+        "table-agree",
+        0,
+        3
       ],
       [
         "table-mobil",
         0,
-        2
+        3
       ],
       [
         "table-eval",
-        1,
-        2
-      ],
-      [
-        "table-kibitz",
-        1,
-        2
-      ],
-      [
-        "table-depth",
-        1,
-        2
+        0,
+        1
       ],
       [
         "table-speed",
-        1,
-        2
+        0,
+        3
       ],
       [
         "table-node",
-        1,
-        2
+        0,
+        3
       ],
       [
         "table-time",
         0,
-        2
+        3
+      ]
+    ],
+    "center0": [
+      [
+        "live",
+        0,
+        1
+      ]
+    ],
+    "left_20": [
+      [
+        "archive",
+        0,
+        1
       ],
+      [
+        "moves-pv0",
+        0,
+        1
+      ],
+      [
+        "moves-pv1",
+        0,
+        1
+      ],
+      [
+        "table-live0",
+        0,
+        1
+      ],
+      [
+        "table-live1",
+        0,
+        1
+      ]
+    ],
+    "left0": [
       [
         "moves-archive",
         0,
@@ -73,71 +94,55 @@
         1
       ],
       [
-        "table-agree",
+        "engine",
         1,
-        2
-      ]
-    ],
-    "left0": [
+        3
+      ],
       [
-        "archive",
-        0,
+        "table-pv",
+        1,
         1
       ],
       [
-        "moves-pv0",
-        0,
-        0
+        "table-kibitz",
+        1,
+        1
       ],
       [
-        "moves-pv1",
-        0,
-        0
-      ],
-      [
-        "table-live0",
-        0,
-        0
-      ],
-      [
-        "live",
+        "table-pva",
         0,
         1
       ]
     ],
+    "right_20": [],
     "right0": [
+      [
+        "quick-pagin",
+        0,
+        1
+      ],
       [
         "table-chat",
         1,
-        2
+        3
       ],
       [
         "table-winner",
         1,
-        2
+        1
       ],
       [
         "table-info",
         1,
-        2
+        0
       ],
       [
         "shortcut_1",
         1,
-        2
+        1
       ],
       [
         "shortcut_2",
-        0,
-        2
-      ],
-      [
-        "table-live1",
-        0,
-        0
-      ],
-      [
-        "quick-pagin",
         0,
         1
       ],
@@ -147,9 +152,6 @@
         1
       ]
     ],
-    "bottom": [],
-    "left_20": [],
-    "right_20": [],
     "top": []
   },
   "arrow_base_border": 0,
@@ -172,17 +174,17 @@
   "arrow_width": 1.6,
   "audio_book": 1,
   "audio_delay": 150,
-  "audio_live_archive": 1,
+  "audio_live_archive": 0,
   "audio_moves": "all",
   "audio_pva": 1,
-  "audio_set": "bamboo",
+  "audio_set": "custom",
   "auto_paste": 1,
   "background_color": "#000000",
   "background_image": "",
   "background_opacity": 0,
-  "board_theme": "chess24",
+  "board_theme": "dark",
   "board_theme_pv": "uscf",
-  "board_theme_pva": "blue",
+  "board_theme_pva": "uscf",
   "book_every": 600,
   "boom_effect": 0,
   "boom_sound": "random",
@@ -190,9 +192,9 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 654,
-  "column_bottom": 4,
-  "column_top": 2,
+  "chat_height": 661,
+  "column_bottom": 8,
+  "column_top": 8,
   "controls": 1,
   "controls_pv": 1,
   "controls_pva": 1,
@@ -206,8 +208,8 @@
   "drag_and_drop": 0,
   "draw_right_click": 0,
   "encoding": "sRGB",
-  "engine_font": 15,
-  "engine_spacing": 0.18,
+  "engine_font": 16,
+  "engine_spacing": 0.2,
   "eval": 1,
   "eval_left": 1,
   "explosion_buildup": 2,
@@ -233,25 +235,25 @@
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.49,
+  "graph_aspect_ratio": 1.5,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
   "graph_color_3": "#eb282d",
   "graph_eval_clamp": 10,
-  "graph_eval_mode": "percent",
-  "graph_line": 2.2,
+  "graph_eval_mode": "score",
+  "graph_line": 1.5,
   "graph_min_width": 240,
-  "graph_radius": 1,
-  "graph_scale": 4,
+  "graph_radius": 1.2,
+  "graph_scale": 0,
   "graph_tension": 0.1,
   "graph_text": 10,
   "grid": 0,
   "grid_copy": 2,
-  "grid_live": 0,
-  "grid_pv": 0,
+  "grid_live": 3,
+  "grid_pv": 2,
   "grid_pva": 0,
-  "hardware": 0,
+  "hardware": 1,
   "highlight_color": "#ffff00",
   "highlight_color_pv": "#ffff00",
   "highlight_color_pva": "#ffff00",
@@ -263,26 +265,26 @@
   "key_repeat": 70,
   "key_repeat_initial": 500,
   "lighting": "high",
-  "live_engine_1": 0,
-  "live_engine_2": 0,
+  "live_engine_1": 1,
+  "live_engine_2": 1,
   "live_log": "all",
-  "live_pv": 0,
+  "live_pv": 1,
   "log_auto_start": 1,
   "log_history": 100,
   "log_pv": 1,
   "marker_color": "#299bff",
   "marker_opacity": 0.5,
   "material_color": "normal",
-  "max_center": 451,
-  "max_left": 580,
-  "max_left_2": 0,
-  "max_right": 0,
+  "max_center": 520,
+  "max_left": 440,
+  "max_left_2": 320,
+  "max_right": 470,
   "max_right_2": 0,
-  "max_window": 1920,
-  "min_center": 300,
-  "min_left": 300,
-  "min_left_2": 0,
-  "min_right": 0,
+  "max_window": 2560,
+  "min_center": 520,
+  "min_left": 440,
+  "min_left_2": 320,
+  "min_right": 470,
   "min_right_2": 0,
   "mobility": 1,
   "moob_effect": 0,
@@ -290,15 +292,15 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
-  "move_height": 91,
-  "move_height_copy": 630,
-  "move_height_live": 46.5,
-  "move_height_pv": 91,
-  "move_height_pva": 78,
-  "moves": 0,
-  "moves_copy": 1,
+  "move_height": 92,
+  "move_height_copy": 260,
+  "move_height_live": 144,
+  "move_height_pv": 388,
+  "move_height_pva": 67.5,
+  "moves": 1,
+  "moves_copy": 0,
   "moves_left": 1,
-  "moves_live": 0,
+  "moves_live": 1,
   "moves_pv": 1,
   "moves_pva": 1,
   "notation": 1,
@@ -309,7 +311,7 @@
   "percent": 1,
   "piece_theme": "chess24",
   "piece_theme_pv": "chess24",
-  "piece_theme_pva": "dilena",
+  "piece_theme_pva": "chess24",
   "play_every": 1200,
   "popup_right_click": 1,
   "quick_every": 300,
@@ -317,23 +319,22 @@
   "resolution": "1:2",
   "rows_per_page": 10,
   "scales": {
+    "agree": 0,
     "depth": 10,
     "eval": 4,
     "mobil": 0,
     "node": 10,
     "speed": 10,
     "tb": 1,
-    "time": 0,
-    "agree": 0
+    "time": 0
   },
-  "scroll": "#tables",
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "sched",
+  "shortcut_2": 0,
   "show_delay": 500,
   "show_ply": "diverging",
-  "single_line": 1,
+  "single_line": 0,
   "small_decimal": 100,
   "sort": "",
   "sound_capture": "bamboo - capture",
@@ -345,7 +346,7 @@
   "sound_win": "win",
   "source_color": "#ffb400",
   "source_opacity": 0.7,
-  "status": 1,
+  "status": "auto",
   "status_pv": 1,
   "status_pva": 1,
   "table_tab": {
@@ -360,7 +361,7 @@
   "three": 0,
   "turn_color": "#ff5a00",
   "turn_opacity": 0,
-  "twitch_dark": 1,
+  "twitch_dark": 0,
   "volume": 10,
   "wasm": 0,
   "wheel_adjust": 63,

@@ -1,5 +1,7 @@
 /*
 sea.css
+@author octopoulo <polluxyz@gmail.com>
+@version 2021-01-20
 - inherits from light.css
 */
 body,
@@ -42,8 +44,8 @@ html {
     background: #b60;
     color: #fff;
 }
-#engine > * {
-    background: rgba(255, 255, 255, 0.2);
+#engine {
+    background: linear-gradient(rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) calc(100% - 48px), transparent calc(100% - 48px), transparent 100%);
 }
 .graphs {
     background: rgba(235, 235, 238, 0.15);
