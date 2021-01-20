@@ -942,20 +942,20 @@ hsub {
 
 /* engines */
 #engine {
-    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) 89%, transparent 89%, transparent 100%);
+    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) calc(100% - 48px), transparent calc(100% - 48px), transparent 100%);
     font-size: 15px;
     margin-bottom: 0.7em;
     width: 100%;
     z-index: 1;
 }
 #engine > div {
-    padding: 0.1em;
+    padding: 0.14em;
 }
 #engine > * {
     text-align: center;
 }
 .einfo {
-    font-size: 0.88em;
+    font-size: 0.87em;
     margin-top: 0.22em;
 }
 .version {
@@ -1052,7 +1052,6 @@ hsub {
     align-content: start;
     background: transparent !important;
     height: 50px;
-    margin-top: -0.4em;
 }
 #material0 img,
 #material1 img {

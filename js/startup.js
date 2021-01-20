@@ -298,7 +298,7 @@ function change_setting_special(name, value, close) {
         set_draggable();
         break;
     case 'engine_font':
-    case 'engine_height':
+    case 'engine_spacing':
     case 'eval':
     case 'eval_left':
     case 'graph_aspect_ratio':
@@ -1367,7 +1367,8 @@ function resize_panels() {
     order_boards();
     resize_move_lists();
 
-    Style(Id('engine'), `font-size:${Y.engine_font}px;height:${Y.engine_height}px`);
+    Style(Id('engine'), `font-size:${Y.engine_font}px`);
+    Style('#engine > div', `padding:${Y.engine_spacing}em`);
 
     // resize all charts
     E('.chart', node => {
@@ -2268,8 +2269,8 @@ function prepare_settings() {
             // wasm: [ON_OFF, 0],
         },
         engine: {
-            engine_font: option_number(15, 8, 24, 0.25),
-            engine_height: option_number(414.5, 230, 818, 0.5),
+            engine_font: option_number(15.5, 8, 24, 0.25),
+            engine_spacing: option_number(0.14, 0, 5, 0.005),
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],
