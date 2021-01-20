@@ -1269,7 +1269,7 @@ function resize_move_lists() {
 
             // normal size: 20 + 36 + 36 = 92
             if (grid && width > scrollbar) {
-                ratio = Min(1.1, (width - scrollbar) / grid / 92);
+                ratio = Min(1, (width - scrollbar) / grid / 92);
                 iwidth = `minmax(${36 * ratio}px, 1fr)`;
             }
 
