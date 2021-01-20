@@ -70,12 +70,12 @@ let __PREFIX = '_',
     LINKS = {},
     MAX_HISTORY = 20,
     me = {},
-    // &1:no import, &2:no export
+    // &1:no import/export, &2:no change setting
     NO_IMPORTS = {
         import_settings: 2,
         language: 1,
         preset: 1,
-        seen: 2,
+        seen: 1,
     },
     NO_TRANSLATES = {
         '#': 1,
