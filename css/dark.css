@@ -101,7 +101,7 @@ textarea:hover {
     background: rgba(200, 200, 200, 0.24);
 }
 #engine {
-    background: linear-gradient(rgba(1, 9, 26, 0.28) 0%, rgba(1, 9, 26, 0.28) 90%, transparent 90%, transparent 100%);
+    background: linear-gradient(rgba(1, 9, 26, 0.28) 0%, rgba(1, 9, 26, 0.28) 89%, transparent 89%, transparent 100%);
 }
 #table-season a {
     color: #fff;

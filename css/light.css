@@ -942,7 +942,7 @@ hsub {
 
 /* engines */
 #engine {
-    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) 90%, transparent 90%, transparent 100%);
+    background: linear-gradient(rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.04) 89%, transparent 89%, transparent 100%);
     font-size: 15px;
     margin-bottom: 0.7em;
     width: 100%;
