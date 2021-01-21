@@ -11,8 +11,8 @@
 globals
 _, A, Abs, AnimationFrame, Assign, Attrs, C, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, From, global, HasClass, Hide, history, HTML,
-Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+DefaultFloat, DefaultInt, devicePixelRatio, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass,
+Hide, history, HTML, Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
 LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
 QueryString, require, Resource,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
@@ -68,6 +68,7 @@ let __PREFIX = '_',
     },
     libraries = {},
     LINKS = {},
+    LOCALHOST = (typeof location == 'object') && location.port == 8080,
     MAX_HISTORY = 20,
     me = {},
     // &1:no import/export, &2:no change setting
@@ -95,8 +96,9 @@ let __PREFIX = '_',
     STATE_KEYS = {},
     THEMES = [''],
     TIMEOUT_adjust = 250,
+    TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
-    TIMEOUT_translate = 3600 * 2,
+    TIMEOUT_translate = LOCALHOST? 60: 3600 * 2,
     timers = {},
     touch_done = 0,                                     // time when the touch was released
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
@@ -280,9 +282,14 @@ function destroy_popup(node, flag) {
  * @param {string} name
  */
 function export_settings(name) {
-    let object = Assign(
-        {}, ...Keys(Y).filter(key => !NO_IMPORTS[key] && key[0] != '_').sort().map(key => ({[key]: Y[key]}))
-    );
+    Assign(Y, {
+        _dpr: Floor(devicePixelRatio * 1000 + 0.5) / 1000,
+        _height: window.innerHeight,
+        _width: window.innerWidth,
+        _zoom: Floor(window.outerWidth / window.innerWidth * 1000 + 0.5) / 1000,
+    });
+    let keys = Keys(Y).filter(key => !NO_IMPORTS[key]).sort((a, b) => Lower(a).localeCompare(Lower(b))),
+        object = Assign({}, ...keys.map(key => ({[key]: Y[key]})));
     DownloadObject(object, `${name}.json`, 0, '  ');
 }
 
@@ -487,7 +494,7 @@ function load_preset(name) {
     if (name == 'default settings')
         reset_settings(true);
     else {
-        Resource(`preset/${name}.json`, (code, data) => {
+        Resource(`preset/${name}.json?v=${Ceil(Now() / TIMEOUT_preset)}`, (code, data) => {
             if (code != 200)
                 return;
             import_settings(data, true);
@@ -1275,12 +1282,19 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
  */
 function resize_text(text, resize)
 {
-    if (!text || resize < 1 || !IsString(text))
+    if (!text || resize < 1)
         return text;
 
-    let len = text.length;
-    if (Upper(text) == text)
-        len *= 4/3;
+    let len;
+    if (IsString(text)) {
+        len = text.length;
+        if (Upper(text) == text)
+            len *= 4/3;
+    }
+    else {
+        text += '';
+        len = text.length;
+    }
 
     if (len > resize)
         text = `<span class="resize">${text}</span>`;
@@ -2685,6 +2699,7 @@ if (typeof exports != 'undefined') {
         KEYS: KEYS,
         LANGUAGES: LANGUAGES,
         load_defaults: load_defaults,
+        LOCALHOST: LOCALHOST,
         me: me,
         merge_settings: merge_settings,
         NO_IMPORTS: NO_IMPORTS,
