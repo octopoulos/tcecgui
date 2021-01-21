@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 /*
 globals
@@ -352,7 +352,9 @@ Assign(translates, {
 // resize_text
 [
     [null, 4, null],
-    [123456, 4, 123456],
+    [12, 2, '12'],
+    [123, 2, '<span class="resize">123</span>'],
+    [123456, 4, '<span class="resize">123456</span>'],
     ['Qxc6', 4, 'Qxc6'],
     ['QXC6', 4, '<span class="resize">QXC6</span>'],
     ['Qxc6+', 4, '<span class="resize">Qxc6+</span>'],

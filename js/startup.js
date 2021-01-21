@@ -22,7 +22,8 @@ get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, Has
 Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings, Min,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
-require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resume_sleep,
+require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resize_move_lists,
+resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -113,6 +114,7 @@ let AD_STYLES = {},
         'octopoulo',
         'sopel',
         'stream',
+        'stream2',
         'terjeweiss',
     ],
     ready = 0,
@@ -276,6 +278,7 @@ function change_setting_special(name, value, close) {
         break;
     case 'click_here_to_RESET_everything':
         reset_settings(true);
+        save_option('last_preset', '');
         add_timeout('quick', () => quick_setup(true), TIMEOUT_quick);
         break;
     case 'custom_black':
@@ -315,7 +318,7 @@ function change_setting_special(name, value, close) {
         resize_panels();
         break;
     case 'export_settings':
-        export_settings('tcec-settings');
+        export_settings(Y.last_preset || 'tcec-settings');
         break;
     case 'game_960':
         pva.frc = value;
@@ -388,6 +391,7 @@ function change_setting_special(name, value, close) {
         break;
     case 'preset':
         load_preset(value);
+        save_option('last_preset', value);
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -519,7 +523,7 @@ function check_stream() {
     Y.stream = stream;
 
     if (stream) {
-        load_preset('stream');
+        load_preset('stream2');
         Assign(Y, {
             language: 'eng',
             twitch_chat: 0,
@@ -1259,49 +1263,6 @@ function resize() {
 }
 
 /**
- * Resize the move lists
- */
-function resize_move_lists() {
-    let styles = [
-        ['#archive .xmoves, #live .xmoves', Y.move_height, Y.grid],
-        ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
-        ['.live-pv', Y.move_height_live, Y.grid_live],
-        ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
-        ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
-    ];
-
-    // ~25px for the scrollbar
-    let scrollbar = device.mobile? 5: 25;
-
-    for (let [sel, height, grid] of styles) {
-        E(sel, node => {
-            let drag = Parent(node, {class_: 'drag'}),
-                iwidth = '1fr',
-                ratio = 1,
-                wextra = '',
-                width = node.clientWidth;
-            if (HasClass(node, 'column')) {
-                width = drag.clientWidth + Y.panel_gap - DefaultInt(node.style.maxWidth, width);
-                if (width > 0)
-                    wextra = `${width}px`;
-            }
-            else
-                wextra = '100%';
-
-            // normal size: 20 + 36 + 36 = 92
-            if (grid && width > scrollbar) {
-                ratio = Min(1, (width - scrollbar) / grid / 92);
-                iwidth = `minmax(${36 * ratio}px, 1fr)`;
-            }
-
-            let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
-            Style(node, `font-size:${13 * ratio}px;min-height:${height}px;${extra};width:${wextra}`);
-            Class(node, 'grid', grid);
-        });
-    }
-}
-
-/**
  * Resize the left & right panels
  */
 function resize_panels() {
@@ -1915,11 +1876,12 @@ function set_global_events() {
         }
 
         reader.readAsText(file);
-        reader.onloadend = function() {
+        reader.onloadend = () => {
             let data = reader.result;
             switch (id) {
                 case 'import_settings':
                     change_setting(id, data);
+                    save_option('last_preset', file.name.split('.').slice(0, -1).join('.'));
                     break;
                 case 'load_pgn':
                     let new_section = 'archive';
@@ -1959,8 +1921,6 @@ function prepare_settings() {
         areas: {
             bottom: [],
             center0: [
-                ['moves-archive', 0, 0],
-                ['moves-live', 0, 0],
                 ['engine', 1, 3],
                 ['table-pv', 1, 1],
                 ['table-pva', 0, 1],
@@ -1973,6 +1933,8 @@ function prepare_settings() {
                 ['table-tb', 1, 1],
                 ['table-agree', 1, 1],
                 ['table-kibitz', 0, 1],
+                ['moves-archive', 0, 1],
+                ['moves-live', 0, 1],
             ],
             left_20: [],
             left0: [
@@ -1997,8 +1959,10 @@ function prepare_settings() {
         },
         div: '',                            // archive link
         game: 0,
+        last_preset: '',
         link: '',                           // live link
         live_log: 'all',
+        offset: 0,                          // move height offset
         round: '',                          // archive link + live round
         scales: {},
         season: '',                         // archive link
@@ -2058,8 +2022,10 @@ function prepare_settings() {
         game: 1,
         import_settings: 2,
         language: 1,
+        last_preset: 1,
         link: 1,
         new_version: 1,
+        offset: 1,
         preset: 1,
         round: 1,
         s: 1,
@@ -2271,7 +2237,7 @@ function prepare_settings() {
         },
         engine: {
             engine_font: option_number(16, 8, 24, 0.25),
-            engine_spacing: option_number(0.2, 0, 5, 0.005),
+            engine_spacing: option_number(0.2, 0, 5, 0.0025),
             material_color: [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],
             mobility: [ON_OFF, 1, 'show r-mobility goal + mobilities'],
             moves_left: [ON_OFF, 1, 'show moves left when Lc0 is playing'],

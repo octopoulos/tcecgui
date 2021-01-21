@@ -22,7 +22,6 @@ if (typeof global != 'undefined') {
 
 // modify those values in config.js
 let HOST_ARCHIVE,
-    LOCALHOST = (typeof location == 'object') && location.port == 8080,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
@@ -416,7 +415,6 @@ if (typeof exports != 'undefined') {
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
-        LOCALHOST: LOCALHOST,
         mix_hex_colors: mix_hex_colors,
         reset_defaults: reset_defaults,
         reset_old_settings: reset_old_settings,

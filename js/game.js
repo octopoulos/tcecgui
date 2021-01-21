@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-19
+// @version 2021-01-20
 //
 // Game specific code:
 // - control the board, moves
@@ -820,6 +820,49 @@ function reset_sub_boards(section, mode, start_fen) {
 }
 
 /**
+ * Resize the move lists
+ */
+function resize_move_lists() {
+    let styles = [
+        ['#archive .xmoves, #live .xmoves', Y.move_height + Y.offset, Y.grid],
+        ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
+        ['.live-pv', Y.move_height_live, Y.grid_live],
+        ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
+        ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
+    ];
+
+    // ~25px for the scrollbar
+    let scrollbar = device.mobile? 5: 25;
+
+    for (let [sel, height, grid] of styles) {
+        E(sel, node => {
+            let drag = Parent(node, {class_: 'drag'}),
+                iwidth = '1fr',
+                ratio = 1,
+                wextra = '',
+                width = node.clientWidth;
+            if (HasClass(node, 'column')) {
+                width = drag.clientWidth + Y.panel_gap - DefaultInt(node.style.maxWidth, width);
+                if (width > 0)
+                    wextra = `${width}px`;
+            }
+            else
+                wextra = '100%';
+
+            // normal size: 20 + 36 + 36 = 92
+            if (grid && width > scrollbar) {
+                ratio = Min(1, (width - scrollbar) / grid / 92);
+                iwidth = `minmax(${36 * ratio}px, 1fr)`;
+            }
+
+            let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
+            Style(node, `font-size:${13 * ratio}px;height:${height}px;${extra};width:${wextra}`);
+            Class(node, 'grid', grid);
+        });
+    }
+}
+
+/**
  * Get the board name for the section: live, archive, pva ...
  * @param {string=} section
  * @returns {string}
@@ -868,6 +911,7 @@ function show_board_info(name, show) {
     Class('.xbottom', '-xcolor0 xcolor1', board.rotate, node);
     Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
     Style('.xframe', `top:${show? 23: 0}px`, true, node);
+    Y.offset = show? -46.5: 0;
 
     board.update_mini(0);
     board.update_mini(1);
@@ -3323,6 +3367,8 @@ function parse_time_control(value) {
  * Resize game elements
  */
 function resize_game() {
+    show_board_info(Y.x);
+
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (!board.main && !board.sub)
@@ -3334,9 +3380,8 @@ function resize_game() {
         board.resize(size, {instant: true, render: true});
     });
 
-    show_board_info(Y.x);
+    resize_move_lists();
     resize_3d();
-
     add_timeout('graph_resize', () => update_chart_options(null, 2), TIMEOUT_graph);
 }
 
@@ -5316,9 +5361,11 @@ function change_setting_game(name, value) {
         break;
     case 'status':
         show_board_info(Y.x);
+        resize_game();
         break;
     case 'status_pva':
         show_board_info('pva');
+        resize_game();
         break;
     case 'test_boom':
         check_boom(0, [3, 0, 0, false]);
@@ -5896,6 +5943,7 @@ function opened_table(node, name, tab) {
 
     check_paginations();
     show_board_info(section);
+    resize_game();
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
@@ -6015,6 +6063,7 @@ function resume_sleep(resume_time) {
         LS(`resume_sleep: ${resume_time}`);
     check_missing_moves();
     show_board_info(Y.x);
+    resize_game();
 }
 
 /**
