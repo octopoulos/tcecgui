@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-20
+@version 2021-01-21
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1473,7 +1473,7 @@ hsub {
     position: relative;
 }
 .graphs {
-    background: rgba(47, 152, 208, 0.1);
+    background: rgba(64, 128, 160, 0.1);
     height: 230px;
     width: 300px;
 }
