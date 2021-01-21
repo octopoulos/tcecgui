@@ -8,7 +8,7 @@
 /*
 globals
 Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
-location, LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
+LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
 
