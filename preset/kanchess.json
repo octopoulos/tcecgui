@@ -72,11 +72,6 @@
     ],
     "right0": [
       [
-        "quick-pagin",
-        0,
-        1
-      ],
-      [
         "table-chat",
         1,
         3
@@ -98,11 +93,6 @@
       ],
       [
         "shortcut_2",
-        0,
-        1
-      ],
-      [
-        "quick-search",
         0,
         1
       ]
@@ -291,6 +281,11 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
+  "move_font": 13,
+  "move_font_copy": 13,
+  "move_font_live": 13,
+  "move_font_pv": 13,
+  "move_font_pva": 13,
   "move_height": 70,
   "move_height_copy": 273,
   "move_height_live": 85,
@@ -313,6 +308,7 @@
   "piece_theme_pva": "dilena",
   "play_every": 1200,
   "popup_right_click": 1,
+  "PV_height": 60,
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",

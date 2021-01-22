@@ -48,24 +48,9 @@
         1
       ],
       [
-        "table-mobil",
-        1,
-        1
-      ],
-      [
-        "table-time",
-        1,
-        1
-      ],
-      [
-        "table-tb",
+        "table-kibitz",
         0,
         1
-      ],
-      [
-        "table-eval",
-        1,
-        3
       ],
       [
         "moves-archive",
@@ -73,7 +58,12 @@
         2
       ],
       [
-        "table-agree",
+        "table-mobil",
+        1,
+        1
+      ],
+      [
+        "table-tb",
         1,
         1
       ],
@@ -93,7 +83,17 @@
         1
       ],
       [
-        "table-kibitz",
+        "table-eval",
+        1,
+        3
+      ],
+      [
+        "table-agree",
+        1,
+        1
+      ],
+      [
+        "table-time",
         0,
         1
       ],
@@ -136,16 +136,6 @@
       ],
       [
         "table-live1",
-        0,
-        1
-      ],
-      [
-        "quick-pagin",
-        0,
-        1
-      ],
-      [
-        "quick-search",
         0,
         1
       ]
@@ -236,7 +226,7 @@
   "game_time": 5,
   "game_wasm": 1,
   "gamma": 1.5,
-  "graph_aspect_ratio": 1.465,
+  "graph_aspect_ratio": 1.63,
   "graph_color_0": "#fefdde",
   "graph_color_1": "#02031e",
   "graph_color_2": "#236ad6",
@@ -252,7 +242,7 @@
   "grid": 0,
   "grid_copy": 2,
   "grid_live": 0,
-  "grid_pv": 0,
+  "grid_pv": 2,
   "grid_pva": 0,
   "hardware": 0,
   "highlight_color": "#ffff00",
@@ -293,11 +283,16 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
+  "move_font": 13.3,
+  "move_font_copy": 13,
+  "move_font_live": 12.9,
+  "move_font_pv": 13,
+  "move_font_pva": 13,
   "move_height": 79.5,
   "move_height_copy": 273,
   "move_height_live": 55,
-  "move_height_pv": 91,
-  "move_height_pva": 86,
+  "move_height_pv": 190,
+  "move_height_pva": 110.5,
   "moves": 1,
   "moves_copy": 0,
   "moves_left": 1,
@@ -315,6 +310,7 @@
   "piece_theme_pva": "chess24",
   "play_every": 1200,
   "popup_right_click": 1,
+  "PV_height": 60,
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",
@@ -355,7 +351,7 @@
     "archive": "sched",
     "live": "stand"
   },
-  "tabs_per_row": 8,
+  "tabs_per_row": 5,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",

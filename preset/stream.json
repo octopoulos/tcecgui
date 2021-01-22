@@ -58,11 +58,6 @@
         1
       ],
       [
-        "table-pva",
-        0,
-        0
-      ],
-      [
         "table-kibitz",
         0,
         0
@@ -71,6 +66,11 @@
     "right0": [
       [
         "table-chat",
+        1,
+        1
+      ],
+      [
+        "table-pva",
         1,
         1
       ],
@@ -101,11 +101,6 @@
       ],
       [
         "table-live1",
-        0,
-        1
-      ],
-      [
-        "quick-pagin",
         0,
         1
       ]
@@ -189,7 +184,7 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 575,
+  "chat_height": 535.5,
   "column_bottom": 7,
   "column_top": 2,
   "controls": 0,
@@ -289,6 +284,11 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
+  "move_font": 14,
+  "move_font_copy": 13,
+  "move_font_live": 13,
+  "move_font_pv": 13,
+  "move_font_pva": 13,
   "move_height": 80,
   "move_height_copy": 260,
   "move_height_live": 57,
@@ -311,6 +311,7 @@
   "piece_theme_pva": "chess24",
   "play_every": 1200,
   "popup_right_click": 1,
+  "PV_height": 60,
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",

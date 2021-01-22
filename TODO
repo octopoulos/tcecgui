@@ -16,6 +16,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
+2021-01-22 : 2021-01-22 : change font size of moves + copy/live/pv/pva
 2021-01-22 : 2021-01-22 : improved mobile support
 2021-01-21 : 2021-01-21 : vertical table for shortcuts when num player <= 4
 2021-01-21 : 2021-01-21 : time left graph
