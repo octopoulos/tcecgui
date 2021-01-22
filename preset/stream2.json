@@ -87,9 +87,14 @@
     ],
     "left0": [
       [
+        "archive",
+        0,
+        1
+      ],
+      [
         "live",
         0,
-        3
+        1
       ],
       [
         "table-info",
@@ -99,11 +104,6 @@
     ],
     "right_20": [],
     "right0": [
-      [
-        "archive",
-        0,
-        1
-      ],
       [
         "table-chat",
         1,
