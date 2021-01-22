@@ -367,7 +367,7 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
-    TIMEOUT_graph = 500,
+    TIMEOUT_graph = 250,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -1683,6 +1683,9 @@ function show_tables(section, is_cup) {
  * @param {boolean=} reset clear the table before adding data to it (so far always the case)
  */
 function update_table(section, name, rows, parent='table', {output, reset=true}={}) {
+    if (!name)
+        return;
+
     // 1) resolve shortcut
     let is_shortcut,
         source = name;
@@ -2050,40 +2053,40 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         vectors.push([vector, dico]);
     }
 
-    // 6) create the nodes + rotate?
-    let nodes = [],
-        num_vector = vectors.length,
-        window_width = window.innerWidth,
-        rotate = (num_vector <= 4 && (is_shortcut || window_width <= 866));
-    if (rotate) {
-        columns.filter(key => !hidden[key]).map((key, id) => {
-            let column = _(`th[data-x="${key}"]`, table2),
-                row = vectors.map(vector => vector[0][id]).join('');
-            let node = CreateNode('tr', [column.outerHTML, row].join(''), {class: 'rotate'});
-            nodes.push(node);
-        });
-    }
-    // no rotation
-    else {
-        for (let [vector, dico] of vectors) {
-            let node = CreateNode('tr', vector.join(''), dico);
-            nodes.push(node);
-        }
-    }
-    S(_('tr', table), !rotate || (is_shortcut && !num_vector));
-
-    if (rotate) {
-        let th_width = Clamp(window_width / 4, 90, 120);
-        for (let node of nodes)
-            Style('th', `width:${th_width}px`, true, node);
-    }
-
-    // 7) add events
     if (is_same) {
+        // 6) create the nodes + rotate?
+        let nodes = [],
+            num_vector = vectors.length,
+            window_width = window.innerWidth,
+            rotate = (num_vector <= 4 && (is_shortcut || window_width <= 866));
+        if (rotate) {
+            columns.filter(key => !hidden[key]).map((key, id) => {
+                let column = _(`th[data-x="${key}"]`, table2),
+                    row = vectors.map(vector => vector[0][id]).join('');
+                let node = CreateNode('tr', [column.outerHTML, row].join(''), {class: 'rotate'});
+                nodes.push(node);
+            });
+        }
+        // no rotation
+        else {
+            for (let [vector, dico] of vectors) {
+                let node = CreateNode('tr', vector.join(''), dico);
+                nodes.push(node);
+            }
+        }
+        S(_('tr', table), !rotate || (is_shortcut && !num_vector));
+
         InsertNodes(body, nodes);
+        if (rotate) {
+            let th_width = Clamp(window_width / 4, 90, 120);
+            for (let node of nodes)
+                Style('th', `width:${th_width}px`, true, node);
+        }
+
         update_svg(table);
         translate_nodes(table);
 
+        // 7) add events
         if (name == 'season')
             set_season_events();
 
@@ -3420,7 +3423,8 @@ function parse_time_control(value) {
  * Resize game elements
  */
 function resize_game() {
-    show_board_info(Y.x);
+    let section = Y.x;
+    show_board_info(section);
 
     Keys(xboards).forEach(key => {
         let board = xboards[key];
@@ -3435,7 +3439,13 @@ function resize_game() {
 
     resize_move_lists();
     resize_3d();
-    add_timeout('graph_resize', () => update_chart_options(null, 2), TIMEOUT_graph);
+
+    // resize graph + update table after a timeout
+    add_timeout('graph_resize', () => {
+        update_chart_options(null, 2);
+        for (let parent of ['quick', 'table'])
+            update_table(section, get_active_tab(parent)[0], null, parent);
+    }, TIMEOUT_graph);
 }
 
 /**
