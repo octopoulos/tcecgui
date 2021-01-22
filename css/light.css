@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-21
+@version 2021-01-22
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -957,9 +957,9 @@ hsub {
     padding: 0.5em 1em 0.5em 0.5em;
     text-align: right;
     white-space: normal;
-    width: 120px !important;
 }
 .rotate .version {
+    max-width: 100px;
     white-space: normal;
     word-break: break-all;
 }
@@ -1635,9 +1635,6 @@ svg.down {
     #header,
     #table-tabs {
         font-size: 0.9em;
-    }
-    .stats {
-        width: 95px;
     }
     #table-stats {
         font-size: 0.85em;
