@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-22
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -23,7 +23,7 @@ Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resize_move_lists,
-resume_sleep,
+resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
 startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, Title, TITLES, toggle_fullscreen, touch_handle,
@@ -1244,14 +1244,17 @@ function reset_settings_special(is_default) {
  * Resize the window => resize some other elements
  */
 function resize() {
+    // 1) tabs per row
     Style('.tabs > .tab', `flex-basis:${Floor(200 / Y.tabs_per_row) / 2}%`);
+
+    // 2) limit each panel
     Style(
         '#banners, #bottom, #main, .pagin, .scroller, #sub-header, #table-log, #table-search, #table-status'
         + ', #table-tabs, #top',
         `max-width:${Y.max_window}px`
     );
 
-    // chat height => resize all sibling tabs
+    // 3) chat height => resize all sibling tabs
     let chat_height = Clamp(Y.chat_height, 350, window.height),
         chat_tab = _('.tab[data-x="table-chat"]'),
         parent = Parent(chat_tab),
@@ -1261,15 +1264,11 @@ function resize() {
     Style(siblings, `height:${chat_height + 32}px;width:100%`);
     Style('#chat, #chat2', `height:${chat_height}px;width:100%`);
 
-    let window_width = window.innerWidth;
-    Style(
-        Id('table-stats'),
-        `grid-template-columns:repeat(${window_width < 740? 3: 6}, ${window_width < 330? 102: 115}px)`,
-    );
-
+    // 4) resize panels + stats
     resize_panels();
+    resize_table('stats');
 
-    // resize charts
+    // 5) resize charts
     E('.chart', node => {
         let parent = node.parentNode,
             width = parent.clientWidth - 2,
@@ -1280,6 +1279,7 @@ function resize() {
     if (Visible('#table-brak'))
         resize_bracket();
 
+    // 6) resize game
     adjust_popups();
     resize_game();
 }
@@ -1483,6 +1483,8 @@ function update_background() {
  * TODO: delete this
  */
 function update_shortcuts() {
+    let names = new Set();
+
     for (let id of [1, 2]) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
@@ -1501,12 +1503,18 @@ function update_shortcuts() {
                     table = Id(`table-${shortcut}`);
 
                 // not in tables => direct copy, ex: "stats"
-                if (!TABLES[shortcut] || !HTML(node))
+                if (!TABLES[shortcut] || !HTML(node)) {
                     HTML(node, HTML(table));
+                    names.add(shortcut);
+                }
             }
         }
         S(tab, shortcut);
     }
+
+    // resize
+    for (let name of names)
+        resize_table(name);
 }
 
 /**

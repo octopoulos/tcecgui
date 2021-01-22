@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-22
 //
 // Game specific code:
 // - control the board, moves
@@ -823,13 +823,15 @@ function reset_sub_boards(section, mode, start_fen) {
  * Resize the move lists
  */
 function resize_move_lists() {
-    let styles = [
-        ['#archive .xmoves, #live .xmoves', Y.move_height + Y.offset, Y.grid],
-        ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
-        ['.live-pv', Y.move_height_live, Y.grid_live],
-        ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
-        ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
-    ];
+    let window_width = window.innerWidth,
+        offset = (window_width <= 420)? 0: Y.offset,
+        styles = [
+            ['#archive .xmoves, #live .xmoves', Y.move_height + offset, Y.grid],
+            ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
+            ['.live-pv', Y.move_height_live, Y.grid_live],
+            ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
+            ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
+        ];
 
     // ~25px for the scrollbar
     let scrollbar = device.mobile? 5: 25;
@@ -837,11 +839,18 @@ function resize_move_lists() {
     for (let [sel, height, grid] of styles) {
         E(sel, node => {
             let drag = Parent(node, {class_: 'drag'}),
+                is_column = HasClass(node, 'column'),
                 iwidth = '1fr',
+                parent = Parent(node, {class_: 'xboard'}),
                 ratio = 1,
                 wextra = '',
                 width = node.clientWidth;
-            if (HasClass(node, 'column')) {
+            if (is_column) {
+                if (parent) {
+                    let board = _('.xframe', parent);
+                    if (board)
+                        height = board.clientHeight;
+                }
                 width = drag.clientWidth + Y.panel_gap - DefaultInt(node.style.maxWidth, width);
                 if (width > 0)
                     wextra = `${width}px`;
@@ -1691,6 +1700,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         if (is_shortcut) {
             let node = Id(`table-${name}`);
             HTML(Id(source), HTML(node));
+            resize_table(name);
         }
         return;
     }
@@ -2045,7 +2055,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // 6) create the nodes + rotate?
     let nodes = [],
         num_vector = vectors.length,
-        rotate = (is_shortcut && num_vector <= 4);
+        window_width = window.innerWidth,
+        rotate = (num_vector <= 4 && (is_shortcut || window_width <= 866));
     if (rotate) {
         columns.filter(key => !hidden[key]).map((key, id) => {
             let column = _(`th[data-x="${key}"]`, table2),
@@ -2062,6 +2073,11 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }
     }
     S(_('tr', table), !rotate || (is_shortcut && !num_vector));
+
+    if (rotate) {
+        let th_width = Clamp(window_width / 4, 90, 120);
+        Style('th', `width:${th_width}px`, true, table);
+    }
 
     // 7) add events
     if (is_same) {
@@ -2542,7 +2558,8 @@ function calculate_event_stats(section, rows) {
             ].join('');
         });
 
-    let node = Id('table-stats');
+    let parent = Id('table-stats'),
+        node = _('.estats', parent);
     HTML(node, lines.join(''));
     translate_nodes(node);
 
@@ -2550,8 +2567,10 @@ function calculate_event_stats(section, rows) {
     for (let id of [1, 2]) {
         let key = `shortcut_${id}`;
         if (Y[key] == 'stats')
-            HTML(Id(key), HTML(node));
+            HTML(Id(key), HTML(parent));
     }
+
+    resize_table('stats');
 }
 
 /**
@@ -3418,6 +3437,22 @@ function resize_game() {
     resize_move_lists();
     resize_3d();
     add_timeout('graph_resize', () => update_chart_options(null, 2), TIMEOUT_graph);
+}
+
+/**
+ * Resize event stats: main + quick
+ * @param {string} name stats
+ */
+function resize_table(name) {
+    if (name == 'stats') {
+        E('.estats', node => {
+            let ewidth = node.parentNode.clientWidth,
+                num_column = (ewidth < 740? 3: 6),
+                width = (ewidth < 330)? 102: 115;
+            Style(node, `grid-template-columns:repeat(${num_column}, ${width}px)`);
+            Style('.stats', `width:${width - 6}px`, true, node);
+        });
+    }
 }
 
 /**
