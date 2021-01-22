@@ -128,6 +128,9 @@ let AD_STYLES = {},
         '2=split linear',
         '3=split logarithmic',
     ],
+    SHORTCUT_NAMES = {
+        'Event Stats': 'Stats',
+    },
     stream_click = 0,
     TAB_NAMES = {
         depth: 'D/SD',
@@ -143,7 +146,7 @@ let AD_STYLES = {},
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000,
-    TIMEOUT_stream = 10000;
+    TIMEOUT_stream = 30000;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -414,7 +417,7 @@ function change_setting_special(name, value, close) {
         populate_areas();
         break;
     case 'use_for_arrow':
-        for (let id = 2; id < 4; id ++)
+        for (let id of [2, 3])
             save_option(`arrow_color_${id}`, Y[`graph_color_${id}`]);
         break;
     default:
@@ -544,7 +547,7 @@ function check_stream() {
             stream_click ++;
 
             let shortcuts = [1, 2].map(id => _(`.tab[data-x="shortcut_${id}"]`)).filter(node => Visible(node)),
-                target = shortcuts[(stream_click % 5 == 0)? shortcuts.length - 1: 0];
+                target = shortcuts[stream_click & 1];
             if (target)
                 target.click();
 
@@ -1423,7 +1426,7 @@ function show_live_engines() {
         players = main.players,
         single_line = Y.single_line;
 
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let hardware = players[id + 2].hardware;
         if (!hardware)
             continue;
@@ -1480,7 +1483,7 @@ function update_background() {
  * TODO: delete this
  */
 function update_shortcuts() {
-    for (let id = 1; id <= 2; id ++) {
+    for (let id of [1, 2]) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
         if (!tab)
@@ -1491,14 +1494,18 @@ function update_shortcuts() {
             if (target && !target.dataset.t)
                 target = _('[data-t]', target);
             if (target) {
-                tab.dataset.t = target.dataset.t;
+                let name = target.dataset.t;
+                tab.dataset.t = SHORTCUT_NAMES[name] || name;
                 translate_nodes(tab.parentNode);
-                let node = Id(`shortcut_${id}`);
-                if (!HTML(node))
-                    HTML(node, HTML(Id(`table-${shortcut}`)));
+                let node = Id(`shortcut_${id}`),
+                    table = Id(`table-${shortcut}`);
+
+                // not in tables => direct copy, ex: "stats"
+                if (!TABLES[shortcut] || !HTML(node))
+                    HTML(node, HTML(table));
             }
         }
-        S(tab, shortcut && shortcut != '0');
+        S(tab, shortcut);
     }
 }
 
@@ -2081,7 +2088,7 @@ function prepare_settings() {
         cores = navigator.hardwareConcurrency,
         min_max = 'min and max values, hidden if both are 0',
         old = 'move',
-        shortcuts = [...['off'], ...Keys(TABLES)],
+        shortcuts = [...['off'], ...[...Keys(TABLES), ...['stats']].sort()],
         show_plies = [['first', 'diverging', 'last'], 'diverging'];
 
     merge_settings({
@@ -2413,7 +2420,7 @@ function prepare_settings() {
         quick: {
             chat_height: option_number(828, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
-            shortcut_2: [shortcuts, 'cross'],
+            shortcut_2: [shortcuts, 'stats'],
         },
         reset: {
             _cancel: true,

@@ -190,7 +190,7 @@ function create_chart_data() {
         mobil: [
             new_dataset('mobility', Y.graph_color_0),
             new_dataset('mobility', Y.graph_color_1),
-            new_dataset('r-mobility', '#007f7f', '', {borderDash: [10, 5]}),
+            new_dataset('r-mobility', '#236ad6', '', {borderDash: [10, 5]}),
         ],
         node: [
             new_dataset('w', Y.graph_color_0),
@@ -276,7 +276,7 @@ function create_charts()
         let node = _(`#table-${name} > .chart`),
             markers = A('cmarker', node);
         if (!markers.length)
-            for (let i = 0; i < 2; i ++)
+            for (let i of [0, 1])
                 node.appendChild(CreateNode('div', null, {class: 'cmarker'}));
     });
 
@@ -362,7 +362,7 @@ function mark_ply_chart(name, ply, max_ply) {
         let invert_wb = (name == 'mobil') * 1,
             id = (name == 'agree')? 0: (ply + invert_wb) & 1,
             dataset = chart.data.datasets[id].data;
-        for (let i = 0; i < 2; i ++) {
+        for (let i of [0, 1]) {
             let first = dataset[i];
             if (first) {
                 offset = first.ply - i;
@@ -523,7 +523,7 @@ function redraw_eval_charts(section) {
     update_live_chart(name, xboards.live1.evals[section], 3);
 
     // update last received player eval, for the next move
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let move = xboards[`pv${id}`].evals[section][num_move];
         if (move)
             update_live_chart(name, [move], id);
