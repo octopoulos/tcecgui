@@ -24,7 +24,11 @@ let CHART_JS = 'js/libs/chart-quick.js',
     ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
     NON_EVALS = new Set([undefined, null, '', '-', 'book']);
 
-let cached_percents = {},
+let BEGIN_ZEROES = {
+        eval: 1,
+        time: 1,
+    },
+    cached_percents = {},
     chart_data = {},
     CHART_LEGEND = {
         display: true,
@@ -248,7 +252,7 @@ function create_charts()
         let hits = format_unit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', true, format_time, 4, (item, data) => {
+    new_chart('time', true, format_time, 0, (item, data) => {
         return format_time(get_tooltip_data(item, data).y);
     }, {backgroundColor: 'rgb(10, 10, 10)'}, 2);
 
@@ -408,7 +412,7 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
         ticks_dico.callback = y_ticks;
 
     // eval
-    if (scale & 4)
+    if (BEGIN_ZEROES[name])
         ticks_dico.beginAtZero = true;
 
     if (Y.scales[name] == undefined)
