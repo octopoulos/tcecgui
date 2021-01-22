@@ -861,6 +861,7 @@ hsub {
 #shortcut_1,
 #shortcut_2,
 #table-winner {
+    align-content: start;
     max-height: 90vh;
     overflow-x: hidden;
 }

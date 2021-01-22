@@ -127,7 +127,7 @@
         1
       ],
       [
-        "table-node",
+        "table-time",
         0,
         1
       ],
@@ -137,12 +137,12 @@
         1
       ],
       [
-        "table-tb",
+        "table-node",
         0,
         1
       ],
       [
-        "table-time",
+        "table-tb",
         0,
         1
       ]
@@ -327,7 +327,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "cross",
+  "shortcut_2": "stats",
   "show_delay": 500,
   "show_ply": "diverging",
   "SI_units": 1,

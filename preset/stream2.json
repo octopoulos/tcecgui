@@ -16,17 +16,17 @@
         3
       ],
       [
-        "table-eval",
-        0,
-        3
-      ],
-      [
-        "table-agree",
-        0,
-        3
-      ],
-      [
         "table-mobil",
+        0,
+        3
+      ],
+      [
+        "table-speed",
+        0,
+        3
+      ],
+      [
+        "table-node",
         0,
         3
       ],
@@ -70,7 +70,7 @@
     ],
     "left_20": [
       [
-        "table-node",
+        "table-eval",
         0,
         3
       ],
@@ -80,7 +80,7 @@
         3
       ],
       [
-        "table-speed",
+        "table-agree",
         0,
         3
       ]
@@ -335,7 +335,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "cross",
+  "shortcut_2": "stats",
   "show_delay": 500,
   "show_ply": "diverging",
   "SI_units": 1,

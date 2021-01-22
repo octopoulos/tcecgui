@@ -343,7 +343,7 @@ class XBoard {
                         for (let [parent, last] of parent_lasts) {
                             let node = CreateNode('a', '0.', {class: 'turn', 'data-i': -1});
                             parent.insertBefore(node, last);
-                            for (let j = 0; j < 2; j ++)
+                            for (let j of [0, 1])
                                 parent.insertBefore(CreateNode('b'), last);
                         }
                     }
@@ -1778,7 +1778,7 @@ class XBoard {
             else if ('bnprqk'.includes(item))
                 materials[1] += item;
         });
-        for (let i = 0; i < 2; i ++)
+        for (let i of [0, 1])
             materials[i] = Lower(materials[i]).split('').sort((a, b) => MATERIAL_ORDERS[a] - MATERIAL_ORDERS[b]);
 
         for (let material of materials)
@@ -1786,7 +1786,7 @@ class XBoard {
                 enough ++;
 
         if (!enough) {
-            for (let i = 0; i < 2; i ++)
+            for (let i of [0, 1])
                 materials[i] = materials[i].join('');
 
             for (let material of materials)

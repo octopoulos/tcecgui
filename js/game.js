@@ -983,7 +983,7 @@ function update_engine_pieces() {
     let main = xboards.live,
         [piece_size, style] = main.get_piece_background(20);
 
-    for (let i = 0; i < 2; i ++) {
+    for (let i of [0, 1]) {
         let node = Id(`king${i}`),
             offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_size;
         Style('div', `${style};background-position-x:${offset}px`, true, node);
@@ -1204,7 +1204,7 @@ function calculate_h2h(section, rows) {
     }
 
     // update players + UI info
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let player = players[id];
         player.score = (names[player.name] - 1).toFixed(1);
     }
@@ -1684,9 +1684,16 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_shortcut = true;
         parent = 'quick';
     }
+
     // not a real table?
-    if (!TABLES[name])
+    // - but maybe a direct copy, ex: "stats"
+    if (!TABLES[name]) {
+        if (is_shortcut) {
+            let node = Id(`table-${name}`);
+            HTML(Id(source), HTML(node));
+        }
         return;
+    }
 
     // 2) update table data
     let data_x = SetDefault(table_data[section], name, {data: []}),
@@ -2133,7 +2140,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // 8) update shortcuts
     if (parent == 'table' && !Y.sort) {
-        for (let id = 1; id <= 2; id ++) {
+        for (let id of [1, 2]) {
             // shortcut matches this table?
             let key = `shortcut_${id}`;
             if (name != Y[key])
@@ -2538,6 +2545,13 @@ function calculate_event_stats(section, rows) {
     let node = Id('table-stats');
     HTML(node, lines.join(''));
     translate_nodes(node);
+
+    // 6) shortcuts?
+    for (let id of [1, 2]) {
+        let key = `shortcut_${id}`;
+        if (Y[key] == 'stats')
+            HTML(Id(key), HTML(node));
+    }
 }
 
 /**
@@ -2711,7 +2725,7 @@ function create_bracket(section, data) {
                     + `<grid class="match-grid${do_class}">`
             );
 
-            for (let id = 0; id < 2; id ++) {
+            for (let id of [0, 1]) {
                 let [name_class, name] = names[id] || [],
                     [score_class, score, seed, place] = scores[id] || [];
 
@@ -3533,7 +3547,7 @@ function update_materials(move) {
         }
     });
 
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let node = Id(`material${id}`),
             html = HTML(node),
             material = materials[id].join('');
@@ -3688,7 +3702,7 @@ function update_options(section) {
         pgn = main.pgn,
         players = main.players;
 
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let key = `${WB_TITLE[id]}EngineOptions`,
             pgn_options = pgn[key];
         if (!pgn_options)
@@ -3824,7 +3838,7 @@ function update_overview_moves(section, headers, moves, is_new) {
 
     // 1) clock
     // time control could be different for white and black
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let tc = headers[`${WB_TITLE[id]}TimeControl`];
         if (tc) {
             let dico = parse_time_control(tc)[1];
@@ -4039,7 +4053,7 @@ function update_pgn(section, data, extras, reset_moves) {
     if (new_game) {
         // 2: a new game was started and we already had a game before
         if (new_game == 2) {
-            for (let id = 0; id < 2; id ++) {
+            for (let id of [0, 1]) {
                 let player = players[id];
                 Assign(player, {
                     elapsed: 0,
@@ -4050,7 +4064,7 @@ function update_pgn(section, data, extras, reset_moves) {
             add_queue(section, 'table');
         }
         else {
-            for (let id = 0; id < 2; id ++) {
+            for (let id of [0, 1]) {
                 let player = players[id];
                 if (!player.elapsed)
                     player.elapsed = 0;
@@ -4084,7 +4098,7 @@ function update_pgn(section, data, extras, reset_moves) {
 function update_scores(section) {
     let main = xboards[section],
         players = main.players;
-    for (let id = 0; id < 2; id ++) {
+    for (let id of [0, 1]) {
         let player = players[id];
         HTML(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
     }
