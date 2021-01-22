@@ -2074,7 +2074,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     if (rotate) {
         let th_width = Clamp(window_width / 4, 90, 120);
-        Style('th', `width:${th_width}px`, true, table);
+        for (let node of nodes)
+            Style('th', `width:${th_width}px`, true, node);
     }
 
     // 7) add events
