@@ -2411,7 +2411,7 @@ function prepare_settings() {
             unhide: '1',
         },
         quick: {
-            chat_height: option_number(770, 100, 1600, 0.5),
+            chat_height: option_number(828, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'cross'],
         },
