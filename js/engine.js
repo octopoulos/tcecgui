@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-20
+// @version 2021-01-21
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1278,9 +1278,10 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
  * Resize text if it's too long
  * @param {string} text
  * @param {number} resize maximum size
+ * @param {string=} class_ class to use
  * @returns {string} the resized text
  */
-function resize_text(text, resize)
+function resize_text(text, resize, class_='resize')
 {
     if (!text || resize < 1)
         return text;
@@ -1297,7 +1298,7 @@ function resize_text(text, resize)
     }
 
     if (len > resize)
-        text = `<span class="resize">${text}</span>`;
+        text = `<span class="${class_}">${text}</span>`;
     return text;
 }
 

@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-20
+@version 2021-01-21
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -222,7 +222,7 @@ textarea {
 }
 th {
     background: #191919;
-    color: white;
+    color: #fff;
     padding: 0.25em;
     text-align: center;
 }
@@ -684,9 +684,6 @@ input.two {
 .real {
     color: #07f;
 }
-.real .resize {
-    font-size: 0.9em;
-}
 #moves-pv1 .real,
 #pv1 .real {
     color: #7ce
@@ -696,9 +693,6 @@ input.two {
 }
 .turn {
     color: #222;
-}
-.turn .resize {
-    font-size: 0.75em;
 }
 #moves-pv1 .turn,
 #pv1 .turn {
@@ -751,6 +745,12 @@ input.two {
 #pva .source,
 #pva .target {
     cursor: pointer;
+}
+.grid .mini-move {
+    font-size: 0.9em;
+}
+.grid .mini-turn {
+    font-size: 0.75em;
 }
 
 /* tables */
@@ -938,6 +938,29 @@ hsub {
 #tables th {
     cursor: pointer;
     font-size: 1.05em;
+}
+.rotate hori {
+    flex-direction: column;
+    text-align: center;
+}
+.rotate hsub {
+    color: #333;
+}
+.rotate .left-image {
+    margin-right: 0;
+}
+.rotate th {
+    background: rgba(0, 0, 0, 0.025);
+    color: #000;
+    font-weight: 500;
+    padding: 0.5em 1em 0.5em 0.5em;
+    text-align: right;
+    white-space: normal;
+    width: 120px !important;
+}
+.rotate .version {
+    white-space: normal;
+    word-break: break-all;
 }
 
 /* engines */
@@ -1473,7 +1496,7 @@ hsub {
     position: relative;
 }
 .graphs {
-    background: rgba(47, 152, 208, 0.1);
+    background: rgba(64, 128, 160, 0.1);
     height: 230px;
     width: 300px;
 }

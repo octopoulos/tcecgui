@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-20
+// @version 2021-01-21
 //
 /*
 globals
@@ -351,18 +351,20 @@ Assign(translates, {
 
 // resize_text
 [
-    [null, 4, null],
-    [12, 2, '12'],
-    [123, 2, '<span class="resize">123</span>'],
-    [123456, 4, '<span class="resize">123456</span>'],
-    ['Qxc6', 4, 'Qxc6'],
-    ['QXC6', 4, '<span class="resize">QXC6</span>'],
-    ['Qxc6+', 4, '<span class="resize">Qxc6+</span>'],
-    ['KomodoDragonArmageddon', 0, 'KomodoDragonArmageddon'],
-    ['KomodoDragonArmageddon', 15, '<span class="resize">KomodoDragonArmageddon</span>'],
-].forEach(([text, resize, answer], id) => {
+    [null, 4, undefined, null],
+    [12, 2, undefined, '12'],
+    [123, 2, undefined, '<span class="resize">123</span>'],
+    [123456, 4, undefined, '<span class="resize">123456</span>'],
+    [123456, 4, '', '<span class="">123456</span>'],
+    ['Qxc6', 4, undefined, 'Qxc6'],
+    ['QXC6', 4, undefined, '<span class="resize">QXC6</span>'],
+    ['Qxc6+', 4, undefined, '<span class="resize">Qxc6+</span>'],
+    ['Qxc6+', 4, 'compress', '<span class="compress">Qxc6+</span>'],
+    ['KomodoDragonArmageddon', 0, undefined, 'KomodoDragonArmageddon'],
+    ['KomodoDragonArmageddon', 15, undefined, '<span class="resize">KomodoDragonArmageddon</span>'],
+].forEach(([text, resize, class_, answer], id) => {
     test(`resize_text:${id}`, () => {
-        expect(resize_text(text, resize)).toEqual(answer);
+        expect(resize_text(text, resize, class_)).toEqual(answer);
     });
 });
 

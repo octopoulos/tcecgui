@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-20
+// @version 2021-01-21
 //
 // Game specific code:
 // - control the board, moves
@@ -1429,7 +1429,7 @@ function create_tables() {
         let is_overview = (name == 'overview'),
             table = TABLES[name],
             html = create_table(Split(table), is_overview);
-        HTML(`#${is_overview? '': 'table-'}${name}`, html);
+        HTML(Id(`${is_overview? '': 'table-'}${name}`), html);
     });
     translate_nodes('body');
 
@@ -1699,6 +1699,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_sched_archive = (is_sched && (section == 'archive' || tour_info[section].cup)),
         page_key = `page_${parent}`,
         table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
+        table2 = Id(`table-${output || name}`),
         body = _('tbody', table);
 
     if (!table)
@@ -1836,15 +1837,15 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 5) process all rows => render the HTML
-    let columns = From(A('th', table)).map(node => node.dataset.x),
+    let columns = From(A('th', table2 || table)).map(node => node.dataset.x),
         hidden = {},
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
         is_stand = (name == 'stand'),
         is_winner = (name == 'winner'),
-        nodes = [],
         required = COLUMNS_REQUIRED[name] || [],
         tour_url = tour_info[section].url,
+        vectors = [],
         wrap = get_wrap(name, body);
 
     // hide columns?
@@ -2031,11 +2032,31 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 'data-g': row_id + 1,
             };
 
-        let node = CreateNode('tr', vector.join(''), dico);
-        nodes.push(node);
+        vectors.push([vector, dico]);
     }
 
-    // 6) add events
+    // 6) create the nodes + rotate?
+    let nodes = [],
+        num_vector = vectors.length,
+        rotate = (is_shortcut && num_vector <= 4);
+    if (rotate) {
+        columns.filter(key => !hidden[key]).map((key, id) => {
+            let column = _(`th[data-x="${key}"]`, table2),
+                row = vectors.map(vector => vector[0][id]).join('');
+            let node = CreateNode('tr', [column.outerHTML, row].join(''), {class: 'rotate'});
+            nodes.push(node);
+        });
+    }
+    // no rotation
+    else {
+        for (let [vector, dico] of vectors) {
+            let node = CreateNode('tr', vector.join(''), dico);
+            nodes.push(node);
+        }
+    }
+    S(_('tr', table), !rotate || (is_shortcut && !num_vector));
+
+    // 7) add events
     if (is_same) {
         InsertNodes(body, nodes);
         update_svg(table);
@@ -2110,7 +2131,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }, table);
     }
 
-    // 7) update shortcuts
+    // 8) update shortcuts
     if (parent == 'table' && !Y.sort) {
         for (let id = 1; id <= 2; id ++) {
             // shortcut matches this table?
@@ -2124,7 +2145,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         }
     }
 
-    // 8) create another table?
+    // 9) create another table?
     if (!is_shortcut && is_sched && !Y.sort)
         add_queue(section, parent);
 }
@@ -3537,7 +3558,7 @@ function update_mobility() {
         HTML(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
         node.dataset.i = gply;
     }
-    HTML(`#mobil${1 - (ply & 1)}`, Abs(mobility));
+    HTML(Id(`mobil${1 - (ply & 1)}`), Abs(mobility));
 }
 
 /**

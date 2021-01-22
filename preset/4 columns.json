@@ -2,7 +2,7 @@
   "_dpr": 1,
   "_height": 970,
   "_width": 1920,
-  "_zoom": 0.713,
+  "_zoom": 1,
   "agree_length": 1,
   "animate": 1,
   "animate_pv": 1,
@@ -80,11 +80,6 @@
     ],
     "left_20": [
       [
-        "archive",
-        0,
-        1
-      ],
-      [
         "moves-pv1",
         0,
         1
@@ -107,6 +102,11 @@
     ],
     "left0": [
       [
+        "archive",
+        0,
+        1
+      ],
+      [
         "live",
         0,
         1
@@ -125,6 +125,11 @@
         1
       ],
       [
+        "table-pva",
+        1,
+        1
+      ],
+      [
         "table-info",
         1,
         0
@@ -135,24 +140,9 @@
         1
       ],
       [
-        "table-pva",
-        1,
-        1
-      ],
-      [
         "shortcut_2",
         0,
         1
-      ],
-      [
-        "quick-pagin",
-        0,
-        0
-      ],
-      [
-        "quick-search",
-        0,
-        0
       ]
     ],
     "top": []
@@ -251,7 +241,7 @@
   "graph_scale": 0,
   "graph_tension": 0.1,
   "graph_text": 10,
-  "grid": 0,
+  "grid": 5,
   "grid_copy": 2,
   "grid_live": 3,
   "grid_pv": 0,
@@ -334,7 +324,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": 0,
+  "shortcut_2": "cross",
   "show_delay": 500,
   "show_ply": "diverging",
   "SI_units": 1,

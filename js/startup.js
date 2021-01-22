@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-20
+// @version 2021-01-21
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -26,7 +26,7 @@ require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, res
 resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
-startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, Title, TITLES, toggle_fullscreen, touch_handle,
+startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, Title, TITLES, toggle_fullscreen, touch_handle,
 translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
@@ -128,6 +128,7 @@ let AD_STYLES = {},
         '2=split linear',
         '3=split logarithmic',
     ],
+    stream_click = 0,
     TAB_NAMES = {
         depth: 'D/SD',
         mobil: 'Mob',
@@ -141,7 +142,8 @@ let AD_STYLES = {},
     TIMEOUT_font = 200,
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
-    TIMEOUT_size = 1000;
+    TIMEOUT_size = 1000,
+    TIMEOUT_stream = 10000;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -522,16 +524,33 @@ function check_stream() {
         return;
     Y.stream = stream;
 
-    if (stream) {
-        load_preset('stream2');
-        Assign(Y, {
-            language: 'eng',
-            twitch_chat: 0,
-            twitch_video: 0,
-        });
-        scroll_adjust('#overview');
-        Hide('.adblock, .google-ad');
+    if (!stream) {
+        clear_timeout('stream');
+        return;
     }
+
+    load_preset('stream2');
+    Assign(Y, {
+        language: 'eng',
+        twitch_chat: 0,
+        twitch_video: 0,
+    });
+    scroll_adjust('#overview');
+    Hide('.adblock, .google-ad');
+
+    // alternate between shortcut_1 and shortcut_2
+    if (!timers.stream)
+        add_timeout('stream', () => {
+            stream_click ++;
+
+            let shortcuts = [1, 2].map(id => _(`.tab[data-x="shortcut_${id}"]`)).filter(node => Visible(node)),
+                target = shortcuts[(stream_click % 5 == 0)? shortcuts.length - 1: 0];
+            if (target)
+                target.click();
+
+            if (!Y.stream)
+                clear_timeout('stream');
+        }, TIMEOUT_stream, true);
 }
 
 /**
@@ -1474,7 +1493,9 @@ function update_shortcuts() {
             if (target) {
                 tab.dataset.t = target.dataset.t;
                 translate_nodes(tab.parentNode);
-                HTML(Id(`shortcut_${id}`), HTML(Id(`table-${shortcut}`)));
+                let node = Id(`shortcut_${id}`);
+                if (!HTML(node))
+                    HTML(node, HTML(Id(`table-${shortcut}`)));
             }
         }
         S(tab, shortcut && shortcut != '0');
@@ -1918,12 +1939,12 @@ function load_settings() {
  */
 function prepare_settings() {
     Assign(DEFAULTS, {
+        // name, join_next, shown (&2: active)
         areas: {
             bottom: [],
             center0: [
                 ['engine', 1, 3],
-                ['table-pv', 1, 1],
-                ['table-pva', 0, 1],
+                ['table-pv', 0, 1],
                 ['table-eval', 1, 1],
                 ['table-mobil', 1, 1],
                 ['table-time', 1, 1],
@@ -1947,13 +1968,14 @@ function prepare_settings() {
             ],
             right_20: [],
             right0: [
-                ['quick-pagin', 0, 1],
                 ['table-chat', 1, 3],
                 ['table-winner', 1, 1],
-                ['table-info', 1, 1],
+                ['table-pva', 1, 1],
                 ['shortcut_1', 1, 1],
                 ['shortcut_2', 0, 1],
-                ['quick-search', 0, 1],
+                ['table-info', 0, 0],
+                ['quick-pagin', 0, 0],
+                ['quick-search', 0, 0],
             ],
             top: [],
         },
@@ -2389,9 +2411,9 @@ function prepare_settings() {
             unhide: '1',
         },
         quick: {
-            chat_height: option_number(770, 100, 1600, 0.5),
+            chat_height: option_number(828, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
-            shortcut_2: [shortcuts, 'sched'],
+            shortcut_2: [shortcuts, 'cross'],
         },
         reset: {
             _cancel: true,

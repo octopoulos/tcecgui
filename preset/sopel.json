@@ -30,11 +30,6 @@
         3
       ],
       [
-        "table-pva",
-        1,
-        2
-      ],
-      [
         "table-kibitz",
         0,
         2
@@ -82,19 +77,24 @@
         1
       ],
       [
-        "table-info",
-        1,
-        1
-      ],
-      [
-        "shortcut_2",
+        "table-pva",
         1,
         1
       ],
       [
         "shortcut_1",
+        1,
+        1
+      ],
+      [
+        "shortcut_2",
         0,
         1
+      ],
+      [
+        "table-info",
+        0,
+        0
       ]
     ],
     "bottom": [
@@ -322,7 +322,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "sched",
+  "shortcut_2": "cross",
   "show_delay": 500,
   "show_ply": "diverging",
   "single_line": 0,

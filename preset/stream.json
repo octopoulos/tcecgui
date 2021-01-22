@@ -70,14 +70,19 @@
     ],
     "right0": [
       [
-        "quick-pagin",
-        0,
+        "table-chat",
+        1,
         1
       ],
       [
-        "table-chat",
+        "shortcut_1",
         1,
-        0
+        3
+      ],
+      [
+        "shortcut_2",
+        0,
+        1
       ],
       [
         "table-winner",
@@ -90,22 +95,17 @@
         0
       ],
       [
-        "shortcut_1",
-        0,
-        3
-      ],
-      [
-        "shortcut_2",
-        0,
-        0
-      ],
-      [
         "table-live0",
         0,
         1
       ],
       [
         "table-live1",
+        0,
+        1
+      ],
+      [
+        "quick-pagin",
         0,
         1
       ]
@@ -327,7 +327,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "sched",
+  "shortcut_2": "cross",
   "show_delay": 500,
   "show_ply": "diverging",
   "SI_units": 1,

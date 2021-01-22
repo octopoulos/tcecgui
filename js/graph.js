@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-21
 //
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
 DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
-Log, Log10, LS, Max, Min, Pad, Pow, require, Round,
+Log, Log10, LS, Max, Min, mix_hex_colors, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
 */
 'use strict';
@@ -24,7 +24,11 @@ let CHART_JS = 'js/libs/chart-quick.js',
     ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
     NON_EVALS = new Set([undefined, null, '', '-', 'book']);
 
-let cached_percents = {},
+let BEGIN_ZEROES = {
+        eval: 1,
+        time: 1,
+    },
+    cached_percents = {},
     chart_data = {},
     CHART_LEGEND = {
         display: true,
@@ -168,6 +172,9 @@ function clamp_eval(eval_)
  * Create all chart data
  */
 function create_chart_data() {
+    let extra0 = mix_hex_colors(Y.graph_color_0, '#007fff', 0.2),
+        extra1 = mix_hex_colors(Y.graph_color_1, '#007fff', 0.75);
+
     let datasets = {
         agree: [
             new_dataset('{white} + {black}', Y.graph_color_0),
@@ -176,8 +183,8 @@ function create_chart_data() {
         depth: [
             new_dataset('depth', Y.graph_color_0),
             new_dataset('depth', Y.graph_color_1),
-            new_dataset('selective', Y.graph_color_0, '', {borderDash: [5, 5]}),
-            new_dataset('selective', Y.graph_color_1, '', {borderDash: [5, 5]}),
+            new_dataset('selective', extra0),
+            new_dataset('selective', extra1),
         ],
         eval: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
         mobil: [
@@ -198,8 +205,10 @@ function create_chart_data() {
             new_dataset('b', Y.graph_color_1),
         ],
         time: [
-            new_dataset('w', Y.graph_color_0),
-            new_dataset('b', Y.graph_color_1),
+            new_dataset('time', Y.graph_color_0),
+            new_dataset('time', Y.graph_color_1),
+            new_dataset('left', extra0, 'y-axis-1'),
+            new_dataset('left', extra1, 'y-axis-1'),
         ],
     };
 
@@ -243,10 +252,9 @@ function create_charts()
         let hits = format_unit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', false, FormatAxis, 0, (item, data) => {
-        let [_, min, sec] = FromSeconds(get_tooltip_data(item, data).y);
-        return `${min}:${Pad(sec)}`;
-    }, {backgroundColor: 'rgb(10, 10, 10)'});
+    new_chart('time', true, format_time, 0, (item, data) => {
+        return format_time(get_tooltip_data(item, data).y);
+    }, {backgroundColor: 'rgb(10, 10, 10)'}, 2);
 
     // 2) click events
     Keys(charts).forEach(name => {
@@ -296,6 +304,16 @@ function fix_labels(labels) {
     for (let i = 0; i < num_label; i ++)
         if (labels[i] == undefined)
             labels[i] = i + offset;
+}
+
+/**
+ * Format hh:mm:ss or mm:ss from seconds
+ * @param {number} seconds
+ * @returns {string}
+ */
+function format_time(seconds) {
+    let [hour, min, sec] = FromSeconds(seconds);
+    return (hour > 0)? `${hour}h${Pad(min)}`: (min > 0)? `${min}:${Pad(sec)}`: sec;
 }
 
 /**
@@ -386,14 +404,15 @@ function mark_ply_charts(ply, max_ply) {
  * @param {number=} scale 1:log, 2:custom, 4:eval
  * @param {function=} tooltip_callback
  * @param {Object=} dico
+ * @param {number=} number number of axes
  */
-function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico) {
+function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, number=1) {
     let ticks_dico = {};
     if (y_ticks)
         ticks_dico.callback = y_ticks;
 
     // eval
-    if (scale & 4)
+    if (BEGIN_ZEROES[name])
         ticks_dico.beginAtZero = true;
 
     if (Y.scales[name] == undefined)
@@ -407,7 +426,7 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico) {
     let options = Assign({}, CHART_OPTIONS, {
         scales: {
             xAxes: [CHART_X_AXES],
-            yAxes: [0].map(id => new_y_axis(id, ticks_dico, axis_dico)),
+            yAxes: Array(number).fill(0).map((_, id) => new_y_axis(id, ticks_dico, axis_dico)),
         },
     });
 
@@ -672,7 +691,7 @@ function update_chart_options(name, mode) {
                 Assign(dataset, {
                     borderWidth: line_width,
                     lineTension: Y.graph_tension,
-                    pointRadius: point_radius,
+                    pointRadius: dataset.borderDash? 0: point_radius,
                     showLine: line_width > 0,
                 });
 
@@ -861,6 +880,7 @@ function update_player_chart(name, moves) {
             dico.y = move.tb;
             break;
         case 'time':
+            datasets[2 + (ply & 1)].data[num2] = Assign({y: move.tl / 1000}, dico);
             dico.y = move.mt / 1000;
             break;
         }

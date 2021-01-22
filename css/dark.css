@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-20
+@version 2021-01-21
 - used in Live mode
 - inherits from light.css
 */
@@ -121,7 +121,7 @@ textarea:hover {
     color: #dfdfdf;
 }
 .graphs {
-    background: rgba(235, 235, 238, 0.8);
+    background: rgba(235, 235, 238, 0.75);
 }
 .stats {
     background: rgba(1, 9, 26, 0.28);
@@ -130,6 +130,14 @@ textarea:hover {
 }
 .stats-title {
     color: #fff;
+}
+.rotate hsub {
+    color: #ccc;
+}
+.rotate th {
+    background: rgba(0, 0, 0, 0.1);
+    color: #fff;
+    white-space: normal;
 }
 
 /* bracket */
