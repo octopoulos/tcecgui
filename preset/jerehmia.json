@@ -21,27 +21,12 @@
         1
       ],
       [
-        "table-pva",
+        "table-kibitz",
         0,
         1
       ],
       [
-        "table-eval",
-        1,
-        3
-      ],
-      [
         "table-mobil",
-        1,
-        1
-      ],
-      [
-        "table-time",
-        1,
-        1
-      ],
-      [
-        "table-depth",
         1,
         1
       ],
@@ -51,7 +36,7 @@
         1
       ],
       [
-        "table-node",
+        "table-depth",
         1,
         1
       ],
@@ -61,12 +46,22 @@
         1
       ],
       [
+        "table-node",
+        1,
+        1
+      ],
+      [
+        "table-eval",
+        1,
+        3
+      ],
+      [
         "table-agree",
         1,
         1
       ],
       [
-        "table-kibitz",
+        "table-time",
         0,
         1
       ],
@@ -112,6 +107,11 @@
       [
         "table-winner",
         1,
+        2
+      ],
+      [
+        "table-pva",
+        1,
         1
       ],
       [
@@ -138,16 +138,6 @@
         "table-live1",
         0,
         3
-      ],
-      [
-        "quick-pagin",
-        0,
-        1
-      ],
-      [
-        "quick-search",
-        0,
-        1
       ]
     ],
     "bottom": [],
@@ -193,7 +183,7 @@
   "boom_visual": "all",
   "boom_volume": 3.5,
   "capture_delay": -200,
-  "chat_height": 522,
+  "chat_height": 521,
   "column_bottom": 4,
   "column_top": 1,
   "controls": 0,
@@ -230,7 +220,7 @@
   "game_new_FEN": "",
   "game_options_black": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
   "game_options_white": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_PV": 1,
+  "game_PV": 0,
   "game_search": "ab",
   "game_threads": 1,
   "game_time": 5,
@@ -252,7 +242,7 @@
   "grid": 0,
   "grid_copy": 2,
   "grid_live": 0,
-  "grid_pv": 1,
+  "grid_pv": 2,
   "grid_pva": 0,
   "hardware": 1,
   "highlight_color": "#c4cdce",
@@ -293,10 +283,15 @@
   "moob_visual": 1,
   "moob_volume": 3.5,
   "more": 1,
-  "move_height": 186.5,
+  "move_font": 14,
+  "move_font_copy": 13,
+  "move_font_live": 13,
+  "move_font_pv": 13,
+  "move_font_pva": 13,
+  "move_height": 193,
   "move_height_copy": 273,
   "move_height_live": 56.5,
-  "move_height_pv": 104,
+  "move_height_pv": 157,
   "move_height_pva": 78,
   "moves": 1,
   "moves_copy": 0,
@@ -315,6 +310,7 @@
   "piece_theme_pva": "dilena",
   "play_every": 1200,
   "popup_right_click": 1,
+  "PV_height": 60,
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",
@@ -354,7 +350,7 @@
     "archive": "sched",
     "live": "stand"
   },
-  "tabs_per_row": 7,
+  "tabs_per_row": 5,
   "target_color": "#ff5a00",
   "target_opacity": 0.7,
   "texture": "auto",

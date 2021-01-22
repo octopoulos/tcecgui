@@ -50,12 +50,7 @@
       [
         "table-kibitz",
         1,
-        1
-      ],
-      [
-        "table-pva",
-        0,
-        1
+        0
       ],
       [
         "moves-archive",
@@ -110,7 +105,7 @@
         1
       ],
       [
-        "table-winner",
+        "table-pva",
         1,
         1
       ],
@@ -121,16 +116,6 @@
       ],
       [
         "shortcut_2",
-        0,
-        1
-      ],
-      [
-        "quick-pagin",
-        0,
-        1
-      ],
-      [
-        "quick-search",
         0,
         1
       ]
@@ -233,7 +218,7 @@
   "game_new_FEN": "",
   "game_options_black": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
   "game_options_white": "d=4 e=att h=1 o=2 q=8 s=ab t=2 x=20",
-  "game_PV": 1,
+  "game_PV": 0,
   "game_search": "ab",
   "game_threads": 1,
   "game_time": 5,
@@ -296,11 +281,16 @@
   "moob_visual": "all",
   "moob_volume": 3.5,
   "more": 1,
+  "move_font": 14,
+  "move_font_copy": 13,
+  "move_font_live": 13,
+  "move_font_pv": 13,
+  "move_font_pva": 13,
   "move_height": 116,
   "move_height_copy": 260,
   "move_height_live": 74,
   "move_height_pv": 375,
-  "move_height_pva": 50,
+  "move_height_pva": 70,
   "moves": 1,
   "moves_copy": 0,
   "moves_left": 1,
@@ -318,6 +308,7 @@
   "piece_theme_pva": "chess24",
   "play_every": 1200,
   "popup_right_click": 1,
+  "PV_height": 60,
   "quick_every": 300,
   "reload_missing": 1,
   "resolution": "1:2",

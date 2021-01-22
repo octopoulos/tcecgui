@@ -61,7 +61,7 @@ let AD_STYLES = {},
     },
     CONTEXT_MENUS = {
         '#engine': 'engine',
-        '#eval0, #eval1, #quick-search, #table-search': 'extra',
+        '#eval0, #eval1, #table-search': 'extra',
         '.moves': 'copy_copy',
         '.pagin, #table-tabs': 'extra',
         '.status': 'hide',
@@ -364,11 +364,17 @@ function change_setting_special(name, value, close) {
     case 'grid_live':
     case 'grid_pv':
     case 'grid_pva':
+    case 'move_font':
+    case 'move_font_copy':
+    case 'move_font_live':
+    case 'move_font_pv':
+    case 'move_font_pva':
     case 'move_height':
     case 'move_height_copy':
     case 'move_height_live':
     case 'move_height_pv':
     case 'move_height_pva':
+    case 'PV_height':
         resize_move_lists();
         break;
     case 'hide':
@@ -1989,8 +1995,6 @@ function prepare_settings() {
                 ['shortcut_1', 1, 1],
                 ['shortcut_2', 0, 1],
                 ['table-info', 0, 0],
-                ['quick-pagin', 0, 0],
-                ['quick-search', 0, 0],
             ],
             top: [],
         },
@@ -2366,6 +2370,7 @@ function prepare_settings() {
             live_engine_1: [ON_OFF, 1],
             live_engine_2: [ON_OFF, 1],
             live_pv: [ON_OFF, 1],
+            move_font_live: option_number(13, 6, 30, 0.1),
             move_height_live: option_number(52, 39, 1600, 0.5),
             moves_live: [ON_OFF, 1],
             show_ply: show_plies,
@@ -2377,6 +2382,11 @@ function prepare_settings() {
             grid_live: option_number(0, 0, 10),
             grid_pv: option_number(2, 0, 10),
             grid_pva: option_number(0, 0, 10),
+            move_font: option_number(13, 6, 30, 0.1),
+            move_font_copy: option_number(13, 6, 30, 0.1),
+            move_font_live: option_number(13, 6, 30, 0.1),
+            move_font_pv: option_number(13, 6, 30, 0.1),
+            move_font_pva: option_number(13, 6, 30, 0.1),
             move_height: option_number(70, 3, 1600, 0.5),
             move_height_copy: option_number(260, 39, 1600, 0.5),
             move_height_live: option_number(52, 39, 1600, 0.5),
@@ -2441,6 +2451,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid: option_number(0, 0, 10),
+            move_font: option_number(13, 6, 30, 0.1),
             move_height: option_number(70, 39, 1600, 0.5),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
@@ -2450,6 +2461,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid_copy: option_number(2, 0, 10),
+            move_font_copy: option_number(13, 6, 30, 0.1),
             move_height_copy: option_number(260, 39, 1600, 0.5),
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
@@ -2460,6 +2472,7 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid_pv: option_number(2, 0, 10),
+            move_font_pv: option_number(13, 6, 30, 0.1),
             move_height_pv: option_number(91, 39, 1600, 0.5),
             moves_pv: [ON_OFF, 1],
             show_ply: show_plies,
@@ -2469,8 +2482,10 @@ function prepare_settings() {
             copy: copy_moves,
             download_PGN: '1',
             grid_pva: option_number(0, 0, 10),
+            move_font_pva: option_number(13, 6, 30, 0.1),
             move_height_pva: option_number(70, 39, 1600, 0.5),
             moves_pva: [ON_OFF, 1],
+            PV_height: option_number(60, 39, 1600, 0.5),
         },
         eval: {
             _pop: true,

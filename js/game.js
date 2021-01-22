@@ -826,21 +826,21 @@ function resize_move_lists() {
     let window_width = window.innerWidth,
         offset = (window_width <= 420)? 0: Y.offset,
         styles = [
-            ['#archive .xmoves, #live .xmoves', Y.move_height + offset, Y.grid],
-            ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_height_pv, Y.grid_pv],
-            ['.live-pv', Y.move_height_live, Y.grid_live],
-            ['#pva .xmoves, #pva-pv', Y.move_height_pva, Y.grid_pva],
-            ['#moves-archive, #moves-live', Y.move_height_copy, Y.grid_copy],
+            ['#archive .xmoves, #live .xmoves', Y.move_font, Y.move_height + offset, Y.grid],
+            ['#live0 .xmoves, #live1 .xmoves, #pv0 .xmoves, #pv1 .xmoves', Y.move_font_pv, Y.move_height_pv, Y.grid_pv],
+            ['.live-pv', Y.move_font_live, Y.move_height_live, Y.grid_live],
+            ['#pva .xmoves', Y.move_font_pva, Y.move_height_pva, Y.grid_pva],
+            ['#pva-pv', Y.move_font_pva, Y.PV_height, Y.grid_pva],
+            ['#moves-archive, #moves-live', Y.move_font_copy, Y.move_height_copy, Y.grid_copy],
         ];
 
     // ~25px for the scrollbar
     let scrollbar = device.mobile? 5: 25;
 
-    for (let [sel, height, grid] of styles) {
+    for (let [sel, font, height, grid] of styles) {
         E(sel, node => {
             let drag = Parent(node, {class_: 'drag'}),
                 is_column = HasClass(node, 'column'),
-                iwidth = '1fr',
                 parent = Parent(node, {class_: 'xboard'}),
                 ratio = 1,
                 wextra = '',
@@ -859,13 +859,11 @@ function resize_move_lists() {
                 wextra = '100%';
 
             // normal size: 20 + 36 + 36 = 92
-            if (grid && width > scrollbar) {
+            if (grid && width > scrollbar)
                 ratio = Min(1, (width - scrollbar) / grid / 92);
-                iwidth = `minmax(${36 * ratio}px, 1fr)`;
-            }
 
-            let extra = grid? `grid-template-columns: repeat(${grid}, ${20 * ratio}px ${iwidth} ${iwidth})`: '';
-            Style(node, `font-size:${13 * ratio}px;height:${height}px;${extra};width:${wextra}`);
+            let extra = grid? `grid-template-columns: repeat(${grid}, 1fr 2fr 2fr`: '';
+            Style(node, `font-size:${font * ratio}px;height:${height}px;${extra};width:${wextra}`);
             Class(node, 'grid', grid);
         });
     }
