@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-20
+// @version 2021-01-21
 //
 // game board:
 // - 4 rendering modes:
@@ -335,7 +335,7 @@ class XBoard {
 
             let move_num = 1 + ply / 2;
             if (!(ply & 1)) {
-                let text = resize_text(move_num, 2);
+                let text = resize_text(move_num, 2, 'mini-turn');
                 if (is_ply)
                     lines.push(`<i class="turn">${text}.</i>`);
                 else if (i < 0) {
@@ -359,7 +359,7 @@ class XBoard {
             // add ... black move
             else {
                 let number = Floor(move_num),
-                    text = resize_text(number, 2);
+                    text = resize_text(number, 2, 'mini-turn');
 
                 if (lines.length < 2 && is_ply)
                     lines.push(`<i class="turn">${text}</i>...`);
@@ -376,7 +376,7 @@ class XBoard {
 
             if (move && move.m) {
                 let class_ = `${move.book? 'book': 'real'}${extra}`,
-                    text = resize_text(move.m, 4);
+                    text = resize_text(move.m, 4, 'mini-move');
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${text}</a>`);
                 else {
@@ -491,16 +491,14 @@ class XBoard {
             if (IsDigit(item[0])) {
                 let turn = parseInt(item);
                 ply = (turn - 1) * 2;
-                lines.push(`<i class="turn" data-j="${turn}">${resize_text(turn, 2)}.</i>`);
+                lines.push(`<i class="turn" data-j="${turn}">${resize_text(turn, 2, 'mini-turn')}.</i>`);
                 return;
             }
             // normal move
             else {
-                moves[ply] = {
-                    m: item,
-                };
-                lines.push(
-                    `<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${resize_text(item, 4)}</a>`);
+                moves[ply] = {m: item};
+                let text = resize_text(item, 4, 'mini-move');
+                lines.push(`<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${text}</a>`);
                 ply ++;
             }
         });
@@ -2613,7 +2611,7 @@ class XBoard {
                 let lines = [];
                 if (!(move.ply & 1))
                     lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
-                lines.push(`<i class="real">${resize_text(move.m, 5)}</i>`);
+                lines.push(`<i class="real">${resize_text(move.m, 4, 'mini-move')}</i>`);
                 return lines.join('');
             }).join('');
 

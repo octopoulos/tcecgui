@@ -684,9 +684,6 @@ input.two {
 .real {
     color: #07f;
 }
-.real .resize {
-    font-size: 0.9em;
-}
 #moves-pv1 .real,
 #pv1 .real {
     color: #7ce
@@ -696,9 +693,6 @@ input.two {
 }
 .turn {
     color: #222;
-}
-.turn .resize {
-    font-size: 0.75em;
 }
 #moves-pv1 .turn,
 #pv1 .turn {
@@ -751,6 +745,12 @@ input.two {
 #pva .source,
 #pva .target {
     cursor: pointer;
+}
+.grid .mini-move {
+    font-size: 0.9em;
+}
+.grid .mini-turn {
+    font-size: 0.75em;
 }
 
 /* tables */
