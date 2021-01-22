@@ -15,6 +15,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
+2021-01-21 : 2021-01-21 : vertical table for shortcuts when num player <= 4
 2021-01-21 : 2021-01-21 : time left graph
 2021-01-20 : 2021-01-20 : save width x height x DPR in the settings
 2021-01-19 : 2021-01-19 : improved GRID

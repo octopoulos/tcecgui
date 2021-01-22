@@ -330,7 +330,7 @@
   "scroll_inertia": 0.95,
   "shadow": "high",
   "shortcut_1": "stand",
-  "shortcut_2": "sched",
+  "shortcut_2": "cross",
   "show_delay": 500,
   "show_ply": "diverging",
   "single_line": 0,

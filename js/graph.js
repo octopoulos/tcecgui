@@ -248,7 +248,7 @@ function create_charts()
         let hits = format_unit(get_tooltip_data(item, data).y);
         return hits;
     });
-    new_chart('time', true, format_time, 0, (item, data) => {
+    new_chart('time', true, format_time, 4, (item, data) => {
         return format_time(get_tooltip_data(item, data).y);
     }, {backgroundColor: 'rgb(10, 10, 10)'}, 2);
 

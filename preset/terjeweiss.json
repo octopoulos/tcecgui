@@ -2,7 +2,7 @@
   "_dpr": 1,
   "_height": 970,
   "_width": 1920,
-  "_zoom": 0.713,
+  "_zoom": 1,
   "agree_length": 1,
   "animate": 0,
   "animate_pv": 1,
@@ -13,15 +13,10 @@
       [
         "engine",
         1,
-        1
-      ],
-      [
-        "table-pv",
-        1,
         3
       ],
       [
-        "table-pva",
+        "table-pv",
         0,
         1
       ],
@@ -121,8 +116,13 @@
       ],
       [
         "table-chat",
-        0,
+        1,
         3
+      ],
+      [
+        "table-pva",
+        0,
+        1
       ],
       [
         "table-winner",
@@ -297,7 +297,7 @@
   "move_height_copy": 260,
   "move_height_live": 51,
   "move_height_pv": 146,
-  "move_height_pva": 65,
+  "move_height_pva": 120,
   "moves": 1,
   "moves_copy": 0,
   "moves_left": 1,

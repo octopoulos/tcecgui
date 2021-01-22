@@ -131,6 +131,14 @@ textarea:hover {
 .stats-title {
     color: #fff;
 }
+.rotate hsub {
+    color: #ccc;
+}
+.rotate th {
+    background: rgba(0, 0, 0, 0.1);
+    color: #fff;
+    white-space: normal;
+}
 
 /* bracket */
 .place1 {
