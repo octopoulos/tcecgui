@@ -189,6 +189,7 @@ textarea:hover {
     border: 1px solid #aaa;
 }
 input[type="checkbox"] {
+    cursor: pointer;
     margin: 0.2em 0.5em;
     transform: scale(1.35);
     width: auto;
@@ -231,14 +232,17 @@ tr {
 }
 
 /* overrides */
-.thin {
-    border-width: 0.5px !important;
-}
 .dn {
     display: none !important;
 }
 .hidden {
     visibility: hidden !important;
+}
+.nopad {
+    padding: 0 !important;
+}
+.thin {
+    border-width: 0.5px !important;
 }
 
 /* grid */
@@ -408,6 +412,9 @@ grid {
     max-width: 200px;
     padding-right: 2px;
 }
+.options > hori {
+    padding: 0 calc(0.2em + 2px) 0 0.2em;
+}
 #modal a {
     color: #000;
 }
@@ -466,8 +473,8 @@ grid {
     font-size: 80%;
     font-variant: small-caps;
 }
-input.two {
-    width: calc(50% - 0.5em);
+input.multi2 {
+    width: calc(50% - 0.2em);
 }
 
 /* board */

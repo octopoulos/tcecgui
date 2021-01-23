@@ -5705,8 +5705,13 @@ function copy_pgn(board, download, only_text, flag=7) {
         space = ' ';
         if (download) {
             let extra = Keys(move).filter(key => keeps[key]).sort().map(key => {
-                    let keep = keeps[key];
-                    return (keep == 2)? (move[key]? key: ''): `${key}=${move[key]}`;
+                    let keep = keeps[key],
+                        value = move[key];
+                    if (keep == 2)
+                        return value? key: '';
+                    if (value == '' || value == undefined)
+                        return '';
+                    return `${key}=${value}`;
                 }).filter(value => value).join(', ');
             if (extra) {
                 text = `${text} {${extra}}\n`;

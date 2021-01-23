@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-23
 //
 /*
 globals
@@ -10,10 +10,11 @@ expect, require, test
 
 let {Assign, Keys} = require('./common.js'),
     {
-        add_history, AUTO_ON_OFF, cannot_click, cannot_popup, create_field_value, create_page_array, create_url_list,
-        DEFAULTS, DEV, DEV_NAMES, done_touch, guess_types, import_settings, KEYS, merge_settings, ON_OFF, option_number,
-        parse_dev, reset_settings, resize_text, restore_history, sanitise_data, save_option, touch_done, translate,
-        translate_default, translate_expression, translates, TYPES, X_SETTINGS, Y, y_states,
+        add_font, add_history, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup, create_field_value,
+        create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, FONTS, guess_types, import_settings,
+        KEYS, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, resize_text, restore_history,
+        sanitise_data, save_option, touch_done, translate, translate_default, translate_expression, translates, TYPES,
+        X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEV_NAMES, {
@@ -30,6 +31,30 @@ Assign(translates, {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// add_font
+[
+    ['', {}, {'': {'': 711}}],
+    [
+        'basic',
+        {
+            '': 711, 0: 711, 1: 515, 2: 711, 3: 711, 4: 738, 5: 711, 6: 715, 7: 687, 8: 711, 9: 715,
+            ' ': 352, '.': 309, '[': 425, ']': 425, '%': 1076, '|': 357, B: 774, D: 919, W: 1237,
+        },
+        {
+            '': {'': 711},
+            basic: {
+                '': 711, 0: 711, 1: 515, 2: 711, 3: 711, 4: 738, 5: 711, 6: 715, 7: 687, 8: 711, 9: 715,
+                ' ': 352, '.': 309, '[': 425, ']': 425, '%': 1076, '|': 357, B: 774, D: 919, W: 1237,
+                },
+        },
+    ],
+].forEach(([font, sizes, answer], id) => {
+    test(`add_font:${id}`, () => {
+        add_font(font, sizes);
+        expect(FONTS).toEqual(answer);
+    });
+});
+
 // add_history
 [
     {chat_height: 10, twitch_chat: 1},
@@ -39,6 +64,21 @@ Assign(translates, {
         Assign(Y, y);
         add_history();
         expect(y_states.length).toBe(length + 1);
+    });
+});
+
+// calculate_text_width
+[
+    ['', '', 0],
+    ['?', '', 711],
+    ['1', 'basic', 515],
+    ['11', 'basic', 1030],
+    ['WDB', 'basic', 2930],
+    ['24.3%', 'basic', 3545],
+    ['24.3% W | 75.7% D | 0.0% B', 'basic', 15930],
+].forEach(([text, font, answer], id) => {
+    test(`calculate_text_width:${id}`, () => {
+        expect(calculate_text_width(text, font)).toEqual(answer);
     });
 });
 

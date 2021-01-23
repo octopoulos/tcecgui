@@ -1141,10 +1141,11 @@ function populate_areas() {
 
         // add children + create tabs
         let exist = 0;
-        prev_tab = null;
+        prev_tab = 0;
         tabs = null;
         for (let vector of areas[key]) {
-            let [id, tab, show] = vector,
+            let no_tab,
+                [id, tab, show] = vector,
                 node = Id(id);
             if (!node)
                 continue;
@@ -1180,14 +1181,18 @@ function populate_areas() {
                 }
                 show = show & 2;
             }
+            // no tab => show label under the graph
+            else
+                no_tab = true;
+
             if (!tab) {
-                prev_tab = null;
+                prev_tab = 0;
                 tabs = null;
             }
 
             parent.appendChild(node);
             S(node, show & 1);
-            S('.label', !tab && !prev_tab, node);
+            S('.label', no_tab, node);
 
             context_areas[id] = vector;
             if (show & 1)
@@ -2096,7 +2101,14 @@ function prepare_settings() {
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
         copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}],
-        copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}],
+        copy_moves = {
+            _class: 'span nopad',
+            _main: 1,
+            _multi: 3,
+            FEN: {},
+            PGN: {},
+            moves: {},
+        },
         cores = navigator.hardwareConcurrency,
         min_max = 'min and max values, hidden if both are 0',
         old = 'move',

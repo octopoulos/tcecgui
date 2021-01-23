@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-23
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -52,6 +52,11 @@ let __PREFIX = '_',
     drag_scroll = 3,
     drag_target,
     drag_type,
+    FONTS = {
+        '': {
+            '': 711,
+        },
+    },
     full_scroll = {x: 0, y: 0},
     full_target,
     HOST = '',
@@ -1033,14 +1038,16 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         // extra _keys: class, color, flag, on, span, value
         let sclass = setting._class,
             scolor = setting._color,
+            sextra = setting._extra,
             sflag = setting._flag,
             sid = setting._id,
             son = setting._on,
+            smain = setting._main,                      // use the main key
             smulti = setting._multi,
             sset = setting._set,
             sspan = setting._span,
             ssvg = setting._svg,
-            ssyn = setting._syn || '',
+            ssyn = setting._syn || '',                  // ~2
             stitle = setting._title,
             svalue = setting._value;
         if (sflag && sflag & flag)
@@ -1104,23 +1111,34 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         // TODO: improve that part, it can be customised better
         if (string_digit & 2)
             scolor = '#f00';
-        let style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
+        let label = `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
+            style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
             title2 = title? `data-t="${title}" data-t2="title"`: '';
 
-        lines.push(
-            `<a${is_string} class="${item_class}${more_class}${title === 0? ' off': ''}"${more_data}${title2}>`
-                + (ssvg? `<i class="icon" data-svg="${ssvg}"></i>`: '')
-                + `<i${sid} data-t="${Title(clean).replace(/_/g, ' ')}${ssyn}"${style}></i>`
-                + ((setting == '')? ' ...': '')
-            + '</a>'
-        );
+        // price [min/max]
+        if (sextra) {
+            if (!sextra.includes('{'))
+                sextra = `{${sextra}}`;
+            label = `{${label}} [<i class='nowrap'>${sextra}</i>]`;
+        }
+
+        if (!smulti || !sclass || !sclass.includes('span')) {
+            lines.push(
+                `<a${is_string} class="${item_class}${more_class}${title === 0? ' off': ''}"${more_data}${title2}>`
+                    + (ssvg? `<i class="icon" data-svg="${ssvg}"></i>`: '')
+                    + `<i${sid} data-t="${label}"${style}></i>`
+                    + ((setting == '')? ' ...': '')
+                + '</a>'
+            );
+        }
 
         if (is_string)
             return;
 
         // multi data? ex: center min-max
         let datas = smulti? setting: {[key]: data},
-            id = -1;
+            id = -1,
+            main_key = key;
 
         Keys(datas).forEach(key => {
             // a) get data info
@@ -1133,8 +1151,8 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             if (smulti) {
                 third = data[3];
                 fourth = data[4];
-                data = data[0];
-                data.class = 'two';
+                data = data[0] || data || {};
+                data.class = `multi${smulti}`;
                 y_key = Y[key];
 
                 if (IsFunction(third) && !third())
@@ -1221,9 +1239,6 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             case 'number':
                 lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
                 break;
-            case 'two':
-                lines.push('HELLO');
-                break;
             default:
                 found = false;
             }
@@ -1232,17 +1247,30 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             }
             else if (type)
                 lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}>`);
-            // dictionary
+            // dictionary / string
             else {
-                lines.push(
-                    `<select name="${key}"${focus}>`
-                        + Keys(data).map(value => {
-                            let option = data[value],
-                                selected = (Y[key] == value)? ' selected': '';
-                            return `<option value="${value}"${selected} data-t="${option}"></option>`;
-                        }).join('')
-                    + '</select>'
-                );
+                let keys = Keys(data).filter(item => item[0] != '_' && item != 'class');
+                if (keys.length) {
+                    lines.push(
+                        `<select name="${key}"${focus}>`
+                            + Keys(data).map(value => {
+                                let option = data[value],
+                                    selected = (Y[key] == value)? ' selected': '';
+                                return `<option value="${value}"${selected} data-t="${option}"></option>`;
+                            }).join('')
+                        + '</select>'
+                    );
+                }
+                // string
+                else {
+                    let class_ = item_class,
+                        iname = key;
+                    if (data._class)
+                        class_ = `${class_} ${data._class}`;
+                    if (smain)
+                        iname = `${main_key}_${iname}`;
+                    lines.push(`<a class="${class_}" name="${iname}" data-t="${Title(key).replace(/_/g, ' ')}"></a>`);
+                }
             }
 
             if (!smulti || id == smulti - 1)
@@ -2362,6 +2390,32 @@ function wheel_event(e, full) {
 /////
 
 /**
+ * Add font + sizes
+ * @param {string} font
+ * @param {Object} sizes sizes when font-size = 128px
+ */
+function add_font(font, sizes) {
+    let widths = SetDefault(FONTS, font, {});
+    Assign(widths, sizes);
+}
+
+/**
+ * Calculate the text width in px
+ * @param {string} text
+ * @param {string=} font
+ * @returns {number}
+ */
+function calculate_text_width(text, font) {
+    let default_width = FONTS[''][''],
+        width = 0,
+        widths = FONTS[font] || {};
+
+    for (let char of text.split(''))
+        width += widths[char] || widths[''] || default_width;
+    return width;
+}
+
+/**
  * Create an array of pages
  * @param {number} num_page
  * @param {number} page
@@ -2632,6 +2686,8 @@ function set_modal_events(parent) {
 
     // right click on item => reset to default
     Events('.item', 'contextmenu', function(e) {
+        if (cannot_popup())
+            return;
         let next = this.nextElementSibling;
         if (next) {
             E('input, select, textarea', node => {
@@ -2681,9 +2737,11 @@ function set_modal_events(parent) {
 // <<
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
+        add_font: add_font,
         add_history: add_history,
         add_timeout: add_timeout,
         AUTO_ON_OFF: AUTO_ON_OFF,
+        calculate_text_width: calculate_text_width,
         cannot_click: cannot_click,
         cannot_popup: cannot_popup,
         clear_timeout: clear_timeout,
@@ -2695,6 +2753,7 @@ if (typeof exports != 'undefined') {
         DEV_NAMES: DEV_NAMES,
         device: device,
         done_touch: done_touch,
+        FONTS: FONTS,
         guess_types: guess_types,
         import_settings: import_settings,
         KEYS: KEYS,

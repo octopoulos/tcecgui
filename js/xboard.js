@@ -2616,7 +2616,7 @@ class XBoard {
             }).join('');
 
         if (san_list)
-            HTML(Id('pva-pv'), `[${this.depth}/${moves.length}] ${san_list}`);
+            HTML(Id('pva-pv'), `<i class="agree">[${this.depth}/${moves.length}]</i>${san_list}`);
     }
 
     /**
