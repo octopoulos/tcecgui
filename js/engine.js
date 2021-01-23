@@ -2392,7 +2392,7 @@ function wheel_event(e, full) {
 /**
  * Add font + sizes
  * @param {string} font
- * @param {Object} sizes sizes when font-size = 128px
+ * @param {Object} sizes sizes when font-size = 1280px
  */
 function add_font(font, sizes) {
     let widths = SetDefault(FONTS, font, {});

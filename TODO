@@ -17,6 +17,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 ~          : 2021-01-23 : resize WDB %
+2021-01-23 : 2021-01-23 : fix show_pv for PVA
 2021-01-23 : 2021-01-23 : improved Copy popup
 2021-01-22 : 2021-01-22 : change font size of moves + copy/live/pv/pva
 2021-01-22 : 2021-01-22 : improved mobile support

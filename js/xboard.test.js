@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-23
 //
 /*
 globals
@@ -281,5 +281,23 @@ live.id = 'null';
     test(`set_fen:${id}`, () => {
         live.set_fen(fen);
         expect(live.fen).toEqual(answer || fen);
+    });
+});
+
+// show_pv
+[
+    [
+        {
+            fen0: 'rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1',
+            pv: 'c7c5 d2d3 b8c6 c1e3 e7e5 c3e4 d7d6',
+        },
+        '<i class="turn">1.</i><i class="real">...</i><i class="real">c5</i>'
+        + '<i class="turn">2.</i><i class="real">d3</i><i class="real">Nc6</i>'
+        + '<i class="turn">3.</i><i class="real">Be3</i><i class="real">e5</i>'
+        + '<i class="turn">4.</i><i class="real">Ne4</i><i class="real">d6</i>',
+    ],
+].forEach(([move, answer], id) => {
+    test(`show_pv:${id}`, () => {
+        expect(live.show_pv(move)).toEqual(answer);
     });
 });

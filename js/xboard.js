@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-23
 //
 // game board:
 // - 4 rendering modes:
@@ -2595,6 +2595,7 @@ class XBoard {
     /**
      * Show PV in pva mode
      * @param {Move} move
+     * @returns {string}
      */
     show_pv(move) {
         if (!move.pv)
@@ -2607,16 +2608,23 @@ class XBoard {
         this.chess2.load(move.fen0);
 
         let moves = ArrayJS(this.chess2.multiUci(move.pv)),
+            number = 0,
             san_list = moves.map(move => {
-                let lines = [];
-                if (!(move.ply & 1))
-                    lines.push(`<i class="turn">${move.ply / 2 + 1}.</i>`);
+                let lines = [],
+                    ply = move.ply;
+                if (!(ply & 1) || !number) {
+                    lines.push(`<i class="turn">${Floor(ply / 2 + 1)}.</i>`);
+                    if (ply & 1)
+                        lines.push('<i class="real">...</i>');
+                }
                 lines.push(`<i class="real">${resize_text(move.m, 4, 'mini-move')}</i>`);
+                number ++;
                 return lines.join('');
             }).join('');
 
         if (san_list)
             HTML(Id('pva-pv'), `<i class="agree">[${this.depth}/${moves.length}]</i>${san_list}`);
+        return san_list;
     }
 
     /**

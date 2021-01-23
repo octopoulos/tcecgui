@@ -76,6 +76,7 @@ Assign(translates, {
     ['WDB', 'basic', 2930],
     ['24.3%', 'basic', 3545],
     ['24.3% W | 75.7% D | 0.0% B', 'basic', 15930],
+    ['44.4% W | 44.4% D | 44.4% B', 'basic', 16905],
 ].forEach(([text, font, answer], id) => {
     test(`calculate_text_width:${id}`, () => {
         expect(calculate_text_width(text, font)).toEqual(answer);

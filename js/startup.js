@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-22
+// @version 2021-01-23
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -64,6 +64,7 @@ let AD_STYLES = {},
         '#eval0, #eval1, #table-search': 'extra',
         '.moves': 'copy_copy',
         '.pagin, #table-tabs': 'extra',
+        '#pva-pv': 'copy_pva',
         '.status': 'hide',
         '#table-chat': 'quick',
         '#table-agree, #table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time':
@@ -1269,10 +1270,12 @@ function resize() {
     let chat_height = Clamp(Y.chat_height, 350, window.height),
         chat_tab = _('.tab[data-x="table-chat"]'),
         parent = Parent(chat_tab),
-        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner';
+        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner',
+        yheight = (window.innerWidth <= 866)? 'auto': `${chat_height + 32}px`;
     if (parent)
         siblings = From(parent.children).map(child => `#${child.dataset.x}`).join(', ');
-    Style(siblings, `height:${chat_height + 32}px;width:100%`);
+
+    Style(siblings, `height:${yheight};width:100%`);
     Style('#chat, #chat2', `height:${chat_height}px;width:100%`);
 
     // 4) resize panels + stats
@@ -2491,12 +2494,14 @@ function prepare_settings() {
         },
         copy_pva: {
             _pop: true,
+            _prefix: 'game_',
             copy: copy_moves,
             download_PGN: '1',
             grid_pva: option_number(0, 0, 10),
             move_font_pva: option_number(13, 6, 30, 0.1),
             move_height_pva: option_number(70, 39, 1600, 0.5),
             moves_pva: [ON_OFF, 1],
+            game_PV: [ON_OFF, 1],
             PV_height: option_number(60, 39, 1600, 0.5),
         },
         eval: {
