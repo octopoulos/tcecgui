@@ -5887,7 +5887,7 @@ function handle_board_events(board, type, value, e, force) {
         if (name == section) {
             // unlock sub boards
             for (let sub of SUB_BOARDS)
-                xboards[sub].set_locked(false);
+                xboards[sub].set_locked(0);
 
             // show PV's
             // - important to reset the boards to prevent wrong compare_duals
@@ -5906,7 +5906,7 @@ function handle_board_events(board, type, value, e, force) {
             // lock sub boards?
             if (cur_ply < board.moves.length - 1)
                 for (let sub of SUB_BOARDS)
-                    xboards[sub].set_locked(true);
+                    xboards[sub].set_locked(1);
         }
         break;
     }
