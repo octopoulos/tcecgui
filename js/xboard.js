@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // game board:
 // - 4 rendering modes:
@@ -892,7 +892,7 @@ class XBoard {
     check_delayed_ply() {
         let ply = this.delayed_ply;
         if (ply > -2)
-            this.set_ply(ply);
+            this.set_ply(ply, {check: true});
     }
 
     /**
@@ -1116,13 +1116,14 @@ class XBoard {
 
         // 1) compare the moves if there's a dual
         let dual = this.dual,
-            real = this.real;
+            real = this.real,
+            set_dico = {check: true, instant: true};
         if (!real)
             return;
 
         // no dual
         if (!dual || !dual.valid || dual.locked) {
-            this.set_ply(num_ply, {instant: true});
+            this.set_ply(num_ply, set_dico);
             return;
         }
 
@@ -1162,8 +1163,8 @@ class XBoard {
             show_ply = Y.show_ply;
 
         if (show_ply == 'first') {
-            this.set_ply(num_ply, {instant: true});
-            dual.set_ply(num_ply, {instant: true});
+            this.set_ply(num_ply, set_dico);
+            dual.set_ply(num_ply, set_dico);
             return;
         }
 
@@ -1175,13 +1176,13 @@ class XBoard {
                 ply = board.moves.length - 1;
 
             if (ply == num_ply)
-                board.set_ply(ply, {instant: true});
+                board.set_ply(ply, set_dico);
             // try to get to the ply without compute, if fails, then render the next ply + compute later
-            else if (board.set_ply(ply, {instant: true}) == false) {
+            else if (board.set_ply(ply, set_dico) == false) {
                 if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
 
-                board.set_ply(show_delay? num_ply: ply, {instant: true});
+                board.set_ply(show_delay? num_ply: ply, set_dico);
                 if (show_delay)
                     this.set_delayed_ply(ply);
             }
@@ -2361,7 +2362,7 @@ class XBoard {
             if (DEV.div)
                 LS(`${this.id}: delayed_ply=${ply}`);
             if (ply > -2)
-                this.set_ply(this.delayed_ply, {instant: true});
+                this.set_ply(this.delayed_ply, {check: true, instant: true});
         }, Y.show_delay);
     }
 
@@ -2471,15 +2472,19 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
+     * @param {boolean=} check only execute if ply != current ply
      * @param {boolean=} instant call instant()
      * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
      * @param {boolean=} render
      * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, {animate, instant, manual, no_compute, render=true}={}) {
+    set_ply(ply, {animate, check, instant, manual, no_compute, render=true}={}) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
+
+        if (check && ply == this.ply)
+            return {};
 
         clear_timeout(`dual_${this.id}`);
         this.clicked = manual;

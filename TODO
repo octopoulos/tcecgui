@@ -20,6 +20,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
 -          : 2021-01-23 : speed: compare_duals with an overall timeout
 -          : 2021-01-24 : speed: don't call compare_duals twice when changing ply
+2021-01-24 : 2021-01-24 : 2190 plies in 102.177s => 21.433 plies/s
 2021-01-24 : 2021-01-24 : benchmark UI
 2021-01-24 : 2021-01-24 : 2190 plies in 105.763s => 20.7067 plies/s
 2021-01-24 : 2021-01-23 : speed: don't redraw charts when changing moves
