@@ -4963,7 +4963,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
-        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
+        HTML('.live-pv', `<i>${translate_default('off~2')}</i>`, node);
         return false;
     }
 
