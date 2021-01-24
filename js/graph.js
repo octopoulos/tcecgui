@@ -190,7 +190,7 @@ function create_chart_data() {
         mobil: [
             new_dataset('mobility', Y.graph_color_0),
             new_dataset('mobility', Y.graph_color_1),
-            new_dataset('r-mobility', '#236ad6', '', {borderDash: [10, 5]}),
+            new_dataset('r-Mobility', '#236ad6', '', {borderDash: [10, 5]}),
         ],
         node: [
             new_dataset('w', Y.graph_color_0),
@@ -207,8 +207,8 @@ function create_chart_data() {
         time: [
             new_dataset('time', Y.graph_color_0),
             new_dataset('time', Y.graph_color_1),
-            new_dataset('left', extra0, 'y-axis-1'),
-            new_dataset('left', extra1, 'y-axis-1'),
+            new_dataset('left~2', extra0, 'y-axis-1'),
+            new_dataset('left~2', extra1, 'y-axis-1'),
         ],
     };
 
