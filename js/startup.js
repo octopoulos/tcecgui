@@ -312,7 +312,6 @@ function change_setting_special(name, value, close) {
     case 'eval':
     case 'eval_left':
     case 'graph_aspect_ratio':
-    case 'hardware':
     case 'moves':
     case 'moves_live':
     case 'moves_pv':
@@ -377,6 +376,9 @@ function change_setting_special(name, value, close) {
     case 'move_height_pva':
     case 'PV_height':
         resize_move_lists();
+        break;
+    case 'hardware':
+        resize();
         break;
     case 'hide':
         hide_element(context_target);
@@ -2367,7 +2369,7 @@ function prepare_settings() {
         info: {
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
-            hardware: [ON_OFF, 1],
+            hardware: [ON_OFF, 0],
             more: [ON_OFF, 1],
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
@@ -2508,7 +2510,7 @@ function prepare_settings() {
             _pop: true,
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
-            hardware: [ON_OFF, 1],
+            hardware: [ON_OFF, 0],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
             single_line: [ON_OFF, 0],

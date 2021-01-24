@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-22
+@version 2021-01-23
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -514,7 +514,7 @@ input.multi2 {
     font-size: 14px;
     margin-left: 0.2em;
     margin-top: 0.1em;
-    width: calc(100% - 0.6em);
+    width: calc(100% - 4px);
 }
 .xcolor0 {
     background: #fff;
@@ -1330,7 +1330,6 @@ hsub {
 .live-more {
     font-size: 0.75em;
     margin-bottom: 0.15em;
-    max-width: calc(100% - 4em);
     z-index: 1;
 }
 .live-pv {
@@ -1351,7 +1350,7 @@ hsub {
 }
 .percent {
     color: #444;
-    font-size: 0.85em;
+    font-size: 13px;
     order: 3;
     white-space: nowrap;
 }

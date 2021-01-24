@@ -2614,8 +2614,9 @@ class XBoard {
                     ply = move.ply;
                 if (!(ply & 1) || !number) {
                     lines.push(`<i class="turn">${Floor(ply / 2 + 1)}.</i>`);
+                    // first move with black => ...
                     if (ply & 1)
-                        lines.push('<i class="real">...</i>');
+                        lines.push('<i>...</i>');
                 }
                 lines.push(`<i class="real">${resize_text(move.m, 4, 'mini-move')}</i>`);
                 number ++;

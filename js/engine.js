@@ -54,7 +54,7 @@ let __PREFIX = '_',
     drag_type,
     FONTS = {
         '': {
-            '': 711,
+            '': 615,
         },
     },
     full_scroll = {x: 0, y: 0},
