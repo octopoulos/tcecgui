@@ -4904,9 +4904,10 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @param {Object} data
  * @param {number} id 0, 1
  * @param {number=} force_ply update with this data.pv even if there's more recent text + forces invert_black
+ * @param {boolean=} no_graph
  * @returns {boolean}
  */
-function update_live_eval(section, data, id, force_ply) {
+function update_live_eval(section, data, id, force_ply, no_graph) {
     if (!data)
         return false;
 
@@ -4993,7 +4994,7 @@ function update_live_eval(section, data, id, force_ply) {
         board.text = '';
     board.add_moves_string(data.pv, cur_ply, force_ply);
 
-    if (section == section_board()) {
+    if (!no_graph && section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
         update_live_charts(moves || [data], id + 2);
@@ -5156,7 +5157,7 @@ function benchmark(step=10, running=0) {
             let elapsed = bench_times.reduce((a, b) => a + b),
                 num_step = bench_times.length,
                 plies = num_move * num_step;
-            LS(`total: ${plies} plies in ${elapsed.toFixed(3)}s => ${(plies / elapsed).toFixed(3)} plies/s`);
+            LS(`total: ${plies} plies in ${elapsed.toFixed(3)}s => ${(plies / elapsed).toFixed(4)} plies/s`);
         }
         return;
     }
@@ -5939,8 +5940,8 @@ function handle_board_events(board, type, value, e, force) {
             update_move_pv(section, cur_ply, value);
 
             // show live engines
-            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply);
-            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply);
+            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply, true);
+            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply, true);
 
             update_materials(value);
             update_mobility();
