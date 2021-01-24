@@ -2407,6 +2407,8 @@ class XBoard {
         if (this.locked == 3 && !(locked & 2))
             return;
 
+        if (locked == 2)
+            locked = 0;
         this.locked = locked;
         S('[data-x="lock"]', !locked, this.node);
         S('[data-x="unlock"]', locked, this.node);
