@@ -46,6 +46,8 @@ let ANALYSIS_URLS = {
         lichess: 'https://lichess.org/analysis/{STANDARD}/{FEN}',
     },
     ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
+    bench_start,
+    bench_times = [],
     BOARD_MATCHES = {
         board_pva: 'pva',
         game: 'pva',
@@ -5127,6 +5129,44 @@ function action_key_no_input(code, active) {
 }
 
 /**
+ * Benchmark by going next as fast as possible
+ * @param {number=} step
+ * @param {number=} running &1:current run, &2:next step
+ */
+function benchmark(step=3, running=0) {
+    let main = xboards[Y.x],
+        num_move = main.moves.length;
+
+    // start + finish
+    if (!(running & 1)) {
+        if (!running) {
+            LS('benchmark starting ...');
+            bench_times.length = 0;
+        }
+        main.set_ply(-1, {manual: true});
+        bench_start = Now(true);
+    }
+    else if (main.ply >= num_move - 1) {
+        let elapsed = Now(true) - bench_start;
+        bench_times.push(elapsed);
+        LS(`${step}: ${num_move} plies in ${elapsed.toFixed(3)}s => ${format_unit(num_move / elapsed)} plies/s`);
+        if (step > 1)
+            AnimationFrame(() => benchmark(step - 1, 2));
+        else {
+            let elapsed = bench_times.reduce((a, b) => a + b),
+                num_step = bench_times.length,
+                plies = num_move * num_step;
+            LS(`total: ${plies} plies in ${elapsed.toFixed(3)}s => ${format_unit(plies / elapsed)} plies/s`);
+        }
+        return;
+    }
+
+    // go to next ply
+    main.set_ply(main.ply + 1, {manual: true});
+    AnimationFrame(() => benchmark(step, 1));
+}
+
+/**
  * Handle keys, when input is not active
  * @param {number} code hardware keycode
  * @returns {boolean}
@@ -5389,6 +5429,9 @@ function change_setting_game(name, value) {
             window.open(url, '_blank');
         }
         close_popups();
+        break;
+    case 'benchmark':
+        benchmark();
         break;
     case 'boom_effect':
         save_option('boom_sound', value? 'random': 0);
