@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-24
 //
 /*
 globals
@@ -11,7 +11,7 @@ expect, require, test
 let {
     Clamp, Clear, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp,
     HashText, Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, PI,
-    QueryString, SetDefault, Split, Title, Undefined,
+    QueryString, SetDefault, Split, Title, Undefined, VisibleHeight, VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -399,5 +399,23 @@ let {
 ].forEach(([value, def, answer], id) => {
     test(`Undefined:${id}`, () => {
         expect(Undefined(value, def)).toEqual(answer);
+    });
+});
+
+// VisibleHeight
+[
+    0,
+].forEach((answer, id) => {
+    test(`VisibleHeight:${id}`, () => {
+        expect(VisibleHeight()).toBeGreaterThan(answer);
+    });
+});
+
+// VisibleWidth
+[
+    0,
+].forEach((answer, id) => {
+    test(`VisibleWidth:${id}`, () => {
+        expect(VisibleWidth()).toBeGreaterThan(answer);
     });
 });

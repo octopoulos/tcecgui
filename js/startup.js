@@ -20,7 +20,7 @@ DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, downl
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
 Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
+LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings, Min,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resize_move_lists,
 resize_table, resume_sleep,
@@ -31,7 +31,7 @@ translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
 virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
-virtual_set_modal_events_special:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_set_modal_events_special:true, Visible, VisibleWidth, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -1309,11 +1309,11 @@ function resize_panels() {
     // panel full + width
     let panel_gap = Y.panel_gap,
         panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
-        window_width = window.innerWidth;
+        visible_width = VisibleWidth();
     for (let panel of panels) {
         let name = panel.id,
-            max_width = Y[`max_${name}`],
-            min_width = Y[`min_${name}`],
+            max_width = Min(visible_width - 8, Y[`max_${name}`]),
+            min_width = Min(visible_width - 8, Y[`min_${name}`]),
             styles = [`margin:0 ${panel_gap}px`];
 
         if (max_width <= 0 && min_width <= 0)
@@ -1324,7 +1324,7 @@ function resize_panels() {
             if (min_width > -1)
                 styles.push(`min-width:${min_width}px`);
 
-            Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
+            Class(panel, 'full', panel.style.order == 2 && visible_width <= 866);
             Style(panel, styles.join(';'));
             Show(panel);
         }

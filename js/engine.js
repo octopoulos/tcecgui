@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -16,7 +16,7 @@ Hide, history, HTML, Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject,
 LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
 QueryString, require, Resource,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
-Upper, Visible, WebSocket, window
+Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
 */
 'use strict';
 
@@ -791,8 +791,8 @@ function show_popup(name, show, {
     if (show || adjust) {
         let px = 0,
             py = 0,
-            win_x = window.innerWidth - 16,
-            win_y = window.innerHeight,
+            win_x = VisibleWidth() - 8,
+            win_y = VisibleHeight(),
             x = 0,
             x2 = 0,
             y = 0,
