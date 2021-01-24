@@ -244,7 +244,7 @@
   "grid": 5,
   "grid_copy": 2,
   "grid_live": 3,
-  "grid_pv": 0,
+  "grid_pv": 2,
   "grid_pva": 5,
   "hardware": 0,
   "highlight_color": "#ffff00",
