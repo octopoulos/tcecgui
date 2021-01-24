@@ -1105,6 +1105,7 @@ class XBoard {
      * Compare plies from the duals
      * - set the ply for both the board and the dual board
      * - called from add_moves and add_moves_string
+     * ! should avoid calling it on the dual unnecessarily
      * @param {number} num_ply current ply in the real game (in live mode: not played yet)
      */
     compare_duals(num_ply) {
@@ -1162,6 +1163,7 @@ class XBoard {
 
         if (show_ply == 'first') {
             this.set_ply(num_ply, {instant: true});
+            dual.set_ply(num_ply, {instant: true});
             return;
         }
 
