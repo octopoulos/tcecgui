@@ -548,7 +548,7 @@ function merge_settings(x_settings) {
                 setting = setting._value;
 
             // support {_multi: 2, a: [...], b: [...]}
-            if (setting._multi) {
+            if (setting._multi && !setting._main) {
                 Keys(setting).forEach(sub_key => {
                     if (sub_key[0] == '_')
                         return;
