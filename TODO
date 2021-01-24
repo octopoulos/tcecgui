@@ -19,9 +19,10 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
 -          : 2021-01-23 : speed: compare_duals with an overall timeout
 -          : 2021-01-23 : speed: don't redraw charts when changing moves, use a timeout
--          : 2021-01-23 : speed: ctx.font = ... => only do it once
 -          : 2021-01-23 : speed: chart.canvas.getBoundingClientRect => cache it
-2021-01-23 : 2021-01-23 : 657 plies in 43.376s => 15.1 plies/s : #div=sf&game=33&season=20
+2021-01-23 : 2021-01-23 : 2190 plies in 139.370s => 15.7 plies/s
+2021-01-23 : 2021-01-23 : speed: ctx.font = ... => only do it once
+2021-01-23 : 2021-01-23 : 2190 plies in 144.876s => 15.1 plies/s : #div=sf&game=33&season=20
 2021-01-23 : 2021-01-23 : find a good game + create a benchmark
 2021-01-23 : 2021-01-23 : resize WDB % + kibitzer info
 2021-01-23 : 2021-01-23 : fix show_pv for PVA

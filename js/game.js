@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // Game specific code:
 // - control the board, moves
@@ -5133,7 +5133,7 @@ function action_key_no_input(code, active) {
  * @param {number=} step
  * @param {number=} running &1:current run, &2:next step
  */
-function benchmark(step=3, running=0) {
+function benchmark(step=10, running=0) {
     let main = xboards[Y.x],
         num_move = main.moves.length;
 

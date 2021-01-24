@@ -1,5 +1,5 @@
 // chart.js
-// @version 2020-10-01
+// @version 2021-01-24
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
@@ -6508,23 +6508,26 @@ function computeLabelSizes(ctx, tickFonts, ticks, caches) {
     var widths = [];
     var heights = [];
     var offsets = [];
-    var i, j, jlen, label, tickFont, fontString, cache, lineHeight, width, height, nestedLabel, widest, highest;
 
-    for (i = 0; i < length; ++i) {
-        label = ticks[i].label;
-        tickFont = tickFonts.minor;
-        ctx.font = fontString = tickFont.string;
-        cache = caches[fontString] = caches[fontString] || {data: {}, gc: []};
-        lineHeight = tickFont.lineHeight + 8;
-        width = height = 0;
+    for (let i = 0; i < length; ++i) {
+        let label = ticks[i].label,
+            tickFont = tickFonts.minor,
+            fontString = tickFont.string;
+        if (!i)
+            ctx.font = fontString;
+
+        let cache = caches[fontString] = caches[fontString] || {data: {}, gc: []},
+            lineHeight = tickFont.lineHeight + 8,
+            height = 0,
+            width = 0;
         // Undefined labels and arrays should not be measured
         if (label != null && !IsArray(label)) {
             width = helpers.measureText(ctx, cache.data, cache.gc, width, label);
             height = lineHeight;
         } else if (IsArray(label)) {
             // if it is an array let's measure each element
-            for (j = 0, jlen = label.length; j < jlen; ++j) {
-                nestedLabel = label[j];
+            for (let j = 0, jlen = label.length; j < jlen; ++j) {
+                let nestedLabel = label[j];
                 // Undefined labels and arrays should not be measured
                 if (nestedLabel != null && !IsArray(nestedLabel)) {
                     width = helpers.measureText(ctx, cache.data, cache.gc, width, nestedLabel);
@@ -6538,8 +6541,8 @@ function computeLabelSizes(ctx, tickFonts, ticks, caches) {
     }
     garbageCollect(caches, length);
 
-    widest = widths.indexOf(Math.max.apply(null, widths));
-    highest = heights.indexOf(Math.max.apply(null, heights));
+    let widest = widths.indexOf(Math.max.apply(null, widths)),
+        highest = heights.indexOf(Math.max.apply(null, heights));
 
     function valueAt(idx) {
         return {
