@@ -5149,14 +5149,14 @@ function benchmark(step=10, running=0) {
     else if (main.ply >= num_move - 1) {
         let elapsed = Now(true) - bench_start;
         bench_times.push(elapsed);
-        LS(`${step}: ${num_move} plies in ${elapsed.toFixed(3)}s => ${format_unit(num_move / elapsed)} plies/s`);
+        LS(`${step}: ${num_move} plies in ${elapsed.toFixed(3)}s => ${(num_move / elapsed).toFixed(3)} plies/s`);
         if (step > 1)
             AnimationFrame(() => benchmark(step - 1, 2));
         else {
             let elapsed = bench_times.reduce((a, b) => a + b),
                 num_step = bench_times.length,
                 plies = num_move * num_step;
-            LS(`total: ${plies} plies in ${elapsed.toFixed(3)}s => ${format_unit(plies / elapsed)} plies/s`);
+            LS(`total: ${plies} plies in ${elapsed.toFixed(3)}s => ${(plies / elapsed).toFixed(3)} plies/s`);
         }
         return;
     }

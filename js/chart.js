@@ -6504,27 +6504,28 @@ function garbageCollect(caches, length) {
  * labels where offset indicates the anchor point offset from the top in pixels.
  */
 function computeLabelSizes(ctx, tickFonts, ticks, caches) {
-    var length = ticks.length;
-    var widths = [];
-    var heights = [];
-    var offsets = [];
+    let length = ticks.length,
+        offsets = [],
+        heights = [],
+        widths = [];
+
+    // speed boost
+    let tickFont = tickFonts.minor,
+        fontString = tickFont.string,
+        cache = caches[fontString] = caches[fontString] || {data: {}, gc: []},
+        lineHeight = tickFont.lineHeight + 8;
+    ctx.font = fontString;
 
     for (let i = 0; i < length; ++i) {
         let label = ticks[i].label,
-            tickFont = tickFonts.minor,
-            fontString = tickFont.string;
-        if (!i)
-            ctx.font = fontString;
-
-        let cache = caches[fontString] = caches[fontString] || {data: {}, gc: []},
-            lineHeight = tickFont.lineHeight + 8,
             height = 0,
             width = 0;
         // Undefined labels and arrays should not be measured
         if (label != null && !IsArray(label)) {
             width = helpers.measureText(ctx, cache.data, cache.gc, width, label);
             height = lineHeight;
-        } else if (IsArray(label)) {
+        }
+        else if (IsArray(label)) {
             // if it is an array let's measure each element
             for (let j = 0, jlen = label.length; j < jlen; ++j) {
                 let nestedLabel = label[j];
@@ -6541,8 +6542,8 @@ function computeLabelSizes(ctx, tickFonts, ticks, caches) {
     }
     garbageCollect(caches, length);
 
-    let widest = widths.indexOf(Math.max.apply(null, widths)),
-        highest = heights.indexOf(Math.max.apply(null, heights));
+    let widest = widths.indexOf(Max.apply(null, widths)),
+        highest = heights.indexOf(Max.apply(null, heights));
 
     function valueAt(idx) {
         return {

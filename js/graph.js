@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-24
 //
 /*
 globals
@@ -373,8 +373,14 @@ function mark_ply_chart(name, ply, max_ply) {
     }
 
     if (data) {
-        let rect = chart.canvas.getBoundingClientRect(),
-            scales = chart.scales,
+        // speed boost
+        let rect = chart.rect;
+        if (!rect) {
+            rect = chart.canvas.getBoundingClientRect();
+            chart.rect = rect;
+        }
+
+        let scales = chart.scales,
             x = scales['x-axis-0'].getPixelForValue(data.x),
             y = scales['y-axis-0'].getPixelForValue(data.y);
         Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);
