@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-22
+// @version 2021-01-23
 //
 // Game specific code:
 // - control the board, moves
@@ -3426,6 +3426,7 @@ function resize_game() {
     let section = Y.x;
     show_board_info(section);
 
+    // 1) boards
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (!board.main && !board.sub)
@@ -3437,10 +3438,28 @@ function resize_game() {
         board.resize(size, {instant: true, render: true});
     });
 
+    // 2) moves
     resize_move_lists();
     resize_3d();
 
-    // resize graph + update table after a timeout
+    // 3) percents
+    let ratio = Y.hardware? 0.65: 1;
+    E('.percent', node => {
+        let parent = Parent(node, {tag: 'grid'}),
+            next = parent.nextElementSibling,
+            units = parent.clientWidth * 1280;
+        if (!units)
+            return;
+
+        // [44.4% W | 44.4% D | 44.4% B] => 17755 units
+        Style(node, `font-size:${Min(13, units / 2 / 17755)}px`);
+
+        // [D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M] => 26730 units
+        if (next && HasClass(next, 'live-more'))
+            Style(next, `font-size:${Min(12, units * ratio / 26730)}px`);
+    });
+
+    // 4) graph + update table after a timeout
     add_timeout('graph_resize', () => {
         update_chart_options(null, 2);
         for (let parent of ['quick', 'table'])
@@ -5705,8 +5724,13 @@ function copy_pgn(board, download, only_text, flag=7) {
         space = ' ';
         if (download) {
             let extra = Keys(move).filter(key => keeps[key]).sort().map(key => {
-                    let keep = keeps[key];
-                    return (keep == 2)? (move[key]? key: ''): `${key}=${move[key]}`;
+                    let keep = keeps[key],
+                        value = move[key];
+                    if (keep == 2)
+                        return value? key: '';
+                    if (value == '' || value == undefined)
+                        return '';
+                    return `${key}=${value}`;
                 }).filter(value => value).join(', ');
             if (extra) {
                 text = `${text} {${extra}}\n`;

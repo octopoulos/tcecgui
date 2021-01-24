@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-22
+@version 2021-01-23
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -189,6 +189,7 @@ textarea:hover {
     border: 1px solid #aaa;
 }
 input[type="checkbox"] {
+    cursor: pointer;
     margin: 0.2em 0.5em;
     transform: scale(1.35);
     width: auto;
@@ -231,14 +232,17 @@ tr {
 }
 
 /* overrides */
-.thin {
-    border-width: 0.5px !important;
-}
 .dn {
     display: none !important;
 }
 .hidden {
     visibility: hidden !important;
+}
+.nopad {
+    padding: 0 !important;
+}
+.thin {
+    border-width: 0.5px !important;
 }
 
 /* grid */
@@ -408,6 +412,9 @@ grid {
     max-width: 200px;
     padding-right: 2px;
 }
+.options > hori {
+    padding: 0 calc(0.2em + 2px) 0 0.2em;
+}
 #modal a {
     color: #000;
 }
@@ -466,8 +473,8 @@ grid {
     font-size: 80%;
     font-variant: small-caps;
 }
-input.two {
-    width: calc(50% - 0.5em);
+input.multi2 {
+    width: calc(50% - 0.2em);
 }
 
 /* board */
@@ -507,7 +514,7 @@ input.two {
     font-size: 14px;
     margin-left: 0.2em;
     margin-top: 0.1em;
-    width: calc(100% - 0.6em);
+    width: calc(100% - 4px);
 }
 .xcolor0 {
     background: #fff;
@@ -1323,7 +1330,6 @@ hsub {
 .live-more {
     font-size: 0.75em;
     margin-bottom: 0.15em;
-    max-width: calc(100% - 4em);
     z-index: 1;
 }
 .live-pv {
@@ -1344,7 +1350,7 @@ hsub {
 }
 .percent {
     color: #444;
-    font-size: 0.85em;
+    font-size: 13px;
     order: 3;
     white-space: nowrap;
 }

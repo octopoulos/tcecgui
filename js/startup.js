@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-22
+// @version 2021-01-23
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -64,6 +64,7 @@ let AD_STYLES = {},
         '#eval0, #eval1, #table-search': 'extra',
         '.moves': 'copy_copy',
         '.pagin, #table-tabs': 'extra',
+        '#pva-pv': 'copy_pva',
         '.status': 'hide',
         '#table-chat': 'quick',
         '#table-agree, #table-depth, #table-eval, #table-mobil, #table-node, #table-speed, #table-tb, #table-time':
@@ -311,7 +312,6 @@ function change_setting_special(name, value, close) {
     case 'eval':
     case 'eval_left':
     case 'graph_aspect_ratio':
-    case 'hardware':
     case 'moves':
     case 'moves_live':
     case 'moves_pv':
@@ -376,6 +376,9 @@ function change_setting_special(name, value, close) {
     case 'move_height_pva':
     case 'PV_height':
         resize_move_lists();
+        break;
+    case 'hardware':
+        resize();
         break;
     case 'hide':
         hide_element(context_target);
@@ -1141,10 +1144,11 @@ function populate_areas() {
 
         // add children + create tabs
         let exist = 0;
-        prev_tab = null;
+        prev_tab = 0;
         tabs = null;
         for (let vector of areas[key]) {
-            let [id, tab, show] = vector,
+            let no_tab,
+                [id, tab, show] = vector,
                 node = Id(id);
             if (!node)
                 continue;
@@ -1180,14 +1184,18 @@ function populate_areas() {
                 }
                 show = show & 2;
             }
+            // no tab => show label under the graph
+            else
+                no_tab = true;
+
             if (!tab) {
-                prev_tab = null;
+                prev_tab = 0;
                 tabs = null;
             }
 
             parent.appendChild(node);
             S(node, show & 1);
-            S('.label', !tab && !prev_tab, node);
+            S('.label', no_tab, node);
 
             context_areas[id] = vector;
             if (show & 1)
@@ -1264,10 +1272,12 @@ function resize() {
     let chat_height = Clamp(Y.chat_height, 350, window.height),
         chat_tab = _('.tab[data-x="table-chat"]'),
         parent = Parent(chat_tab),
-        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner';
+        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner',
+        yheight = (window.innerWidth <= 866)? 'auto': `${chat_height + 32}px`;
     if (parent)
         siblings = From(parent.children).map(child => `#${child.dataset.x}`).join(', ');
-    Style(siblings, `height:${chat_height + 32}px;width:100%`);
+
+    Style(siblings, `height:${yheight};width:100%`);
     Style('#chat, #chat2', `height:${chat_height}px;width:100%`);
 
     // 4) resize panels + stats
@@ -2096,7 +2106,14 @@ function prepare_settings() {
         boom_sounds = ['off', 'random', 'boom', 'boom2', 'boom3', 'boom4', 'boom5', 'boom6'],
         boom_visuals = ['off', 'all', 'color', 'shake'],
         copy_download = [{list: ['FEN', 'PGN', 'download'], type: 'list'}],
-        copy_moves = [{list: ['FEN', 'PGN', 'moves'], type: 'list'}],
+        copy_moves = {
+            _class: 'span nopad',
+            _main: 1,
+            _multi: 3,
+            FEN: {},
+            PGN: {},
+            moves: {},
+        },
         cores = navigator.hardwareConcurrency,
         min_max = 'min and max values, hidden if both are 0',
         old = 'move',
@@ -2352,7 +2369,7 @@ function prepare_settings() {
         info: {
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
-            hardware: [ON_OFF, 1],
+            hardware: [ON_OFF, 0],
             more: [ON_OFF, 1],
             moves: [ON_OFF, 1],
             moves_copy: [ON_OFF, 0],
@@ -2479,19 +2496,21 @@ function prepare_settings() {
         },
         copy_pva: {
             _pop: true,
+            _prefix: 'game_',
             copy: copy_moves,
             download_PGN: '1',
             grid_pva: option_number(0, 0, 10),
             move_font_pva: option_number(13, 6, 30, 0.1),
             move_height_pva: option_number(70, 39, 1600, 0.5),
             moves_pva: [ON_OFF, 1],
+            game_PV: [ON_OFF, 1],
             PV_height: option_number(60, 39, 1600, 0.5),
         },
         eval: {
             _pop: true,
             eval: [ON_OFF, 1],
             eval_left: [ON_OFF, 1],
-            hardware: [ON_OFF, 1],
+            hardware: [ON_OFF, 0],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
             single_line: [ON_OFF, 0],
