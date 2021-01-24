@@ -284,6 +284,26 @@ live.id = 'null';
     });
 });
 
+// set_locked
+[
+    [0, 0],
+    [1, 1],
+    [0, 0],
+    [2, 2],
+    [1, 1],
+    [0, 0],
+    [3, 3],
+    [0, 3],
+    [2, 2],
+    [1, 1],
+    [0, 0],
+].forEach(([locked, answer], id) => {
+    test(`set_locked:${id}`, () => {
+        live.set_locked(locked);
+        expect(live.locked).toEqual(answer);
+    });
+});
+
 // show_pv
 [
     [

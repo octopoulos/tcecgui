@@ -202,7 +202,7 @@ class XBoard {
         this.hold = null;                               // mouse/touch hold target
         this.hold_step = 0;
         this.hold_time = 0;                             // last time the event was repeated
-        this.locked = false;
+        this.locked = 0;                                // &1:locked, &2:manual
         this.locked_obj = null;
         this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
@@ -1364,7 +1364,7 @@ class XBoard {
                 that.go_end();
                 break;
             case 'lock':
-                that.set_locked(true);
+                that.set_locked(3);
                 break;
             case 'play':
                 that.play(false, true, 'event_hook');
@@ -1379,7 +1379,7 @@ class XBoard {
                 that.go_start();
                 break;
             case 'unlock':
-                that.set_locked(false);
+                that.set_locked(2);
                 break;
             default:
                 callback(that, 'control', name, e);
@@ -2400,9 +2400,13 @@ class XBoard {
 
     /**
      * Lock/unlock the PV
-     * @param {boolean} locked
+     * @param {boolean} locked &1:locked, &2:manual
      */
     set_locked(locked) {
+        // don't automatically unlock if manually locked
+        if (this.locked == 3 && !(locked & 2))
+            return;
+
         this.locked = locked;
         S('[data-x="lock"]', !locked, this.node);
         S('[data-x="unlock"]', locked, this.node);
