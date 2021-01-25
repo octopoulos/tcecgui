@@ -25,7 +25,7 @@ resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
 stockfish_wdl, Style, SUB_BOARDS,
-TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_node, translate_nodes,
+TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard,
@@ -5177,8 +5177,8 @@ function benchmark(step=10, running=0) {
 
             HTML(node, html);
             Show(node);
+            add_benchmark_result(1, ...['round', 'plies', 'time', 'plies/s'].map(text => `<i data-t="${text}"></i>`));
             translate_nodes(node);
-            add_benchmark_result(1, ...['round', 'plies', 'time', 'plies/s'].map(text => translate_default(text)));
 
             // events
             C('#bench-stop', function() {
@@ -5205,10 +5205,10 @@ function benchmark(step=10, running=0) {
                 total = num_step? bench_times.reduce((a, b) => a + b): 0;
 
             if (total > 0)
-                add_benchmark_result(1, 'total', plies, total);
+                add_benchmark_result(1, '<i data-t="total"></i>', plies, total);
             let node = Id('bench-stop');
             Attrs(node, {'data-t': 'OK'});
-            translate_node(node);
+            translate_nodes(Id('benchmark'));
         }
         return;
     }

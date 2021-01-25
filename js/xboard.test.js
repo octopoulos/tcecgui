@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 /*
 globals
@@ -36,30 +36,17 @@ live.id = 'null';
     [
         '1. d4 Nf6 2. c4 c5 3. d5',
         0,
-        [
-            0,
-            {
-                agree: 0, fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
-                from: 99, m: 'd4', ply: 0, san: 'd4', score: 120, to: 67,
-            },
-            {agree: 0, m: 'Nf6'}, {agree: 0, m: 'c4'}, {agree: 0, m: 'c5'}, {agree: 0, m: 'd5'},
-        ],
+        [0, {m: 'd4'}, {m: 'Nf6'}, {m: 'c4'}, {m: 'c5'}, {m: 'd5'}],
     ],
     [
         '38...Qg7 39. Rf2 Qh6 40. Nxg6',
         75,
-        [
-            75,
-            {agree: 0, m: 'Qg7', ply: 75}, {agree: 0, m: 'Rf2'}, {agree: 0, m: 'Qh6'}, {agree: 0, m: 'Nxg6'},
-        ],
+        [75, {m: 'Qg7'}, {m: 'Rf2'}, {m: 'Qh6'}, {m: 'Nxg6'}],
     ],
     [
         '41...Kxg8 42. a8=Q+ Kg7',
         81,
-        [
-            81,
-            {agree: 0, m: 'Kxg8', ply: 81}, {agree: 0, m: 'a8=Q+'}, {agree: 0, m: 'Kg7'},
-        ],
+        [81, {m: 'Kxg8'}, {m: 'a8=Q+'}, {m: 'Kg7'}],
     ],
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
