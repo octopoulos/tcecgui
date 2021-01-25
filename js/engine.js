@@ -1041,9 +1041,10 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             sextra = setting._extra,
             sflag = setting._flag,
             sid = setting._id,
-            son = setting._on,
+            slabel = setting._label,
             smain = setting._main,                      // use the main key
             smulti = setting._multi,
+            son = setting._on,
             sset = setting._set,
             sspan = setting._span,
             ssvg = setting._svg,
@@ -1111,7 +1112,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         // TODO: improve that part, it can be customised better
         if (string_digit & 2)
             scolor = '#f00';
-        let label = `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
+        let label = slabel? slabel: `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
             style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
             title2 = title? `data-t="${title}" data-t2="title"`: '';
 
