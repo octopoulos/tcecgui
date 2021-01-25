@@ -5157,10 +5157,10 @@ function add_benchmark_result(class_, step, num_move, elapsed, speed) {
 
 /**
  * Benchmark by going next as fast as possible
- * @param {number=} step
- * @param {number=} running &1:current run, &2:next step
+ * @param {number=} round
+ * @param {number=} running &1:current run, &2:next round
  */
-function benchmark(step=10, running=0) {
+function benchmark(round=10, running=0) {
     let main = xboards[Y.x],
         node = Id('benchmark'),
         now = Now(true),
@@ -5204,7 +5204,8 @@ function benchmark(step=10, running=0) {
         let started = (now > bench_countdown);
         if (bench_start < 0 && started) {
             Attrs(Id('bench-title'), {'data-t': 'Benchmark in progress ...'});
-            Show(Id('bench-sub'));
+            if (!device.mobile)
+                Show(Id('bench-sub'));
             translate_nodes(node);
         }
 
@@ -5214,12 +5215,16 @@ function benchmark(step=10, running=0) {
     // finished
     else if (run_over || bench_stop) {
         if (run_over) {
-            let elapsed = now - bench_start;
-            bench_stats.push([elapsed, num_move, step]);
-            add_benchmark_result(0, step, num_move, elapsed);
+            if (bench_start > 0) {
+                let elapsed = now - bench_start;
+                bench_stats.push([elapsed, num_move, round]);
+                add_benchmark_result(0, round, num_move, elapsed);
+            }
         }
-        if (step > 1 && !bench_stop)
-            AnimationFrame(() => benchmark(step - 1, 2));
+        // next round
+        if (round > 1 && !bench_stop)
+            AnimationFrame(() => benchmark(round - 1, 2));
+        // game over
         else {
             let stats = bench_stats.sort((a, b) => a[0] - b[0]),
                 length = stats.length,
@@ -5227,13 +5232,13 @@ function benchmark(step=10, running=0) {
                 total_plies = 0,
                 total_time = 0;
 
-            stats.forEach(([time, plies, istep], id) => {
+            stats.forEach(([time, plies, iround], id) => {
                 if (id >= margin && id < length - margin) {
                     total_plies += plies;
                     total_time += time;
                 }
                 else
-                    Class(`[data-s="${istep}"]`, 'bench1', true, node);
+                    Class(`[data-s="${iround}"]`, 'bench1', true, node);
             });
 
             if (total_time > 0)
@@ -5257,7 +5262,7 @@ function benchmark(step=10, running=0) {
     else
         main.set_ply(main.ply + 1, {manual: true});
 
-    AnimationFrame(() => benchmark(step, is_waiting? 2: 1));
+    AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
 }
 
 /**
