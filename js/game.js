@@ -866,7 +866,7 @@ function resize_move_lists() {
 
             // normal size: 28 + 40 + 40 = 108
             if (grid && width > scrollbar)
-                ratio = Min(1, (width - scrollbar) / grid / 120);
+                ratio = Min(1, (width - scrollbar) / grid / 112);
 
             let extra = grid? `grid-template-columns: repeat(${grid}, 1fr 2fr 2fr`: '';
             Style(node, `font-size:${font * ratio}px;height:${height}px;${extra};width:${wextra}`);
