@@ -5178,7 +5178,7 @@ function benchmark(step=10, running=0) {
             HTML(node, html);
             Show(node);
             translate_nodes(node);
-            add_benchmark_result(1, ...['step', 'plies', 'time', 'plies/s'].map(text => translate_default(text)));
+            add_benchmark_result(1, ...['round', 'plies', 'time', 'plies/s'].map(text => translate_default(text)));
 
             // events
             C('#bench-stop', function() {
