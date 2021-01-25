@@ -1110,7 +1110,7 @@ class XBoard {
         // 1) compare the moves if there's a dual
         let dual = this.dual,
             real = this.real,
-            set_dico = {check: force? false: true, instant: true};
+            set_dico = {check: !force, instant: true};
         if (!real)
             return;
 

@@ -5518,7 +5518,7 @@ function change_setting_game(name, value) {
     case 'benchmark_now':
         benchmark();
         break;
-    case 'benchmark_test':
+    case 'benchmark_A':
         load_benchmark();
         break;
     case 'boom_effect':

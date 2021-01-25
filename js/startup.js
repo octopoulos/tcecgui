@@ -2310,7 +2310,7 @@ function prepare_settings() {
                 _main: 1,
                 _multi: 2,
                 now: {},
-                test: {},
+                A: {},
             },
             drag_and_drop: [ON_OFF, 0],
             join_next: [ON_OFF, 0],
