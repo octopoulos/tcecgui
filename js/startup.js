@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-25
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -2290,7 +2290,6 @@ function prepare_settings() {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
-            // key_repeat_update: option_number(350, 0, 2000, 10, 'update move lists after some delay'),
             play_every: option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
             quick_every: option_number(300, 100, 50000, 10, {}, 'live moves play speed'),
             // wasm: [ON_OFF, 0],
@@ -2310,7 +2309,7 @@ function prepare_settings() {
                 _main: 1,
                 _multi: 2,
                 now: {},
-                A: {},
+                game: {},
             },
             drag_and_drop: [ON_OFF, 0],
             join_next: [ON_OFF, 0],

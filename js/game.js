@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-25
 //
 // Game specific code:
 // - control the board, moves
@@ -47,9 +47,10 @@ let ANALYSIS_URLS = {
         lichess: 'https://lichess.org/analysis/{STANDARD}/{FEN}',
     },
     ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
+    bench_countdown,
     bench_start,
+    bench_stats = [],
     bench_stop,
-    bench_times = [],
     BOARD_MATCHES = {
         board_pva: 'pva',
         game: 'pva',
@@ -371,7 +372,7 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
-    TIMEOUT_benchmark = 250,
+    TIMEOUT_bench_load = 250,
     TIMEOUT_graph = 250,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
@@ -5142,12 +5143,16 @@ function action_key_no_input(code, active) {
  * @param {string=} speed
  */
 function add_benchmark_result(class_, step, num_move, elapsed, speed) {
+    let dico = {'data-s': step};
+    if (class_)
+        dico.class = `bench${class_}`;
+
     InsertNodes(Id('bench-grid'), [
         step,
         num_move,
         IsString(elapsed)? elapsed: elapsed.toFixed(3),
         IsString(speed)? speed: (num_move / elapsed).toFixed(3),
-    ].map(text => CreateNode('div', text, class_? {class: `bench${class_}`}: undefined)));
+    ].map(text => CreateNode('div', text, dico)));
 }
 
 /**
@@ -5157,65 +5162,102 @@ function add_benchmark_result(class_, step, num_move, elapsed, speed) {
  */
 function benchmark(step=10, running=0) {
     let main = xboards[Y.x],
+        node = Id('benchmark'),
+        now = Now(true),
         num_move = main.moves.length,
         run_over = (main.ply >= num_move - 1);
 
-    // start + finish
+    // started
     if (!(running & 1)) {
         if (!running) {
-            clear_timeout('benchmark');
+            clear_timeout('bench_load');
             close_popups();
-            bench_times.length = 0;
+            bench_countdown = now + 3.2;
+            bench_start = -1;
+            bench_stats.length = 0;
+            bench_stop = 0;
 
             let html = [
-                    '<vert id="bench-title" data-t="Benchmark in progress ..."></vert>',
-                    '<vert data-t="Don\'t move the mouse."></vert>',
+                    '<vert id="bench-title" data-t="Benchmark"></vert>',
+                    '<vert id="bench-sub" class="dn" data-t="Don\'t move the mouse."></vert>',
+                    '<vert id="bench-count">&nbsp;</vert>',
                     '<grid id="bench-grid"></grid>',
                     '<vert><a id="bench-stop" data-t="STOP"></a></vert>',
-                ].join(''),
-                node = Id('benchmark');
+                ].join('');
 
             HTML(node, html);
             Show(node);
-            add_benchmark_result(1, ...['round', 'plies', 'time', 'plies/s'].map(text => `<i data-t="${text}"></i>`));
+            add_benchmark_result(0, ...['round', 'plies', 'time', 'plies/s'].map(text => `<i data-t="${text}"></i>`));
             translate_nodes(node);
 
             // events
             C('#bench-stop', function() {
                 bench_stop = 1;
-                if (this.dataset.t == 'OK')
+                if (Now(true) <= bench_countdown || this.dataset.t == 'OK')
                     Hide(node);
             });
         }
+
+        if (bench_stop)
+            return;
+
+        let started = (now > bench_countdown);
+        if (bench_start < 0 && started) {
+            Attrs(Id('bench-title'), {'data-t': 'Benchmark in progress ...'});
+            Show(Id('bench-sub'));
+            translate_nodes(node);
+        }
+
         main.set_ply(-1, {manual: true});
-        bench_start = Now(true);
-        bench_stop = 0;
+        bench_start = started? now: -1;
     }
+    // finished
     else if (run_over || bench_stop) {
         if (run_over) {
-            let elapsed = Now(true) - bench_start;
-            bench_times.push(elapsed);
+            let elapsed = now - bench_start;
+            bench_stats.push([elapsed, num_move, step]);
             add_benchmark_result(0, step, num_move, elapsed);
         }
         if (step > 1 && !bench_stop)
             AnimationFrame(() => benchmark(step - 1, 2));
         else {
-            let num_step = bench_times.length,
-                plies = num_move * num_step,
-                total = num_step? bench_times.reduce((a, b) => a + b): 0;
+            let stats = bench_stats.sort((a, b) => a[0] - b[0]),
+                length = stats.length,
+                margin = Floor(length / 4),
+                total_plies = 0,
+                total_time = 0;
 
-            if (total > 0)
-                add_benchmark_result(1, '<i data-t="total"></i>', plies, total);
-            let node = Id('bench-stop');
-            Attrs(node, {'data-t': 'OK'});
-            translate_nodes(Id('benchmark'));
+            stats.forEach(([time, plies, istep], id) => {
+                if (id >= margin && id < length - margin) {
+                    total_plies += plies;
+                    total_time += time;
+                }
+                else
+                    Class(`[data-s="${istep}"]`, 'bench1', true, node);
+            });
+
+            if (total_time > 0)
+                add_benchmark_result(0, '<i data-t="total"></i>', total_plies, total_time);
+
+            Attrs(Id('bench-title'), {'data-t': 'Benchmark over.'});
+            Attrs(Id('bench-stop'), {'data-t': 'OK'});
+            translate_nodes(node);
+            Hide(Id('bench-sub'));
         }
         return;
     }
 
-    // go to next ply
-    main.set_ply(main.ply + 1, {manual: true});
-    AnimationFrame(() => benchmark(step, 1));
+    // go to next ply - or countdown
+    let count = Id('bench-count'),
+        left = bench_countdown - now,
+        is_waiting = (left > 0);
+    S(count, is_waiting);
+    if (is_waiting)
+        HTML(count, (left > 3)? '': Ceil(left));
+    else
+        main.set_ply(main.ply + 1, {manual: true});
+
+    AnimationFrame(() => benchmark(step, is_waiting? 2: 1));
 }
 
 /**
@@ -5395,7 +5437,7 @@ function load_benchmark(step) {
 
     // wait for the PGN + 2x live info to be loaded
     let bench_try = 0,
-        name = 'benchmark';
+        name = 'bench_load';
     add_timeout(name, () => {
         let board = xboards.archive,
             headers = (board.pgn || {}).Headers,
@@ -5403,13 +5445,15 @@ function load_benchmark(step) {
             num_live1 = xboards.live1.evals.archive.length,
             num_move = board.moves.length;
 
-        if (headers.Round == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3))
+        if (headers.Round == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3)) {
             benchmark(step);
+            bench_try = 100;
+        }
 
         bench_try ++;
         if (bench_try > 100)
             clear_timeout(name);
-    }, TIMEOUT_benchmark, true);
+    }, TIMEOUT_bench_load, true);
 }
 
 /**
@@ -5515,11 +5559,11 @@ function change_setting_game(name, value) {
         }
         close_popups();
         break;
+    case 'benchmark_game':
+        load_benchmark();
+        break;
     case 'benchmark_now':
         benchmark();
-        break;
-    case 'benchmark_A':
-        load_benchmark();
         break;
     case 'boom_effect':
         save_option('boom_sound', value? 'random': 0);

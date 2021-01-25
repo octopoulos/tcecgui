@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-24
+@version 2021-01-25
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1517,6 +1517,10 @@ hsub {
     right: 0;
     z-index: 10;
 }
+#bench-count {
+    font-size: 2em;
+    padding: 1em 0 0.5em 0;
+}
 #bench-grid {
     gap: 0 1em;
     grid-template-columns: minmax(2em, 1fr) minmax(2em, 1fr) minmax(4em, 1fr) minmax(4em, 1fr);
@@ -1530,6 +1534,10 @@ hsub {
     min-width: 6em;
     padding: 0.3em 0.5em;
     text-align: center;
+}
+.bench1 {
+    color: #080;
+    text-decoration: line-through;
 }
 
 /* extras */
