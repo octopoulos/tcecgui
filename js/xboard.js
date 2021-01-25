@@ -284,14 +284,14 @@ class XBoard {
      * @param {Move[]} moves
      * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves(moves, cur_ply) {
-        if (this.check_locked(['move', moves, cur_ply]))
+    add_moves(moves, cur_ply, agree) {
+        if (this.check_locked(['move', moves, cur_ply, agree]))
             return;
 
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = Y.agree_length? ['<i class="agree X"></i>']: [],
+            lines = Y.agree_length? [`<i class="agree X">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -449,16 +449,17 @@ class XBoard {
      * - completely replaces the moves list with this one
      * @param {string} text
      * @param {number=} cur_ply if defined, then we want to go to this ply
+     * @param {number=} agree
      * @param {boolean=} force force update
      */
-    add_moves_string(text, cur_ply, force) {
+    add_moves_string(text, cur_ply, agree, force) {
         if (!text)
             return;
 
         // 1) no change or older => skip
         if (this.text == text || (!this.manual && this.text.includes(text)))
             return;
-        if (this.check_locked(['text', text, cur_ply]))
+        if (this.check_locked(['text', text, cur_ply, agree]))
             return;
 
         let [new_ply, new_items] = split_move_string(text),
@@ -472,7 +473,7 @@ class XBoard {
 
         // 2) update the moves
         let first_ply = -1,
-            lines = Y.agree_length? ['<i class="agree Y"></i>']: [],
+            lines = Y.agree_length? [`<i class="agree Y">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             moves = [],
             ply = new_ply;
 
@@ -2402,13 +2403,13 @@ class XBoard {
         Style('[data-x="unlock"]', 'color:#f00', false, this.node);
 
         if (!locked && this.locked_obj) {
-            let [type, param1, param2] = this.locked_obj;
+            let [type, param1, param2, param3] = this.locked_obj;
             this.locked_obj = null;
             this.reset(Y.x);
             if (type == 'move')
-                this.add_moves(param1, param2);
+                this.add_moves(param1, param2, param3);
             else if (type == 'text')
-                this.add_moves_string(param1, param2);
+                this.add_moves_string(param1, param2, param3);
         }
     }
 
@@ -2437,7 +2438,7 @@ class XBoard {
 
             let node = _('i.agree', parent);
             if (node)
-                HTML(node, Y.agree_length? `[${agree}]`: '');
+                HTML(node, Y.agree_length? `[${agree}]`: '[0]');
         });
     }
 
