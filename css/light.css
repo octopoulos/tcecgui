@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-23
+@version 2021-01-24
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -700,6 +700,7 @@ input.multi2 {
 }
 .turn {
     color: #222;
+    font-size: 0.85em;
 }
 #moves-pv1 .turn,
 #pv1 .turn {
@@ -720,12 +721,6 @@ input.multi2 {
 }
 .void {
     background-color: #191919;
-}
-#live0 .turn,
-#live1 .turn,
-#pv0 .turn,
-#pv1 .turn {
-    font-size: 0.85em;
 }
 #popup-fen {
     border-radius: 0;
@@ -758,6 +753,9 @@ input.multi2 {
 }
 .grid .mini-turn {
     font-size: 0.75em;
+}
+.last {
+    grid-column: span 3;
 }
 
 /* tables */
@@ -1507,6 +1505,33 @@ hsub {
     font-size: 0.85em;
 }
 
+/* benchmark */
+#benchmark {
+    background: rgba(0, 0, 0, 0.8);
+    bottom: 0;
+    color: #0d0;
+    font-family: consolas;
+    font-size: 14px;
+    padding: 1em;
+    position: fixed;
+    right: 0;
+    z-index: 10;
+}
+#bench-grid {
+    gap: 0 1em;
+    grid-template-columns: minmax(2em, 1fr) minmax(2em, 1fr) minmax(4em, 1fr) minmax(4em, 1fr);
+    margin-top: 1em;
+}
+#bench-stop {
+    border: 1px solid #0d0;
+    border-radius: 0.1em;
+    color: #fff;
+    margin-top: 1em;
+    min-width: 6em;
+    padding: 0.3em 0.5em;
+    text-align: center;
+}
+
 /* extras */
 #ad0 {
     margin: 0 0.5em;
@@ -1578,6 +1603,7 @@ hsub {
 
 /* allow text selection */
 .adblock,
+#benchmark,
 #engine,
 #footer,
 .live-basic,

@@ -1,13 +1,13 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-01-24
 //
 // utility JS functions used in all the sites
 // no state is being required
 //
 /*
 globals
-console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, window, XMLHttpRequest
+console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, screen, window, XMLHttpRequest
 */
 'use strict';
 
@@ -1558,6 +1558,28 @@ function Undefined(value, def) {
     return (value === undefined || Number.isNaN(value))? def: value;
 }
 
+/**
+ * Get the visible height
+ * - screen.height might be 0 on node.js
+ * @returns {number}
+ */
+function VisibleHeight() {
+    let screen_height = screen.height,
+        window_height = window.innerHeight;
+    return screen_height? Min(screen_height, window_height): window_height;
+}
+
+/**
+ * Get the visible width
+ * - screen.width might be 0 on node.js
+ * @returns {number}
+ */
+function VisibleWidth() {
+    let screen_width = screen.width,
+        window_width = window.innerWidth;
+    return screen_width? Min(screen_width, window_width): window_width;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // <<
@@ -1629,6 +1651,8 @@ if (typeof exports != 'undefined') {
         Undefined: Undefined,
         Upper: Upper,
         Visible: Visible,
+        VisibleHeight: VisibleHeight,
+        VisibleWidth: VisibleWidth,
     });
 }
 // >>

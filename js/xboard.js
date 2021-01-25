@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // game board:
 // - 4 rendering modes:
@@ -86,6 +86,7 @@ let AI = 'ai',
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_arrow = 200,
     TIMEOUT_click = 200,
+    TIMEOUT_compare = 100,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
@@ -283,14 +284,14 @@ class XBoard {
      * @param {Move[]} moves
      * @param {number=} cur_ply if defined, then we want to go to this ply
      */
-    add_moves(moves, cur_ply) {
-        if (this.check_locked(['move', moves, cur_ply]))
+    add_moves(moves, cur_ply, agree) {
+        if (this.check_locked(['move', moves, cur_ply, agree]))
             return;
 
         let added = A('[data-j]', this.xmoves).length,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
-            lines = Y.agree_length? ['<i class="agree X"></i>']: [],
+            lines = Y.agree_length? [`<i class="agree X">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             manual = this.manual,
             num_book = 0,
             num_new = moves.length,
@@ -406,7 +407,7 @@ class XBoard {
                     this.hook(this, 'next', move);
                 }
             }
-            this.compare_duals(cur_ply);
+            this.delayed_compare(cur_ply);
         }
         else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
             if (DEV.ply)
@@ -448,16 +449,17 @@ class XBoard {
      * - completely replaces the moves list with this one
      * @param {string} text
      * @param {number=} cur_ply if defined, then we want to go to this ply
+     * @param {number=} agree
      * @param {boolean=} force force update
      */
-    add_moves_string(text, cur_ply, force) {
+    add_moves_string(text, cur_ply, agree, force) {
         if (!text)
             return;
 
         // 1) no change or older => skip
         if (this.text == text || (!this.manual && this.text.includes(text)))
             return;
-        if (this.check_locked(['text', text, cur_ply]))
+        if (this.check_locked(['text', text, cur_ply, agree]))
             return;
 
         let [new_ply, new_items] = split_move_string(text),
@@ -471,7 +473,7 @@ class XBoard {
 
         // 2) update the moves
         let first_ply = -1,
-            lines = Y.agree_length? ['<i class="agree Y"></i>']: [],
+            lines = Y.agree_length? [`<i class="agree Y">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             moves = [],
             ply = new_ply;
 
@@ -534,7 +536,7 @@ class XBoard {
             }
 
             // show diverging move in PV
-            this.compare_duals(want_ply);
+            this.delayed_compare(want_ply);
         }
     }
 
@@ -887,15 +889,6 @@ class XBoard {
     }
 
     /**
-     * Check if there's a delayed ply
-     */
-    check_delayed_ply() {
-        let ply = this.delayed_ply;
-        if (ply > -2)
-            this.set_ply(ply);
-    }
-
-    /**
      * Call this when new moves arrive
      * @param {Object} object
      * @returns {boolean}
@@ -1105,23 +1098,26 @@ class XBoard {
      * Compare plies from the duals
      * - set the ply for both the board and the dual board
      * - called from add_moves and add_moves_string
+     * ! should avoid calling it on the dual unnecessarily
      * @param {number} num_ply current ply in the real game (in live mode: not played yet)
+     * @param {number=} force force the lock: &1:self, &2:dual
      */
-    compare_duals(num_ply) {
+    compare_duals(num_ply, force) {
         // 0) skip?
-        if (this.locked)
+        if (this.locked && !(force & 1))
             return;
         this.clicked = false;
 
         // 1) compare the moves if there's a dual
         let dual = this.dual,
-            real = this.real;
+            real = this.real,
+            set_dico = {check: !force, instant: true};
         if (!real)
             return;
 
         // no dual
-        if (!dual || !dual.valid || dual.locked) {
-            this.set_ply(num_ply, {instant: true});
+        if (!dual || !dual.valid || (dual.locked && !(force & 2))) {
+            this.set_ply(num_ply, set_dico);
             return;
         }
 
@@ -1157,11 +1153,10 @@ class XBoard {
         dual.set_marker(ply, agree, num_ply);
 
         // 2) set ply?
-        let show_delay = (!real.hold || !real.hold_step || real.ply == real.moves.length - 1)? 0: Y.show_delay,
-            show_ply = Y.show_ply;
-
+        let show_ply = Y.show_ply;
         if (show_ply == 'first') {
-            this.set_ply(num_ply, {instant: true});
+            this.set_ply(num_ply, set_dico);
+            dual.set_ply(num_ply, set_dico);
             return;
         }
 
@@ -1173,15 +1168,12 @@ class XBoard {
                 ply = board.moves.length - 1;
 
             if (ply == num_ply)
-                board.set_ply(ply, {instant: true});
+                board.set_ply(ply, set_dico);
             // try to get to the ply without compute, if fails, then render the next ply + compute later
-            else if (board.set_ply(ply, {instant: true}) == false) {
+            else if (board.set_ply(ply, set_dico) == false) {
                 if (DEV.div)
                     LS(`${this.id}/${board.id} : delayed ${num_ply} => ${ply}`);
-
-                board.set_ply(show_delay? num_ply: ply, {instant: true});
-                if (show_delay)
-                    this.set_delayed_ply(ply);
+                board.set_ply(ply, set_dico);
             }
         }
     }
@@ -1296,6 +1288,17 @@ class XBoard {
             worker.id = id;
             worker.postMessage({dev: DEV, func: 'config'});
             this.workers.push(worker);
+        }
+    }
+
+    /**
+     * Compare duals with a delay
+     * @param {number} want_ply
+     */
+    delayed_compare(want_ply) {
+        if (!this.locked) {
+            let force = (!this.dual || this.dual.locked)? 1: 3;
+            add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
         }
     }
 
@@ -1709,7 +1712,7 @@ class XBoard {
                 '</hori>',
                 `<hori class="xcontrol">${controls}</hori>`,
             '</div>',
-            `<horis class="xmoves${this.list? '': ' dn'}"></horis>`,
+            `<horis class="xmoves fabase${this.list? '': ' dn'}"></horis>`,
         ].join(''));
 
         this.overlay = _('.xoverlay', this.node);
@@ -2242,9 +2245,10 @@ class XBoard {
      * @param {string} section
      * @param {boolean=} evals reset evals
      * @param {boolean=} instant call instant()
+     * @param {boolean=} render
      * @param {string=} start_fen
      */
-    reset(section, {evals, instant, start_fen}={}) {
+    reset(section, {evals, instant, render, start_fen}={}) {
         if (this.check_locked())
             return;
 
@@ -2274,7 +2278,7 @@ class XBoard {
         if (evals)
             this.evals[section].length = 0;
 
-        this.set_fen(null, true);
+        this.set_fen(null, render);
         this.set_last(this.last);
 
         // rotate if human is black
@@ -2348,22 +2352,6 @@ class XBoard {
     }
 
     /**
-     * Set a delayed ply
-     * @param {number} ply
-     */
-    set_delayed_ply(ply) {
-        this.delayed_ply = ply;
-
-        add_timeout(`dual_${this.id}`, () => {
-            let ply = this.delayed_ply;
-            if (DEV.div)
-                LS(`${this.id}: delayed_ply=${ply}`);
-            if (ply > -2)
-                this.set_ply(this.delayed_ply, {instant: true});
-        }, Y.show_delay);
-    }
-
-    /**
      * Set a new FEN
      * @param {string} fen null for start_fen
      * @param {boolean=} render
@@ -2415,13 +2403,13 @@ class XBoard {
         Style('[data-x="unlock"]', 'color:#f00', false, this.node);
 
         if (!locked && this.locked_obj) {
-            let [type, param1, param2] = this.locked_obj;
+            let [type, param1, param2, param3] = this.locked_obj;
             this.locked_obj = null;
             this.reset(Y.x);
             if (type == 'move')
-                this.add_moves(param1, param2);
+                this.add_moves(param1, param2, param3);
             else if (type == 'text')
-                this.add_moves_string(param1, param2);
+                this.add_moves_string(param1, param2, param3);
         }
     }
 
@@ -2450,7 +2438,7 @@ class XBoard {
 
             let node = _('i.agree', parent);
             if (node)
-                HTML(node, Y.agree_length? `[${agree}]`: '');
+                HTML(node, Y.agree_length? `[${agree}]`: '[0]');
         });
     }
 
@@ -2469,15 +2457,19 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {boolean=} animate
+     * @param {boolean=} check only execute if ply != current ply
      * @param {boolean=} instant call instant()
      * @param {boolean=} manual ply was set manually => send the 'ply' in the hook
      * @param {boolean=} no_compute does not computer chess positions (slow down)
      * @param {boolean=} render
      * @returns {Move} move, false if no move + no compute, null if failed
      */
-    set_ply(ply, {animate, instant, manual, no_compute, render=true}={}) {
+    set_ply(ply, {animate, check, instant, manual, no_compute, render=true}={}) {
         if (DEV.ply)
             LS(`${this.id}: set_ply: ${ply} : ${animate} : ${manual}`);
+
+        if (check && ply == this.ply)
+            return {};
 
         clear_timeout(`dual_${this.id}`);
         this.clicked = manual;

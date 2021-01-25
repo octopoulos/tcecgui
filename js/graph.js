@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-01-24
 //
 /*
 globals
@@ -190,7 +190,7 @@ function create_chart_data() {
         mobil: [
             new_dataset('mobility', Y.graph_color_0),
             new_dataset('mobility', Y.graph_color_1),
-            new_dataset('r-mobility', '#236ad6', '', {borderDash: [10, 5]}),
+            new_dataset('r-Mobility', '#236ad6', '', {borderDash: [10, 5]}),
         ],
         node: [
             new_dataset('w', Y.graph_color_0),
@@ -207,8 +207,8 @@ function create_chart_data() {
         time: [
             new_dataset('time', Y.graph_color_0),
             new_dataset('time', Y.graph_color_1),
-            new_dataset('left', extra0, 'y-axis-1'),
-            new_dataset('left', extra1, 'y-axis-1'),
+            new_dataset('left~2', extra0, 'y-axis-1'),
+            new_dataset('left~2', extra1, 'y-axis-1'),
         ],
     };
 
@@ -373,8 +373,14 @@ function mark_ply_chart(name, ply, max_ply) {
     }
 
     if (data) {
-        let rect = chart.canvas.getBoundingClientRect(),
-            scales = chart.scales,
+        // speed boost
+        let rect = chart.rect;
+        if (!rect) {
+            rect = chart.canvas.getBoundingClientRect();
+            chart.rect = rect;
+        }
+
+        let scales = chart.scales,
             x = scales['x-axis-0'].getPixelForValue(data.x),
             y = scales['y-axis-0'].getPixelForValue(data.y);
         Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);

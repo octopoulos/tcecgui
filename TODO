@@ -16,6 +16,20 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
+-          : 2021-01-24 : piece animation is not smooth anymore, something to do with set_ply
+-          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
+2021-01-24 : 2021-01-24 : 2190 plies in 76.857s => 28.4945 plies/s
+2021-01-24 : 2021-01-23 : speed: compare_duals with a 100ms timeout
+2021-01-24 : 2021-01-24 : 2190 plies in 102.177s => 21.4334 plies/s
+2021-01-24 : 2021-01-24 : benchmark UI
+2021-01-24 : 2021-01-24 : 2190 plies in 105.763s => 20.7067 plies/s
+2021-01-24 : 2021-01-23 : speed: don't redraw charts when changing moves
+2021-01-23 : 2021-01-24 : 2190 plies in 138.677s => 15.7921 plies/s
+2021-01-24 : 2021-01-23 : speed: chart.canvas.getBoundingClientRect => cache it
+2021-01-24 : 2021-01-24 : 2190 plies in 139.370s => 15.7136 plies/s
+2021-01-23 : 2021-01-23 : speed: ctx.font = ... => only do it once
+2021-01-24 : 2021-01-24 : 2190 plies in 144.876s => 15.1164 plies/s : #div=sf&game=33&season=20 + 4 sections
+2021-01-23 : 2021-01-23 : find a good game + create a benchmark
 2021-01-23 : 2021-01-23 : resize WDB % + kibitzer info
 2021-01-23 : 2021-01-23 : fix show_pv for PVA
 2021-01-23 : 2021-01-23 : improved Copy popup

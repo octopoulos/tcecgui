@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // Game specific code:
 // - control the board, moves
@@ -28,7 +28,8 @@ stockfish_wdl, Style, SUB_BOARDS,
 TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard, xboards, Y
+virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard,
+xboards, Y
 */
 'use strict';
 
@@ -46,6 +47,9 @@ let ANALYSIS_URLS = {
         lichess: 'https://lichess.org/analysis/{STANDARD}/{FEN}',
     },
     ARCHIVE_KEYS = ['season', 'div', 'round', 'stage', 'game'],
+    bench_start,
+    bench_stop,
+    bench_times = [],
     BOARD_MATCHES = {
         board_pva: 'pva',
         game: 'pva',
@@ -367,6 +371,7 @@ let ANALYSIS_URLS = {
         smp_threads: 5,
         threads: 5,
     },
+    TIMEOUT_benchmark = 250,
     TIMEOUT_graph = 250,
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
@@ -804,9 +809,10 @@ function redraw_arrows() {
  * - &1: mark board invalid
  * - &2: reset the board completely
  * - &4: reset board evals
+ * @param {boolean=} render
  * @param {string=} start_fen
  */
-function reset_sub_boards(section, mode, start_fen) {
+function reset_sub_boards(section, mode, render, start_fen) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (board.main_manual)
@@ -815,7 +821,7 @@ function reset_sub_boards(section, mode, start_fen) {
         if (mode & 1)
             board.valid = false;
         if (mode & 2)
-            board.reset(section, {evals: mode & 4, start_fen: start_fen});
+            board.reset(section, {evals: mode & 4, render: render, start_fen: start_fen});
     });
 }
 
@@ -858,9 +864,9 @@ function resize_move_lists() {
             else
                 wextra = '100%';
 
-            // normal size: 20 + 36 + 36 = 92
+            // normal size: 28 + 40 + 40 = 108
             if (grid && width > scrollbar)
-                ratio = Min(1, (width - scrollbar) / grid / 92);
+                ratio = Min(1, (width - scrollbar) / grid / 120);
 
             let extra = grid? `grid-template-columns: repeat(${grid}, 1fr 2fr 2fr`: '';
             Style(node, `font-size:${font * ratio}px;height:${height}px;${extra};width:${wextra}`);
@@ -3734,9 +3740,9 @@ function update_move_pv(section, ply, move) {
 
     if (move.pv) {
         if (IsString(move.pv))
-            board.add_moves_string(move.pv, cur_ply, true);
+            board.add_moves_string(move.pv, cur_ply, move.agree, true);
         else
-            board.add_moves(move.pv.Moves, cur_ply);
+            board.add_moves(move.pv.Moves, cur_ply, move.agree);
     }
     else {
         // no pv available =>
@@ -4058,7 +4064,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
         main.reset(section, {evals: is_same, start_fen: pgn.frc});
         if (is_same) {
-            reset_sub_boards(section, 7, pgn.frc);
+            reset_sub_boards(section, 7, true, pgn.frc);
             if (section == section_board()) {
                 if (DEV.chart)
                     LS(`UP: ${section}`);
@@ -4902,9 +4908,10 @@ function update_hardware(section, id, engine, short, hardware, nodes) {
  * @param {Object} data
  * @param {number} id 0, 1
  * @param {number=} force_ply update with this data.pv even if there's more recent text + forces invert_black
+ * @param {boolean=} no_graph
  * @returns {boolean}
  */
-function update_live_eval(section, data, id, force_ply) {
+function update_live_eval(section, data, id, force_ply, no_graph) {
     if (!data)
         return false;
 
@@ -4957,7 +4964,7 @@ function update_live_eval(section, data, id, force_ply) {
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
-        HTML('.live-pv', `<i>${translate_default('off')}</i>`, node);
+        HTML('.live-pv', `<i>${translate_default('off~2')}</i>`, node);
         return false;
     }
 
@@ -4989,9 +4996,9 @@ function update_live_eval(section, data, id, force_ply) {
 
     if (force_ply)
         board.text = '';
-    board.add_moves_string(data.pv, cur_ply, force_ply);
+    board.add_moves_string(data.pv, cur_ply, data.agree, force_ply);
 
-    if (section == section_board()) {
+    if (!no_graph && section == section_board()) {
         if (DEV.chart)
             LS(`ULE: ${section}`);
         update_live_charts(moves || [data], id + 2);
@@ -5040,7 +5047,7 @@ function update_player_eval(section, data, same_pv) {
             board.reset(section, {instant: true});
             let last_move = main.moves.slice(-1)[0];
             board.set_fen(last_move? last_move.fen: main.fen);
-            board.add_moves(moves, data.ply);
+            board.add_moves(moves, data.ply, data.agree);
             if (DEV.ply) {
                 LS(`added ${moves.length} moves : ${data.ply} <> ${cur_ply}`);
                 LS(board.moves);
@@ -5048,7 +5055,7 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data.pv) {
             data.ply = split_move_string(data.pv)[0];
-            board.add_moves_string(data.pv, cur_ply);
+            board.add_moves_string(data.pv, cur_ply, data.agree);
         }
     }
 
@@ -5124,6 +5131,91 @@ function update_player_eval(section, data, same_pv) {
  * @param {Object=} active active input element, if any
  */
 function action_key_no_input(code, active) {
+}
+
+/**
+ * Add a benchmark result
+ * @param {number} class_ 0, 1
+ * @param {number|string} step
+ * @param {number|string} num_move
+ * @param {number|string} elapsed
+ * @param {string=} speed
+ */
+function add_benchmark_result(class_, step, num_move, elapsed, speed) {
+    InsertNodes(Id('bench-grid'), [
+        step,
+        num_move,
+        IsString(elapsed)? elapsed: elapsed.toFixed(3),
+        IsString(speed)? speed: (num_move / elapsed).toFixed(3),
+    ].map(text => CreateNode('div', text, class_? {class: `bench${class_}`}: undefined)));
+}
+
+/**
+ * Benchmark by going next as fast as possible
+ * @param {number=} step
+ * @param {number=} running &1:current run, &2:next step
+ */
+function benchmark(step=10, running=0) {
+    let main = xboards[Y.x],
+        num_move = main.moves.length,
+        run_over = (main.ply >= num_move - 1);
+
+    // start + finish
+    if (!(running & 1)) {
+        if (!running) {
+            clear_timeout('benchmark');
+            close_popups();
+            bench_times.length = 0;
+
+            let html = [
+                    '<vert id="bench-title" data-t="Benchmark in progress ..."></vert>',
+                    '<vert data-t="Don\'t move the mouse."></vert>',
+                    '<grid id="bench-grid"></grid>',
+                    '<vert><a id="bench-stop" data-t="STOP"></a></vert>',
+                ].join(''),
+                node = Id('benchmark');
+
+            HTML(node, html);
+            Show(node);
+            add_benchmark_result(1, ...['round', 'plies', 'time', 'plies/s'].map(text => `<i data-t="${text}"></i>`));
+            translate_nodes(node);
+
+            // events
+            C('#bench-stop', function() {
+                bench_stop = 1;
+                if (this.dataset.t == 'OK')
+                    Hide(node);
+            });
+        }
+        main.set_ply(-1, {manual: true});
+        bench_start = Now(true);
+        bench_stop = 0;
+    }
+    else if (run_over || bench_stop) {
+        if (run_over) {
+            let elapsed = Now(true) - bench_start;
+            bench_times.push(elapsed);
+            add_benchmark_result(0, step, num_move, elapsed);
+        }
+        if (step > 1 && !bench_stop)
+            AnimationFrame(() => benchmark(step - 1, 2));
+        else {
+            let num_step = bench_times.length,
+                plies = num_move * num_step,
+                total = num_step? bench_times.reduce((a, b) => a + b): 0;
+
+            if (total > 0)
+                add_benchmark_result(1, '<i data-t="total"></i>', plies, total);
+            let node = Id('bench-stop');
+            Attrs(node, {'data-t': 'OK'});
+            translate_nodes(Id('benchmark'));
+        }
+        return;
+    }
+
+    // go to next ply
+    main.set_ply(main.ply + 1, {manual: true});
+    AnimationFrame(() => benchmark(step, 1));
 }
 
 /**
@@ -5288,6 +5380,39 @@ function game_action_keyup(code) {
 }
 
 /**
+ * Load and then start a benchmark
+ * @param {number=} step
+ */
+function load_benchmark(step) {
+    // load a game
+    Assign(Y, {
+        div: 'sf',
+        game: 33,
+        season: '20',
+        x: 'archive',
+    });
+    open_event('archive');
+
+    // wait for the PGN + 2x live info to be loaded
+    let bench_try = 0,
+        name = 'benchmark';
+    add_timeout(name, () => {
+        let board = xboards.archive,
+            headers = (board.pgn || {}).Headers,
+            num_live0 = xboards.live0.evals.archive.length,
+            num_live1 = xboards.live1.evals.archive.length,
+            num_move = board.moves.length;
+
+        if (headers.Round == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3))
+            benchmark(step);
+
+        bench_try ++;
+        if (bench_try > 100)
+            clear_timeout(name);
+    }, TIMEOUT_benchmark, true);
+}
+
+/**
  * Paste text to PVA
  * - FEN or PGN
  * @param {string} text
@@ -5376,7 +5501,7 @@ function change_setting_game(name, value) {
         Keys(xboards).forEach(key => {
             let board = xboards[key];
             if (!board.main)
-                board.compare_duals(main.ply);
+                board.delayed_compare(main.ply);
         });
         break;
     case 'analysis_chessdb':
@@ -5389,6 +5514,12 @@ function change_setting_game(name, value) {
             window.open(url, '_blank');
         }
         close_popups();
+        break;
+    case 'benchmark_now':
+        benchmark();
+        break;
+    case 'benchmark_A':
+        load_benchmark();
         break;
     case 'boom_effect':
         save_option('boom_sound', value? 'random': 0);
@@ -5556,7 +5687,7 @@ function changed_section() {
     }
 
     // reset some stuff
-    reset_sub_boards(section, 3);
+    reset_sub_boards(section, 3, true);
     if (DEV.chart)
         LS(`CS: ${section}`);
     reset_charts(section);
@@ -5890,14 +6021,14 @@ function handle_board_events(board, type, value, e, force) {
                 xboards[sub].set_locked(0);
 
             // show PV's
-            // - important to reset the boards to prevent wrong compare_duals
+            // - important to invalidate the boards to prevent wrong compare_duals
             reset_sub_boards(section, 1);
             update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, value);
 
             // show live engines
-            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply);
-            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply);
+            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply, true);
+            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply, true);
 
             update_materials(value);
             update_mobility();
@@ -6078,7 +6209,9 @@ function popup_custom(id, name, e, scolor, text) {
 
     let num_col, show,
         popup = Id(id),
-        type = e.type;
+        type = e.type,
+        visible_height = VisibleHeight(),
+        visible_width = VisibleWidth();
 
     if (type == 'mouseleave')
         show = false;
@@ -6127,11 +6260,11 @@ function popup_custom(id, name, e, scolor, text) {
             y = e.clientY + 10,
             x2 = 0,
             y2 = 0;
-        if (x >= window.innerWidth / 2) {
+        if (x >= visible_width / 2) {
             x -= 20;
             x2 = -100;
         }
-        if (y >= window.innerHeight / 2) {
+        if (y >= visible_height / 2) {
             y -= 20;
             y2 = -100;
         }
@@ -6141,7 +6274,7 @@ function popup_custom(id, name, e, scolor, text) {
     }
 
     Class(popup, 'popup-show', show);
-    Style(popup, `min-width:${Min(num_col * 165 + 32, window.innerWidth * 2/3)}px`, num_col);
+    Style(popup, `min-width:${Min(num_col * 165 + 32, visible_width * 2/3)}px`, num_col);
 
     // trick to be able to put the mouse on the popup and copy text
     if (show) {

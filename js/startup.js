@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-24
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -14,13 +14,13 @@ globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
+changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
 context_target:true, CreateNode,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
 Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings,
+LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings, Min,
 navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
 require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resize_move_lists,
 resize_table, resume_sleep,
@@ -31,7 +31,7 @@ translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
 virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
-virtual_set_modal_events_special:true, Visible, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_set_modal_events_special:true, Visible, VisibleWidth, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -143,7 +143,7 @@ let AD_STYLES = {},
         pva: 'PV(A)',
         tb: 'TB',
     },
-    TIMEOUT_font = 200,
+    TIMEOUT_font = 2000,
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000,
@@ -1309,11 +1309,11 @@ function resize_panels() {
     // panel full + width
     let panel_gap = Y.panel_gap,
         panels = From(A('.panel')).sort((a, b) => a.style.order - b.style.order),
-        window_width = window.innerWidth;
+        visible_width = VisibleWidth();
     for (let panel of panels) {
         let name = panel.id,
-            max_width = Y[`max_${name}`],
-            min_width = Y[`min_${name}`],
+            max_width = Min(visible_width - 8, Y[`max_${name}`]),
+            min_width = Min(visible_width - 8, Y[`min_${name}`]),
             styles = [`margin:0 ${panel_gap}px`];
 
         if (max_width <= 0 && min_width <= 0)
@@ -1324,7 +1324,7 @@ function resize_panels() {
             if (min_width > -1)
                 styles.push(`min-width:${min_width}px`);
 
-            Class(panel, 'full', panel.style.order == 2 && window_width <= 866);
+            Class(panel, 'full', panel.style.order == 2 && visible_width <= 866);
             Style(panel, styles.join(';'));
             Show(panel);
         }
@@ -1378,6 +1378,7 @@ function resize_panels() {
             Style(node, `height:${width / Max(0.5, Y.graph_aspect_ratio)}px;width:${width}px`);
         }
     });
+    Keys(charts).forEach(key => charts[key].rect = null);
 }
 
 /**
@@ -2225,7 +2226,7 @@ function prepare_settings() {
             highlight_size_pv: option_number(0.088, 0, 0.4, 0.001),
             notation_pv: [ON_OFF, 1],
             piece_theme_pv: [Keys(PIECE_THEMES), 'chess24'],
-            show_delay: option_number(500, 0, 2000, 10),
+            show_delay: option_number(100, 0, 2000, 10),
             show_ply: show_plies,
             status_pv: [ON_OFF, 1],
         },
@@ -2289,6 +2290,7 @@ function prepare_settings() {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
+            // key_repeat_update: option_number(350, 0, 2000, 10, 'update move lists after some delay'),
             play_every: option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
             quick_every: option_number(300, 100, 50000, 10, {}, 'live moves play speed'),
             // wasm: [ON_OFF, 0],
@@ -2304,6 +2306,12 @@ function prepare_settings() {
         },
         extra: {
             archive_scroll: [ON_OFF, 1],
+            benchmark: {
+                _main: 1,
+                _multi: 2,
+                now: {},
+                A: {},
+            },
             drag_and_drop: [ON_OFF, 0],
             join_next: [ON_OFF, 0],
             log_auto_start: [ON_OFF, 1],
