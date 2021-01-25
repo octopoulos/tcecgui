@@ -700,6 +700,7 @@ input.multi2 {
 }
 .turn {
     color: #222;
+    font-size: 0.85em;
 }
 #moves-pv1 .turn,
 #pv1 .turn {
@@ -720,12 +721,6 @@ input.multi2 {
 }
 .void {
     background-color: #191919;
-}
-#live0 .turn,
-#live1 .turn,
-#pv0 .turn,
-#pv1 .turn {
-    font-size: 0.85em;
 }
 #popup-fen {
     border-radius: 0;

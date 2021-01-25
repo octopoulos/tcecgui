@@ -809,9 +809,10 @@ function redraw_arrows() {
  * - &1: mark board invalid
  * - &2: reset the board completely
  * - &4: reset board evals
+ * @param {boolean=} render
  * @param {string=} start_fen
  */
-function reset_sub_boards(section, mode, start_fen) {
+function reset_sub_boards(section, mode, render, start_fen) {
     Keys(xboards).forEach(key => {
         let board = xboards[key];
         if (board.main_manual)
@@ -820,7 +821,7 @@ function reset_sub_boards(section, mode, start_fen) {
         if (mode & 1)
             board.valid = false;
         if (mode & 2)
-            board.reset(section, {evals: mode & 4, start_fen: start_fen});
+            board.reset(section, {evals: mode & 4, render: render, start_fen: start_fen});
     });
 }
 
@@ -863,9 +864,9 @@ function resize_move_lists() {
             else
                 wextra = '100%';
 
-            // normal size: 20 + 36 + 36 = 92
+            // normal size: 28 + 40 + 40 = 108
             if (grid && width > scrollbar)
-                ratio = Min(1, (width - scrollbar) / grid / 92);
+                ratio = Min(1, (width - scrollbar) / grid / 108);
 
             let extra = grid? `grid-template-columns: repeat(${grid}, 1fr 2fr 2fr`: '';
             Style(node, `font-size:${font * ratio}px;height:${height}px;${extra};width:${wextra}`);
@@ -4063,7 +4064,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
         main.reset(section, {evals: is_same, start_fen: pgn.frc});
         if (is_same) {
-            reset_sub_boards(section, 7, pgn.frc);
+            reset_sub_boards(section, 7, true, pgn.frc);
             if (section == section_board()) {
                 if (DEV.chart)
                     LS(`UP: ${section}`);
@@ -5162,6 +5163,10 @@ function benchmark(step=10, running=0) {
     // start + finish
     if (!(running & 1)) {
         if (!running) {
+            clear_timeout('benchmark');
+            close_popups();
+            bench_times.length = 0;
+
             let html = [
                     '<vert id="bench-title" data-t="Benchmark in progress ..."></vert>',
                     '<vert data-t="Don\'t move the mouse."></vert>',
@@ -5181,8 +5186,6 @@ function benchmark(step=10, running=0) {
                 if (this.dataset.t == 'OK')
                     Hide(node);
             });
-
-            bench_times.length = 0;
         }
         main.set_ply(-1, {manual: true});
         bench_start = Now(true);
@@ -5382,7 +5385,13 @@ function game_action_keyup(code) {
  */
 function load_benchmark(step) {
     // load a game
-    location.hash = '#div=sf&game=33&season=20';
+    Assign(Y, {
+        div: 'sf',
+        game: 33,
+        season: '20',
+        x: 'archive',
+    });
+    open_event('archive');
 
     // wait for the PGN + 2x live info to be loaded
     let bench_try = 0,
@@ -5394,10 +5403,9 @@ function load_benchmark(step) {
             num_live1 = xboards.live1.evals.archive.length,
             num_move = board.moves.length;
 
-        if (headers.Round == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3)) {
-            clear_timeout(name);
+        if (headers.Round == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3))
             benchmark(step);
-        }
+
         bench_try ++;
         if (bench_try > 100)
             clear_timeout(name);
@@ -5493,7 +5501,7 @@ function change_setting_game(name, value) {
         Keys(xboards).forEach(key => {
             let board = xboards[key];
             if (!board.main)
-                board.compare_duals(main.ply);
+                board.delayed_compare(main.ply);
         });
         break;
     case 'analysis_chessdb':
@@ -5507,7 +5515,10 @@ function change_setting_game(name, value) {
         }
         close_popups();
         break;
-    case 'benchmark':
+    case 'benchmark_now':
+        benchmark();
+        break;
+    case 'benchmark_test':
         load_benchmark();
         break;
     case 'boom_effect':
@@ -5676,7 +5687,7 @@ function changed_section() {
     }
 
     // reset some stuff
-    reset_sub_boards(section, 3);
+    reset_sub_boards(section, 3, true);
     if (DEV.chart)
         LS(`CS: ${section}`);
     reset_charts(section);
@@ -6010,7 +6021,7 @@ function handle_board_events(board, type, value, e, force) {
                 xboards[sub].set_locked(0);
 
             // show PV's
-            // - important to reset the boards to prevent wrong compare_duals
+            // - important to invalidate the boards to prevent wrong compare_duals
             reset_sub_boards(section, 1);
             update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, value);
