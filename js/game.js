@@ -5436,6 +5436,7 @@ function game_action_keyup(code) {
     // left / right
     case 37:
     case 39:
+        board_target.release();
         clear_timeout(`click_${KEY_NAMES[code]}_${board_target.id}`);
         if (code == 37)
             board_target.play(true, true, 'game_action_keyup');

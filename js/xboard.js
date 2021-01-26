@@ -16,8 +16,8 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cancel_timeout,
-cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cannot_popup, Chess, Class,
+Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
@@ -1428,13 +1428,13 @@ class XBoard {
                         let [change] = touch_event(e);
                         if (change.x < rect.left || change.x > rect.left + rect.width
                                 || change.y < rect.top || change.y > rect.bottom + rect.height)
-                            that.hold = null;
+                            that.release();
                     }
                     if (name != that.hold)
-                        that.hold = null;
+                        that.release();
                 }
                 else
-                    that.hold = null;
+                    that.release();
 
                 if (!that.hold)
                     that.rect = null;
@@ -1610,9 +1610,9 @@ class XBoard {
             return;
 
         this.hold_step = step;
-        let now = Now(true);
 
         // need this to prevent mouse up from doing another click
+        let now = Now(true);
         if (step >= 0 || now > this.hold_time + TIMEOUT_click) {
             switch (name) {
             case 'next':
@@ -1645,7 +1645,7 @@ class XBoard {
             if (key_repeat > Y.key_repeat)
                 key_repeat = Y.key_repeat;
             else
-                key_repeat = Max(key_repeat / Y.key_accelerate, 10);
+                key_repeat = Max(key_repeat / Y.key_accelerate, 8);
             timeout = key_repeat;
         }
         else {
@@ -1654,8 +1654,8 @@ class XBoard {
         }
 
         // faster than 60Hz? => go warp speed
-        if (timeout <= 1 / 60) {
-            cancel_timeout(time_name);
+        if (timeout < 1000 / 59) {
+            clear_timeout(time_name);
             AnimationFrame(() => this.hold_button(name, step + 1, !is_play));
         }
         else
@@ -2054,6 +2054,13 @@ class XBoard {
         else
             this.hold_button('play', 0, manual);
         this.set_play(stop);
+    }
+
+    /**
+     * Release the hold button
+     */
+    release() {
+        this.hold = null;
     }
 
     /**
