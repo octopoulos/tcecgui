@@ -309,18 +309,22 @@ function change_setting_special(name, value, close) {
         break;
     case 'engine_font':
     case 'engine_spacing':
+    case 'graph_aspect_ratio':
+    case 'panel_adjust':
+    case 'status_pv':
+        resize_panels();
+        break;
     case 'eval':
     case 'eval_left':
-    case 'graph_aspect_ratio':
     case 'moves':
     case 'moves_live':
     case 'moves_pv':
     case 'moves_pva':
-    case 'panel_adjust':
     case 'percent':
+    case 'percent_width':
     case 'single_line':
-    case 'status_pv':
         resize_panels();
+        resize_game();
         break;
     case 'export_settings':
         export_settings(Y.last_preset || 'tcec-settings');
@@ -2288,6 +2292,8 @@ function prepare_settings() {
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
+            key_accelerate:
+                option_number(1.04, 0.5, 1, 0.001, {}, 'divide key repeat time by this value, 1 for no acceleration'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
             play_every: option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
@@ -2384,6 +2390,7 @@ function prepare_settings() {
             moves_pv: [ON_OFF, 1],
             moves_pva: [ON_OFF, 1],
             percent: [ON_OFF, 1],
+            percent_width: option_number(50, 0, 100, 0.5, {}, 'max width in %'),
             single_line: [ON_OFF, 0],
         },
         live: {
@@ -2520,6 +2527,7 @@ function prepare_settings() {
             hardware: [ON_OFF, 0],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
+            percent_width: option_number(50, 0, 100, 0.5, {}, 'max width in %'),
             single_line: [ON_OFF, 0],
         },
         parameters: {

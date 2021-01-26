@@ -19,9 +19,9 @@ DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
-Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
-resize_3d, resize_text, Resource, restore_history, Round,
+last_key:true, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module,
+navigator, Now, Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require,
+reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
 stockfish_wdl, Style, SUB_BOARDS,
@@ -897,8 +897,10 @@ function section_board(section) {
  */
 function show_board_info(name, show) {
     let board = xboards[name],
+        is_pva = (name == 'pva'),
+        main = is_pva? board: xboards.live,
         node = board.node,
-        status = (name == 'pva')? Y.status_pva: Y.status;
+        status = is_pva? Y.status_pva: Y.status;
 
     if (show == undefined) {
         // auto => if engine is not visible => show the status
@@ -921,12 +923,25 @@ function show_board_info(name, show) {
             show = (status != 0);
     }
 
-    S('.xbottom, .xtop', show, node);
-    Class('.xbottom', '-xcolor0 xcolor1', board.rotate, node);
-    Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
-    Style('.xframe', `top:${show? 23: 0}px`, true, node);
-    Y.offset = show? -46.5: 0;
+    // update top/bottom
+    let players = main.players,
+        rotate = board.rotate,
+        turn = players[0].turn? 0: players[1].turn? 1: -1;
 
+    S('.xbottom, .xtop', show, node);
+    Class('.xbottom', '-xcolor0 xcolor1', rotate, node);
+    Class('.xtop', 'xcolor0 -xcolor1', rotate, node);
+    Style('.xframe', `top:${show? 23: 0}px`, true, node);
+
+    // update clock
+    if (turn >= 0) {
+        Show(`.xcolor${turn} .xcog`, node);
+        Hide(`.xcolor${1 - turn} .xcog`, node);
+    }
+    else
+        Hide('.xcog', node);
+
+    Y.offset = show? -46.5: 0;
     board.update_mini(0);
     board.update_mini(1);
     if (board.manual && !board.is_ai())
@@ -3459,7 +3474,7 @@ function resize_game() {
             return;
 
         // [44.4% W | 44.4% D | 44.4% B] => 17755 units
-        Style(node, `font-size:${Min(13, units / 2 / 17755)}px`);
+        Style(node, `font-size:${Min(13, units / 17755 * Y.percent_width / 100)}px`);
 
         // [D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M] => 26730 units
         if (next && HasClass(next, 'live-more'))
@@ -4806,6 +4821,7 @@ function start_clock(section, id, finished, delta) {
         Assign(player, {
             elapsed: 0.000001,
             start: Now(true) - player.time / 1000 - (delta || 0),
+            turn: 1,
         });
         clock_tick(section, id);
     }
@@ -4817,8 +4833,11 @@ function start_clock(section, id, finished, delta) {
  * @param {number[]} ids
  */
 function stop_clock(section, ids) {
-    for (let id of ids)
+    let players = xboards[section].players;
+    for (let id of ids) {
         clear_timeout(`clock-${section}${id}`);
+        players[id].turn = 0;
+    }
 }
 
 /**
@@ -5179,7 +5198,7 @@ function benchmark(round=10, running=0) {
 
             let html = [
                     '<vert id="bench-title" data-t="Benchmark"></vert>',
-                    '<vert id="bench-sub" class="dn" data-t="Don\'t move the mouse."></vert>',
+                    '<vert id="bench-sub" class="dn"></vert>',
                     '<vert id="bench-count">&nbsp;</vert>',
                     '<grid id="bench-grid"></grid>',
                     '<vert><a id="bench-stop" data-t="STOP"></a></vert>',
@@ -5204,8 +5223,9 @@ function benchmark(round=10, running=0) {
         let started = (now > bench_countdown);
         if (bench_start < 0 && started) {
             Attrs(Id('bench-title'), {'data-t': 'Benchmark in progress ...'});
-            if (!device.mobile)
-                Show(Id('bench-sub'));
+            let sub = Id('bench-sub');
+            Attrs(sub, {'data-t': device.mobile? "Don't touch the screen.": "Don't move the mouse."});
+            Show(sub);
             translate_nodes(node);
         }
 
@@ -5244,7 +5264,7 @@ function benchmark(round=10, running=0) {
             if (total_time > 0)
                 add_benchmark_result(0, '<i data-t="total"></i>', total_plies, total_time);
 
-            Attrs(Id('bench-title'), {'data-t': 'Benchmark over.'});
+            Attrs(Id('bench-title'), {'data-t': 'Benchmark over'});
             Attrs(Id('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
             Hide(Id('bench-sub'));
@@ -5257,11 +5277,13 @@ function benchmark(round=10, running=0) {
         left = bench_countdown - now,
         is_waiting = (left > 0);
     S(count, is_waiting);
+
     if (is_waiting)
         HTML(count, (left > 3)? '': Ceil(left));
-    else
+    else {
+        last_key = now;
         main.set_ply(main.ply + 1, {manual: true});
-
+    }
     AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
 }
 
@@ -5417,6 +5439,7 @@ function game_action_keyup(code) {
     // left / right
     case 37:
     case 39:
+        board_target.release();
         clear_timeout(`click_${KEY_NAMES[code]}_${board_target.id}`);
         if (code == 37)
             board_target.play(true, true, 'game_action_keyup');
@@ -5550,7 +5573,7 @@ function change_setting_game(name, value) {
         Keys(xboards).forEach(key => {
             let board = xboards[key];
             if (!board.main)
-                board.delayed_compare(main.ply);
+                board.delayed_compare(main.ply, main.moves.length - 1);
         });
         break;
     case 'analysis_chessdb':

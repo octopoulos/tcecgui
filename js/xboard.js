@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-25
 //
 // game board:
 // - 4 rendering modes:
@@ -20,8 +20,8 @@ _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, a
 Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
-resize_text,
+Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
+require, resize_text,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
@@ -69,6 +69,8 @@ let AI = 'ai',
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
+    key_repeat = 0,
+    last_key = 0,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -407,7 +409,7 @@ class XBoard {
                     this.hook(this, 'next', move);
                 }
             }
-            this.delayed_compare(cur_ply);
+            this.delayed_compare(cur_ply, num_move - 1);
         }
         else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
             if (DEV.ply)
@@ -536,7 +538,7 @@ class XBoard {
             }
 
             // show diverging move in PV
-            this.delayed_compare(want_ply);
+            this.delayed_compare(want_ply, last_ply);
         }
     }
 
@@ -1293,13 +1295,22 @@ class XBoard {
 
     /**
      * Compare duals with a delay
+     * - direct on the last ply or previous one
+     * - direct if key was not pushed/repeated recently
      * @param {number} want_ply
+     * @param {number} last_ply
      */
-    delayed_compare(want_ply) {
-        if (!this.locked) {
-            let force = (!this.dual || this.dual.locked)? 1: 3;
+    delayed_compare(want_ply, last_ply) {
+        if (this.locked)
+            return;
+
+        let delta = (Now(true) - last_key) * 1000,
+            force = (!this.dual || this.dual.locked)? 1: 3;
+
+        if (want_ply >= last_ply - 1 || delta > Y.key_repeat * 2)
+            this.compare_duals(want_ply, force);
+        else
             add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
-        }
     }
 
     /**
@@ -1421,13 +1432,13 @@ class XBoard {
                         let [change] = touch_event(e);
                         if (change.x < rect.left || change.x > rect.left + rect.width
                                 || change.y < rect.top || change.y > rect.bottom + rect.height)
-                            that.hold = null;
+                            that.release();
                     }
                     if (name != that.hold)
-                        that.hold = null;
+                        that.release();
                 }
                 else
-                    that.hold = null;
+                    that.release();
 
                 if (!that.hold)
                     that.rect = null;
@@ -1603,9 +1614,9 @@ class XBoard {
             return;
 
         this.hold_step = step;
-        let now = Now(true);
 
         // need this to prevent mouse up from doing another click
+        let now = Now(true);
         if (step >= 0 || now > this.hold_time + TIMEOUT_click) {
             switch (name) {
             case 'next':
@@ -1628,9 +1639,32 @@ class XBoard {
         }
 
         this.hold_time = now;
+        last_key = now;
 
-        let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
-        add_timeout(`click_${name}_${this.id}`, () => this.hold_button(name, step + 1, !is_play), timeout);
+        // handle key repeat
+        let timeout,
+            time_name = `click_${name}_${this.id}`;
+        if (is_play)
+            timeout = Y[`${this.play_mode}_every`];
+        else if (step) {
+            if (key_repeat > Y.key_repeat)
+                key_repeat = Y.key_repeat;
+            else
+                key_repeat = Max(key_repeat / Y.key_accelerate, 8);
+            timeout = key_repeat;
+        }
+        else {
+            key_repeat = Y.key_repeat_initial;
+            timeout = key_repeat;
+        }
+
+        // faster than 60Hz? => go warp speed
+        if (timeout < 1000 / 59) {
+            clear_timeout(time_name);
+            AnimationFrame(() => this.hold_button(name, step + 1, !is_play));
+        }
+        else
+            add_timeout(time_name, () => this.hold_button(name, step + 1, !is_play), timeout);
     }
 
     /**
@@ -2025,6 +2059,13 @@ class XBoard {
         else
             this.hold_button('play', 0, manual);
         this.set_play(stop);
+    }
+
+    /**
+     * Release the hold button
+     */
+    release() {
+        this.hold = null;
     }
 
     /**
