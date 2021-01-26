@@ -19,9 +19,9 @@ DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 getSelection, global, GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
-listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module, navigator, Now,
-Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require, reset_charts,
-resize_3d, resize_text, Resource, restore_history, Round,
+last_key:true, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module,
+navigator, Now, Pad, Parent, parse_time, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts, require,
+reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
 stockfish_wdl, Style, SUB_BOARDS,
@@ -5276,11 +5276,13 @@ function benchmark(round=10, running=0) {
         left = bench_countdown - now,
         is_waiting = (left > 0);
     S(count, is_waiting);
+
     if (is_waiting)
         HTML(count, (left > 3)? '': Ceil(left));
-    else
+    else {
+        last_key = now;
         main.set_ply(main.ply + 1, {manual: true});
-
+    }
     AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
 }
 
