@@ -3474,7 +3474,7 @@ function resize_game() {
             return;
 
         // [44.4% W | 44.4% D | 44.4% B] => 17755 units
-        Style(node, `font-size:${Min(13, units / 2 / 17755)}px`);
+        Style(node, `font-size:${Min(13, units / 17755 * Y.percent_width / 100)}px`);
 
         // [D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M] => 26730 units
         if (next && HasClass(next, 'live-more'))
