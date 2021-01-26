@@ -172,41 +172,45 @@ function clamp_eval(eval_)
  * Create all chart data
  */
 function create_chart_data() {
-    let extra0 = mix_hex_colors(Y.graph_color_0, '#007fff', 0.2),
-        extra1 = mix_hex_colors(Y.graph_color_1, '#007fff', 0.75);
+    let color0 = Y.graph_color_0,
+        color1 = Y.graph_color_1,
+        color2 = Y.graph_color_2,
+        color3 = Y.graph_color_3,
+        extra0 = mix_hex_colors(color0, '#007fff', 0.2),
+        extra1 = mix_hex_colors(color1, '#007fff', 0.75);
 
     let datasets = {
         agree: [
-            new_dataset('{white} + {black}', Y.graph_color_0),
-            new_dataset('{blue} + {red}', Y.graph_color_2),
+            new_dataset('{white} + {black}', color0),
+            new_dataset('{blue} + {red}', mix_hex_colors(color2, color3, 0.45)),
         ],
         depth: [
-            new_dataset('depth', Y.graph_color_0),
-            new_dataset('depth', Y.graph_color_1),
+            new_dataset('depth', color0),
+            new_dataset('depth', color1),
             new_dataset('selective', extra0),
             new_dataset('selective', extra1),
         ],
         eval: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
         mobil: [
-            new_dataset('mobility', Y.graph_color_0),
-            new_dataset('mobility', Y.graph_color_1),
+            new_dataset('mobility', color0),
+            new_dataset('mobility', color1),
             new_dataset('r-Mobility', '#236ad6', '', {borderDash: [10, 5]}),
         ],
         node: [
-            new_dataset('w', Y.graph_color_0),
-            new_dataset('b', Y.graph_color_1),
+            new_dataset('w', color0),
+            new_dataset('b', color1),
         ],
         speed: [
-            new_dataset('w',Y.graph_color_0),
-            new_dataset('b', Y.graph_color_1),
+            new_dataset('w', color0),
+            new_dataset('b', color1),
         ],
         tb: [
-            new_dataset('w', Y.graph_color_0),
-            new_dataset('b', Y.graph_color_1),
+            new_dataset('w', color0),
+            new_dataset('b', color1),
         ],
         time: [
-            new_dataset('time', Y.graph_color_0),
-            new_dataset('time', Y.graph_color_1),
+            new_dataset('time', color0),
+            new_dataset('time', color1),
             new_dataset('left~2', extra0, 'y-axis-1'),
             new_dataset('left~2', extra1, 'y-axis-1'),
         ],
