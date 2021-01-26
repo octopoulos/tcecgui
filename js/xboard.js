@@ -69,7 +69,7 @@ let AI = 'ai',
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
-    key_repeat,
+    key_repeat = 0,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
