@@ -935,8 +935,8 @@ function show_board_info(name, show) {
 
     // update clock
     if (turn >= 0) {
-        Show(`.xcolor${turn} .xcog`);
-        Hide(`.xcolor${1 - turn} .xcog`);
+        Show(`.xcolor${turn} .xcog`, node);
+        Hide(`.xcolor${1 - turn} .xcog`, node);
     }
     else
         Hide('.xcog', node);
