@@ -1294,7 +1294,7 @@ class XBoard {
 
     /**
      * Compare duals with a delay
-     * - do it directly on the last ply
+     * - do it directly on the last ply or previous one
      * @param {number} want_ply
      * @param {number} last_ply
      */
@@ -1303,7 +1303,7 @@ class XBoard {
             return;
 
         let force = (!this.dual || this.dual.locked)? 1: 3;
-        if (want_ply >= last_ply)
+        if (want_ply >= last_ply - 1)
             this.compare_duals(want_ply, force);
         else
             add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
