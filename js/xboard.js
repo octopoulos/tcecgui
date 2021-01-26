@@ -16,12 +16,12 @@
 // included after: common, engine, global, 3d
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cannot_popup, Chess, Class,
-Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
+_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cancel_timeout,
+cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
-Lower, LS, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt, require,
-resize_text,
+Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
+require, resize_text,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
 update_svg, Upper, Visible, window, Worker, Y
 */
@@ -69,6 +69,7 @@ let AI = 'ai',
     },
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
+    key_repeat,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -86,7 +87,7 @@ let AI = 'ai',
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_arrow = 200,
     TIMEOUT_click = 200,
-    TIMEOUT_compare = 80,
+    TIMEOUT_compare = 100,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
@@ -1635,8 +1636,30 @@ class XBoard {
 
         this.hold_time = now;
 
-        let timeout = is_play? Y[`${this.play_mode}_every`]: (step? Y.key_repeat: Y.key_repeat_initial);
-        add_timeout(`click_${name}_${this.id}`, () => this.hold_button(name, step + 1, !is_play), timeout);
+        // handle key repeat
+        let timeout,
+            time_name = `click_${name}_${this.id}`;
+        if (is_play)
+            timeout = Y[`${this.play_mode}_every`];
+        else if (step) {
+            if (key_repeat > Y.key_repeat)
+                key_repeat = Y.key_repeat;
+            else
+                key_repeat = Max(key_repeat / Y.key_accelerate, 10);
+            timeout = key_repeat;
+        }
+        else {
+            key_repeat = Y.key_repeat_initial;
+            timeout = key_repeat;
+        }
+
+        // faster than 60Hz? => go warp speed
+        if (timeout <= 1 / 60) {
+            cancel_timeout(time_name);
+            AnimationFrame(() => this.hold_button(name, step + 1, !is_play));
+        }
+        else
+            add_timeout(time_name, () => this.hold_button(name, step + 1, !is_play), timeout);
     }
 
     /**
