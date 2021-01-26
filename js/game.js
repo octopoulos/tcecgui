@@ -5198,7 +5198,7 @@ function benchmark(round=10, running=0) {
 
             let html = [
                     '<vert id="bench-title" data-t="Benchmark"></vert>',
-                    '<vert id="bench-sub" class="dn" data-t="Don\'t move the mouse."></vert>',
+                    '<vert id="bench-sub" class="dn"></vert>',
                     '<vert id="bench-count">&nbsp;</vert>',
                     '<grid id="bench-grid"></grid>',
                     '<vert><a id="bench-stop" data-t="STOP"></a></vert>',
@@ -5223,8 +5223,9 @@ function benchmark(round=10, running=0) {
         let started = (now > bench_countdown);
         if (bench_start < 0 && started) {
             Attrs(Id('bench-title'), {'data-t': 'Benchmark in progress ...'});
-            if (!device.mobile)
-                Show(Id('bench-sub'));
+            let sub = Id('bench-sub');
+            Attrs(sub, {'data-t': device.mobile? "Don't touch the screen.": "Don't move the mouse."});
+            Show(sub);
             translate_nodes(node);
         }
 
@@ -5263,7 +5264,7 @@ function benchmark(round=10, running=0) {
             if (total_time > 0)
                 add_benchmark_result(0, '<i data-t="total"></i>', total_plies, total_time);
 
-            Attrs(Id('bench-title'), {'data-t': 'Benchmark over.'});
+            Attrs(Id('bench-title'), {'data-t': 'Benchmark over'});
             Attrs(Id('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
             Hide(Id('bench-sub'));
