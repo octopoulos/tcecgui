@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-25
 //
 // game board:
 // - 4 rendering modes:
@@ -86,7 +86,7 @@ let AI = 'ai',
     START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     TIMEOUT_arrow = 200,
     TIMEOUT_click = 200,
-    TIMEOUT_compare = 100,
+    TIMEOUT_compare = 80,
     TIMEOUT_pick = 600,
     TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
@@ -407,7 +407,7 @@ class XBoard {
                     this.hook(this, 'next', move);
                 }
             }
-            this.delayed_compare(cur_ply);
+            this.delayed_compare(cur_ply, num_move - 1);
         }
         else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
             if (DEV.ply)
@@ -536,7 +536,7 @@ class XBoard {
             }
 
             // show diverging move in PV
-            this.delayed_compare(want_ply);
+            this.delayed_compare(want_ply, last_ply);
         }
     }
 
@@ -1293,13 +1293,19 @@ class XBoard {
 
     /**
      * Compare duals with a delay
+     * - do it directly on the last ply
      * @param {number} want_ply
+     * @param {number} last_ply
      */
-    delayed_compare(want_ply) {
-        if (!this.locked) {
-            let force = (!this.dual || this.dual.locked)? 1: 3;
+    delayed_compare(want_ply, last_ply) {
+        if (this.locked)
+            return;
+
+        let force = (!this.dual || this.dual.locked)? 1: 3;
+        if (want_ply >= last_ply)
+            this.compare_duals(want_ply, force);
+        else
             add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
-        }
     }
 
     /**

@@ -897,8 +897,10 @@ function section_board(section) {
  */
 function show_board_info(name, show) {
     let board = xboards[name],
+        is_pva = (name == 'pva'),
+        main = is_pva? board: xboards.live,
         node = board.node,
-        status = (name == 'pva')? Y.status_pva: Y.status;
+        status = is_pva? Y.status_pva: Y.status;
 
     if (show == undefined) {
         // auto => if engine is not visible => show the status
@@ -921,12 +923,25 @@ function show_board_info(name, show) {
             show = (status != 0);
     }
 
-    S('.xbottom, .xtop', show, node);
-    Class('.xbottom', '-xcolor0 xcolor1', board.rotate, node);
-    Class('.xtop', 'xcolor0 -xcolor1', board.rotate, node);
-    Style('.xframe', `top:${show? 23: 0}px`, true, node);
-    Y.offset = show? -46.5: 0;
+    // update top/bottom
+    let players = main.players,
+        rotate = board.rotate,
+        turn = players[0].turn? 0: players[1].turn? 1: -1;
 
+    S('.xbottom, .xtop', show, node);
+    Class('.xbottom', '-xcolor0 xcolor1', rotate, node);
+    Class('.xtop', 'xcolor0 -xcolor1', rotate, node);
+    Style('.xframe', `top:${show? 23: 0}px`, true, node);
+
+    // update clock
+    if (turn >= 0) {
+        Show(`.xcolor${turn} .xcog`);
+        Hide(`.xcolor${1 - turn} .xcog`);
+    }
+    else
+        Hide('.xcog', node);
+
+    Y.offset = show? -46.5: 0;
     board.update_mini(0);
     board.update_mini(1);
     if (board.manual && !board.is_ai())
@@ -4806,6 +4821,7 @@ function start_clock(section, id, finished, delta) {
         Assign(player, {
             elapsed: 0.000001,
             start: Now(true) - player.time / 1000 - (delta || 0),
+            turn: 1,
         });
         clock_tick(section, id);
     }
@@ -4817,8 +4833,11 @@ function start_clock(section, id, finished, delta) {
  * @param {number[]} ids
  */
 function stop_clock(section, ids) {
-    for (let id of ids)
+    let players = xboards[section].players;
+    for (let id of ids) {
         clear_timeout(`clock-${section}${id}`);
+        players[id].turn = 0;
+    }
 }
 
 /**
@@ -5550,7 +5569,7 @@ function change_setting_game(name, value) {
         Keys(xboards).forEach(key => {
             let board = xboards[key];
             if (!board.main)
-                board.delayed_compare(main.ply);
+                board.delayed_compare(main.ply, main.moves.length - 1);
         });
         break;
     case 'analysis_chessdb':
