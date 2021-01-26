@@ -5282,7 +5282,7 @@ function benchmark(round=10, running=0) {
         HTML(count, (left > 3)? '': Ceil(left));
     else {
         last_key = now;
-        main.set_ply(main.ply + 1, {manual: true});
+        main.go_next();
     }
     AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
 }
