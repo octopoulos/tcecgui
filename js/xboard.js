@@ -70,6 +70,7 @@ let AI = 'ai',
     FIGURES = 'bknpqrBKNPQR'.split(''),
     HUMAN = 'human',
     key_repeat = 0,
+    last_key = 0,
     LETTER_COLUMNS = Assign({}, ...COLUMN_LETTERS.map((letter, id) => ({[letter]: id}))),
     MATERIAL_ORDERS = {
         k: 1,
@@ -1294,7 +1295,8 @@ class XBoard {
 
     /**
      * Compare duals with a delay
-     * - do it directly on the last ply or previous one
+     * - direct on the last ply or previous one
+     * - direct if key was not pushed/repeated recently
      * @param {number} want_ply
      * @param {number} last_ply
      */
@@ -1302,8 +1304,10 @@ class XBoard {
         if (this.locked)
             return;
 
-        let force = (!this.dual || this.dual.locked)? 1: 3;
-        if (want_ply >= last_ply - 1)
+        let delta = (Now(true) - last_key) * 1000,
+            force = (!this.dual || this.dual.locked)? 1: 3;
+
+        if (want_ply >= last_ply - 1 || delta > Y.key_repeat * 2)
             this.compare_duals(want_ply, force);
         else
             add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
@@ -1635,6 +1639,7 @@ class XBoard {
         }
 
         this.hold_time = now;
+        last_key = now;
 
         // handle key repeat
         let timeout,

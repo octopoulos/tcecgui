@@ -2288,7 +2288,8 @@ function prepare_settings() {
         },
         control: {
             book_every: option_number(600, 100, 5000, 50, {}, 'opening book play speed'),
-            key_accelerate: option_number(1.04, 0.5, 1, 0.001, {}, 'divide key repeat time by this value'),
+            key_accelerate:
+                option_number(1.04, 0.5, 1, 0.001, {}, 'divide key repeat time by this value, 1 for no acceleration'),
             key_repeat: option_number(70, 10, 2000, 10),
             key_repeat_initial: option_number(500, 10, 2000, 10),
             play_every: option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
