@@ -6073,8 +6073,11 @@ function handle_board_events(board, type, value, e, force) {
     // !! make sure it's set manually
     case 'ply':
         let cur_ply = board.ply,
+            moves = board.moves,
+            num_move = moves.length,
             prev_ply = cur_ply - 1,
-            prev_move = board.moves[prev_ply];
+            prev_move = moves[prev_ply],
+            want_ply = (cur_ply >= num_move - 1)? num_move: cur_ply;
         move = value;
 
         if (name == section || board.manual) {
@@ -6098,9 +6101,23 @@ function handle_board_events(board, type, value, e, force) {
             update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, value);
 
+            // live PV
+            if (want_ply > cur_ply) {
+                let id = num_move & 1,
+                    evals = xboards[`pv${id}`].evals[section],
+                    eval_ = evals[want_ply];
+                if (eval_)
+                    update_player_eval(section, eval_);
+                if (DEV.ply2)
+                    LS('num_move=', num_move, 'id=', id, 'cur_ply=', cur_ply, 'want_ply=', want_ply, 'eval_=', eval_);
+            }
+
             // show live engines
-            update_live_eval(section, xboards.live0.evals[section][cur_ply], 0, cur_ply, true);
-            update_live_eval(section, xboards.live1.evals[section][cur_ply], 1, cur_ply, true);
+            for (let id of [0, 1]) {
+                let evals = xboards[`live${id}`].evals[section],
+                    ply = (want_ply > cur_ply && evals[want_ply])? want_ply: cur_ply;
+                update_live_eval(section, evals[ply], id, ply, true);
+            }
 
             update_materials(value);
             update_mobility();
