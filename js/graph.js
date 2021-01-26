@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-25
 //
 /*
 globals
@@ -182,7 +182,7 @@ function create_chart_data() {
     let datasets = {
         agree: [
             new_dataset('{white} + {black}', color0),
-            new_dataset('{blue} + {red}', mix_hex_colors(color2, color3, 0.45)),
+            new_dataset('{blue} + {red}', mix_hex_colors(color2, color3, 0.5)),
         ],
         depth: [
             new_dataset('depth', color0),
@@ -675,6 +675,16 @@ function update_chart_options(name, mode) {
                 Assign(datasets[id], {
                     backgroundColor: color,
                     borderColor: color,
+                });
+            }
+
+            // + update agree
+            let agree = (chart_data.agree || {}).datasets;
+            if (agree && agree[1]) {
+                let mix = mix_hex_colors(Y.graph_color_2, Y.graph_color_3, 0.5);
+                Assign(agree[1], {
+                    backgroundColor: mix,
+                    borderColor: mix,
                 });
             }
         }
