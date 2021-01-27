@@ -764,7 +764,7 @@ class XBoard {
 
         // 1) no move => hide the arrow
         // TODO: maybe some restoration is needed here
-        if (!dico || !dico.from || !Y.arrow_opacity) {
+        if (!dico || dico.from == undefined || !Y.arrow_opacity) {
             Hide(this.svgs[id].svg);
             return;
         }

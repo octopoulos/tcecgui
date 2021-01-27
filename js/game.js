@@ -738,9 +738,9 @@ function check_draw_arrow(board) {
     }
 
     if (draw) {
-        main.arrow(id, next, is_other? from_opponent: 1);
         if (DEV.arrow)
             LS(`     => draw: ${next.m} : ${next.from} => ${next.to} @${next.ply} / ${next.ply / 2 + 1}`);
+        main.arrow(id, next, is_other? from_opponent: 1);
     }
     else if (DEV.arrow)
         LS(`${board.id} no arrow`);
