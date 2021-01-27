@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-25
+// @version 2021-01-27
 //
 /*
 globals
@@ -8,7 +8,7 @@ expect, global, require, test
 */
 'use strict';
 
-let {Assign, Keys} = require('./common.js'),
+let {A, Assign, From, Keys, Safe} = require('./common.js'),
     {load_defaults, Y} = require('./engine.js'),
     {create_boards} = require('./game.js'),
     {xboards} = require('./global.js'),
@@ -87,6 +87,67 @@ live.id = 'null';
 ].forEach(([fen, answer], id) => {
     test(`analyse_fen:${id}`, () => {
         expect(live.analyse_fen(fen)).toEqual(answer);
+    });
+});
+
+// arrow_html
+// white(#cdcdbe), black(#666666), blue(#236ad6), red(#eb282d)
+[
+    // a8a5, white -> black -> blue -> red
+    [1, 0, {}, 0.5, [0, 0, 0, 0]],
+    [0, 0, {from: 0, to: 3}, 1, ['1|0.7|M6.68 5 L32.6 5|#c1c1b7|#c1c1b7|#cdcdbe', 0, 0, 0]],
+    [
+        0, 1, {from: 0, to: 3}, 1,
+        [
+            '0|0.7|M6.68 5 L32.6 5|#c1c1b7|#c1c1b7|#cdcdbe',
+            '1|0.7|M6.68 5 L32.6 5|#bcb788|#bcb788|#c6bf7b',
+            0,
+            0,
+        ],
+    ],
+    [
+        0, 2, {from: 0, to: 3}, 1,
+        [
+            '0|0.7|M6.68 5 L32.6 5|#c1c1b7|#c1c1b7|#cdcdbe',
+            '0|0.7|M6.68 5 L32.6 5|#bcb788|#bcb788|#c6bf7b',
+            '1|0.7|M6.68 5 L32.6 5|#4a7cc7|#bcb788|#236ad6',
+            0,
+        ],
+    ],
+    [
+        0, 3, {from: 0, to: 3}, 1,
+        [
+            '0|0.7|M6.68 5 L32.6 5|#c1c1b7|#c1c1b7|#cdcdbe',
+            '0|0.7|M6.68 5 L32.6 5|#bcb788|#bcb788|#c6bf7b',
+            '0|0.7|M6.68 5 L32.6 5|#4a7cc7|#bcb788|#236ad6',
+            '1|0.7|M6.68 5 L32.6 5|#328532|#bcb788|#007700',
+        ],
+    ],
+].forEach(([reset, id_, dico, opacity, answer], id) => {
+    test(`arrow_html:${id}`, () => {
+        if (reset)
+            live.svgs = [{id: 0}, {id: 1}, {id: 2}, {id: 3}];
+        live.arrow_html(id_, dico, opacity);
+
+        let results = [];
+        for (let svg of live.svgs) {
+            let node = svg.svg,
+                opacity = '',
+                text = '',
+                visible = '';
+            if (node) {
+                let style = node.style;
+                opacity = style.opacity;
+                visible = (style.display == 'none')? 0: 1;
+
+                node = node.firstChild;
+                let markers = From(A('marker', node)).map(child => child.getAttributeNS(null, 'fill')),
+                    stroke = Safe('path[stroke]', node).getAttributeNS(null, 'stroke');
+                text = [...[svg.path], ...markers, ...[stroke]].join('|');
+            }
+            results.push(text? `${visible}|${opacity}|${text}`: 0);
+        }
+        expect(results).toEqual(answer);
     });
 });
 

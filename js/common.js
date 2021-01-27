@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-27
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -32,6 +32,8 @@ let Abs = Math.abs,
         },
         clientHeight: 0,
         dataset: {},
+        getAttribute: () => undefined,
+        getAttributeNS: () => undefined,
         getBoundingClientRect: () => ({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0}),
         offsetHeight: 0,
         removeAttribute: () => 0,
@@ -1592,6 +1594,7 @@ if (typeof exports != 'undefined') {
         ArrayJS: ArrayJS,
         Assign: Assign,
         Atan: Atan,
+        AttrsNS: AttrsNS,
         C: C,
         Clamp: Clamp,
         Class: Class,
@@ -1599,6 +1602,7 @@ if (typeof exports != 'undefined') {
         Contain: Contain,
         CopyClipboard: CopyClipboard,
         CreateNode: CreateNode,
+        CreateSVG: CreateSVG,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
         E: E,

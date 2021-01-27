@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-25
+@version 2021-01-27
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -852,6 +852,9 @@ hsub {
     font-size: 1.1em;
     padding: 1em;
     z-index: 1;
+}
+#table-season {
+    overflow-y: hidden;
 }
 #table-season a {
     color: #212529;
