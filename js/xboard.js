@@ -827,41 +827,50 @@ class XBoard {
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
             head_color = Y.arrow_head_color,
+            others = this.svgs.filter(svg => svg.id != id && svg.path == path),
             scolor = Y[`arrow_color_${id}`],
             shown = true;
 
-        for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
-            let other_id = other.id;
-            opacity = 1;
+        // player
+        if (id < 2) {
+            for (let other of others) {
+                let other_id = other.id;
+                opacity = 1;
 
-            if (id < 2) {
-                // black + white => combine
+                // player => combine
                 if (other_id < 2) {
                     scolor = combine_01;
                     Hide(other.svg);
                 }
+                // kibitzer => player head
                 else {
-                    // combined head?
-                    let svg2 = this.svgs[1 - id],
-                        cid = (path == svg2.path)? combine_01: Y[`arrow_color_${id}`];
                     AttrsNS(Id(`mk${name}_${other_id}_1`), {
-                        fill: mix_hex_colors(head_color, cid, 0.6),
+                        fill: mix_hex_colors(head_color, scolor, 0.6),
                     });
                     shown = false;
                     break;
                 }
             }
-            else {
-                // blue + red => combine
+        }
+        // kibitzer
+        else {
+            let ids = [];
+            for (let other of others) {
+                let other_id = other.id;
+                opacity = 1;
+
+                // kibitzer => combine
                 if (other_id >= 2)
                     scolor = Y.arrow_combine_23;
-                else {
-                    // combined head?
-                    let svg2 = this.svgs[1 - other_id],
-                        cid = (path == svg2.path)? combine_01: Y[`arrow_color_${other_id}`];
-                    shead = mix_hex_colors(head_color, cid, 0.6);
-                }
+                // player => mix heads
+                else
+                    ids.push(other_id);
                 Hide(other.svg);
+            }
+
+            if (ids.length) {
+                let mix = (ids.length >= 2)? combine_01: Y[`arrow_color_${ids[0]}`];
+                shead = mix_hex_colors(head_color, mix, 0.6);
             }
         }
 
