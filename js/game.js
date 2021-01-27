@@ -5758,7 +5758,8 @@ function changed_hash() {
  */
 function changed_section() {
     let section = Y.x,
-        is_cup = tour_info[section].cup;
+        is_cup = tour_info[section].cup,
+        main = xboards[section];
     assign_boards();
 
     old_cup = null;
@@ -5775,7 +5776,7 @@ function changed_section() {
     }
 
     // reset some stuff
-    lock_sub_boards(0);
+    lock_sub_boards(2);
     reset_sub_boards(section, 3, true);
     if (DEV.chart)
         LS(`CS: ${section}`);
@@ -5799,8 +5800,7 @@ function changed_section() {
     }
 
     // update overview
-    let main = xboards[section],
-        headers = main.pgn.Headers;
+    let headers = main.pgn.Headers;
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
