@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-13
+// @version 2021-01-26
 /*
 globals
 expect, global, require, test
@@ -78,7 +78,12 @@ function init_players(ply, players, evals) {
             depth: 91, engine: 'Komodo 14.1', eval: 'M8', hashfull: 0, id: 1, mate: -4, nodes: 2508046, nps: 4407815,
             ply: 145, tbhits: 123007, time: 568,
             pv: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
-            pvs: {d3c5: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6'},
+            pvs: {
+                d3c5: [
+                    'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
+                    'Nc5 Qb8+ Nb7 Qe8+ Ka6 Qc6+ Ka5 Qcb6#',
+                ],
+            },
         },
         'Nc5 Qb8+ Nb7 Qe8+ Ka6 Qc6+ Ka5 Qcb6#',
     ],
@@ -94,7 +99,12 @@ function init_players(ply, players, evals) {
             depth: 77, engine: 'Stockfish 202011101829_nn-c3ca321c51c9', eval: 'M25', hashfull: 21, id: 0, mate: 13,
             nodes: 575877930, nps: 258009825, ply: 128, seldepth: 26, tbhits: 6492754, time: 2232, wdl: '1000 0 0',
             pv: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
-            pvs: {h7g7: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5'},
+            pvs: {
+                h7g7: [
+                    'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
+                    'Rg7 Ne6 Rg6 Kd7 h7 Nf8 Rg7+ Kd6 h8=Q Ne6 Rg6 Kc5 Rxe6 Kc4 Rd6 f4 Qc8+ Kb5',
+                ],
+            },
         },
         'Rg7 Ne6 Rg6 Kd7 h7 Nf8 Rg7+ Kd6 h8=Q Ne6 Rg6 Kc5 Rxe6 Kc4 Rd6 f4 Qc8+ Kb5',
     ],
@@ -110,7 +120,12 @@ function init_players(ply, players, evals) {
             cp: -7, depth: 27, engine: 'Demolito dev-20201019', eval: -0.07, hashfull: 194, id: 0, nodes: 1793674384,
             ply: 20, time: 16216,
             pv: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6',
-            pvs: {h3f4: 'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6'},
+            pvs: {
+                h3f4: [
+                    'h3f4 d8f8 e1g3 g6f5 g4f5 f8f5 d2d4 g8f8 d4d5 e6d5 c3d5 e7d6 f1h1 d6f4 e3f4 h8g6 h1e1 d7d6',
+                    'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6',
+                ],
+            },
         },
         'Nf4 Rdf8 Bg3 Bf5 Bxf5 Rxf5 d4 Rgf8 d5 exd5 Ncxd5 Bd6 Rh1 Bxf4 exf4 Ng6 Rhe1 d6',
     ],
@@ -126,14 +141,20 @@ function init_players(ply, players, evals) {
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1',
-            pvs: {d1d6: 'd1d6 e7e6 f1d1'},
+            pvs: {d1d6: ['d1d6 e7e6 f1d1', 'Rd6 Re6 Rfd1']},
         },
         'Rd6 Re6 Rfd1',
     ],
     [
         '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
         [
-            {info: {pv: 'd1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {
+                info: {
+                    pv: 'd1d6 e7e6 f1d1 e6d6',
+                    pvs: {d1d6: ['d1d6 e7e6 f1d1 e6d6', 'Rd6 Re6 Rfd1 Rxd6']},
+                },
+                name: 'KomodoDragon 2647.00',
+            },
             {name: 'Stockfish 20201225'},
         ],
         '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6 f1d1',
@@ -142,14 +163,21 @@ function init_players(ply, players, evals) {
             cp: 226, depth: 32, eval: 2.26, engine: 'KomodoDragon 2647.00', hashfull: 145, id: 0, nodes: 3285889668,
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1 e6d6',
-            pvs: {d1d6: 'd1d6 e7e6 f1d1 e6d6'},
+            pvs: {d1d6: ['d1d6 e7e6 f1d1 e6d6', 'Rd6 Re6 Rfd1 Rxd6']},
         },
-        null,
+        'Rd6 Re6 Rfd1 Rxd6',
     ],
+    // 5
     [
         '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
         [
-            {info: {pv: 'e8e7 d1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {
+                info: {
+                    pv: 'e8e7 d1d6 e7e6 f1d1 e6d6',
+                    pvs: {e8e7: ['e8e7 d1d6 e7e6 f1d1 e6d6', 'Re7 Rd6 Re6 Rfd1 Rxd6']},
+                },
+                name: 'KomodoDragon 2647.00',
+            },
             {name: 'Stockfish 20201225'},
         ],
         '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6',
@@ -159,8 +187,8 @@ function init_players(ply, players, evals) {
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6',
             pvs: {
-                e8e7: 'e8e7 d1d6 e7e6 f1d1 e6d6',
-                d1d6: 'd1d6 e7e6',
+                e8e7: ['e8e7 d1d6 e7e6 f1d1 e6d6', 'Re7 Rd6 Re6 Rfd1 Rxd6'],
+                d1d6: ['d1d6 e7e6', 'Rd6 Re6'],
             },
         },
         'Rd6 Re6',
@@ -168,7 +196,13 @@ function init_players(ply, players, evals) {
     [
         '2r3k1/1p2rpp1/6p1/2n3P1/p1P4P/P7/1P3PB1/3R1RK1 w - - 0 32',
         [
-            {info: {ply: 60, pv: 'h2h4 e8e7 d1d6 e7e6 f1d1 e6d6'}, name: 'KomodoDragon 2647.00'},
+            {
+                info: {
+                    ply: 60, pv: 'h2h4 e8e7 d1d6 e7e6 f1d1 e6d6',
+                    pvs: {h2h4: ['h2h4 e8e7 d1d6 e7e6 f1d1 e6d6', 'h4 Re7 Rd6 Re6 Rfd1 Rxd6']},
+                },
+                name: 'KomodoDragon 2647.00',
+            },
             {name: 'Stockfish 20201225'},
         ],
         '187833610 KomodoDragon 2647.00(50): info depth 32 time 17830 nodes 3285889668 score cp 226 lowerbound nps 184279613 hashfull 145 tbhits 139607 pv d1d6 e7e6',
@@ -178,8 +212,8 @@ function init_players(ply, players, evals) {
             nps: 184279613, ply: 62, tbhits: 139607, time: 17830,
             pv: 'd1d6 e7e6 f1d1 e6d6',
             pvs: {
-                h2h4: 'h2h4 e8e7 d1d6 e7e6 f1d1 e6d6',
-                d1d6: 'd1d6 e7e6 f1d1 e6d6',
+                h2h4: ['h2h4 e8e7 d1d6 e7e6 f1d1 e6d6', 'h4 Re7 Rd6 Re6 Rfd1 Rxd6'],
+                d1d6: ['d1d6 e7e6 f1d1 e6d6', 'Rd6 Re6 Rfd1 Rxd6'],
             },
         },
         'Rd6 Re6 Rfd1 Rxd6',
@@ -188,7 +222,18 @@ function init_players(ply, players, evals) {
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         [
             {name: 'Stoofvlees II a16'},
-            {info: {ply: 53, pv: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+            {
+                info: {
+                    ply: 53, pv: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    pvs: {
+                        b6c4: [
+                            'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                            'Nc4 Bf6 Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                        ],
+                    },
+                },
+                name: 'Ethereal TCEC S20 DivP',
+            },
         ],
         '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv h8h7',
         1,
@@ -197,8 +242,11 @@ function init_players(ply, players, evals) {
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'h8h7',
             pvs: {
-                b6c4: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
-                h8h7: 'h8h7',
+                b6c4: [
+                    'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nc4 Bf6 Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
+                h8h7: ['h8h7', 'Rh7'],
             },
         },
         'Rh7',
@@ -207,7 +255,18 @@ function init_players(ply, players, evals) {
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         [
             {name: 'Stoofvlees II a16'},
-            {info: {ply: 53, pv: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+            {
+                info: {
+                    ply: 53, pv: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    pvs: {
+                        b6c4: [
+                            'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                            'Nc4 Bf6 Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                        ],
+                    },
+                },
+                name: 'Ethereal TCEC S20 DivP',
+            },
         ],
         '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3',
         1,
@@ -216,8 +275,14 @@ function init_players(ply, players, evals) {
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
             pvs: {
-                b6c4: 'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
-                c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                b6c4: [
+                    'b6c4 g5f6 c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nc4 Bf6 Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
+                c4a3: [
+                    'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
             },
         },
         'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
@@ -226,7 +291,18 @@ function init_players(ply, players, evals) {
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         [
             {name: 'Stoofvlees II a16'},
-            {info: {ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+            {
+                info: {
+                    ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    pvs: {
+                        c4a3: [
+                            'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                            'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                        ],
+                    },
+                },
+                name: 'Ethereal TCEC S20 DivP',
+            },
         ],
         '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 156 pv c4a3 b1c1',
         1,
@@ -234,15 +310,32 @@ function init_players(ply, players, evals) {
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 156, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
-            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
+            pvs: {
+                c4a3: [
+                    'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
+            },
         },
-        null,
+        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
+    // 10
     [
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         [
             {name: 'Stoofvlees II a16'},
-            {info: {ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+            {
+                info: {
+                    ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    pvs: {
+                        c4a3: [
+                            'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                            'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                        ],
+                    },
+                },
+                name: 'Ethereal TCEC S20 DivP',
+            },
         ],
         '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3 b1b8',
         1,
@@ -250,7 +343,7 @@ function init_players(ply, players, evals) {
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1b8',
-            pvs: {c4a3: 'c4a3 b1b8'},
+            pvs: {c4a3: ['c4a3 b1b8', 'Nxa3 Rb8']},
         },
         'Nxa3 Rb8',
     ],
@@ -258,7 +351,18 @@ function init_players(ply, players, evals) {
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         [
             {name: 'Stoofvlees II a16'},
-            {info: {ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'}, name: 'Ethereal TCEC S20 DivP'},
+            {
+                info: {
+                    ply: 55, pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    pvs: {
+                        c4a3: [
+                            'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                            'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                        ],
+                    },
+                },
+                name: 'Ethereal TCEC S20 DivP',
+            },
         ],
         '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv ',
         1,
@@ -266,9 +370,14 @@ function init_players(ply, players, evals) {
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
-            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
+            pvs: {
+                c4a3: [
+                    'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
+            },
         },
-        null,
+        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
     [
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
@@ -279,22 +388,36 @@ function init_players(ply, players, evals) {
             cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
-            pvs: {c4a3: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7'},
+            pvs: {
+                c4a3: [
+                    'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
+                    'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+                ],
+            },
         },
-        null,
+        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
     [
         START_FEN,
         [
             {name: 'One'},
-            {info: {ply: -1, pv: 'e2e4 e7e5 b1c3', pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'}}, name: 'Two'},
+            {
+                info: {
+                    ply: -1, pv: 'e2e4 e7e5 b1c3',
+                    pvs: {d2d4: ['d2d4 d7d5 g1f3', 'd4 d5 Nf3'], e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3']},
+                },
+                name: 'Two',
+            },
         ],
         '1000 Two(10): info depth 3 cp 50 pv d2d4',
         1,
         {
             cp: 50, depth: 3, engine: 'Two', eval: -0.5, id: 1, ply: 0,
             pv: 'd2d4 d7d5 g1f3',
-            pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
+            pvs: {
+                d2d4: ['d2d4 d7d5 g1f3', 'd4 d5 Nf3'],
+                e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3'],
+            },
         },
         'd4 d5 Nf3',
     ],
@@ -302,16 +425,25 @@ function init_players(ply, players, evals) {
         START_FEN,
         [
             {name: 'One'},
-            {info: {ply: -1, pv: 'e2e4 e7e5 b1c3', pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'}}, name: 'Two'},
+            {
+                info: {
+                    ply: -1, pv: 'e2e4 e7e5 b1c3',
+                    pvs: {d2d4: ['d2d4 d7d5 g1f3', 'd4 d5 Nf3'], e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3']},
+                },
+                name: 'Two',
+            },
         ],
         '1000 Two(10): info depth 3 cp 50 pv e2e4',
         1,
         {
             cp: 50, depth: 3, engine: 'Two', eval: -0.5, id: 1, ply: 0,
             pv: 'e2e4 e7e5 b1c3',
-            pvs: {d2d4: 'd2d4 d7d5 g1f3', e2e4: 'e2e4 e7e5 b1c3'},
+            pvs: {
+                d2d4: ['d2d4 d7d5 g1f3', 'd4 d5 Nf3'],
+                e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3'],
+            },
         },
-        null,
+        'e4 e5 Nc3',
     ],
 ].forEach(([fen, players_, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
@@ -337,9 +469,19 @@ function init_players(ply, players, evals) {
         main.set_fen(fen);
 
         analyse_log(line);
-        let info = players[player_id].info,
-            san_list = info.moves? info.moves.map(move => move.m).join(' '): null;
+        let info = players[player_id].info || {},
+            pvs = info.pvs,
+            moves = info.moves,
+            san_list = moves? (IsArray(moves)? moves.map(move => move.m).join(' '): moves): null;
         delete info.moves;
+
+        if (pvs)
+            Keys(pvs).forEach(key => {
+                let pv = pvs[key];
+                if (IsArray(pv[1]))
+                    pv[1] = pv[1].map(move => move.m).join(' ');
+            });
+
         expect(info.id).toEqual(player_id);
         expect(info).toEqual(answer);
         expect(san_list).toEqual(answer_san);
