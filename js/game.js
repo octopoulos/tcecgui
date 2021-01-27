@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-26
+// @version 2021-01-27
 //
 // Game specific code:
 // - control the board, moves
@@ -780,6 +780,15 @@ function create_boards(mode='html') {
     update_board_theme(7);
 
     xboards.pva.reset(Y.x);
+}
+
+/**
+ * Lock/unlock sub boards
+ * @param {number} locked
+ */
+function lock_sub_boards(locked) {
+    for (let sub of SUB_BOARDS)
+        xboards[sub].set_locked(locked);
 }
 
 /**
@@ -5749,7 +5758,8 @@ function changed_hash() {
  */
 function changed_section() {
     let section = Y.x,
-        is_cup = tour_info[section].cup;
+        is_cup = tour_info[section].cup,
+        main = xboards[section];
     assign_boards();
 
     old_cup = null;
@@ -5766,6 +5776,7 @@ function changed_section() {
     }
 
     // reset some stuff
+    lock_sub_boards(2);
     reset_sub_boards(section, 3, true);
     if (DEV.chart)
         LS(`CS: ${section}`);
@@ -5789,8 +5800,7 @@ function changed_section() {
     }
 
     // update overview
-    let main = xboards[section],
-        headers = main.pgn.Headers;
+    let headers = main.pgn.Headers;
     update_overview_basic(section, headers);
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
@@ -6099,8 +6109,7 @@ function handle_board_events(board, type, value, e, force) {
         }
         if (name == section) {
             // unlock sub boards
-            for (let sub of SUB_BOARDS)
-                xboards[sub].set_locked(0);
+            lock_sub_boards(0);
 
             // show PV's
             // - important to invalidate the boards to prevent wrong compare_duals
@@ -6132,8 +6141,7 @@ function handle_board_events(board, type, value, e, force) {
 
             // lock sub boards?
             if (cur_ply < board.moves.length - 1)
-                for (let sub of SUB_BOARDS)
-                    xboards[sub].set_locked(1);
+                lock_sub_boards(1);
         }
         break;
     }

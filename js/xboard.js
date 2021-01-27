@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-26
+// @version 2021-01-27
 //
 // game board:
 // - 4 rendering modes:
@@ -827,6 +827,7 @@ class XBoard {
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
             head_color = Y.arrow_head_color,
+            head_mix = Y.arrow_head_mix,
             others = this.svgs.filter(svg => svg.id != id && svg.path == path),
             scolor = Y[`arrow_color_${id}`],
             shown = true;
@@ -845,7 +846,7 @@ class XBoard {
                 // kibitzer => player head
                 else {
                     AttrsNS(Id(`mk${name}_${other_id}_1`), {
-                        fill: mix_hex_colors(head_color, scolor, 0.6),
+                        fill: mix_hex_colors(head_color, scolor, head_mix),
                     });
                     shown = false;
                     break;
@@ -867,10 +868,9 @@ class XBoard {
                     ids.push(other_id);
                 Hide(other.svg);
             }
-
             if (ids.length) {
                 let mix = (ids.length >= 2)? combine_01: Y[`arrow_color_${ids[0]}`];
-                shead = mix_hex_colors(head_color, mix, 0.6);
+                shead = mix_hex_colors(head_color, mix, head_mix);
             }
         }
 
@@ -881,16 +881,15 @@ class XBoard {
         // 4) show the arrow
         let body = this.create_arrow(id),
             color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
-            color_head = shead || mix_hex_colors(head_color, scolor, Y.arrow_head_mix),
-            marker0 = Id(`mk${name}_${id}_0`),
-            marker1 = Id(`mk${name}_${id}_1`),
+            color_head = shead || mix_hex_colors(head_color, scolor, head_mix),
+            markers = A('marker', body),
             paths = A('svg > path', body),
             svg = this.svgs[id];
 
-        AttrsNS(marker0, {fill: color_base, stroke: scolor, 'stroke-width': Y.arrow_base_border});
-        AttrsNS(marker1, {fill: color_head, stroke: scolor, 'stroke-width': Y.arrow_head_border});
-
+        AttrsNS(markers[0], {fill: color_base, stroke: scolor, 'stroke-width': Y.arrow_base_border});
+        AttrsNS(markers[1], {fill: color_head, stroke: scolor, 'stroke-width': Y.arrow_head_border});
         AttrsNS(paths[0], {d: path, stroke: scolor, 'stroke-width': Y.arrow_width});
+
         svg.dist = delta_x + delta_y;
         svg.path = path;
         Style(body, `opacity:${Y.arrow_opacity * opacity}`);
@@ -1249,8 +1248,8 @@ class XBoard {
         AttrsNS(path, {'marker-end': `url(#mk${name}_${id}_1)`, 'marker-start': `url(#mk${name}_${id}_0)`});
 
         arrow = CreateNode('div', null, {class: 'arrow', id: `ar${id}`}, [svg]);
-
-        this.overlay.appendChild(arrow);
+        if (this.overlay)
+            this.overlay.appendChild(arrow);
         this.svgs[id].svg = arrow;
         return arrow;
     }
