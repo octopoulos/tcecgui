@@ -2180,7 +2180,7 @@ function prepare_settings() {
             arrow_combine_01: [{type: 'color'}, '#c6bf7b', 'color when players agree'],
             arrow_combine_23: [{type: 'color'}, '#007700', 'color when kibitzers agree'],
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
-            arrow_from_opponent: option_number(0.5, 0, 1, 0.01),
+            arrow_from_opponent: option_number(0.6, 0, 1, 0.01),
             arrow_head_border: option_number(0.5, 0, 5, 0.01),
             arrow_head_color: [{type: 'color'}, '#a5a5a5'],
             arrow_head_mix: option_number(0.7, 0, 1, 0.01),
