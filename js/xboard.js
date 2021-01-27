@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-25
+// @version 2021-01-26
 //
 // game board:
 // - 4 rendering modes:
@@ -724,19 +724,21 @@ class XBoard {
      * Show an arrow
      * @param {number} id object id, there can be multiple arrows
      * @param {Object} dico {captured, color, from, piece, to}
+     * @param {number=} opacity opacity multiplier
      */
-    arrow(id, dico) {
+    arrow(id, dico, opacity=1) {
         let func = `arrow_${this.mode}`;
         if (this[func])
-            this[func](id, dico);
+            this[func](id, dico, opacity);
     }
 
     /**
      * Display a 3d arrow
      * @param {number} id
      * @param {Object} dico
+     * @param {number} opacity
      */
-    arrow_3d(id, dico) {
+    arrow_3d(id, dico, opacity) {
 
     }
 
@@ -744,8 +746,9 @@ class XBoard {
      * Draw an arrow on the canvas
      * @param {number} id
      * @param {Object} dico
+     * @param {number} opacity
      */
-    arrow_canvas(id, dico) {
+    arrow_canvas(id, dico, opacity) {
 
     }
 
@@ -753,8 +756,9 @@ class XBoard {
      * Create an SVG arrow
      * @param {number} id svg id, there can be multiple arrows
      * @param {Object} dico contains move info, if null then hide the arrow
+     * @param {number} opacity
      */
-    arrow_html(id, dico) {
+    arrow_html(id, dico, opacity) {
         if (DEV.arrow)
             LS('arrow', id, dico);
 
@@ -819,30 +823,44 @@ class XBoard {
         // 3) arrow conflicts
         // - arrows have the same path => hide the other + modify the color
         let shead,
+            combine_01 = Y.arrow_combine_01,
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
+            head_color = Y.arrow_head_color,
             scolor = Y[`arrow_color_${id}`],
             shown = true;
 
         for (let other of this.svgs.filter(svg => svg.id != id && svg.path == path)) {
             let other_id = other.id;
+            opacity = 1;
+
             if (id < 2) {
-                // black and white = only 1 arrow can exist
-                if (other_id < 2)
+                // black + white => combine
+                if (other_id < 2) {
+                    scolor = combine_01;
                     Hide(other.svg);
+                }
                 else {
+                    // combined head?
+                    let svg2 = this.svgs[1 - id],
+                        cid = (path == svg2.path)? combine_01: Y[`arrow_color_${id}`];
                     AttrsNS(Id(`mk${name}_${other_id}_1`), {
-                        fill: mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${id}`], 0.6),
+                        fill: mix_hex_colors(head_color, cid, 0.6),
                     });
                     shown = false;
                     break;
                 }
             }
             else {
+                // blue + red => combine
                 if (other_id >= 2)
                     scolor = Y.arrow_combine_23;
-                else
-                    shead = mix_hex_colors(Y.arrow_head_color, Y[`graph_color_${other_id}`], 0.6);
+                else {
+                    // combined head?
+                    let svg2 = this.svgs[1 - other_id],
+                        cid = (path == svg2.path)? combine_01: Y[`arrow_color_${other_id}`];
+                    shead = mix_hex_colors(head_color, cid, 0.6);
+                }
                 Hide(other.svg);
             }
         }
@@ -854,7 +872,7 @@ class XBoard {
         // 4) show the arrow
         let body = this.create_arrow(id),
             color_base = mix_hex_colors(Y.arrow_base_color, scolor, Y.arrow_base_mix),
-            color_head = shead || mix_hex_colors(Y.arrow_head_color, scolor, Y.arrow_head_mix),
+            color_head = shead || mix_hex_colors(head_color, scolor, Y.arrow_head_mix),
             marker0 = Id(`mk${name}_${id}_0`),
             marker1 = Id(`mk${name}_${id}_1`),
             paths = A('svg > path', body),
@@ -866,7 +884,7 @@ class XBoard {
         AttrsNS(paths[0], {d: path, stroke: scolor, 'stroke-width': Y.arrow_width});
         svg.dist = delta_x + delta_y;
         svg.path = path;
-        Style(body, `opacity:${Y.arrow_opacity}`);
+        Style(body, `opacity:${Y.arrow_opacity * opacity}`);
         S(body, shown);
         if (DEV.arrow)
             LS(id, 'drew arrow');

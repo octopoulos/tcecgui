@@ -18,6 +18,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 -          : 2021-01-24 : piece animation is not smooth anymore, something to do with set_ply
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
+2021-01-26 : 2021-01-26 : arrow from opponent
 2021-01-25 : 2021-01-25 : key accelerate + use AnimationFrame when going very fast
 2021-01-24 : 2021-01-24 : 2190 plies in 76.857s => 28.4945 plies/s
 2021-01-24 : 2021-01-23 : speed: compare_duals with a 100ms timeout

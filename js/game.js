@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-25
+// @version 2021-01-26
 //
 // Game specific code:
 // - control the board, moves
@@ -697,14 +697,18 @@ function check_draw_arrow(board) {
         return;
 
     // wrong color?
-    if (board.name.slice(0, 2) == 'pv' && (next_ply & 1) != (id & 1))
+    let from_opponent = Y.arrow_from_opponent,
+        is_other = (board.name.slice(0, 2) == 'pv' && (next_ply & 1) != (id & 1));
+    if (!from_opponent && is_other)
         return;
 
     // wrong current move?
-    if (moves[ply] && board_moves[ply]) {
-        let fen = moves[ply].fen;
+    let board_move = board_moves[ply],
+        move = moves[ply];
+    if (move && board_move) {
+        let fen = move.fen;
 
-        if (fen != board_moves[ply].fen) {
+        if (fen != board_move.fen) {
             if (DEV.arrow)
                 LS(`${board.id} wrong fen @${ply} / ${ply / 2 + 1}`);
         }
@@ -734,7 +738,7 @@ function check_draw_arrow(board) {
     }
 
     if (draw) {
-        main.arrow(id, next);
+        main.arrow(id, next, is_other? from_opponent: 1);
         if (DEV.arrow)
             LS(`     => draw: ${next.m} : ${next.from} => ${next.to} @${next.ply} / ${next.ply / 2 + 1}`);
     }
@@ -4321,9 +4325,10 @@ function analyse_log(line) {
 
     let ply = main.moves.length;
     for (let key of Keys(pvs)) {
-        let memory = pvs[key];
+        let [memory, moves] = pvs[key];
         pos = memory.indexOf(pv);
         if (pos == 0) {
+            info.moves = moves;
             info.pv = memory;
             break;
         }
@@ -4331,6 +4336,7 @@ function analyse_log(line) {
             let items = memory.split(' '),
                 pv2 = items.slice(ply - prev_ply).join(' ');
             if (pv2.indexOf(pv) == 0) {
+                info.moves = moves.slice(ply - prev_ply);
                 info.pv = pv2;
                 break;
             }
@@ -4349,6 +4355,7 @@ function analyse_log(line) {
         if (moves.length != splits.length)
             return check_missing_moves(ply, undefined, undefined, true);
     }
+
     if (DEV.log) {
         LS(`no_pv=${no_pv? 1: 0} : pv=${pv} : info_pv=${info_pv} : prev_pv=${prev_pv}`);
         LS(info);
@@ -4356,7 +4363,7 @@ function analyse_log(line) {
 
     // multi PVs
     if (info_pv) {
-        pvs[first] = info_pv;
+        pvs[first] = [info_pv, info.moves];
         info.pvs = pvs;
     }
 
@@ -5264,7 +5271,7 @@ function benchmark(round=10, running=0) {
             if (total_time > 0)
                 add_benchmark_result(0, '<i data-t="total"></i>', total_plies, total_time);
 
-            Attrs(Id('bench-title'), {'data-t': 'Benchmark over'});
+            Attrs(Id('bench-title'), {'data-t': 'Benchmark over.'});
             Attrs(Id('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
             Hide(Id('bench-sub'));
