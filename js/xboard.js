@@ -823,7 +823,7 @@ class XBoard {
         // 3) arrow conflicts
         // - arrows have the same path => hide the other + modify the color
         let shead,
-            combine_01 = Y.arrow_combine_01,
+            color_01 = Y.arrow_color_01,
             dual_id = id + 1 - (id & 1) * 2,
             dual = this.svgs[dual_id],
             head_color = Y.arrow_head_color,
@@ -840,7 +840,7 @@ class XBoard {
 
                 // player => combine
                 if (other_id < 2) {
-                    scolor = combine_01;
+                    scolor = color_01;
                     Hide(other.svg);
                 }
                 // kibitzer => player head
@@ -862,14 +862,14 @@ class XBoard {
 
                 // kibitzer => combine
                 if (other_id >= 2)
-                    scolor = Y.arrow_combine_23;
+                    scolor = Y.arrow_color_23;
                 // player => mix heads
                 else
                     ids.push(other_id);
                 Hide(other.svg);
             }
             if (ids.length) {
-                let mix = (ids.length >= 2)? combine_01: Y[`arrow_color_${ids[0]}`];
+                let mix = (ids.length >= 2)? color_01: Y[`arrow_color_${ids[0]}`];
                 shead = mix_hex_colors(head_color, mix, head_mix);
             }
         }

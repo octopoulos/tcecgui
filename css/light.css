@@ -195,7 +195,6 @@ input[type="checkbox"] {
     width: auto;
 }
 input[type="color"] {
-    min-width: 80px;
     padding-left: unset;
 }
 input[type="image"] {
@@ -868,6 +867,7 @@ hsub {
 }
 #shortcut_1,
 #shortcut_2,
+#shortcut_3,
 #table-winner {
     align-content: start;
     max-height: 90vh;
