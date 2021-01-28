@@ -1,9 +1,9 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-17
+// @version 2021-01-27
 /*
 globals
-Buffer, console, process, require
+process, require
 */
 'use strict';
 
