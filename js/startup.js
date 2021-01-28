@@ -15,23 +15,24 @@ _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
 cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
-context_target:true, CreateNode,
+context_target:true,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
-E, Events, export_settings, exports, FileReader, Floor, From, game_action_key, game_action_keyup, get_area,
-get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HTML, ICONS:true,
-Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
-LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, LS, Max, merge_settings, Min,
-navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, Parent, PD, PIECE_THEMES, POPUP_ADJUSTS,
-require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game, resize_move_lists,
-resize_table, resume_sleep,
+E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key, game_action_keyup, get_area,
+get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HIDES, HTML,
+ICONS:true, Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
+LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
+move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, PD, PIECE_THEMES,
+populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game,
+resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, SetDefault,
 SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game,
-startup_graph, Style, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, Title, TITLES, toggle_fullscreen, touch_handle,
+startup_graph, Style, TAB_NAMES, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, toggle_fullscreen, touch_handle,
 translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_import_settings:true,
-virtual_opened_table_special:true, virtual_reset_settings_special:true, virtual_resize:true,
-virtual_set_modal_events_special:true, Visible, VisibleWidth, WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_click_tab:true, virtual_hide_areas:true,
+virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
+virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true, Visible, VisibleWidth,
+WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y
 */
 'use strict';
 
@@ -72,16 +73,6 @@ let AD_STYLES = {},
         '.swaps': 'panel',
     },
     drag_source,
-    HIDES = {
-        archive: {
-            live: 1,
-            'moves-live': 1,
-        },
-        live: {
-            archive: 1,
-            'moves-archive': 1,
-        },
-    },
     LEVELS = {
         custom: '',
         dog: 'd=3 e=hce h=1 q=0 s=ab t=0',
@@ -97,13 +88,6 @@ let AD_STYLES = {},
     old_stream = 0,
     old_window_height,
     old_x,
-    PANES = {
-        left_2: 0,
-        left: 1,
-        center: 2,
-        right: 3,
-        right_2: 4,
-    },
     PRESETS = [
         'custom',
         'default settings',
@@ -133,16 +117,6 @@ let AD_STYLES = {},
         'Event Stats': 'Stats',
     },
     stream_click = 0,
-    TAB_NAMES = {
-        depth: 'D/SD',
-        mobil: 'Mob',
-        node: 'Nodes',
-        pv: 'PV',
-        pv0: 'White',
-        pv1: 'Black',
-        pva: 'PV(A)',
-        tb: 'TB',
-    },
     TIMEOUT_font = 2000,
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
@@ -698,22 +672,6 @@ function create_swaps() {
 }
 
 /**
- * Find an element in areas
- * @params {string} name
- * @returns {[string, number]}
- */
-function find_area(name) {
-    let areas = Y.areas;
-    for (let key of Keys(areas)) {
-        let vector = areas[key];
-        for (let i = 0; i < vector.length; i ++)
-            if (vector[i][0] == name)
-                return [key, i];
-    }
-    return ['', -1];
-}
-
-/**
  * Fix old settings
  */
 function fix_old_settings() {
@@ -833,6 +791,16 @@ function handle_drop(e) {
     SP(e);
     PD(e);
     add_history();
+}
+
+/**
+ * Which elements should be hidden dynamically?
+ * - used at the start of populate_areas
+ * @param {Object} hides
+ */
+function hide_areas(hides) {
+    if (!Y.moves_copy)
+        hides[`moves-${Y.x}`] = 1;
 }
 
 /**
@@ -986,54 +954,6 @@ function load_google_analytics() {
 }
 
 /**
- * Move a pane left or right, swapping it with another
- * @param {Node} node
- * @param {number} dir <<[-3] <[-1] >[1] >>[3]
- */
-function move_pane(node, dir) {
-    // 1) gather pane info
-    let areas = Y.areas,
-        index = -1,
-        panes = Keys(PANES)
-            .filter(pane => Y[`min_${pane}`] > 0 || Y[`max_${pane}`] > 0)
-            .map((pane, id) => {
-                if (pane == node.id)
-                    index = id;
-                return [pane, [...areas[`${pane}0`]]];
-            }),
-        num_pane = panes.length,
-        orders = panes.map(pane => pane[0]);
-
-    // 2) move pane, but skip if already where it should be
-    if ((dir == -3 && !index) || (dir == 3 && index == num_pane - 1))
-        return;
-
-    let pane = panes.splice(index, 1)[0],
-        target = (dir == -3)? 0: (dir == 3)? num_pane - 1: index + dir;
-    if (target < 0 || target >= num_pane)
-        return;
-    panes.splice(target, 0, pane);
-
-    // 3) update sizes
-    let dico = {};
-    panes.forEach((pane, id) => {
-        let order = orders[id];
-        dico[`max_${order}`] = Y[`max_${pane[0]}`];
-        dico[`min_${order}`] = Y[`min_${pane[0]}`];
-    });
-    Assign(Y, dico);
-    for (let order of orders) {
-        save_option(`max_${order}`);
-        save_option(`min_${order}`);
-    }
-
-    // 4) update areas
-    let new_areas = Assign({}, ...panes.map((pane, id) => ({[`${orders[id]}0`]: pane[1]})));
-    Assign(areas, new_areas);
-    populate_areas();
-}
-
-/**
  * A table was opened => extra handling
  * @param {Node} node
  * @param {string} name
@@ -1045,187 +965,9 @@ function opened_table_special(node, name, tab) {
 }
 
 /**
- * Populate areas
+ * Called after populate_areas
  */
-function populate_areas() {
-    let areas = Y.areas || {},
-        default_areas = DEFAULTS.areas,
-        section = Y.x,
-        hides = Assign({}, HIDES[section]);
-
-    if (!Y.moves_copy)
-        hides[`moves-${section}`] = 1;
-
-    // 1) count existing
-    Keys(areas).forEach(key => {
-        for (let vector of areas[key])
-            context_areas[vector[0]] = vector;
-    });
-
-    // 2) process all areas
-    Keys(areas).forEach(key => {
-        let parent = Id(key);
-        if (!parent)
-            return;
-
-        // a) add missing defaults
-        for (let vector of default_areas[key])
-            if (!context_areas[vector[0]])
-                areas[key].push(vector);
-
-        // b) check if we already have the correct order, if yes then skip
-        let prev_tab, tabs,
-            children = parent.children,
-            child = children[0],
-            child_id = 0,
-            error = '',
-            sorder = areas[key].map(item => item[0]).join(' ');
-
-        for (let [id, tab, show] of areas[key]) {
-            let node = Id(id);
-            if (!node)
-                continue;
-
-            let is_tab;
-            if (tab || prev_tab) {
-                if (show & 1) {
-                    if (!prev_tab || !tabs) {
-                        tabs = child;
-                        // check if in the tabs and in the right order
-                        if (!HasClass(child, 'tabs')) {
-                            error = 'tabs';
-                            break;
-                        }
-                        let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
-                        if (!sorder.includes(torder))
-                            error = 'sub';
-
-                        child_id ++;
-                        child = children[child_id];
-                    }
-
-                    is_tab = true;
-                    prev_tab = tab;
-                }
-                show = show & 2;
-            }
-            else
-                tabs = null;
-
-            if (!child || child.id != id) {
-                error = `id=${id}`;
-                break;
-            }
-            else if (!is_tab) {
-                let is_show = ((show & 1) && !hides[id])? true: false,
-                    visible = Visible(child);
-
-                if (is_show != visible) {
-                    error = `vis=${id}`;
-                    break;
-                }
-            }
-
-            child_id ++;
-            child = children[child_id];
-        }
-
-        if (!error) {
-            if (child)
-                error = `last=${child.id}`;
-            else
-                return;
-        }
-        if (DEV.ui) {
-            LS(key, `populate ${key} : ${error}`);
-            LS(child);
-        }
-
-        // c) restructure the panel => this will cause the chat to reload too
-        // remove tabs
-        E('.tabs', node => {
-            node.remove();
-        }, parent);
-
-        // add children + create tabs
-        let exist = 0;
-        prev_tab = 0;
-        tabs = null;
-        for (let vector of areas[key]) {
-            let no_tab,
-                [id, tab, show] = vector,
-                node = Id(id);
-            if (!node)
-                continue;
-
-            if (tab || prev_tab) {
-                if (show & 1) {
-                    if (!prev_tab || !tabs) {
-                        tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
-                        parent.appendChild(tabs);
-                        exist ++;
-                    }
-
-                    let text = id.split('-');
-                    text = text.slice(-text.length + 1).join('-');
-                    text = TAB_NAMES[text] || Title(text);
-
-                    let dico = {
-                            class: `tab drop${(show & 2)? ' active': ''}`,
-                            'data-abbr': text,
-                            'data-label': HTML('.label', undefined, node) || '',
-                            'data-x': id,
-                        },
-                        title = TITLES[text];
-
-                    if (title)
-                        Assign(dico, {
-                            'data-t': title,
-                            'data-t2': 'title',
-                        });
-
-                    tabs.appendChild(CreateNode('div', `<i data-t="${text}"></i>`, dico));
-                    prev_tab = tab;
-                }
-                show = show & 2;
-            }
-            // no tab => show label under the graph
-            else
-                no_tab = true;
-
-            if (!tab) {
-                prev_tab = 0;
-                tabs = null;
-            }
-
-            parent.appendChild(node);
-            S(node, show & 1);
-            S('.label', no_tab, node);
-
-            context_areas[id] = vector;
-            if (show & 1)
-                exist ++;
-        }
-    });
-
-    // 3) activate tabs
-    E('.tabs', node => {
-        let tabs = From(A('.tab', node)),
-            actives = tabs.filter(node => HasClass(node, 'active'));
-
-        // few tabs => show full label
-        if (tabs.length < 4)
-            for (let tab of tabs) {
-                let dataset = tab.dataset;
-                dataset.t = dataset.label || dataset.abbr;
-            }
-
-        open_table(actives.length? actives[0]: tabs[0]);
-    });
-
-    save_option('areas');
-    translate_nodes('body');
-    set_draggable();
+function populate_areas_special() {
     show_archive_live();
     update_shortcuts();
     resize();
@@ -2074,6 +1816,17 @@ function prepare_settings() {
         y: 'ply',
     });
 
+    Assign(HIDES, {
+        archive: {
+            live: 1,
+            'moves-live': 1,
+        },
+        live: {
+            archive: 1,
+            'moves-archive': 1,
+        },
+    });
+
     Assign(NO_IMPORTS, {
         dev: 1,
         div: 1,
@@ -2097,6 +1850,14 @@ function prepare_settings() {
         x: 1,
     });
 
+    Assign(PANES, {
+        left_2: 0,
+        left: 1,
+        center: 2,
+        right: 3,
+        right_2: 4,
+    });
+
     // &1:adjust &2:top &4:right &8:bottom &16:left & 32:vcenter &64:hcenter, &128:h100, &256:w100
     Assign(POPUP_ADJUSTS, {
         about: 1,
@@ -2106,6 +1867,26 @@ function prepare_settings() {
         options: 1,
     });
 
+    Assign(TAB_NAMES, {
+        depth: 'D/SD',
+        mobil: 'Mob',
+        node: 'Nodes',
+        pv: 'PV',
+        pv0: 'White',
+        pv1: 'Black',
+        pva: 'PV(A)',
+        tb: 'TB',
+    });
+
+    Assign(TRANSLATE_SPECIALS, {
+        CODER: 'octopoulo',
+        SPONSOR: 'Noobpwnftw',
+        TCEC: '<b>TCEC</b> (Top Chess Engine Championship)',
+        TCEC_URL: '<i class="nowrap">https://tcec-chess.com</i>',
+        UI: '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
+    });
+
+    // settings
     let agree_length = [ON_OFF, 1, 'show how many plies are in agreement between 2 players / kibitzers'],
         analyses = [{list: ['lichess', 'chessdb', 'evalguide=eguide'], type: 'list'}],
         bamboo = 'bamboo',
@@ -2594,14 +2375,6 @@ function prepare_settings() {
     Assign(TYPES, {
         graph_scale: 'i',
     });
-
-    Assign(TRANSLATE_SPECIALS, {
-        CODER: 'octopoulo',
-        SPONSOR: 'Noobpwnftw',
-        TCEC: '<b>TCEC</b> (Top Chess Engine Championship)',
-        TCEC_URL: '<i class="nowrap">https://tcec-chess.com</i>',
-        UI: '<a href="https://github.com/TCEC-Chess/tcecgui" target="_blank">UI</a>',
-    });
 }
 
 /**
@@ -2672,8 +2445,11 @@ function startup() {
     // assign virtual functions
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
+    virtual_click_tab = open_table;
+    virtual_hide_areas = hide_areas;
     virtual_import_settings = import_settings_special;
     virtual_opened_table_special = opened_table_special;
+    virtual_populate_areas_special = populate_areas_special;
     virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;
     virtual_set_modal_events_special = set_modal_events_special;
@@ -2710,8 +2486,6 @@ function startup() {
 // <<
 if (typeof exports != 'undefined')
     Assign(exports, {
-        find_area: find_area,
-        move_pane: move_pane,
         prepare_settings: prepare_settings,
     });
 // >>
