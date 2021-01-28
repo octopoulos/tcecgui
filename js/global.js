@@ -35,7 +35,7 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210127',
+    VERSION = '20210127b',
     virtual_close_popups,
     xboards = {};
 
@@ -322,6 +322,10 @@ function reset_old_settings() {
     }
     if (version < '20210109e')
         keys.push('boom_threshold');
+    if (version < '20210127b') {
+        save_default('arrow_color_01', Y.arrow_combine_01);
+        save_default('arrow_color_23', Y.arrow_combine_23);
+    }
 
     let changes = [];
     for (let key of keys)

@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-25
+// @version 2021-01-27
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -413,6 +413,7 @@ function change_setting_special(name, value, close) {
         break;
     case 'shortcut_1':
     case 'shortcut_2':
+    case 'shortcut_3':
         update_shortcuts();
         break;
     // refresh the Engine tab
@@ -1276,7 +1277,7 @@ function resize() {
     let chat_height = Clamp(Y.chat_height, 350, window.height),
         chat_tab = _('.tab[data-x="table-chat"]'),
         parent = Parent(chat_tab),
-        siblings = '#shortcut_1, #shortcut_2, #table-chat, #table-info, #table-winner',
+        siblings = '#shortcut_1, #shortcut_2, #shortcut_3, #table-chat, #table-info, #table-winner',
         yheight = (window.innerWidth <= 866)? 'auto': `${chat_height + 32}px`;
     if (parent)
         siblings = From(parent.children).map(child => `#${child.dataset.x}`).join(', ');
@@ -1506,7 +1507,7 @@ function update_background() {
 function update_shortcuts() {
     let names = new Set();
 
-    for (let id of [1, 2]) {
+    for (let id = 1; id <= 3; id ++) {
         let tab = _(`.tab[data-x="shortcut_${id}"]`),
             shortcut = Y[`shortcut_${id}`];
         if (!tab)
@@ -2008,7 +2009,8 @@ function prepare_settings() {
                 ['table-winner', 1, 1],
                 ['table-pva', 1, 1],
                 ['shortcut_1', 1, 1],
-                ['shortcut_2', 0, 1],
+                ['shortcut_2', 1, 1],
+                ['shortcut_3', 0, 1],
                 ['table-info', 0, 0],
             ],
             top: [],
@@ -2170,20 +2172,38 @@ function prepare_settings() {
         arrow: {
             _prefix: 'arrow_',
             arrow_base_border: option_number(0, 0, 5, 0.01),
-            arrow_base_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_base_mix: option_number(0.7, 0, 1, 0.01),
+            arrow_base_color: {
+                _multi: 2,
+                arrow_base_color: [{type: 'color'}, '#a5a5a5'],
+                arrow_base_mix: option_number(0.7, 0, 1, 0.01, {}, 'mix'),
+            },
             arrow_base_size: option_number(2.05, 0, 5, 0.05),
-            arrow_color_0: [{type: 'color'}, '#cdcdbe', 'white player'],
-            arrow_color_1: [{type: 'color'}, '#666666', 'black player'],
-            arrow_color_2: [{type: 'color'}, '#236ad6', 'kibitzer 1'],
-            arrow_color_3: [{type: 'color'}, '#eb282d', 'kibitzer 2'],
-            arrow_combine_01: [{type: 'color'}, '#c6bf7b', 'color when players agree'],
-            arrow_combine_23: [{type: 'color'}, '#007700', 'color when kibitzers agree'],
+            color_01: {
+                _label: '{Color} 0, 1',
+                _multi: 2,
+                arrow_color_0: [{type: 'color'}, '#cdcdbe', 'white'],
+                arrow_color_1: [{type: 'color'}, '#666666', 'black'],
+            },
+            color_23: {
+                _label: '{Color} 2, 3',
+                _multi: 2,
+                arrow_color_2: [{type: 'color'}, '#236ad6', 'blue'],
+                arrow_color_3: [{type: 'color'}, '#eb282d', 'red'],
+            },
+            combine: {
+                _label: '{Color} 01, 23',
+                _multi: 2,
+                arrow_color_01: [{type: 'color'}, '#c6bf7b', '{white} + {black}'],
+                arrow_color_23: [{type: 'color'}, '#007700', '{blue} + {red}'],
+            },
             arrow_from: [['none', 'all', 'kibitzer', 'player'], 'all'],
             arrow_from_opponent: option_number(0.6, 0, 1, 0.01),
             arrow_head_border: option_number(0.5, 0, 5, 0.01),
-            arrow_head_color: [{type: 'color'}, '#a5a5a5'],
-            arrow_head_mix: option_number(0.7, 0, 1, 0.01),
+            arrow_head_color: {
+                _multi: 2,
+                arrow_head_color: [{type: 'color'}, '#a5a5a5'],
+                arrow_head_mix: option_number(0.7, 0, 1, 0.01, {}, 'mix'),
+            },
             arrow_head_size: option_number(2.05, 0, 5, 0.05),
             arrow_history_lag: option_number(1300, 0, 5000),
             arrow_moves: [['all', 'last'], 'all'],
@@ -2357,10 +2377,18 @@ function prepare_settings() {
         graph: {
             _prefix: 'graph_',
             graph_aspect_ratio: option_number(1.5, 0.5, 5, 0.005),
-            graph_color_0: [{type: 'color'}, '#fefdde'],
-            graph_color_1: [{type: 'color'}, '#02031e'],
-            graph_color_2: [{type: 'color'}, '#236ad6'],
-            graph_color_3: [{type: 'color'}, '#eb282d'],
+            color_01: {
+                _label: '{Color} 0, 1',
+                _multi: 2,
+                graph_color_0: [{type: 'color'}, '#fefdde', 'white'],
+                graph_color_1: [{type: 'color'}, '#02031e', 'black'],
+            },
+            color_23: {
+                _label: '{Color} 2, 3',
+                _multi: 2,
+                graph_color_2: [{type: 'color'}, '#236ad6', 'blue'],
+                graph_color_3: [{type: 'color'}, '#eb282d', 'red'],
+            },
             graph_eval_clamp: option_number(10, 0, 256, 0.5, {}, 'works with scale=linear'),
             graph_eval_mode: [['percent', 'score'], 'score'],
             graph_line: option_number(1.5, 0, 10, 0.1),
@@ -2472,6 +2500,7 @@ function prepare_settings() {
             chat_height: option_number(828, 100, 1600, 0.5),
             shortcut_1: [shortcuts, 'stand'],
             shortcut_2: [shortcuts, 'stats'],
+            shortcut_3: [shortcuts, 0],
         },
         reset: {
             _cancel: true,

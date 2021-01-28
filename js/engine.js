@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-01-27
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1150,6 +1150,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
             // multi
             if (smulti) {
+                title = data[2];
                 third = data[3];
                 fourth = data[4];
                 data = data[0] || data || {};
@@ -1201,6 +1202,11 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             if (focus)
                 focus = ` data-f="${focus}"`;
 
+            // title
+            title = title || data.title;
+            if (title)
+                title = ` title="${translate_expression(title)}"`;
+
             if (id == 0)
                 lines.push(smulti? `<hori class="faround${iclass}">`: `<vert class="fcenter${iclass}">`);
 
@@ -1213,15 +1219,15 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             let found = true;
             switch (type) {
             case 'area':
-                lines.push(`<textarea name="${key}"${class_}${holder}${auto}${focus}>${y_key}</textarea>`);
+                lines.push(`<textarea name="${key}"${class_}${holder}${auto}${focus}${title}>${y_key}</textarea>`);
                 break;
             case 'info':
             case 'upper':
-                lines.push(`<div class="${type}" name="${key}" data-t="${data.text || ''}"></div>`);
+                lines.push(`<div class="${type}" name="${key}" data-t="${data.text || ''}${title}"></div>`);
                 break;
             case 'link':
                 if (data.text)
-                    lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}>`);
+                    lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}${title}>`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
                 Attrs(Id('file'), {'data-x': key});
                 break;
@@ -1238,7 +1244,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 ].join(''));
                 break;
             case 'number':
-                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}>`);
+                lines.push(`<input name="${key}" type="${type}"${class_} min="${data.min}" max="${data.max}" step="${data.step || 1}"${holder} value="${y_key}"${focus}${title}>`);
                 break;
             default:
                 found = false;
@@ -1247,7 +1253,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             if (found) {
             }
             else if (type)
-                lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}>`);
+                lines.push(`<input name="${key}" type="${type}"${class_}${holder}${auto} value="${y_key}"${focus}${title}>`);
             // dictionary / string
             else {
                 let keys = Keys(data).filter(item => item[0] != '_' && item != 'class');
