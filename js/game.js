@@ -2193,7 +2193,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     // 8) update shortcuts
     if (parent == 'table' && !Y.sort) {
-        for (let id of [1, 2]) {
+        for (let id = 1; id <= 3; id ++) {
             // shortcut matches this table?
             let key = `shortcut_${id}`;
             if (name != Y[key])
@@ -2601,7 +2601,7 @@ function calculate_event_stats(section, rows) {
     translate_nodes(node);
 
     // 6) shortcuts?
-    for (let id of [1, 2]) {
+    for (let id = 1; id <= 3; id ++) {
         let key = `shortcut_${id}`;
         if (Y[key] == 'stats')
             HTML(Id(key), HTML(parent));
