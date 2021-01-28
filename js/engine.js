@@ -59,6 +59,7 @@ let __PREFIX = '_',
     },
     full_scroll = {x: 0, y: 0},
     full_target,
+    HIDES = {},
     HOST = '',
     ICONS = {},
     KEY_TIMES = {},
@@ -87,6 +88,7 @@ let __PREFIX = '_',
         '#': 1,
     },
     ON_OFF = ['on', 'off'],
+    PANES = {},
     ping = 0,
     pong = 0,
     POPUP_ADJUSTS = {},
@@ -99,12 +101,14 @@ let __PREFIX = '_',
     socket,
     socket_fail = 0,
     STATE_KEYS = {},
+    TAB_NAMES = {},
     THEMES = [''],
     TIMEOUT_adjust = 250,
     TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
     TIMEOUT_translate = LOCALHOST? 60: 3600 * 2,
     timers = {},
+    TITLES = {},
     touch_done = 0,                                     // time when the touch was released
     TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
     touch_last = {x: 0, y: 0},
@@ -122,9 +126,12 @@ let __PREFIX = '_',
     // virtual functions, can be assigned
     virtual_change_setting_special,
     virtual_check_hash_special,
+    virtual_click_tab,
     virtual_drag_done,
+    virtual_hide_areas,
     virtual_import_settings,
     virtual_logout,
+    virtual_populate_areas_special,
     virtual_rename_option,
     virtual_reset_settings_special,
     virtual_sanitise_data_special,
@@ -1326,6 +1333,8 @@ function resize_text(text, resize, class_='resize')
         len = text.length;
         if (Upper(text) == text)
             len *= 4/3;
+        else if (text.includes('='))
+            len += 0.5;
     }
     else {
         text += '';
@@ -2560,6 +2569,22 @@ function draw_rectangle(node, orient, mx, my) {
 }
 
 /**
+ * Find an element in areas
+ * @params {string} name
+ * @returns {[string, number]}
+ */
+function find_area(name) {
+    let areas = Y.areas;
+    for (let key of Keys(areas)) {
+        let vector = areas[key];
+        for (let i = 0; i < vector.length; i ++)
+            if (vector[i][0] == name)
+                return [key, i];
+    }
+    return ['', -1];
+}
+
+/**
  * Get the drag and drop id
  * @param {Node} target
  * @returns {[Node, string]}
@@ -2567,6 +2592,242 @@ function draw_rectangle(node, orient, mx, my) {
 function get_drop_id(target) {
     let parent = Parent(target, {class_: 'drag|drop', self: true});
     return [parent, parent? (parent.id || parent.dataset.x): null];
+}
+
+/**
+ * Move a pane left or right, swapping it with another
+ * @param {Node} node
+ * @param {number} dir <<[-3] <[-1] >[1] >>[3]
+ */
+function move_pane(node, dir) {
+    // 1) gather pane info
+    let areas = Y.areas,
+        index = -1,
+        panes = Keys(PANES)
+            .filter(pane => Y[`min_${pane}`] > 0 || Y[`max_${pane}`] > 0)
+            .map((pane, id) => {
+                if (pane == node.id)
+                    index = id;
+                return [pane, [...areas[`${pane}0`]]];
+            }),
+        num_pane = panes.length,
+        orders = panes.map(pane => pane[0]);
+
+    // 2) move pane, but skip if already where it should be
+    if ((dir == -3 && !index) || (dir == 3 && index == num_pane - 1))
+        return;
+
+    let pane = panes.splice(index, 1)[0],
+        target = (dir == -3)? 0: (dir == 3)? num_pane - 1: index + dir;
+    if (target < 0 || target >= num_pane)
+        return;
+    panes.splice(target, 0, pane);
+
+    // 3) update sizes
+    let dico = {};
+    panes.forEach((pane, id) => {
+        let order = orders[id];
+        dico[`max_${order}`] = Y[`max_${pane[0]}`];
+        dico[`min_${order}`] = Y[`min_${pane[0]}`];
+    });
+    Assign(Y, dico);
+    for (let order of orders) {
+        save_option(`max_${order}`);
+        save_option(`min_${order}`);
+    }
+
+    // 4) update areas
+    let new_areas = Assign({}, ...panes.map((pane, id) => ({[`${orders[id]}0`]: pane[1]})));
+    Assign(areas, new_areas);
+    populate_areas();
+}
+
+/**
+ * Populate areas
+ */
+function populate_areas() {
+    let areas = Y.areas || {},
+        default_areas = DEFAULTS.areas,
+        section = Y.x,
+        hides = Assign({}, HIDES[section]);
+
+    if (virtual_hide_areas)
+        virtual_hide_areas(hides);
+
+    // 1) count existing
+    Keys(areas).forEach(key => {
+        for (let vector of areas[key])
+            context_areas[vector[0]] = vector;
+    });
+
+    // 2) process all areas
+    Keys(areas).forEach(key => {
+        let parent = Id(key);
+        if (!parent)
+            return;
+
+        // a) add missing defaults
+        for (let vector of default_areas[key])
+            if (!context_areas[vector[0]])
+                areas[key].push(vector);
+
+        // b) check if we already have the correct order, if yes then skip
+        let prev_tab, tabs,
+            children = parent.children,
+            child = children[0],
+            child_id = 0,
+            error = '',
+            sorder = areas[key].map(item => item[0]).join(' ');
+
+        for (let [id, tab, show] of areas[key]) {
+            let node = Id(id);
+            if (!node)
+                continue;
+
+            let is_tab;
+            if (tab || prev_tab) {
+                if (show & 1) {
+                    if (!prev_tab || !tabs) {
+                        tabs = child;
+                        // check if in the tabs and in the right order
+                        if (!HasClass(child, 'tabs')) {
+                            error = 'tabs';
+                            break;
+                        }
+                        let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
+                        if (!sorder.includes(torder))
+                            error = 'sub';
+
+                        child_id ++;
+                        child = children[child_id];
+                    }
+
+                    is_tab = true;
+                    prev_tab = tab;
+                }
+                show = show & 2;
+            }
+            else
+                tabs = null;
+
+            if (!child || child.id != id) {
+                error = `id=${id}`;
+                break;
+            }
+            else if (!is_tab) {
+                let is_show = ((show & 1) && !hides[id])? true: false,
+                    visible = Visible(child);
+
+                if (is_show != visible) {
+                    error = `vis=${id}`;
+                    break;
+                }
+            }
+
+            child_id ++;
+            child = children[child_id];
+        }
+
+        if (!error) {
+            if (child)
+                error = `last=${child.id}`;
+            else
+                return;
+        }
+        if (DEV.ui) {
+            LS(key, `populate ${key} : ${error}`);
+            LS(child);
+        }
+
+        // c) restructure the panel => this will cause the chat to reload too
+        // remove tabs
+        E('.tabs', node => {
+            node.remove();
+        }, parent);
+
+        // add children + create tabs
+        let exist = 0;
+        prev_tab = 0;
+        tabs = null;
+        for (let vector of areas[key]) {
+            let no_tab,
+                [id, tab, show] = vector,
+                node = Id(id);
+            if (!node)
+                continue;
+
+            if (tab || prev_tab) {
+                if (show & 1) {
+                    if (!prev_tab || !tabs) {
+                        tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
+                        parent.appendChild(tabs);
+                        exist ++;
+                    }
+
+                    let text = id.split('-');
+                    text = text.slice(-text.length + 1).join('-');
+                    text = TAB_NAMES[text] || Title(text);
+
+                    let dico = {
+                            class: `tab drop${(show & 2)? ' active': ''}`,
+                            'data-abbr': text,
+                            'data-label': HTML('.label', undefined, node) || '',
+                            'data-x': id,
+                        },
+                        title = TITLES[text];
+
+                    if (title)
+                        Assign(dico, {
+                            'data-t': title,
+                            'data-t2': 'title',
+                        });
+
+                    tabs.appendChild(CreateNode('div', `<i data-t="${text}"></i>`, dico));
+                    prev_tab = tab;
+                }
+                show = show & 2;
+            }
+            // no tab => show label under the graph
+            else
+                no_tab = true;
+
+            if (!tab) {
+                prev_tab = 0;
+                tabs = null;
+            }
+
+            parent.appendChild(node);
+            S(node, show & 1);
+            S('.label', no_tab, node);
+
+            context_areas[id] = vector;
+            if (show & 1)
+                exist ++;
+        }
+    });
+
+    // 3) activate tabs
+    E('.tabs', node => {
+        let tabs = From(A('.tab', node)),
+            actives = tabs.filter(node => HasClass(node, 'active'));
+
+        // few tabs => show full label
+        if (tabs.length < 4)
+            for (let tab of tabs) {
+                let dataset = tab.dataset;
+                dataset.t = dataset.label || dataset.abbr;
+            }
+
+        if (virtual_click_tab)
+            virtual_click_tab(actives.length? actives[0]: tabs[0]);
+    });
+
+    save_option('areas');
+    translate_nodes('body');
+    set_draggable();
+
+    if (virtual_populate_areas_special)
+        virtual_populate_areas_special();
 }
 
 /**
@@ -2762,6 +3023,7 @@ if (typeof exports != 'undefined') {
         done_touch: done_touch,
         FONTS: FONTS,
         guess_types: guess_types,
+        HIDES: HIDES,
         import_settings: import_settings,
         KEYS: KEYS,
         LANGUAGES: LANGUAGES,
@@ -2769,10 +3031,13 @@ if (typeof exports != 'undefined') {
         LOCALHOST: LOCALHOST,
         me: me,
         merge_settings: merge_settings,
+        move_pane: move_pane,
         NO_IMPORTS: NO_IMPORTS,
         ON_OFF: ON_OFF,
         option_number: option_number,
+        PANES: PANES,
         parse_dev: parse_dev,
+        populate_areas: populate_areas,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
         reset_settings: reset_settings,
         resize_text: resize_text,
@@ -2781,6 +3046,7 @@ if (typeof exports != 'undefined') {
         save_default: save_default,
         save_option: save_option,
         socket: socket,
+        TAB_NAMES: TAB_NAMES,
         THEMES: THEMES,
         timers: timers,
         translate: translate,

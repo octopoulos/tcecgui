@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-23
+// @version 2021-01-27
 //
 /*
 globals
@@ -411,6 +411,8 @@ Assign(translates, {
     ['QXC6', 4, undefined, '<span class="resize">QXC6</span>'],
     ['Qxc6+', 4, undefined, '<span class="resize">Qxc6+</span>'],
     ['Qxc6+', 4, 'compress', '<span class="compress">Qxc6+</span>'],
+    ['b8:Q', 4, undefined, 'b8:Q'],
+    ['b8=Q', 4, undefined, '<span class="resize">b8=Q</span>'],
     ['KomodoDragonArmageddon', 0, undefined, 'KomodoDragonArmageddon'],
     ['KomodoDragonArmageddon', 15, undefined, '<span class="resize">KomodoDragonArmageddon</span>'],
 ].forEach(([text, resize, class_, answer], id) => {
