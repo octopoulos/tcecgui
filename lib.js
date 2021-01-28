@@ -1,6 +1,6 @@
 /*
 globals
-console, exports, process, require
+console, exports, process
 */
 'use strict';
 

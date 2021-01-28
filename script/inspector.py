@@ -89,6 +89,9 @@ class Inspect:
     def analyse_folder(self, folder: str):
         """Analyse a folder
         """
+        if not os.path.isdir(folder):
+            return
+
         sources = os.listdir(folder)
         for source in sources:
             base, ext = os.path.splitext(source)
@@ -117,9 +120,8 @@ class Inspect:
     def go(self):
         """Run JS inspect + PY inspector
         """
+        self.analyse_folder(BASE)
         self.analyse_folder(JS_FOLDER)
-        # inspector = Inspector()
-        # self.analyse_project(BASE, 'script')
 
 
 if __name__ == '__main__':
