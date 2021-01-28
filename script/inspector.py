@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2020-08-29
+# @version 2021-01-27
 
 """
 Inspect JS files
@@ -10,6 +10,7 @@ import os
 import re
 import sys
 from time import time
+from typing import List
 
 BASE = os.path.dirname(__file__)
 if BASE not in sys.path:
@@ -27,8 +28,10 @@ SKIP_SOURCES = {'all', 'chart', 'tcec'}
 class Inspect:
     """Inspect
     """
+
     def __init__(self):
         self.re_args = re.compile(r'(\w+)(?:=(?:\w+|\[.*?\]|{.*?}|\'.*?\'))?(?:[,}]|$)', re.S)
+        self.re_exports = re.compile(r'[Aa]ssign\(exports, {(.*?)}\);', re.S)
         self.re_function = re.compile(r'/\*\*(.*?)\*/\r?\n(?:async )?function\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
         self.re_globals = re.compile(r'/\*\s*globals\s*(.*?)\*/', re.S)
         self.re_split = re.compile(r'[,\s]')
@@ -37,34 +40,38 @@ class Inspect:
         """Analyse a file
         """
         text = read_text_safe(filename)
-        rematch = self.re_globals.search(text)
-        if not rematch:
+        if not (rematch := self.re_globals.search(text)):
             return
-        globs = rematch.group(1).strip()
-        if not globs:
+        if not (globs := rematch.group(1).strip()):
             return
 
+        # 1) check globals
         globs = [item for item in self.re_split.split(globs) if item]
+        # order
+        self.check_order(filename, 'global_order', globs)
 
-        # 1) check globals alphabetical order
-        alphas = sorted(globs, key=lambda x: x.split(':')[0].lower())
-        if globs != alphas:
-            for glob, alpha in zip(globs, alphas):
-                if glob != alpha:
-                    print(f'{filename}: order: {glob} vs {alpha}')
-                    break
-
-        # 2) detect unused globals
+        # unused globals
         unused = []
         data = text[rematch.end():]
         for glob in globs:
             glob = glob.split(':')[0]
-            rematch = re.findall(rf'\b{glob}\b', data)
-            if not rematch:
+            if not (rematch := re.findall(rf'\b{glob}\b', data)):
                 unused.append(glob)
 
         if unused:
             print(f"{filename}: unused: {', '.join(unused)}")
+
+        # 2) check exports
+        if rematch := self.re_exports.search(text):
+            exports = [line.strip().split(':')[0] for line in rematch.group(1).strip().split('\n') if ':' in line]
+            # order
+            self.check_order(filename, 'export_order', exports)
+
+            # exported globals
+            glob_set = set(globs)
+            wrongs = [export for export in exports if export in glob_set]
+            if wrongs:
+                print(f"{filename}: exported: {', '.join(wrongs)}")
 
         # 3) check function doc
         funcs = self.re_function.findall(data)
@@ -95,6 +102,17 @@ class Inspect:
                 self.analyse_folder(filename)
             elif os.path.isfile(filename):
                 self.analyse_file(filename)
+
+    def check_order(self, filename: str, section: str, texts: List[str]):
+        """Check if texts are in alphabetical order
+        """
+        alphas = sorted(texts, key=lambda x: x.split(':')[0].lower())
+        if texts == alphas:
+            return
+        for text, alpha in zip(texts, alphas):
+            if text != alpha:
+                print(f'{filename}: {section}: {text} vs {alpha}')
+                break
 
     def go(self):
         """Run JS inspect + PY inspector
