@@ -8,19 +8,32 @@ expect, require, test
 */
 'use strict';
 
-let {Assign, Keys} = require('./common.js'),
+let {Assign, Clear, Keys} = require('./common.js'),
     {
         add_font, add_history, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup, create_field_value,
-        create_page_array, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, FONTS, guess_types, import_settings,
-        KEYS, merge_settings, ON_OFF, option_number, parse_dev, reset_settings, resize_text, restore_history,
-        sanitise_data, save_option, touch_done, translate, translate_default, translate_expression, translates, TYPES,
+        create_page_array, create_svg_icon, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, FONTS, get_float,
+        get_int, get_object, get_string, guess_types, ICONS, import_settings, KEYS, load_defaults, merge_settings,
+        ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history, sanitise_data,
+        save_default, save_option, show_settings, translate, translate_default, translate_expression,
+        translates, TYPES,
         X_SETTINGS, Y, y_states,
     } = require('./engine.js');
+
+Assign(DEFAULTS, {
+    language: '',
+    limit: 20,
+    skip: 0,
+    theme: '',
+});
 
 Assign(DEV_NAMES, {
     E: 'engine',
     S: 'no_socket',
     w: 'wasm',
+});
+
+Assign(ICONS, {
+    play: 'VB="0 0 448 512"><PFC d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/>',
 });
 
 Assign(translates, {
@@ -174,6 +187,17 @@ Assign(translates, {
     });
 });
 
+// create_svg_icon
+[
+    ['', ''],
+    ['next', ''],
+    ['play', '<svg class="svg play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/></svg>'],
+].forEach(([name, answer], id) => {
+    test(`create_svg_icon:${id}`, () => {
+        expect(create_svg_icon(name)).toEqual(answer);
+    });
+});
+
 // create_url_list
 [
     [null, ''],
@@ -182,6 +206,98 @@ Assign(translates, {
 ].forEach(([dico, answer], id) => {
     test(`create_url_list:${id}`, () => {
         expect(create_url_list(dico)).toEqual(answer);
+    });
+});
+
+// get_float
+[
+    ['x', '', 6.1, 6.1],
+    ['x', null, undefined, undefined],
+    ['x', null, 'test', 'test'],
+    ['x', null, 7.2, 7.2],
+    ['x', 5.25, undefined, 5.25],
+    ['x', 5, undefined, 5.0],
+    ['x', {y: 9}, undefined, undefined],
+    ['x', {y: 9}, 8.3, 8.3],
+    ['x', {y: 9}, null, null],
+    ['x', '3.33', undefined, 3.33],
+    ['x', '3', undefined, 3.0],
+    ['x', 'live', undefined, undefined],
+    ['x', 'live', 9.4, 9.4],
+    ['x', 'live', {error: 1}, {error: 1}],
+].forEach(([name, value, def, answer], id) => {
+    test(`get_float:${id}`, () => {
+        save_option(name, value);
+        expect(get_float(name, def)).toEqual(answer);
+    });
+});
+
+// get_int
+[
+    ['x', '', 6, true, 6],
+    ['x', null, undefined, false, 'null'],
+    ['x', null, 7, false, 'null'],
+    ['x', null, 7, true, 7],
+    ['x', 5.25, undefined, false, 5],
+    ['x', 5, undefined, false, 5],
+    ['x', {y: 9}, undefined, false, '{"y":9}'],
+    ['x', {y: 9}, 8, false, '{"y":9}'],
+    ['x', {y: 9}, 8, true, 8],
+    ['x', '3.33', undefined, false, 3],
+    ['x', '3', undefined, false, 3],
+    ['x', 'live', undefined, 'live'],
+    ['x', 'live', 9, false, 'live'],
+    ['x', 'live', 9, true, 9],
+].forEach(([name, value, def, force, answer], id) => {
+    test(`get_int:${id}`, () => {
+        save_option(name, value);
+        expect(get_int(name, def, force)).toEqual(answer);
+    });
+});
+
+// get_object
+[
+    ['x', '', {good: true}, {good: true}],
+    ['x', null, undefined, null],
+    ['x', null, 'test', null],
+    ['x', null, 7.1, null],
+    ['x', 5.25, undefined, 5.25],
+    ['x', 5, undefined, 5.0],
+    ['x', {y: 9}, undefined, {y: 9}],
+    ['x', {y: 9}, 8.2, {y: 9}],
+    ['x', {y: 9}, null, {y: 9}],
+    ['x', '3.33', undefined, 3.33],
+    ['x', '3', undefined, 3],
+    ['x', '"live"', undefined, 'live'],
+    ['x', 'live', 9.3, 9.3],
+    ['x', 'live', {error: 1}, {error: 1}],
+].forEach(([name, value, def, answer], id) => {
+    test(`get_object:${id}`, () => {
+        save_option(name, value);
+        expect(get_object(name, def)).toEqual(answer);
+    });
+});
+
+// get_string
+[
+    ['x', 'undefined', 'good', 'good'],
+    ['x', null, undefined, 'null'],
+    ['x', null, 'test', 'null'],
+    ['x', null, 7.1, 'null'],
+    ['x', 5.25, undefined, '5.25'],
+    ['x', 5, undefined, '5'],
+    ['x', {y: 9}, undefined, '{"y":9}'],
+    ['x', {y: 9}, 8.2, '{"y":9}'],
+    ['x', {y: 9}, null, '{"y":9}'],
+    ['x', '3.33', undefined, '3.33'],
+    ['x', '3', undefined, '3'],
+    ['x', '"live"', undefined, '"live"'],
+    ['x', 'live', 9.3, 'live'],
+    ['x', 'live', {error: 1}, 'live'],
+].forEach(([name, value, def, answer], id) => {
+    test(`get_string:${id}`, () => {
+        save_option(name, value);
+        expect(get_string(name, def)).toEqual(answer);
     });
 });
 
@@ -259,6 +375,20 @@ Assign(translates, {
 ].forEach(([data, reset, answer], id) => {
     test(`import_settings:${id}`, () => {
         import_settings(data, reset);
+        Keys(answer).forEach(key => {
+            expect(Y).toHaveProperty(key, answer[key]);
+        });
+    });
+});
+
+// load_defaults
+[
+    {language: '', limit: 20},
+].forEach((answer, id) => {
+    test(`load_defaults:${id}`, () => {
+        Clear(Y);
+        guess_types(DEFAULTS);
+        load_defaults();
         Keys(answer).forEach(key => {
             expect(Y).toHaveProperty(key, answer[key]);
         });
@@ -365,6 +495,20 @@ Assign(translates, {
     });
 });
 
+// option_number
+[
+    [150, 0, 2000, undefined, undefined, undefined, [{max: 2000, min: 0, step: 1, type: 'number'}, 150, '']],
+    [-200, -1000, 1000, undefined, undefined, undefined, [{max: 1000, min: -1000, step: 1, type: 'number'}, -200, '']],
+    [10, 0, 20, 0.5, undefined, undefined, [{max: 20, min: 0, step: 0.5, type: 'number'}, 10, '']],
+    [0.055, 0, 0.4, 0.001, undefined, undefined, [{max: 0.4, min: 0, step: 0.001, type: 'number'}, 0.055, '']],
+    [0.7, 0, 1, 0.01, {}, 'mix', [{max: 1, min: 0, step: 0.01, type: 'number'}, 0.7, 'mix']],
+].forEach(([def, min, max, step, options, help, answer], id) => {
+    test(`option_number:${id}`, () => {
+        expect(option_number(def, min, max, step, options, help)).toEqual(answer);
+    });
+});
+
+
 // parse_dev
 [
     ['', {}],
@@ -384,6 +528,22 @@ Assign(translates, {
         Y.dev = dev;
         parse_dev();
         expect(DEV).toEqual(answer);
+    });
+});
+
+// reset_default
+[
+    ['language', undefined, ''],
+    ['language', 'fra', ''],
+    ['language', '', ''],
+    ['limit', 500, 20],
+    ['limit', undefined, 20],
+].forEach(([name, value, answer], id) => {
+    test(`reset_default:${id}`, () => {
+        Y[name] = value;
+        expect(reset_default(name)).toEqual(answer);
+        expect(Y[name]).toEqual(answer);
+        expect(get_string(name)).toBeUndefined();
     });
 });
 
@@ -460,13 +620,45 @@ Assign(translates, {
     });
 });
 
+// save_default
+[
+    ['language', undefined, '', undefined],
+    ['language', 'eng', 'eng', 'eng'],
+    ['language', 'fra', 'fra', 'fra'],
+    ['language', undefined, 'fra', 'fra'],
+    ['language', '', '', undefined],
+    ['limit', 500, 500, '500'],
+    ['limit', 30, 30, '30'],
+    ['limit', 20, 20, undefined],
+    ['limit', undefined, 20, undefined],
+].forEach(([name, value, answer, answer_storage], id) => {
+    test(`save_default:${id}`, () => {
+        save_default(name, value);
+        expect(Y[name]).toEqual(answer);
+        expect(get_string(name)).toEqual(answer_storage);
+    });
+});
+
+
 // save_option
 [
-    ['width', 100],
-].forEach(([name, value], id) => {
+    ['width', 100, '100'],
+    ['x', 'live', 'live'],
+].forEach(([name, value, answer], id) => {
     test(`save_option:${id}`, () => {
         save_option(name, value);
         expect(Y[name]).toEqual(value);
+        expect(get_string(name)).toEqual(answer);
+    });
+});
+
+// show_settings
+[
+    ['unknown', {}, '<grid class="options"><div class="item-title span" data-set="" data-n="unknown" data-t="Unknown options"></div><a class="item item-title span" data-set="-1" data-t="OK"></a></grid>'],
+    ['audio', {}, '<grid class="options"><div class="item-title span" data-set="" data-n="audio" data-t="Audio options"></div><a class="item"><i data-t="Volume"></i></a><vert class="fcenter"><input name="volume" type="number" class="setting" min="0" max="10" step="1" value="5"undefined></vert><a class="item"><i data-t="Music"></i></a><vert class="fcenter"><select name="music"><option value="1" data-t="on"></option><option value="0" selected data-t="off"></option></select></vert><a class="item item-title span" data-set="-1" data-t="OK"></a></grid>'],
+].forEach(([name, dico, answer], id) => {
+    test(`show_settings:${id}`, () => {
+        expect(show_settings(name, dico)).toEqual(answer);
     });
 });
 

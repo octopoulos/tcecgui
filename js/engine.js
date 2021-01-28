@@ -317,6 +317,7 @@ function get_float(name, def) {
 
 /**
  * Local Storage - get int/bool
+ * + keep the string when fails to convert
  * @param {string} name
  * @param {number|boolean} def also used if the value cannot be converted to an `int`
  * @param {boolean=} force force int, otherwise keep the string
@@ -639,6 +640,19 @@ function remove_storage(name) {
 }
 
 /**
+ * Reset a default value
+ * + remove it from localStorage
+ * @param {string} name
+ * @returns {*} default value
+ */
+function reset_default(name) {
+    let value = DEFAULTS[name];
+    Y[name] = value;
+    remove_storage(name);
+    return value;
+}
+
+/**
  * Reset to the default/other settings
  * @param {boolean} is_default
  */
@@ -697,8 +711,13 @@ function sanitise_data() {
  * @param {*} value value for the name, undefined to save Y[name]
  */
 function save_default(name, value) {
-    if (value === undefined)
-        value = DEFAULTS[name];
+    if (value === undefined) {
+        value = Y[name];
+        if (value === undefined) {
+            value = DEFAULTS[name];
+            Y[name] = value;
+        }
+    }
     else
         Y[name] = value;
     if (value == DEFAULTS[name])
@@ -3015,6 +3034,7 @@ if (typeof exports != 'undefined') {
         clear_timeout: clear_timeout,
         create_field_value: create_field_value,
         create_page_array: create_page_array,
+        create_svg_icon: create_svg_icon,
         create_url_list: create_url_list,
         DEFAULTS: DEFAULTS,
         DEV: DEV,
@@ -3022,8 +3042,13 @@ if (typeof exports != 'undefined') {
         device: device,
         done_touch: done_touch,
         FONTS: FONTS,
+        get_float: get_float,
+        get_int: get_int,
+        get_object: get_object,
+        get_string: get_string,
         guess_types: guess_types,
         HIDES: HIDES,
+        ICONS: ICONS,
         import_settings: import_settings,
         KEYS: KEYS,
         LANGUAGES: LANGUAGES,
@@ -3039,12 +3064,14 @@ if (typeof exports != 'undefined') {
         parse_dev: parse_dev,
         populate_areas: populate_areas,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
+        reset_default: reset_default,
         reset_settings: reset_settings,
         resize_text: resize_text,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
         save_default: save_default,
         save_option: save_option,
+        show_settings: show_settings,
         socket: socket,
         TAB_NAMES: TAB_NAMES,
         THEMES: THEMES,

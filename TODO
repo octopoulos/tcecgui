@@ -19,6 +19,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-24 : piece animation is not smooth anymore, something to do with set_ply
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
 -          : 2021-01-27 : pv should show fails
+2021-01-27 : 2021-01-27 : add engine tests
 2021-01-27 : 2021-01-27 : improve inspector.py
 2021-01-27 : 2021-01-27 : move populate_areas + move_pane to engine
 2021-01-27 : 2021-01-27 : color 0, 1, 2, 3, 01, 23

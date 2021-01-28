@@ -8,7 +8,7 @@
 /*
 globals
 Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
-LS, Max, Min, Pad, Pow, require, Round, save_default, save_option, show_popup, Split, Undefined, Y
+LS, Max, Min, Pad, Pow, require, reset_default, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
 
@@ -332,7 +332,7 @@ function reset_old_settings() {
         for (let item of key.split(' '))
             if (Y[item] != DEFAULTS[item]) {
                 changes.push(item);
-                save_default(item);
+                reset_default(item);
             }
 
     LS(`version: ${version} => ${VERSION} : ${changes}`);
