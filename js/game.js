@@ -25,7 +25,7 @@ reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, SetDefault, Show,
 show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
 stockfish_wdl, Style, SUB_BOARDS,
-TEXT, TIMEOUTS, timers, Title, Toggle, touch_handle, translate_default, translate_nodes,
+TEXT, TIMEOUTS, timers, Title, TITLES, Toggle, touch_handle, translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
 virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard,
@@ -379,22 +379,6 @@ let ANALYSIS_URLS = {
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
-    TITLES = {
-        50: 'Fifty-move rule',
-        'D/SD': '{Depth} / {Selective depth}',
-        ECO: 'Encyclopaedia of Chess Openings',
-        Eval: 'Evaluation',
-        H2H: 'Head to head',
-        Mob: 'Mobility',
-        points: 'points + direct encounters',
-        PV: 'Principal variation',
-        'PV(A)': '{PV}: {analysis}',
-        rmobility_result: 'r-Mobility result',
-        rmobility_score: 'r-Mobility score',
-        SB: 'Sonneborn–Berger',
-        TB: 'Tablebase',
-        TC: 'Time control',
-    },
     tour_info = {
         archive: {},
         live: {},
@@ -6479,6 +6463,23 @@ function startup_game() {
         live: [],
     });
 
+    Assign(TITLES, {
+        50: 'Fifty-move rule',
+        'D/SD': '{Depth} / {Selective depth}',
+        ECO: 'Encyclopaedia of Chess Openings',
+        Eval: 'Evaluation',
+        H2H: 'Head to head',
+        Mob: 'Mobility',
+        points: 'points + direct encounters',
+        PV: 'Principal variation',
+        'PV(A)': '{PV}: {analysis}',
+        rmobility_result: 'r-Mobility result',
+        rmobility_score: 'r-Mobility score',
+        SB: 'Sonneborn–Berger',
+        TB: 'Tablebase',
+        TC: 'Time control',
+    });
+
     virtual_close_popups = popup_custom;
     virtual_init_3d_special = init_3d_special;
     virtual_random_position = random_position;
@@ -6516,7 +6517,6 @@ if (typeof exports != 'undefined')
         parse_time_control: parse_time_control,
         PIECE_THEMES: PIECE_THEMES,
         TABLES: TABLES,
-        TITLES: TITLES,
         tour_info: tour_info,
         update_live_eval: update_live_eval,
         update_materials: update_materials,
