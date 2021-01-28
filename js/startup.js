@@ -2057,22 +2057,22 @@ function prepare_settings() {
             piece_theme_pva: [Keys(PIECE_THEMES), 'chess24'],
             source_color: {
                 _multi: 2,
-                _title: 'clicked piece: color + opacity',
+                _title: 'clicked piece',
                 source_color: [{type: 'color'}, '#ffb400'],
-                source_opacity: option_number(0.7, 0, 1, 0.01),
+                source_opacity: option_number(0.7, 0, 1, 0.01, {}, 'opacity'),
             },
             status_pva: [ON_OFF, 1],
             target_color: {
                 _multi: 2,
-                _title: 'legal squares: color + opacity',
+                _title: 'legal squares',
                 target_color: [{type: 'color'}, '#ff5a00'],
-                target_opacity: option_number(0.7, 0, 1, 0.01),
+                target_opacity: option_number(0.7, 0, 1, 0.01, {}, 'opacity'),
             },
             turn_color: {
                 _multi: 2,
-                _title: 'legal pieces: color + opacity',
+                _title: 'legal pieces',
                 turn_color: [{type: 'color'}, '#ff5a00'],
-                turn_opacity: option_number(0, 0, 1, 0.01),
+                turn_opacity: option_number(0, 0, 1, 0.01, {}, 'opacity'),
             },
         },
         boom: {
@@ -2176,7 +2176,7 @@ function prepare_settings() {
             marker_color: {
                 _multi: 2,
                 marker_color: [{type: 'color'}, '#299bff'],
-                marker_opacity: option_number(0.5, 0, 1, 0.01),
+                marker_opacity: option_number(0.5, 0, 1, 0.01, {}, 'opacity'),
             },
             graph_min_width: option_number(240, 40, 640),
             graph_radius: option_number(1.2, 0, 10, 0.1),
