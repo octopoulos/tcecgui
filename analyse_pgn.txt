@@ -1,4 +1,4 @@
-Updated on 2021-01-26
+Updated on 2021-01-30
 
 How nps is calculated for each game:
 - nps = total nodes / total time, so, moves with a long thinking time have a lot of impact
@@ -27,8 +27,8 @@ Stockfish 20201225                            : 148799296 : 148.7M : s20   : 172
 Ethereal TCEC-S20                             : 146434780 : 146.4M : s20   : 176     :      : 33
 Koivisto 4.16                                 : 144966958 : 144.9M : s20   : 172     :      : 13
 Ethereal TCEC S20 DivP (PEXT)                 : 138134832 : 138.1M : s20   : 176     :      : 2
+Stockfish 20210113                            : 135412141 : 135.4M : s20   : 172     :      : 88
 Vajolet2 2.9.0-TCEC-S19                       : 131164967 : 131.1M : s20   : 176     :      : 23
-Stockfish 20210113                            : 129728622 : 129.7M : s20   : 172     :      : 65
 KomodoDragon 2657.00                          : 124586900 : 124.5M : s20   : 176     :      : 6
 KomodoDragon 2647.00                          : 124381617 : 124.3M : s20   : 176     :      : 60
 Counter 3.7dev2                               : 121422230 : 121.4M : s20   : 176     :      : 20
@@ -65,7 +65,7 @@ Bagatur 2.2                                   :   4276584 :   4.2M : s20   : 64 
 ScorpioNN 3.0.11                              :    535574 : 535.5k : s20   :         :      : 60
 AllieStein v0.8-120f959_net-15.0              :    519149 : 519.1k : s20   :         : 4    : 60
 AllieStein v0.8-a0fb846_net-15.0              :    493352 : 493.3k : s20   :         : 4    : 2
-LCZero 0.27.0d-Tilps-dje-magic_JH.94-100      :    120192 : 120.1k : s20   : 2       :      : 64
+LCZero 0.27.0d-Tilps-dje-magic_JH.94-100      :    121150 : 121.1k : s20   : 2       :      : 87
 LCZero 0.27.0d+Tilps/dje-magic_JH.94-100      :    114393 : 114.3k : s20   : 2       :      : 7
 LCZero copy 0.27.0d+Tilps/dje-magic_JH.94-100 :     99869 :  99.8k : s20   : 2       :      : 1
 LCZero v0.26.3_T60.66740                      :     65445 :  65.4k : s20   : 2       :      : 58
