@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-27
+// @version 2021-01-29
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -52,7 +52,7 @@ let Abs = Math.abs,
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
-    GLOBAL = (typeof global != 'undefined'),
+    IS_NODE = (typeof global != 'undefined'),
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
     IsFunction = value => (typeof(value) == 'function'),
@@ -1615,7 +1615,6 @@ if (typeof exports != 'undefined') {
         From: From,
         FromSeconds: FromSeconds,
         FromTimestamp: FromTimestamp,
-        GLOBAL: GLOBAL,
         HashText: HashText,
         Hex2RGB: Hex2RGB,
         Hide: Hide,
@@ -1623,6 +1622,7 @@ if (typeof exports != 'undefined') {
         Id: Id,
         InvalidEmail: InvalidEmail,
         InvalidPhone: InvalidPhone,
+        IS_NODE: IS_NODE,
         IsArray: IsArray,
         IsDigit: IsDigit,
         IsFloat: IsFloat,
