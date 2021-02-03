@@ -2222,7 +2222,7 @@ function prepare_settings() {
             moves_pv: [ON_OFF, 1],
             moves_pva: [ON_OFF, 1],
             percent: [ON_OFF, 1],
-            percent_width: option_number(55, 0, 100, 0.5, {}, 'max width in %'),
+            percent_width: option_number(58, 0, 100, 0.5, {}, 'max width in %'),
             single_line: [ON_OFF, 0],
         },
         live: {
@@ -2360,7 +2360,7 @@ function prepare_settings() {
             hardware: [ON_OFF, 0],
             moves_live: [ON_OFF, 1],
             percent: [ON_OFF, 1],
-            percent_width: option_number(55, 0, 100, 0.5, {}, 'max width in %'),
+            percent_width: option_number(58, 0, 100, 0.5, {}, 'max width in %'),
             single_line: [ON_OFF, 0],
         },
         parameters: {
