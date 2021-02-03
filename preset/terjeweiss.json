@@ -116,6 +116,21 @@
       ],
       [
         "table-pva",
+        1,
+        1
+      ],
+      [
+        "shortcut_1",
+        1,
+        1
+      ],
+      [
+        "shortcut_2",
+        1,
+        1
+      ],
+      [
+        "shortcut_3",
         0,
         1
       ],
@@ -127,16 +142,6 @@
       [
         "table-info",
         1,
-        0
-      ],
-      [
-        "shortcut_1",
-        1,
-        0
-      ],
-      [
-        "shortcut_2",
-        0,
         0
       ]
     ],
@@ -150,11 +155,13 @@
   "arrow_base_mix": 0.7,
   "arrow_base_size": 2.05,
   "arrow_color_0": "#cdcdbe",
+  "arrow_color_01": "#c6bf7b",
   "arrow_color_1": "#000000",
   "arrow_color_2": "#236ad6",
   "arrow_color_23": "#800080",
   "arrow_color_3": "#eb282d",
   "arrow_from": "all",
+  "arrow_from_opponent": 0.6,
   "arrow_head_border": 0.5,
   "arrow_head_color": "#a5a5a5",
   "arrow_head_mix": 1,
@@ -253,6 +260,7 @@
   "highlight_size_pv": 0.088,
   "highlight_size_pva": 0.055,
   "join_next": 0,
+  "key_accelerate": 1.04,
   "key_repeat": 70,
   "key_repeat_initial": 500,
   "lighting": "high",
@@ -305,6 +313,7 @@
   "panel_adjust": 0,
   "panel_gap": 12,
   "percent": 0,
+  "percent_width": 58,
   "piece_theme": "chess24",
   "piece_theme_pv": "chess24",
   "piece_theme_pva": "chess24",
@@ -327,8 +336,9 @@
   },
   "scroll_inertia": 0.95,
   "shadow": "high",
-  "shortcut_1": "stand",
-  "shortcut_2": "stats",
+  "shortcut_1": 0,
+  "shortcut_2": 0,
+  "shortcut_3": 0,
   "show_delay": 500,
   "show_ply": "diverging",
   "SI_units": 1,
