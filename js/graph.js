@@ -1,13 +1,13 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-25
+// @version 2021-02-02
 //
 /*
 globals
-_, A, Abs, Assign, C, calculate_feature_q, Chart, Clamp, CreateNode,
+_, A, Abs, Assign, C, calculate_feature_q, Clamp, CreateNode,
 DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
 Log, Log10, LS, Max, Min, mix_hex_colors, Pad, Pow, require, Round,
-S, save_option, SetDefault, Sign, Style, translate_expression, Visible, xboards, Y
+S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y
 */
 'use strict';
 
@@ -454,7 +454,7 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
     if (dico)
         Assign(options, dico);
 
-    charts[name] = charts[name] || new Chart(`chart-${name}`, {
+    charts[name] = charts[name] || new window.Chart(`chart-${name}`, {
         data: chart_data[name],
         options: options,
         type: 'line',

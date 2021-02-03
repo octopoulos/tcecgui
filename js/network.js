@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-02-02
 //
 // all socket functions are here
 //
@@ -8,9 +8,9 @@
 /*
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
-DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes, io,
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes,
 LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
-update_pgn, update_player_eval, update_table, update_twitch, Y
+update_pgn, update_player_eval, update_table, update_twitch, window, Y
 */
 'use strict';
 
@@ -53,7 +53,7 @@ function check_socket_io() {
 
     // 2) connect
     if (!socket)
-        socket = io.connect(HOST);
+        socket = window.io.connect(HOST);
     else if (!socket.connected)
         socket.connect(HOST);
 

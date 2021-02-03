@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-29
+// @version 2021-02-02
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -390,7 +390,7 @@ function CreateSVG(type, attrs, children) {
  * Handle any events on nodes
  * + mouseenter => will use node.addEventListener('mouseenter', callback)
  * + !mouseenter => will use node.onmouseenter = callback
- * @param {string|Node} sel CSS selector or node
+ * @param {string|Node|Window} sel CSS selector or node
  * @param {string} events
  * @param {function} callback
  * @param {Object=} options
