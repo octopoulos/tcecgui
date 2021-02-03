@@ -421,6 +421,7 @@ grid {
     color: #f00;
 }
 .about {
+    max-width: 640px;
     min-height: 50vh;
     min-width: 50vw;
 }
