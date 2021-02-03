@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-27
+@version 2021-02-02
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -871,10 +871,15 @@ hsub {
 #table-winner {
     align-content: start;
     max-height: 90vh;
+}
+#table-winner {
     overflow-x: hidden;
 }
 #table-winner td {
     padding: 0.8em 0.4em;
+}
+.estats {
+    margin: 0 auto;
 }
 #twitch-theme {
     width: 100%;

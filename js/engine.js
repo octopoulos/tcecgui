@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-27
+// @version 2021-02-02
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -2590,7 +2590,7 @@ function draw_rectangle(node, orient, mx, my) {
 /**
  * Find an element in areas
  * @params {string} name
- * @returns {[string, number]}
+ * @returns {[string, number, *[]]}
  */
 function find_area(name) {
     let areas = Y.areas;
@@ -2598,9 +2598,9 @@ function find_area(name) {
         let vector = areas[key];
         for (let i = 0; i < vector.length; i ++)
             if (vector[i][0] == name)
-                return [key, i];
+                return [key, i, vector[i]];
     }
-    return ['', -1];
+    return ['', -1, null];
 }
 
 /**
@@ -3041,6 +3041,7 @@ if (typeof exports != 'undefined') {
         DEV_NAMES: DEV_NAMES,
         device: device,
         done_touch: done_touch,
+        find_area: find_area,
         FONTS: FONTS,
         get_float: get_float,
         get_int: get_int,
