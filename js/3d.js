@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-15
+// @version 2021-02-02
 //
 // general 3d rendering code
 //
@@ -117,6 +117,7 @@ let audiobox = {
     SIMULATION_HZ = 60,
     stats,
     STEPS = {},
+    T,
     t_quat,
     t_rot,
     t_sphere,
@@ -192,8 +193,8 @@ function init_3d(force) {
         return;
 
     // vars
-    if (!window.T)
-        window.T = THREE;
+    if (!T)
+        T = window.T = window.THREE;
 
     Object3D = T.Object3D;
     Quaternion = T.Quaternion;
@@ -256,7 +257,7 @@ function init_3d(force) {
 
     // more
     if (DEV.frame) {
-        stats = new Stats();
+        stats = new window.Stats();
         stats.showPanel(0);     // 0: fps, 1: ms, 2: mb, 3+: custom
         document.body.appendChild(stats.dom);
     }
@@ -683,6 +684,7 @@ function resize_3d() {
     camera.width = width;
 
     if (renderer && !controls && use_controls) {
+        let CameraControls = window.CameraControls;
         CameraControls.install({T: T, THREE: T});
         controls = new CameraControls(camera, renderer.domElement);
         controls.dampingFactor = 0.1;
@@ -1217,7 +1219,7 @@ function start_3d() {
  * Initialise structures
  */
 function startup_3d() {
-    window.T = window.T || window.THREE || null;
+    T = window.T = window.T || window.THREE || null;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

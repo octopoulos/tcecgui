@@ -11,10 +11,10 @@
 globals
 _, A, Abs, AnimationFrame, Assign, Attrs, C, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, devicePixelRatio, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass,
-Hide, history, HTML, Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
-LoadLibrary, localStorage, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow,
-QueryString, require, Resource,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass, Hide, history,
+HTML, Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow, QueryString,
+require, Resource,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
 Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
 */
@@ -75,6 +75,7 @@ let __PREFIX = '_',
     libraries = {},
     LINKS = {},
     LOCALHOST = (typeof location == 'object') && location.port == 8080,
+    localStorage = window.localStorage,
     MAX_HISTORY = 20,
     me = {},
     // &1:no import/export, &2:no change setting
@@ -295,7 +296,7 @@ function destroy_popup(node, flag) {
  */
 function export_settings(name) {
     Assign(Y, {
-        _dpr: Floor(devicePixelRatio * 1000 + 0.5) / 1000,
+        _dpr: Floor(window.devicePixelRatio * 1000 + 0.5) / 1000,
         _height: window.innerHeight,
         _width: window.innerWidth,
         _zoom: Floor(window.outerWidth / window.innerWidth * 1000 + 0.5) / 1000,
