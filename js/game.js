@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-29
+// @version 2021-02-02
 //
 // Game specific code:
 // - control the board, moves
@@ -1171,8 +1171,11 @@ function analyse_crosstable(section, data) {
 
                 let de = engines[name];
                 for (let row of [engine_crosses[name], engine_stands[name]]) {
-                    row['points+'] = row.points + de * 0.0001;
-                    row.points = `${row.points} [${de}]`;
+                    let points = row.points;
+                    if (points >= 1) {
+                        row['points+'] = points + de * 0.0001;
+                        row.points = `${points} [${de}]`;
+                    }
                 }
             }
         });
