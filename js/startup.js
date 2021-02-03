@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -902,7 +902,7 @@ function init_globals() {
 
         add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
     }
-    load_google_analytics();
+    // load_google_analytics();
 
     // font size detector
     add_timeout('font', () => {
@@ -936,13 +936,16 @@ function init_globals() {
  */
 function insert_google_ad(id) {
     let html = [
-        '<ins class="adsbygoogle"',
-            `style="display:block;${AD_STYLES[id] || ''}"`,
-            'data-ad-client="ca-pub-6544406400639567"',
-            'data-ad-slot="4926769371"',
-            'data-ad-format="auto"',
-            'data-full-width-responsive="true">',
-        '</ins>',
+        // '<ins class="adsbygoogle"',
+        //     `style="display:block;${AD_STYLES[id] || ''}"`,
+        //     'data-ad-client="ca-pub-6544406400639567"',
+        //     'data-ad-slot="4926769371"',
+        //     'data-ad-format="auto"',
+        //     'data-full-width-responsive="true">',
+        // '</ins>',
+        '<a rel="nofollow" href="https://decodechess.com/">',
+            '<img src="/image/300x250decodea.jpg" width="300" height="250">',
+        '</a>'
     ].join('');
 
     HTML(`#ad${id} > hori`, html);
@@ -956,7 +959,7 @@ function insert_google_ads() {
     insert_google_ad(0);
     insert_google_ad(1);
 
-    load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', null, {async: ''});
+    // load_library('//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', null, {async: ''});
 }
 
 /**

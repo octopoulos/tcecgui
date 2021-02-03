@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 // Game specific code:
 // - control the board, moves
@@ -879,7 +879,7 @@ function resize_move_lists() {
  * @returns {string}
  */
 function section_board(section) {
-    if (board_target.name == 'pva') {
+    if (board_target && board_target.name == 'pva') {
         Y.s = 'pva';
         return 'pva';
     }
