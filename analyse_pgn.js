@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-27
+// @version 2021-02-02
 /*
 globals
 process, require
@@ -16,14 +16,16 @@ let fs = require('fs'),
     {fix_move_format} = require('./js/global.js'),
     {extract_threads, parse_pgn} = require('./js/game.js');
 
-let OPTIONS = {},
+let engine_check = 'LCZero 0.27.0d-Tilps-dje-magic_JH.94-100',
+    OPTIONS = {},
     REPLACES = {
         bonus: 'Bonus',
         cup: 'Cup ',
         s: 'Season ',
     },
     skipped_keys = {},
-    synonyms = {};
+    synonyms = {},
+    worsts = [];
 
 // ANALYSE STATS
 ////////////////
@@ -161,6 +163,13 @@ function get_pgn_stats(data, origin) {
         if (threads)
             synonyms[`${name}|${event}`] = name2;
 
+        if (name == engine_check) {
+            moves.forEach((move, mi) => {
+                if (move.s < 50000 && move.mt > 60000)
+                    worsts.push([headers.Round, mi, 1 + mi / 2, move.m, move.s, move.mt]);
+            });
+        }
+
         if (OPTIONS.discover && !median[id]) {
             LS(`${origin} : ${headers.Round} : ${headers.GameStartTime} : ${name2} : ${median[id]} : ${average[id]}`);
             LS(headers);
@@ -277,6 +286,15 @@ function merge_stats(result) {
             return prefix + line;
         }).join('\n');
 
+    // 5) worsts
+    if (worsts.length) {
+        worsts.sort((a, b) => a[4] - b[4]);
+        LS('   round      ply     move      san      nps       ms');
+        for (let worst of worsts) {
+            let vector = worst.map(item => (item + '').padStart(8));
+            LS(vector.join(' '));
+        }
+    }
     return text;
 }
 

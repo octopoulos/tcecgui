@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-27
+// @version 2021-02-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -677,7 +677,8 @@ function create_swaps() {
 function fix_old_settings() {
     // 1) add missing panel
     let areas = Y.areas,
-        default_areas = DEFAULTS.areas;
+        default_areas = DEFAULTS.areas,
+        populate = 0;
     Keys(default_areas).forEach(key => {
         if (!areas[key])
             areas[key] = default_areas[key];
@@ -687,24 +688,44 @@ function fix_old_settings() {
     let found = find_area('table-agree');
     if (found[1] < 0) {
         for (let key of Keys(areas)) {
-            let id = -1,
+            let id, prev,
                 vector = areas[key];
 
             for (let i = vector.length - 1; i >= 0; i --) {
                 let item = vector[i];
                 if ((item[1] & 1) && (item[2] & 1) && item[0].slice(0, 6) == 'table-') {
                     id = i;
+                    prev = item;
                     break;
                 }
             }
-            if (id >= 0) {
-                vector.splice(id + 1, 0, ['table-agree', 1, 1]);
+            if (prev) {
+                vector.splice(id + 1, 0, ['table-agree', prev[1], 1]);
+                prev[1] = 1;
+                populate ++;
                 break;
             }
         }
     }
 
-    // 3) move height from em => px
+    // 3) insert shortcut_3 after shortcut_2
+    let name = 'shortcut_3';
+    found = find_area(name);
+    if (found[1] < 0) {
+        let [parent, id, found] = find_area('shortcut_2');
+        if (id >= 0) {
+            let vector = areas[parent];
+            vector.splice(id + 1, 0, [name, found[1], 1]);
+            found[1] = 1;
+            found[2] |= 1;
+            populate ++;
+        }
+    }
+
+    if (populate)
+        populate_areas();
+
+    // 4) move height from em => px
     // - guess, min height is 39px normally, so anything under that = old setting, but will miss values over
     Keys(Y).filter(key => key.slice(0, 11) == 'move_height').forEach(key => {
         let value = Y[key];

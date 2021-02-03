@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-27
+// @version 2021-02-02
 //
 /*
 globals
@@ -11,12 +11,11 @@ expect, require, test
 let {Assign, Clear, Keys} = require('./common.js'),
     {
         add_font, add_history, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup, create_field_value,
-        create_page_array, create_svg_icon, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, FONTS, get_float,
-        get_int, get_object, get_string, guess_types, ICONS, import_settings, KEYS, load_defaults, merge_settings,
-        ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history, sanitise_data,
-        save_default, save_option, show_settings, translate, translate_default, translate_expression,
-        translates, TYPES,
-        X_SETTINGS, Y, y_states,
+        create_page_array, create_svg_icon, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, find_area, FONTS,
+        get_float, get_int, get_object, get_string, guess_types, ICONS, import_settings, KEYS, load_defaults,
+        merge_settings, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history,
+        sanitise_data, save_default, save_option, show_settings, translate, translate_default, translate_expression,
+        translates, TYPES, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
@@ -41,6 +40,26 @@ Assign(translates, {
     Belgium: 'Belgique',
     Japan: 'Japon',
 });
+
+Y.areas = {
+    bottom: [],
+    center0: [
+        ['engine', 1, 3],
+        ['table-tb', 1, 1],
+        ['table-kibitz', 0, 1],
+    ],
+    left0: [
+        ['archive', 0, 1],
+        ['live', 0, 1],
+    ],
+    right0: [
+        ['table-chat', 1, 3],
+        ['shortcut_1', 1, 1],
+        ['shortcut_2', 1, 1],
+        ['table-info', 0, 0],
+    ],
+    top: [],
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -206,6 +225,16 @@ Assign(translates, {
 ].forEach(([dico, answer], id) => {
     test(`create_url_list:${id}`, () => {
         expect(create_url_list(dico)).toEqual(answer);
+    });
+});
+
+// find_area
+[
+    ['test', ['', -1, null]],
+    ['shortcut_2', ['right0', 2, ['shortcut_2', 1, 1]]],
+].forEach(([name, answer], id) => {
+    test(`find_area:${id}`, () => {
+        expect(find_area(name)).toEqual(answer);
     });
 });
 
