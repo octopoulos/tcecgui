@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-29
+// @version 2021-02-02
 //
 // game board:
 // - 4 rendering modes:
@@ -411,6 +411,12 @@ class XBoard {
             }
             this.delayed_compare(cur_ply, num_move - 1);
         }
+        // way behind => set mode to quick
+        else if (this.ply < num_move - 5) {
+            if (!num_book || num_book < num_new)
+                this.play_mode = 'quick';
+        }
+        // end => play
         else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
             if (DEV.ply)
                 LS(`num_book=${num_book} : num_new=${num_new}`);

@@ -2696,7 +2696,7 @@ function populate_areas() {
             child = children[0],
             child_id = 0,
             error = '',
-            sorder = areas[key].map(item => item[0]).join(' ');
+            sorder = areas[key].filter(item => (item[2] & 1)).map(item => item[0]).join(' ');
 
         for (let [id, tab, show] of areas[key]) {
             let node = Id(id);
@@ -2715,7 +2715,7 @@ function populate_areas() {
                         }
                         let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
                         if (!sorder.includes(torder))
-                            error = 'sub';
+                            error = `sub: ${sorder} : ${torder}`;
 
                         child_id ++;
                         child = children[child_id];

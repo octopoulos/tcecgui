@@ -1249,7 +1249,7 @@ function calculate_h2h(section, rows) {
  */
 function change_page(parent, value) {
     let [active, output] = get_active_tab(parent);
-    if (DEV.ui)
+    if (DEV.ui2)
         LS(`change_page: ${parent} : ${value} ~ ${active}`);
 
     let page,
