@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-01-27
+# @version 2021-02-03
 
 """
 Inspect JS files
@@ -81,10 +81,12 @@ class Inspect:
             if has_return is not doc_return:
                 print(f'{filename}: return: {name}')
 
-            doc_param = len(re.findall('@param', doc))
+            doc_params = re.findall(r'@param \{(.*?)\}\s?([^\n\r]*)', doc)
+            doc_params = [param for param in doc_params if param[0] != 'Object' or param[1] != 'obj']
+            num_doc = len(doc_params)
             num_param = len(self.re_args.findall(args))
-            if doc_param != num_param:
-                print(f'{filename}: args: {name}: {doc_param} vs {num_param}')
+            if num_doc != num_param:
+                print(f'{filename}: args: {name}: {num_doc} vs {num_param}')
 
     def analyse_folder(self, folder: str):
         """Analyse a folder

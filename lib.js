@@ -1,19 +1,17 @@
 /*
 globals
-console, exports, process
+exports, process, require
 */
 'use strict';
 
-let Keys = Object.keys;
+let {Assign, Keys, LS} = require('./js/common.js');
 
-function perror(errormsg)
-{
-   console.log ("Error:" + errormsg);
+function perror(errormsg) {
+   LS('Error:', errormsg);
    process.exit();
 }
 
-function getPrevPGN(id, name, menuData)
-{
+function getPrevPGN(id, name, menuData) {
    var found = 0;
    var data = menuData;
    var prevpgn = [];
@@ -38,8 +36,7 @@ function getPrevPGN(id, name, menuData)
    return prevpgnStr;
 }
 
-function getPGN(id, jsonMenuData)
-{
+function getPGN(id, jsonMenuData) {
    var found = 0;
    var localPgn = {};
    var data = jsonMenuData;
@@ -52,14 +49,11 @@ function getPGN(id, jsonMenuData)
    Keys(data.Seasons).forEach(key => {
       let value = data.Seasons[key];
       if (found)
-      {
          return false;
-      }
+
       Keys(value.sub).forEach(subkey => {
          let subvalue = value.sub[subkey];
-         if ((subvalue.id == id) ||
-            (subvalue.idf == id))
-         {
+         if ((subvalue.id == id) || (subvalue.idf == id)) {
             localPgn.abb = subvalue.abb;
             localPgn.pgnfile = subvalue.abb + "_link.pgn";
             localPgn.scjson  = subvalue.abb + "_Schedule.json";
@@ -73,9 +67,9 @@ function getPGN(id, jsonMenuData)
             if (localPgn.cup)
             {
                localPgn.prevpgnlist = getPrevPGN(parseInt(subvalue.dno), value.seasonName, jsonMenuData);
-               console.log ("XXXXXXX: localPgn.prevpgn:" + localPgn.prevpgnlist);
+               LS("XXXXXXX: localPgn.prevpgn:" + localPgn.prevpgnlist);
             }
-            //console.log ("STRXX:::::" + JSON.stringify(value.sub, null, '\t'));
+            // LS("STRXX:::::" + JSON.stringify(value.sub, null, '\t'));
             return false;
          }
       });
@@ -84,8 +78,7 @@ function getPGN(id, jsonMenuData)
    return localPgn;
 }
 
-function getUpdatedJSON(totalId, jsonMenuData)
-{
+function getUpdatedJSON(totalId, jsonMenuData) {
    // var found = 0;
    var data = jsonMenuData;
    let dno = 0;
@@ -97,7 +90,7 @@ function getUpdatedJSON(totalId, jsonMenuData)
          return true;
       }
 
-      console.log ("Found season:" + key);
+      LS("Found season:" + key);
 
       Keys(value.sub).forEach(subkey => {
          let subvalue = value.sub[subkey];
@@ -106,7 +99,7 @@ function getUpdatedJSON(totalId, jsonMenuData)
       dno = (parseInt(dno) + 4).toString();
       totalId.dno = dno.padStart(4, '0');
       value.sub.push (totalId);
-      //console.log ("STRXX:::::" + " jsonkey: " + value + " ," + JSON.stringify(data, null, '\t'));
+      // LS("STRXX:::::" + " jsonkey: " + value + " ," + JSON.stringify(data, null, '\t'));
    });
 
    data.newaddedid = totalId.id;
@@ -114,16 +107,14 @@ function getUpdatedJSON(totalId, jsonMenuData)
    return data;
 }
 
-function getRandomSalt(fileName)
-{
+function getRandomSalt(fileName) {
    var timestamp = new Date().getTime().toString();
    var return_string = fileName + "_" + timestamp;
 
    return return_string;
 }
 
-function getNewIdStruc(stringMessage, jsonMenuData)
-{
+function getNewIdStruc(stringMessage, jsonMenuData) {
    var narray = stringMessage.split("_");
    let ncompName = narray[0];
    let nseasonName = narray[1];
@@ -208,11 +199,13 @@ function getNewIdStruc(stringMessage, jsonMenuData)
    }
    */
 
-   //console.log(narray + " ,id:\n" + JSON.stringify(totalId, null, '\t'));
+   // LS(narray + " ,id:\n" + JSON.stringify(totalId, null, '\t'));
    return updJSON;
 }
 
-exports.getNewIdStruc = getNewIdStruc;
-exports.getPGN = getPGN;
-exports.getUpdatedJSON = getUpdatedJSON;
-exports.getRandomSalt = getRandomSalt;
+Assign(exports, {
+   getNewIdStruc: getNewIdStruc,
+   getPGN: getPGN,
+   getRandomSalt: getRandomSalt,
+   getUpdatedJSON: getUpdatedJSON,
+});

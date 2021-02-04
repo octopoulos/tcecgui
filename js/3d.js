@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 // general 3d rendering code
 //
@@ -15,7 +15,7 @@ S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_n
 'use strict';
 
 // <<
-if (typeof global != 'undefined') {
+if (typeof global != 'undefined' && typeof require != 'undefined') {
     ['common'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
@@ -343,7 +343,7 @@ function interpolate_store(part) {
  * Load a model
  * @param {string} name key for model storage
  * @param {string} filename
- * @param {function} callback
+ * @param {Function} callback
  */
 function load_model(name, filename, callback) {
     // 0) need T
@@ -394,7 +394,7 @@ function load_model(name, filename, callback) {
 /**
  * Load multiple models
  * @param {Object} filenames
- * @param {function} callback
+ * @param {Function} callback
  */
 function load_models(filenames, callback) {
     let keys = Keys(filenames),
@@ -968,7 +968,7 @@ function gamepad_update() {
  * @param {number=} cycle end of the cycle
  * @param {boolean=} inside
  * @param {boolean=} interrupt play the sound again even if it's being played
- * @param {function=} loaded only load the audio
+ * @param {Function=} loaded only load the audio
  * @param {number=} start start of the 2nd cycle
  * @param {boolean=} voice
  * @param {number=} volume
