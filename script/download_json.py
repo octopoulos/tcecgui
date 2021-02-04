@@ -1,4 +1,6 @@
 # coding: utf-8
+# @author octopoulo <polluxyz@gmail.com>
+# @version 2021-02-03
 
 """
 Download JSON
@@ -22,6 +24,7 @@ SOURCE_TIMES = {
     'enginerating.json': 3600 * 6,
     'Eventcrosstable.json': 3600,
     'gamelist.json': 3600 * 12,
+    # 'live.json': 1,
     'live.pgn': 1,
     'liveeval.json': 2 + 1800,
     'liveeval1.json': 3 + 1800,

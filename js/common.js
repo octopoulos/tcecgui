@@ -1,13 +1,13 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 // utility JS functions used in all the sites
 // no state is being required
 //
 /*
 globals
-console, document, exports, FormData, location, navigator, Node, requestAnimationFrame, screen, window, XMLHttpRequest
+console, document, exports, FormData, global, location, navigator, Node, requestAnimationFrame, screen, window, XMLHttpRequest
 */
 'use strict';
 
@@ -15,7 +15,6 @@ console, document, exports, FormData, location, navigator, Node, requestAnimatio
 ////////////
 
 let Abs = Math.abs,
-    AnimationFrame = (callback, direct) => (direct? callback(): requestAnimationFrame(callback)),
     Assign = Object.assign,
     Atan = Math.atan,
     Ceil = Math.ceil,
@@ -52,7 +51,7 @@ let Abs = Math.abs,
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
-    IS_NODE = (typeof global != 'undefined'),
+    IS_NODE = (typeof global != 'undefined')? global: null,
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
     IsFunction = value => (typeof(value) == 'function'),
@@ -62,7 +61,7 @@ let Abs = Math.abs,
     Log = Math.log,
     Log10 = Math.log10,
     Lower = text => text.toLowerCase(),
-    LS = console.log,
+    LS = console.log.bind(console),
     Max = Math.max,
     Min = Math.min,
     NAMESPACE_SVG = 'http://www.w3.org/2000/svg',
@@ -75,7 +74,7 @@ let Abs = Math.abs,
     Sin = Math.sin,
     SP = e => e.stopPropagation(),
     Sqrt = Math.sqrt,
-    Stringify = JSON.stringify,
+    Stringify = JSON.stringify.bind(JSON),
     Tanh = Math.tanh,
     Upper = text => text.toUpperCase();
 
@@ -101,15 +100,15 @@ function _(sel, parent) {
 
 /**
  * Find multiple nodes
- * @param {string|Node[]} sel CSS selector OR list of nodes
+ * @param {string|Array<Node>} sel CSS selector OR list of nodes
  * @param {Node=} parent parent node, document by default
- * @returns {Node[]} found nodes
+ * @returns {Array<Node>} found nodes
  * @example
  * A('input')       // get all the <input> nodes
  * A('a', node)     // get all the links inside the node
  */
 function A(sel, parent) {
-    if (!sel) return;
+    if (!sel) return [];
     if (IsObject(sel) && sel.length)
         return sel;
     return (parent || document).querySelectorAll(sel);
@@ -117,8 +116,8 @@ function A(sel, parent) {
 
 /**
  * Execute a function on multiple nodes
- * @param {string|Node[]} sel CSS selector OR list of nodes
- * @param {function} callback (node, index=, array=)
+ * @param {string|Array<Node>} sel CSS selector OR list of nodes
+ * @param {Function} callback (node, index=, array=)
  * @param {Node=} parent
  * @example
  * E('input[type=text]', node => {LS(node)})     // print all the text <input> nodes
@@ -209,7 +208,7 @@ function AttrsNS(sel, attrs, parent) {
 /**
  * Click event on nodes
  * @param {string|Node} sel CSS selector or node
- * @param {function} callback (event)
+ * @param {Function} callback (event)
  * @param {Node=} parent
  * @example
  * C('img', function() {LS(this.src)})  // print the URL of the image being clicked
@@ -230,8 +229,8 @@ function C(sel, callback, parent) {
  * Add / remove classes
  * @param {string|Node} sel CSS selector or node
  * @param {string} class_ 'add +also_add -remove ^toggle'
- * @param {boolean=} [add=true] true for normal behavior (default), otherwise invert all - and +
- * @param {Node=} parent
+ * @param {(boolean|number)=} add true for normal behavior (default), otherwise invert all - and +
+ * @param {Node?} parent
  * @example
  * Class('img', 'dn')               // hide every image
  * Class('img', '-dn')              // restore every image
@@ -303,7 +302,7 @@ function Class(sel, class_, add=true, parent=null) {
 
 /**
  * Check if a list contains a pattern, using ^, $, *
- * @param {string[]} list
+ * @param {Array<string>} list
  * @param {string} pattern
  * @returns {boolean}
  */
@@ -344,7 +343,7 @@ function Contain(list, pattern) {
  * @param {string} tag
  * @param {string=} html
  * @param {Object=} attrs
- * @param {Object[]=} children
+ * @param {Array<Object>=} children
  * @returns {Node} created node
  * @example
  * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
@@ -369,7 +368,7 @@ function CreateNode(tag, html, attrs, children) {
  * Create an SVG node
  * @param {string} type
  * @param {Object=} attrs
- * @param {Object[]=} children
+ * @param {Array<Object>=} children
  * @returns {Node} created node
  */
 function CreateSVG(type, attrs, children) {
@@ -392,7 +391,7 @@ function CreateSVG(type, attrs, children) {
  * + !mouseenter => will use node.onmouseenter = callback
  * @param {string|Node|Window} sel CSS selector or node
  * @param {string} events
- * @param {function} callback
+ * @param {Function} callback
  * @param {Object=} options
  * @param {Node=} parent
  * @example
@@ -562,7 +561,7 @@ function Index(node) {
 /**
  * Input event on nodes
  * @param {string|Node} sel CSS selector or node
- * @param {function} callback (event)
+ * @param {Function} callback (event)
  * @param {Node=} parent
  * @example
  * Input('input[sb-field=username]', e => {LS(e)})   // username is being modified
@@ -582,7 +581,7 @@ function Input(sel, callback, parent) {
 /**
  * Insert nodes into a parent
  * @param {string|Node} parent
- * @param {Node[]} nodes
+ * @param {Array<Node>} nodes
  * @param {boolean=} preprend should the nodes be preprended or appended?
  * @example
  * InsertNodes(#chat', nodes, true)     // preprend
@@ -605,10 +604,11 @@ function InsertNodes(parent, nodes, preprend) {
 /**
  * Find a parent node by tagName and class
  * @param {string|Node} node CSS selector or node
- * @param {string=} attrs
- * @param {string=} class_ 'live-pv|xmoves'
- * @param {boolean=} self true => the parent can be the node itself
- * @param {string=} tag 'a div'
+ * @param {Object} obj
+ * @param {string=} obj.attrs
+ * @param {string=} obj.class_ 'live-pv|xmoves'
+ * @param {boolean=} obj.self true => the parent can be the node itself
+ * @param {string=} obj.tag 'a div'
  * @returns {Node=} parent node or null or undefined
  * @example
  * Parent(node, {attrs: 'id=ok', tag: 'div')        // find a parent with tag <div> and whose ID='ok'
@@ -703,7 +703,7 @@ function Prop(sel, prop, value, parent) {
  * Show / hide nodes
  * + handle dn
  * @param {string|Node} sel CSS selector or node
- * @param {boolean=} show true to show the node
+ * @param {(boolean|number)=} show true to show the node
  * @param {Node=} parent
  * @param {string=} [mode=''] value to use for node.display, by default '' but could be block
  * @example
@@ -748,7 +748,7 @@ function SafeId(sel, parent) {
 
 /**
  * Scroll the document to the top
- * @param {string|number=} top if undefined then returns the scrollTop value
+ * @param {string|number|Node=} top if undefined then returns the scrollTop value
  * @param {boolean=} smooth
  * @param {number=} offset
  * @returns {number}
@@ -883,7 +883,7 @@ function Style(sel, style, add=true, parent=null) {
 /**
  * Submit event on nodes
  * @param {string|Node} sel CSS selector or node
- * @param {function} callback
+ * @param {Function} callback
  * @param {Node=} parent
  * @example
  * Submit('body', () => {return false})    // prevent any Submit
@@ -982,9 +982,19 @@ function Visible(sel, parent) {
 // NON-NODE FUNCTIONS
 /////////////////////
 /**
+ * Utility for requestAnimationFrame
+ * @param {Function} callback
+ * @param {boolean=} direct
+ * @returns {number|*}
+ */
+function AnimationFrame(callback, direct) {
+    return direct? callback(): requestAnimationFrame(callback);
+}
+
+/**
  * Convert an WASM vector to JS vector
- * @param {Object|*[]} vector
- * @returns {Object[]}
+ * @param {Object|Array<*>} vector
+ * @returns {Array<Object>}
  */
 function ArrayJS(vector) {
     if (vector.size)
@@ -994,9 +1004,9 @@ function ArrayJS(vector) {
 
 /**
  * Choose a random element in an array
- * @param {*[]} array
+ * @param {Array<*>} array
  * @param {number} length
- * @returns {*[]}
+ * @returns {Array<*>}
  */
 function Choice(array, length) {
     return array[Floor(Random() * (length || array.length))];
@@ -1033,7 +1043,7 @@ function Clear(dico) {
  * Copy text to the clipboard
  * - must be called from an event callback
  * @param {string} text
- * @param {function=} callback
+ * @param {Function=} callback
  */
 function CopyClipboard(text, callback) {
     if (navigator.clipboard)
@@ -1335,7 +1345,7 @@ function IsDigit(char) {
 /**
  * Load a library
  * @param {string} url
- * @param {function=} callback
+ * @param {Function=} callback
  * @param {Object=} extra
  * @example
  * LoadLibrary('./script/3d.js')
@@ -1467,7 +1477,7 @@ function RandomSpread(range) {
 /**
  * Load a resource
  * @param {string} url
- * @param {function} callback (status, text, xhr)
+ * @param {Function} callback (status, text, xhr)
  * @param {*=} content
  * @param {string=} form add the content to a new FormData
  * @param {Object=} headers

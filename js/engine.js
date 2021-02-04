@@ -1,18 +1,19 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
 // contains global vars but the script will be imported in a function => they become local
 //
 // included after: common
+// jshint -W069
 /*
 globals
 _, A, Abs, AnimationFrame, Assign, Attrs, C, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
 DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass, Hide, history,
-HTML, Id, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+HTML, Id, Input, IS_NODE, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
 LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow, QueryString,
 require, Resource,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
@@ -21,7 +22,7 @@ Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
 'use strict';
 
 // <<
-if (typeof global != 'undefined') {
+if (typeof global != 'undefined' && typeof require != 'undefined') {
     ['common'].forEach(key => {
         Object.assign(global, require(`./${key}.js`));
     });
@@ -39,12 +40,12 @@ let __PREFIX = '_',
     context_areas = {},
     context_target,
     DEFAULTS = {
-        language: '',
-        theme: '',
+        'language': '',
+        'theme': '',
     },
     DEV = {},
     DEV_NAMES = {
-        d: 'debug',
+        'd': 'debug',
     },
     device = {},
     drag,
@@ -67,23 +68,24 @@ let __PREFIX = '_',
     LANGUAGES = {},
     // only if they're different from the first 2 letters, ex: it:ita is not necessary
     LANGUAGES_23 = {
-        es: 'spa',
-        ja: 'jpn',
-        pl: 'pol',
-        sv: 'swe',
+        'es': 'spa',
+        'ja': 'jpn',
+        'pl': 'pol',
+        'sv': 'swe',
     },
     libraries = {},
     LINKS = {},
     LOCALHOST = (typeof location == 'object') && location.port == 8080,
-    localStorage = window.localStorage,
+    localStorage = (IS_NODE || window).localStorage,
     MAX_HISTORY = 20,
     me = {},
-    // &1:no import/export, &2:no change setting
+    // &1:no import/export, &2:no change setting, &4:update Y but no localStorage
     NO_IMPORTS = {
-        import_settings: 2,
-        language: 1,
-        preset: 1,
-        seen: 1,
+        'import_settings': 2,
+        'language': 1,
+        'password': 2,
+        'preset': 1,
+        'seen': 1,
     },
     NO_TRANSLATES = {
         '#': 1,
@@ -96,7 +98,7 @@ let __PREFIX = '_',
     popup_classes = new Set(),
     QUERY_KEYS = {
         '': '?',
-        hash: '#',
+        'hash': '#',
     },
     scroll_target,
     socket,
@@ -111,15 +113,26 @@ let __PREFIX = '_',
     timers = {},
     TITLES = {},
     touch_done = 0,                                     // time when the touch was released
-    TOUCH_ENDS = {mouseleave: 1, mouseup: 1, touchend: 1},
+    TOUCH_ENDS = {
+        'mouseleave': 1,
+        'mouseup': 1,
+        'touchend': 1,
+    },
     touch_last = {x: 0, y: 0},
     touch_moves = [],
-    TOUCH_MOVES = {mousemove: 1, touchmove: 2},
+    TOUCH_MOVES = {
+        'mousemove': 1,
+        'touchmove': 2,
+    },
     touch_now,
     touch_scroll = {x: 0, y: 0},
     touch_speed = {x: 0, y: 0},
     touch_start,
-    TOUCH_STARTS = {mousedown: 1, mouseenter: 1, touchstart: 2},
+    TOUCH_STARTS = {
+        'mousedown': 1,
+        'mouseenter': 1,
+        'touchstart': 2,
+    },
     TRANSLATE_SPECIALS = {},
     translates = {},
     TRANSLATES = {},
@@ -154,7 +167,7 @@ let __PREFIX = '_',
 /**
  * Add a timeout / interval
  * @param {string} name
- * @param {function} func function to be called after the timer
+ * @param {Function} func function to be called after the timer
  * @param {number} timer milliseconds <0: does nothing, =0: executes directly, >0: timer
  * @param {boolean=} is_interval
  */
@@ -170,7 +183,7 @@ function add_timeout(name, func, timer, is_interval) {
         ];
     else
         func();
-    if (DEV.frame) {
+    if (DEV['frame']) {
         LS(`add_timeout: ${name} : ${timer} : ${is_interval}`);
         LS(timers);
     }
@@ -191,7 +204,7 @@ function clear_timeout(name) {
         clearTimeout(timer[0]);
 
     delete timers[name];
-    if (DEV.frame)
+    if (DEV['frame'])
         LS(`clear_timeout: ${name} : ${timer}`);
 }
 
@@ -267,7 +280,7 @@ function change_setting(name, value, close) {
 
     switch (name) {
     case 'language':
-        if (value == 'eng' || translates._lan == value)
+        if (value == 'eng' || translates['_lan'] == value)
             translate_nodes('body');
         else if (value != 'eng')
             api_translate_get();
@@ -296,10 +309,10 @@ function destroy_popup(node, flag) {
  */
 function export_settings(name) {
     Assign(Y, {
-        _dpr: Floor(window.devicePixelRatio * 1000 + 0.5) / 1000,
-        _height: window.innerHeight,
-        _width: window.innerWidth,
-        _zoom: Floor(window.outerWidth / window.innerWidth * 1000 + 0.5) / 1000,
+        '_dpr': Floor(window.devicePixelRatio * 1000 + 0.5) / 1000,
+        '_height': window.innerHeight,
+        '_width': window.innerWidth,
+        '_zoom': Floor(window.outerWidth / window.innerWidth * 1000 + 0.5) / 1000,
     });
     let keys = Keys(Y).filter(key => !NO_IMPORTS[key]).sort((a, b) => Lower(a).localeCompare(Lower(b))),
         object = Assign({}, ...keys.map(key => ({[key]: Y[key]})));
@@ -359,7 +372,7 @@ function get_string(name, def) {
 /**
  * Guess the types
  * @param {Object} settings
- * @param {string[]=} keys
+ * @param {Array<string>=} keys
  */
 function guess_types(settings, keys) {
     if (!keys)
@@ -494,7 +507,7 @@ function load_defaults() {
     });
 
     // use browser language
-    if (!Y.language)
+    if (!Y['language'])
         guess_browser_language();
 }
 
@@ -537,6 +550,7 @@ function merge_settings(x_settings) {
     });
 
     // update defaults
+    // + skip undefined values
     Keys(X_SETTINGS).forEach(name => {
         let settings = X_SETTINGS[name];
         if (!IsObject(settings))
@@ -553,21 +567,23 @@ function merge_settings(x_settings) {
                 return;
 
             // support {_value: [...]}
-            if (setting._value)
-                setting = setting._value;
+            if (setting['_value'])
+                setting = setting['_value'];
 
             // support {_multi: 2, a: [...], b: [...]}
-            if (setting._multi && !setting._main) {
+            if (setting['_multi'] && !setting['_main']) {
                 Keys(setting).forEach(sub_key => {
                     if (sub_key[0] == '_')
                         return;
                     let sub = setting[sub_key];
-                    dico[sub_key] = sub[1];
+                    if (sub[1] != undefined)
+                        dico[sub_key] = sub[1];
                     sub_settings[sub_key] = sub;
                 });
             }
             else {
-                dico[key] = setting[1];
+                if (setting[1] != undefined)
+                    dico[key] = setting[1];
                 sub_settings[key] = setting;
             }
         });
@@ -580,7 +596,7 @@ function merge_settings(x_settings) {
 
 /**
  * Utility for creating settings
- * @param {number} def
+ * @param {number|string} def
  * @param {number} min
  * @param {number} max
  * @param {number=} step
@@ -596,7 +612,7 @@ function option_number(def, min, max, step=1, options={}, help='') {
  * Parse DEV
  */
 function parse_dev() {
-    let text = Y.dev || '';
+    let text = Y['dev'] || '';
     Clear(DEV);
 
     for (let i = 0, length = text.length; i < length; i ++) {
@@ -628,7 +644,7 @@ function parse_dev() {
         }
     }
 
-    if (DEV.debug)
+    if (DEV['debug'])
         LS(DEV);
 }
 
@@ -709,7 +725,7 @@ function sanitise_data() {
 /**
  * Save a Y value + to Local Storage if different from default, otherwise removes it
  * @param {string} name
- * @param {*} value value for the name, undefined to save Y[name]
+ * @param {*=} value value for the name, undefined to save Y[name]
  */
 function save_default(name, value) {
     if (value === undefined) {
@@ -730,7 +746,7 @@ function save_default(name, value) {
 /**
  * Save a Y value + to Local Storage
  * @param {string} name
- * @param {*} value value for the name, undefined to save Y[name]
+ * @param {*=} value value for the name, undefined to save Y[name]
  */
 function save_option(name, value) {
     if (value === undefined)
@@ -762,22 +778,23 @@ function save_storage(name, value) {
  * Show/hide popup
  * @param {string=} name
  * @param {boolean|string=} show
- * @param {boolean=} adjust only change its position
- * @param {number=} bar_x width of the scrollbar
- * @param {boolean=} center place the popup in the center of the screen
- * @param {string=} class_ extra class
- * @param {number=} event 0 to disable set_modal_events
- * @param {string=} html 0 to skip => keep the current HTML
- * @param {string=} id id of the element that us used for adjust
- * @param {boolean=} instant popup appears instantly
- * @param {number=} margin_y
- * @param {number=} offset mouse offset from the popup
- * @param {string=} node_id popup id
- * @param {boolean=} overlay dark overlay is used behind the popup
- * @param {string=} setting
- * @param {number=} shadow 0:none, 1:normal, 2:light
- * @param {Node=} target element that was clicked
- * @param {number[]]=} xy
+ * @param {Object} obj
+ * @param {boolean=} obj.adjust only change its position
+ * @param {number=} obj.bar_x width of the scrollbar
+ * @param {boolean=} obj.center place the popup in the center of the screen
+ * @param {string=} obj.class_ extra class
+ * @param {number=} obj.event 0 to disable set_modal_events
+ * @param {string=} obj.html 0 to skip => keep the current HTML
+ * @param {string=} obj.id id of the element that us used for adjust
+ * @param {boolean=} obj.instant popup appears instantly
+ * @param {number=} obj.margin_y
+ * @param {number=} obj.offset mouse offset from the popup
+ * @param {string=} obj.node_id popup id
+ * @param {boolean=} obj.overlay dark overlay is used behind the popup
+ * @param {string=} obj.setting
+ * @param {number=} obj.shadow 0:none, 1:normal, 2:light
+ * @param {Node=} obj.target element that was clicked
+ * @param {number[]]=} obj.xy
  */
 function show_popup(name, show, {
         adjust, bar_x=20, center, class_, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0],
@@ -799,18 +816,18 @@ function show_popup(name, show, {
         return;
 
     let dataset = node.dataset,
-        data_id = dataset.id,
-        data_name = dataset.name,
+        data_id = dataset['id'],
+        data_name = dataset['name'],
         is_modal = (node.id == 'modal'),
         popup_adjust = POPUP_ADJUSTS[name] || POPUP_ADJUSTS[data_id || data_name];
     if (adjust && !popup_adjust)
         adjust = false;
     if (center == undefined)
-        center = dataset.center || '';
+        center = dataset['center'] || '';
 
     // smart toggle
     if (is_toggle)
-        show = (data_id != (id || name) || !HasClass(node, 'popup-show') || (xy && xy + '' != dataset.xy));
+        show = (data_id != (id || name) || !HasClass(node, 'popup-show') || (xy && xy + '' != dataset['xy']));
 
     if (!adjust && overlay != undefined)
         S(Id('overlay'), show && overlay);
@@ -893,12 +910,12 @@ function show_popup(name, show, {
                         xy = [x, y];
                     }
                     else if (!xy) {
-                        let item = dataset.xy;
+                        let item = dataset['xy'];
                         if (item)
                             xy = item.split(',').map(item => item * 1);
                     }
 
-                    let data_margin = dataset.my;
+                    let data_margin = dataset['my'];
                     if (data_margin)
                         margin_y = data_margin * 1;
                 }
@@ -946,9 +963,9 @@ function show_popup(name, show, {
                 }
             }
 
-            dataset.center = center || '';
-            dataset.my = margin_y || '';
-            dataset.xy = xy || '';
+            dataset['center'] = center || '';
+            dataset['my'] = margin_y || '';
+            dataset['xy'] = xy || '';
             x += full_scroll.x;
             y += full_scroll.y;
             Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
@@ -968,13 +985,13 @@ function show_popup(name, show, {
                 popup_classes.add(class_);
 
             // remember which popup it is, so if we click again on the same id => it closes it
-            dataset.id = show? (id || ''): '';
-            dataset.name = show? name: '';
+            dataset['id'] = show? (id || ''): '';
+            dataset['name'] = show? name: '';
             if (!show)
                 destroy_popup(node, 3);
         }
         if (show) {
-            dataset.ev = event;
+            dataset['ev'] = event;
             let height = 'unset',
                 width = 'unset';
             if (popup_adjust) {
@@ -989,9 +1006,9 @@ function show_popup(name, show, {
             Class(node, `${shadow == 0? '': '-'}shadow0 ${shadow == 2? '': '-'}shadow2`);
         }
         else {
-            dataset.center = '';
-            dataset.my = '';
-            dataset.xy = '';
+            dataset['center'] = '';
+            dataset['my'] = '';
+            dataset['xy'] = '';
         }
 
         set_modal_events(node);
@@ -1002,31 +1019,32 @@ function show_popup(name, show, {
 /**
  * Show a settings page
  * @param {string} name
- * @param {number=} flag &1:title &2:OK
- * @param {string=} grid_class
- * @param {string=} item_class
- * @param {string=} title
- * @param {boolean=} unique true if the dialog comes from a contextual popup, otherwise from main options
- * @param {boolean=} xy
+ * @param {Object} obj
+ * @param {number=} obj.flag &1:title &2:OK
+ * @param {string=} obj.grid_class
+ * @param {string=} obj.item_class
+ * @param {string=} obj.title
+ * @param {boolean=} obj.unique true if the dialog comes from a contextual popup, otherwise from main options
+ * @param {boolean=} obj.xy
  * @returns {string} html
  */
 function show_settings(name, {flag, grid_class='options', item_class='item', title, unique, xy}={}) {
     let settings = name? (X_SETTINGS[name] || []): X_SETTINGS,
-        class_ = settings._class || '',
+        class_ = settings['_class'] || '',
         keys = Keys(settings),
         lines = [`<grid class="${grid_class}${class_? ' ': ''}${class_}">`],
         parent_id = get_drop_id(context_target)[1],
-        prefix = settings._prefix,
-        split = settings._split,
-        suffix = settings._suffix;
+        prefix = settings['_prefix'],
+        split = settings['_split'],
+        suffix = settings['_suffix'];
 
-    flag = Undefined(flag, settings._flag) || 0;
+    flag = Undefined(flag, settings['_flag']) || 0;
 
     // set multiple columns
     if (split) {
         let new_keys = [],
             offset = split;
-        keys = keys.filter(key => (key != '_split' && !settings[key]._pop));
+        keys = keys.filter(key => (key != '_split' && !settings[key]['_pop']));
 
         for (let i = 0; i < split; i ++) {
             new_keys.push(keys[i]);
@@ -1045,7 +1063,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             lines.push(`<div class="item2 span" data-set="-1">${parent_id}</div>`);
         else if (name) {
             if (!title)
-                title = settings._title || `${Title(name).replace(/_/g, ' ')}${settings._same? '': ' options'}`;
+                title = settings['_title'] || `${Title(name).replace(/_/g, ' ')}${settings['_same']? '': ' options'}`;
             lines.push(
                 `<div class="item-title span" data-set="${unique? -1: ''}" data-n="${name}" data-t="${title}"></div>`);
         }
@@ -1059,25 +1077,25 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
         // only in popup
         let setting = settings[key];
-        if (setting._pop)
+        if (setting['_pop'])
             return;
 
         // extra _keys: class, color, flag, on, span, value
-        let sclass = setting._class,
-            scolor = setting._color,
-            sextra = setting._extra,
-            sflag = setting._flag,
-            sid = setting._id,
-            slabel = setting._label,
-            smain = setting._main,                      // use the main key
-            smulti = setting._multi,
-            son = setting._on,
-            sset = setting._set,
-            sspan = setting._span,
-            ssvg = setting._svg,
-            ssyn = setting._syn || '',                  // ~2
-            stitle = setting._title,
-            svalue = setting._value;
+        let sclass = setting['_class'],
+            scolor = setting['_color'],
+            sextra = setting['_extra'],
+            sflag = setting['_flag'],
+            sid = setting['_id'],
+            slabel = setting['_label'],
+            smain = setting['_main'],                   // use the main key
+            smulti = setting['_multi'],
+            son = setting['_on'],
+            sset = setting['_set'],
+            sspan = setting['_span'],
+            ssvg = setting['_svg'],
+            ssyn = setting['_syn'] || '',               // ~2
+            stitle = setting['_title'],
+            svalue = setting['_value'];
         if (sflag && sflag & flag)
             return;
         if (son && !son())
@@ -1140,7 +1158,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         if (string_digit & 2)
             scolor = '#f00';
         let label = slabel? slabel: `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
-            style = scolor? `${(Y.theme == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
+            style = scolor? `${(Y['theme'] == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
             title2 = title? `data-t="${title}" data-t2="title"`: '';
 
         // price [min/max]
@@ -1181,7 +1199,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 third = data[3];
                 fourth = data[4];
                 data = data[0] || data || {};
-                data.class = `multi${smulti}`;
+                data['class'] = `multi${smulti}`;
                 y_key = Y[key];
 
                 if (IsFunction(third) && !third())
@@ -1206,7 +1224,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                         + `<select name="${key}">`
                             + data.map(option => {
                                 let splits = (option + '').split('='),
-                                    value = Undefined({off: 0, on: 1}[option], option);
+                                    value = Undefined({'off': 0, 'on': 1}[option], option);
                                 if (splits.length > 1) {
                                     option = splits[1];
                                     value = splits[0];
@@ -1221,7 +1239,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             }
 
             let auto = data.auto || '',
-                class_ = data.class || '',
+                class_ = data['class'] || '',
                 focus = data.focus || '',
                 holder = data.text || '',
                 type = data.type || '';
@@ -1299,8 +1317,8 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 else {
                     let class_ = item_class,
                         iname = key;
-                    if (data._class)
-                        class_ = `${class_} ${data._class}`;
+                    if (data['_class'])
+                        class_ = `${class_} ${data['_class']}`;
                     if (smain)
                         iname = `${main_key}_${iname}`;
                     lines.push(`<a class="${class_}" name="${iname}" data-t="${Title(key).replace(/_/g, ' ')}"></a>`);
@@ -1314,7 +1332,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
     // -1 to close the popup
     if (!(flag & 2)) {
-        if (parent_id && !(flag & 4) && (Y.join_next || Y.drag_and_drop)) {
+        if (parent_id && !(flag & 4) && (Y['join_next'] || Y['drag_and_drop'])) {
             let context_area = context_areas[parent_id] || {};
             lines.push(
                 `<hori class="span">`
@@ -1326,7 +1344,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         }
         else if (name)
             lines.push(
-                `<a class="item item-title span" data-set="-1" data-t="${settings._cancel? 'CANCEL': 'OK'}"></a>`);
+                `<a class="item item-title span" data-set="-1" data-t="${settings['_cancel']? 'CANCEL': 'OK'}"></a>`);
     }
 
     lines.push('</grid>');
@@ -1384,10 +1402,10 @@ function set_text(node, text) {
 function translate(text) {
     if (!text)
         return text;
-    if (DEV.translate)
+    if (DEV['translate'])
         TRANSLATES[text] = '';
 
-    if (Y.language == 'eng')
+    if (Y['language'] == 'eng')
         return text.includes('{')? null: text.split('~')[0];
 
     // mode
@@ -1456,13 +1474,13 @@ function translate_node(node) {
     // 1) skip?
     if (!node)
         return;
-    let text = node.dataset.t;
+    let text = node.dataset['t'];
     if (text == undefined)
         return;
 
     // 2) translate
     let tag = node.tagName,
-        target = node.dataset.t2,
+        target = node.dataset['t2'],
         translated = translate_expression(text);
 
     if (!target)
@@ -1474,7 +1492,7 @@ function translate_node(node) {
     if (target)
         node.setAttribute(target, translated);
     else {
-        let resize = node.dataset.tr;
+        let resize = node.dataset['tr'];
         if (resize)
             translated = resize_text(translated, parseInt(resize));
         TEXT(node, translated);
@@ -1527,7 +1545,7 @@ function create_svg_icon(name) {
 /**
  * Fill a combo filter
  * @param {string} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
- * @param {string[]} values list of values for the combo, default to [DEFAULTS[letter]]
+ * @param {Array<string>|Object<string, string>} values list of values for the combo, default to [DEFAULTS[letter]]
  * @param {string=} select the value to be selected, default to Y[letter]
  * @param {Object=} dico used to name the values, ex: 01 => cheater
  * @param {boolean=} no_translate don't translate the options
@@ -1659,8 +1677,8 @@ function set_combo_value(letter, value, save=true) {
 
 /**
  * Update the theme
- * @param {string[]=} themes if null, will use Y.theme
- * @param {function=} callback
+ * @param {Array<string>=} themes if null, will use Y.theme
+ * @param {Function=} callback
  * @param {number=} version CSS version, use Now() to force reload
  */
 function update_theme(themes, callback, version=1) {
@@ -1668,7 +1686,7 @@ function update_theme(themes, callback, version=1) {
     if (!parent)
         return;
     if (!themes)
-        themes = [Y.theme];
+        themes = [Y['theme']];
 
     // default theme is skipped because it's already loaded
     if (themes[0] == THEMES[0])
@@ -1698,7 +1716,7 @@ function update_theme(themes, callback, version=1) {
     // 3) add extra links
     else if (num_child < num_theme) {
         for (let i = num_child; i < num_theme; i ++) {
-            let child = CreateNode('link', null, {href: links[i], rel: 'stylesheet'});
+            let child = CreateNode('link', null, {'href': links[i], rel: 'stylesheet'});
             parent.appendChild(child);
         }
     }
@@ -1715,11 +1733,11 @@ function update_theme(themes, callback, version=1) {
  */
 function update_svg(parent) {
     E('[data-svg]', node => {
-        let name = node.dataset.svg,
+        let name = node.dataset['svg'],
             image = create_svg_icon(name);
         if (image) {
             HTML(node, image);
-            delete node.dataset.svg;
+            delete node.dataset['svg'];
         }
     }, parent);
 }
@@ -1776,7 +1794,7 @@ function guess_browser_language() {
         lan = lan.split('-')[0];
         let index = indices[lan];
         if (index) {
-            Y.language = index;
+            Y['language'] = index;
             break;
         }
     }
@@ -1795,13 +1813,13 @@ function is_fullscreen() {
 /**
  * Load a library only once
  * @param {string} url
- * @param {function=} callback
+ * @param {Function=} callback
  * @param {Object=} extra
  */
 function load_library(url, callback, extra) {
     if (!libraries[url])
         LoadLibrary(url, () => {
-            if (DEV.load)
+            if (DEV['load'])
                 LS(`loaded: ${url}`);
             libraries[url] = Now();
             if (callback)
@@ -1822,7 +1840,7 @@ function load_library(url, callback, extra) {
 function push_state(query, replace, query_key='hash', go=null) {
     query = query || {};
     let changes = [],
-        state_keys = STATE_KEYS[Y.x] || STATE_KEYS._ || [],
+        state_keys = STATE_KEYS[Y.x] || STATE_KEYS['_'] || [],
         new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x =>
             ({[x]: Undefined(query[x], Y[x])})
         )),
@@ -1863,7 +1881,7 @@ function set_cursor(cursor='') {
 
 /**
  * Toggle full screen mode
- * @param {function} callback
+ * @param {Function=} callback
  */
 function toggle_fullscreen(callback) {
     let full = is_fullscreen();
@@ -1898,7 +1916,7 @@ function check_sockets() {
         let ready = socket? socket.readyState: WS.CLOSED;
         if (ready == WS.OPEN) {
             socket.send(Uint8Array.of(0));
-            if (DEV.socket)
+            if (DEV['socket'])
                 LS('ping');
             ping = now;
         }
@@ -1913,7 +1931,7 @@ function check_sockets() {
 function init_websockets() {
     if (socket && socket.readyState <= WS.OPEN)
         return;
-    if (DEV.socket)
+    if (DEV['socket'])
         LS('init websockets');
 
     socket = new WS(`ws${location.protocol == 'https:'? 's': ''}://${location.host}/api/`);
@@ -1933,7 +1951,7 @@ function init_websockets() {
         pong = Now(true);
         let vector = new Uint8Array(message.data);
         if (vector[0] == 0) {
-            if (DEV.socket)
+            if (DEV['socket'])
                 LS(`pong: ${pong - ping}`);
         }
         else if (virtual_socket_message)
@@ -2003,7 +2021,7 @@ function cannot_click() {
     if (Now(true) < touch_done + TIMEOUT_touch)
         return true;
     let active = document.activeElement;
-    if (active && {INPUT: 1, TEXTAREA: 1}[active.tagName])
+    if (active && {'INPUT': 1, 'TEXTAREA': 1}[active.tagName])
         return active;
     return false;
 }
@@ -2014,7 +2032,7 @@ function cannot_click() {
  */
 function cannot_popup() {
     let is_control = KEYS[17],
-        cannot = !Y.popup_right_click || is_control;
+        cannot = !Undefined(Y['popup_right_click'], 1) || is_control;
     if (cannot && is_control)
         KEYS[17] = 0;
     return cannot;
@@ -2055,12 +2073,12 @@ function get_changed_touches(e) {
  * Render the inertial scrolling
  */
 function render_scroll() {
-    if (!Y.scroll_inertia)
+    let ratio = Y['scroll_inertia'];
+    if (!ratio)
         return;
 
     let now = Now(true),
-        delta = Min(33, (now - touch_now) * 1000),
-        ratio = Y.scroll_inertia;
+        delta = Min(33, (now - touch_now) * 1000);
 
     touch_scroll.x -= touch_speed.x * delta;
     touch_scroll.y -= touch_speed.y * delta;
@@ -2088,7 +2106,7 @@ function render_scroll() {
  */
 function scroll_adjust(target, max_delta, depth=0) {
     if (max_delta == undefined)
-        max_delta = Y.wheel_adjust;
+        max_delta = Y['wheel_adjust'];
 
     let keys = target? [target]: Keys(ANCHORS),
         max_allowed = 100,
@@ -2143,7 +2161,7 @@ function scroll_adjust(target, max_delta, depth=0) {
         diff = max_delta,
         diff3 = diff;
     for (let [priority, key, delta1, delta2, top, bottom] of deltas) {
-        if (DEV.ui)
+        if (DEV['ui'])
             LS(`${priority} : ${key} : ${delta1} : ${delta2} : ${top} : ${bottom}`);
         if (delta2 != undefined && Abs(delta2) < max_delta) {
             y2 = bottom;
@@ -2590,11 +2608,11 @@ function draw_rectangle(node, orient, mx, my) {
 
 /**
  * Find an element in areas
- * @params {string} name
+ * @param {string} name
  * @returns {[string, number, *[]]}
  */
 function find_area(name) {
-    let areas = Y.areas;
+    let areas = Y['areas'];
     for (let key of Keys(areas)) {
         let vector = areas[key];
         for (let i = 0; i < vector.length; i ++)
@@ -2606,12 +2624,12 @@ function find_area(name) {
 
 /**
  * Get the drag and drop id
- * @param {Node} target
+ * @param {Node|EventTarget} target
  * @returns {[Node, string]}
  */
 function get_drop_id(target) {
     let parent = Parent(target, {class_: 'drag|drop', self: true});
-    return [parent, parent? (parent.id || parent.dataset.x): null];
+    return [parent, parent? (parent.id || parent.dataset['x']): null];
 }
 
 /**
@@ -2621,7 +2639,7 @@ function get_drop_id(target) {
  */
 function move_pane(node, dir) {
     // 1) gather pane info
-    let areas = Y.areas,
+    let areas = Y['areas'],
         index = -1,
         panes = Keys(PANES)
             .filter(pane => Y[`min_${pane}`] > 0 || Y[`max_${pane}`] > 0)
@@ -2666,7 +2684,7 @@ function move_pane(node, dir) {
  * Populate areas
  */
 function populate_areas() {
-    let areas = Y.areas || {},
+    let areas = Y['areas'] || {},
         default_areas = DEFAULTS.areas,
         section = Y.x,
         hides = Assign({}, HIDES[section]);
@@ -2714,7 +2732,7 @@ function populate_areas() {
                             error = 'tabs';
                             break;
                         }
-                        let torder = From(tabs.children).map(sub => sub.dataset.x).join(' ');
+                        let torder = From(tabs.children).map(sub => sub.dataset['x']).join(' ');
                         if (!sorder.includes(torder))
                             error = `sub: ${sorder} : ${torder}`;
 
@@ -2754,7 +2772,7 @@ function populate_areas() {
             else
                 return;
         }
-        if (DEV.ui) {
+        if (DEV['ui']) {
             LS(key, `populate ${key} : ${error}`);
             LS(child);
         }
@@ -2779,7 +2797,7 @@ function populate_areas() {
             if (tab || prev_tab) {
                 if (show & 1) {
                     if (!prev_tab || !tabs) {
-                        tabs = CreateNode('horis', '', {class: 'tabs', style: exist? 'margin-top:1em': ''});
+                        tabs = CreateNode('horis', '', {'class': 'tabs', 'style': exist? 'margin-top:1em': ''});
                         parent.appendChild(tabs);
                         exist ++;
                     }
@@ -2789,7 +2807,7 @@ function populate_areas() {
                     text = TAB_NAMES[text] || Title(text);
 
                     let dico = {
-                            class: `tab drop${(show & 2)? ' active': ''}`,
+                            'class': `tab drop${(show & 2)? ' active': ''}`,
                             'data-abbr': text,
                             'data-label': HTML('.label', undefined, node) || '',
                             'data-x': id,
@@ -2835,7 +2853,7 @@ function populate_areas() {
         if (tabs.length < 4)
             for (let tab of tabs) {
                 let dataset = tab.dataset;
-                dataset.t = dataset.label || dataset.abbr;
+                dataset['t'] = dataset['label'] || dataset['abbr'];
             }
 
         if (virtual_click_tab)
@@ -2854,8 +2872,8 @@ function populate_areas() {
  * Set some elements to be draggable or not
  */
 function set_draggable() {
-    let drag = !!Y.drag_and_drop;
-    Attrs('.drag, .drop', {draggable: drag});
+    let drag = !!Y['drag_and_drop'];
+    Attrs('.drag, .drop', {'draggable': drag});
     Hide(Id('rect'));
     Class('.area', '-dragging');
 }
@@ -2866,7 +2884,7 @@ function set_draggable() {
 /**
  * Get translations
  * @param {boolean=} force
- * @param {function=} callback
+ * @param {Function=} callback
  */
 function api_translate_get(force, callback) {
     function _done(data) {
@@ -2882,10 +2900,10 @@ function api_translate_get(force, callback) {
     }
 
     // 1) cached?
-    let language = Y.language,
+    let language = Y['language'],
         now = Now();
     if (!force)
-        if (language == 'eng' || (translates._lan == language && now < (api_times.translate || 0) + TIMEOUT_translate)) {
+        if (language == 'eng' || (translates['_lan'] == language && now < (api_times.translate || 0) + TIMEOUT_translate)) {
             _done();
             return;
         }
@@ -2932,7 +2950,7 @@ function set_engine_events() {
 function set_modal_events(parent) {
     // settings events
     parent = parent || Id('modal');
-    if (parent.dataset.ev == 0)
+    if (parent.dataset['ev'] == 0)
         return;
 
     // click on item => toggle if possible
@@ -2941,7 +2959,7 @@ function set_modal_events(parent) {
         let name = this.name;
         if (name || HasClass(this, 'item-title')) {
             click_target = Parent(this, {class_: 'popup', self: true});
-            change_setting(name, undefined, (this.dataset.set == '-1' || HasClass(this, 'span'))? 2: 0);
+            change_setting(name, undefined, (this.dataset['set'] == '-1' || HasClass(this, 'span'))? 2: 0);
             return;
         }
 
@@ -2968,7 +2986,7 @@ function set_modal_events(parent) {
         }
     }, parent);
     C('.item2', function() {
-        let name = this.dataset.t;
+        let name = this.dataset['t'];
         change_setting(name? name.replace(/ /g, '_'): name);
     }, parent);
 
