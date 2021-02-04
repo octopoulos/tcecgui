@@ -573,7 +573,7 @@ function format_opening(opening) {
  * @returns {string}
  */
 function format_percent(value) {
-    return `${Round(value * 10000) / 100}%`;
+    return isNaN(value)? '-': `${Round(value * 10000) / 100}%`;
 }
 
 /**
@@ -879,7 +879,7 @@ function resize_move_lists() {
  * @returns {string}
  */
 function section_board(section) {
-    if (board_target && board_target.name == 'pva') {
+    if (board_target.name == 'pva') {
         Y.s = 'pva';
         return 'pva';
     }

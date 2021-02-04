@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-26
+// @version 2021-02-03
 /*
 globals
 expect, global, require, test
@@ -1021,7 +1021,7 @@ function init_players(ply, players, evals) {
 // format_percent
 [
     [null, '0%'],
-    [NaN, 'NaN%'],
+    [NaN, '-'],
     [Infinity, 'Infinity%'],
     ['', '0%'],
     [0, '0%'],

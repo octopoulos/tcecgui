@@ -722,7 +722,7 @@ function fix_old_settings() {
         }
     }
 
-    if (populate)
+    if (populate && ready)
         populate_areas();
 
     // 4) move height from em => px
