@@ -69,8 +69,7 @@ class Inspect:
 
             # exported globals
             glob_set = set(globs)
-            wrongs = [export for export in exports if export in glob_set]
-            if wrongs:
+            if wrongs := [export for export in exports if export in glob_set]:
                 print(f"{filename}: exported: {', '.join(wrongs)}")
 
         # 3) check function doc

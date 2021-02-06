@@ -1,16 +1,17 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 //
 // general 3d rendering code
 //
 // included after: common, engine, global
+// jshint -W069
 /*
 globals
 _, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CameraControls, clear_timeout,
 DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, Id, IsString, KEY_TIMES, Keys, KEYS,
 load_library, LS, navigator, Now, require,
-S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes, Visible, window, Y
+S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes, Vector2:true, Visible, window, Y
 */
 'use strict';
 
@@ -95,12 +96,10 @@ let audiobox = {
     next_paused,
     now,
     now2,
-    Object3D,
     old_pos,
     old_rot,
     PARENT_3D = 'body',
     PARTS = [],
-    Quaternion,
     raycaster,
     rendered = 0,
     renderer,
@@ -133,8 +132,6 @@ let audiobox = {
     VECTOR_X,
     VECTOR_Y,
     VECTOR_Z,
-    Vector2,
-    Vector3,
     VECTORS,
     vibration,
     virtual_animate_scenery,
@@ -158,6 +155,21 @@ let audiobox = {
     virtual_update_renderer_special,
     world,
     world_transform;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/** @typedef {{x:number, y:number, z:number, w:number}} */
+let Quaternion;
+/** @typedef {{x:number, y:number, z:number}} */
+let Vector3;
+
+/**
+ * @typedef {{
+ * position: Vector3,
+ * quaternion: Quaternion,
+ * rotation: *,
+ * }} */
+let Object3D;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -252,11 +264,11 @@ function init_3d(force) {
         shadowMapSoft: true,
         toneMappingExposure: 3.2,
     });
-    renderer.shadowMap.enabled = !!Y.shadow;
+    renderer.shadowMap.enabled = !!Y['shadow'];
     // renderer.shadowMap.type = T.PCFSoftShadowMap;
 
     // more
-    if (DEV.frame) {
+    if (DEV['frame']) {
         stats = new window.Stats();
         stats.showPanel(0);     // 0: fps, 1: ms, 2: mb, 3+: custom
         document.body.appendChild(stats.dom);
@@ -393,7 +405,7 @@ function load_model(name, filename, callback) {
 
 /**
  * Load multiple models
- * @param {Object} filenames
+ * @param {!Object} filenames
  * @param {Function} callback
  */
 function load_models(filenames, callback) {
@@ -419,7 +431,7 @@ function load_models(filenames, callback) {
  * @param {number=} y
  * @param {number=} z
  * @param {number=} w
- * @returns {Object}
+ * @returns {Quaternion}
  */
 function new_quaternion(x, y, z, w) {
     return new Quaternion(x, y, z, w);
@@ -622,12 +634,12 @@ function render() {
 
 /**
  * Request a render
- * @param {Object|number} timer
+ * @param {Object|number=} timer
  */
 function request_render(timer) {
     if (dirty & 4)
         return;
-    if (dirty && (!timer || !Number.isFinite(timer)))
+    if (dirty && (!timer || isNaN(timer)))
         return;
     dirty = 2;
     AnimationFrame(render);
@@ -697,7 +709,7 @@ function resize_3d() {
 
 /**
  * Set controls to the current camera
- * @param {boolean=} pause
+ * @param {boolean} pause
  * @param {Vector3} target
  * @param {boolean=} transition
  */
@@ -764,7 +776,7 @@ function update_light_settings() {
 
     let exists = light_main.quality,
         [main_intensity, under_intensity, quality] =
-        virtual_update_light_settings_special? virtual_update_light_settings_special(): [1, 1, Y.shadow];
+        virtual_update_light_settings_special? virtual_update_light_settings_special(): [1, 1, Y['shadow']];
 
     light_main.intensity = main_intensity;
     light_main.castShadow = !!quality;
@@ -808,14 +820,14 @@ function update_renderer() {
     if (renderer) {
         let ratio = 4;
         if (Y.x == 'play')
-            ratio = DefaultInt((Y.resolution || '').split(':').slice(-1)[0], 2);
+            ratio = DefaultInt((Y['resolution'] || '').split(':').slice(-1)[0], 2);
 
         if (three_loaded)
-            renderer.outputEncoding = T[`${Y.encoding}Encoding`] || T.sRGBEncoding;
-        renderer.toneMappingExposure = Y.exposure;
-        renderer.gammaFactor = Y.gamma;
+            renderer.outputEncoding = T[`${Y['encoding']}Encoding`] || T.sRGBEncoding;
+        renderer.toneMappingExposure = Y['exposure'];
+        renderer.gammaFactor = Y['gamma'];
         renderer.setPixelRatio(window.devicePixelRatio / ratio);
-        renderer.shadowMap.enabled = !!Y.shadow;
+        renderer.shadowMap.enabled = !!Y['shadow'];
     }
     update_light_settings();
 
@@ -839,7 +851,7 @@ function update_time(delta) {
 
 /**
  * Convert a btQuaternion to Quaternion
- * @param {Object} quaternion
+ * @param {!Object} quaternion
  * @param {Object=} target
  * @returns {Object}
  */
@@ -851,7 +863,7 @@ function three_quat(quaternion, target) {
 
 /**
  * Convert a bVector3 to T.Vector3
- * @param {Object} vector
+ * @param {!Object} vector
  * @param {Vector3=} target
  * @returns {Vector3}
  */
@@ -963,15 +975,16 @@ function gamepad_update() {
  * Play a sound
  * @param {Cube} cube
  * @param {string} name
- * @param {string=} _ filename
- * @param {string=} ext
- * @param {number=} cycle end of the cycle
- * @param {boolean=} inside
- * @param {boolean=} interrupt play the sound again even if it's being played
- * @param {Function=} loaded only load the audio
- * @param {number=} start start of the 2nd cycle
- * @param {boolean=} voice
- * @param {number=} volume
+ * @param {Object} obj
+ * @param {string=} obj._ filename
+ * @param {string=} obj.ext
+ * @param {number=} obj.cycle end of the cycle
+ * @param {boolean=} obj.inside
+ * @param {boolean=} obj.interrupt play the sound again even if it's being played
+ * @param {Function=} obj.loaded only load the audio
+ * @param {number=} obj.start start of the 2nd cycle
+ * @param {boolean=} obj.voice
+ * @param {number=} obj.volume
  * @returns {boolean}
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded, start=0, voice, volume=1}={}) {
@@ -995,7 +1008,7 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
         if (!isNaN(cube.camera))
             volume *= Exp(-cube.camera * 0.0072);
 
-    volume *= Y.volume / 10;
+    volume *= Y['volume'] / 10;
     if ((inside || voice) && !cube.see)
         volume *= 0.05;
 
@@ -1083,7 +1096,7 @@ function gamepad_modal() {
  * @returns {boolean}
  */
 function is_overlay_visible() {
-    return Visible(Id('overlay'));
+    return !!Visible(Id('overlay'));
 }
 
 /**
@@ -1146,7 +1159,7 @@ function update_debug() {
         sep = ' : ';
 
     // gamepad
-    if (DEV.input) {
+    if (DEV['input']) {
         lines.push('&nbsp;');
         lines.push(`id=${gamepad_id}`);
         lines.push(`axes=${Format(axes, sep)}`);
@@ -1157,7 +1170,7 @@ function update_debug() {
     }
 
     // debugs
-    if (DEV.debug) {
+    if (DEV['debug']) {
         let debug_keys = Keys(debugs).sort();
         if (debug_keys.length) {
             lines.push('&nbsp;');

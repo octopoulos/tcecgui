@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-16
+// @version 2021-02-05
 // - fast javascript implementation, 30000x faster
 // - FRC support
 /*
@@ -344,19 +344,19 @@ let PIECE_SQUARES = [
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * MoveText
- * @typedef {Object} MoveText
- * @property {number} capture
- * @property {string} fen
- * @property {number} flag
- * @property {number} from
- * @property {string} m
- * @property {number} ply
- * @property {number} promote
- * @property {string} pv
- * @property {number} score
- * @property {number} to
- */
+ * @typedef {{
+ * capture: number,
+ * fen: string,
+ * flag: number,
+ * from: number,
+ * m: string,
+ * ply: number,
+ * promote: number,
+ * pv: string,
+ * score: number,
+ * to: number,
+ * }} */
+let MoveText;
 
 // null object
 let NULL_OBJ = {
@@ -502,7 +502,7 @@ var Chess = function(fen_) {
      * Add a top level move
      * @param {Move} move
      * @param {number} score
-     * @param {number[]} pv
+     * @param {Array<number>} pv
      */
     function addTopMove(move, score, pv) {
         let uci = ucifyMove(move),
@@ -536,7 +536,7 @@ var Chess = function(fen_) {
      * @param {number} beta
      * @param {number} depth
      * @param {number} max_depth
-     * @param {number[]} pv
+     * @param {Array<number>} pv
      * @returns {number}
      */
     function alphaBeta(alpha, beta, depth, max_depth, pv) {
@@ -675,7 +675,7 @@ var Chess = function(fen_) {
     /**
      * Uniquely identify ambiguous moves
      * @param {number} move
-     * @param {number[]} moves
+     * @param {Array<number>} moves
      * @returns {string}
      */
     function disambiguate(move, moves) {
@@ -715,8 +715,8 @@ var Chess = function(fen_) {
     /**
      * Find an entry in the transposition table
      * @param {number} hash
-     * @param {[number]} hit true if the hash matches
-     * @returns {number[] | null} hash, score, bound, depth, move, index
+     * @param {Array<number>} hit true if the hash matches
+     * @returns {Array<number>} hash, score, bound, depth, move, index
      */
     function findEntry(hash, hit) {
         if (!hash_mode)
@@ -746,7 +746,7 @@ var Chess = function(fen_) {
      * Mini max tree search
      * @param {number} depth
      * @param {number} max_depth
-     * @param {number[]} pv
+     * @param {Array<number>} pv
      * @returns {number}
      */
     function miniMax(depth, max_depth, pv) {
@@ -1233,7 +1233,7 @@ var Chess = function(fen_) {
     /**
      * Create the moves
      * @param {boolean} only_capture
-     * @returns {number[]} moves
+     * @returns {Array<number>} moves
      */
     function createMoves(only_capture) {
         let moves = [],
@@ -1580,7 +1580,7 @@ var Chess = function(fen_) {
     /**
      * Check if the king is attacked
      * @param {number} color 0, 1 + special cases: 2=same turn, 3=other turn
-     * @return {boolean} true if king is attacked
+     * @returns {boolean} true if king is attacked
      */
     function kingAttacked(color) {
         if (color > 1)
@@ -1924,7 +1924,7 @@ var Chess = function(fen_) {
      * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
      * 4. ... Ne7 is technically the valid SAN
      * @param {number} move
-     * @param {number[]} moves
+     * @param {Array<number>} moves
      * @returns {string}
      */
     function moveToSan(move, moves) {
@@ -1977,7 +1977,7 @@ var Chess = function(fen_) {
      * Parse a list of SAN moves + create FEN for each move
      * @param {string} text c2c4 a7a8a ...
      * @param {boolean} sloppy allow sloppy parser
-     * @returns {Object[]}
+     * @returns {Array<Object>}
      */
     function multiSan(multi, sloppy) {
         let result = [],
@@ -2002,7 +2002,7 @@ var Chess = function(fen_) {
     /**
      * Parse a list of UCI moves + create SAN + FEN for each move
      * @param {string} text c2c4 a7a8a ...
-     * @returns {Object[]}
+     * @returns {Array<Object>}
      */
     function multiUci(multi) {
         let result = [],
@@ -2028,7 +2028,7 @@ var Chess = function(fen_) {
      * - captures
      * - castle
      * - nb/r/q/r/p
-     * @param {number[]} moves
+     * @param {Array<number>} moves
      */
     function orderMoves(moves) {
         // use previous PV to reorder the first move
@@ -2177,7 +2177,7 @@ var Chess = function(fen_) {
     /**
      * Convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
      * @param {string} san Nf3, Nf3+?!
-     * @param {number[]} moves list of moves to match the san against
+     * @param {Array<number>} moves list of moves to match the san against
      * @param {boolean} sloppy allow sloppy parser
      * @returns {Object}
      */
@@ -2258,7 +2258,7 @@ var Chess = function(fen_) {
      * @param {string} move_string list of numbers
      * @param {string} pv_string previous pv
      * @param {boolean} scan_all_
-     * @returns {MoveText[]} updated moves
+     * @returns {Array<MoveText>} updated moves
      */
     function search(move_string, pv_string, scan_all_) {
         // 1) prepare search

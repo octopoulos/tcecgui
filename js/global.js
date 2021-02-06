@@ -1,10 +1,11 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 //
 // global variables/functions shared across multiple js files
 //
 // included after: common, engine
+// jshint -W069
 /*
 globals
 Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
@@ -38,6 +39,28 @@ let HOST_ARCHIVE,
     VERSION = '20210203',
     virtual_close_popups,
     xboards = {};
+
+/**
+ * @typedef {{
+ * agree: number,
+ * book: boolean,
+ * d: number,
+ * fen: string,
+ * invert: boolean,
+ * m: string,
+ * mb: string,
+ * mt: number,
+ * n: number,
+ * ply: number,
+ * pv: string,
+ * s: number,
+ * sd: number,
+ * tb: number,
+ * tl: number,
+ * wdl: string,
+ * wv: number,
+ * }} */
+let Move;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -178,7 +201,7 @@ function format_eval(value, process) {
     if (isNaN(float))
         return value;
 
-    let small_decimal = Y.small_decimal,
+    let small_decimal = Y['small_decimal'],
         text = float.toFixed(2);
 
     if (!process || !small_decimal)
@@ -204,7 +227,7 @@ function format_eval(value, process) {
  * @returns {string}
  */
 function format_unit(number, def, keep_decimal) {
-    return FormatUnit(number, def, keep_decimal, Y.SI_units);
+    return FormatUnit(number, def, keep_decimal, Y['SI_units']);
 }
 
 /**
@@ -303,7 +326,7 @@ function reset_defaults(pattern) {
  * Reset some settings if the version is too old
  */
 function reset_old_settings() {
-    let version = Undefined(Y.version, '');
+    let version = Undefined(Y['version'], '');
     if (version == VERSION) {
         save_option('version', VERSION);
         return;
@@ -323,8 +346,8 @@ function reset_old_settings() {
     if (version < '20210109e')
         keys.push('boom_threshold');
     if (version < '20210127b') {
-        save_default('arrow_color_01', Y.arrow_combine_01);
-        save_default('arrow_color_23', Y.arrow_combine_23);
+        save_default('arrow_color_01', Y['arrow_combine_01']);
+        save_default('arrow_color_23', Y['arrow_combine_23']);
     }
 
     let changes = [];
@@ -346,14 +369,14 @@ function reset_old_settings() {
  * @param {string} text
  * @param {boolean=} no_number remove the numbers
  * @param {number=} def_ply default ply
- * @returns {[number, string[]]}
+ * @returns {Array<*>}
  */
 function split_move_string(text, no_number, def_ply) {
     if (!text)
         return [-2, []];
 
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
-        ply = (parseInt(items[0]) - 1) * 2 + (items[1] == '...'? 1: 0);
+        ply = (parseInt(items[0]) - 1, 10) * 2 + (items[1] == '...'? 1: 0);
 
     if (no_number)
         items = items.filter(item => !IsDigit(item[0]) && item != '...');
@@ -365,7 +388,7 @@ function split_move_string(text, no_number, def_ply) {
  * @see https://github.com/official-stockfish/Stockfish/pull/2778
  * @param {number} cp
  * @param {number} ply
- * @returns {number[]} w,d,l
+ * @returns {!Array<number>} w,d,l
  */
 function stockfish_wdl(cp, ply) {
     let win = stockfish_win_rate_model(cp, ply),

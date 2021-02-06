@@ -1,7 +1,8 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-05
 //
+// jshint -W069
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Clamp, CreateNode,
@@ -119,7 +120,7 @@ function calculate_win(id, eval_, ply) {
 function check_first_num(num) {
     if (first_num >= 0 && first_num <= num)
         return;
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`first_num: ${first_num} => ${num}`);
 
     if (first_num >= 0) {
@@ -146,8 +147,7 @@ function check_first_num(num) {
  * @param {number} eval_
  * @returns {number}
  */
-function clamp_eval(eval_)
-{
+function clamp_eval(eval_) {
     if (NON_EVALS.has(eval_))
         return undefined;
 
@@ -172,10 +172,10 @@ function clamp_eval(eval_)
  * Create all chart data
  */
 function create_chart_data() {
-    let color0 = Y.graph_color_0,
-        color1 = Y.graph_color_1,
-        color2 = Y.graph_color_2,
-        color3 = Y.graph_color_3,
+    let color0 = Y['graph_color_0'],
+        color1 = Y['graph_color_1'],
+        color2 = Y['graph_color_2'],
+        color3 = Y['graph_color_3'],
         extra0 = mix_hex_colors(color0, '#007fff', 0.2),
         extra1 = mix_hex_colors(color1, '#007fff', 0.75);
 
@@ -231,15 +231,14 @@ function create_chart_data() {
  * - only linear but allow scale type registration.
  * - This allows extensions to exist solely for log scale for instance
  */
-function create_charts()
-{
+function create_charts() {
     // 1) create all charts
     new_chart('agree', true, FormatAxis, 0);
     new_chart('depth', true, FormatAxis, 10);
     new_chart('eval', true, FormatEval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
-        return (Y.graph_eval_mode == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
+        return (Y['graph_eval_mode'] == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
     });
     new_chart('mobil', true, FormatAxis, 0);
     new_chart('node', false, FormatAxis, 10, (item, data) => {
@@ -288,13 +287,13 @@ function create_charts()
 
     // settings
     save_option('scales');
-    DEFAULTS.scales = DEFAULT_SCALES;
+    DEFAULTS['scales'] = DEFAULT_SCALES;
 }
 
 /**
  * Fix labels that are undefined
  * - the last label needs to be set, otherwise there won't be any change
- * @param {string[]} labels
+ * @param {Array<string>} labels
  */
 function fix_labels(labels) {
     let num_label = labels.length;
@@ -410,14 +409,15 @@ function mark_ply_charts(ply, max_ply) {
  * - an element with id="chart-{name}" must exist
  * @param {string} name
  * @param {boolean} has_legend
- * @param {function|Object=} y_ticks format_unit, {...}
+ * @param {Function|Object=} y_ticks format_unit, {...}
  * @param {number=} scale 1:log, 2:custom, 4:eval
- * @param {function=} tooltip_callback
+ * @param {Function=} tooltip_callback
  * @param {Object=} dico
  * @param {number=} number number of axes
  */
 function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, number=1) {
-    let ticks_dico = {};
+    let scales = Y['scales'],
+        ticks_dico = {};
     if (y_ticks)
         ticks_dico.callback = y_ticks;
 
@@ -425,8 +425,8 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
     if (BEGIN_ZEROES[name])
         ticks_dico.beginAtZero = true;
 
-    if (Y.scales[name] == undefined)
-        Y.scales[name] = scale;
+    if (scales[name] == undefined)
+        scales[name] = scale;
     DEFAULT_SCALES[name] = scale;
 
     let axis_dico = {
@@ -477,7 +477,7 @@ function new_dataset(label, color, yaxis, dico) {
         data: [],
         fill: false,
         label: translate_expression(label),
-        lineTension: Y.graph_tension,
+        lineTension: Y['graph_tension'],
         pointHitRadius: 4,
         yAxisID: yaxis,
     };
@@ -517,7 +517,7 @@ function new_y_axis(id, y_ticks, dico) {
  * @param {string} section
  */
 function redraw_eval_charts(section) {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`REC: ${section}`);
     let board = xboards[section];
     if (!board)
@@ -529,8 +529,8 @@ function redraw_eval_charts(section) {
 
     // update existing moves + kibitzer evals (including next move)
     update_player_chart(name, moves);
-    update_live_chart(name, xboards.live0.evals[section], 2);
-    update_live_chart(name, xboards.live1.evals[section], 3);
+    update_live_chart(name, xboards['live0'].evals[section], 2);
+    update_live_chart(name, xboards['live1'].evals[section], 3);
 
     // update last received player eval, for the next move
     for (let id of [0, 1]) {
@@ -560,10 +560,9 @@ function reset_chart(chart, name) {
 /**
  * Reset all charts
  * @param {string} section
- * @param {boolean} reset_evals reset (live + pv) evals as well
+ * @param {boolean=} reset_evals reset (live + pv) evals as well
  */
-function reset_charts(section, reset_evals)
-{
+function reset_charts(section, reset_evals) {
     first_num = -1;
     Keys(charts).forEach(key => {
         reset_chart(charts[key], key);
@@ -588,10 +587,10 @@ function scale_boom(x) {
 /**
  * Set the y-axis scaling function (not custom)
  * @param {string} name
- * @returns {function[]}
+ * @returns {Array<Function>}
  */
 function set_scale_func(name) {
-    let funcs = (Y.scales[name] & 1)? [
+    let funcs = (Y['scales'][name] & 1)? [
         x => x > 0? Log10(x + 1): 0,
         y => y > 0? Pow(10, y) - 1: 0,
     ]: [x => x, y => y];
@@ -614,14 +613,14 @@ function slice_charts(last_ply) {
 
     let from = 0,
         to = last_ply - first_num + 2;
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`SC: ${last_ply} - ${first_num} + 2 = ${to}`);
 
     Keys(charts).forEach(key => {
         let chart = charts[key],
             data_c = chart_data[key];
 
-        if (DEV.chart && data_c.labels.length > to)
+        if (DEV['chart'] && data_c.labels.length > to)
             LS(`SC:${chart.name} : ${data_c.labels.length} > ${to}`);
 
         data_c.labels = data_c.labels.slice(from, to);
@@ -641,7 +640,7 @@ function update_chart(name) {
     if (!chart)
         return;
 
-    let scale = Y.scales[name];
+    let scale = Y['scales'][name];
     if (scale == 0 && name == 'eval')
         update_scale_linear(chart);
     if (scale & 2)
@@ -651,7 +650,7 @@ function update_chart(name) {
     else if (scale & 16)
         update_scale_boom(chart);
 
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`UC: ${name}`);
     chart.update();
 }
@@ -681,7 +680,7 @@ function update_chart_options(name, mode) {
             // + update agree
             let agree = (chart_data.agree || {}).datasets;
             if (agree && agree[1]) {
-                let mix = mix_hex_colors(Y.graph_color_2, Y.graph_color_3, 0.5);
+                let mix = mix_hex_colors(Y['graph_color_2'], Y['graph_color_3'], 0.5);
                 Assign(agree[1], {
                     backgroundColor: mix,
                     borderColor: mix,
@@ -703,14 +702,14 @@ function update_chart_options(name, mode) {
             let datasets = chart.data.datasets,
                 options = chart.options,
                 ratio = chart.canvas.parentNode.clientWidth / 300,
-                line_width = Y.graph_line * ratio,
-                point_radius = Y.graph_radius * ratio,
-                text_size = Min(Y.graph_text * ratio, 16);
+                line_width = Y['graph_line'] * ratio,
+                point_radius = Y['graph_radius'] * ratio,
+                text_size = Min(Y['graph_text'] * ratio, 16);
 
             for (let dataset of datasets)
                 Assign(dataset, {
                     borderWidth: line_width,
-                    lineTension: Y.graph_tension,
+                    lineTension: Y['graph_tension'],
                     pointRadius: dataset.borderDash? 0: point_radius,
                     showLine: line_width > 0,
                 });
@@ -732,11 +731,11 @@ function update_chart_options(name, mode) {
 /**
  * Update a chart from a Live source
  * @param {string} name agree, eval, speed
- * @param {Move[]} moves
- * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
+ * @param {Array<Move>} moves
+ * @param {number} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
 function update_live_chart(name, moves, id) {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`ULC: ${name} : ${id}`);
     if (!moves)
         return;
@@ -750,7 +749,7 @@ function update_live_chart(name, moves, id) {
 
     let dataset = data_c.datasets[id],
         data = dataset.data,
-        is_percent = (Y.graph_eval_mode == 'percent'),
+        is_percent = (Y['graph_eval_mode'] == 'percent'),
         labels = data_c.labels;
 
     for (let move of moves) {
@@ -795,11 +794,11 @@ function update_live_chart(name, moves, id) {
 
 /**
  * Update charts from a Live source
- * @param {Move[]} moves
- * @param {id} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
+ * @param {Array<Move>} moves
+ * @param {number} id can be: 0=white, 1=black, 2=live0, 3=live1, ...
  */
 function update_live_charts(moves, id) {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`ULC+: ${id}`);
     Keys(LIVE_GRAPHS).forEach(name => {
         let flag = LIVE_GRAPHS[name];
@@ -813,17 +812,17 @@ function update_live_charts(moves, id) {
  * Update the marker color+opacity
  */
 function update_markers() {
-    Style('.cmarker', `background:${Y.marker_color};opacity:${Y.marker_opacity}`);
+    Style('.cmarker', `background:${Y['marker_color']};opacity:${Y['marker_opacity']}`);
 }
 
 /**
  * Update a player chart using new moves
  * - designed for white & black, not live
  * @param {string} name
- * @param {Move[]} moves
+ * @param {Array<Move>} moves
  */
 function update_player_chart(name, moves) {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS(`UPC: ${name}`);
     if (!Visible(Id(`table-${name}`)))
         return;
@@ -834,7 +833,7 @@ function update_player_chart(name, moves) {
 
     let datasets = data.datasets,
         invert_wb = (name == 'mobil') * 1,
-        is_percent = (Y.graph_eval_mode == 'percent'),
+        is_percent = (Y['graph_eval_mode'] == 'percent'),
         labels = data.labels,
         num_move = moves.length,
         offset = 0;
@@ -917,10 +916,10 @@ function update_player_chart(name, moves) {
 /**
  * Update a player charts using new moves
  * - designed for white & black, not live
- * @param {Move[]} moves
+ * @param {Array<Move>} moves
  */
 function update_player_charts(moves) {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS('UPC+');
     Keys(charts).forEach(key => {
         update_player_chart(key, moves);
@@ -936,7 +935,7 @@ function update_player_charts(moves) {
  */
 function update_scale_boom(chart) {
     let scale = chart.scales['y-axis-0'];
-    scale.options.funcs = (Y.graph_eval_mode == 'percent') ? [
+    scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
     ]:[
@@ -973,18 +972,19 @@ function update_scale_custom(chart) {
 
     // no center?
     if (range[1] >= range[2]) {
+        let scales = Y['scales'];
         // auto => choose log if averages are very different
-        if (Y.scales[name] & 8) {
+        if (scales[name] & 8) {
             let sum0 = data0.reduce((a, b) => a + b),
                 sum1 = data1.reduce((a, b) => a + b),
                 delta = Abs((sum0 / (sum0 + sum1) - 0.5));
 
-            if (DEV.chart)
+            if (DEV['chart'])
                 LS(`USC: ${sum0} : ${sum1} : ${sum0/sum1} => ${delta}`);
             if (delta > 0.25)
-                Y.scales[name] |= 1;
+                scales[name] |= 1;
             else
-                Y.scales[name] &= ~1;
+                scales[name] &= ~1;
         }
         set_scale_func(name);
         return;
@@ -1028,7 +1028,7 @@ function update_scale_custom(chart) {
  */
 function update_scale_eval(chart) {
     let scale = chart.scales['y-axis-0'];
-    scale.options.funcs = (Y.graph_eval_mode == 'percent') ? [
+    scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
     ]:[
@@ -1042,7 +1042,7 @@ function update_scale_eval(chart) {
  * @param {Object} chart
  */
 function update_scale_linear(chart) {
-    let eval_clamp = Y.graph_eval_clamp,
+    let eval_clamp = Y['graph_eval_clamp'],
         scale = chart.scales['y-axis-0'];
     scale.options.funcs = (eval_clamp > 0)? [
         x => Clamp(x, -eval_clamp, eval_clamp),
@@ -1061,7 +1061,7 @@ function update_scale_linear(chart) {
  * - it might be bundled already => skip loading in that case
  */
 function init_graph() {
-    if (DEV.chart)
+    if (DEV['chart'])
         LS('IG');
     create_chart_data();
     create_charts();

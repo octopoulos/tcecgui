@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-01-05
+# @version 2021-02-03
 
 """
 Sync
@@ -11,7 +11,7 @@ from ftplib import FTP
 import gzip
 from logging import getLogger
 import os
-from os.path import join
+from os.path import abspath, join
 import re
 import shutil
 from subprocess import run
@@ -36,13 +36,13 @@ CSS_FILES = [
 ]
 
 JS_FILES = {
-    '4d': [
-        'libs/three',
-        'libs/stats',
-        'libs/GLTFLoader',
-        'libs/DRACOLoader',
-        'libs/camera-controls',
-    ],
+    # '4d': [
+    #     'libs/three',
+    #     'libs/stats',
+    #     'libs/GLTFLoader',
+    #     'libs/DRACOLoader',
+    #     'libs/camera-controls',
+    # ],
     'all': [
         'libs/socket.io.dev',
         ':common',
@@ -54,21 +54,17 @@ JS_FILES = {
         ':chart',
         ':graph',
         ':game',
-        ':temp',
         ':network',
         ':startup',
         ':config',
         'script',
     ],
-    # 'chart': [
-    #     'libs/chart-quick',
-    # ],
 }
 
 NEED_GZIPS = {
-    '4d_.js',
-    'ammo.wasm.js',
-    'ammo.wasm.wasm',
+    # '4d_.js',
+    # 'ammo.wasm.js',
+    # 'ammo.wasm.wasm',
     'bul.json',
     'chart_.js',
     'chart.min.js',
@@ -119,7 +115,8 @@ class Sync:
 
         self.clean = kwargs.get('clean')                                # type: bool
         self.debug = kwargs.get('debug')                                # type: bool
-        self.ftp_debug = default_int(self.kwargs.get('ftp_debug'), 0)   # type: int
+        self.ftp_debug = default_int(kwargs.get('ftp_debug'), 0)        # type: int
+        self.force = default_int(kwargs.get('force'), 0)                # type: int
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
         self.target = kwargs.get('target', 'index')                     # type: str
@@ -165,7 +162,7 @@ class Sync:
 
         # 2) locate the compiler
         for base in ('script', 'bin', '../bin'):
-            compiler = os.path.abspath(f'{BASE}/{base}/{COMPILER}')
+            compiler = abspath(f'{BASE}/{base}/{COMPILER}')
             if os.path.isfile(compiler):
                 break
         else:
@@ -230,7 +227,7 @@ class Sync:
         """@import {common.js}
         """
         source = match.group(1)
-        filename = join(JS_FOLDER, source)
+        filename = abspath(f'{JS_FOLDER}/{source}')
         data = read_text_safe(filename) or ''
         if source.endswith('.js'):
             data = re.sub(r'["\']use strict["\'];?', '', data)
@@ -267,8 +264,8 @@ class Sync:
             all_js = join(JS_FOLDER, f'{js_output}.js')
             all_min_js = join(JS_FOLDER, f'{js_output}_.js')
             # common/engine changed => need to update, even though we're not using those files
-            js_dates = [os.path.abspath(f"{JS_FOLDER}{js_file.strip(':')}.js") for js_file in js_files]
-            js_names = [os.path.abspath(f'{JS_FOLDER}{js_file}.js') for js_file in js_files if js_file[0] != ':']
+            js_dates = [abspath(f"{JS_FOLDER}{js_file.strip(':')}.js") for js_file in js_files]
+            js_names = [abspath(f'{JS_FOLDER}{js_file}.js') for js_file in js_files if js_file[0] != ':']
 
             if js_output == 'all':
                 # script_js = join(JS_FOLDER, 'script.js')
@@ -278,11 +275,12 @@ class Sync:
 
             # skip?
             update = True
-            if os.path.isfile(all_min_js) and os.path.isfile(all_js):
-                all_time = os.path.getmtime(all_min_js)
-                update = False
-                for js_date in js_dates + extras:
-                    update |= os.path.isfile(js_date) and os.path.getmtime(js_date) >= all_time
+            if not self.force:
+                if os.path.isfile(all_min_js) and os.path.isfile(all_js):
+                    all_time = os.path.getmtime(all_min_js)
+                    update = False
+                    for js_date in js_dates + extras:
+                        update |= os.path.isfile(js_date) and os.path.getmtime(js_date) >= all_time
 
             if not update:
                 pinfo('J', end='')
@@ -325,7 +323,7 @@ class Sync:
         # 2) minimise CSS
         all_css = join(CSS_FOLDER, 'all.css')
         all_min_css = join(CSS_FOLDER, 'all_.css')
-        css_names = [os.path.abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
+        css_names = [abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
 
         update = True
         if os.path.isfile(all_min_css) and os.path.isfile(all_css):
@@ -494,6 +492,7 @@ def add_arguments_sync(parser: ArgumentParser):
     add('--advanced', action='store_true', help='advanced javascript compilation')
     add('--clean', action='store_true', help='delete all .gz files')
     add('--ftp-debug', nargs='?', default=0, const=1, type=int, help='ftp debug level')
+    add('--force', nargs='?', default=0, const=1, type=int, help='force compilation')
     add('--host', nargs='?', default='/', help='host, ex: /seriv/')
     add('--no-compress', nargs='?', default=0, const=1, type=int, help="don't compress JS")
     add('--sync', action='store_true', help='create the index.html')

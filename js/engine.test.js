@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-03
 //
 /*
 globals
@@ -230,8 +230,8 @@ Y.areas = {
 
 // find_area
 [
-    ['test', ['', -1, null]],
-    ['shortcut_2', ['right0', 2, ['shortcut_2', 1, 1]]],
+    ['test', {id: -1}],
+    ['shortcut_2', {area: ['shortcut_2', 1, 1], id: 2, key: 'right0'}],
 ].forEach(([name, answer], id) => {
     test(`find_area:${id}`, () => {
         expect(find_area(name)).toEqual(answer);
