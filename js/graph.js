@@ -8,7 +8,7 @@ globals
 _, A, Abs, Assign, C, calculate_feature_q, Clamp, CreateNode,
 DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
 Log, Log10, LS, Max, Min, mix_hex_colors, Pad, Pow, require, Round,
-S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y
+S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
 */
 'use strict';
 
@@ -26,8 +26,8 @@ let CHART_JS = 'js/libs/chart-quick.js',
     NON_EVALS = new Set([undefined, null, '', '-', 'book']);
 
 let BEGIN_ZEROES = {
-        eval: 1,
-        time: 1,
+        'eval': 1,
+        'time': 1,
     },
     cached_percents = {},
     chart_data = {},
@@ -68,8 +68,8 @@ let BEGIN_ZEROES = {
     FormatEval = value => value? value.toFixed(2): 0,
     // &1: no_kibitzer
     LIVE_GRAPHS = {
-        eval: 0,
-        speed: 1,
+        'eval': 0,
+        'speed': 1,
     },
     queued_charts = [],
     SUB_BOARDS = ['live0', 'live1', 'pv0', 'pv1'];
@@ -180,35 +180,35 @@ function create_chart_data() {
         extra1 = mix_hex_colors(color1, '#007fff', 0.75);
 
     let datasets = {
-        agree: [
+        'agree': [
             new_dataset('{white} + {black}', color0),
             new_dataset('{blue} + {red}', mix_hex_colors(color2, color3, 0.5)),
         ],
-        depth: [
+        'depth': [
             new_dataset('depth', color0),
             new_dataset('depth', color1),
             new_dataset('selective', extra0),
             new_dataset('selective', extra1),
         ],
-        eval: ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
-        mobil: [
+        'eval': ENGINE_NAMES.map((name, id) => new_dataset(name, Y[`graph_color_${id}`])),
+        'mobil': [
             new_dataset('mobility', color0),
             new_dataset('mobility', color1),
             new_dataset('r-Mobility', '#236ad6', '', {borderDash: [10, 5]}),
         ],
-        node: [
+        'node': [
             new_dataset('w', color0),
             new_dataset('b', color1),
         ],
-        speed: [
+        'speed': [
             new_dataset('w', color0),
             new_dataset('b', color1),
         ],
-        tb: [
+        'tb': [
             new_dataset('w', color0),
             new_dataset('b', color1),
         ],
-        time: [
+        'time': [
             new_dataset('time', color0),
             new_dataset('time', color1),
             new_dataset('left~2', extra0, 'y-axis-1'),
@@ -238,7 +238,7 @@ function create_charts() {
     new_chart('eval', true, FormatEval, 4, (item, data) => {
         let dico = get_tooltip_data(item, data),
             eval_ = dico.eval;
-        return (Y['graph_eval_mode'] == 'percent')? calculate_win(item.datasetIndex, eval_, dico.ply): eval_;
+        return (Y['graph_eval_mode'] == 'percent')? calculate_win(item.datasetIndex, eval_, dico['ply']): eval_;
     });
     new_chart('mobil', true, FormatAxis, 0);
     new_chart('node', false, FormatAxis, 10, (item, data) => {
@@ -272,7 +272,7 @@ function create_charts() {
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards[Y.s].set_ply(dico.ply, {manual: true});
+                xboards[Y.s].set_ply(dico['ply'], {manual: true});
         });
 
         // add markers
@@ -756,7 +756,7 @@ function update_live_chart(name, moves, id) {
         if (!move)
             continue;
 
-        let eval_ = move.eval,
+        let eval_ = move['eval'],
             ply = get_move_ply(move),
             num = ply;
         if (ply < -1)
@@ -768,7 +768,7 @@ function update_live_chart(name, moves, id) {
 
         // check update_player_chart to understand
         let dico = {
-            ply: ply,
+            'ply': ply,
             x: num / 2 + 1,
         };
         switch (name) {
@@ -780,8 +780,8 @@ function update_live_chart(name, moves, id) {
             dico.y = is_percent? calculate_win(id, eval_, ply): clamp_eval(eval_);
             break;
         case 'speed':
-            dico.nodes = move.nodes;
-            dico.y = move.nps;
+            dico.nodes = move['nodes'];
+            dico.y = move['nps'];
             break;
         }
 
@@ -857,8 +857,8 @@ function update_player_chart(name, moves) {
         labels[num2] = num / 2 + 1;
 
         let dico = {
-                x: num / 2 + 1,     // move number
-                ply: ply,           // used for jumping to the position
+            'ply': ply,           // used for jumping to the position
+            x: num / 2 + 1,     // move number
             },
             id = (ply + invert_wb) & 1;
         if (id < 0)
@@ -870,15 +870,15 @@ function update_player_chart(name, moves) {
             dico.y = move.agree;
             break;
         case 'depth':
-            if (!isNaN(move.sd))
-               datasets[2 + (ply & 1)].data[num2] = Assign({y: move.sd}, dico);
-            dico.y = move.d;
+            if (!isNaN(move['sd']))
+               datasets[2 + (ply & 1)].data[num2] = Assign({y: move['sd']}, dico);
+            dico.y = move['d'];
             break;
         case 'eval':
-            if (move.wv == '-')
+            if (move['wv'] == '-')
                 continue;
-            dico.eval = move.wv;
-            dico.y = is_percent? calculate_win(id, move.wv, ply): clamp_eval(move.wv);
+            dico.eval = move['wv'];
+            dico.y = is_percent? calculate_win(id, move['wv'], ply): clamp_eval(move['wv']);
             break;
         case 'mobil':
             if (isNaN(move.mobil))
@@ -888,19 +888,19 @@ function update_player_chart(name, moves) {
             dico.y = Abs(move.mobil);
             break;
         case 'node':
-            dico.nodes = move.n;
-            dico.y = move.n;
+            dico.nodes = move['n'];
+            dico.y = move['n'];
             break;
         case 'speed':
-            dico.nodes = move.n;
-            dico.y = move.s;
+            dico.nodes = move['n'];
+            dico.y = move['s'];
             break;
         case 'tb':
-            dico.y = move.tb;
+            dico.y = move['tb'];
             break;
         case 'time':
-            datasets[2 + (ply & 1)].data[num2] = Assign({y: move.tl / 1000}, dico);
-            dico.y = move.mt / 1000;
+            datasets[2 + (ply & 1)].data[num2] = Assign({y: move['tl'] / 1000}, dico);
+            dico.y = move['mt'] / 1000;
             break;
         }
 
@@ -1065,7 +1065,7 @@ function init_graph() {
         LS('IG');
     create_chart_data();
     create_charts();
-    update_player_charts(xboards[Y.x].moves);
+    update_player_charts(xboards[y_x].moves);
 
     for (let [name, moves, id] of queued_charts)
         update_live_chart(name, moves, id);

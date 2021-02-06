@@ -8,7 +8,7 @@ expect, global, require, test
 'use strict';
 
 let {Assign, FromTimestamp, IsArray, Keys, Undefined} = require('./common.js'),
-    {DEV, load_defaults, Y} = require('./engine.js'),
+    {DEV, load_defaults, set_section, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         check_boom, check_explosion, check_explosion_boom, copy_pgn, create_boards, create_game_link,
@@ -705,6 +705,8 @@ function init_players(ply, players, evals) {
         main.moves.length = ply;
         Assign(main, states);
         Assign(Y, y);
+        if (y.x)
+            set_section(y.x);
 
         expect(check_explosion(!!is_boom)).toEqual(answer);
         expect(main.exploded).toBeCloseTo(answer_boomed, 3);
@@ -732,6 +734,8 @@ function init_players(ply, players, evals) {
         init_players(ply, players, evals);
         main.moves.length = ply;
         Assign(Y, y);
+        if (y.x)
+            set_section(y.x);
         if (reset)
             main.seens.clear();
 
@@ -811,7 +815,7 @@ function init_players(ply, players, evals) {
     ],
 ].forEach(([start_fen, main_moves, board_moves, fen, answer], id) => {
     test(`copy_pgn:${id}`, () => {
-        Y.x = 'live';
+        set_section('live');
         for (let [name, moves] of [['live', main_moves], ['pv0', board_moves]]) {
             let board = xboards[name];
             board.start_fen = start_fen;
@@ -2299,6 +2303,8 @@ function init_players(ply, players, evals) {
 ].forEach(([states, section, data, answer], id) => {
     test(`update_player_eval:${id}`, () => {
         Assign(Y, states);
+        if (states.x)
+            set_section(states.x);
         expect(update_player_eval(section, data)).toEqual(answer);
     });
 });

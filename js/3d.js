@@ -11,7 +11,8 @@ globals
 _, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CameraControls, clear_timeout,
 DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, Id, IsString, KEY_TIMES, Keys, KEYS,
 load_library, LS, navigator, Now, require,
-S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes, Vector2:true, Visible, window, Y
+S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes,
+Vector2:true, Visible, window, Y, y_x
 */
 'use strict';
 
@@ -819,7 +820,7 @@ function update_light_settings() {
 function update_renderer() {
     if (renderer) {
         let ratio = 4;
-        if (Y.x == 'play')
+        if (y_x == 'play')
             ratio = DefaultInt((Y['resolution'] || '').split(':').slice(-1)[0], 2);
 
         if (three_loaded)
