@@ -83,17 +83,17 @@ function think(engine, fen, moves, pv_string, scan_all) {
     // 2) results
     let pawn_score = PIECE_SCORES[PAWN];
     for (let move of objs) {
-        move.m = `${SQUARES_INV[move.from]}${SQUARES_INV[move.to]}`;
-        let score = Undefined(move.score, 0);
+        move['m'] = `${SQUARES_INV[move['from']]}${SQUARES_INV[move['to']]}`;
+        let score = Undefined(move['score'], 0);
         if (Abs(score) >= SCORE_MATING)
             score /= 100;
         else {
             score /= pawn_score;
             score +=GaussianRandom() * 0.2;
         }
-        move.score = score;
+        move['score'] = score;
     }
-    objs.sort((a, b) => b.score - a.score);
+    objs.sort((a, b) => b['score'] - a['score']);
     return [objs, elapsed, chess.nodes(), chess.avgDepth(), chess.selDepth(), ArrayJS(chess.hashStats())];
 }
 
@@ -105,18 +105,18 @@ self.onconnect = () => {
 };
 
 self.onmessage = e => {
-    let data = e.data,
-        func = data.func;
+    let data = e['data'],
+        func = data['func'];
 
     // 1) create the chess engine
-    let chess = create_chess(data.engine);
-    if (data.options)
-        chess.configure(data.frc, data.options, data.depth);
+    let chess = create_chess(data['engine']);
+    if (data['options'])
+        chess.configure(data['frc'], data['options'], data['depth']);
 
     // 2) handle the messages
     if (func == 'config') {
-        if (data.dev)
-            DEV = data.dev;
+        if (data['dev'])
+            DEV = data['dev'];
     }
     if (DEV['worker']) {
         LS('worker got message:');
@@ -124,17 +124,17 @@ self.onmessage = e => {
     }
     if (func == 'think') {
         let [moves, elapsed, nodes, avg_depth, sel_depth, hash_stats] =
-            think(data.engine, data.fen, data.moves, data.pv_string, data.scan_all);
+            think(data['engine'], data['fen'], data['moves'], data['pv_string'], data['scan_all']);
         self.postMessage({
-            avg_depth: avg_depth,
-            elapsed: elapsed,
-            fen: data.fen,
-            hash_stats: hash_stats,
-            id: data.id,
-            moves: moves,
-            nodes: nodes,
-            sel_depth: sel_depth,
-            suggest: data.suggest,
+            'avg_depth': avg_depth,
+            'elapsed': elapsed,
+            'fen': data.fen,
+            'hash_stats': hash_stats,
+            'id': data.id,
+            'moves': moves,
+            'nodes': nodes,
+            'sel_depth': sel_depth,
+            'suggest': data.suggest,
         });
     }
 };

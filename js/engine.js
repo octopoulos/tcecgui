@@ -157,7 +157,8 @@ let __PREFIX = '_',
     X_SETTINGS = {},
     Y = {},                                             // params
     y_index = -1,
-    y_states = [];
+    y_states = [],
+    y_x = '';
 
 /** @typedef {{x:number, y:number}} */
 let Vector2;
@@ -241,6 +242,16 @@ function create_field_value(text) {
     // startTime => start_time
     field = Lower(field.replace(/([a-z])([A-Z])/g, (_match, p1, p2) => `${p1}_${p2}`));
     return [field.replace(/[{}]/g, '').replace(/[_() ./#-]+/g, '_').replace(/^_+|_+$/, ''), text];
+}
+
+/**
+ * Set the current section
+ * @param {string} section
+ */
+function set_section(section) {
+    y_x = section;
+    if (IS_NODE)
+        IS_NODE.y_x = y_x;
 }
 
 // SETTINGS
@@ -1590,7 +1601,7 @@ function fill_combo(letter, values, select, dico, no_translate) {
         group = false,
         lines = [];
 
-    for (let value_ of /** @type {!Array<string>} */(values)) {
+    for (let value_ of /** @type {!Array<string|number>} */(values)) {
         let selected,
             items = (value_ + '').split('='),
             text = items.slice(-1)[0],
@@ -1774,6 +1785,10 @@ function check_hash(no_special) {
     sanitise_data();
     parse_dev();
 
+    // section
+    if (dico['x'] != undefined)
+        set_section(dico['x']);
+
     if (!no_special && virtual_check_hash_special)
         virtual_check_hash_special(dico);
 }
@@ -1858,7 +1873,7 @@ function load_library(url, callback, extra) {
 function push_state(query, replace, query_key='hash', go=undefined) {
     query = query || {};
     let changes = [],
-        state_keys = STATE_KEYS[Y.x] || STATE_KEYS['_'] || [],
+        state_keys = STATE_KEYS[y_x] || STATE_KEYS['_'] || [],
         new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x =>
             ({[x]: Undefined(query[x], Y[x])})
         )),
@@ -2715,7 +2730,7 @@ function move_pane(node, dir) {
 function populate_areas() {
     let areas = Y['areas'] || {},
         default_areas = DEFAULTS['areas'],
-        section = Y.x,
+        section = y_x,
         hides = Assign({}, HIDES[section]);
 
     if (virtual_hide_areas)
@@ -3120,6 +3135,7 @@ if (typeof exports != 'undefined') {
         sanitise_data: sanitise_data,
         save_default: save_default,
         save_option: save_option,
+        set_section: set_section,
         show_settings: show_settings,
         socket: socket,
         TAB_NAMES: TAB_NAMES,

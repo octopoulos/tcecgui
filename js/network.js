@@ -11,7 +11,7 @@ globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes,
 LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
-update_pgn, update_player_eval, update_table, update_twitch, window, Y
+update_pgn, update_player_eval, update_table, update_twitch, window, Y, y_x
 */
 'use strict';
 
@@ -31,8 +31,8 @@ let log_time = 0,
     num_listen = 0,
     prev_room = 0,
     socket_data = {
-        archive: {},
-        live: {},
+        'archive': {},
+        'live': {},
     },
     socket_ready = false,
     TIMEOUT_check = 60,
@@ -127,7 +127,7 @@ function event_sockets() {
     socket.on('tournament', data => {
         log_socket('tournament', data, true);
         analyse_tournament('live', data);
-        if (Y.x == 'live')
+        if (y_x == 'live')
             update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
     });
     socket.on('updeng', data => {
@@ -221,7 +221,7 @@ function log_socket(name, data, cache) {
         LS(data);
     }
     if (cache)
-        socket_data[Y.x][name] = data;
+        socket_data[y_x][name] = data;
 }
 
 /**
@@ -273,7 +273,7 @@ function update_twitch(dark, chat_url, only_resize) {
 
     let right = Id('right'),
         active = _('.active', right),
-        active_name = active? active.dataset.x: '',
+        active_name = active? active.dataset['x']: '',
         has_narrow = HasClass(right, 'narrow'),
         has_wide = HasClass(right, 'wide'),
         need_narrow = (active_name == 'chat' && !src),

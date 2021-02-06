@@ -3,6 +3,7 @@
 // @version 2021-02-05
 // - fast javascript implementation, 30000x faster
 // - FRC support
+// jshint -W069
 /*
 globals
 Abs, Assign, DefaultInt, exports, Floor, global, Lower, LS, Max, Min, require
@@ -216,43 +217,43 @@ let MOBILITY_LIMITS = I8([
 
 // extras
 let EVAL_MODES = {
-        att: 1 + 2 + 4,
-        hce: 1 + 2,
-        mat: 1,
-        mob: 2,
-        nn: 1 + 2 + 4 + 32,
-        null: 0,
-        sq: 1 + 2 + 4 + 8,
+        'att': 1 + 2 + 4,
+        'hce': 1 + 2,
+        'mat': 1,
+        'mob': 2,
+        'nn': 1 + 2 + 4 + 32,
+        'null': 0,
+        'sq': 1 + 2 + 4 + 8,
     },
     // piece names for print
     PIECES = {
-        P: 1,
-        N: 2,
-        B: 3,
-        R: 4,
-        Q: 5,
-        K: 6,
-        p: 9,
-        n: 10,
-        b: 11,
-        r: 12,
-        q: 13,
-        k: 14,
+        'P': 1,
+        'N': 2,
+        'B': 3,
+        'R': 4,
+        'Q': 5,
+        'K': 6,
+        'p': 9,
+        'n': 10,
+        'b': 11,
+        'r': 12,
+        'q': 13,
+        'k': 14,
     },
     SEARCH_MODES = {
-        ab: 2,
-        mm: 1,
-        rnd: 0,
+        'ab': 2,
+        'mm': 1,
+        'rnd': 0,
     },
     SQUARES = {
-        a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, f8:   5, g8:   6, h8:   7,
-        a7:  16, b7:  17, c7:  18, d7:  19, e7:  20, f7:  21, g7:  22, h7:  23,
-        a6:  32, b6:  33, c6:  34, d6:  35, e6:  36, f6:  37, g6:  38, h6:  39,
-        a5:  48, b5:  49, c5:  50, d5:  51, e5:  52, f5:  53, g5:  54, h5:  55,
-        a4:  64, b4:  65, c4:  66, d4:  67, e4:  68, f4:  69, g4:  70, h4:  71,
-        a3:  80, b3:  81, c3:  82, d3:  83, e3:  84, f3:  85, g3:  86, h3:  87,
-        a2:  96, b2:  97, c2:  98, d2:  99, e2: 100, f2: 101, g2: 102, h2: 103,
-        a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
+        'a8':   0, 'b8':   1, 'c8':   2, 'd8':   3, 'e8':   4, 'f8':   5, 'g8':   6, 'h8':   7,
+        'a7':  16, 'b7':  17, 'c7':  18, 'd7':  19, 'e7':  20, 'f7':  21, 'g7':  22, 'h7':  23,
+        'a6':  32, 'b6':  33, 'c6':  34, 'd6':  35, 'e6':  36, 'f6':  37, 'g6':  38, 'h6':  39,
+        'a5':  48, 'b5':  49, 'c5':  50, 'd5':  51, 'e5':  52, 'f5':  53, 'g5':  54, 'h5':  55,
+        'a4':  64, 'b4':  65, 'c4':  66, 'd4':  67, 'e4':  68, 'f4':  69, 'g4':  70, 'h4':  71,
+        'a3':  80, 'b3':  81, 'c3':  82, 'd3':  83, 'e3':  84, 'f3':  85, 'g3':  86, 'h3':  87,
+        'a2':  96, 'b2':  97, 'c2':  98, 'd2':  99, 'e2': 100, 'f2': 101, 'g2': 102, 'h2': 103,
+        'a1': 112, 'b1': 113, 'c1': 114, 'd1': 115, 'e1': 116, 'f1': 117, 'g1': 118, 'h1': 119
     };
 
 // piece-square for move ordering
@@ -360,16 +361,16 @@ let MoveText;
 
 // null object
 let NULL_OBJ = {
-    capture: 0,
-    fen: '',
-    flag: 0,
-    from: 0,
-    m: '',
-    ply: -2,
-    promote: 0,
-    pv: '',
-    score: 0,
-    to: 0,
+    'capture': 0,
+    'fen': '',
+    'flag': 0,
+    'from': 0,
+    'm': '',
+    'ply': -2,
+    'promote': 0,
+    'pv': '',
+    'score': 0,
+    'to': 0,
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -500,7 +501,7 @@ var Chess = function(fen_) {
 
     /**
      * Add a top level move
-     * @param {Move} move
+     * @param {number} move
      * @param {number} score
      * @param {Array<number>} pv
      */
@@ -514,10 +515,10 @@ var Chess = function(fen_) {
             }
 
         let obj = unpackMove(move);
-        obj.m = uci;
-        obj.pv = pv_string;
-        obj.score = score;
-        obj.score2 = score;
+        obj['m'] = uci;
+        obj['pv'] = pv_string;
+        obj['score'] = score;
+        obj['score2'] = score;
         first_objs.push(obj);
 
         if (debug & 2)
@@ -1846,8 +1847,8 @@ var Chess = function(fen_) {
     function moveObject(obj, decorate) {
         let flag = 0,
             move = 0,
-            move_from = obj.from,
-            move_to = obj.to,
+            move_from = obj['from'],
+            move_to = obj['to'],
             moves = legalMoves(),
             san = '';
 
@@ -1883,7 +1884,7 @@ var Chess = function(fen_) {
                 if (move_from != MoveFrom(move2) || move_to != MoveTo(move2))
                     continue;
                 let promote = MovePromote(move2);
-                if (promote && obj.promote != promote)
+                if (promote && obj['promote'] != promote)
                     continue;
 
                 move = move2;
@@ -1894,8 +1895,8 @@ var Chess = function(fen_) {
         // no suitable move?
         if (move && makeMove(move)) {
             obj = unpackMove(move);
-            obj.m = decorate? decorateSan(san): san;
-            obj.ply = fen_ply + ply;
+            obj['m'] = decorate? decorateSan(san): san;
+            obj['ply'] = fen_ply + ply;
         }
         return Assign({}, NULL_OBJ, obj);
     }
@@ -1910,10 +1911,10 @@ var Chess = function(fen_) {
     function moveSan(text, decorate, sloppy) {
         let moves = legalMoves(),
             obj = sanToObject(text, moves, sloppy);
-        if (obj.from != obj.to) {
+        if (obj['from'] != obj['to']) {
             makeMove(packObject(obj));
             if (decorate)
-                obj.m = decorateSan(obj.m);
+                obj['m'] = decorateSan(obj['m']);
         }
         return obj;
     }
@@ -1966,9 +1967,9 @@ var Chess = function(fen_) {
      */
     function moveUci(text, decorate) {
         let obj = {
-            from: anToSquare(text.substr(0, 2)),
-            promote: text[4]? TYPE(PIECES[text[4]]): 0,
-            to: anToSquare(text.substr(2, 2)),
+            'from': anToSquare(text.substr(0, 2)),
+            'promote': text[4]? TYPE(PIECES[text[4]]): 0,
+            'to': anToSquare(text.substr(2, 2)),
         };
         return moveObject(obj, decorate);
     }
@@ -1988,12 +1989,12 @@ var Chess = function(fen_) {
 
             let moves = legalMoves(),
                 obj = sanToObject(text, moves, sloppy);
-            if (obj.from == obj.to)
+            if (obj['from'] == obj['to'])
                 break;
             makeMove(packObject(obj));
-            obj.fen = createFen();
-            obj.ply = fen_ply + ply;
-            obj.score = 0;
+            obj['fen'] = createFen();
+            obj['ply'] = fen_ply + ply;
+            obj['score'] = 0;
             result.push(obj);
         }
         return result;
@@ -2012,12 +2013,12 @@ var Chess = function(fen_) {
                 continue;
 
             let obj = moveUci(text, true);
-            if (obj.from == obj.to || !obj.m)
+            if (obj['from'] == obj['to'] || !obj['m'])
                 break;
 
-            obj.fen = createFen();
-            obj.ply = fen_ply + ply;
-            obj.score = 0;
+            obj['fen'] = createFen();
+            obj['ply'] = fen_ply + ply;
+            obj['score'] = 0;
             result.push(obj);
         }
         return result;
@@ -2061,11 +2062,11 @@ var Chess = function(fen_) {
      */
     function packObject(obj) {
         let value = 0
-            + (obj.capture << 10)
-            + (obj.flag << 13)
-            + ((obj.from & 127) << 15)
-            + (obj.promote << 22)
-            + ((obj.to & 127) << 25);
+            + (obj['capture'] << 10)
+            + (obj['flag'] << 13)
+            + ((obj['from'] & 127) << 15)
+            + (obj['promote'] << 22)
+            + ((obj['to'] & 127) << 25);
         return value >>> 0;
     }
 
@@ -2187,8 +2188,8 @@ var Chess = function(fen_) {
         for (let move of moves)
             if (clean == cleanSan(moveToSan(move, moves))) {
                 let obj = unpackMove(move);
-                obj.m = san;
-                obj.ply = fen_ply + ply + 1;
+                obj['m'] = san;
+                obj['ply'] = fen_ply + ply + 1;
                 return Assign({}, NULL_OBJ, obj);
             }
 
@@ -2244,8 +2245,8 @@ var Chess = function(fen_) {
                     && (from_rank == EMPTY || from_rank == Rank(move_from))
                     && (!promote || promote == MovePromote(move))) {
                 let obj = unpackMove(move);
-                obj.m = moveToSan(move, moves);
-                obj.ply = fen_ply + ply + 1;
+                obj['m'] = moveToSan(move, moves);
+                obj['ply'] = fen_ply + ply + 1;
                 return Assign({}, NULL_OBJ, obj);
             }
         }
@@ -2275,7 +2276,7 @@ var Chess = function(fen_) {
 
         // 3) add unseen moves with a None score
         if (!scan_all) {
-            let seens = Assign({}, ...first_objs.map(obj => ({[obj.m]: 1})));
+            let seens = Assign({}, ...first_objs.map(obj => ({[obj['m']]: 1})));
             for (let move of first_moves) {
                 let uci = ucifyMove(move);
                 if (!seens[uci])
@@ -2327,9 +2328,9 @@ var Chess = function(fen_) {
     function ucifyObject(obj) {
         if (!obj)
             return '???';
-        let uci = squareToAn(obj.from, false) + squareToAn(obj.to, false);
-        if (obj.promote)
-            uci += PIECE_LOWER[obj.promote];
+        let uci = squareToAn(obj['from'], false) + squareToAn(obj['to'], false);
+        if (obj['promote'])
+            uci += PIECE_LOWER[obj['promote']];
         return uci;
     }
 
@@ -2437,16 +2438,16 @@ var Chess = function(fen_) {
      */
     function unpackMove(move) {
         return {
-            capture: MoveCapture(move),
-            fen: '',
-            flag: MoveFlag(move),
-            from: MoveFrom(move),
-            m: '',
-            ply: -2,
-            promote: MovePromote(move),
-            pv: '',
-            score: move & 1023,
-            to: MoveTo(move),
+            'capture': MoveCapture(move),
+            'fen': '',
+            'flag': MoveFlag(move),
+            'from': MoveFrom(move),
+            'm': '',
+            'ply': -2,
+            'promote': MovePromote(move),
+            'pv': '',
+            'score': move & 1023,
+            'to': MoveTo(move),
         };
     }
 

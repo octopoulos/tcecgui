@@ -36,29 +36,22 @@ let HOST_ARCHIVE,
         twitch: 5 * 1000,
         users: 5 * 1000,
     },
-    VERSION = '20210203',
+    VERSION = '20210205',
     virtual_close_popups,
     xboards = {};
 
 /**
  * @typedef {{
+ * _fixed: number,
  * agree: number,
- * book: boolean,
- * d: number,
- * fen: string,
+ * fen0: string,
+ * goal: number,
+ * id: number,
  * invert: boolean,
- * m: string,
- * mb: string,
- * mt: number,
- * n: number,
- * ply: number,
- * pv: string,
- * s: number,
- * sd: number,
- * tb: number,
- * tl: number,
- * wdl: string,
- * wv: number,
+ * mobil: number,
+ * node_from: Node,
+ * node_to: Node,
+ * seen: number,
  * }} */
 let Move;
 
@@ -143,47 +136,47 @@ function close_popups() {
  * @param {Move} move
  */
 function fix_move_format(move) {
-    if (move._fixed || move.book)
+    if (move._fixed || move['book'])
         return;
 
     // fix eval
-    if (move.wv == undefined)
-        move.wv = move.ev;
+    if (move['wv'] == undefined)
+        move['wv'] = move['ev'];
 
     // fix move time
-    if (isNaN(move.mt) && move.mt)
-        move.mt = parse_time(move.mt) * 1000;
+    if (isNaN(move['mt']) && move['mt'])
+        move['mt'] = parse_time(move['mt']) * 1000;
 
     // fix time left
-    if (isNaN(move.tl) && move.tl)
-        move.tl = parse_time(move.tl) * 1000;
+    if (isNaN(move['tl']) && move['tl'])
+        move['tl'] = parse_time(move['tl']) * 1000;
 
     // fix speed
-    if (isNaN(move.s) && move.s) {
-        let items = move.s.split(' ');
+    if (isNaN(move['s']) && move['s']) {
+        let items = move['s'].split(' ');
         if (items.length >= 2)
-            move.s = parseFloat(items[0]) * ({k: 1000, M: 1e6}[items[1][0]] || 1);
+            move['s'] = parseFloat(items[0]) * ({k: 1000, M: 1e6}[items[1][0]] || 1);
     }
 
     // fix nodes
     // note: it's an approximation, not reliable at low values => skipped there
-    if (move.n == undefined && move.mt >= 2000)
-        move.n = Floor(move.s / move.mt * 1000 + 0.5);
+    if (move['n'] == undefined && move['mt'] >= 2000)
+        move['n'] = Floor(move['s'] / move['mt'] * 1000 + 0.5);
 
     // fix too fast speed: > 10Bnps
-    if (move.s > 1e10) {
-        move.n = '-';
-        move.s = '-';
+    if (move['s'] > 1e10) {
+        move['n'] = '-';
+        move['s'] = '-';
     }
-    else if (move.n) {
+    else if (move['n']) {
         // fix missing speed
-        if (!move.s)
-            move.s = (move.mt >= 2000)? Floor(move.n / move.mt * 1000): '-';
+        if (!move['s'])
+            move['s'] = (move['mt'] >= 2000)? Floor(move['n'] / move['mt'] * 1000): '-';
         // fix insta-moves speed
-        else if (move.mt && move.mt < 2000) {
-            let speed = move.n / (move.mt + 500) * 1000;
-            if (move.s > speed * 3)
-                move.s = '-';
+        else if (move['mt'] && move['mt'] < 2000) {
+            let speed = move['n'] / (move['mt'] + 500) * 1000;
+            if (move['s'] > speed * 3)
+                move['s'] = '-';
         }
     }
 
@@ -252,14 +245,15 @@ function get_fen_ply(fen) {
 function get_move_ply(move) {
     if (!move)
         return -2;
-    if (move.ply != undefined && move.ply >= -1)
-        return move.ply;
-    if (!move.fen)
+    let move_ply = move['ply'];
+    if (move_ply != undefined && move_ply >= -1)
+        return move_ply;
+    if (!move['fen'])
         return -2;
 
-    let ply = get_fen_ply(move.fen);
+    let ply = get_fen_ply(move['fen']);
     if (ply >= -1) {
-        move.ply = ply;
+        move['ply'] = ply;
         return ply;
     }
     return -2;
@@ -376,7 +370,7 @@ function split_move_string(text, no_number, def_ply) {
         return [-2, []];
 
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
-        ply = (parseInt(items[0]) - 1, 10) * 2 + (items[1] == '...'? 1: 0);
+        ply = (parseInt(items[0], 10) - 1) * 2 + (items[1] == '...'? 1: 0);
 
     if (no_number)
         items = items.filter(item => !IsDigit(item[0]) && item != '...');
