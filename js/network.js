@@ -1,10 +1,11 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-05
 //
 // all socket functions are here
 //
 // included after: common, engine, global, 3d, xboard, game
+// jshint -W069
 /*
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
@@ -45,7 +46,7 @@ let log_time = 0,
  */
 function check_socket_io() {
     // 1) disconnect?
-    if (DEV.no_socket) {
+    if (DEV['no_socket']) {
         if (socket && socket.connected)
             socket.close();
         return;
@@ -58,7 +59,7 @@ function check_socket_io() {
         socket.connect(HOST);
 
     if (!socket_ready)
-        event_sockets(false);
+        event_sockets();
 }
 
 /**
@@ -131,7 +132,7 @@ function event_sockets() {
     });
     socket.on('updeng', data => {
         log_socket('updeng', data);
-        if (!DEV.wasm)
+        if (!DEV['wasm'])
             update_player_eval('live', data);
     });
     socket.on('users', data => {
@@ -150,7 +151,7 @@ function event_sockets() {
     //
     add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUTS.users);
     add_timeout('check', () => {
-        if (!Y.log_auto_start)
+        if (!Y['log_auto_start'])
             return;
         if (Now() > log_time + TIMEOUT_check - 1) {
             listen_log(0);
@@ -167,7 +168,7 @@ function event_sockets() {
  */
 function insert_log(html) {
     let live_log = Id('live-log'),
-        log_history = Y.log_history,
+        log_history = Y['log_history'],
         node = CreateNode('div', html);
     InsertNodes(live_log, [node], true);
 
@@ -180,16 +181,16 @@ function insert_log(html) {
 
 /**
  * Listen to the log (or not)
- * @param {string|number} new_room
+ * @param {string|number=} new_room
  */
 function listen_log(new_room) {
     if (!socket)
         return;
     if (new_room == undefined)
-        new_room = Y.live_log;
-    if (!num_listen && Y.log_auto_start && new_room == 0) {
+        new_room = Y['live_log'];
+    if (!num_listen && Y['log_auto_start'] && new_room == 0) {
         new_room = 'all';
-        Y.live_log = 'all';
+        Y['live_log'] = 'all';
     }
     num_listen ++;
 
@@ -215,7 +216,7 @@ function listen_log(new_room) {
  * @param {boolean=} cache
  */
 function log_socket(name, data, cache) {
-    if (DEV.socket) {
+    if (DEV['socket']) {
         LS(`socket/${name}:`);
         LS(data);
     }
@@ -238,8 +239,8 @@ function show_banner(text) {
 
 /**
  * Enable/disable twitch video + chat
- * @param {number=} dark
- * @param {string=} chat_url new chat URL
+ * @param {number?=} dark
+ * @param {string?=} chat_url new chat URL
  * @param {boolean=} only_resize
  */
 function update_twitch(dark, chat_url, only_resize) {
@@ -250,18 +251,18 @@ function update_twitch(dark, chat_url, only_resize) {
         TWITCH_CHAT = chat_url;
 
     // 1) update twitch chat IF there was a change
-    dark = Y.twitch_dark;
+    dark = Y['twitch_dark'];
     let node = Id('chat');
     if (!node)
         return;
 
     if (LOCALHOST) {
-        Y.twitch_chat = 0;
-        Y.twitch_video = 0;
+        Y['twitch_chat'] = 0;
+        Y['twitch_video'] = 0;
     }
 
     let current = node.src,
-        src = Y.twitch_chat? `${TWITCH_CHAT}${dark? '&darkpopout': ''}`: '';
+        src = Y['twitch_chat']? `${TWITCH_CHAT}${dark? '&darkpopout': ''}`: '';
 
     if (!only_resize && current != src)
         node.src = src;
@@ -288,7 +289,7 @@ function update_twitch(dark, chat_url, only_resize) {
     // 2) update twitch video IF there was a change
     node = Id('twitch-vid');
     current = node.src;
-    src = Y.twitch_video? TWITCH_CHANNEL: '';
+    src = Y['twitch_video']? TWITCH_CHANNEL: '';
 
     if (!only_resize && current != src)
         node.src = src;

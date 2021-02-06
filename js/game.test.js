@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 /*
 globals
 expect, global, require, test
@@ -706,7 +706,7 @@ function init_players(ply, players, evals) {
         Assign(main, states);
         Assign(Y, y);
 
-        expect(check_explosion(is_boom)).toEqual(answer);
+        expect(check_explosion(!!is_boom)).toEqual(answer);
         expect(main.exploded).toBeCloseTo(answer_boomed, 3);
     });
 });

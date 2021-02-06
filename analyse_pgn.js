@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-02
+// @version 2021-02-05
 /*
 globals
 process, require
@@ -302,7 +302,7 @@ function merge_stats(result) {
  * Open a file and process it
  * @param {string} filename
  * @param {Object} result
- * @param {function} callback
+ * @param {Function} callback
  */
 function open_file(filename, result, callback) {
     let ext = filename.split('.').slice(-1)[0],
@@ -359,7 +359,7 @@ function open_file(filename, result, callback) {
 /**
  * Show the results
  * @param {Object} result
- * @param {string[]} filenames
+ * @param {Array<string>} filenames
  */
 function done(result, filenames) {
     let [day] = FromTimestamp(),

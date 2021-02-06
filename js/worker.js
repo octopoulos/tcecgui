@@ -1,6 +1,8 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2020-11-02
+// @version 2021-02-05
+//
+// jshint -W069
 /*
 globals
 Abs, ArrayJS, Chess, GaussianRandom, importScripts, LS, Now, PAWN, PIECE_SCORES, SCORE_MATING, self, Undefined
@@ -52,7 +54,7 @@ function create_chess(engine) {
 
     let chess = engines[engine];
     if (!chess) {
-        if (DEV.worker)
+        if (DEV['worker'])
             LS(`creating "${engine}" engine`);
         engines[engine] = new engine_class();
         chess = engines[engine];
@@ -64,10 +66,10 @@ function create_chess(engine) {
  * Think ...
  * @param {string} engine
  * @param {string} fen
- * @param {number[]} moves
+ * @param {Array<number>} moves
  * @param {string} pv_string
  * @param {boolean} scan_all
- * @returns {[Move, number, number]} best_move, score, depth, hash_stats
+ * @returns {Array<*>} best_move, score, depth, hash_stats
  */
 function think(engine, fen, moves, pv_string, scan_all) {
     // 1) generate all moves + analyse them
@@ -116,7 +118,7 @@ self.onmessage = e => {
         if (data.dev)
             DEV = data.dev;
     }
-    if (DEV.worker) {
+    if (DEV['worker']) {
         LS('worker got message:');
         LS(e);
     }

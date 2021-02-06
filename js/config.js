@@ -1,12 +1,13 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
 //
 // included after: common, engine, global, 3d, xboard, game, network, startup
 // (after everything except script.js)
+// jshint -W069
 /*
 globals
 AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
@@ -29,8 +30,8 @@ function startup_config() {
     // - & 1 => NN engine
     // - & 2 => Leela variations
     Assign(ENGINE_FEATURES, {
-        LCZeroCPU: 3,
-        LCZeroCPU3pct: 3,
+        'LCZeroCPU': 3,
+        'LCZeroCPU3pct': 3,
     });
 
     // first theme is always the default theme => don't change it
@@ -43,8 +44,8 @@ function startup_config() {
     // navigation links
     // the URL will be: HOST/path, except if it starts with 'http', '.' or '/'
     LINKS = {
-        articles: {
-            _ext: '.pdf',
+        'articles': {
+            '_ext': '.pdf',
             'Super Final 19 by GM Sadler.pdf': 'articles/Sufi_19_-_Sadler.pdf',
             'Super Final 18 by GM Sadler.pdf': 'articles/Sufi_18_-_Sadler.pdf',
             'Super Final 17 by GM Sadler.pdf': 'articles/Sufi_17_-_Sadler.pdf',
@@ -52,9 +53,9 @@ function startup_config() {
             'Super Final 15 by GM Sadler.pdf': 'articles/Sufi_15_-_Sadler.pdf',
             'Super Final 14 by GM Sadler.pdf': 'articles/Sufi_14_-_Sadler.pdf',
             // separator
-            a: 0,
+            'a': 0,
             // grid of 2 columns
-            _a1: 2,
+            '_a1': 2,
             'TCEC_19.pdf': 'articles/TCEC_19.pdf',
             'TCEC_18.pdf': 'articles/TCEC_18.pdf',
             'TCEC_17.pdf': 'articles/TCEC_17.pdf',
@@ -66,10 +67,10 @@ function startup_config() {
             'TCEC_11.pdf': 'articles/TCEC_11.pdf',
             'TCEC_10.pdf': 'articles/TCEC_10.pdf',
             // end the grid
-            _a2: 0,
+            '_a2': 0,
             // again
-            b: 0,
-            _b1: 2,
+            'b': 0,
+            '_b1': 2,
             'TCEC_Cup_7.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_7.pdf',
             'TCEC_Cup_6.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_6.pdf',
             'TCEC_Cup_5.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_5.pdf',
@@ -77,21 +78,21 @@ function startup_config() {
             'TCEC_Cup_3.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_3.pdf',
             'TCEC_Cup_2.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_2.pdf',
             'TCEC_Cup_1.pdf': 'http://tcec-chess.com/articles/TCEC_Cup_1.pdf',
-            _b2: 0,
+            '_b2': 0,
         },
-        download: {
-            Crosstable: 'crosstable.json',
-            Schedule: 'schedule.json',
+        'download': {
+            'Crosstable': 'crosstable.json',
+            'Schedule': 'schedule.json',
             'Event PGN': 'evalbotelo/archive.pgn',
             'Current PGN': 'evalbotelo/live.pgn',
             '{Load PGN} ...': '',
         },
-        info: {
-            About: '',
-            Rules: 'https://wiki.chessdom.org/Rules',
+        'info': {
+            'About': '',
+            'Rules': 'https://wiki.chessdom.org/Rules',
             'Book FAQ': 'articles/TCEC_Openings_FAQ.html',
-            a: 0,
-            Coverage: 'https://wiki.chessdom.org/Category:Coverage',
+            'a': 0,
+            'Coverage': 'https://wiki.chessdom.org/Category:Coverage',
             'Notable games': 'https://wiki.chessdom.org/Category:Notable_game',
         },
     };
@@ -149,7 +150,7 @@ function startup_config() {
     //////////////////////////////
 
     // clean up some mistakes
-    DEFAULTS.theme = THEMES[0];
+    DEFAULTS['theme'] = THEMES[0];
     HOST = HOST.replace(/\/$/, '');
     HOST_ARCHIVE = HOST_ARCHIVE.replace(/\/$/, '');
 }

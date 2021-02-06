@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -159,6 +159,9 @@ let __PREFIX = '_',
     y_index = -1,
     y_states = [];
 
+/** @typedef {{x:number, y:number}} */
+let Vector2;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // HELPERS
@@ -190,6 +193,16 @@ function add_timeout(name, func, timer, is_interval) {
 }
 
 /**
+ * Cancel the animation
+ */
+function cancel_animation() {
+    if (!isNaN(animation)) {
+        cancelAnimationFrame(/** @type {number} */(animation));
+        animation = null;
+    }
+}
+
+/**
  * Clear a timeout / interval
  * @param {string} name
  */
@@ -211,7 +224,7 @@ function clear_timeout(name) {
 /**
  * Create a field for a table value
  * @param {string} text
- * @returns {string[]} field, value
+ * @returns {!Array<string>} field, value
  */
 function create_field_value(text) {
     let field = text,
@@ -250,7 +263,7 @@ function add_history() {
 /**
  * Change a setting
  * @param {string} name
- * @param {string|number} value
+ * @param {string|number=} value
  * @param {boolean=} close close the popup
  */
 function change_setting(name, value, close) {
@@ -335,7 +348,7 @@ function get_float(name, def) {
  * @param {string} name
  * @param {number|boolean} def also used if the value cannot be converted to an `int`
  * @param {boolean=} force force int, otherwise keep the string
- * @returns {number|boolean}
+ * @returns {number|boolean|string}
  */
 function get_int(name, def, force) {
     let text = get_string(name),
@@ -349,7 +362,7 @@ function get_int(name, def, force) {
  * Local Storage - get an object
  * @param {string} name
  * @param {*=} def
- * @returns {Object}
+ * @returns {*}
  */
 function get_object(name, def) {
     let text = get_string(name);
@@ -361,7 +374,7 @@ function get_object(name, def) {
 /**
  * Local Storage - get string
  * @param {string} name
- * @param {string} def
+ * @param {string=} def
  * @returns {string}
  */
 function get_string(name, def) {
@@ -371,7 +384,7 @@ function get_string(name, def) {
 
 /**
  * Guess the types
- * @param {Object} settings
+ * @param {!Object} settings
  * @param {Array<string>=} keys
  */
 function guess_types(settings, keys) {
@@ -459,11 +472,14 @@ function guess_types(settings, keys) {
 
 /**
  * Import settings from an object
- * @param {Object} data
+ * @param {*} data
  * @param {boolean=} reset
  */
 function import_settings(data, reset) {
-    Keys(data).forEach(key => {
+    if (!IsObject(data))
+        return;
+
+    Keys(/** @type {!Object} */(data)).forEach(key => {
         if (!NO_IMPORTS[key])
             save_option(key, data[key]);
     });
@@ -532,7 +548,7 @@ function load_preset(name) {
 /**
  * Merge settings
  * + updates DEFAULTS and TYPES
- * @param {Object} x_settings
+ * @param {!Object} x_settings
  */
 function merge_settings(x_settings) {
     Keys(x_settings).forEach(name => {
@@ -540,7 +556,7 @@ function merge_settings(x_settings) {
 
         // audio: { ... }
         if (IsObject(value)) {
-            let exists = SetDefault(X_SETTINGS, name, {});
+            let exists = /** @type {!Object} */(SetDefault(X_SETTINGS, name, {}));
             Assign(exists, value);
             X_SETTINGS[name] = Assign({}, ...Keys(exists).map(key => ({[key]: exists[key]})));
         }
@@ -602,7 +618,7 @@ function merge_settings(x_settings) {
  * @param {number=} step
  * @param {Object=} options
  * @param {string=} help
- * @returns {[Object, number]}
+ * @returns {!Array<*>}
  */
 function option_number(def, min, max, step=1, options={}, help='') {
     return [Assign({max: max, min: min, step: step, type: 'number'}, options), def, help];
@@ -671,7 +687,7 @@ function reset_default(name) {
 
 /**
  * Reset to the default/other settings
- * @param {boolean} is_default
+ * @param {boolean=} is_default
  */
 function reset_settings(is_default) {
     if (is_default) {
@@ -693,8 +709,10 @@ function restore_history(dir) {
         return;
     y_index += dir;
     let data = JSON.parse(y_copy);
-    Assign(Y, data);
+    if (!IsObject(data))
+        return;
 
+    Assign(Y, /** @type {!Object} */(data));
     import_settings(data, true);
 }
 
@@ -777,7 +795,7 @@ function save_storage(name, value) {
 /**
  * Show/hide popup
  * @param {string=} name
- * @param {boolean|string=} show
+ * @param {?(boolean|string)=} show
  * @param {Object} obj
  * @param {boolean=} obj.adjust only change its position
  * @param {number=} obj.bar_x width of the scrollbar
@@ -794,7 +812,7 @@ function save_storage(name, value) {
  * @param {string=} obj.setting
  * @param {number=} obj.shadow 0:none, 1:normal, 2:light
  * @param {Node=} obj.target element that was clicked
- * @param {number[]]=} obj.xy
+ * @param {Array<number>=} obj.xy
  */
 function show_popup(name, show, {
         adjust, bar_x=20, center, class_, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0],
@@ -1033,12 +1051,12 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         class_ = settings['_class'] || '',
         keys = Keys(settings),
         lines = [`<grid class="${grid_class}${class_? ' ': ''}${class_}">`],
-        parent_id = get_drop_id(context_target)[1],
+        parent_id = get_drop_id(context_target).id,
         prefix = settings['_prefix'],
         split = settings['_split'],
         suffix = settings['_suffix'];
 
-    flag = Undefined(flag, settings['_flag']) || 0;
+    flag = /** @type {number} */(Undefined(flag, settings['_flag']) || 0);
 
     // set multiple columns
     if (split) {
@@ -1105,7 +1123,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
 
         // separator
         if (key[0] == '_') {
-            if (parseInt(key[1]))
+            if (parseInt(key[1], 10))
                 lines.push(`<hr${split? '': ' class="span"'}>`);
             return;
         }
@@ -1361,8 +1379,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
  * @param {string=} class_ class to use
  * @returns {string} the resized text
  */
-function resize_text(text, resize, class_='resize')
-{
+function resize_text(text, resize, class_='resize') {
     if (!text || resize < 1)
         return text;
 
@@ -1468,7 +1485,7 @@ function translate_expression(text) {
 /**
  * Translate a single node
  * - resolve all data-t, data-t2=target, data-tr=resize
- * @param {Node} node
+ * @param {Node=} node
  */
 function translate_node(node) {
     // 1) skip?
@@ -1494,7 +1511,7 @@ function translate_node(node) {
     else {
         let resize = node.dataset['tr'];
         if (resize)
-            translated = resize_text(translated, parseInt(resize));
+            translated = resize_text(translated, parseInt(resize, 10));
         TEXT(node, translated);
     }
 }
@@ -1502,10 +1519,12 @@ function translate_node(node) {
 /**
  * Translate nodes
  * - resolve all data-t, data-t2=target, data-tr=resize
- * @param {string|Node=} parent CSS selector or node
+ * @param {string|Node?} parent CSS selector or node
  */
 function translate_nodes(parent) {
     parent = _(parent);
+    if (!parent)
+        return;
     E('[data-t]', translate_node, parent);
     translate_node(parent);
 }
@@ -1544,15 +1563,14 @@ function create_svg_icon(name) {
 
 /**
  * Fill a combo filter
- * @param {string} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
- * @param {Array<string>|Object<string, string>} values list of values for the combo, default to [DEFAULTS[letter]]
+ * @param {string?} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
+ * @param {Array<string>|Object<string, string>=} values list of values for the combo, default to [DEFAULTS[letter]]
  * @param {string=} select the value to be selected, default to Y[letter]
  * @param {Object=} dico used to name the values, ex: 01 => cheater
  * @param {boolean=} no_translate don't translate the options
  * @returns {string} the selected value, or the HTML
  */
-function fill_combo(letter, values, select, dico, no_translate)
-{
+function fill_combo(letter, values, select, dico, no_translate) {
     dico = Undefined(dico, {});
 
     if (letter != null) {
@@ -1564,15 +1582,15 @@ function fill_combo(letter, values, select, dico, no_translate)
 
     // {be: 'Belgium', fr: 'France'}
     if (!IsArray(values) && IsObject(values)) {
-        dico = values;
-        values = Keys(values);
+        dico = /** @type {!Object} */(values);
+        values = Keys(dico);
     }
 
     let found = 'all',
         group = false,
         lines = [];
 
-    for (let value_ of values) {
+    for (let value_ of /** @type {!Array<string>} */(values)) {
         let selected,
             items = (value_ + '').split('='),
             text = items.slice(-1)[0],
@@ -1642,7 +1660,7 @@ function letter_selector(letter) {
  * Set a combo value
  * @param {string} letter combo letter: g, m, t, c, f + special cases: n, o, s
  * @param {string} value
- * @param {boolean|string=} [save=true] save in memory, if string: use this for saving, ex: #classes => class
+ * @param {boolean|string=} save in memory, if string: use this for saving, ex: #classes => class
  */
 function set_combo_value(letter, value, save=true) {
     // n, o, s special cases
@@ -1664,7 +1682,7 @@ function set_combo_value(letter, value, save=true) {
     // save in memory
     if (save) {
         if (IsString(save))
-            letter = save;
+            letter = /** @type {string} */(save);
 
         if (Y[letter] !== value) {
             Y[letter] = value;
@@ -1750,7 +1768,7 @@ function update_svg(parent) {
  * @param {boolean=} no_special
  */
 function check_hash(no_special) {
-    let string = QueryString({key: 'hash'}),
+    let string = /** @type {!Object} */(QueryString({key: 'hash'})),
         dico = Assign({}, ...Keys(string).map(key => ({[key]: (string[key] == 'undefined')? undefined: string[key]})));
     Assign(Y, dico);
     sanitise_data();
@@ -1788,7 +1806,7 @@ function detect_device() {
  */
 function guess_browser_language() {
     let indices = Assign({}, ...Keys(LANGUAGES).map(lan => ({[lan.slice(0, 2)]: lan}))),
-        languages = [...[navigator.language], ...navigator.languages];
+        languages = [...[navigator.language], ...(navigator.languages || [])];
     Assign(indices, LANGUAGES_23);
     for (let lan of languages) {
         lan = lan.split('-')[0];
@@ -1831,13 +1849,13 @@ function load_library(url, callback, extra) {
 
 /**
  * Push history state if it changed
- * @param {Object} query
+ * @param {Object=} query
  * @param {boolean=} replace replace the state instead of pushing it
  * @param {string=} query_key
  * @param {string=} go change URL location
- * @returns {Object|boolean} dictionary of changes, or null if empty
+ * @returns {Object} dictionary of changes, or null if empty
  */
-function push_state(query, replace, query_key='hash', go=null) {
+function push_state(query, replace, query_key='hash', go=undefined) {
     query = query || {};
     let changes = [],
         state_keys = STATE_KEYS[Y.x] || STATE_KEYS['_'] || [],
@@ -1860,7 +1878,7 @@ function push_state(query, replace, query_key='hash', go=null) {
         url = `${QUERY_KEYS[query_key]}${url}`;
         let exist = location[query_key];
         if (exist == url)
-            return;
+            return null;
         if (replace)
             history.replaceState(new_state, '', url);
         else
@@ -1976,13 +1994,13 @@ function socket_error(text) {
 
 /**
  * Send data to a socket
- * @param {Object} data
- * @returns {boolean}
+ * @param {!Object} data
+ * @returns {boolean?}
  */
 function socket_send(data) {
     if (!socket || socket.readyState != WS.OPEN)
         return false;
-    let success;
+    let success = null;
     try {
         socket.send(Stringify(data));
         success = true;
@@ -1998,11 +2016,11 @@ function socket_send(data) {
 
 /**
  * Add a touch move
- * @param {Object} change
+ * @param {Vector2} change
  * @param {number} stamp
  * @param {number=} ratio_x
  * @param {number=} ratio_y
- * @returns {number[]} deltas
+ * @returns {!Array<number>} deltas
  */
 function add_move(change, stamp, ratio_x=1, ratio_y=1) {
     if (!drag)
@@ -2058,7 +2076,7 @@ function get_area(node) {
 /**
  * Get the changed touches + stamp
  * @param {Event} e
- * @returns {*[]} [changed_touches, stamp]
+ * @returns {!Array<Vector2>}
  */
 function get_changed_touches(e) {
     let touches = e.changedTouches || e.touches;
@@ -2066,7 +2084,7 @@ function get_changed_touches(e) {
         touches = [...touches].map(touch => ({x: touch.clientX, y: touch.clientY}));
     else
         touches = [{x: e.clientX, y: e.clientY}];
-    return [touches, e.timeStamp];
+    return touches;
 }
 
 /**
@@ -2245,18 +2263,20 @@ function stop_drag() {
 /**
  * Handle a touch/mouse event
  * @param {Event} e
- * @returns {Object[]}
+ * @returns {{change:Vector2, error:number, stamp:number}}
  */
 function touch_event(e) {
-    let [changes, stamp] = get_changed_touches(e),
+    let changes = get_changed_touches(e),
         change = changes[0],
         error = -1,
-        length = changes.length;
+        length = changes.length,
+        stamp = e.timeStamp;
 
     // multiple inputs => keep the one closer to the previous input
     if (length > 1) {
         if (drag) {
-            let best_x, best_y;
+            let best_x = 0,
+                best_y = 0;
             for (let touch of changes) {
                 let dx = (touch.x - touch_last.x),
                     dy = (touch.y - touch_last.y),
@@ -2286,7 +2306,11 @@ function touch_event(e) {
         error = dx * dx + dy * dy;
     }
 
-    return [change, stamp, error];
+    return {
+        change: change,
+        error: error,
+        stamp: stamp,
+    };
 }
 
 /**
@@ -2298,10 +2322,12 @@ function touch_event(e) {
  */
 function touch_handle(e, full, prevent_default) {
     if (full == undefined)
-        full = is_fullscreen();
+        full = !!is_fullscreen();
 
     let buttons = e.buttons,
-        [change, stamp] = touch_event(e),
+        event = touch_event(e),
+        change = event.change,
+        stamp = event.stamp,
         target = e.target,
         type = e.type,
         type5 = type.slice(0, 5),
@@ -2321,7 +2347,7 @@ function touch_handle(e, full, prevent_default) {
 
         clear_timeout('touch_end');
 
-        drag_target = Parent(target, {class_: 'scroller', self: true, tag: 'div'});
+        drag_target = Parent(/** @type {Node} */(target), {class_: 'scroller', self: true, tag: 'div'});
         if (drag_target && !full_target) {
             // maybe the object is already fully visible?
             // TODO: limit x and y directions individually
@@ -2404,7 +2430,7 @@ function touch_handle(e, full, prevent_default) {
             if (virtual_drag_done)
                 virtual_drag_done(sumx, sumy, touch_speed);
 
-            cancelAnimationFrame(animation);
+            cancel_animation();
             if (drag_target || full_target || scroll_target)
                 animation = AnimationFrame(render_scroll);
         }
@@ -2446,10 +2472,10 @@ function wheel_event(e, full) {
 /**
  * Add font + sizes
  * @param {string} font
- * @param {Object} sizes sizes when font-size = 1280px
+ * @param {!Object} sizes sizes when font-size = 1280px
  */
 function add_font(font, sizes) {
-    let widths = SetDefault(FONTS, font, {});
+    let widths = /** @type {!Object} */(SetDefault(FONTS, font, {}));
     Assign(widths, sizes);
 }
 
@@ -2474,7 +2500,7 @@ function calculate_text_width(text, font) {
  * @param {number} num_page
  * @param {number} page
  * @param {number} extra
- * @returns {number[]}
+ * @returns {!Array<number>}
  */
 function create_page_array(num_page, page, extra) {
     if (num_page < 2)
@@ -2512,7 +2538,7 @@ function create_page_array(num_page, page, extra) {
 
 /**
  * Create an URL list
- * @param {Object} dico {key:value, ...}
+ * @param {!Object} dico {key:value, ...}
  * - value is string => URL is created unless empty string
  * - otherwise insert separator
  * @returns {string}
@@ -2609,7 +2635,7 @@ function draw_rectangle(node, orient, mx, my) {
 /**
  * Find an element in areas
  * @param {string} name
- * @returns {[string, number, *[]]}
+ * @returns {{area: (Array<string|number>|undefined), id: number, key: (string|undefined)}}
  */
 function find_area(name) {
     let areas = Y['areas'];
@@ -2617,19 +2643,22 @@ function find_area(name) {
         let vector = areas[key];
         for (let i = 0; i < vector.length; i ++)
             if (vector[i][0] == name)
-                return [key, i, vector[i]];
+                return {area: vector[i], id: i, key: key};
     }
-    return ['', -1, null];
+    return {id: -1};
 }
 
 /**
  * Get the drag and drop id
  * @param {Node|EventTarget} target
- * @returns {[Node, string]}
+ * @returns {{id:string, node:Node?}}
  */
 function get_drop_id(target) {
-    let parent = Parent(target, {class_: 'drag|drop', self: true});
-    return [parent, parent? (parent.id || parent.dataset['x']): null];
+    let parent = Parent(/** @type {Node} */(target), {class_: 'drag|drop', self: true});
+    return {
+        id: parent? (parent.id || parent.dataset['x']): null,
+        node: parent,
+    };
 }
 
 /**
@@ -2685,7 +2714,7 @@ function move_pane(node, dir) {
  */
 function populate_areas() {
     let areas = Y['areas'] || {},
-        default_areas = DEFAULTS.areas,
+        default_areas = DEFAULTS['areas'],
         section = Y.x,
         hides = Assign({}, HIDES[section]);
 
@@ -2887,6 +2916,9 @@ function set_draggable() {
  * @param {Function=} callback
  */
 function api_translate_get(force, callback) {
+    /**
+     * @param {Object=} data
+     */
     function _done(data) {
         if (data) {
             translates = data;
@@ -2924,7 +2956,7 @@ function api_translate_get(force, callback) {
 
 function set_engine_events() {
     Events(window, 'mousedown touchstart', () => {
-        cancelAnimationFrame(animation);
+        cancel_animation();
     });
 
     // iframe support: scroll going to opposite expected way => stop the animation
@@ -2934,10 +2966,7 @@ function set_engine_events() {
         let y = ScrollDocument(),
             sign = Sign(y - touch_scroll.y);
         if (sign && sign != -Sign(touch_speed.y)) {
-            if (animation) {
-                cancelAnimationFrame(animation);
-                animation = null;
-            }
+            cancel_animation();
             stop_drag();
         }
     });
@@ -3021,13 +3050,13 @@ function set_modal_events(parent) {
     //
     Input('input, select, textarea', function() {
         done_touch();
-        change_setting();
+        change_setting('');
     }, parent);
     //
     C('input, select, textarea', function() {
         if (cannot_click())
             return;
-        change_setting();
+        change_setting('');
     }, parent);
     //
     C('div[name]', function() {

@@ -1,6 +1,6 @@
 // chat_server.js
 // @authors octopoulo <polluxyz@gmail.com>, Aloril <aloril@iki.fi>
-// @version 2020-10-30
+// @version 2021-02-05
 /*
 globals
 console, exports, require
@@ -32,8 +32,7 @@ async function load_wasm() {
     LS('chess library loaded');
 }
 
-function vote(data)
-{
+function vote(data) {
     LS('vote, data=' + Stringify(data));
     if (typeof data.fen == "string") { //needed because fen string here don't match fen strings in Python
 	let lst = data.fen.split(" ");

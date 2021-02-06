@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-02-05
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -84,7 +84,7 @@ let Abs = Math.abs,
 ////////////////////////////
 /**
  * Find 1 node
- * @param {string|Node} sel CSS selector or node
+ * @param {Element|Node|string} sel CSS selector or node
  * @param {Node=} parent parent node, document by default
  * @returns {Node} found node
  * @example
@@ -92,25 +92,25 @@ let Abs = Math.abs,
  * _('a', node)    // get the first link inside the node
  */
 function _(sel, parent) {
-    if (!sel) return;
+    if (!sel) return null;
     if (IsObject(sel))
-        return sel;
-    return (parent || document).querySelector(sel);
+        return /** @type {Node} */(sel);
+    return (parent || document).querySelector(/** @type {string} */(sel));
 }
 
 /**
  * Find multiple nodes
  * @param {string|Array<Node>} sel CSS selector OR list of nodes
- * @param {Node=} parent parent node, document by default
- * @returns {Array<Node>} found nodes
+ * @param {Node|Object=} parent parent node, document by default
+ * @returns {!Array<Node>} found nodes
  * @example
  * A('input')       // get all the <input> nodes
  * A('a', node)     // get all the links inside the node
  */
 function A(sel, parent) {
     if (!sel) return [];
-    if (IsObject(sel) && sel.length)
-        return sel;
+    if (IsArray(sel))
+        return /** @type {!Array<Node>} */(sel);
     return (parent || document).querySelectorAll(sel);
 }
 
@@ -124,7 +124,7 @@ function A(sel, parent) {
  */
 function E(sel, callback, parent) {
     if (!sel) return;
-    if (IsObject(sel) && sel.length)
+    if (IsArray(sel))
         sel.forEach(callback);
     else
         A(sel, parent).forEach(callback);
@@ -132,14 +132,14 @@ function E(sel, callback, parent) {
 
 /**
  * Get an element by ID
- * @param {string|Node} id
+ * @param {Node|string} id
  * @param {Node=} parent parent node, document by default
- * @returns {Node=}
+ * @returns {Node}
  */
 function Id(id, parent) {
-    if (!id) return;
+    if (!id) return null;
     if (IsObject(id))
-        return id;
+        return /** @type {Node} */(id);
     return (parent || document).getElementById(id);
 }
 
@@ -147,8 +147,8 @@ function Id(id, parent) {
 /////////////////////////
 /**
  * Change attributes
- * @param {string|Node} sel CSS selector or node
- * @param {Object} attrs attribute to change
+ * @param {Node|string} sel CSS selector or node
+ * @param {!Object} attrs attribute to change
  * @param {Node=} parent
  */
 function Attrs(sel, attrs, parent) {
@@ -164,7 +164,7 @@ function Attrs(sel, attrs, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
             if (value == undefined)
@@ -177,8 +177,8 @@ function Attrs(sel, attrs, parent) {
 
 /**
  * Change attributes
- * @param {string|Node} sel
- * @param {Object} attrs
+ * @param {Node|string} sel
+ * @param {!Object} attrs
  * @param {Node=} parent
  */
 function AttrsNS(sel, attrs, parent) {
@@ -194,7 +194,7 @@ function AttrsNS(sel, attrs, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
             if (value == undefined)
@@ -207,7 +207,7 @@ function AttrsNS(sel, attrs, parent) {
 
 /**
  * Click event on nodes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Function} callback (event)
  * @param {Node=} parent
  * @example
@@ -220,16 +220,16 @@ function C(sel, callback, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.onclick = callback;
     }, parent);
 }
 
 /**
  * Add / remove classes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {string} class_ 'add +also_add -remove ^toggle'
- * @param {(boolean|number)=} add true for normal behavior (default), otherwise invert all - and +
+ * @param {boolean|number=} add true for normal behavior (default), otherwise invert all - and +
  * @param {Node?} parent
  * @example
  * Class('img', 'dn')               // hide every image
@@ -270,7 +270,7 @@ function Class(sel, class_, add=true, parent=null) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         let list = node.classList;
         class_.split(' ').forEach(item => {
             if (!item)
@@ -302,7 +302,7 @@ function Class(sel, class_, add=true, parent=null) {
 
 /**
  * Check if a list contains a pattern, using ^, $, *
- * @param {Array<string>} list
+ * @param {!Array<string>} list
  * @param {string} pattern
  * @returns {boolean}
  */
@@ -341,9 +341,9 @@ function Contain(list, pattern) {
  * + set its HTML
  * + set its attributes
  * @param {string} tag
- * @param {string=} html
+ * @param {string?=} html
  * @param {Object=} attrs
- * @param {Array<Object>=} children
+ * @param {Array<Node>=} children
  * @returns {Node} created node
  * @example
  * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
@@ -368,7 +368,7 @@ function CreateNode(tag, html, attrs, children) {
  * Create an SVG node
  * @param {string} type
  * @param {Object=} attrs
- * @param {Array<Object>=} children
+ * @param {Array<Node>=} children
  * @returns {Node} created node
  */
 function CreateSVG(type, attrs, children) {
@@ -389,10 +389,10 @@ function CreateSVG(type, attrs, children) {
  * Handle any events on nodes
  * + mouseenter => will use node.addEventListener('mouseenter', callback)
  * + !mouseenter => will use node.onmouseenter = callback
- * @param {string|Node|Window} sel CSS selector or node
+ * @param {Node|string|Window} sel CSS selector or node
  * @param {string} events
  * @param {Function} callback
- * @param {Object=} options
+ * @param {!AddEventListenerOptions|boolean=} options
  * @param {Node=} parent
  * @example
  * Events(window, 'resize', e => {LS(e)});      // window.addEventListener('resize', function ...)
@@ -419,7 +419,7 @@ function Events(sel, events, callback, options, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         events.split(' ').forEach(event => {
             if (direct)
                 node[`on${event}`] = callback;
@@ -431,7 +431,7 @@ function Events(sel, events, callback, options, parent) {
 
 /**
  * Check if a node has a class
- * @param {string|Node} node CSS selector or node
+ * @param {Node|string} node CSS selector or node
  * @param {string} class_ can be multiple classes separated by spaces
  * @returns {boolean}
  */
@@ -439,26 +439,26 @@ function HasClass(node, class_) {
     if (IsString(node))
         node = _(node);
     if (!node)
-        return;
+        return false;
 
     return node.classList && node.classList.contains(class_);
 }
 
 /**
  * Check if a node has all classes
- * @param {string|Node} node CSS selector or node
- * @param {string} class_ can be multiple classes separated by spaces, with +/- and ^$* patterns
+ * @param {Node|string} node CSS selector or node
+ * @param {string} classes can be multiple classes separated by spaces, with +/- and ^$* patterns
  * @returns {boolean}
  */
 function HasClasses(node, classes) {
     if (IsString(node))
         node = _(node);
     if (!node)
-        return;
+        return false;
 
     let list = node.classList;
     if (!list)
-        return;
+        return false;
 
     // match all classes, ex: 'visible -shown'
     for (let item of classes.split(' ')) {
@@ -482,7 +482,7 @@ function HasClasses(node, classes) {
 /**
  * Hide nodes
  * + handle dn
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
  * @example
  * Hide('body')     // hide the body
@@ -496,7 +496,7 @@ function Hide(sel, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.classList.remove('dn');
         node.style.display = 'none';
     }, parent);
@@ -504,8 +504,8 @@ function Hide(sel, parent) {
 
 /**
  * Get / set HTML
- * @param {string|Node} sel CSS selector or node
- * @param {string=} html
+ * @param {Node|string} sel CSS selector or node
+ * @param {string|number=} html
  * @param {Node=} parent
  * @returns {string} html of the first matched node
  * @example
@@ -514,17 +514,17 @@ function Hide(sel, parent) {
  * HTML('a', '<strong>hello</strong>')  // replace the content of all links
  */
 function HTML(sel, html, parent) {
-    if (!sel) return;
+    if (!sel) return '';
     if (IsObject(sel)) {
         if (html !== undefined && html != sel.innerHTML)
-            sel.innerHTML = html;
+            sel.innerHTML = html + '';
         return sel.innerHTML;
     }
     //
     let result;
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         if (html !== undefined && html != node.innerHTML)
-            node.innerHTML = html;
+            node.innerHTML = html + '';
         // FUTURE: use ?? operator
         if (result == undefined)
             result = node.innerHTML;
@@ -534,7 +534,7 @@ function HTML(sel, html, parent) {
 
 /**
  * Compute the index of the node (how many siblings are before it)
- * @param {string|Node} node CSS selector or node
+ * @param {Node|string} node CSS selector or node
  * @returns {number} computed index
  * @example
  * <tr>
@@ -560,7 +560,7 @@ function Index(node) {
 
 /**
  * Input event on nodes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Function} callback (event)
  * @param {Node=} parent
  * @example
@@ -573,15 +573,15 @@ function Input(sel, callback, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.oninput = callback;
     }, parent);
 }
 
 /**
  * Insert nodes into a parent
- * @param {string|Node} parent
- * @param {Array<Node>} nodes
+ * @param {Node|string} parent
+ * @param {!Array<Node>} nodes
  * @param {boolean=} preprend should the nodes be preprended or appended?
  * @example
  * InsertNodes(#chat', nodes, true)     // preprend
@@ -603,13 +603,13 @@ function InsertNodes(parent, nodes, preprend) {
 
 /**
  * Find a parent node by tagName and class
- * @param {string|Node} node CSS selector or node
+ * @param {Node|string} node CSS selector or node
  * @param {Object} obj
  * @param {string=} obj.attrs
  * @param {string=} obj.class_ 'live-pv|xmoves'
  * @param {boolean=} obj.self true => the parent can be the node itself
  * @param {string=} obj.tag 'a div'
- * @returns {Node=} parent node or null or undefined
+ * @returns {Node} parent node or null or undefined
  * @example
  * Parent(node, {attrs: 'id=ok', tag: 'div')        // find a parent with tag <div> and whose ID='ok'
  * Parent(node, {attrs: 'id=ok', tag: 'a div')      // find a parent with tag <a> or <div> and whose ID='ok'
@@ -618,11 +618,11 @@ function Parent(node, {tag, class_, attrs, self}={}) {
     if (IsString(node))
         node = _(node);
     if (!node)
-        return;
+        return null;
 
     let aitems = attrs? attrs.split(' '): [],
         citems = class_? class_.split(' '): [],
-        parent = node,
+        parent = /** @type {Node} */(node),
         tags = tag? tag.split(' '): null;
 
     for (let depth = 0; ; depth ++) {
@@ -680,7 +680,7 @@ function Parent(node, {tag, class_, attrs, self}={}) {
 
 /**
  * Change properties
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {string} prop property to change
  * @param {string|boolean=} value value to set
  * @param {Node=} parent
@@ -694,7 +694,7 @@ function Prop(sel, prop, value, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node[prop] = value;
     }, parent);
 }
@@ -702,10 +702,10 @@ function Prop(sel, prop, value, parent) {
 /**
  * Show / hide nodes
  * + handle dn
- * @param {string|Node} sel CSS selector or node
- * @param {(boolean|number)=} show true to show the node
+ * @param {Node|string} sel CSS selector or node
+ * @param {*=} show true to show the node
  * @param {Node=} parent
- * @param {string=} [mode=''] value to use for node.display, by default '' but could be block
+ * @param {string=} value to use for node.display, by default '' but could be block
  * @example
  * S('a')                       // hide all links
  * S('a', true)                 // show all links
@@ -720,7 +720,7 @@ function S(sel, show, parent, mode='') {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.classList.remove('dn');
         node.style.display = show? mode: 'none';
     }, parent);
@@ -728,7 +728,7 @@ function S(sel, show, parent, mode='') {
 
 /**
  * Safe _
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent parent node, document by default
  * @returns {Node|Object} found node or {}
  */
@@ -738,7 +738,7 @@ function Safe(sel, parent) {
 
 /**
  * Safe Id
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent parent node, document by default
  * @returns {Node|Object} found node or {}
  */
@@ -748,17 +748,17 @@ function SafeId(sel, parent) {
 
 /**
  * Scroll the document to the top
- * @param {string|number|Node=} top if undefined then returns the scrollTop value
+ * @param {Node|string|number=} top if undefined then returns the scrollTop value
  * @param {boolean=} smooth
  * @param {number=} offset
- * @returns {number}
+ * @returns {number|undefined}
  */
 function ScrollDocument(top, smooth, offset=0) {
     let scroll = document.scrollingElement;
     if (top != undefined) {
         // top can be a selector too
         if (isNaN(top)) {
-            top = _(top);
+            top = _(/** @type {Node|string} */(top));
             if (!top)
                 return;
             top = top.offsetTop;
@@ -775,9 +775,9 @@ function ScrollDocument(top, smooth, offset=0) {
 /**
  * Show nodes
  * + handle dn
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
- * @param {string=} [mode=''] value to use for node.display, by default '' but could be block
+ * @param {string=} value to use for node.display, by default '' but could be block
  * @example
  * Show('body')     // show the body
  * Show('a')        // show all links
@@ -790,7 +790,7 @@ function Show(sel, parent, mode='') {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.classList.remove('dn');
         node.style.display = mode;
     }, parent);
@@ -798,9 +798,9 @@ function Show(sel, parent, mode='') {
 
 /**
  * Change the style of nodes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {string} style
- * @param {boolean=} [add=true] true to set/add the style, otherwise remove it
+ * @param {boolean=} true to set/add the style, otherwise remove it
  * @param {Node=} parent
  * @example
  * Style(document.documentElement, 'opacity:0.1')   // make the page almost transparent
@@ -845,7 +845,7 @@ function Style(sel, style, add=true, parent=null) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         let list = node.style;
         style.split(/\s*;+\s*/).forEach(item => {
             let split,
@@ -882,7 +882,7 @@ function Style(sel, style, add=true, parent=null) {
 
 /**
  * Submit event on nodes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Function} callback
  * @param {Node=} parent
  * @example
@@ -895,14 +895,14 @@ function Submit(sel, callback, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         node.onsubmit = callback;
     }, parent);
 }
 
 /**
  * Get / set the textContent of nodes
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {string=} text
  * @param {Node=} parent
  * @returns {string}
@@ -912,7 +912,7 @@ function Submit(sel, callback, parent) {
  * TEXT('a', 'hello')               // replace the content of all links
  */
 function TEXT(sel, text, parent) {
-    if (!sel) return;
+    if (!sel) return '';
     if (IsObject(sel)) {
         if (text !== undefined)
             sel.innerHTML = text;
@@ -920,7 +920,7 @@ function TEXT(sel, text, parent) {
     }
     //
     let result;
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         if (text !== undefined)
             node.innerHTML = text;
         // FUTURE: use ?? operator
@@ -933,7 +933,7 @@ function TEXT(sel, text, parent) {
 /**
  * Toggle nodes
  * + handle dn
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
  * @example
  * Toggle('a')      // toggle all links
@@ -945,29 +945,29 @@ function Toggle(sel, parent) {
         return;
     }
     //
-    E(sel, node => {
+    E(/** @type {string} */(sel), node => {
         S(node, !Visible(node));
     }, parent);
 }
 
 /**
  * Quick check if all nodes are visible
- * @param {string|Node} sel CSS selector or node
+ * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
- * @returns {boolean} true if ALL nodes are visible
+ * @returns {boolean?} true if ALL nodes are visible
  * @example
  * Visible('body')  // true
  * Visible('.dn')   // false
  */
 function Visible(sel, parent) {
-    if (!sel) return;
+    if (!sel) return null;
     if (IsObject(sel)) {
         if (sel.classList.contains('dn'))
             return false;
         return sel.style.display != 'none' && sel.style.visibility != 'hidden';
     }
     //
-    let nodes = A(sel, parent);
+    let nodes = A(/** @type {string} */(sel), parent);
     if (!nodes.length)
         return false;
     for (let node of nodes) {
@@ -988,25 +988,25 @@ function Visible(sel, parent) {
  * @returns {number|*}
  */
 function AnimationFrame(callback, direct) {
-    return direct? callback(): requestAnimationFrame(callback);
+    return direct? callback(): requestAnimationFrame(() => callback());
 }
 
 /**
  * Convert an WASM vector to JS vector
  * @param {Object|Array<*>} vector
- * @returns {Array<Object>}
+ * @returns {!Array<*>}
  */
 function ArrayJS(vector) {
     if (vector.size)
         vector = Array(vector.size()).fill(0).map((_, id) => vector.get(id));
-    return vector;
+    return /** @type {!Array<*>} */(vector);
 }
 
 /**
  * Choose a random element in an array
- * @param {Array<*>} array
+ * @param {!Array<*>} array
  * @param {number} length
- * @returns {Array<*>}
+ * @returns {*}
  */
 function Choice(array, length) {
     return array[Floor(Random() * (length || array.length))];
@@ -1024,12 +1024,14 @@ function Choice(array, length) {
  * @returns {number} clamped number
  */
 function Clamp(number, min, max, min_set) {
-    return (number < min)? (Number.isFinite(min_set)? min_set: min): (number > max? max: number);
+    return (number < min)?
+        (Number.isFinite(/** @type {number} */(min_set))? /** @type {number} */(min_set): min)
+    : (number > max? max: number);
 }
 
 /**
  * Remove all properties of an object
- * @param {Object} dico
+ * @param {!Object} dico
  * @returns {Object}
  */
 function Clear(dico) {
@@ -1088,8 +1090,8 @@ function DateOffset(offset) {
  * @returns {number}
  */
 function DefaultFloat(value, def) {
-    if (Number.isFinite(value))
-        return value;
+    if (Number.isFinite(/** @type {number} */(value)))
+        return /** @type {number} */(value);
     value = parseFloat(value);
     return isNaN(value)? def: value;
 }
@@ -1097,19 +1099,19 @@ function DefaultFloat(value, def) {
 /**
  * Default int conversion
  * @param {string|number} value
- * @param {number} def default value when the value is not a valid number
- * @returns {number}
+ * @param {number|string|boolean} def default value when the value is not a valid number
+ * @returns {number|string|boolean}
  */
 function DefaultInt(value, def) {
-    if (Number.isInteger(value))
-        return value;
-    value = parseInt(value);
+    if (Number.isInteger(/** @type {number} */(value)))
+        return /** @type {number} */(value);
+    value = parseInt(value, 10);
     return isNaN(value)? def: value;
 }
 
 /**
  * Download a JSON object
- * @param {Object} object
+ * @param {Object|string} object
  * @param {string} name output filename
  * @param {number=} mode 0:JSON, 1:binary, 2:text
  * @param {string=} space JSON space for pretty output
@@ -1121,15 +1123,24 @@ function DownloadObject(object, name, mode, space) {
     if (mode == 1)
         text = object;
     else {
-        let json = (mode == 2)? object: Stringify(object, null, space),
-            type_ = (mode == 2)? 'plain': 'json';
+        let json, type_;
+        if (mode == 2) {
+            if (!IsString(object))
+                return;
+            json = object;
+            type_ = 'plain';
+        }
+        else {
+            json = Stringify(object, null, space);
+            type_ = 'json';
+        }
         // add a newline to formatted JSON
         if (space && json.slice(-1) != '\n')
             json += '\n';
-        text = `data:text/${type_};charset=utf-8,${encodeURIComponent(json)}`;
+        text = `data:text/${type_};charset=utf-8,${encodeURIComponent(/** @type {string} */(json))}`;
     }
 
-    node.setAttribute('href', text);
+    node.setAttribute('href', /** @type {string} */(text));
     node.setAttribute('download', name);
      // required for firefox
     document.body.appendChild(node);
@@ -1139,21 +1150,21 @@ function DownloadObject(object, name, mode, space) {
 
 /**
  * Format a vector or float ...
- * @param {Object} vector
+ * @param {*} vector
  * @param {string=} sep
  * @param {number=} align
- * @returns {string}
+ * @returns {string?}
  */
-function Format(vector, sep=', ', align=null) {
+function Format(vector, sep=', ', align=undefined) {
     // null, undefined
     if (vector == null)
-        return vector;
+        return null;
     // [1, 2, 3]
     if (IsArray(vector))
         return vector.map(value => Format(IsArray(value)? value[0]: value, sep, align)).join(sep);
     // Set()
     else if (vector instanceof Set)
-        return vector.size;
+        return vector.size + '';
     // dict or quaternion, vector3, ...
     else if (vector instanceof Object) {
         let items = [];
@@ -1166,18 +1177,18 @@ function Format(vector, sep=', ', align=null) {
     }
 
     // float, int, text ...
-    return FormatFloat(vector, align);
+    return FormatFloat(/** @type {number|string} */(vector), align);
 }
 
 /**
  * Format a float
- * @param {number} text
+ * @param {number|string} text
  * @param {number=} align
  * @returns {string}
  */
 function FormatFloat(text, align) {
     if (IsFloat(text))
-        text = text.toFixed(3);
+        text = /** @type {number} */(text).toFixed(3);
     if (text === '-0.000' || text === '0.000')
         text = '0';
 
@@ -1186,21 +1197,20 @@ function FormatFloat(text, align) {
         if (text.length < align)
             text = ('        ' + text).slice(-align);
     }
-    return text;
+    return text + '';
 }
 
 /**
  * Format a number:
  * - B: billion, M: million, K: thousand
  * - NaN => n/a
- * @param {number} number
+ * @param {number|string} number
  * @param {string=} def default value used when number is not a number
  * @param {boolean=} keep_decimal keep 1 decimal even if it's .0
  * @param {boolean=} is_si use SI units
- * @returns {number}
+ * @returns {string}
  */
-function FormatUnit(number, def, keep_decimal, is_si=true)
-{
+function FormatUnit(number, def, keep_decimal, is_si=true) {
     let unit = '';
 
     if (isNaN(number)) {
@@ -1208,7 +1218,7 @@ function FormatUnit(number, def, keep_decimal, is_si=true)
             return def;
 
         // isNaN will return true for 'hello', but Number.isNaN won't
-        if (Number.isNaN(number))
+        if (Number.isNaN(/** @type {number} */(number)))
             number = 'N/A';
         else
             number = `${number}`;
@@ -1242,7 +1252,7 @@ function FormatUnit(number, def, keep_decimal, is_si=true)
 /**
  * Extract the hours, minutes, seconds and 1/100th of seconds from a time in seconds
  * @param {number} time
- * @returns {number[]} hours, mins, secs, cs
+ * @returns {!Array<number>} hours, mins, secs, cs
  */
 function FromSeconds(time) {
     let secs = Floor(time),
@@ -1258,8 +1268,8 @@ function FromSeconds(time) {
 
 /**
  * Convert stamp to date
- * @param {number} stamp timestamp in seconds
- * @returns {string[]} [date, time] string
+ * @param {number=} stamp timestamp in seconds
+ * @returns {!Array<string>} [date, time] string
  */
 function FromTimestamp(stamp) {
     if (!stamp)
@@ -1303,7 +1313,7 @@ function HashText(text) {
  * @param {string} color
  * @param {boolean=} get_string
  * @param {number=} alpha
- * @returns {string|number[]}
+ * @returns {string|Array<number>}
  */
 function Hex2RGB(color, get_string, alpha) {
     let off = (color[0] == '#')? 1: 0,
@@ -1385,8 +1395,8 @@ function Pad(value, size=2, pad='00') {
 /**
  * Try to parse JSON data
  * @param {string} text
- * @param {Object=} def
- * @returns {Object}
+ * @param {*=} def
+ * @returns {*}
  */
 function ParseJSON(text, def) {
     let json;
@@ -1401,16 +1411,16 @@ function ParseJSON(text, def) {
 
 /**
  * URL get query string, ordered + keep/discard/replace some elements
- * @param {Object=} discard list of keys to discard
- * @param {Object=} keep list of keys to keep
- * @param {string=} query use this url instead of location[key]
- * @param {Object=} replaces add or replace items
- * @param {string=} key hash, search
- * @param {boolean=} string true to have a sorted string, otherwise get a sorted object
+ * @param {Object} obj
+ * @param {Object=} obj.discard list of keys to discard
+ * @param {Object=} obj.keep list of keys to keep
+ * @param {string=} obj.query use this url instead of location[key]
+ * @param {Object=} obj.replaces add or replace items
+ * @param {string=} obj.key hash, search
+ * @param {boolean=} obj.string true to have a sorted string, otherwise get a sorted object
  * @returns {string|Object} result object or string
  */
-function QueryString({discard, keep, key='search', replace, query, string}={})
-{
+function QueryString({discard, keep, key='search', replace, query, string}={}) {
     let dico = {},
         items = query? query.split('&'): (key? location[key].slice(1).split('&'): []),
         vector = [];
@@ -1478,11 +1488,12 @@ function RandomSpread(range) {
  * Load a resource
  * @param {string} url
  * @param {Function} callback (status, text, xhr)
- * @param {*=} content
- * @param {string=} form add the content to a new FormData
- * @param {Object=} headers
- * @param {string=} method GET, POST
- * @param {string=} type arraybuffer, blob, document, json, text
+ * @param {Object} obj
+ * @param {*=} obj.content
+ * @param {string=} obj.form add the content to a new FormData
+ * @param {Object=} obj.headers
+ * @param {string=} obj.method GET, POST
+ * @param {string=} obj.type arraybuffer, blob, document, json, text
  * @example
  * // get the context of the file
  * Resource('./fragment.frag', (status, text) => {LS(text)}, {type: 'text'})
@@ -1519,7 +1530,7 @@ function Resource(url, callback, {content=null, form, headers={}, method='GET', 
 
 /**
  * Same as Python's set_default
- * @param {Object} dico
+ * @param {!Object} dico
  * @param {string} key
  * @param {*} def
  * @returns {*} dico[key]
@@ -1537,7 +1548,7 @@ function SetDefault(dico, key, def) {
  * Smart split, tries with | and if not found, then with ' '
  * @param {string} text
  * @param {string=} char
- * @returns {string[]}
+ * @returns {!Array<string>}
  */
 function Split(text, char) {
     if (!text)
@@ -1562,9 +1573,9 @@ function Title(text) {
 
 /**
  * This can be replaced by the ?? operator in the future
- * @param {*} value
- * @param {*} def
- * @returns {*}
+ * @param {?} value
+ * @param {?} def
+ * @returns {?}
  */
 function Undefined(value, def) {
     return (value === undefined || Number.isNaN(value))? def: value;

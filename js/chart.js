@@ -1,5 +1,5 @@
 // chart.js
-// @version 2021-01-24
+// @version 2021-02-05
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
@@ -7,13 +7,12 @@ define, document, Floor, IsArray, IsObject, IsString, Keys,
 Log10, Max, Min, module, PI, Pow, require, Round,
 Sign, Sin, Sqrt, Undefined, window
 */
-'use strict';
-
 (function (global, factory) {
 typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(function() {}()) :
 typeof define === 'function' && define.amd ? define(['require'], function(require) { return factory(function() {}()); }) :
 (global = global || self, global.Chart = factory());
 }(this, (function () {
+    'use strict';
 
 function noop() {}
 
@@ -300,7 +299,7 @@ function getRgba(string) {
     }
     else if ((match = string.match(rgba))) {
         for (let i = 0; i < rgb.length; i++) {
-            rgb[i] = parseInt(match[i + 1]);
+            rgb[i] = parseInt(match[i + 1], 10);
         }
         a = parseFloat(match[4]);
     }
@@ -653,9 +652,9 @@ var helpers = {
     /**
      * Calls `fn` with the given `args` in the scope defined by `thisArg` and returns the
      * value returned by `fn`. If `fn` is not a function, this method returns undefined.
-     * @param {function} fn - The function to call.
-     * @param {Array|undefined|null} args - The arguments with which `fn` should be called.
-     * @param {object} [thisArg] - The value of `this` provided for the call to `fn`.
+     * @param {Function} fn - The function to call.
+     * @param {Array?=} args - The arguments with which `fn` should be called.
+     * @param {Object} thisArg - The value of `this` provided for the call to `fn`.
      * @returns {*}
      */
     callback: function(fn, args, thisArg) {
@@ -668,10 +667,10 @@ var helpers = {
      * Note(SB) for performance sake, this method should only be used when loopable type
      * is unknown or in none intensive code (not called often and small loopable). Else
      * it's preferable to use a regular for() loop and save extra function calls.
-     * @param {object|Array} loopable - The object or array to be iterated.
-     * @param {function} fn - The function to call for each item.
-     * @param {object} [thisArg] - The value of `this` provided for the call to `fn`.
-     * @param {boolean} [reverse] - If true, iterates backward on the loopable.
+     * @param {Object|Array} loopable - The object or array to be iterated.
+     * @param {Function} fn - The function to call for each item.
+     * @param {Object} thisArg - The value of `this` provided for the call to `fn`.
+     * @param {boolean} reverse - If true, iterates backward on the loopable.
      */
     each: function(loopable, fn, thisArg, reverse) {
         var i, len, keys;
@@ -786,11 +785,11 @@ var helpers = {
     /**
      * Recursively deep copies `source` properties into `target` with the given `options`.
      * IMPORTANT: `target` is not cloned and will be updated with `source` properties.
-     * @param {object} target - The target object in which all sources are merged into.
-     * @param {object|object[]} source - Object(s) to merge into `target`.
-     * @param {object} [options] - Merging options:
-     * @param {function} [options.merger] - The merge method (key, target, source, options)
-     * @returns {object} The `target` object.
+     * @param {Object} target - The target object in which all sources are merged into.
+     * @param {Object|Array<Object>} source - Object(s) to merge into `target`.
+     * @param {Object} options - Merging options:
+     * @param {Function} options.merger - The merge method (key, target, source, options)
+     * @returns {Object} The `target` object.
      */
     merge: function(target, source, options) {
         var sources = IsArray(source) ? source : [source];
@@ -822,9 +821,9 @@ var helpers = {
     /**
      * Recursively deep copies `source` properties into `target` *only* if not defined in target.
      * IMPORTANT: `target` is not cloned and will be updated with `source` properties.
-     * @param {object} target - The target object in which all sources are merged into.
-     * @param {object|object[]} source - Object(s) to merge into `target`.
-     * @returns {object} The `target` object.
+     * @param {Object} target - The target object in which all sources are merged into.
+     * @param {Object|Array<Object>} source - Object(s) to merge into `target`.
+     * @returns {Object} The `target` object.
      */
     mergeIf: function(target, source) {
         return helpers.merge(target, source, {merger: helpers._mergerIf});
@@ -862,7 +861,7 @@ var helpers = {
  * @see http://www.robertpenner.com/easing/
  */
 var effects = {
-    easeOutQuart: function(t) {
+    'easeOutQuart': function(t) {
         return -((t = t - 1) * t * t * t - 1);
     },
 };
@@ -915,8 +914,8 @@ var exports$1 = {
 
     /**
      * Returns true if the point is inside the rectangle
-     * @param {object} point - The point to test
-     * @param {object} area - The rectangle
+     * @param {Object} point - The point to test
+     * @param {Object} area - The rectangle
      * @returns {boolean}
      * @private
      */
@@ -996,8 +995,8 @@ var core_defaults = defaults;
 
 /**
  * Converts the given font object into a CSS font string.
- * @param {object} font - A font object.
- * @return {string} The CSS font string. See https://developer.mozilla.org/en-US/docs/Web/CSS/font
+ * @param {Object} font - A font object.
+ * @returns {string} The CSS font string. See https://developer.mozilla.org/en-US/docs/Web/CSS/font
  * @private
  */
 function toFontString(font) {
@@ -1045,9 +1044,9 @@ var helpers_options = {
 
     /**
      * Converts the given value into a padding object with pre-computed width/height.
-     * @param {number|object} value - If a number, set the value to all TRBL component,
+     * @param {number|Object} value - If a number, set the value to all TRBL component,
      *  else, if and object, use defined properties and sets undefined ones to 0.
-     * @returns {object} The padding values (top, right, bottom, left, width, height)
+     * @returns {Object} The padding values (top, right, bottom, left, width, height)
      * @since 2.7.0
      */
     toPadding: function(value) {
@@ -1074,8 +1073,8 @@ var helpers_options = {
 
     /**
      * Parses font options and returns the font object.
-     * @param {object} options - A object that contains font options to be parsed.
-     * @return {object} The font object.
+     * @param {Object} options - A object that contains font options to be parsed.
+     * @returns {Object} The font object.
      * @todo Support font.* options and renamed to toFont().
      * @private
      */
@@ -1098,12 +1097,12 @@ var helpers_options = {
     /**
      * Evaluates the given `inputs` sequentially and returns the first defined value.
      * @param {Array} inputs - An array of values, falling back to the last value.
-     * @param {object} [context] - If defined and the current value is a function, the value
+     * @param {Object} context - If defined and the current value is a function, the value
      * is called with `context` as first argument and the result becomes the new input.
-     * @param {number} [index] - If defined and the current value is an array, the value
+     * @param {number} index - If defined and the current value is an array, the value
      * at `index` become the new input.
-     * @param {object} [info] - object to return information about resolution in
-     * @param {boolean} [info.cacheable] - Will be set to `false` if option is not cacheable.
+     * @param {Object} info - object to return information about resolution in
+     * @param {boolean} info.cacheable - Will be set to `false` if option is not cacheable.
      * @since 2.7.0
      */
     resolve: function(inputs, context, index, info) {
@@ -1742,7 +1741,7 @@ Assign(DatasetController.prototype, {
      * Returns a set of predefined style properties that should be used to represent the dataset
      * or the data if the index is specified
      * @param {number} index - data index
-     * @return {IStyleInterface} style object
+     * @returns {IStyleInterface} style object
      */
     getStyle: function(index) {
         var me = this;
@@ -2567,7 +2566,7 @@ var controllers = {
  * Helper function to get relative position for an event
  * @param {Event|IEvent} event - The event to get the position for
  * @param {Chart} chart - The chart
- * @returns {object} the event position
+ * @returns {Object} the event position
  */
 function getRelativePosition(e, chart) {
     if (e.native) {
@@ -2583,7 +2582,7 @@ function getRelativePosition(e, chart) {
 /**
  * Helper function to traverse all of the visible elements in the chart
  * @param {Chart} chart - the chart
- * @param {function} handler - the callback to execute for each visible item
+ * @param {Function} handler - the callback to execute for each visible item
  */
 function parseVisibleItems(chart, handler) {
     var metasets = chart._getSortedVisibleDatasetMetas();
@@ -2603,9 +2602,9 @@ function parseVisibleItems(chart, handler) {
 
 /**
  * Helper function to get the items that intersect the event position
- * @param {ChartElement[]} items - elements to filter
- * @param {object} position - the point to be nearest to
- * @return {ChartElement[]} the nearest items
+ * @param {Array<ChartElement>} items - elements to filter
+ * @param {Object} position - the point to be nearest to
+ * @returns {Array<ChartElement>} the nearest items
  */
 function getIntersectItems(chart, position) {
     var elements = [];
@@ -2624,8 +2623,8 @@ function getIntersectItems(chart, position) {
  * @param {Chart} chart - the chart to look at elements from
  * @param {object} position - the point to be nearest to
  * @param {boolean} intersect - if true, only consider items that intersect the position
- * @param {function} distanceMetric - function to provide the distance between points
- * @return {ChartElement[]} the nearest items
+ * @param {Function} distanceMetric - function to provide the distance between points
+ * @returns {Array<ChartElement>} the nearest items
  */
 function getNearestItems(chart, position, intersect, distanceMetric) {
     var minDistance = Number.POSITIVE_INFINITY;
@@ -2728,7 +2727,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use during interaction
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         index: indexMode,
 
@@ -2739,7 +2738,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use during interaction
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         dataset: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2760,7 +2759,7 @@ var core_interaction = {
          * @function Chart.Interaction.modes.intersect
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         point: function(chart, e) {
             var position = getRelativePosition(e, chart);
@@ -2773,7 +2772,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         nearest: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2788,7 +2787,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         x: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2819,7 +2818,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @return {Chart.Element[]} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         y: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -3051,9 +3050,9 @@ core_defaults._set('global', {
  * 'left', 'top', 'right', 'bottom', and 'chartArea'
  * @prop {number} weight - The weight used to sort the item. Higher weights are further away from the chart area
  * @prop {boolean} fullWidth - if true, and the item is horizontal, then push vertical boxes down
- * @prop {function} isHorizontal - returns true if the layout item is horizontal (ie. top or bottom)
- * @prop {function} update - Takes two parameters: width and height. Returns size of item
- * @prop {function} getPadding -  Returns an object with padding on the edges
+ * @prop {Function} isHorizontal - returns true if the layout item is horizontal (ie. top or bottom)
+ * @prop {Function} update - Takes two parameters: width and height. Returns size of item
+ * @prop {Function} getPadding -  Returns an object with padding on the edges
  * @prop {number} width - Width of item. Must be valid after update()
  * @prop {number} height - Height of item. Must be valid after update()
  * @prop {number} left - Left edge of the item. Set by layout system and cannot be used in update
@@ -3730,7 +3729,7 @@ var platform = Assign({
      * Registers the specified listener on the given chart.
      * @param {Chart} chart - Chart from which to listen for event
      * @param {string} type - The ({@link IEvent}) type to listen for
-     * @param {function} listener - Receives a notification (an object that implements
+     * @param {Function} listener - Receives a notification (an object that implements
      * the {@link IEvent} interface) when an event of the specified type occurs.
      */
     addEventListener: function() {},
@@ -3739,7 +3738,7 @@ var platform = Assign({
      * Removes the specified listener previously registered with addEventListener.
      * @param {Chart} chart - Chart from which to remove the listener
      * @param {string} type - The ({@link IEvent}) type to remove
-     * @param {function} listener - The listener function to remove from the event target.
+     * @param {Function} listener - The listener function to remove from the event target.
      */
     removeEventListener: function() {}
 
@@ -3771,7 +3770,7 @@ var core_plugins = {
 
     /**
      * Registers the given plugin(s) if not already registered.
-     * @param {IPlugin[]|IPlugin} plugins plugin instance(s).
+     * @param {Array<IPlugin>|IPlugin} plugins plugin instance(s).
      */
     register: function(plugins) {
         var p = this._plugins;
@@ -3786,7 +3785,7 @@ var core_plugins = {
 
     /**
      * Unregisters the given plugin(s) only if registered.
-     * @param {IPlugin[]|IPlugin} plugins plugin instance(s).
+     * @param {Array<IPlugin>|IPlugin} plugins plugin instance(s).
      */
     unregister: function(plugins) {
         var p = this._plugins;
@@ -3820,7 +3819,7 @@ var core_plugins = {
 
     /**
      * Returns all registered plugin instances.
-     * @returns {IPlugin[]} array of plugin objects.
+     * @returns {Array<IPlugin>} array of plugin objects.
      * @since 2.1.5
      */
     getAll: function() {
@@ -3859,7 +3858,7 @@ var core_plugins = {
 
     /**
      * Returns descriptors of enabled plugins for the given chart.
-     * @returns {object[]} [{ plugin, options }]
+     * @returns {Array<Object>} { plugin, options }
      * @private
      */
     descriptors: function(chart) {
@@ -4050,8 +4049,8 @@ var positioners = {
     /**
      * Average mode places the tooltip at the average position of the elements shown
      * @function Chart.Tooltip.positioners.average
-     * @param elements {ChartElement[]} the elements being displayed in the tooltip
-     * @returns {object} tooltip position
+     * @param {Array<ChartElement>} elements the elements being displayed in the tooltip
+     * @returns {Object} tooltip position
      */
     average: function(elements) {
         if (!elements.length) {
@@ -4082,9 +4081,9 @@ var positioners = {
     /**
      * Gets the tooltip position nearest of the item nearest to the event position
      * @function Chart.Tooltip.positioners.nearest
-     * @param elements {Chart.Element[]} the tooltip elements
-     * @param eventPosition {object} the position of the event in canvas coordinates
-     * @returns {object} the tooltip position
+     * @param {Array<ChartElement>} elements the tooltip elements
+     * @param {Object} eventPosition the position of the event in canvas coordinates
+     * @returns {Object} the tooltip position
      */
     nearest: function(elements, eventPosition) {
         var x = eventPosition.x;
@@ -4135,7 +4134,7 @@ function pushOrConcat(base, toPush) {
 /**
  * Returns array of strings split by newline
  * @param {string} value - The value to split by newline.
- * @returns {string[]} value if newline present - Returned from String split() method
+ * @returns {Array<string>} value if newline present - Returned from String split() method
  * @function
  */
 function splitNewlines(str) {
@@ -4149,7 +4148,7 @@ function splitNewlines(str) {
 /**
  * Private helper to create a tooltip item model
  * @param element - the chart element (point, arc, bar) to create the tooltip item for
- * @return new tooltip item
+ * @returns {Object} new tooltip item
  */
 function createTooltipItem(element) {
     var xScale = element._xScale;
@@ -4174,7 +4173,7 @@ function createTooltipItem(element) {
 
 /**
  * Helper to get the reset model for the tooltip
- * @param tooltipOpts {object} the tooltip options
+ * @param {Object} tooltipOpts the tooltip options
  */
 function getBaseModel(tooltipOpts) {
     var globalDefaults = core_defaults.global;
@@ -5453,14 +5452,14 @@ Assign(Chart.prototype, /** @lends Chart */ {
         core_layouts.update(this, this.width, this.height);
 
         me._layers = [];
-        for (let box of me.boxes) {
+        for (let box of me.boxes || []) {
             // _configure is called twice, once in core.scale.update and once here.
             // Here the boxes are fully updated and at their final positions.
             if (box._configure) {
                 box._configure();
             }
             me._layers.push.apply(me._layers, box._layers());
-        };
+        }
 
         me._layers.forEach(function(item, index) {
             item._idx = index;
@@ -5700,7 +5699,7 @@ Assign(Chart.prototype, /** @lends Chart */ {
 
     /**
      * Get the single element that was clicked on
-     * @return An object containing the dataset index and element index of the matching element. Also contains the rectangle that was draw
+     * @returns {Object} An object containing the dataset index and element index of the matching element. Also contains the rectangle that was draw
      */
     getElementAtEvent: function(e) {
         return core_interaction.modes.single(this, e);
@@ -5937,7 +5936,7 @@ Assign(Chart.prototype, /** @lends Chart */ {
      * Handle an event
      * @private
      * @param {IEvent} event the event to handle
-     * @return {boolean} true if the chart needs to re-render
+     * @returns {boolean} true if the chart needs to re-render
      */
     handleEvent: function(e) {
         var me = this;
@@ -6708,7 +6707,7 @@ var Scale = Element.extend({
     /**
      * @param {number} maxWidth - the max width in pixels
      * @param {number} maxHeight - the max height in pixels
-     * @param {object} margins - the space between the edge of the other scales and edge of the chart
+     * @param {Object} margins - the space between the edge of the other scales and edge of the chart
      *   This space comes from two sources:
      *     - padding - space that's required to show the labels at the edges of the scale
      *     - thickness of scales or legends in another orientation
@@ -7829,7 +7828,7 @@ scale_category._defaults = _defaults;
  * Generate a set of linear ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {number[]} array of tick values
+ * @returns {Array<number>} array of tick values
  */
 function generateTicks(generationOptions, dataRange) {
     var ticks = [];
@@ -7925,7 +7924,7 @@ function updateMinMax(scale, meta, data) {
  * Generate a set of custom ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {number[]} array of tick values
+ * @returns {Array<number>} array of tick values
  */
 function generateTicks$1(generationOptions, dataRange) {
     let [func, inv] = generationOptions.funcs,
@@ -8230,9 +8229,9 @@ core_defaults._set('global', {
 
 /**
  * Helper function to get the box width based on the usePointStyle option
- * @param {object} labelopts - the label options on the legend
+ * @param {Object} labelopts - the label options on the legend
  * @param {number} fontSize - the label font size
- * @return {number} width of the color box area
+ * @returns {number} width of the color box area
  */
 function getBoxWidth(labelOpts, fontSize) {
     return labelOpts.usePointStyle && labelOpts.boxWidth > fontSize ?
