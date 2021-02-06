@@ -84,7 +84,7 @@ let Abs = Math.abs,
 ////////////////////////////
 /**
  * Find 1 node
- * @param {Element|Node|string} sel CSS selector or node
+ * @param {Node|string|Element|EventTarget} sel CSS selector or node
  * @param {Node=} parent parent node, document by default
  * @returns {Node} found node
  * @example
@@ -603,7 +603,7 @@ function InsertNodes(parent, nodes, preprend) {
 
 /**
  * Find a parent node by tagName and class
- * @param {Node|string} node CSS selector or node
+ * @param {EventTarget|Node|string} node CSS selector or node
  * @param {Object} obj
  * @param {string=} obj.attrs
  * @param {string=} obj.class_ 'live-pv|xmoves'

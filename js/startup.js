@@ -22,9 +22,9 @@ E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_ac
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HIDES, HTML,
 ICONS:true, Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
-move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, PD, PIECE_THEMES,
-populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings, resize_bracket, resize_game,
-resize_move_lists, resize_table, resume_sleep,
+move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, ParseJSON, PD,
+PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
+resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, set_section,
 SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config,
 startup_game, startup_graph, Style, TAB_NAMES, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, toggle_fullscreen,
@@ -155,7 +155,7 @@ function adjust_popups() {
 
 /**
  * Use an audio set
- * @param {string} set custom, bamboo
+ * @param {string|number} set custom, bamboo
  */
 function audio_set(set) {
     let audio_settings = X_SETTINGS['audio'],
@@ -320,7 +320,7 @@ function change_setting_special(name, value, close) {
         configure('e', value);
         break;
     case 'game_level':
-        configure_string(value);
+        configure_string(value + '');
         break;
     case 'game_new_FEN':
     case 'game_new_game':
@@ -363,11 +363,9 @@ function change_setting_special(name, value, close) {
         hide_element(context_target);
         break;
     case 'import_settings':
-        try {
-            import_settings(JSON.parse(value), true);
-        }
-        catch (err) {
-        }
+        let json = ParseJSON(value + '');
+        if (json)
+            import_settings(json, true);
         break;
     case 'join_next':
         tab_element(context_target);
@@ -383,7 +381,7 @@ function change_setting_special(name, value, close) {
         populate_areas();
         break;
     case 'preset':
-        load_preset(value);
+        load_preset(value + '');
         save_option('last_preset', value);
         break;
     case 'shortcut_1':
@@ -418,7 +416,7 @@ function change_setting_special(name, value, close) {
         show_custom_colors(name);
 
     add_history();
-    return result;
+    return !!result;
 }
 
 /**
@@ -1707,7 +1705,7 @@ function set_global_events() {
 
         reader.readAsText(file);
         reader.onloadend = () => {
-            let data = reader.result;
+            let data = /** @type {string} */(reader.result);
             switch (id) {
                 case 'import_settings':
                     change_setting(id, data);

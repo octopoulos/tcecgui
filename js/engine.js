@@ -719,7 +719,7 @@ function restore_history(dir) {
     if (!y_copy)
         return;
     y_index += dir;
-    let data = JSON.parse(y_copy);
+    let data = ParseJSON(y_copy);
     if (!IsObject(data))
         return;
 

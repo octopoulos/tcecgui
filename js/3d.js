@@ -67,7 +67,7 @@ let audiobox = {
     camera_pos,
     camera_target,
     CAMERAS = {
-        static: {
+        'static': {
             dir: [0, 0, 0],
             lerp: [-1, -1, 0],
             pos: [0, 0, 0],
