@@ -84,8 +84,8 @@ server.on('connection', async socket => {
         await load_wasm();
 
     socket.on('data', chunk => {
-	// CHECK THIS: FIX: handle 2 messages in one packet or incomplete packets:
-	// Error can triggered by "go movetime 100" for example. Could use same method as chat_engine.read_votes does.
+        // CHECK THIS: FIX: handle 2 messages in one packet or incomplete packets:
+        // Error can triggered by "go movetime 100" for example. Could use same method as chat_engine.read_votes does.
         LS('data');
         let data, text;
         try {

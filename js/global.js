@@ -42,16 +42,16 @@ let HOST_ARCHIVE,
 
 /**
  * @typedef {{
- * _fixed: number,
- * agree: number,
- * fen0: string,
- * goal: number,
- * id: number,
- * invert: boolean,
- * mobil: number,
- * node_from: Node,
- * node_to: Node,
- * seen: number,
+ * _fixed: (number|undefined),
+ * agree: (number|undefined),
+ * fen0: (string|undefined),
+ * goal: (Array<number>|undefined),
+ * id: (number|undefined),
+ * invert: (boolean|undefined),
+ * mobil: (number|undefined),
+ * node_from: (Node|undefined),
+ * node_to: (Node|undefined),
+ * seen: (number|undefined),
  * }} */
 let Move;
 
@@ -363,18 +363,21 @@ function reset_old_settings() {
  * @param {string} text
  * @param {boolean=} no_number remove the numbers
  * @param {number=} def_ply default ply
- * @returns {Array<*>}
+ * @returns {!{items:Array<string>, ply:number}}
  */
-function split_move_string(text, no_number, def_ply) {
+function split_move_string(text, no_number, def_ply=-2) {
     if (!text)
-        return [-2, []];
+        return {items: [], ply: -2};
 
     let items = text.replace(/[.]{2,}/, ' ... ').split(' '),
         ply = (parseInt(items[0], 10) - 1) * 2 + (items[1] == '...'? 1: 0);
 
     if (no_number)
         items = items.filter(item => !IsDigit(item[0]) && item != '...');
-    return [isNaN(ply)? def_ply: ply, items];
+    return {
+        items: items,
+        ply: isNaN(ply)? def_ply: ply,
+    };
 }
 
 /**

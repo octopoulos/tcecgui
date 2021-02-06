@@ -79,7 +79,7 @@ let BEGIN_ZEROES = {
 /**
  * Calculate white win %
  * @param {number} id 0, 1, 2, 3
- * @param {string|number} eval_
+ * @param {number|string} eval_
  * @param {number} ply
  * @returns {number}
  */
@@ -98,7 +98,7 @@ function calculate_win(id, eval_, ply) {
 
     let score;
     if (!isNaN(eval_)) {
-        score = calculate_feature_q(feature, eval_, ply) * 2;
+        score = calculate_feature_q(feature, /** @type {number} */(eval_), ply) * 2;
         score = Sign(score) * Round(Abs(score) * 10) / 10;
     }
     else if (eval_ && eval_.includes('-'))
@@ -145,7 +145,7 @@ function check_first_num(num) {
 /**
  * Clamp an eval
  * @param {number} eval_
- * @returns {number}
+ * @returns {number|undefined}
  */
 function clamp_eval(eval_) {
     if (NON_EVALS.has(eval_))
@@ -293,7 +293,7 @@ function create_charts() {
 /**
  * Fix labels that are undefined
  * - the last label needs to be set, otherwise there won't be any change
- * @param {Array<string>} labels
+ * @param {Array<string|number>} labels
  */
 function fix_labels(labels) {
     let num_label = labels.length;
@@ -657,14 +657,14 @@ function update_chart(name) {
 
 /**
  * Update chart options
- * @param {string} name null for all charts
+ * @param {string?} name null for all charts
  * @param {number} mode &1:colors, &2:line + font size
  */
 function update_chart_options(name, mode) {
     // eval colors
     if (mode & 1) {
         if (!name || name == 'eval') {
-            let data = chart_data.eval;
+            let data = chart_data['eval'];
             if (!data)
                 return;
             let datasets = data.datasets;
@@ -678,7 +678,7 @@ function update_chart_options(name, mode) {
             }
 
             // + update agree
-            let agree = (chart_data.agree || {}).datasets;
+            let agree = (chart_data['agree'] || {}).datasets;
             if (agree && agree[1]) {
                 let mix = mix_hex_colors(Y['graph_color_2'], Y['graph_color_3'], 0.5);
                 Assign(agree[1], {

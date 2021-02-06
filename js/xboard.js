@@ -472,8 +472,10 @@ class XBoard {
         if (this.check_locked(['text', text, cur_ply, agree]))
             return;
 
-        let [new_ply, new_items] = split_move_string(text),
-            [old_ply] = split_move_string(this.text),
+        let split = split_move_string(text),
+            new_items = split.items,
+            new_ply = split.ply,
+            old_ply = split_move_string(this.text).ply,
             want_ply = cur_ply? cur_ply: new_ply;
         if (!force && new_ply < old_ply) {
             if (DEV['ply'])
@@ -666,15 +668,19 @@ class XBoard {
         if (!move)
             return;
 
-        let func = `animate_${this.mode}`;
-        if (!this[func])
+        let func = {
+            '3d': this.animate_3d,
+            'canvas': this.animate_canvas,
+            'html': this.animate_html,
+        }[this.mode];
+        if (!func)
             return;
 
         let delay = Y['highlight_delay'];
-        this[func](move, animate || !delay);
+        func.call(this, move, animate || !delay);
 
         if (!animate && delay > 0)
-            add_timeout(`animate_${this.id}`, () => this[func](move, true), delay);
+            add_timeout(`animate_${this.id}`, () => func.call(this, move, true), delay);
     }
 
     /**
@@ -735,9 +741,14 @@ class XBoard {
      * @param {number=} opacity opacity multiplier
      */
     arrow(id, dico, opacity=1) {
-        let func = `arrow_${this.mode}`;
-        if (this[func])
-            this[func](id, dico, opacity);
+        let func = {
+            '3d': this.arrow_3d,
+            'canvas': this.arrow_canvas,
+            'html': this.arrow_html,
+        }[this.mode];
+
+        if (func)
+            func.call(this, id, dico, opacity);
     }
 
     /**
@@ -1015,7 +1026,7 @@ class XBoard {
      * Calculate the mobility
      * @param {Move} move
      * @param {boolean=} no_load don't load the FEN
-     * @returns {string}
+     * @returns {number}
      */
     chess_mobility(move, no_load) {
         if (move.mobil != undefined)
@@ -1030,7 +1041,6 @@ class XBoard {
             move.mobil = 20.5;
             return -20.5;
         }
-        // CHECK THIS
         if (!fen)
             return -20.5;
         if (!no_load)
@@ -2100,9 +2110,16 @@ class XBoard {
 
         if (DEV['board'])
             LS(`render: ${this.dirty}`);
-        let func = `render_${this.mode}`;
-        if (this[func]) {
-            this[func]();
+
+        let func = {
+            '3d': this.render_3d,
+            'canvas': this.render_canvas,
+            'html': this.render_html,
+            'text': this.render_text,
+        }[this.mode];
+
+        if (func) {
+            func.call(this);
             this.animate(this.moves[this.ply], this.smooth);
         }
 

@@ -2134,8 +2134,8 @@ function init_players(ply, players, evals) {
 
 // parse_time_control
 [
-    ['900+5', [`15'+5"`, {tc: 900, tc2: 5, tc3: 0}]],
-    ['40/900', [`40/900'`, {tc: 900, tc2: 0, tc3: 40}]],
+    ['900+5', {dico: {tc: 900, tc2: 5, tc3: 0}, text: `15'+5"`}],
+    ['40/900', {dico: {tc: 900, tc2: 0, tc3: 40}, text: `40/900'`}],
 ].forEach(([value, answer], id) => {
     test(`parse_time_control:${id}`, () => {
         expect(parse_time_control(value)).toEqual(answer);

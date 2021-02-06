@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-18
+// @version 2021-02-05
 //
 /*
 globals
@@ -426,9 +426,12 @@ global.DEFAULTS = {
     ['2...d6 3. d4 Nf6 4. Nc3 cxd4', 1, [3, ['d6', 'd4', 'Nf6', 'Nc3', 'cxd4']]],
     ['2...Nc6 3. Bb5', 0, [3, ['2', '...', 'Nc6', '3.', 'Bb5']]],
     ['2...Nc6 3. Bb5', 1, [3, ['Nc6', 'Bb5']]],
+    ['Nc6', 0, [-2, ['Nc6']]],
 ].forEach(([text, no_number, answer], id) => {
     test(`split_move_string:${id}`, () => {
-        expect(split_move_string(text, no_number)).toEqual(answer);
+        let split = split_move_string(text, no_number);
+        expect(split.ply).toEqual(answer[0]);
+        expect(split.items).toEqual(answer[1]);
     });
 });
 
