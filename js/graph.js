@@ -1,13 +1,13 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-07
 //
 // jshint -W069
 /*
 globals
 _, A, Abs, Assign, C, calculate_feature_q, Clamp, CreateNode,
 DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
-Log, Log10, LS, Max, Min, mix_hex_colors, Pad, Pow, require, Round,
+Log, Log10, LS, Max, Merge, Min, mix_hex_colors, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
 */
 'use strict';
@@ -211,8 +211,8 @@ function create_chart_data() {
         'time': [
             new_dataset('time', color0),
             new_dataset('time', color1),
-            new_dataset('left~2', extra0, 'y-axis-1'),
-            new_dataset('left~2', extra1, 'y-axis-1'),
+            new_dataset('left~2', extra0, 'y_axis_1'),
+            new_dataset('left~2', extra1, 'y_axis_1'),
         ],
     };
 
@@ -384,8 +384,8 @@ function mark_ply_chart(name, ply, max_ply) {
         }
 
         let scales = chart.scales,
-            x = scales['x-axis-0'].getPixelForValue(data.x),
-            y = scales['y-axis-0'].getPixelForValue(data.y);
+            x = scales.x_axis_0.getPixelForValue(data.x),
+            y = scales.y_axis_0.getPixelForValue(data.y);
         Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);
         Style(markers[1], `height:1px;left:0;top:${y - 0.5}px;width:${rect.width}px`);
     }
@@ -433,10 +433,12 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
         funcs: set_scale_func(name),
     };
 
-    let options = Assign({}, CHART_OPTIONS, {
+    let defaults = window.ChartDefaults,
+        default_scale = defaults.scale,
+        options = Assign({}, CHART_OPTIONS, {
         scales: {
-            xAxes: [CHART_X_AXES],
-            yAxes: Array(number).fill(0).map((_, id) => new_y_axis(id, ticks_dico, axis_dico)),
+            xAxes: [Merge(CHART_X_AXES, default_scale, 0)],
+            yAxes: Array(number).fill(0).map((_, id) => Merge(new_y_axis(id, ticks_dico, axis_dico), default_scale, 0)),
         },
     });
 
@@ -454,6 +456,8 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
     if (dico)
         Assign(options, dico);
 
+    window['Chart'] = window.Chart;
+    window['ChartDefaults'] = defaults;
     charts[name] = charts[name] || new window.Chart(`chart-${name}`, {
         data: chart_data[name],
         options: options,
@@ -497,7 +501,7 @@ function new_dataset(label, color, yaxis, dico) {
 function new_y_axis(id, y_ticks, dico) {
     let y_axis = {
         display: true,
-        id: `y-axis-${id}`,
+        id: `y_axis_${id}`,
         position: (id == 0)? 'left': 'right',
     };
 
@@ -585,7 +589,7 @@ function scale_boom(x) {
 }
 
 /**
- * Set the y-axis scaling function (not custom)
+ * Set the y_axis scaling function (not custom)
  * @param {string} name
  * @returns {Array<Function>}
  */
@@ -597,7 +601,7 @@ function set_scale_func(name) {
 
     let chart = charts[name];
     if (chart) {
-        let scale = chart.scales['y-axis-0'];
+        let scale = chart.scales.y_axis_0;
         scale.options.funcs = funcs;
     }
     return funcs;
@@ -934,7 +938,7 @@ function update_player_charts(moves) {
  * @param {Object} chart
  */
 function update_scale_boom(chart) {
-    let scale = chart.scales['y-axis-0'];
+    let scale = chart.scales.y_axis_0;
     scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
@@ -949,7 +953,7 @@ function update_scale_boom(chart) {
  * @param {Object} chart
  */
 function update_scale_custom(chart) {
-    let scale = chart.scales['y-axis-0'];
+    let scale = chart.scales.y_axis_0;
 
     // 1) calculate the 2 regions + center
     let datasets = scale.chart.data.datasets,
@@ -1027,7 +1031,7 @@ function update_scale_custom(chart) {
  * @param {Object} chart
  */
 function update_scale_eval(chart) {
-    let scale = chart.scales['y-axis-0'];
+    let scale = chart.scales.y_axis_0;
     scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
@@ -1043,7 +1047,7 @@ function update_scale_eval(chart) {
  */
 function update_scale_linear(chart) {
     let eval_clamp = Y['graph_eval_clamp'],
-        scale = chart.scales['y-axis-0'];
+        scale = chart.scales.y_axis_0;
     scale.options.funcs = (eval_clamp > 0)? [
         x => Clamp(x, -eval_clamp, eval_clamp),
         y => y,

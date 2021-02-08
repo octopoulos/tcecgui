@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-06
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -603,7 +603,7 @@ function InsertNodes(parent, nodes, preprend) {
 
 /**
  * Find a parent node by tagName and class
- * @param {EventTarget|Node|string} node CSS selector or node
+ * @param {Node|string|EventTarget} node CSS selector or node
  * @param {Object} obj
  * @param {string=} obj.attrs
  * @param {string=} obj.class_ 'live-pv|xmoves'
@@ -705,7 +705,7 @@ function Prop(sel, prop, value, parent) {
  * @param {Node|string} sel CSS selector or node
  * @param {*=} show true to show the node
  * @param {Node=} parent
- * @param {string=} value to use for node.display, by default '' but could be block
+ * @param {string=} mode to use for node.display, by default '' but could be block
  * @example
  * S('a')                       // hide all links
  * S('a', true)                 // show all links
@@ -761,7 +761,12 @@ function ScrollDocument(top, smooth, offset=0) {
             top = _(/** @type {Node|string} */(top));
             if (!top)
                 return;
-            top = top.offsetTop;
+            let value = 0;
+            while (top) {
+                value += top.offsetTop;
+                top = top.offsetParent;
+            }
+            top = value;
         }
         if (smooth) {
             window.scrollTo({top: Max(0, top + offset), behavior: 'smooth'});
@@ -777,7 +782,7 @@ function ScrollDocument(top, smooth, offset=0) {
  * + handle dn
  * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
- * @param {string=} value to use for node.display, by default '' but could be block
+ * @param {string=} mode to use for node.display, by default '' but could be block
  * @example
  * Show('body')     // show the body
  * Show('a')        // show all links
@@ -800,7 +805,7 @@ function Show(sel, parent, mode='') {
  * Change the style of nodes
  * @param {Node|string} sel CSS selector or node
  * @param {string} style
- * @param {boolean=} true to set/add the style, otherwise remove it
+ * @param {boolean=} add to set/add the style, otherwise remove it
  * @param {Node=} parent
  * @example
  * Style(document.documentElement, 'opacity:0.1')   // make the page almost transparent
@@ -1368,6 +1373,33 @@ function LoadLibrary(url, callback, extra) {
 }
 
 /**
+ * Merge 2 objects recursively
+ * @param {!Object} dico
+ * @param {!Object} extras
+ * @param {number=} flag &1:replace existing values, &2:remove a key with "undefined", &4:copy object
+ * @returns {!Object}
+ */
+function Merge(dico, extras, flag=1) {
+    Keys(extras).forEach(key => {
+        let extra = extras[key];
+        if (extra == undefined) {
+            if (flag & 2)
+                delete dico[key];
+        }
+        else if (IsObject(extra)) {
+            let source = dico[key];
+            if (IsObject(source))
+                Merge(source, extra, flag);
+            else if ((flag & 1) || dico[key] == undefined)
+                dico[key] = (flag & 4)? {...extra}: extra;
+        }
+        else if ((flag & 1) || dico[key] == undefined)
+            dico[key] = extra;
+    });
+    return dico;
+}
+
+/**
  * Get the timestamp in seconds
  * @param {boolean=} as_float get seconds as float instead of int
  * @returns {number} seconds
@@ -1655,6 +1687,7 @@ if (typeof exports != 'undefined') {
         Lower: Lower,
         LS: LS,
         Max: Max,
+        Merge: Merge,
         Min: Min,
         NAMESPACE_SVG: NAMESPACE_SVG,
         Now: Now,

@@ -102,12 +102,6 @@ verts {
 }
 
 /* helpers */
-.h100 {
-    height: 100%;
-}
-.mirror {
-    transform: scale(-1, 1);
-}
 a,
 img,
 .noselect,
@@ -116,6 +110,12 @@ img,
     -webkit-user-select: none;
     -webkit-user-drag: none;
     user-select: none;
+}
+.h100 {
+    height: 100%;
+}
+.mirror {
+    transform: scale(-1, 1);
 }
 .nowrap {
     white-space: nowrap;
@@ -129,9 +129,6 @@ img,
 .resize {
     font-size: 0.8em;
 }
-.tshadow {
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-}
 .small {
     font-size: 0.9em;
 }
@@ -143,6 +140,9 @@ img,
 }
 .tar {
     text-align: right;
+}
+.tshadow {
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 .w100 {
     width: 100%;
@@ -361,7 +361,6 @@ grid {
 }
 #popup > grid > div {
     padding: 0 0.5em;
-    /* word-break: break-all; */
 }
 .popup {
     background: rgba(40, 40, 40, 0.96);

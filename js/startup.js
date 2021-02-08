@@ -2493,7 +2493,7 @@ function startup() {
     prepare_settings();
     load_settings();
     start_game();
-    // init_graph();
+    init_graph();
     check_hash();
 
     set_global_events();

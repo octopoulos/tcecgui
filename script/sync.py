@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-02-03
+# @version 2021-02-06
 
 """
 Sync
@@ -31,60 +31,74 @@ JS_FOLDER = join(BASE, 'js')
 LOCAL = BASE
 
 # edit these files
-CSS_FILES = [
-    'light',
-]
-
-JS_FILES = {
-    # '4d': [
-    #     'libs/three',
-    #     'libs/stats',
-    #     'libs/GLTFLoader',
-    #     'libs/DRACOLoader',
-    #     'libs/camera-controls',
-    # ],
-    'all': [
-        'libs/socket.io.dev',
-        ':common',
-        ':chess',
-        ':engine',
-        ':global',
-        ':3d',
-        ':xboard',
-        ':chart',
-        ':graph',
-        ':game',
-        ':network',
-        ':startup',
-        ':config',
-        'script',
+CSS_FILES = {
+    'index': [
+        'light',
     ],
 }
 
+JS_FILES = {
+    'index': {
+        # '4d': [
+        #     'libs/three',
+        #     'libs/stats',
+        #     'libs/GLTFLoader',
+        #     'libs/DRACOLoader',
+        #     'libs/camera-controls',
+        # ],
+        'all': [
+            'libs/socket.io.dev',
+            ':common',
+            ':chess',
+            ':engine',
+            ':global',
+            ':3d',
+            ':xboard',
+            ':chart',
+            ':graph',
+            ':game',
+            ':network',
+            ':startup',
+            ':config',
+            'script',
+        ],
+    },
+}
+
+JS_MAINS = {
+    'index': 'all',
+}
+
 NEED_GZIPS = {
+    'index.html',
+    'manifest.json',
+
+    # css
+    'dark.css',
+    'dark-archive.css',
+    'light-archive.css',
+    'sea.css',
+    'sea-archive.css',
+
+    # js
     # '4d_.js',
     # 'ammo.wasm.js',
     # 'ammo.wasm.wasm',
-    'bul.json',
     'chart_.js',
     'chart.min.js',
     'chess-wasm.js',
     'chess-wasm.wasm',
-    'dark.css',
-    'dark-archive.css',
     'draco_decoder.js',
     'draco_decoder.wasm',
     'draco_wasm_wrapper.js',
-    'fra.json',
-    'index.html',
-    'jpn.json',
-    'light-archive.css',
-    'manifest.json',
     'pieces-draco.glb',
+
+    # translate
+    'bul.json',
+    'fra.json',
+    'jpn.json',
     'pol.json',
     'rus.json',
-    'sea.css',
-    'sea-archive.css',
     'spa.json',
     'ukr.json',
 }
@@ -111,15 +125,13 @@ class Sync:
 
     #
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
-
+        self.advanced = kwargs.get('advanced')                          # type: bool
         self.clean = kwargs.get('clean')                                # type: bool
-        self.debug = kwargs.get('debug')                                # type: bool
-        self.ftp_debug = default_int(kwargs.get('ftp_debug'), 0)        # type: int
         self.force = default_int(kwargs.get('force'), 0)                # type: int
+        self.ftp_debug = default_int(kwargs.get('ftp_debug'), 0)        # type: int
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
-        self.target = kwargs.get('target', 'index')                     # type: str
+        self.sync = kwargs.get('sync', 'index')                         # type: str
         self.upload = kwargs.get('upload')                              # type: int
         self.zip = kwargs.get('zip')                                    # type: bool
 
@@ -178,7 +190,7 @@ class Sync:
             '--language_in', 'ECMASCRIPT_2018',
             '--language_out', 'ECMASCRIPT_2018',
         ]
-        if self.kwargs.get('advanced'):
+        if self.advanced:
             args.extend(['--compilation_level', 'ADVANCED'])
         run(args)
         return output
@@ -250,8 +262,11 @@ class Sync:
     def create_index(self):
         """Create the new index.html
         """
-        target = f'{self.target}.html'
-        base = join(LOCAL, 'index_base.html')
+        if not (js_main := JS_MAINS.get(self.sync)):
+            return
+
+        target = f'{self.sync}.html'
+        base = join(LOCAL, f'{self.sync}_base.html')
         base_time = os.path.getmtime(base)
         index = join(LOCAL, target)
         index_time = os.path.getmtime(index) if os.path.isfile(index) else 0
@@ -260,18 +275,12 @@ class Sync:
             change += 1
 
         # 1) minimise JS
-        for js_output, js_files in JS_FILES.items():
+        for js_output, js_files in JS_FILES.get(self.sync, {}).items():
             all_js = join(JS_FOLDER, f'{js_output}.js')
             all_min_js = join(JS_FOLDER, f'{js_output}_.js')
             # common/engine changed => need to update, even though we're not using those files
             js_dates = [abspath(f"{JS_FOLDER}{js_file.strip(':')}.js") for js_file in js_files]
             js_names = [abspath(f'{JS_FOLDER}{js_file}.js') for js_file in js_files if js_file[0] != ':']
-
-            if js_output == 'all':
-                # script_js = join(JS_FOLDER, 'script.js')
-                extras = []
-            else:
-                extras = []
 
             # skip?
             update = True
@@ -279,12 +288,17 @@ class Sync:
                 if os.path.isfile(all_min_js) and os.path.isfile(all_js):
                     all_time = os.path.getmtime(all_min_js)
                     update = False
-                    for js_date in js_dates + extras:
+                    for js_date in js_dates:
                         update |= os.path.isfile(js_date) and os.path.getmtime(js_date) >= all_time
 
             if not update:
                 pinfo('J', end='')
                 continue
+
+            # entry script
+            entry_script = ''
+            if js_output == js_main:
+                entry_script = js_files[-1]
 
             datas = [
                 "'use strict';",
@@ -294,14 +308,12 @@ class Sync:
                 if not (script_data := read_text_safe(js_name)):
                     continue
 
-                # process the script.js
-                if js_name.endswith('script.js'):
+                # process the entry script
+                if entry_script and js_name.endswith(f'{entry_script}.js'):
                     script_data = re.sub(r'["\']use strict["\'];?', '', script_data)
                     script_data = re.sub('@import {(.*?)}', self.import_file, script_data)
                     script_data = re.sub('// BEGIN.*?// END', '', script_data, flags=re.S)
-
-                    if not self.debug:
-                        script_data = re.sub('// <<.*?// >>', '', script_data, flags=re.S)
+                    script_data = re.sub('// <<.*?// >>', '', script_data, flags=re.S)
 
                     # use HOST
                     pinfo(f'host={self.host}')
@@ -321,16 +333,17 @@ class Sync:
             change += 1
 
         # 2) minimise CSS
-        all_css = join(CSS_FOLDER, 'all.css')
-        all_min_css = join(CSS_FOLDER, 'all_.css')
-        css_names = [abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES]
+        all_css = join(CSS_FOLDER, f'{js_main}.css')
+        all_min_css = join(CSS_FOLDER, f'{js_main}_.css')
+        css_names = [abspath(f'{CSS_FOLDER}{css_file}.css') for css_file in CSS_FILES.get(self.sync, [])]
 
         update = True
-        if os.path.isfile(all_min_css) and os.path.isfile(all_css):
-            all_time = os.path.getmtime(all_min_css)
-            update = False
-            for css_name in css_names:
-                update |= os.path.isfile(css_name) and os.path.getmtime(css_name) >= all_time
+        if not self.force:
+            if os.path.isfile(all_min_css) and os.path.isfile(all_css):
+                all_time = os.path.getmtime(all_min_css)
+                update = False
+                for css_name in css_names:
+                    update |= os.path.isfile(css_name) and os.path.getmtime(css_name) >= all_time
 
         if update:
             datas = []
@@ -368,7 +381,7 @@ class Sync:
 
         # 4) create the new index.html
         if True:
-            all_min_js = join(JS_FOLDER, 'all_.js')
+            all_min_js = join(JS_FOLDER, f'{js_main}_.js')
             js_data = read_text_safe(all_min_js) or ''
             replaces = {
                 '<!-- {SCRIPT} -->': f'<script>{js_data}</script>',
@@ -491,12 +504,11 @@ def add_arguments_sync(parser: ArgumentParser):
     add = create_group(parser, 'sync')
     add('--advanced', action='store_true', help='advanced javascript compilation')
     add('--clean', action='store_true', help='delete all .gz files')
-    add('--ftp-debug', nargs='?', default=0, const=1, type=int, help='ftp debug level')
     add('--force', nargs='?', default=0, const=1, type=int, help='force compilation')
+    add('--ftp-debug', nargs='?', default=0, const=1, type=int, help='ftp debug level')
     add('--host', nargs='?', default='/', help='host, ex: /seriv/')
     add('--no-compress', nargs='?', default=0, const=1, type=int, help="don't compress JS")
-    add('--sync', action='store_true', help='create the index.html')
-    add('--target', nargs='?', default='index', help='set the output file, ex: index')
+    add('--sync', nargs='?', default='', const='index', type=str, help='cook the index', choices=['index', 'kick'])
     add('--upload', nargs='?', default=0, const=1, type=int, help='upload via FTP')
     add('--zip', action='store_true', help='create .gz files')
 

@@ -25,6 +25,7 @@ c++/*.html
 c++/*.js
 c++/*.wasm
 c++/shared*
+chart2.js
 coverage/
 crash.json
 create_list.js

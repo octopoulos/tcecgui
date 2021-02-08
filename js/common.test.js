@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-24
+// @version 2021-02-06
 //
 /*
 globals
@@ -276,6 +276,30 @@ let {
 ].forEach(([text, answer], id) => {
     test(`IsString:${id}`, () => {
         expect(IsString(text)).toEqual(answer);
+    });
+});
+
+// Merge
+[
+    [{x: {y: 5}}, {x: {y: 6}}, undefined, {x: {y: 6}}],
+    [{x: {y: 5}}, {x: {y: 6}}, 1, {x: {y: 6}}],
+    [{x: {y: 5}}, {x: {y: 6}}, 5, {x: {y: 6}}],
+    [{x: {y: 5}}, {x: {y: 6}}, 0, {x: {y: 5}}],
+    [{x: {y: 5}}, {x: {z: 6}}, 1, {x: {y: 5, z: 6}}],
+    [{x: {y: 5}}, {x: {y: {hello: 'there'}, z: 6}}, 1, {x: {y: {hello: 'there'}, z: 6}}],
+    [{x: {y: 5}}, {x: {y: {hello: 'there'}, z: 6}}, 0, {x: {y: 5, z: 6}}],
+    [{x: {y: 5}}, {x: 0}, 0, {x: {y: 5}}],
+    [{x: {y: 5}}, {x: 0}, 1, {x: 0}],
+    [{x: {y: 5}}, {x: undefined}, 0, {x: {y: 5}}],
+    [{x: {y: 5}}, {x: undefined}, 1, {x: {y: 5}}],
+    [{x: {y: 5}}, {x: undefined}, 2, {}],
+    [{x: {y: 5}}, {y: undefined}, 2, {x: {y: 5}}],
+    [{x: {y: 5}}, {x: {y: undefined}}, 2, {x: {}}],
+    [{x: {y: 5, z: 6}}, {x: {y: undefined}}, 2, {x: {z: 6}}],
+].forEach(([dico, extras, replace, answer], id) => {
+    test(`Merge:${id}`, () => {
+        expect(Merge(dico, extras, replace)).toEqual(answer);
+        expect(dico).toEqual(answer);
     });
 });
 
