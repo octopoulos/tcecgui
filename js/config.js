@@ -1,4 +1,4 @@
-// game.js
+// config.js
 // @author octopoulo <polluxyz@gmail.com>
 // @version 2021-02-05
 //

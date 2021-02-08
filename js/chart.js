@@ -1,10 +1,10 @@
 // chart.js
-// @version 2021-02-05
+// @version 2021-02-06
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
-define, document, Floor, IsArray, IsObject, IsString, Keys,
-Log10, Max, Min, module, PI, Pow, require, Round,
+define, document, Floor, IsArray, IsFunction, IsObject, IsString, Keys,
+Log10, LS, Max, Merge, Min, module, PI, Pow, require, Round,
 Sign, Sin, Sqrt, Undefined, window
 */
 (function (global, factory) {
@@ -768,21 +768,6 @@ var helpers = {
     },
 
     /**
-     * Merges source[key] in target[key] only if target[key] is undefined.
-     * @private
-     */
-    _mergerIf: function(key, target, source) {
-        var tval = target[key];
-        var sval = source[key];
-
-        if (IsObject(tval) && IsObject(sval)) {
-            helpers.mergeIf(tval, sval);
-        } else if (!target.hasOwnProperty(key)) {
-            target[key] = helpers.clone(sval);
-        }
-    },
-
-    /**
      * Recursively deep copies `source` properties into `target` with the given `options`.
      * IMPORTANT: `target` is not cloned and will be updated with `source` properties.
      * @param {Object} target - The target object in which all sources are merged into.
@@ -816,17 +801,6 @@ var helpers = {
         }
 
         return target;
-    },
-
-    /**
-     * Recursively deep copies `source` properties into `target` *only* if not defined in target.
-     * IMPORTANT: `target` is not cloned and will be updated with `source` properties.
-     * @param {Object} target - The target object in which all sources are merged into.
-     * @param {Object|Array<Object>} source - Object(s) to merge into `target`.
-     * @returns {Object} The `target` object.
-     */
-    mergeIf: function(target, source) {
-        return helpers.merge(target, source, {merger: helpers._mergerIf});
     },
 
     /**
@@ -970,25 +944,20 @@ var exports$1 = {
 
 var helpers_canvas = exports$1;
 
-var defaults = {
-    /**
-     * @private
-     */
-    _set: function(scope, values) {
-        return helpers.merge(this[scope] || (this[scope] = {}), values);
-    }
-};
+var defaults = {};
 
 // TODO(v3): remove 'global' from namespace.  all default are global and
 // there's inconsistency around which options are under 'global'
-defaults._set('global', {
-    defaultColor: 'rgba(0,0,0,0.1)',
-    defaultFontColor: '#666',
-    defaultFontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
-    defaultFontSize: 12,
-    defaultFontStyle: 'normal',
-    defaultLineHeight: 1.2,
-    showLines: true
+Merge(defaults, {
+    global: {
+        defaultColor: 'rgba(0,0,0,0.1)',
+        defaultFontColor: '#666',
+        defaultFontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+        defaultFontSize: 12,
+        defaultFontStyle: 'normal',
+        defaultLineHeight: 1.2,
+        showLines: true,
+    },
 });
 
 var core_defaults = defaults;
@@ -1114,7 +1083,7 @@ var helpers_options = {
             if (value === undefined) {
                 continue;
             }
-            if (context !== undefined && typeof value === 'function') {
+            if (context !== undefined && IsFunction(value)) {
                 value = value(context);
                 cacheable = false;
             }
@@ -1296,13 +1265,15 @@ var exports$3 = Element.extend({
 
 var core_animation = exports$3;
 
-core_defaults._set('global', {
-    animation: {
-        duration: 1000,
-        easing: 'easeOutQuart',
-        onProgress: noop,
-        onComplete: noop
-    }
+Merge(core_defaults, {
+    global: {
+        animation: {
+            duration: 1000,
+            easing: 'easeOutQuart',
+            onProgress: noop,
+            onComplete: noop,
+        },
+    },
 });
 
 var core_animations = {
@@ -1323,9 +1294,8 @@ var core_animations = {
         animation.startTime = Date.now();
         animation.duration = duration;
 
-        if (!lazy) {
+        if (!lazy)
             chart.animating = true;
-        }
 
         for (i = 0, ilen = animations.length; i < ilen; ++i) {
             if (animations[i].chart === chart) {
@@ -1337,9 +1307,8 @@ var core_animations = {
         animations.push(animation);
 
         // If there are no animations queued, manually kickstart a digest, for lack of a better word
-        if (animations.length === 1) {
+        if (animations.length === 1)
             this.requestAnimationFrame();
-        }
     },
 
     cancelAnimation: function(chart) {
@@ -1448,9 +1417,8 @@ function listenArrayEvents(array, listener) {
                 var res = base.apply(this, args);
 
                 helpers.each(array._chartjs.listeners, function(object) {
-                    if (typeof object[method] === 'function') {
+                    if (IsFunction(object[method]))
                         object[method].apply(object, args);
-                    }
                 });
 
                 return res;
@@ -1540,7 +1508,6 @@ Assign(DatasetController.prototype, {
         me.index = datasetIndex;
         me.linkScales();
         me.addElements();
-        me._type = me.getMeta().type;
     },
 
     updateIndex: function(datasetIndex) {
@@ -1686,16 +1653,17 @@ Assign(DatasetController.prototype, {
      */
     _configure: function() {
         var me = this;
-        me._config = helpers.merge({}, [
-            me.chart.options.datasets[me._type],
-            me.getDataset(),
-        ], {
-            merger: function(key, target, source) {
-                if (key !== '_meta' && key !== 'data') {
-                    helpers._merger(key, target, source);
-                }
-            }
-        });
+        me._config = Merge({}, me.getDataset(), 0);
+        // me._config = helpers.merge({}, [
+        //     me.chart.options.datasets.line,
+        //     me.getDataset(),
+        // ], {
+        //     merger: function(key, target, source) {
+        //         if (key !== '_meta' && key !== 'data') {
+        //             helpers._merger(key, target, source);
+        //         }
+        //     }
+        // });
     },
 
     _update: function(reset) {
@@ -1772,7 +1740,7 @@ Assign(DatasetController.prototype, {
         var chart = me.chart;
         var datasetOpts = me._config;
         var custom = element.custom || {};
-        var options = chart.options.elements[me.datasetElementType.prototype._type] || {};
+        var options = chart.options.elements[me.datasetElementType.prototype.line] || {};
         var elementOptions = me._datasetElementOptions;
         var values = {};
         var i, ilen, key, readKey;
@@ -1810,7 +1778,7 @@ Assign(DatasetController.prototype, {
         }
         var chart = me.chart;
         var datasetOpts = me._config;
-        var options = chart.options.elements[me.dataElementType.prototype._type] || {};
+        var options = chart.options.elements[me.dataElementType.prototype.line] || {};
         var elementOptions = me._dataElementOptions;
         var values = {};
 
@@ -1859,7 +1827,7 @@ Assign(DatasetController.prototype, {
     },
 
     removeHoverStyle: function(element) {
-        helpers.merge(element._model, element.$previousStyle || {});
+        Merge(element._model, element.$previousStyle || {});
         delete element.$previousStyle;
     },
 
@@ -1985,34 +1953,38 @@ DatasetController.extend = helpers.inherits;
 
 var core_datasetController = DatasetController;
 
-core_defaults._set('global', {
-    elements: {
-        arc: {
-            backgroundColor: core_defaults.global.defaultColor,
-            borderColor: '#fff',
-            borderWidth: 2,
-            borderAlign: 'center'
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        elements: {
+            arc: {
+                backgroundColor: core_defaults.global.defaultColor,
+                borderColor: '#fff',
+                borderWidth: 2,
+                borderAlign: 'center',
+            },
+        },
+    },
 });
 
 var defaultColor = core_defaults.global.defaultColor;
 
-core_defaults._set('global', {
-    elements: {
-        line: {
-            tension: 0.4,
-            backgroundColor: defaultColor,
-            borderWidth: 3,
-            borderColor: defaultColor,
-            borderCapStyle: 'butt',
-            borderDash: [],
-            borderDashOffset: 0.0,
-            borderJoinStyle: 'miter',
-            capBezierPoints: true,
-            fill: true, // do we fill in the area between the line and its base axis
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        elements: {
+            line: {
+                backgroundColor: defaultColor,
+                borderCapStyle: 'butt',
+                borderColor: defaultColor,
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderJoinStyle: 'miter',
+                borderWidth: 3,
+                capBezierPoints: true,
+                fill: true, // do we fill in the area between the line and its base axis
+                tension: 0.4,
+            },
+        },
+    },
 });
 
 var element_line = Element.extend({
@@ -2102,20 +2074,22 @@ var element_line = Element.extend({
 
 var defaultColor$1 = core_defaults.global.defaultColor;
 
-core_defaults._set('global', {
-    elements: {
-        point: {
-            radius: 3,
-            pointStyle: 'circle',
-            backgroundColor: defaultColor$1,
-            borderColor: defaultColor$1,
-            borderWidth: 1,
-            // Hover
-            hitRadius: 1,
-            hoverRadius: 4,
-            hoverBorderWidth: 1
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        elements: {
+            point: {
+                radius: 3,
+                pointStyle: 'circle',
+                backgroundColor: defaultColor$1,
+                borderColor: defaultColor$1,
+                borderWidth: 1,
+                // Hover
+                hitRadius: 1,
+                hoverRadius: 4,
+                hoverBorderWidth: 1,
+            },
+        },
+    },
 });
 
 function xRange(mouseX) {
@@ -2188,15 +2162,17 @@ var element_point = Element.extend({
 
 var defaultColor$2 = core_defaults.global.defaultColor;
 
-core_defaults._set('global', {
-    elements: {
-        rectangle: {
-            backgroundColor: defaultColor$2,
-            borderColor: defaultColor$2,
-            borderSkipped: 'bottom',
-            borderWidth: 0
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        elements: {
+            rectangle: {
+                backgroundColor: defaultColor$2,
+                borderColor: defaultColor$2,
+                borderSkipped: 'bottom',
+                borderWidth: 0,
+            },
+        },
+    },
 });
 
 var elements = {};
@@ -2205,45 +2181,33 @@ var Point = element_point;
 elements.Line = Line;
 elements.Point = Point;
 
-core_defaults._set('global', {
-    datasets: {
-        bar: {
-            categoryPercentage: 0.8,
-            barPercentage: 0.9
-        }
-    }
-});
-
-core_defaults._set('global', {
-    datasets: {
-        horizontalBar: {
-            categoryPercentage: 0.8,
-            barPercentage: 0.9
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        datasets: {},
+    },
 });
 
 var resolve$2 = helpers.options.resolve;
 var isPointInArea = helpers.canvas._isPointInArea;
 
-core_defaults._set('line', {
-    showLines: true,
-    spanGaps: false,
-
-    hover: {
-        mode: 'label'
+Merge(core_defaults, {
+    line: {
+        showLines: true,
+        spanGaps: false,
+        hover: {
+            mode: 'label',
+        },
+        scales: {
+            xAxes: [{
+                type: 'category',
+                id: 'x_axis_0',
+            }],
+            yAxes: [{
+                type: 'custom',
+                id: 'y_axis_0',
+            }],
+        },
     },
-
-    scales: {
-        xAxes: [{
-            type: 'category',
-            id: 'x-axis-0'
-        }],
-        yAxes: [{
-            type: 'custom',
-            id: 'y-axis-0'
-        }]
-    }
 });
 
 function scaleClip(scale, halfBorderWidth) {
@@ -2544,14 +2508,6 @@ var controller_line = core_datasetController.extend({
         model.borderWidth = Undefined(options.hoverBorderWidth, options.borderWidth);
         model.radius = Undefined(options.hoverRadius, options.radius);
     },
-});
-
-core_defaults._set('global', {
-    datasets: {
-        scatter: {
-            showLine: false
-        }
-    }
 });
 
 // NOTE export a map in which the key represents the controller type, not
@@ -3033,15 +2989,17 @@ function placeBoxes(boxes, chartArea, params) {
     chartArea.y = y;
 }
 
-core_defaults._set('global', {
-    layout: {
-        padding: {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-        }
-    }
+Merge(core_defaults, {
+    global: {
+        layout: {
+            padding: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+            },
+        },
+    },
 });
 
 /**
@@ -3744,8 +3702,10 @@ var platform = Assign({
 
 }, implementation);
 
-core_defaults._set('global', {
-    plugins: {}
+Merge(core_defaults, {
+    global: {
+        plugins: {},
+    },
 });
 
 /**
@@ -3836,16 +3796,27 @@ var core_plugins = {
      * @returns {boolean} false if any of the plugins return false, else returns true.
      */
     notify: function(chart, hook, args) {
-        var descriptors = this.descriptors(chart);
-        var ilen = descriptors.length;
-        var i, descriptor, plugin, params, method;
+        for (let descriptor of this.descriptors(chart)) {
+            let plugin = descriptor.plugin,
+                method = null;
 
-        for (i = 0; i < ilen; ++i) {
-            descriptor = descriptors[i];
-            plugin = descriptor.plugin;
-            method = plugin[hook];
-            if (typeof method === 'function') {
-                params = [chart].concat(args || []);
+            switch (hook) {
+            case 'afterEvent':
+                method = plugin.afterEvent;
+                break;
+            case 'beforeInit':
+                method = plugin.beforeInit;
+                break;
+            case 'beforeUpdate':
+                method = plugin.beforeUpdate;
+                break;
+            default:
+                if (plugin[hook])
+                    LS('unknown hook', hook);
+            }
+
+            if (IsFunction(method)) {
+                let params = [chart].concat(args || []);
                 params.push(descriptor.options);
                 if (method.apply(plugin, params) === false) {
                     return false;
@@ -3929,7 +3900,7 @@ var core_scaleService = {
     },
     getScaleDefaults: function(type) {
         // Return the scale defaults merged with the global settings so that we always use the latest ones
-        return this.defaults.hasOwnProperty(type) ? helpers.merge({}, [core_defaults.scale, this.defaults[type]]) : {};
+        return this.defaults.hasOwnProperty(type)? helpers.merge({}, [core_defaults.scale, this.defaults[type]]) : {};
     },
     updateScaleDefaults: function(type, additions) {
         var me = this;
@@ -3949,100 +3920,102 @@ var core_scaleService = {
     }
 };
 
-core_defaults._set('global', {
-    tooltips: {
-        enabled: true,
-        custom: null,
-        mode: 'nearest',
-        position: 'average',
-        intersect: true,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleFontStyle: 'bold',
-        titleSpacing: 2,
-        titleMarginBottom: 6,
-        titleFontColor: '#fff',
-        titleAlign: 'left',
-        bodySpacing: 2,
-        bodyFontColor: '#fff',
-        bodyAlign: 'left',
-        footerFontStyle: 'bold',
-        footerSpacing: 2,
-        footerMarginTop: 6,
-        footerFontColor: '#fff',
-        footerAlign: 'left',
-        yPadding: 6,
-        xPadding: 6,
-        caretPadding: 2,
-        caretSize: 5,
-        cornerRadius: 6,
-        multiKeyBackground: '#fff',
-        displayColors: true,
-        borderColor: 'rgba(0,0,0,0)',
-        borderWidth: 0,
-        callbacks: {
-            // Args are: (tooltipItems, data)
-            beforeTitle: noop,
-            title: function(tooltipItems, data) {
-                var title = '';
-                var labels = data.labels;
-                var labelCount = labels ? labels.length : 0;
+Merge(core_defaults, {
+    global: {
+        tooltips: {
+            enabled: true,
+            custom: null,
+            mode: 'nearest',
+            position: 'average',
+            intersect: true,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFontStyle: 'bold',
+            titleSpacing: 2,
+            titleMarginBottom: 6,
+            titleFontColor: '#fff',
+            titleAlign: 'left',
+            bodySpacing: 2,
+            bodyFontColor: '#fff',
+            bodyAlign: 'left',
+            footerFontStyle: 'bold',
+            footerSpacing: 2,
+            footerMarginTop: 6,
+            footerFontColor: '#fff',
+            footerAlign: 'left',
+            yPadding: 6,
+            xPadding: 6,
+            caretPadding: 2,
+            caretSize: 5,
+            cornerRadius: 6,
+            multiKeyBackground: '#fff',
+            displayColors: true,
+            borderColor: 'rgba(0,0,0,0)',
+            borderWidth: 0,
+            callbacks: {
+                // Args are: (tooltipItems, data)
+                beforeTitle: noop,
+                title: function(tooltipItems, data) {
+                    var title = '';
+                    var labels = data.labels;
+                    var labelCount = labels ? labels.length : 0;
 
-                if (tooltipItems.length > 0) {
-                    var item = tooltipItems[0];
-                    if (item.label) {
-                        title = item.label;
-                    } else if (item.xLabel) {
-                        title = item.xLabel;
-                    } else if (labelCount > 0 && item.index < labelCount) {
-                        title = labels[item.index];
+                    if (tooltipItems.length > 0) {
+                        var item = tooltipItems[0];
+                        if (item.label) {
+                            title = item.label;
+                        } else if (item.xLabel) {
+                            title = item.xLabel;
+                        } else if (labelCount > 0 && item.index < labelCount) {
+                            title = labels[item.index];
+                        }
                     }
-                }
 
-                return title;
+                    return title;
+                },
+                afterTitle: noop,
+
+                // Args are: (tooltipItems, data)
+                beforeBody: noop,
+
+                // Args are: (tooltipItem, data)
+                beforeLabel: noop,
+                label: function(tooltipItem, data) {
+                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
+
+                    if (label) {
+                        label += ': ';
+                    }
+                    if (tooltipItem.value != null) {
+                        label += tooltipItem.value;
+                    } else {
+                        label += tooltipItem.yLabel;
+                    }
+                    return label;
+                },
+                labelColor: function(tooltipItem, chart) {
+                    var meta = chart.getDatasetMeta(tooltipItem.datasetIndex);
+                    var activeElement = meta.data[tooltipItem.index];
+                    var view = activeElement._view;
+                    return {
+                        borderColor: view.borderColor,
+                        backgroundColor: view.backgroundColor
+                    };
+                },
+                labelTextColor: function() {
+                    return this._options.bodyFontColor;
+                },
+                afterLabel: noop,
+
+                // Args are: (tooltipItems, data)
+                afterBody: noop,
+
+                // Args are: (tooltipItems, data)
+                beforeFooter: noop,
+                footer: noop,
+                afterFooter: noop,
             },
-            afterTitle: noop,
-
-            // Args are: (tooltipItems, data)
-            beforeBody: noop,
-
-            // Args are: (tooltipItem, data)
-            beforeLabel: noop,
-            label: function(tooltipItem, data) {
-                var label = data.datasets[tooltipItem.datasetIndex].label || '';
-
-                if (label) {
-                    label += ': ';
-                }
-                if (tooltipItem.value != null) {
-                    label += tooltipItem.value;
-                } else {
-                    label += tooltipItem.yLabel;
-                }
-                return label;
-            },
-            labelColor: function(tooltipItem, chart) {
-                var meta = chart.getDatasetMeta(tooltipItem.datasetIndex);
-                var activeElement = meta.data[tooltipItem.index];
-                var view = activeElement._view;
-                return {
-                    borderColor: view.borderColor,
-                    backgroundColor: view.backgroundColor
-                };
-            },
-            labelTextColor: function() {
-                return this._options.bodyFontColor;
-            },
-            afterLabel: noop,
-
-            // Args are: (tooltipItems, data)
-            afterBody: noop,
-
-            // Args are: (tooltipItems, data)
-            beforeFooter: noop,
-            footer: noop,
-            afterFooter: noop,
-        }
-    }
+        },
+    },
 });
 
 var positioners = {
@@ -4959,25 +4932,27 @@ var positioners_1 = positioners;
 var core_tooltip = exports$4;
 core_tooltip.positioners = positioners_1;
 
-core_defaults._set('global', {
-    elements: {},
-    events: [
-        'mousemove',
-        'mouseout',
-        'click',
-        'touchstart',
-        'touchmove'
-    ],
-    hover: {
-        onHover: null,
-        mode: 'nearest',
-        intersect: true,
-        animationDuration: 400
+Merge(core_defaults, {
+    global: {
+        elements: {},
+        events: [
+            'mousemove',
+            'mouseout',
+            'click',
+            'touchstart',
+            'touchmove',
+        ],
+        hover: {
+            onHover: null,
+            mode: 'nearest',
+            intersect: true,
+            animationDuration: 400,
+        },
+        onClick: null,
+        maintainAspectRatio: true,
+        responsive: true,
+        responsiveAnimationDuration: 0,
     },
-    onClick: null,
-    maintainAspectRatio: true,
-    responsive: true,
-    responsiveAnimationDuration: 0
 });
 
 /**
@@ -5010,7 +4985,7 @@ function mergeScaleConfig(/* config objects ... */) {
                         helpers.merge(target[key][i], [core_scaleService.getScaleDefaults(type), scale]);
                     } else {
                         // scales type are the same
-                        helpers.merge(target[key][i], scale);
+                        Merge(target[key][i], scale);
                     }
                 }
             } else {
@@ -5053,10 +5028,9 @@ function initConfig(config) {
     data.datasets = data.datasets || [];
     data.labels = data.labels || [];
 
-    config.options = mergeConfig(
-        core_defaults.global,
-        core_defaults[config.type],
-        config.options || {});
+    config.options = config.options || {};
+    Merge(config.options, core_defaults.line, 0);
+    Merge(config.options, core_defaults.global, 0);
 
     return config;
 }
@@ -5068,31 +5042,20 @@ function updateConfig(chart) {
         core_layouts.removeBox(chart, scale);
     });
 
+    // Merge(newOptions, core_defaults.global, 0);
+    // Merge(newOptions, core_defaults.line, 0);
+
     newOptions = mergeConfig(
         core_defaults.global,
-        core_defaults[chart.config.type],
+        core_defaults.line,
         newOptions);
 
     chart.options = chart.config.options = newOptions;
-    chart.ensureScalesHaveIDs();
     chart.buildOrUpdateScales();
 
     // Tooltip
     chart.tooltip._options = newOptions.tooltips;
     chart.tooltip.initialize();
-}
-
-function nextAvailableScaleId(axesOpts, prefix, index) {
-    var id;
-    var hasId = function(obj) {
-        return obj.id === id;
-    };
-
-    do {
-        id = prefix + index++;
-    } while (helpers.findIndex(axesOpts, hasId) >= 0);
-
-    return id;
 }
 
 function positionIsHorizontal(position) {
@@ -5231,28 +5194,6 @@ Assign(Chart.prototype, /** @lends Chart */ {
         }
     },
 
-    ensureScalesHaveIDs: function() {
-        var options = this.options;
-        var scalesOptions = options.scales || {};
-        var scaleOptions = options.scale;
-
-        helpers.each(scalesOptions.xAxes, function(xAxisOptions, index) {
-            if (!xAxisOptions.id) {
-                xAxisOptions.id = nextAvailableScaleId(scalesOptions.xAxes, 'x-axis-', index);
-            }
-        });
-
-        helpers.each(scalesOptions.yAxes, function(yAxisOptions, index) {
-            if (!yAxisOptions.id) {
-                yAxisOptions.id = nextAvailableScaleId(scalesOptions.yAxes, 'y-axis-', index);
-            }
-        });
-
-        if (scaleOptions) {
-            scaleOptions.id = scaleOptions.id || 'scale';
-        }
-    },
-
     /**
      * Builds a map of scale ID to scale object for future lookup.
      */
@@ -5336,13 +5277,7 @@ Assign(Chart.prototype, /** @lends Chart */ {
         for (i = 0, ilen = datasets.length; i < ilen; i++) {
             var dataset = datasets[i];
             var meta = me.getDatasetMeta(i);
-            var type = dataset.type || me.config.type;
 
-            if (meta.type && meta.type !== type) {
-                me.destroyDatasetMeta(i);
-                meta = me.getDatasetMeta(i);
-            }
-            meta.type = type;
             meta.order = dataset.order || 0;
             meta.index = i;
 
@@ -5350,7 +5285,7 @@ Assign(Chart.prototype, /** @lends Chart */ {
                 meta.controller.updateIndex(i);
                 meta.controller.linkScales();
             } else {
-                var ControllerClass = controllers[meta.type];
+                var ControllerClass = controllers.line;
                 meta.controller = new ControllerClass(me, i);
                 newControllers.push(meta.controller);
             }
@@ -5710,14 +5645,13 @@ Assign(Chart.prototype, /** @lends Chart */ {
     },
 
     getElementsAtXAxis: function(e) {
-        return core_interaction.modes['x-axis'](this, e, {intersect: true});
+        return core_interaction.modes.x_axis(this, e, {intersect: true});
     },
 
     getElementsAtEventForMode: function(e, mode, options) {
         var method = core_interaction.modes[mode];
-        if (typeof method === 'function') {
+        if (IsFunction(method))
             return method(this, e, options);
-        }
 
         return [];
     },
@@ -6390,58 +6324,60 @@ function valueAtIndexOrDefault(value, index, defaultValue) {
     return Undefined(IsArray(value) ? value[index] : value, defaultValue);
 }
 
-core_defaults._set('scale', {
-    display: true,
-    position: 'left',
-    offset: false,
-
-    // grid line settings
-    gridLines: {
+Merge(core_defaults, {
+    scale: {
         display: true,
-        color: 'rgba(0,0,0,0.1)',
-        lineWidth: 1,
-        drawBorder: true,
-        drawOnChartArea: true,
-        drawTicks: true,
-        tickMarkLength: 10,
-        zeroLineWidth: 1,
-        zeroLineColor: 'rgba(0,0,0,0.25)',
-        zeroLineBorderDash: [],
-        zeroLineBorderDashOffset: 0.0,
-        offsetGridLines: false,
-        borderDash: [],
-        borderDashOffset: 0.0
+        position: 'left',
+        offset: false,
+
+        // grid line settings
+        gridLines: {
+            display: true,
+            color: 'rgba(0,0,0,0.1)',
+            lineWidth: 1,
+            drawBorder: true,
+            drawOnChartArea: true,
+            drawTicks: true,
+            tickMarkLength: 10,
+            zeroLineWidth: 1,
+            zeroLineColor: 'rgba(0,0,0,0.25)',
+            zeroLineBorderDash: [],
+            zeroLineBorderDashOffset: 0.0,
+            offsetGridLines: false,
+            borderDash: [],
+            borderDashOffset: 0.0,
+        },
+
+        // scale label
+        scaleLabel: {
+            // display property
+            display: false,
+
+            // actual label
+            labelString: '',
+
+            // top/bottom padding
+            padding: {
+                top: 4,
+                bottom: 4,
+            },
+        },
+
+        // label settings
+        ticks: {
+            beginAtZero: false,
+            minRotation: 0,
+            maxRotation: 50,
+            mirror: false,
+            padding: 0,
+            reverse: false,
+            display: true,
+            autoSkip: true,
+            autoSkipPadding: 0,
+            labelOffset: 0,
+            minor: {},
+        },
     },
-
-    // scale label
-    scaleLabel: {
-        // display property
-        display: false,
-
-        // actual label
-        labelString: '',
-
-        // top/bottom padding
-        padding: {
-            top: 4,
-            bottom: 4
-        }
-    },
-
-    // label settings
-    ticks: {
-        beginAtZero: false,
-        minRotation: 0,
-        maxRotation: 50,
-        mirror: false,
-        padding: 0,
-        reverse: false,
-        display: true,
-        autoSkip: true,
-        autoSkipPadding: 0,
-        labelOffset: 0,
-        minor: {},
-    }
 });
 
 /** Returns a new array containing numItems from arr */
@@ -8139,92 +8075,94 @@ var scales = {
     custom: scale_custom,
 };
 
-core_defaults._set('global', {
-    legend: {
-        display: true,
-        position: 'top',
-        align: 'center',
-        fullWidth: true,
-        reverse: false,
-        weight: 1000,
+Merge(core_defaults, {
+    global: {
+        legend: {
+            display: true,
+            position: 'top',
+            align: 'center',
+            fullWidth: true,
+            reverse: false,
+            weight: 1000,
 
-        // a callback that will handle
-        onClick: function(e, legendItem) {
-            var index = legendItem.datasetIndex;
-            var ci = this.chart;
-            var meta = ci.getDatasetMeta(index);
+            // a callback that will handle
+            onClick: function(e, legendItem) {
+                var index = legendItem.datasetIndex;
+                var ci = this.chart;
+                var meta = ci.getDatasetMeta(index);
 
-            // See controller.isDatasetVisible comment
-            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+                // See controller.isDatasetVisible comment
+                meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
 
-            // We hid a dataset ... rerender the chart
-            ci.update();
+                // We hid a dataset ... rerender the chart
+                ci.update();
+            },
+
+            onHover: null,
+            onLeave: null,
+
+            labels: {
+                boxWidth: 40,
+                padding: 10,
+                // Generates labels shown in the legend
+                // Valid properties to return:
+                // text : text to display
+                // fillStyle : fill of coloured box
+                // strokeStyle: stroke of coloured box
+                // hidden : if this legend item refers to a hidden item
+                // lineCap : cap style for line
+                // lineDash
+                // lineDashOffset :
+                // lineJoin :
+                // lineWidth :
+                generateLabels: function(chart) {
+                    var datasets = chart.data.datasets;
+                    var options = chart.options.legend || {};
+                    var usePointStyle = options.labels && options.labels.usePointStyle;
+
+                    return chart._getSortedDatasetMetas().map(function(meta) {
+                        var style = meta.controller.getStyle(usePointStyle ? 0 : undefined);
+
+                        return {
+                            text: datasets[meta.index].label,
+                            fillStyle: style.backgroundColor,
+                            hidden: !chart.isDatasetVisible(meta.index),
+                            lineCap: style.borderCapStyle,
+                            lineDash: style.borderDash,
+                            lineDashOffset: style.borderDashOffset,
+                            lineJoin: style.borderJoinStyle,
+                            lineWidth: style.borderWidth,
+                            strokeStyle: style.borderColor,
+                            pointStyle: style.pointStyle,
+                            rotation: style.rotation,
+
+                            // Below is extra data used for toggling the datasets
+                            datasetIndex: meta.index
+                        };
+                    }, this);
+                }
+            }
         },
 
-        onHover: null,
-        onLeave: null,
+        legendCallback: function(chart) {
+            var list = document.createElement('ul');
+            var datasets = chart.data.datasets;
+            var i, ilen, listItem, listItemSpan;
 
-        labels: {
-            boxWidth: 40,
-            padding: 10,
-            // Generates labels shown in the legend
-            // Valid properties to return:
-            // text : text to display
-            // fillStyle : fill of coloured box
-            // strokeStyle: stroke of coloured box
-            // hidden : if this legend item refers to a hidden item
-            // lineCap : cap style for line
-            // lineDash
-            // lineDashOffset :
-            // lineJoin :
-            // lineWidth :
-            generateLabels: function(chart) {
-                var datasets = chart.data.datasets;
-                var options = chart.options.legend || {};
-                var usePointStyle = options.labels && options.labels.usePointStyle;
+            list.setAttribute('class', chart.id + '-legend');
 
-                return chart._getSortedDatasetMetas().map(function(meta) {
-                    var style = meta.controller.getStyle(usePointStyle ? 0 : undefined);
-
-                    return {
-                        text: datasets[meta.index].label,
-                        fillStyle: style.backgroundColor,
-                        hidden: !chart.isDatasetVisible(meta.index),
-                        lineCap: style.borderCapStyle,
-                        lineDash: style.borderDash,
-                        lineDashOffset: style.borderDashOffset,
-                        lineJoin: style.borderJoinStyle,
-                        lineWidth: style.borderWidth,
-                        strokeStyle: style.borderColor,
-                        pointStyle: style.pointStyle,
-                        rotation: style.rotation,
-
-                        // Below is extra data used for toggling the datasets
-                        datasetIndex: meta.index
-                    };
-                }, this);
+            for (i = 0, ilen = datasets.length; i < ilen; i++) {
+                listItem = list.appendChild(document.createElement('li'));
+                listItemSpan = listItem.appendChild(document.createElement('span'));
+                listItemSpan.style.backgroundColor = datasets[i].backgroundColor;
+                if (datasets[i].label) {
+                    listItem.appendChild(document.createTextNode(datasets[i].label));
+                }
             }
-        }
+
+            return list.outerHTML;
+        },
     },
-
-    legendCallback: function(chart) {
-        var list = document.createElement('ul');
-        var datasets = chart.data.datasets;
-        var i, ilen, listItem, listItemSpan;
-
-        list.setAttribute('class', chart.id + '-legend');
-
-        for (i = 0, ilen = datasets.length; i < ilen; i++) {
-            listItem = list.appendChild(document.createElement('li'));
-            listItemSpan = listItem.appendChild(document.createElement('span'));
-            listItemSpan.style.backgroundColor = datasets[i].backgroundColor;
-            if (datasets[i].label) {
-                listItem.appendChild(document.createTextNode(datasets[i].label));
-            }
-        }
-
-        return list.outerHTML;
-    }
 });
 
 /**
@@ -8574,13 +8512,13 @@ var Legend = Element.extend({
             cursor = {
                 x: me.left + alignmentOffset(legendWidth, lineWidths[0]),
                 y: me.top + labelOpts.padding,
-                line: 0
+                line: 0,
             };
         } else {
             cursor = {
                 x: me.left + labelOpts.padding,
                 y: me.top + alignmentOffset(legendHeight, columnHeights[0]),
-                line: 0
+                line: 0,
             };
         }
 
@@ -8729,7 +8667,7 @@ var plugin_legend = {
         var legend = chart.legend;
 
         if (legendOpts) {
-            helpers.mergeIf(legendOpts, core_defaults.global.legend);
+            Merge(legendOpts, core_defaults.global.legend, 0);
 
             if (legend) {
                 core_layouts.configure(chart, legend, legendOpts);
@@ -8751,16 +8689,18 @@ var plugin_legend = {
     }
 };
 
-core_defaults._set('global', {
-    title: {
-        display: false,
-        fontStyle: 'bold',
-        fullWidth: true,
-        padding: 10,
-        position: 'top',
-        text: '',
-        weight: 2000         // by default greater than legend (1000) to be above
-    }
+Merge(core_defaults, {
+    global: {
+        title: {
+            display: false,
+            fontStyle: 'bold',
+            fullWidth: true,
+            padding: 10,
+            position: 'top',
+            text: '',
+            weight: 2000,        // by default greater than legend (1000) to be above
+        },
+    },
 });
 
 var plugins = {};
@@ -8816,6 +8756,7 @@ core_controller.platform.initialize();
 
 var src = core_controller;
 window.Chart = core_controller;
+window.ChartDefaults = core_defaults;
 
 return src;
 

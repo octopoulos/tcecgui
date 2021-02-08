@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-06
 //
 // Game specific code:
 // - control the board, moves
@@ -13,9 +13,9 @@
 /*
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class, clear_timeout,
-close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value, create_page_array,
-create_svg_icon, CreateNode, CreateSVG, cube:true,
+cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class,
+clear_timeout, close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value,
+create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IS_NODE,
@@ -2442,7 +2442,7 @@ function analyse_tournament(section, data) {
     open_event(section);
     update_table(section, 'sched', null);
     if (DEV['global'])
-        window.tour_info = tour_info;
+        window['tour_info'] = tour_info;
 }
 
 /**
@@ -2563,7 +2563,7 @@ function calculate_event_stats(section, rows) {
         [end_date, end_time] = FromTimestamp(stats._end),
         [start_date, start_time] = FromTimestamp(start);
 
-    Assign(stats, {
+    let dico = {
         //
         'start_time': `${start_time} <i class="year">${start_date}</i>`,
         'end_time': `${end_time} <i class="year">${end_date}</i>`,
@@ -2588,19 +2588,18 @@ function calculate_event_stats(section, rows) {
         'average_time': format_hhmmss(seconds / games),
         'min_time': `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
         'max_time': `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
-    });
+    };
+    Assign(stats, dico);
 
     // 5) create the table
-    let lines = Keys(stats)
-        .filter(key => (key[0] != '_'))
-        .map(key => {
-            let title = Title(key.replace(/_/g, ' '));
-            return [
-                '<vert class="stats faround">',
-                    `<div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div>`,
-                '</vert>',
-            ].join('');
-        });
+    let lines = Keys(dico).map(key => {
+        let title = Title(key.replace(/_/g, ' '));
+        return [
+            '<vert class="stats faround">',
+                `<div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div>`,
+            '</vert>',
+        ].join('');
+    });
 
     let parent = Id('table-stats'),
         node = _('.estats', parent);
@@ -5740,6 +5739,8 @@ function changed_hash() {
         Hide('#ad0, #ad1');
     if (DEV['global'])
         Assign(window, {
+            'chart_data': chart_data,
+            'charts': charts,
             'DEV': DEV,
             'LS': LS,
             'xboards': xboards,
@@ -5769,9 +5770,6 @@ function changed_hash() {
 
     if (section == 'live')
         open_event(section);
-
-    if (DEV['global'])
-        window.xboards = xboards;
 }
 
 /**
@@ -6504,20 +6502,20 @@ function startup_game() {
     });
 
     Assign(TITLES, {
-        50: 'Fifty-move rule',
+        '50': 'Fifty-move rule',
         'D/SD': '{Depth} / {Selective depth}',
-        ECO: 'Encyclopaedia of Chess Openings',
-        Eval: 'Evaluation',
-        H2H: 'Head to head',
-        Mob: 'Mobility',
-        points: 'points + direct encounters',
-        PV: 'Principal variation',
+        'ECO': 'Encyclopaedia of Chess Openings',
+        'Eval': 'Evaluation',
+        'H2H': 'Head to head',
+        'Mob': 'Mobility',
+        'points': 'points + direct encounters',
+        'PV': 'Principal variation',
         'PV(A)': '{PV}: {analysis}',
-        rmobility_result: 'r-Mobility result',
-        rmobility_score: 'r-Mobility score',
-        SB: 'Sonneborn–Berger',
-        TB: 'Tablebase',
-        TC: 'Time control',
+        'rmobility_result': 'r-Mobility result',
+        'rmobility_score': 'r-Mobility score',
+        'SB': 'Sonneborn–Berger',
+        'TB': 'Tablebase',
+        'TC': 'Time control',
     });
 
     virtual_close_popups = popup_custom;
