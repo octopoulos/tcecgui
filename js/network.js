@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-09
 //
 // all socket functions are here
 //
@@ -10,8 +10,8 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes,
-LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, TIMEOUTS, update_live_eval,
-update_pgn, update_player_eval, update_table, update_twitch, window, Y, y_x
+LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, update_live_eval, update_pgn,
+update_player_eval, update_table, update_twitch, window, Y, y_x
 */
 'use strict';
 
@@ -35,8 +35,10 @@ let log_time = 0,
         'live': {},
     },
     socket_ready = false,
+    TIMEOUT_banner = 30000,
     TIMEOUT_check = 60,
     TIMEOUT_log = 500,
+    TIMEOUT_users = 5000,
     virtual_resize;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +151,7 @@ function event_sockets() {
     });
 
     //
-    add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUTS.users);
+    add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUT_users);
     add_timeout('check', () => {
         if (!Y['log_auto_start'])
             return;
@@ -234,7 +236,7 @@ function show_banner(text) {
         HTML(node, text);
         Show(node);
     }
-    add_timeout('banner', () => Hide(node), TIMEOUTS.banner);
+    add_timeout('banner', () => Hide(node), TIMEOUT_banner);
 }
 
 /**

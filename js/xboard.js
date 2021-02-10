@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-09
 //
 // game board:
 // - 4 rendering modes:
@@ -197,6 +197,7 @@ class XBoard {
         this.fen2 = '';
         this.fens = {};                                 // fen counter to detect 3-fold repetition
         this.finished = false;
+        this.frame = 0;                                 // rendered frames
         this.frc = (this.manual && Y['game_960']);      // fischer random
         this.goal = [-20.5, -1];
         this.grid = new Array(128);
@@ -405,7 +406,7 @@ class XBoard {
         if (is_ply) {
             // live engine => show an arrow for the next move
             if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(cur_ply, {instant: true, render: false});
+                let move = this.set_ply(cur_ply, {instant: !this.main, render: false});
                 if (this.hook) {
                     this.next = move;
                     this.hook(this, 'next', move);
@@ -540,7 +541,7 @@ class XBoard {
             // 3) update the cursor
             // live engine => show an arrow for the next move
             if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(new_ply, {instant: true, render: false});
+                let move = this.set_ply(new_ply, {instant: !this.main, render: false});
                 if (this.hook) {
                     this.next = move;
                     this.hook(this, 'next', move);
@@ -1157,7 +1158,7 @@ class XBoard {
         // 1) compare the moves if there's a dual
         let dual = this.dual,
             real = this.real,
-            set_dico = {check: !force, instant: true};
+            set_dico = {check: !force, instant: !this.main};
         if (!real)
             return;
 
@@ -1473,7 +1474,7 @@ class XBoard {
                     // no 'leave' for touch => check rect
                     let rect = that.rect;
                     if (rect) {
-                        let [change] = touch_event(e);
+                        let change = touch_event(e).change;
                         if (change.x < rect.left || change.x > rect.left + rect.width
                                 || change.y < rect.top || change.y > rect.bottom + rect.height)
                             that.release();
@@ -2126,6 +2127,7 @@ class XBoard {
         // restore smooth
         if (this.smooth0)
             this.smooth = this.smooth0;
+        this.frame ++;
     }
 
     /**
@@ -2400,8 +2402,11 @@ class XBoard {
 
         let border = this.border,
             num_col = this.dims[1],
-            size = Floor((width - border * 2) * 2 / num_col) / 2,
-            frame_size = size * num_col + border * 2,
+            size = Floor((width - border * 2) * 2 / num_col) / 2;
+        if (this.frame && size == this.size)
+            return;
+
+        let frame_size = size * num_col + border * 2,
             frame_size2 = size * num_col,
             min_height = frame_size + 10 + Visible('.xbottom', node) * 23;
 
@@ -2982,7 +2987,7 @@ class XBoard {
         }
         else {
             HTML(`.xleft`, player.sleft, mini);
-            HTML('.xshort', player.short, mini);
+            HTML('.xshort', resize_text(player.short, 15), mini);
             HTML(`.xtime`, player.stime, mini);
         }
     }

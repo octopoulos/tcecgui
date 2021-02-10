@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-06
+// @version 2021-02-09
 //
 // Game specific code:
 // - control the board, moves
@@ -25,12 +25,12 @@ navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, Quer
 require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, set_section,
 SetDefault, Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN,
-STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, TIMEOUTS, timers, Title, TITLES, Toggle, touch_handle,
-translate_default, translate_nodes,
+STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, timers, Title, TITLES, Toggle, touch_handle, translate_default,
+translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
-update_player_chart, update_player_charts, update_svg, Upper, virtual_close_popups:true, virtual_init_3d_special:true,
-virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE, window, X_SETTINGS, XBoard,
-xboards, Y, y_x
+update_player_chart, update_player_charts, update_svg, Upper, virtual_click_tab:true, virtual_close_popups:true,
+virtual_init_3d_special:true, virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE,
+window, X_SETTINGS, XBoard, xboards, Y, y_x
 */
 'use strict';
 
@@ -383,13 +383,16 @@ let ANALYSIS_URLS = {
         'smp_threads': 5,
         'threads': 5,
     },
+    TIMEOUT_active = 500,               // activate tab after changing section
     TIMEOUT_bench_load = 250,
-    TIMEOUT_graph = 250,
+    TIMEOUT_graph_resize = 250,
+    TIMEOUT_info = 20,                  // show board info when opened a table
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
+    TIMEOUT_tables = 10000,              // load the tables
     tour_info = {
         'archive': {},
         'live': {},
@@ -904,9 +907,11 @@ function section_board(section) {
 /**
  * Show/hide the timers around the board
  * @param {string} name
+ * @param {number} resize_flag &1:force resize_game, &2:no resize
  * @param {boolean=} show undefined => show when center/engine is disabled
+ * @returns {boolean} true if visibility has changed
  */
-function show_board_info(name, show) {
+function show_board_info(name, resize_flag, show) {
     let board = xboards[name],
         is_pva = (name == 'pva'),
         main = is_pva? board: xboards['live'],
@@ -934,6 +939,12 @@ function show_board_info(name, show) {
             show = (status != 0);
     }
 
+    if (Visible('.xbottom', node) == show) {
+        if (resize_flag & 1)
+            resize_game();
+        return false;
+    }
+
     // update top/bottom
     let players = main.players,
         rotate = board.rotate,
@@ -957,6 +968,10 @@ function show_board_info(name, show) {
     board.update_mini(1);
     if (board.manual && !board.is_ai())
         board.show_picks(true);
+
+    if (!(resize_flag & 3))
+        resize_game();
+    return true;
 }
 
 /**
@@ -1615,15 +1630,18 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
 /**
  * Download static JSON files at startup
  * @param {boolean=} only_cache
- * @param {boolean=} no_live
+ * @param {number=} live_flag &1:no_live, &2:only_live
  */
-function download_tables(only_cache, no_live) {
+function download_tables(only_cache, live_flag) {
+    let section = 'live';
+    if (!only_cache && !(live_flag & 1))
+        download_pgn(section, 'live.pgn', false, download_live);
+
+    if (live_flag & 2)
+        return;
+
     if (!only_cache)
         download_gamelist();
-
-    let section = 'live';
-    if (!only_cache && !no_live)
-        download_pgn(section, 'live.pgn', false, download_live);
 
     let dico = {only_cache: only_cache};
     download_table(section, 'crosstable.json', 'cross', data => {
@@ -3463,7 +3481,6 @@ function parse_time_control(value) {
  */
 function resize_game() {
     let section = y_x;
-    show_board_info(section);
 
     // 1) boards
     Keys(xboards).forEach(key => {
@@ -3503,7 +3520,7 @@ function resize_game() {
         update_chart_options(null, 2);
         for (let parent of ['quick', 'table'])
             update_table(section, get_active_tab(parent).name, null, parent);
-    }, TIMEOUT_graph);
+    }, TIMEOUT_graph_resize);
 }
 
 /**
@@ -3914,7 +3931,7 @@ function update_overview_basic(section, headers) {
         update_hardware(section, id, [box_node, node], {engine: name, short: short});
 
         HTML(Id(`engine${id}`), format_engine(name, true, 21));
-        HTML(`.xcolor${id} .xshort`, short, xboards[section].node);
+        HTML(`.xcolor${id} .xshort`, resize_text(short, 15), xboards[section].node);
 
         // load engine image
         let image = Id(`logo${id}`);
@@ -4139,7 +4156,7 @@ function update_pgn(section, data, extras, reset_moves) {
         HTML(Id('movesleft'), '');
 
         if (reset_moves && !LOCALHOST)
-            add_timeout('tables', () => download_tables(false, true), TIMEOUTS.tables);
+            add_timeout('tables', () => download_tables(false, 1), TIMEOUT_tables);
         listen_log();
     }
     // can happen after resume
@@ -5154,7 +5171,7 @@ function update_player_eval(section, data, same_pv) {
             HTML(`[data-x="${key}"]`, dico[key], node);
         });
 
-        HTML(`.xshort`, short, mini);
+        HTML(`.xshort`, resize_text(short, 15), mini);
         HTML(`.xeval`, format_eval(eval_), mini);
         if (data['nodes'] > 1)
             SetDefault(player, 'evals', [])[ply] = eval_;
@@ -5697,12 +5714,10 @@ function change_setting_game(name, value) {
         update_tab = true;
         break;
     case 'status':
-        show_board_info(y_x);
-        resize_game();
+        show_board_info(y_x, 2);
         break;
     case 'status_pva':
-        show_board_info('pva');
-        resize_game();
+        show_board_info('pva', 2);
         break;
     case 'test_boom':
         check_boom(0, [3, 0, 0, false]);
@@ -5788,7 +5803,7 @@ function changed_section() {
     // - if doesn't exist, then active the default tab
     let active = get_active_tab('table').node;
     if (active && Visible(active))
-        open_table(active);
+        add_timeout('active', () => open_table(active), TIMEOUT_active);
     else {
         active = is_cup? 'brak': DEFAULT_ACTIVES[section];
         open_table(active);
@@ -6088,7 +6103,7 @@ function handle_board_events(board, type, value, e, force) {
             board.render(3);
         }
         else if (value == 'rotate') {
-            show_board_info(board.name);
+            show_board_info(board.name, 2);
             redraw_arrows();
             order_boards();
         }
@@ -6193,6 +6208,8 @@ function handle_board_events(board, type, value, e, force) {
  * @param {string|Node} sel
  */
 function open_table(sel) {
+    clear_timeout('active');
+
     let tab = sel;
     if (IsString(tab)) {
         tab = _(`[data-x="${sel}"]`);
@@ -6302,8 +6319,7 @@ function opened_table(node, name, tab) {
     }
 
     check_paginations();
-    show_board_info(section);
-    resize_game();
+    add_timeout('info', () => show_board_info(section, 0), TIMEOUT_info);
 
     if (virtual_opened_table_special)
         virtual_opened_table_special(node, name, tab);
@@ -6424,8 +6440,7 @@ function resume_sleep(resume_time) {
     if (DEV['queue'])
         LS(`resume_sleep: ${resume_time}`);
     check_missing_moves();
-    show_board_info(y_x);
-    resize_game();
+    show_board_info(y_x, 1);
 }
 
 /**
@@ -6476,7 +6491,7 @@ function set_game_events() {
 function start_game() {
     create_tables();
     create_boards();
-    show_board_info('pva', true);
+    show_board_info('pva', 0, true);
     S(Id('pva-pv'), Y['game_PV']);
 
     Y.wasm = 0;
@@ -6518,6 +6533,7 @@ function startup_game() {
         'TC': 'Time control',
     });
 
+    virtual_click_tab = open_table;
     virtual_close_popups = popup_custom;
     virtual_init_3d_special = init_3d_special;
     virtual_random_position = random_position;

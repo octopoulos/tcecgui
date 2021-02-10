@@ -20,6 +20,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
 -          : 2021-01-27 : pv should show fails
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
+2021-02-09 : 2021-02-09 : optimise loading
 2021-02-05 : 2021-02-05 : closure compiler advanced #3
 2021-02-05 : 2021-02-05 : closure compiler advanced #2
 2021-02-05 : 2021-02-05 : closure compiler advanced #1

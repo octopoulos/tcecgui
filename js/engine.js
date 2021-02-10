@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-09
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -106,6 +106,7 @@ let __PREFIX = '_',
     STATE_KEYS = {},
     TAB_NAMES = {},
     THEMES = [''],
+    TIMEOUT_activate = 5000,                            // activate tabs in populate_areas
     TIMEOUT_adjust = 250,
     TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
@@ -1709,11 +1710,12 @@ function set_combo_value(letter, value, save=true) {
  * @param {Array<string>=} themes if null, will use Y.theme
  * @param {Function=} callback
  * @param {number=} version CSS version, use Now() to force reload
+ * @returns {boolean} true if the theme was changed
  */
 function update_theme(themes, callback, version=1) {
     let parent = Id('extra-style');
     if (!parent)
-        return;
+        return false;
     if (!themes)
         themes = [Y['theme']];
 
@@ -1721,7 +1723,8 @@ function update_theme(themes, callback, version=1) {
     if (themes[0] == THEMES[0])
         themes = themes.slice(1);
 
-    let children = A('link', parent),
+    let changes = 0,
+        children = A('link', parent),
         links = themes.map(theme => `css/${theme}.css?v=${version}`),
         num_child = children.length,
         num_theme = themes.length,
@@ -1733,27 +1736,35 @@ function update_theme(themes, callback, version=1) {
             base_href = child.href.split('/').slice(-1)[0].split('.')[0],
             theme = themes[i];
 
-        if (base_href != theme)
+        if (base_href != theme) {
             child.setAttribute('href', links[i]);
+            changes ++;
+        }
     }
 
     // 2) remove extra links
     if (num_child > num_theme) {
+        changes ++;
         for (let i = num_theme; i < num_child; i ++)
             children[i].removeAttribute('href');
     }
     // 3) add extra links
     else if (num_child < num_theme) {
+        changes ++;
         for (let i = num_child; i < num_theme; i ++) {
             let child = CreateNode('link', null, {'href': links[i], rel: 'stylesheet'});
             parent.appendChild(child);
         }
     }
 
+    if (!changes)
+        return false;
+
     // post-process
     update_svg();
     if (callback)
         callback();
+    return true;
 }
 
 /**
@@ -2889,7 +2900,7 @@ function populate_areas() {
     });
 
     // 3) activate tabs
-    E('.tabs', node => {
+    E('.tabs', (node, id) => {
         let tabs = From(A('.tab', node)),
             actives = tabs.filter(node => HasClass(node, 'active'));
 
@@ -2900,8 +2911,9 @@ function populate_areas() {
                 dataset['t'] = dataset['label'] || dataset['abbr'];
             }
 
-        if (virtual_click_tab)
+        add_timeout(`active:${id}`, () => {
             virtual_click_tab(actives.length? actives[0]: tabs[0]);
+        }, node.id == 'table-tabs'? TIMEOUT_activate: 0);
     });
 
     save_option('areas');
