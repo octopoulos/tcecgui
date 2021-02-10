@@ -1,11 +1,11 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-07
+// @version 2021-02-09
 //
 // jshint -W069
 /*
 globals
-_, A, Abs, Assign, C, calculate_feature_q, Clamp, CreateNode,
+_, A, Abs, add_timeout, Assign, C, calculate_feature_q, Clamp, CreateNode,
 DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
 Log, Log10, LS, Max, Merge, Min, mix_hex_colors, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
@@ -21,8 +21,7 @@ if (typeof global != 'undefined') {
 // >>
 
 // modify those values in config.js
-let CHART_JS = 'js/libs/chart-quick.js',
-    ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
+let ENGINE_NAMES = ['White', 'Black', '7{Blue}', '7{Red}'],
     NON_EVALS = new Set([undefined, null, '', '-', 'book']);
 
 let BEGIN_ZEROES = {
@@ -72,7 +71,8 @@ let BEGIN_ZEROES = {
         'speed': 1,
     },
     queued_charts = [],
-    SUB_BOARDS = ['live0', 'live1', 'pv0', 'pv1'];
+    SUB_BOARDS = ['live0', 'live1', 'pv0', 'pv1'],
+    TIMEOUT_graph = 500;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1068,13 +1068,17 @@ function init_graph() {
     if (DEV['chart'])
         LS('IG');
     create_chart_data();
-    create_charts();
-    update_player_charts(xboards[y_x].moves);
 
-    for (let [name, moves, id] of queued_charts)
-        update_live_chart(name, moves, id);
-    queued_charts = [];
-    update_markers();
+    add_timeout('graph', () => {
+        create_charts();
+        update_player_charts(xboards[y_x].moves);
+        for (let [name, moves, id] of queued_charts)
+            update_live_chart(name, moves, id);
+
+        queued_charts = [];
+        update_markers();
+        Style('canvas', 'visibility:visible');
+    }, TIMEOUT_graph);
 }
 
 /**

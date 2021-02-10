@@ -1,6 +1,6 @@
 // config.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-09
 //
 // Ideally, only this file needs modification from an administrator.
 // If other files need to be modified, then contact me, and I will reengineer the system a bit.
@@ -10,8 +10,8 @@
 // jshint -W069
 /*
 globals
-AD_STYLES, Assign, CHAMPIONS:true, CHART_JS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
-HOST_ARCHIVE:true, LINKS:true, THEMES:true, TIMEOUTS, TWITCH_CHANNEL:true, TWITCH_CHAT:true
+AD_STYLES, Assign, CHAMPIONS:true, DEFAULTS, ENGINE_FEATURES, ENGINE_NAMES:true, HOST:true,
+HOST_ARCHIVE:true, LINKS:true, THEMES:true, TWITCH_CHANNEL:true, TWITCH_CHAT:true
 */
 'use strict';
 
@@ -128,19 +128,6 @@ function startup_config() {
         0: 'width:100%;height:250px',
         1: 'width:100%;height:320px',
     });
-
-    // startup timeouts in ms
-    Assign(TIMEOUTS, {
-        banner: 30 * 1000,
-        google_ad: 5 * 1000,
-        graph: 1 * 1000,
-        tables: 100,
-        twitch: 5 * 1000,
-        users: 5 * 1000,
-    });
-
-    // dynamically loaded libraries
-    CHART_JS = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js';
 
     TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com';
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';

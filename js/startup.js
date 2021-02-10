@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-09
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -13,10 +13,10 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
-ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES, C,
-cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
-changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups, context_areas,
-context_target:true,
+ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+C, cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme,
+changed_hash, changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups,
+context_areas, context_target:true,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HIDES, HTML,
@@ -26,11 +26,11 @@ move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_
 PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, set_section,
-SetDefault, SHADOW_QUALITIES, Show, show_banner, show_popup, SP, start_3d, start_game, startup_3d, startup_config,
-startup_game, startup_graph, Style, TAB_NAMES, TABLES, THEMES, TIMEOUT_adjust, TIMEOUTS, timers, toggle_fullscreen,
-touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
+SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_popup, SP, start_3d, start_game, startup_3d,
+startup_config, startup_game, startup_graph, Style, TAB_NAMES, TABLES, THEMES, TIMEOUT_adjust, TIMEOUT_tables, timers,
+toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_click_tab:true, virtual_hide_areas:true,
+virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
 virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true, Visible, VisibleWidth,
 WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y, y_x
@@ -118,11 +118,15 @@ let AD_STYLES = {},
         'Event Stats': 'Stats',
     },
     stream_click = 0,
+    TIMEOUT_adblock = 15000,
     TIMEOUT_font = 2000,
+    TIMEOUT_google_ad = 5000,
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000,
-    TIMEOUT_stream = 30000;
+    TIMEOUT_stream = 30000,
+    TIMEOUT_three = 5000,
+    TIMEOUT_twitch = 5000;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -860,7 +864,7 @@ function import_settings_special() {
  * @param {boolean=} initial
  */
 function init_customs(initial) {
-    add_timeout('twitch', update_twitch, initial? TIMEOUTS.twitch: 0);
+    add_timeout('twitch', update_twitch, initial? TIMEOUT_twitch: 0);
     change_theme();
     resize_move_lists();
     show_live_engines();
@@ -885,12 +889,14 @@ function init_globals() {
 
     // load local data directly, and later online data
     download_tables(true);
-    add_timeout('tables', download_tables, TIMEOUTS.tables);
+    download_tables(false, 2);
+    add_timeout('tables', download_tables, TIMEOUT_tables);
 
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    add_timeout('three', () => set_3d_scene, TIMEOUTS.three);
+    if (Y.three)
+        add_timeout('three', () => set_3d_scene, TIMEOUT_three);
 
     // google ads
     if (!Y.no_ad && !DEV['ad'] && !LOCALHOST) {
@@ -899,20 +905,17 @@ function init_globals() {
                 HTML('.adblock', HTML(Id('adblock')));
                 Show('.adblock');
             }
-        }, TIMEOUTS.adblock);
+        }, TIMEOUT_adblock);
 
-        add_timeout('ad', insert_google_ads, TIMEOUTS.google_ad);
+        add_timeout('ad', insert_google_ads, TIMEOUT_google_ad);
     }
     // load_google_analytics();
 
     // font size detector
     add_timeout('font', () => {
         let font_height = SafeId('text').offsetHeight;
-        if (font_height != old_font_height || window.innerHeight != old_window_height) {
+        if (font_height != old_font_height || window.innerHeight != old_window_height)
             resize();
-            old_font_height = font_height;
-            old_window_height = window.innerHeight;
-        }
 
         if (Y.stream)
             ScrollDocument(Id('overview'));
@@ -995,7 +998,7 @@ function opened_table_special(node, name, tab) {
 function populate_areas_special() {
     show_archive_live();
     update_shortcuts();
-    resize();
+    add_timeout('populate', resize, 100);
 }
 
 /**
@@ -1069,7 +1072,10 @@ function resize() {
 
     // 6) resize game
     adjust_popups();
-    resize_game();
+    show_board_info(y_x, 1);
+
+    old_font_height = SafeId('text').offsetHeight;
+    old_window_height = window.innerHeight;
 }
 
 /**
@@ -2475,7 +2481,6 @@ function startup() {
     // assign virtual functions
     virtual_change_setting_special = change_setting_special;
     virtual_check_hash_special = check_hash_special;
-    virtual_click_tab = open_table;
     virtual_hide_areas = hide_areas;
     virtual_import_settings = import_settings_special;
     virtual_opened_table_special = opened_table_special;
@@ -2492,6 +2497,7 @@ function startup() {
 
     prepare_settings();
     load_settings();
+    change_theme();
     start_game();
     init_graph();
     check_hash();
