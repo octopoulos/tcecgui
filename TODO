@@ -20,6 +20,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
 -          : 2021-01-27 : pv should show fails
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
+2021-02-10 : 2021-02-10 : boom_every
 2021-02-10 : 2021-02-10 : quick_every interpolation
 2021-02-10 : 2021-02-10 : improved tab opening
 2021-02-09 : 2021-02-09 : optimise loading
