@@ -247,6 +247,7 @@ class XBoard {
             {id: 2},
             {id: 3},
         ];                                              // svg objects for the arrows
+        this.temp = new Array(128);
         this.text = '';                                 // current text from add_moves_string
         this.thinking = false;
         this.valid = true;
@@ -289,12 +290,13 @@ class XBoard {
      * - if cur_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Array<Move>} moves
      * @param {number=} cur_ply if defined, then we want to go to this ply
+     * @param {number=} agree agree length
      */
     add_moves(moves, cur_ply, agree) {
         if (this.check_locked(['move', moves, cur_ply, agree]))
             return;
 
-        let added = A('[data-j]', this.xmoves).length,
+        let added = _('[data-j]', this.xmoves)? 1: 0,
             is_empty = !HTML(this.xmoves),
             is_ply = (cur_ply != undefined),
             lines = Y['agree_length']? [`<i class="agree X">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
@@ -465,7 +467,7 @@ class XBoard {
      * - completely replaces the moves list with this one
      * @param {string} text
      * @param {number=} cur_ply if defined, then we want to go to this ply
-     * @param {number=} agree
+     * @param {number=} agree agree length
      * @param {boolean=} force force update
      */
     add_moves_string(text, cur_ply, agree, force) {
@@ -572,13 +574,15 @@ class XBoard {
             items = fen.split(' '),
             off = 0,
             lines = items[0].split('/'),
-            pieces = this.pieces;
+            pieces = this.pieces,
+            temp = this.temp;
 
         // accept incomplete fens (without half_moves + move_number)
         if (items.length < 4)
             return false;
 
         grid.fill('');
+        temp.fill(0);
 
         for (let line of lines) {
             let col = 0;
@@ -586,7 +590,7 @@ class XBoard {
                 // piece
                 if (isNaN(char)) {
                     grid[off + col] = char;
-                    chars.push([char, off + col]);
+                    chars.push([char, off + col, Lower(char)]);
                     let count = (counts[char] || 0) + 1,
                         items = pieces[char];
 
@@ -623,24 +627,35 @@ class XBoard {
         }
 
         // imperfect matches
-        for (let [char, index] of chars) {
+        let imps = [];
+        for (let [char, index, type] of chars) {
             if (!char)
                 continue;
 
-            let win,
-                best = Infinity,
-                items = pieces[char];
+            let items = pieces[char];
             for (let item of items) {
                 if (item[0])
                     continue;
-                let diff = (item[1] < -7)? 999: Abs((index >> 4) - (item[1] >> 4)) + Abs((index & 15) - (item[1] & 15));
-                if (diff < best) {
-                    best = diff;
-                    win = item;
-                }
+                let coord = item[1],
+                    filec = coord >> 4,
+                    filei = index >> 4,
+                    hmult = (type == 'p')? 2: 1,
+                    diff = (coord < -7)? 999: Abs(filei - filec) * hmult + Abs((index & 15) - (coord & 15));
+
+                // keep bishop on the same color
+                if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
+                    diff += 128;
+                imps.push([diff, index, item]);
             }
-            win[0] = 1;
-            win[1] = index;
+        }
+
+        imps.sort((a, b) => a[0] - b[0]);
+        for (let [_, index, item] of imps) {
+            if (item[0] || temp[index])
+                continue;
+            item[0] = 1;
+            item[1] = index;
+            temp[index] = 1;
         }
 
         // 3) move non found pieces off the board
@@ -651,9 +666,9 @@ class XBoard {
         });
 
         // 4) update variables
-        let temp = this.grid;
+        let temp_grid = this.grid;
         this.grid = grid;
-        this.grid2 = temp;
+        this.grid2 = temp_grid;
 
         this.fen = fen;
         this.ply = get_fen_ply(fen);
