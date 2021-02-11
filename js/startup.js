@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-10
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -12,7 +12,7 @@
 // jshint -W069
 /*
 globals
-_, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, add_history, add_timeout,
+_, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, activate_tabs, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme,
 changed_hash, changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups,
@@ -281,7 +281,7 @@ function change_setting_special(name, value, close) {
         break;
     case 'default_positions':
         Y['areas'] = Assign({}, DEFAULTS['areas']);
-        populate_areas();
+        populate_areas(true);
         break;
     case 'drag_and_drop':
         set_draggable();
@@ -405,7 +405,7 @@ function change_setting_special(name, value, close) {
         Keys(context_areas).forEach(key => {
             context_areas[key][2] |= 1;
         });
-        populate_areas();
+        populate_areas(true);
         break;
     case 'use_for_arrow':
         for (let id of [2, 3])
@@ -500,6 +500,9 @@ function check_hash_special(dico) {
         changed_section();
         close_popups();
     }
+
+    if (!ready)
+        activate_tabs();
 }
 
 /**
@@ -856,6 +859,7 @@ function hide_element(target) {
  */
 function import_settings_special() {
     fix_old_settings();
+    activate_tabs();
     resize();
 }
 

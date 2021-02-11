@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-10
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -106,7 +106,7 @@ let __PREFIX = '_',
     STATE_KEYS = {},
     TAB_NAMES = {},
     THEMES = [''],
-    TIMEOUT_activate = 5000,                            // activate tabs in populate_areas
+    TIMEOUT_activate = 500,                             // activate tabs in populate_areas
     TIMEOUT_adjust = 250,
     TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
@@ -2496,6 +2496,27 @@ function wheel_event(e, full) {
 /////
 
 /**
+ * Activate tabs after populating the areas
+ */
+function activate_tabs() {
+    E('.tabs', (node, id) => {
+        let tabs = From(A('.tab', node)),
+            actives = tabs.filter(node => HasClass(node, 'active'));
+
+        // few tabs => show full label
+        if (tabs.length < 4)
+            for (let tab of tabs) {
+                let dataset = tab.dataset;
+                dataset['t'] = dataset['label'] || dataset['abbr'];
+            }
+
+        add_timeout(`active:${id}`, () => {
+            virtual_click_tab(actives.length? actives[0]: tabs[0]);
+        }, node.id == 'table-tabs'? TIMEOUT_activate: 0);
+    });
+}
+
+/**
  * Add font + sizes
  * @param {string} font
  * @param {!Object} sizes sizes when font-size = 1280px
@@ -2737,8 +2758,9 @@ function move_pane(node, dir) {
 
 /**
  * Populate areas
+ * @param {boolean=} activate activate the tabs
  */
-function populate_areas() {
+function populate_areas(activate) {
     let areas = Y['areas'] || {},
         default_areas = DEFAULTS['areas'],
         section = y_x,
@@ -2900,21 +2922,8 @@ function populate_areas() {
     });
 
     // 3) activate tabs
-    E('.tabs', (node, id) => {
-        let tabs = From(A('.tab', node)),
-            actives = tabs.filter(node => HasClass(node, 'active'));
-
-        // few tabs => show full label
-        if (tabs.length < 4)
-            for (let tab of tabs) {
-                let dataset = tab.dataset;
-                dataset['t'] = dataset['label'] || dataset['abbr'];
-            }
-
-        add_timeout(`active:${id}`, () => {
-            virtual_click_tab(actives.length? actives[0]: tabs[0]);
-        }, node.id == 'table-tabs'? TIMEOUT_activate: 0);
-    });
+    if (activate)
+        activate_tabs();
 
     save_option('areas');
     translate_nodes('body');
@@ -3099,6 +3108,7 @@ function set_modal_events(parent) {
 // <<
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
+        activate_tabs: activate_tabs,
         add_font: add_font,
         add_history: add_history,
         add_timeout: add_timeout,

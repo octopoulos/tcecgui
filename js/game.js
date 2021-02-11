@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-10
 //
 // Game specific code:
 // - control the board, moves
@@ -383,7 +383,7 @@ let ANALYSIS_URLS = {
         'smp_threads': 5,
         'threads': 5,
     },
-    TIMEOUT_active = 500,               // activate tab after changing section
+    TIMEOUT_active = 800,               // activate tab after changing section
     TIMEOUT_bench_load = 250,
     TIMEOUT_graph_resize = 250,
     TIMEOUT_info = 20,                  // show board info when opened a table
@@ -969,7 +969,7 @@ function show_board_info(name, resize_flag, show) {
     if (board.manual && !board.is_ai())
         board.show_picks(true);
 
-    if (!(resize_flag & 3))
+    if (!(resize_flag & 2))
         resize_game();
     return true;
 }
@@ -2316,6 +2316,8 @@ function expand_season(node, show) {
  * @param {Function=} callback
  */
 function open_event(section, callback) {
+    clear_timeout('active');
+
     let data_x = table_data['archive']['season'];
     if (!data_x)
         return;
@@ -4646,6 +4648,9 @@ function check_explosion(is_boom, force) {
     players = players.filter(player => player && player[1]);
 
     // 2) engines must agree
+    if (is_boom)
+        threshold *= 0.8;
+
     let exploded = main.exploded,
         scores = players.map(player => clamp_eval(player[0])),
         scores1 = scores.filter(score => score >= threshold),
@@ -5799,15 +5804,18 @@ function changed_section() {
     old_cup = null;
     show_tables(section, is_cup);
 
-    // click on the active tab, ex: schedule, stats
-    // - if doesn't exist, then active the default tab
-    let active = get_active_tab('table').node;
-    if (active && Visible(active))
-        add_timeout('active', () => open_table(active), TIMEOUT_active);
-    else {
+    // click on the active tab, ex: schedule, stats, if it has data
+    // - if no data, then activate the default tab
+    let active,
+        tab = get_active_tab('table'),
+        data_x = table_data[section],
+        data = (data_x[tab.name] || {}).data || [];
+
+    if (data.length)
+        active = tab.name;
+    else
         active = is_cup? 'brak': DEFAULT_ACTIVES[section];
-        open_table(active);
-    }
+    add_timeout('active', () => open_table(active), TIMEOUT_active);
 
     // reset some stuff
     lock_sub_boards(2);
