@@ -1,13 +1,13 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-10
 /*
 globals
 expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp, IsArray, Keys, Undefined} = require('./common.js'),
+let {Assign, FromTimestamp, IsArray, IsString, Keys, ParseJSON, Stringify, Undefined} = require('./common.js'),
     {DEV, load_defaults, set_section, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
@@ -165,7 +165,7 @@ function init_players(ply, players, evals) {
             pv: 'd1d6 e7e6 f1d1 e6d6',
             pvs: {d1d6: ['d1d6 e7e6 f1d1 e6d6', 'Rd6 Re6 Rfd1 Rxd6']},
         },
-        'Rd6 Re6 Rfd1 Rxd6',
+        'Rd6 Re6 Rfd1 | Rxd6',
     ],
     // 5
     [
@@ -216,7 +216,7 @@ function init_players(ply, players, evals) {
                 d1d6: ['d1d6 e7e6 f1d1 e6d6', 'Rd6 Re6 Rfd1 Rxd6'],
             },
         },
-        'Rd6 Re6 Rfd1 Rxd6',
+        'Rd6 Re6 | Rfd1 Rxd6',
     ],
     [
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
@@ -285,7 +285,7 @@ function init_players(ply, players, evals) {
                 ],
             },
         },
-        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+        'Nxa3 | Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
     [
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
@@ -317,7 +317,7 @@ function init_players(ply, players, evals) {
                 ],
             },
         },
-        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+        'Nxa3 Rc1 | Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
     // 10
     [
@@ -337,10 +337,10 @@ function init_players(ply, players, evals) {
                 name: 'Ethereal TCEC S20 DivP',
             },
         ],
-        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3 b1b8',
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705178 nps 142497000 tbhits 107098 hashfull 155 pv c4a3 b1b8',
         1,
         {
-            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705178,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1b8',
             pvs: {c4a3: ['c4a3 b1b8', 'Nxa3 Rb8']},
@@ -364,10 +364,10 @@ function init_players(ply, players, evals) {
                 name: 'Ethereal TCEC S20 DivP',
             },
         ],
-        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv ',
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705177 nps 142497000 tbhits 107098 hashfull 155 pv ',
         1,
         {
-            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705177,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
             pvs: {
@@ -382,10 +382,10 @@ function init_players(ply, players, evals) {
     [
         '2rb2kr/q4p2/b1n1pBp1/p2pP2p/2nP3P/P4NPN/2B2P2/1R1QR1K1 b - - 7 28',
         null,
-        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705179 nps 142497000 tbhits 107098 hashfull 155 pv c4a3',
+        '219974502 Ethereal TCEC S20 DivP(59): info depth 32 seldepth 53 multipv 1 score cp -177 upperbound time 101648 nodes 14484705176 nps 142497000 tbhits 107098 hashfull 155 pv c4a3',
         1,
         {
-            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705179,
+            cp: -177, depth: 32, engine: 'Ethereal TCEC S20 DivP', eval: 1.77, hashfull: 155, id: 1, nodes: 14484705176,
             nps: 142497000, ply: 55, seldepth: 53, tbhits: 107098, time: 101648,
             pv: 'c4a3 b1c1 a3c2 c1c2 a6c4 d1d2 h8h7 h3g5 d8e7',
             pvs: {
@@ -395,7 +395,7 @@ function init_players(ply, players, evals) {
                 ],
             },
         },
-        'Nxa3 Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
+        'Nxa3 | Rc1 Nxc2 Rxc2 Bc4 Qd2 Rh7 Nhg5 Be7',
     ],
     [
         START_FEN,
@@ -419,7 +419,7 @@ function init_players(ply, players, evals) {
                 e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3'],
             },
         },
-        'd4 d5 Nf3',
+        'd4 | d5 Nf3',
     ],
     [
         START_FEN,
@@ -443,7 +443,7 @@ function init_players(ply, players, evals) {
                 e2e4: ['e2e4 e7e5 b1c3', 'e4 e5 Nc3'],
             },
         },
-        'e4 e5 Nc3',
+        'e4 | e5 Nc3',
     ],
 ].forEach(([fen, players_, line, player_id, answer, answer_san], id) => {
     test(`analyse_log:${id}`, () => {
@@ -457,11 +457,19 @@ function init_players(ply, players, evals) {
         if (players_) {
             for (let player of players_) {
                 let info = player.info;
-                if (info && !info.pvs) {
+                if (!info)
+                    continue;
+                if (!info.pvs) {
                     let pv = info.pv;
                     if (pv)
                         info.pvs = {[pv.split(' ')[0]]: pv};
                 }
+                let pvs = info.pvs;
+                Keys(pvs).forEach(key => {
+                    let [pv, moves] = pvs[key];
+                    if (IsString(moves))
+                        pvs[key] = [pv, moves.split(' ').map(item => ({m: item}))];
+                });
             }
             players[0] = players_[0];
             players[1] = players_[1];
@@ -469,10 +477,11 @@ function init_players(ply, players, evals) {
         main.set_fen(fen);
 
         analyse_log(line);
-        let info = players[player_id].info || {},
+        let info = ParseJSON(Stringify(players[player_id].info || {})),
             pvs = info.pvs,
             moves = info.moves,
-            san_list = moves? (IsArray(moves)? moves.map(move => move.m).join(' '): moves): null;
+            san_list =
+                moves? (IsArray(moves)? moves.map(move => `${move.fail? '| ': ''}${move.m}`).join(' '): moves): null;
         delete info.moves;
 
         if (pvs)
