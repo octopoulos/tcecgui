@@ -2140,7 +2140,12 @@ function prepare_settings() {
             'key_repeat': option_number(70, 10, 2000, 10),
             'key_repeat_initial': option_number(500, 10, 2000, 10),
             'play_every': option_number(1200, 100, 5000, 50, {}, 'speed when clicking on PLAY'),
-            'quick_every': option_number(300, 100, 50000, 10, {}, 'live moves play speed'),
+            'quick_every': {
+                '_multi': 2,
+                '_title': 'live moves play speed',
+                'quick_min': option_number(150, 100, 50000, 10, {}, 'min'),
+                'quick_max': option_number(400, 100, 50000, 10, {}, 'max'),
+            },
             // 'wasm': [ON_OFF, 0],
         },
         'engine': {

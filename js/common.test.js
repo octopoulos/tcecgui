@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-06
+// @version 2021-02-10
 //
 /*
 globals
@@ -10,7 +10,7 @@ expect, require, test
 
 let {
     Clamp, Clear, Contain, DefaultFloat, DefaultInt, Format, FormatFloat, FormatUnit, FromSeconds, FromTimestamp,
-    HashText, Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Pad, ParseJSON, PI,
+    HashText, Hex2RGB, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Merge, Pad, ParseJSON, PI,
     QueryString, SetDefault, Split, Title, Undefined, VisibleHeight, VisibleWidth,
 } = require('./common.js');
 

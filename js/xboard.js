@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-10
 //
 // game board:
 // - 4 rendering modes:
@@ -19,7 +19,7 @@
 globals
 _, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cannot_popup, Chess, Class,
 Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
+DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 require, resize_text,
@@ -230,6 +230,7 @@ class XBoard {
         this.pv_string = '';                            // last pv_string used
         this.pv_strings = {};                           // iterative search: pv lists per move
         this.pv_node = _(this.pv_id);
+        this.quick = 300;                               // quick speed
         this.real = null;                               // pointer to a board with the real moves
         this.rect = null;                               // control rect
         this.replies = {};                              // worker replies
@@ -402,6 +403,7 @@ class XBoard {
         this.valid = true;
 
         // update the cursor
+        let delta = num_move - this.ply;
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply) {
             // live engine => show an arrow for the next move
@@ -415,12 +417,15 @@ class XBoard {
             this.delayed_compare(cur_ply, num_move - 1);
         }
         // way behind => set mode to quick
-        else if (this.ply < num_move - 5) {
-            if (!num_book || num_book < num_new)
+        else if (delta >= 5) {
+            if (!num_book || num_book < num_new) {
                 this.play_mode = 'quick';
+                let ratio = Exp((5 - delta) * 0.1);
+                this.quick = Y['quick_min'] * (1 - ratio) + Y['quick_max'] * ratio;
+            }
         }
         // end => play
-        else if (this.ply >= num_move - 1 && !timers[this.play_id]) {
+        else if (delta <= 1 && !timers[this.play_id]) {
             if (DEV['ply'])
                 LS(`num_book=${num_book} : num_new=${num_new}`);
 
@@ -1689,8 +1694,12 @@ class XBoard {
         // handle key repeat
         let timeout,
             time_name = `click_${name}_${this.id}`;
-        if (is_play)
-            timeout = Y[`${this.play_mode}_every`];
+        if (is_play) {
+            if (this.play_mode == 'quick')
+                timeout = this.quick;
+            else
+               timeout = Y[`${this.play_mode}_every`];
+        }
         else if (step) {
             if (key_repeat > Y['key_repeat'])
                 key_repeat = Y['key_repeat'];
