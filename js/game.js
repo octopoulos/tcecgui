@@ -4375,7 +4375,9 @@ function analyse_log(line) {
     if (!Y['log_pv'])
         return;
 
-    let ply = main.moves.length;
+    let fail = pv.split(' ').length,
+        ply = main.moves.length;
+
     for (let key of Keys(pvs)) {
         let [memory, moves] = pvs[key];
         pos = memory.indexOf(pv);
@@ -4406,6 +4408,19 @@ function analyse_log(line) {
         info['moves'] = moves;
         if (moves.length != splits.length)
             return check_missing_moves(ply, null, null, true);
+    }
+
+    // fail?
+    if (pv) {
+        let moves = info['moves'];
+        for (let move of moves)
+            if (move.fail)
+                delete move.fail;
+        if (fail) {
+            let move = moves[fail];
+            if (move)
+                move.fail = 1;
+        }
     }
 
     if (DEV['log']) {

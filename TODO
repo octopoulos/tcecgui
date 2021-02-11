@@ -16,13 +16,14 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
--          : 2021-01-24 : piece animation is not smooth anymore, something to do with set_ply
--          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
--          : 2021-01-27 : pv should show fails
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
+-          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
+2021-02-10 : 2021-01-24 : 1314 plies in 45.714s => 28.744 plies/s
+2021-02-10 : 2021-01-27 : pv should show fails
 2021-02-10 : 2021-02-10 : boom_every
 2021-02-10 : 2021-02-10 : quick_every interpolation
 2021-02-10 : 2021-02-10 : improved tab opening
+2021-02-09 : 2021-01-24 : piece animation is not smooth anymore, something to do with set_ply
 2021-02-09 : 2021-02-09 : optimise loading
 2021-02-05 : 2021-02-05 : closure compiler advanced #3
 2021-02-05 : 2021-02-05 : closure compiler advanced #2
@@ -119,6 +120,7 @@ DONE         CREATED      DESCRIPTION
 2020-12-19 : 2020-12-19 : cross table engine sorting
 2020-12-19 : 2020-12-19 : parse_pgn breaks pv at first '='
 2020-11-22 : 2020-11-22 : parse mate from log
+2020-11-22 : 2020-06-20 : parse live log
 2020-11-20 : 2020-11-20 : improved livelog analysis
 2020-11-17 : 2020-11-17 : show FRC # in the opening
 2020-11-17 : 2020-05-02 : live fen calculation after clicking on a ply without chess.js (fast)
@@ -567,16 +569,14 @@ DONE         CREATED      DESCRIPTION
 2020-04-12 : 2020-04-12 : remove lodash, because slower + takes more space
 2020-04-12 : 2020-04-12 : jshint + squash bugs, will be easier to debug
 high:
+-          : 2020-09-08 : remove socket.io
 medium:
 low:
 ~          : 2020-04-13 : add 3d board
--          : 2020-06-20 : parse live log
 -          : 2020-06-03 : PVA pawn promotion: should be able to choose the piece
 lowest:
 -          : 2020-09-29 : use d3.js instead of chart.js
 -          : 2020-05-23 : dynamic pagination and search nodes
--          : 2020-09-08 : remove socket.io
--          : 2020-05-26 : live_log option to run in the background
 -          : 2020-04-24 : add 3d dark room
 -          : 2020-04-24 : add 3d tables showing the player names + logos (photo1.jpg)
 -          : 2020-04-24 : add 3d screens displaying the board, requires 2d canvas drawing in XBoard

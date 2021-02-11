@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-09
+@version 2021-02-10
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -720,6 +720,9 @@ input.multi2 {
 .seen {
     background-color: #222 !important;
     color: #ff0 !important;
+}
+.fail {
+    color: #f00 !important;
 }
 .void {
     background-color: #191919;

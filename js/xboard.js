@@ -382,7 +382,7 @@ class XBoard {
             }
 
             if (move && move['m']) {
-                let class_ = `${move['book']? 'book': 'real'}${extra}`,
+                let class_ = `${move['book']? 'book': 'real'}${extra}${move.fail? ' fail': ''}`,
                     text = resize_text(move['m'], 4, 'mini-move');
                 if (is_ply)
                     lines.push(`<a class="${class_}" data-i="${ply}">${text}</a>`);
