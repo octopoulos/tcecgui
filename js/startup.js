@@ -2117,6 +2117,7 @@ function prepare_settings() {
         },
         'boom': {
             'disable_everything': [ON_OFF, 0],
+            'every': option_number(60, 0, 1800, 0.5, {}, 'no more than 1 sound every X seconds'),
             'boom_sound': [boom_sounds, 0],
             'boom_threshold': option_number(1.2, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
             'boom_visual': [boom_visuals, 0],

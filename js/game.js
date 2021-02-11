@@ -156,6 +156,7 @@ let ANALYSIS_URLS = {
         transform: '',
         volume: 1,
     },
+    boom_last = 0,
     BOOM_MIN_PLY = 8,
     // intensity, shake_start, shake_duration, red_start, red_duration, magnitude, decay
     BOOM_PARAMS = {
@@ -4433,9 +4434,14 @@ function analyse_log(line) {
  * @param {Function=} callback
  */
 function boom_effect(type, info, volume, intensities, params, callback) {
-    let main = xboards['live'];
+    let main = xboards['live'],
+        now = Now(true),
+        volume2 = (now > boom_last + Y['every'])? volume: 0;
 
-    boom_sound(type, volume, intensities, sound => {
+    if (volume2)
+        boom_last = now;
+
+    boom_sound(type, volume2, intensities, sound => {
         let boom_param = BOOM_PARAMS[sound] || BOOM_PARAMS._,
             [_, shake_start, shake_duration, red_start, red_duration, magnitude, decay] = boom_param;
         if (DEV['effect'])
@@ -4505,12 +4511,12 @@ function boom_sound(type, volume, intensities, callback) {
     }
 
     last_sound = sound;
-    let gonna_play = play_sound(audiobox, sound, {loaded: () => {
+    let gonna_play = volume? play_sound(audiobox, sound, {loaded: () => {
         if (DEV['effect'])
             LS(`sound ${sound} loaded, playing now ...`);
         play_sound(audiobox, sound, {interrupt: true, volume: Y[`${type}_volume`] / 10 * volume});
         callback(sound);
-    }});
+    }}): false;
 
     if (!gonna_play)
         callback();
@@ -5725,12 +5731,15 @@ function change_setting_game(name, value) {
         show_board_info('pva', 2);
         break;
     case 'test_boom':
+        boom_last = 0;
         check_boom(0, [3, 0, 0, false]);
         break;
     case 'test_explosion':
+        boom_last = 0;
         check_explosion(false, -10 * (Sign(xboards['live'].exploded) || 1));
         break;
     case 'test_moob':
+        boom_last = 0;
         check_boom(0, [3, 0, 0, true]);
         break;
     }
