@@ -17,7 +17,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
--          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
+~          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
+-          : 2021-02-10 : improve analyse_fen + add tests
 2021-02-10 : 2021-01-24 : 1314 plies in 45.714s => 28.744 plies/s
 2021-02-10 : 2021-01-27 : pv should show fails
 2021-02-10 : 2021-02-10 : boom_every
