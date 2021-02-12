@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-11
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1914,7 +1914,7 @@ function prepare_settings() {
         'pv': 'PV',
         'pv0': 'White',
         'pv1': 'Black',
-        'pva': 'PV(A)',
+        'pva': 'PVA',
         'tb': 'TB',
     });
 
@@ -2117,7 +2117,7 @@ function prepare_settings() {
         },
         'boom': {
             'disable_everything': [ON_OFF, 0],
-            'every': option_number(60, 0, 1800, 0.5, {}, 'no more than 1 sound every X seconds'),
+            'every': option_number(30, 0, 1800, 0.5, {}, 'no more than 1 sound every X seconds, -1 to disable sounds'),
             'boom_sound': [boom_sounds, 0],
             'boom_threshold': option_number(1.2, 0, 10, 0.05, {}, 'threshold to exceed in graph scale => boom'),
             'boom_visual': [boom_visuals, 0],
@@ -2132,6 +2132,7 @@ function prepare_settings() {
                 option_number(2.3, 0, 10, 0.1, {}, 'strict majority of unique engines must exceed this eval'),
             'explosion_visual': [boom_visuals, 'all'],
             'explosion_volume': option_number(5, 0, 20, 0.5),
+            'PVA': [ON_OFF, 0],
             'test': [{list: ['boom', 'moob', 'explosion'], type: 'list'}],
         },
         'control': {
@@ -2144,8 +2145,8 @@ function prepare_settings() {
             'quick_every': {
                 '_multi': 2,
                 '_title': 'live moves play speed',
-                'quick_min': option_number(150, 100, 50000, 10, {}, 'min'),
-                'quick_max': option_number(400, 100, 50000, 10, {}, 'max'),
+                'quick_min': option_number(100, 100, 50000, 10, {}, 'min'),
+                'quick_max': option_number(500, 100, 50000, 10, {}, 'max'),
             },
             // 'wasm': [ON_OFF, 0],
         },

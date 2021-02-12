@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-11
 /*
 globals
 expect, global, require, test
@@ -651,7 +651,7 @@ function init_players(ply, players, evals) {
         Assign(Y, y);
 
         let player = players[0],
-            result = check_boom(0);
+            result = check_boom('live', 0);
         expect(result[0]).toEqual(answer);
         expect(player.boomed).toBeCloseTo(answer_boomed, 3);
         if (player.boomed)
@@ -717,7 +717,7 @@ function init_players(ply, players, evals) {
         if (y.x)
             set_section(y.x);
 
-        expect(check_explosion(!!is_boom)).toEqual(answer);
+        expect(check_explosion('live', !!is_boom)).toEqual(answer);
         expect(main.exploded).toBeCloseTo(answer_boomed, 3);
     });
 });

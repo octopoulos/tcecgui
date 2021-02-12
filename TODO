@@ -1,7 +1,6 @@
 TODO
 =====
 DONE         CREATED      DESCRIPTION
-~          : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 -          : 2020-10-02 : king safety: check 8 squares around, pawn or edge = block a direction
 ~          : 2020-07-22 : individual piece mobility, ex: bishop 1 + bishop 2
 -          : 2020-09-18 : pressure area around opponent king = larger bonus
@@ -18,7 +17,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
 ~          : 2021-01-23 : speed: add_moves_string should reuse the nodes, instead of HTML(...)
--          : 2021-02-10 : improve analyse_fen + add tests
+2021-02-11 : 2021-02-11 : boom in PVA
+2021-02-10 : 2021-02-10 : improve analyse_fen + add tests
 2021-02-10 : 2021-01-24 : 1314 plies in 45.714s => 28.744 plies/s
 2021-02-10 : 2021-01-27 : pv should show fails
 2021-02-10 : 2021-02-10 : boom_every
@@ -121,6 +121,7 @@ DONE         CREATED      DESCRIPTION
 2020-12-19 : 2020-12-19 : cross table engine sorting
 2020-12-19 : 2020-12-19 : parse_pgn breaks pv at first '='
 2020-11-22 : 2020-11-22 : parse mate from log
+2020-11-22 : 2020-06-23 : parse livelog => update player eval / pv / wdl etc
 2020-11-22 : 2020-06-20 : parse live log
 2020-11-20 : 2020-11-20 : improved livelog analysis
 2020-11-17 : 2020-11-17 : show FRC # in the opening
