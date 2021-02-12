@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-11
 //
 /*
 globals
@@ -11,8 +11,8 @@ expect, global, require, test
 let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
     {
-        allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, format_unit, get_fen_ply,
-        get_move_ply, leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl,
+        add_player_eval, allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, format_unit,
+        get_fen_ply, get_move_ply, leela_cp_to_score, mix_hex_colors, reset_defaults, split_move_string, stockfish_wdl,
         stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
 
@@ -23,6 +23,22 @@ global.DEFAULTS = {
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// add_player_eval
+[
+    [{}, 1, undefined, {}],
+    [{}, 2, 5.6, {2: 5.6}],
+    [{}, 2, '6.3', {2: '6.3'}],
+].forEach(([player, ply, eval_, answer], id) => {
+    test(`add_player_eval:${id}`, () => {
+        add_player_eval(player, ply, eval_);
+        let vector = [];
+        Keys(answer).forEach(key => {
+            vector[key] = answer[key];
+        });
+        expect(player.evals).toEqual(vector.length? vector: undefined);
+    });
+});
 
 // allie_cp_to_score
 // https://github.com/manyoso/allie/blob/be656ec3042e0422c8275d6362ca4f69b2e43f0d/tests/testbasics.cpp#L120

@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-10
+@version 2021-02-11
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -697,7 +697,8 @@ input.multi2 {
 #pv1 .real {
     color: #7ce
 }
-.agree {
+.agree,
+.zero {
     grid-column: 1/4;
 }
 .turn {

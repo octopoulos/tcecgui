@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-11
 //
 // global variables/functions shared across multiple js files
 //
@@ -26,7 +26,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210209',
+    VERSION = '20210211',
     virtual_close_popups,
     xboards = {};
 
@@ -46,6 +46,21 @@ let HOST_ARCHIVE,
 let Move;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Add an eval to the history
+ * - used by check_boom
+ * @param {!Object} player
+ * @param {number} ply
+ * @param {number|string} eval_
+ */
+function add_player_eval(player, ply, eval_) {
+    if (eval_ == undefined)
+        return;
+    if (!player.evals)
+        player.evals = [];
+    player.evals[ply] = eval_;
+}
 
 /**
  * Convert centipawn to score % for AS
@@ -420,6 +435,7 @@ function stoof_cp_to_score(cp) {
 // <<
 if (typeof exports != 'undefined') {
     Assign(exports, {
+        add_player_eval: add_player_eval,
         allie_cp_to_score: allie_cp_to_score,
         assign_move: assign_move,
         calculate_feature_q: calculate_feature_q,

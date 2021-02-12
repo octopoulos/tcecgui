@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-11
 //
 // game board:
 // - 4 rendering modes:
@@ -17,8 +17,8 @@
 // jshint -W069
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, cannot_popup, Chess, Class,
-Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
+_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C,
+cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
@@ -492,20 +492,20 @@ class XBoard {
         }
 
         // 2) update the moves
-        let first_ply = -1,
-            lines = Y['agree_length']? [`<i class="agree Y">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
+        let lines = Y['agree_length']? [`<i class="agree Y">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             moves = [],
-            ply = new_ply;
+            ply = new_ply,
+            vectors = [[0, ply, 'agree', agree]];
 
         if (this.manual)
-            lines.push('<i class="turn" data-i="-1">0.</i><b></b><b></b>');
+            vectors.push([2, -1, 'turn zero', '0.']);
 
         new_items.forEach(item => {
-            if (first_ply < 0 && ply >= 0)
-                first_ply = ply;
+            let ply3 = (ply + 1) * 3;
 
             if (item == '...') {
                 lines.push('<i>...</i>');
+                vectors.push([ply3 + 1, ply, '', '...']);
                 ply ++;
                 return;
             }
@@ -513,21 +513,21 @@ class XBoard {
             if (IsDigit(item[0])) {
                 let turn = parseInt(item, 10);
                 ply = (turn - 1) * 2;
-                lines.push(`<i class="turn" data-j="${turn}">${resize_text(turn, 2, 'mini-turn')}.</i>`);
+                vectors.push([ply3, ply, 'turn', turn]);
                 return;
             }
             // normal move
             else {
                 moves[ply] = {'m': item};
                 let text = resize_text(item, 4, 'mini-move');
-                lines.push(`<a class="real${(ply == want_ply)? ' current': ''}" data-i="${ply}">${text}</a>`);
+                vectors.push([ply3 + 1, ply, `real${(ply == want_ply)? ' current': ''}`, text]);
                 ply ++;
             }
         });
 
         this.valid = true;
 
-        // only update if this is the current ply + 1, or if we want a specific ply
+        // 3) only update if this is the current ply + 1, or if we want a specific ply
         let last_ply = this.real? this.real.moves.length - 1: -1,
             is_current = (new_ply == cur_ply || force || this.manual || (cur_ply == last_ply && new_ply > last_ply));
 
@@ -535,29 +535,42 @@ class XBoard {
             Assign(SetDefault(moves, this.real.ply, {}), {'fen': this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
         }
+        if (!is_current)
+            return;
 
-        if (is_current) {
-            this.moves = moves;
+        this.moves = moves;
 
-            // update the HTML
-            let html = lines.join('');
-            for (let parent of [this.xmoves, this.pv_node])
-                HTML(parent, html);
-            this.text = text;
+        // 4) create the HTML
+        let children = [this.xmoves.children, this.pv_node.children];
 
-            // 3) update the cursor
-            // live engine => show an arrow for the next move
-            if (this.live_id != undefined || Visible(this.vis)) {
-                let move = this.set_ply(new_ply, {instant: !this.main, render: false});
-                if (this.hook) {
-                    this.next = move;
-                    this.hook(this, 'next', move);
-                }
-            }
+        let html = 'Y' + vectors.map(([id, ply, class_, text]) => {
+            if (class_ == 'agree')
+                return `<i class="agree Y${Y['agree_length']? '': ' dn'}">[${Undefined(agree, '&nbsp; ')}]</i>`;
+            if (class_ == 'turn')
+                return `<i class="turn" data-j="text">${resize_text(text, 2, 'mini-turn')}.</i>`;
+            return `<a class="${class_}" data-i="${ply}">${text}</a>`;
+        }).join('');
 
-            // show diverging move in PV
-            this.delayed_compare(want_ply, last_ply);
+        if (this.name == 'pv0')
+            LS(vectors);
+        // let html = lines.join('');
+        for (let parent of [this.xmoves, this.pv_node]) {
+            HTML(parent, html);
         }
+        this.text = text;
+
+        // 5) update the cursor
+        // live engine => show an arrow for the next move
+        if (this.live_id != undefined || Visible(this.vis)) {
+            let move = this.set_ply(new_ply, {instant: !this.main, render: false});
+            if (this.hook) {
+                this.next = move;
+                this.hook(this, 'next', move);
+            }
+        }
+
+        // show diverging move in PV
+        this.delayed_compare(want_ply, last_ply);
     }
 
     /**
@@ -1990,8 +2003,11 @@ class XBoard {
             move['n'] = '-';
         if (!move['s'])
             move['s'] = '-';
-        if (!move['wv'])
+
+        let eval_ = move['wv'];
+        if (!eval_)
             move['wv'] = '-';
+        add_player_eval(player, ply, eval_);
 
         this.add_moves([move]);
         this.set_ply(ply);

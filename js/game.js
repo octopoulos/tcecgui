@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-11
 //
 // Game specific code:
 // - control the board, moves
@@ -12,10 +12,10 @@
 // jshint -W069
 /*
 globals
-_, A, Abs, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, calculate_feature_q,
-cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp, clamp_eval, Class,
-clear_timeout, close_popups, context_areas, context_target:true, controls, CopyClipboard, create_field_value,
-create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C,
+calculate_feature_q, cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp,
+clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, CopyClipboard,
+create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IS_NODE,
@@ -3826,8 +3826,7 @@ function update_move_pv(section, ply, move) {
         }
     }
 
-    if (eval_ != undefined)
-        SetDefault(player, 'evals', [])[ply] = eval_;
+    add_player_eval(player, ply, eval_);
 }
 
 /**
@@ -3934,7 +3933,7 @@ function update_overview_basic(section, headers) {
         update_hardware(section, id, [box_node, node], {engine: name, short: short});
 
         HTML(Id(`engine${id}`), format_engine(name, true, 21));
-        HTML(`.xcolor${id} .xshort`, resize_text(short, 15), xboards[section].node);
+        HTML(`.xcolor${id} .xshort`, resize_text(short, 15, 'small'), xboards[section].node);
 
         // load engine image
         let image = Id(`logo${id}`);
@@ -4441,6 +4440,7 @@ function analyse_log(line) {
 
 /**
  * Create a boom effect: sound + color + shake
+ * @param {string} section live, pva
  * @param {string} type
  * @param {number} volume
  * @param {Array<number>} intensities
@@ -4448,10 +4448,11 @@ function analyse_log(line) {
  * @param {Object} params
  * @param {Function=} callback
  */
-function boom_effect(type, info, volume, intensities, params, callback) {
-    let main = xboards['live'],
+function boom_effect(section, type, info, volume, intensities, params, callback) {
+    let every = Y['every'],
+        main = xboards[section],
         now = Now(true),
-        volume2 = (now > boom_last + Y['every'])? volume: 0;
+        volume2 = (every >= 0 && now > boom_last + every)? volume: 0;
 
     if (volume2)
         boom_last = now;
@@ -4541,18 +4542,19 @@ function boom_sound(type, volume, intensities, callback) {
  * Check if we have an BOOM
  * - individual check for every player
  * - ignore kibitzers
+ * @param {string} section live, pva
  * @param {number} offset ply offset
  * @param {Array<number>=} force for debugging
  * @param {boolean=} only_check only check if a boom should occur
  * @returns {!Array<number>} [0] on success
  */
-function check_boom(offset, force, only_check) {
+function check_boom(section, offset, force, only_check) {
     if (Y['disable_everything'])
         return [1];
 
     // 1) gather all evals
     let best = force || [0, 0, 0, 0],
-        main = xboards['live'],
+        main = xboards[section],
         players = main.players.slice(0, 2),
         ply = main.moves.length + offset,
         threshold = Y['boom_threshold'];
@@ -4633,7 +4635,7 @@ function check_boom(offset, force, only_check) {
         intensities[1] = 9;
 
     // 4) effect if a boom was detected
-    boom_effect(type, best, volume, intensities, {
+    boom_effect(section, type, best, volume, intensities, {
         every: 1 / rate,
         red_coeff: red_coeff,
     });
@@ -4646,18 +4648,19 @@ function check_boom(offset, force, only_check) {
  * Check if we have an explosion
  * - need a majority of engines to agree
  * - include kibitzers
+ * @param {string} section live, pva
  * @param {boolean=} is_boom boom occured at the same time?
  * @param {number=} force for debugging
  * @returns {number} 0 on success
  */
-function check_explosion(is_boom, force) {
+function check_explosion(section, is_boom, force) {
     let threshold = Y['explosion_threshold'];
     if (threshold < 0.1 || Y['disable_everything'])
         return 1;
 
     // 1) gather score of all engines
     let best = 0,
-        main = xboards['live'],
+        main = xboards[section],
         players = main.players.map(player => [player.eval, player.short || get_short_name(player.name)]),
         ply = main.moves.length,
         two = new Set([players[0][1], players[1][1]]);
@@ -4724,7 +4727,7 @@ function check_explosion(is_boom, force) {
             return 5;
     }
 
-    boom_effect('explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
+    boom_effect(section, 'explosion', `best=${best} : scores=${scores}`, 1, [1, 10], {
         every: 1/20,
         red_coeff: 0.75,
     }, () => {
@@ -4736,14 +4739,19 @@ function check_explosion(is_boom, force) {
 
 /**
  * Check explosion + boom
- * @param {string} section
+ * @param {string} section live, pva
  * @param {number} offset ply offset
  * @param {number} mode &1:boom, &2:explosion
  * @returns {number} &1:boom, &2:explosion
  */
 function check_explosion_boom(section, offset, mode=3) {
-    if (section != 'live')
+    if (section == 'pva') {
+        if (!Y['PVA'])
+            return 0;
+    }
+    else if (section != 'live')
         return 0;
+
     let main = xboards[section],
         ply = main.moves.length,
         seens = main.seens;
@@ -4765,11 +4773,11 @@ function check_explosion_boom(section, offset, mode=3) {
     let best,
         error = 1;
     if (mode & 1)
-        [error, best] = check_boom(offset, undefined, true);
+        [error, best] = check_boom(section, offset, undefined, true);
 
-    if ((mode & 2) && !check_explosion(!error))
+    if ((mode & 2) && !check_explosion(section, !error))
         return 2;
-    if (!error && !check_boom(offset, best)[0])
+    if (!error && !check_boom(section, offset, best)[0])
         return 1;
     return 0;
 }
@@ -4993,7 +5001,7 @@ function update_hardware(section, id, nodes, {engine, hardware, short}={}) {
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
         if (node && node.title != full_engine) {
-            HTML(node, resize_text(short, 15));
+            HTML(node, resize_text(short, 15, 'small'));
             Attrs(node, {title: full_engine});
             Assign(player, {
                 feature: Undefined(ENGINE_FEATURES[short], 0),
@@ -5062,7 +5070,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
     board_evals[ply] = data;
     player.eval = eval_;
     if (data['nodes'] > 1)
-        SetDefault(player, 'evals', [])[ply] = eval_;
+        add_player_eval(player, ply, eval_);
 
     // live engine is not desired?
     if (!Y[`live_engine_${id + 1}`]) {
@@ -5197,10 +5205,10 @@ function update_player_eval(section, data, same_pv) {
             HTML(`[data-x="${key}"]`, dico[key], node);
         });
 
-        HTML(`.xshort`, resize_text(short, 15), mini);
+        HTML(`.xshort`, resize_text(short, 15, 'small'), mini);
         HTML(`.xeval`, format_eval(eval_), mini);
         if (data['nodes'] > 1)
-            SetDefault(player, 'evals', [])[ply] = eval_;
+            add_player_eval(player, ply, eval_);
 
         // moves left
         if (Y['moves_left'] && data['movesleft'] != undefined)
@@ -5747,15 +5755,15 @@ function change_setting_game(name, value) {
         break;
     case 'test_boom':
         boom_last = 0;
-        check_boom(0, [3, 0, 0, false]);
+        check_boom('live', 0, [3, 0, 0, false]);
         break;
     case 'test_explosion':
         boom_last = 0;
-        check_explosion(false, -10 * (Sign(xboards['live'].exploded) || 1));
+        check_explosion('live', false, -10 * (Sign(xboards['live'].exploded) || 1));
         break;
     case 'test_moob':
         boom_last = 0;
-        check_boom(0, [3, 0, 0, true]);
+        check_boom('live', 0, [3, 0, 0, true]);
         break;
     }
 
@@ -6016,7 +6024,7 @@ function copy_pgn(board, download, only_text, flag=7) {
                         value = move[key];
                     if (keep == 2)
                         return value? key: '';
-                    if (value == '' || value == undefined)
+                    if (value == '' || value == undefined || value == '-')
                         return '';
                     return `${key}=${value}`;
                 }).filter(value => value).join(', ');
@@ -6212,6 +6220,8 @@ function handle_board_events(board, type, value, e, force) {
             if (cur_ply < board.moves.length - 1)
                 lock_sub_boards(1);
         }
+        if (name == 'pva')
+            check_explosion_boom(name, -1, 3);
         break;
     }
 
@@ -6557,7 +6567,7 @@ function startup_game() {
         'Mob': 'Mobility',
         'points': 'points + direct encounters',
         'PV': 'Principal variation',
-        'PV(A)': '{PV}: {analysis}',
+        'PVA': '{PV}: {analysis}',
         'rmobility_result': 'r-Mobility result',
         'rmobility_score': 'r-Mobility score',
         'SB': 'Sonneborn–Berger',
