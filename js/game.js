@@ -5000,6 +5000,9 @@ function update_hardware(section, id, nodes, {engine, hardware, short}={}) {
     if (hardware)
         player.hardware = hardware;
 
+    if (section != y_x)
+        return;
+
     let full_engine = `${engine}\n${player.hardware}`;
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
@@ -5033,6 +5036,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
         board_evals = board.evals[section],
         desc = data['desc'],
         engine = data['engine'],
+        is_same = (section == section_board()),
         main = xboards[section],
         moves = data['moves'],
         player = main.players[id + 2],
@@ -5085,6 +5089,9 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
     engine = engine || data['engine'];
     let short = get_short_name(engine);
     update_hardware(section, id + 2, [box_node, node], {engine: engine, hardware: desc, short: short});
+
+    if (!is_same)
+        return false;
 
     if (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply)) {
         let is_hide = !Y.eval,
