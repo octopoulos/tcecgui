@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-11
+// @version 2021-02-13
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -894,7 +894,7 @@ function init_globals() {
     // load local data directly, and later online data
     download_tables(true);
     download_tables(false, 2);
-    add_timeout('tables', download_tables, TIMEOUT_tables);
+    add_timeout('tables', () => download_tables(false, 1), TIMEOUT_tables);
 
     // delayed loading
     show_banner();

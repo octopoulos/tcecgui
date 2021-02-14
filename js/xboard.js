@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-11
+// @version 2021-02-13
 //
 // game board:
 // - 4 rendering modes:
@@ -209,17 +209,21 @@ class XBoard {
         this.hold_time = 0;                             // last time the event was repeated
         this.locked = 0;                                // &1:locked, &2:manual
         this.locked_obj = null;
-        this.markers = [];                              // @
         this.main_manual = this.main || this.manual;
         this.max_time = 0;                              // max time in IT
         this.min_depth = 0;                             // max depth in IT
+        this.move_list = [];
         this.move_time = 0;                             // when a new move happened
         this.move2 = null;                              // previous move
         /** @type {Array<Move>} */
         this.moves = [];                                // move list
         this.next = null;
         this.node = _(this.id);
+        this.node_currents = [];                        // current ply
+        this.node_markers = [];                         // marker ply
+        this.node_seens = [];                           // seen ply
         this.overlay = null;                            // svg objects will be added there
+        this.parents = [];
         this.pgn = {};
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
@@ -239,6 +243,7 @@ class XBoard {
         this.seens = new Set();                         // seen plies for boom/explode
         this.shared = null;
         this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.speed = 0;
         this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
         this.svgs = [
@@ -304,16 +309,14 @@ class XBoard {
             num_book = 0,
             num_new = moves.length,
             num_move = this.moves.length,
-            parent_lasts = [this.xmoves, this.pv_node]
-                .filter(parent => parent)
-                .map(parent => {
-                    let last = _('.last', parent);
-                    if (!last && this.last) {
-                        last = CreateNode('i', this.last, {'class': 'last'});
-                        parent.appendChild(last);
-                    }
-                    return [parent, last];
-                }),
+            parent_lasts = this.parents.map(parent => {
+                let last = _('.last', parent);
+                if (!last && this.last) {
+                    last = CreateNode('i', this.last, {'class': 'last'});
+                    parent.appendChild(last);
+                }
+                return [parent, last];
+            }),
             start = 0;
 
         // add the initial position
@@ -470,17 +473,17 @@ class XBoard {
      * @param {number=} agree agree length
      * @param {boolean=} force force update
      */
-    add_moves_string(text, cur_ply, agree, force) {
-        if (!text)
+    add_moves_string(string, cur_ply, agree, force) {
+        if (!string)
             return;
 
         // 1) no change or older => skip
-        if (this.text == text || (!this.manual && this.text.includes(text)))
+        if (this.text == string || (!this.manual && this.text.includes(string)))
             return;
-        if (this.check_locked(['text', text, cur_ply, agree]))
+        if (this.check_locked(['text', string, cur_ply, agree]))
             return;
 
-        let split = split_move_string(text),
+        let split = split_move_string(string),
             new_items = split.items,
             new_ply = split.ply,
             old_ply = split_move_string(this.text).ply,
@@ -495,32 +498,33 @@ class XBoard {
         let lines = Y['agree_length']? [`<i class="agree Y">[${Undefined(agree, '&nbsp; ')}]</i>`]: [],
             moves = [],
             ply = new_ply,
-            vectors = [[0, ply, 'agree', agree]];
-
-        if (this.manual)
-            vectors.push([2, -1, 'turn zero', '0.']);
+            texts = {},
+            vectors = {},
+            visibles = new Set([0]);
 
         new_items.forEach(item => {
-            let ply3 = (ply + 1) * 3;
-
             if (item == '...') {
                 lines.push('<i>...</i>');
-                vectors.push([ply3 + 1, ply, '', '...']);
+                vectors[ply] = '...';
+                visibles.add((ply + 1) << 1);
                 ply ++;
                 return;
             }
             // turn? => use it
             if (IsDigit(item[0])) {
                 let turn = parseInt(item, 10);
-                ply = (turn - 1) * 2;
-                vectors.push([ply3, ply, 'turn', turn]);
+                ply = (turn - 1) << 1;
+                vectors[ply] = turn;
+                visibles.add(((ply + 1) << 1) - 1);
                 return;
             }
             // normal move
             else {
                 moves[ply] = {'m': item};
                 let text = resize_text(item, 4, 'mini-move');
-                vectors.push([ply3 + 1, ply, `real${(ply == want_ply)? ' current': ''}`, text]);
+                vectors[ply] = text;
+                texts[(ply + 1) << 1] = text;
+                visibles.add((ply + 1) << 1);
                 ply ++;
             }
         });
@@ -538,26 +542,12 @@ class XBoard {
         if (!is_current)
             return;
 
+        // 4) update HTML
+        this.update_move_list(vectors, visibles, texts, ply, agree);
+        this.update_memory(this.node_currents, want_ply, 'current');
+
         this.moves = moves;
-
-        // 4) create the HTML
-        let children = [this.xmoves.children, this.pv_node.children];
-
-        let html = 'Y' + vectors.map(([id, ply, class_, text]) => {
-            if (class_ == 'agree')
-                return `<i class="agree Y${Y['agree_length']? '': ' dn'}">[${Undefined(agree, '&nbsp; ')}]</i>`;
-            if (class_ == 'turn')
-                return `<i class="turn" data-j="text">${resize_text(text, 2, 'mini-turn')}.</i>`;
-            return `<a class="${class_}" data-i="${ply}">${text}</a>`;
-        }).join('');
-
-        if (this.name == 'pv0')
-            LS(vectors);
-        // let html = lines.join('');
-        for (let parent of [this.xmoves, this.pv_node]) {
-            HTML(parent, html);
-        }
-        this.text = text;
+        this.text = string;
 
         // 5) update the cursor
         // live engine => show an arrow for the next move
@@ -1527,7 +1517,7 @@ class XBoard {
         }, {}, this.node);
 
         // pv list
-        for (let parent of [this.xmoves, this.pv_node])
+        for (let parent of this.parents)
             C(parent, e => {
                 this.clicked_move_list(e, callback);
             });
@@ -1739,6 +1729,7 @@ class XBoard {
             key_repeat = Y['key_repeat_initial'];
             timeout = key_repeat;
         }
+        this.speed = timeout;
 
         // faster than 60Hz? => go warp speed
         if (timeout < 1000 / 59) {
@@ -1821,16 +1812,16 @@ class XBoard {
         this.xpieces = _('.xpieces', this.node);
         this.xsquares = _('.xsquares', this.node);
 
+        this.parents = [this.xmoves, this.pv_node].filter(parent => parent);
+        this.node_currents = this.parents.map(_ => null);
+        this.node_markers = this.parents.map(_ => null);
+        this.node_seens = this.parents.map(_ => null);
+
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
 
         this.set_fen(null);
         update_svg();
-
-        this.markers = [
-            CreateNode('i', '@', {'class': 'marker'}),
-            CreateNode('i', '@', {'class': 'marker'}),
-        ];
 
         if (this.hook)
             this.event_hook(this.hook);
@@ -2395,9 +2386,6 @@ class XBoard {
         this.seens.clear();
         this.text = '';
 
-        HTML(this.xmoves, '');
-        HTML(this.pv_node, '');
-
         if (evals)
             this.evals[section].length = 0;
 
@@ -2509,7 +2497,7 @@ class XBoard {
      * @param {string} text
      */
     set_last(text) {
-        for (let parent of [this.xmoves, this.pv_node])
+        for (let parent of this.parents)
             HTML('.last', text, parent);
     }
 
@@ -2556,17 +2544,10 @@ class XBoard {
         }
 
         // update the @ marker + agree length
-        [this.xmoves, this.pv_node].forEach((parent, id) => {
-            let child = _(`[data-i="${ply}"]`, parent);
-            if (child && !(ply & 1))
-                child = child.previousElementSibling;
-            if (child)
-                parent.insertBefore(this.markers[id], child);
+        this.update_memory(this.node_markers, ply, 'marker');
 
-            let node = _('i.agree', parent);
-            if (node)
-                HTML(node, Y['agree_length']? `[${agree}]`: '[0]');
-        });
+        for (let parent of this.parents)
+            HTML(parent.firstChild, `[${agree}]`);
     }
 
     /**
@@ -2667,7 +2648,9 @@ class XBoard {
             else
                 sound = 'move_pawn';
 
-            let sounds = [[sound, audio_delay]];
+            let sounds = [[sound, audio_delay]],
+                speed = this.speed || 500,
+                volume = 1 - 0.85 * Exp(-speed * 0.03);
 
             if (text.includes('x')) {
                 let capture_delay = Y['capture_delay'];
@@ -2680,8 +2663,8 @@ class XBoard {
 
             for (let [name, delay] of sounds)
                 add_timeout(`ply${ply}+${name}_${this.id}`, () => {
-                    play_sound(audiobox, Y[`sound_${name}`], {interrupt: true});
-                }, delay + offset);
+                    play_sound(audiobox, Y[`sound_${name}`], {interrupt: true, volume: volume});
+                }, (speed < 33)? 0: delay + offset);
         }
 
         if (manual)
@@ -2984,10 +2967,14 @@ class XBoard {
      * @param {number} ply
      */
     update_cursor(ply) {
-        for (let parent of [this.xmoves, this.pv_node]) {
-            if (!parent)
-                continue;
+        let updated = this.update_memory(this.node_seens, ply, 'seen', node => {
+            let parent = node.parentNode;
+            parent.scrollTop = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
+        });
+        if (updated)
+            return;
 
+        for (let parent of this.parents) {
             // node might disappear when the PV is updated
             let node = _(`[data-i="${ply}"]`, parent);
             if (!node)
@@ -2999,6 +2986,32 @@ class XBoard {
             // keep the cursor in the center
             parent.scrollTop = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
         }
+    }
+
+    /**
+     * Update current/marker/seen + memory
+     * @param {Array<Node>} memory
+     * @param {number} ply
+     * @param {string} class_
+     * @param {Function=} callback
+     * @returns {boolean}
+     */
+    update_memory(memory, ply, class_, callback) {
+        let list = this.move_list[(ply + 1) << 1];
+        if (!list)
+            return false;
+        for (let i = list.length - 1; i >= 2; i --) {
+            let current2 = memory[i - 2],
+                node = list[i];
+            if (node != current2) {
+                Class(current2, class_, false);
+                Class(node, class_);
+                memory[i - 2] = node;
+                if (callback)
+                    callback(node);
+            }
+        }
+        return true;
     }
 
     /**
@@ -3055,6 +3068,101 @@ class XBoard {
             this.chess_mobility(move, no_load);
             fen = move['fen'];
         }
+    }
+
+    /**
+     * Update move list
+     * @param {!Object<number, *>} vectors
+     * @param {Set<number>} visibles
+     * @param {!Object<number, string>} texts
+     * @param {number} ply
+     * @param {number=} agree
+     */
+    update_move_list(vectors, visibles, texts, ply, agree) {
+        let dones = {},
+            move_list = this.move_list,
+            num_child = move_list.length;
+
+        // 1) add initial data
+        if (!num_child) {
+            let agree_length = Y['agree_length'],
+                dico = {'class': `agree Y${agree_length? '': ' dn'}`};
+
+            move_list.push([agree_length? 1: 0, '']);
+            for (let parent of this.parents)
+                parent.appendChild(CreateNode('i', Undefined(agree, '&nbsp; '), dico));
+            num_child ++;
+        }
+        else
+            for (let parent of this.parents)
+                parent.firstChild.firstChild.nodeValue = `[${agree}]`;
+
+        // 2) fill past data
+        for (let id = num_child - 1; id <= (ply + 2) << 1; id ++) {
+            let dico, tag, text,
+                id4 = id % 4,
+                ply = Floor(id / 2),
+                vector = vectors[ply],
+                visible = visibles[(ply + 1) << 1];
+
+            if (id4 == 0) {
+                let turn = id / 4 + 1;
+                dico = {'class': `turn${visible? '': ' dn'}`, 'data-j': turn};
+                tag = 'i';
+                text = resize_text(turn, 2, 'mini-turn');
+            }
+            else if (id4 == 2) {
+                dico = {'class': 'dn'};
+                tag = 'i';
+                text = null;
+            }
+            else {
+                dico = {'class': `real${visible? '': ' dn'}`, 'data-i': ply};
+                tag = 'a';
+                text = vector || (ply + '');
+            }
+            dones[ply] = 1;
+
+            let list = [visible? 1: 0, text];
+            for (let parent of this.parents) {
+                let node = CreateNode(tag, text, dico);
+                parent.appendChild(node);
+                list.push(node);
+            }
+            move_list.push(list);
+        }
+
+        // 3) change visibilities
+        move_list.forEach((list, id) => {
+            let visible = visibles.has(id)? 1: 0;
+            if (list[0] == visible)
+                return;
+
+            list[0] = visible;
+            for (let i = list.length - 1; i >= 2; i --) {
+                let child = list[i];
+                if (child)
+                    if (visible)
+                        child.classList.remove('dn');
+                    else
+                        child.classList.add('dn');
+            }
+        });
+
+        // 4) change texts
+        Keys(texts).forEach(id => {
+            let list = move_list[id],
+                text = texts[id];
+            if (list[1] == text)
+                return;
+
+            list[1] = text;
+            for (let i = list.length - 1; i >= 2; i --) {
+                let child = list[i];
+                if (child)
+                    child.innerHTML = text;
+            }
+        });
     }
 
     /**

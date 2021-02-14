@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-11
+@version 2021-02-13
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -258,9 +258,6 @@ grid {
 }
 .grid > * {
     white-space: nowrap;
-}
-.grid > .marker {
-    display: none;
 }
 .grid3 {
     grid-template-columns: 37% 26% 37%;
@@ -721,6 +718,21 @@ input.multi2 {
 .seen {
     background-color: #222 !important;
     color: #ff0 !important;
+}
+.marker::before {
+    color: #222;
+    content: '@ ';
+    font-weight: 500;
+}
+.marker.seen::before,
+#moves-pv1 .marker::before {
+    color: #fff;
+}
+.grid > .marker {
+    text-decoration: underline;
+}
+.grid > .marker::before {
+    content: '';
 }
 .fail {
     color: #f00 !important;

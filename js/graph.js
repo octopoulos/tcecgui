@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-13
 //
 // jshint -W069
 /*
@@ -280,7 +280,7 @@ function create_charts() {
             markers = A('cmarker', node);
         if (!markers.length)
             for (let i of [0, 1])
-                node.appendChild(CreateNode('div', null, {class: 'cmarker'}));
+                node.appendChild(CreateNode('div', null, {'class': 'cmarker'}));
     });
 
     update_chart_options(null, 3);
