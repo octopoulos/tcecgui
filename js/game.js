@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-11
+// @version 2021-02-13
 //
 // Game specific code:
 // - control the board, moves
@@ -1497,7 +1497,7 @@ function create_tables() {
     // 2) live tables
     for (let [node, box_node] of LIVE_TABLES) {
         let html = create_live_table(node.includes('live'), node.slice(-1));
-        HTML(node, html.replace('{TEMP}', '<horis class="live-pv"></horis>'));
+        HTML(node, html.replace('{TEMP}', '<horis class="live-pv fabase"></horis>'));
         HTML(box_node, html.replace('{TEMP}', ''));
     }
 
@@ -2124,7 +2124,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             columns.filter(key => !hidden[key]).map((key, id) => {
                 let column = _(`th[data-x="${key}"]`, table2),
                     row = vectors.map(vector => vector[0][id]).join('');
-                let node = CreateNode('tr', [column.outerHTML, row].join(''), {class: 'rotate'});
+                let node = CreateNode('tr', [column.outerHTML, row].join(''), {'class': 'rotate'});
                 nodes.push(node);
             });
         }
@@ -2320,8 +2320,10 @@ function open_event(section, callback) {
     clear_timeout('active');
 
     let data_x = table_data['archive']['season'];
-    if (!data_x)
+    if (!data_x) {
+        download_gamelist();
         return;
+    }
 
     let found,
         data = data_x.data,
@@ -3020,7 +3022,8 @@ function create_medals(parent) {
                 `<div class="place-text">#${place}</div>`,
             ].join(''),
             style = `left:${ax + 4}px;top:${ay}px`;
-        return CreateNode('hori', html, {class: `place place${place} fastart`, 'data-s': dataset['s'], style: style});
+        return CreateNode(
+            'hori', html, {'class': `place place${place} fastart`, 'data-s': dataset['s'], 'style': style});
     });
 }
 
