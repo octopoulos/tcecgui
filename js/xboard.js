@@ -1102,11 +1102,11 @@ class XBoard {
      */
     clear_moves() {
         for (let list of this.move_list) {
-            if (!list[1])
+            if (!list[0])
                 continue;
-            list[1] = 0;
+            list[0] = 0;
             for (let i = list.length; i >= 2; i --)
-                Class(list[i], '-dn -book -real');
+                Class(list[i], 'dn -book -real');
         }
     }
 
