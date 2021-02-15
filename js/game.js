@@ -4169,7 +4169,7 @@ function update_pgn(section, data, extras, reset_moves) {
         main.clear_moves();
 
     // 4) add the moves
-    main.add_moves(moves);
+    main.add_moves(moves, {keep_prev: true});
     check_missing_moves();
     main.time = Now(true);
 
