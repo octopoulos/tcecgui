@@ -306,8 +306,9 @@ class XBoard {
         if (this.check_locked(['move', moves, {agree: agree, cur_ply: cur_ply, keep_prev: keep_prev}]))
             return;
 
-        let is_ply = (cur_ply != undefined),
-            max_ply = -2,
+        let first_ply = Infinity,
+            is_ply = (cur_ply != undefined),
+            last_ply = -2,
             move_list = this.move_list,
             num_book = 0,
             num_new = moves.length,
@@ -318,43 +319,56 @@ class XBoard {
 
         // 1) gather moves
         for (let i = start; i < num_new; i ++) {
-            let book,
-                move = moves[i],
+            let move = moves[i],
                 ply = get_move_ply(move),
                 ply2 = (ply << 1) + 1;
 
-            if (ply > max_ply)
-                max_ply = ply;
+            if (ply < first_ply)
+                first_ply = ply;
+            if (ply > last_ply)
+                last_ply = ply;
 
             if (!move)
                 continue;
 
             move['ply'] = ply;
             this.moves[ply] = move;
-            book = move['book']? 1: 0;
+            let book = move['book']? 1: 0,
+                flag = book | (move['fail']? 2: 0);
             num_book += book;
 
             let san = move['m'];
             if (!san)
                 continue;
             if (i == start && (ply & 1) && !keep_prev) {
-                texts[ply2 - 2] = ['...', book];
+                texts[ply2 - 2] = ['...', flag];
                 visibles.add(ply2 - 2);
             }
             let memory = move_list[ply2];
-            if (!memory || memory[1] != san || memory[2] != book)
-                texts[ply2] = [san, book];
+            if (!memory || memory[1] != san || memory[2] != flag)
+                texts[ply2] = [san, flag];
+
+            // make the turn visible
             visibles.add(ply2);
             visibles.add(ply2 - ((ply & 1)? 3: 1));
         }
 
-        // 2) update HTML
-        this.update_move_list('X', visibles, texts, max_ply, agree, keep_prev);
+        // 2) handle skipped moves
+        if (this.main && first_ply < Infinity)
+            for (let ply = num_move; ply < first_ply; ply ++) {
+                let ply2 = (ply << 1) + 1;
+                texts[ply2] = ['...', 0];
+                visibles.add(ply2);
+                visibles.add(ply2 - ((ply & 1)? 3: 1));
+            }
+
+        // 3) update HTML
+        this.update_move_list('X', visibles, texts, last_ply, agree, keep_prev);
         this.update_memory(this.node_currents, cur_ply, 'current');
 
         this.valid = true;
 
-        // 3) update the cursor
+        // 4) update the cursor
         let delta = num_move - this.ply;
         // - if live eval (is_ply) => check the dual board to know which ply to display
         if (is_ply) {
@@ -398,7 +412,7 @@ class XBoard {
                 this.set_ply(this.moves.length - 1, {animate: true});
         }
 
-        // next move
+        // 5) next move
         if (this.hook) {
             let next = this.moves[this.real.ply + 1];
             if (next) {
@@ -468,8 +482,10 @@ class XBoard {
                 if (!memory || memory[1] != item)
                     texts[ply2] = [item, 0];
 
+                // make the turn visible
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
+
                 moves[ply] = {'m': item};
                 ply ++;
             }
@@ -3055,7 +3071,7 @@ class XBoard {
             let dico, tag,
                 id4 = id % 4,
                 ply = Floor(id / 2),
-                [text, book] = texts[id] || ['', 0],
+                [text, flag] = texts[id] || ['', 0],
                 visible = visibles.has(id)? 1: 0;
 
             if (id4 == 0) {
@@ -3076,16 +3092,19 @@ class XBoard {
             }
             // 1:white, 3:black
             else {
-                dico = {'class': `real${book? ' book': ''}${visible? '': ' dn'}`, 'data-i': ply};
+                dico = {
+                    'class': `real${(flag & 1)? ' book': ''}${(flag & 2)? ' fail': ''}${visible? '': ' dn'}`,
+                    'data-i': ply,
+                };
                 tag = 'a';
                 if (text)
                     text = resize_text(text, 4, 'mini-move');
                 else
-                    text = ply + '?';
+                    text = '';
             }
             dones.add(id);
 
-            let list = [visible? 1: 0, text, book, []];
+            let list = [visible? 1: 0, text, flag, []];
             for (let parent of this.parents) {
                 let node = CreateNode(tag, text, dico);
                 parent.appendChild(node);
@@ -3120,11 +3139,11 @@ class XBoard {
 
             let list = move_list[id],
                 node = list[3].firstChild,
-                [text, book] = texts[id] || ['', 0],
-                new_book = (list[2] != book);
+                [text, flag] = texts[id] || ['', 0],
+                new_flag = list[2] ^ flag;
 
             list[1] = text;
-            list[2] = book;
+            list[2] = flag;
             text = resize_text(text, 4, 'mini-move');
 
             // text
@@ -3135,10 +3154,15 @@ class XBoard {
                 for (let child of list[3])
                     child.firstChild.nodeValue = text;
 
-            // book
-            if (new_book)
-                for (let child of list[3])
-                    Class(child, 'book', book);
+            // book + fail
+            if (new_flag) {
+                if (new_flag & 1)
+                    for (let child of list[3])
+                        Class(child, 'book', flag & 1);
+                if (new_flag & 2)
+                    for (let child of list[3])
+                        Class(child, 'fail', flag & 2);
+            }
         });
 
         // 4) agree
