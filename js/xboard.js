@@ -222,6 +222,7 @@ class XBoard {
         this.node_agrees = [];                          // [0]
         this.node_currents = [];                        // current ply
         this.node_lasts = [];                           // *, 1-0, ...
+        this.node_locks = [];                           // lock, unlock
         this.node_markers = [];                         // marker ply
         this.node_seens = [];                           // seen ply
         this.overlay = null;                            // svg objects will be added there
@@ -911,7 +912,7 @@ class XBoard {
     check_locked(object) {
         if (this.locked) {
             this.locked_obj = object;
-            Style('[data-x="unlock"]', 'color:#f00', true, this.node);
+            Style(this.node_locks[1], 'color:#f00');
         }
         return this.locked;
     }
@@ -1702,7 +1703,8 @@ class XBoard {
      * - must be run before doing anything with it
      */
     initialise() {
-        let controls2 = Assign({}, CONTROLS);
+        let controls2 = Assign({}, CONTROLS),
+            root = this.node;
         if (this.main_manual) {
             delete controls2.lock;
             controls2['burger'] = '';  // Change view';
@@ -1739,7 +1741,7 @@ class XBoard {
             return `<vert class="control fcenter${class_}"${attr}>${svg}</vert>`;
         }).join('');
 
-        HTML(this.node, [
+        HTML(root, [
             '<hori class="xtop xcolor1 dn">',
                 '<hori class="xshort fbetween"></hori>',
                 '<div class="xleft"></div>',
@@ -1764,10 +1766,10 @@ class XBoard {
             `<horis class="xmoves fabase${this.list? '': ' dn'}"></horis>`,
         ].join(''));
 
-        this.overlay = _('.xoverlay', this.node);
-        this.xmoves = _('.xmoves', this.node);
-        this.xpieces = _('.xpieces', this.node);
-        this.xsquares = _('.xsquares', this.node);
+        this.overlay = _('.xoverlay', root);
+        this.xmoves = _('.xmoves', root);
+        this.xpieces = _('.xpieces', root);
+        this.xsquares = _('.xsquares', root);
 
         this.parents = [this.xmoves, this.pv_node].filter(parent => parent);
         for (let parent of this.parents)
@@ -1776,6 +1778,7 @@ class XBoard {
         this.node_agrees = this.parents.map(node => node.firstChild);
         this.node_currents = this.parents.map(_ => null);
         this.node_lasts = this.parents.map(node => node.children[1]);
+        this.node_locks = [_(`[data-x="lock"]`, root), _(`[data-x="unlock"]`, root)];
         this.node_markers = this.parents.map(_ => null);
         this.node_seens = this.parents.map(_ => null);
 
@@ -2468,9 +2471,11 @@ class XBoard {
         if (locked == 2)
             locked = 0;
         this.locked = locked;
-        S('[data-x="lock"]', !locked, this.node);
-        S('[data-x="unlock"]', locked, this.node);
-        Style('[data-x="unlock"]', 'color:#f00', false, this.node);
+
+        let [lock, unlock] = this.node_locks;
+        S(lock, !locked);
+        S(unlock, locked);
+        Style(unlock, 'color:#f00', false);
 
         if (!locked && this.locked_obj) {
             let [type, param1, param2] = this.locked_obj;
