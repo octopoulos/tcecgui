@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-14
 //
 /*
 globals
@@ -64,7 +64,7 @@ live.id = 'null';
 ].forEach(([text, cur_ply, answer], id) => {
     test(`add_moves_string:${id}`, () => {
         live.reset(Y.x);
-        live.add_moves_string(text, cur_ply);
+        live.add_moves_string(text, {cur_ply: cur_ply});
 
         let offset = answer[0],
             array = new Array(offset);

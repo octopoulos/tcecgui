@@ -3814,9 +3814,9 @@ function update_move_pv(section, ply, move) {
 
     if (move['pv']) {
         if (IsString(move['pv']))
-            board.add_moves_string(move['pv'], cur_ply, move.agree, true);
+            board.add_moves_string(move['pv'], {agree: move.agree, cur_ply: cur_ply, force: true});
         else
-            board.add_moves(move['pv']['Moves'], cur_ply, move.agree);
+            board.add_moves(move['pv']['Moves'], {agree: move.agree, cur_ply: cur_ply});
     }
     else {
         // no pv available =>
@@ -4165,10 +4165,8 @@ function update_pgn(section, data, extras, reset_moves) {
         listen_log();
     }
     // can happen after resume
-    else if (reset_moves) {
-        // HTML(main.xmoves, '');
-        // HTML(main.pv_node, '');
-    }
+    else if (reset_moves)
+        main.clear_moves();
 
     // 4) add the moves
     main.add_moves(moves);
@@ -5116,7 +5114,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
 
     if (force_ply)
         board.text = '';
-    board.add_moves_string(data['pv'], cur_ply, data.agree, force_ply);
+    board.add_moves_string(data['pv'], {agree: data.agree, cur_ply: cur_ply, force: force_ply});
 
     if (!no_graph && section == section_board()) {
         if (DEV['chart'])
@@ -5167,7 +5165,7 @@ function update_player_eval(section, data, same_pv) {
             board.reset(section, {instant: true});
             let last_move = main.moves.slice(-1)[0];
             board.set_fen(last_move? last_move['fen']: main.fen);
-            board.add_moves(moves, data['ply'], data.agree);
+            board.add_moves(moves, {agree: data.agree, cur_ply: data['ply']});
             if (DEV['ply']) {
                 LS(`added ${moves.length} moves : ${data['ply']} <> ${cur_ply}`);
                 LS(board.moves);
@@ -5175,7 +5173,7 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data['pv']) {
             data['ply'] = split_move_string(data['pv']).ply;
-            board.add_moves_string(data['pv'], cur_ply, data.agree);
+            board.add_moves_string(data['pv'], {agree: data.agree, cur_ply: cur_ply});
         }
     }
 

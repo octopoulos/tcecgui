@@ -296,11 +296,13 @@ class XBoard {
      * - can handle 2 pv lists
      * - if cur_ply is defined, then create a new HTML from scratch => no node insertion
      * @param {Array<Move>} moves
-     * @param {number=} cur_ply if defined, then we want to go to this ply
-     * @param {number=} agree agree length
+     * @param {Object} obj
+     * @param {number=} obj.agree agree length
+     * @param {number=} obj.cur_ply if defined, then we want to go to this ply
+     * @param {boolean=} obj.keep_prev keep previous moves
      */
-    add_moves(moves, cur_ply, agree) {
-        if (this.check_locked(['move', moves, cur_ply, agree]))
+    add_moves(moves, {agree, cur_ply, keep_prev}={}) {
+        if (this.check_locked(['move', moves, {agree: agree, cur_ply: cur_ply, keep_prev: keep_prev}]))
             return;
 
         let is_ply = (cur_ply != undefined),
@@ -315,37 +317,38 @@ class XBoard {
 
         // 1) gather moves
         for (let i = start; i < num_new; i ++) {
-            let move = moves[i],
+            let book,
+                move = moves[i],
                 ply = get_move_ply(move),
                 ply2 = (ply << 1) + 1;
 
-            if (move) {
-                move['ply'] = ply;
-                this.moves[ply] = move;
-                num_book += (move['book'] || 0);
-            }
-
-            if (move) {
-                let san = move['m'];
-                if (san) {
-                    if (max_ply == -2 && (ply & 1)) {
-                        texts[ply2 - 2] = '...';
-                        visibles.add(ply2 - 2);
-                    }
-                    let memory = move_list[ply2];
-                    if (!memory || memory[1] != san)
-                        texts[ply2] = san;
-                    visibles.add(ply2);
-                    visibles.add(ply2 - ((ply & 1)? 3: 1));
-                }
-            }
-
             if (ply > max_ply)
                 max_ply = ply;
+
+            if (!move)
+                continue;
+
+            move['ply'] = ply;
+            this.moves[ply] = move;
+            book = move['book']? 'b': '';
+            num_book += (book? 1: 0);
+
+            let san = move['m'];
+            if (!san)
+                continue;
+            if (i == start && (ply & 1) && !keep_prev) {
+                texts[ply2 - 2] = ['...', book];
+                visibles.add(ply2 - 2);
+            }
+            let memory = move_list[ply2];
+            if (!memory || memory[1] != san)
+                texts[ply2] = [san, book];
+            visibles.add(ply2);
+            visibles.add(ply2 - ((ply & 1)? 3: 1));
         }
 
         // 2) update HTML
-        this.update_move_list('X', visibles, texts, max_ply, agree);
+        this.update_move_list('X', visibles, texts, max_ply, agree, keep_prev);
         this.update_memory(this.node_currents, cur_ply, 'current');
 
         this.valid = true;
@@ -412,18 +415,20 @@ class XBoard {
      * - used in live pv, not for real moves
      * - completely replaces the moves list with this one
      * @param {string} text
-     * @param {number=} cur_ply if defined, then we want to go to this ply
-     * @param {number=} agree agree length
-     * @param {boolean=} force force update
+     * @param {Object} obj
+     * @param {number=} obj.agree agree length
+     * @param {number=} obj.cur_ply if defined, then we want to go to this ply
+     * @param {boolean=} obj.force force update
+     * @param {boolean=} obj.keep_prev keep previous moves
      */
-    add_moves_string(string, cur_ply, agree, force) {
+    add_moves_string(string, {agree, cur_ply, force, keep_prev}={}) {
         if (!string)
             return;
 
         // 1) no change or older => skip
         if (this.text == string || (!this.manual && this.text.includes(string)))
             return;
-        if (this.check_locked(['text', string, cur_ply, agree]))
+        if (this.check_locked(['text', string, {agree: agree, cur_ply: cur_ply, keep_prev: keep_prev}]))
             return;
 
         let split = split_move_string(string),
@@ -443,7 +448,7 @@ class XBoard {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
                 if (!memory || memory[1] != item)
-                    texts[ply2] = item;
+                    texts[ply2] = [item, ''];
 
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
@@ -460,7 +465,7 @@ class XBoard {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
                 if (!memory || memory[1] != item)
-                    texts[ply2] = item;
+                    texts[ply2] = [item, ''];
 
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
@@ -483,7 +488,7 @@ class XBoard {
             return;
 
         // 4) update HTML
-        this.update_move_list('Y', visibles, texts, ply, agree);
+        this.update_move_list('Y', visibles, texts, ply, agree, keep_prev);
         this.update_memory(this.node_currents, want_ply, 'current');
         this.moves = moves;
         this.text = string;
@@ -1083,6 +1088,19 @@ class XBoard {
             Class('.source', '-source', true, this.xpieces);
         if (restore)
             Style('.source', `background:${Y['turn_color']};opacity:${Y['turn_opacity']}`, true, this.xsquares);
+    }
+
+    /**
+     * Hide move list + nodes
+     */
+    clear_moves() {
+        for (let list of this.move_list) {
+            if (!list[1])
+                continue;
+            list[1] = 0;
+            for (let i = list.length; i >= 2; i --)
+                list[i].classList.remove('dn');
+        }
     }
 
     /**
@@ -1919,16 +1937,9 @@ class XBoard {
             this.clear_high('source target', false);
             this.picked = null;
 
-            // delete some moves?
-            if (ply < this.moves.length) {
+            // delete some moves when playing earlier move in PVA
+            if (ply < this.moves.length)
                 this.moves = this.moves.slice(0, ply);
-                let node = _(`[data-i="${ply}"]`, this.xmoves);
-                while (node) {
-                    let next = node.nextElementSibling;
-                    node.remove();
-                    node = next;
-                }
-            }
         }
 
         // 2) add move + add missing info
@@ -1944,7 +1955,7 @@ class XBoard {
             move['wv'] = '-';
         add_player_eval(player, ply, eval_);
 
-        this.add_moves([move]);
+        this.add_moves([move], {keep_prev: true});
         this.set_ply(ply);
         this.move_time = now;
         this.eval(this.name, move);
@@ -2441,8 +2452,8 @@ class XBoard {
      * @param {string} text
      */
     set_last(text) {
-        for (let parent of this.parents)
-            TEXT('.last', text, parent);
+        for (let node of this.node_lasts)
+            TEXT(node, text);
     }
 
     /**
@@ -2462,13 +2473,13 @@ class XBoard {
         Style('[data-x="unlock"]', 'color:#f00', false, this.node);
 
         if (!locked && this.locked_obj) {
-            let [type, param1, param2, param3] = this.locked_obj;
+            let [type, param1, param2] = this.locked_obj;
             this.locked_obj = null;
             this.reset(y_x);
             if (type == 'move')
-                this.add_moves(param1, param2, param3);
+                this.add_moves(param1, param2);
             else if (type == 'text')
-                this.add_moves_string(param1, param2, param3);
+                this.add_moves_string(param1, param2);
         }
     }
 
@@ -2914,27 +2925,12 @@ class XBoard {
      * @param {number} ply
      */
     update_cursor(ply) {
-        let updated = this.update_memory(this.node_seens, ply, 'seen', node => {
+        this.update_memory(this.node_seens, ply, 'seen', node => {
             let parent = node.parentNode,
                 top = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
             if (parent.scrollTop != top)
                 parent.scrollTop = top;
         });
-        if (updated)
-            return;
-
-        for (let parent of this.parents) {
-            // node might disappear when the PV is updated
-            let node = _(`[data-i="${ply}"]`, parent);
-            if (!node)
-                continue;
-
-            Class('.seen', '-seen', true, parent);
-            Class(node, 'seen');
-
-            // keep the cursor in the center
-            parent.scrollTop = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
-        }
     }
 
     /**
@@ -2980,7 +2976,7 @@ class XBoard {
 
         if (this.name == 'pva') {
             TEXT(`.xleft`, Undefined(dico.stime, '-'), mini);
-            TEXT('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
+            HTML('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
             TEXT(`.xtime`, Undefined(dico.depth, '-'), mini);
 
             let arrow = player.arrow;
@@ -3025,9 +3021,10 @@ class XBoard {
      * @param {Set<number>} visibles
      * @param {!Object<number, string>} texts
      * @param {number} ply
-     * @param {number=} agree
+     * @param {number=} agree agree length
+     * @param {boolean=} keep_prev keep previous moves
      */
-    update_move_list(origin, visibles, texts, ply, agree) {
+    update_move_list(origin, visibles, texts, ply, agree, keep_prev) {
         let dones = new Set(),
             move_list = this.move_list,
             num_child = move_list.length;
@@ -3037,13 +3034,18 @@ class XBoard {
             let dico, tag,
                 id4 = id % 4,
                 ply = Floor(id / 2),
-                text = texts[id],
+                [text, book] = texts[id] || [],
                 visible = visibles.has(id)? 1: 0;
 
             if (id4 == 0) {
                 let turn = id / 4 + 1;
                 dico = {'class': `turn${visible? '': ' dn'}`, 'data-j': turn};
-                tag = 'i';
+                if (turn == 1) {
+                    dico['data-i'] = -1;
+                    tag = 'a';
+                }
+                else
+                    tag = 'i';
                 text = resize_text(turn, 2, 'mini-turn');
             }
             else if (id4 == 2) {
@@ -3053,7 +3055,7 @@ class XBoard {
             }
             // 1:white, 3:black
             else {
-                dico = {'class': `real${visible? '': ' dn'}`, 'data-i': ply};
+                dico = {'class': `${book? 'book': 'real'}${visible? '': ' dn'}`, 'data-i': ply};
                 tag = 'a';
                 if (text)
                     text = resize_text(text, 4, 'mini-move');
@@ -3077,7 +3079,7 @@ class XBoard {
             if (dones.has(id))
                 return;
 
-            let visible = visibles.has(id)? 1: 0;
+            let visible = (visibles.has(id) || (keep_prev && id <= (ply << 1)))? 1: 0;
             if (list[0] == visible)
                 return;
 
@@ -3099,7 +3101,7 @@ class XBoard {
             let list = move_list[id],
                 list_end = list.length - 1,
                 node = list[list_end].firstChild,
-                text = texts[id];
+                [text] = texts[id] || [];
 
             list[1] = text;
             text = resize_text(text, 4, 'mini-move');
@@ -3119,8 +3121,6 @@ class XBoard {
             if (agree != undefined)
                 child.firstChild.nodeValue = `[${agree}]`;
         }
-
-        this.visibles = visibles;
     }
 
     /**
