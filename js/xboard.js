@@ -3031,17 +3031,18 @@ class XBoard {
      * @param {string} origin
      * @param {Set<number>} visibles
      * @param {!Object<number, string>} texts
-     * @param {number} ply
+     * @param {number} cur_ply
      * @param {number=} agree agree length
      * @param {boolean=} keep_prev keep previous moves
      */
-    update_move_list(origin, visibles, texts, ply, agree, keep_prev) {
-        let dones = new Set(),
+    update_move_list(origin, visibles, texts, cur_ply, agree, keep_prev) {
+        let cur_id = (cur_ply << 1) + 1,
+            dones = new Set(),
             move_list = this.move_list,
             num_child = move_list.length;
 
         // 1) fill past data
-        for (let id = num_child; id <= (ply + 2) << 1; id ++) {
+        for (let id = num_child; id <= (cur_ply + 2) << 1; id ++) {
             let dico, tag,
                 id4 = id % 4,
                 ply = Floor(id / 2),
@@ -3091,7 +3092,7 @@ class XBoard {
                 return;
 
             let visible = visibles.has(id)? 1: 0;
-            if (list[0] == visible || (!visible && keep_prev))
+            if (list[0] == visible || (!visible && keep_prev && id < cur_id))
                 return;
 
             list[0] = visible;
