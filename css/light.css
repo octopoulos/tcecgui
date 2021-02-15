@@ -728,9 +728,6 @@ input.multi2 {
 #moves-pv1 .marker::before {
     color: #fff;
 }
-.grid > .marker {
-    text-decoration: underline;
-}
 .grid > .marker::before {
     content: '';
 }
