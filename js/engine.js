@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-15
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -2389,7 +2389,7 @@ function touch_handle(e, full, prevent_default) {
         drag = [change, stamp];
         drag_type = type5;
         touch_last = change;
-        touch_moves = [];
+        touch_moves.length = 0;
         touch_now = Now(true);
         touch_speed = {x: 0, y: 0};
         touch_start = touch_now;

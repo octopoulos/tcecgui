@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-13
+// @version 2021-02-15
 //
 // jshint -W069
 /*
@@ -1075,7 +1075,7 @@ function init_graph() {
         for (let [name, moves, id] of queued_charts)
             update_live_chart(name, moves, id);
 
-        queued_charts = [];
+        queued_charts.length = 0;
         update_markers();
         Style('canvas', 'visibility:visible');
     }, TIMEOUT_graph);
