@@ -4411,8 +4411,8 @@ function analyse_log(line) {
     }
 
     // fail?
+    let moves = info['moves'] || [];
     if (pv) {
-        let moves = info['moves'];
         for (let move of moves)
             if (move.fail)
                 delete move.fail;
@@ -4430,7 +4430,7 @@ function analyse_log(line) {
 
     // multi PVs
     if (info_pv) {
-        pvs[first] = [info_pv, info['moves']];
+        pvs[first] = [info_pv, moves];
         info['pvs'] = pvs;
     }
 
