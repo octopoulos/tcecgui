@@ -1548,7 +1548,7 @@ function translate_nodes(parent) {
  * Create a canvas for a texture
  * @param {number} width
  * @param {number=} height
- * @returns {Object}
+ * @returns {!Object}
  */
 function create_canvas(width, height) {
     let canvas = document.createElement('canvas'),
