@@ -917,11 +917,15 @@ function TEXT(sel, text, parent) {
     if (IsObject(sel)) {
         if (text !== undefined) {
             text += '';
-            let child = sel.firstChild;
-            if (!child)
-                sel.appendChild(document.createTextNode(text));
-            else if (child.nodeType == 3)
-                child.nodeValue = text;
+            if (!sel.childElementCount) {
+                let child = sel.firstChild;
+                if (!child)
+                    sel.appendChild(document.createTextNode(text));
+                else if (child.nodeType == 3)
+                    child.nodeValue = text;
+                else if (sel.innerHTML != text)
+                    sel.textContent = text;
+            }
             else if (sel.innerHTML != text)
                  sel.textContent = text;
             return text;
@@ -936,11 +940,15 @@ function TEXT(sel, text, parent) {
     text += '';
     let result;
     E(/** @type {string} */(sel), node => {
-        let child = node.firstChild;
-        if (!child)
-            node.appendChild(document.createTextNode(text));
-        else if (child.nodeType == 3)
-            child.nodeValue = text;
+        if (!node.childElementCount) {
+            let child = node.firstChild;
+            if (!child)
+                node.appendChild(document.createTextNode(text));
+            else if (child.nodeType == 3)
+                child.nodeValue = text;
+            else if (node.innerHTML != text)
+                node.textContent = text;
+        }
         else if (node.innerHTML != text)
             node.textContent = text;
         if (result === undefined)
@@ -961,7 +969,7 @@ function TextHTML(sel, text, parent) {
     if (IsObject(sel)) {
         if (text !== undefined) {
             text += '';
-            if (!text.includes('<')) {
+            if (!sel.childElementCount && !text.includes('<')) {
                 let child = sel.firstChild;
                 if (!child)
                     sel.appendChild(document.createTextNode(text));
@@ -986,7 +994,7 @@ function TextHTML(sel, text, parent) {
     let is_html = (text.includes('<')),
         result;
     E(/** @type {string} */(sel), node => {
-        if (!is_html) {
+        if (!is_html && !node.childElementCount) {
             let child = node.firstChild;
             if (!child)
                 node.appendChild(document.createTextNode(text));

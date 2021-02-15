@@ -3039,7 +3039,7 @@ class XBoard {
 
             if (id4 == 0) {
                 let turn = id / 4 + 1;
-                dico = {'class': `turn${visible? '': ' dn'}`, 'data-j': turn};
+                dico = {'class': `turn${visible? '': ' dn'}`};
                 if (turn == 1) {
                     dico['data-i'] = -1;
                     tag = 'a';
