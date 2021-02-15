@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-15
 //
 // game board:
 // - 4 rendering modes:
@@ -2377,6 +2377,7 @@ class XBoard {
         if (evals)
             this.evals[section].length = 0;
 
+        this.clear_moves();
         this.set_fen(null, render);
         this.set_last(this.last);
 
