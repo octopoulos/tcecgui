@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-13
+// @version 2021-02-14
 //
 // Game specific code:
 // - control the board, moves
@@ -25,8 +25,8 @@ navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, Quer
 require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, set_section,
 SetDefault, Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN,
-STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, timers, Title, TITLES, Toggle, touch_handle, translate_default,
-translate_nodes,
+STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle,
+translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_click_tab:true, virtual_close_popups:true,
 virtual_init_3d_special:true, virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE,
@@ -1353,8 +1353,8 @@ function check_pagination(parent) {
 
         lines.push('<a class="page page-next" data-p="+1">&gt;</a>');
         HTML('.pages', lines.join(''), node);
-        HTML('.row-filter', num_row, node);
-        HTML('.row-total', total, node);
+        TEXT('.row-filter', num_row, node);
+        TEXT('.row-total', total, node);
     }
 
     return num_page;
@@ -1901,8 +1901,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             page = Min(page, num_page - 1);
 
             if (node) {
-                HTML('.row-filter', num_row, node);
-                HTML('.row-total', total, node);
+                TEXT('.row-filter', num_row, node);
+                TEXT('.row-total', total, node);
                 Class('.active', '-active', true, node);
                 Class(`[data-p="${page}"]`, 'active', true, node);
             }
@@ -3712,10 +3712,10 @@ function update_mobility() {
         [goal, gply] = move.goal || [];
 
     if (node) {
-        HTML(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
+        TEXT(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
         node.dataset['i'] = gply;
     }
-    HTML(Id(`mobil${1 - (ply & 1)}`), Abs(mobility));
+    TEXT(Id(`mobil${1 - (ply & 1)}`), Abs(mobility));
 }
 
 /**
@@ -3752,7 +3752,7 @@ function update_move_info(section, ply, move, fresh) {
         main.update_mini(id, stats);
     if (!is_pva) {
         Keys(stats).forEach(key => {
-            HTML(Id(`${key}${id}`), stats[key]);
+            TextHTML(Id(`${key}${id}`), stats[key]);
         });
 
         if (fresh || y_x == 'archive') {
@@ -3803,10 +3803,10 @@ function update_move_pv(section, ply, move) {
 
     if (Y.eval) {
         for (let child of [box_node, node]) {
-            HTML(`[data-x="eval"]`, status_eval, child);
-            HTML(`[data-x="score"]`, status_score, child);
+            TextHTML(`[data-x="eval"]`, status_eval, child);
+            TEXT(`[data-x="score"]`, status_score, child);
         }
-        HTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
+        TextHTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
     }
 
     // PV should jump directly to a new position, no transition
@@ -3915,7 +3915,7 @@ function update_overview_basic(section, headers) {
             break;
         }
 
-        HTML(`td[data-x="${key}"]`, value, overview);
+        TEXT(`td[data-x="${key}"]`, value, overview);
     });
 
     // 2) engines
@@ -3935,8 +3935,8 @@ function update_overview_basic(section, headers) {
         });
         update_hardware(section, id, [box_node, node], {engine: name, short: short});
 
-        HTML(Id(`engine${id}`), format_engine(name, true, 21));
-        HTML(`.xcolor${id} .xshort`, resize_text(short, 15, 'small'), xboards[section].node);
+        TextHTML(Id(`engine${id}`), format_engine(name, true, 21));
+        TextHTML(`.xcolor${id} .xshort`, resize_text(short, 15, 'small'), xboards[section].node);
 
         // load engine image
         let image = Id(`logo${id}`);
@@ -4062,7 +4062,7 @@ function update_overview_result(move, num_ply, finished) {
         result['50'] = Floor(50 - fen.split(' ')[4] / 2);
 
     Keys(result).forEach(key => {
-        HTML(`td[data-x="${key}"]`, result[key], overview);
+        TEXT(`td[data-x="${key}"]`, result[key], overview);
     });
 
     S('[data-x="adj_rule"]', finished, overview);
@@ -4117,7 +4117,7 @@ function update_pgn(section, data, extras, reset_moves) {
 
     // 2) update overview
     if (pgn['Users'])
-        HTML('td[data-x="viewers"]', pgn['Users'], overview);
+        TEXT('td[data-x="viewers"]', pgn['Users'], overview);
     if (is_same)
         update_overview_basic(section, headers);
 
@@ -4158,7 +4158,7 @@ function update_pgn(section, data, extras, reset_moves) {
                 info: {},
             });
         }
-        HTML(Id('movesleft'), '');
+        TEXT(Id('movesleft'), '');
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, 1), TIMEOUT_tables);
@@ -4166,8 +4166,8 @@ function update_pgn(section, data, extras, reset_moves) {
     }
     // can happen after resume
     else if (reset_moves) {
-        HTML(main.xmoves, '');
-        HTML(main.pv_node, '');
+        // HTML(main.xmoves, '');
+        // HTML(main.pv_node, '');
     }
 
     // 4) add the moves
@@ -4243,7 +4243,7 @@ function update_scores(section) {
         players = main.players;
     for (let id of [0, 1]) {
         let player = players[id];
-        HTML(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
+        TEXT(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
     }
 }
 
@@ -4256,7 +4256,7 @@ function update_time_control(section, id) {
     let main = xboards[section],
         player = main.players[id],
         mins = Round(player.tc / 60);
-    HTML(`#overview td[data-x="tc"]`, player.tc3? `${player.tc3}/${mins}'`: `${mins}'+${player.tc2}"`);
+    TEXT(`#overview td[data-x="tc"]`, player.tc3? `${player.tc3}/${mins}'`: `${mins}'+${player.tc2}"`);
 }
 
 // LIVE ACTION / DATA
@@ -4367,8 +4367,8 @@ function analyse_log(line) {
             status_score = calculate_probability(player.short, info['eval'], main.moves.length, info['wdl']);
 
         for (let child of [box_node, node]) {
-            HTML(`[data-x="eval"]`, status_eval, child);
-            HTML(`[data-x="score"]`, status_score, child);
+            TextHTML(`[data-x="eval"]`, status_eval, child);
+            TEXT(`[data-x="score"]`, status_score, child);
         }
     }
 
@@ -4833,7 +4833,7 @@ function color_screen(visual, red, red_start, red_duration) {
  * @param {number} count
  */
 function set_viewers(count) {
-    HTML('#overview td[data-x="viewers"]', count);
+    TEXT('#overview td[data-x="viewers"]', count);
 }
 
 /**
@@ -4964,19 +4964,19 @@ function update_clock(section, id, move) {
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
     if (same) {
-        HTML(Id(`remain${id}`), left);
-        HTML(Id(`time${id}`), time);
+        TEXT(Id(`remain${id}`), left);
+        TEXT(Id(`time${id}`), time);
     }
     player.sleft = left;
     player.stime = time;
 
     let mini = _(`.xcolor${id}`, main.node);
     if (same) {
-        HTML(`.xleft`, left, mini);
-        HTML(`.xtime`, time, mini);
+        TEXT(`.xleft`, left, mini);
+        TEXT(`.xtime`, time, mini);
     }
     else if (section == 'pva')
-        HTML(`.xleft`, time, mini);
+        TEXT(`.xleft`, time, mini);
 }
 
 /**
@@ -5007,7 +5007,7 @@ function update_hardware(section, id, nodes, {engine, hardware, short}={}) {
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
         if (node && node.title != full_engine) {
-            HTML(node, resize_text(short, 15, 'small'));
+            TextHTML(node, resize_text(short, 15, 'small'));
             Attrs(node, {title: full_engine});
             Assign(player, {
                 feature: Undefined(ENGINE_FEATURES[short], 0),
@@ -5110,7 +5110,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
                 return;
 
             for (let child of [box_node, node])
-                HTML(`[data-x="${key}"]`, Undefined(value, '-'), child);
+                TextHTML(`[data-x="${key}"]`, Undefined(value, '-'), child);
         });
     }
 
@@ -5198,7 +5198,7 @@ function update_player_eval(section, data, same_pv) {
             'tb': format_unit(data['tbhits']),
         };
         Keys(stats).forEach(key => {
-            HTML(Id(`${key}${id}`), stats[key]);
+            TextHTML(Id(`${key}${id}`), stats[key]);
         });
 
         // update the live part on the left
@@ -5212,17 +5212,17 @@ function update_player_eval(section, data, same_pv) {
         update_hardware(section, id, [node], {engine: engine, short: short});
 
         Keys(dico).forEach(key => {
-            HTML(`[data-x="${key}"]`, dico[key], node);
+            TextHTML(`[data-x="${key}"]`, dico[key], node);
         });
 
-        HTML(`.xshort`, resize_text(short, 15, 'small'), mini);
-        HTML(`.xeval`, format_eval(eval_), mini);
+        TextHTML(`.xshort`, resize_text(short, 15, 'small'), mini);
+        TextHTML(`.xeval`, format_eval(eval_), mini);
         if (data['nodes'] > 1)
             add_player_eval(player, ply, eval_);
 
         // moves left
         if (Y['moves_left'] && data['movesleft'] != undefined)
-            HTML(Id('movesleft'), `#${data['movesleft']}`);
+            TEXT(Id('movesleft'), `#${data['movesleft']}`);
     }
 
     if (DEV['chart'])
@@ -5379,9 +5379,10 @@ function benchmark(round=10, running=0) {
     S(count, is_waiting);
 
     if (is_waiting)
-        HTML(count, (left > 3)? '': Ceil(left));
+        TEXT(count, (left > 3)? '': Ceil(left));
     else {
         last_key = now;
+        main.speed = 8;
         main.go_next();
     }
     AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
@@ -5521,7 +5522,7 @@ function game_action_key(code) {
             break;
         }
 
-        HTML(Id('keycode'), code);
+        TEXT(Id('keycode'), code);
     }
 
     return okay;

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-13
+// @version 2021-02-14
 //
 // game board:
 // - 4 rendering modes:
@@ -23,8 +23,8 @@ DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, F
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 require, resize_text,
-S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, timers, touch_event, U32, Undefined,
-update_svg, Upper, Visible, window, Worker, Y, y_x
+S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32,
+Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
 */
 'use strict';
 
@@ -464,8 +464,8 @@ class XBoard {
 
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
-                ply ++;
                 moves[ply] = {'m': item};
+                ply ++;
             }
         });
 
@@ -1980,7 +1980,7 @@ class XBoard {
         case 'null':
             break;
         default:
-            HTML(this.xsquares, text);
+            TextHTML(this.xsquares, text);
         }
     }
 
@@ -2442,7 +2442,7 @@ class XBoard {
      */
     set_last(text) {
         for (let parent of this.parents)
-            HTML('.last', text, parent);
+            TEXT('.last', text, parent);
     }
 
     /**
@@ -2491,7 +2491,7 @@ class XBoard {
         this.update_memory(this.node_markers, ply, 'marker');
 
         for (let parent of this.parents)
-            HTML(parent.firstChild, `[${agree}]`);
+            TEXT(parent.firstChild, `[${agree}]`);
     }
 
     /**
@@ -2594,7 +2594,7 @@ class XBoard {
 
             let sounds = [[sound, audio_delay]],
                 speed = this.speed || 500,
-                volume = 1 - 0.85 * Exp(-speed * 0.03);
+                volume = 1 - 0.3 * Exp(-speed * 0.03);
 
             if (text.includes('x')) {
                 let capture_delay = Y['capture_delay'];
@@ -2605,10 +2605,13 @@ class XBoard {
 
             sounds.sort((a, b) => (a[1] - b[1]));
 
-            for (let [name, delay] of sounds)
+            for (let [name, delay] of sounds) {
+                if (name[0] == 'm' && speed < 21)
+                    continue;
                 add_timeout(`ply${ply}+${name}_${this.id}`, () => {
                     play_sound(audiobox, Y[`sound_${name}`], {interrupt: true, volume: volume});
-                }, (speed < 33)? 0: delay + offset);
+                }, (speed < 21)? 0: delay + offset);
+            }
         }
 
         if (manual)
@@ -2903,7 +2906,7 @@ class XBoard {
         let node = _('.count', this.node),
             unseen = this.moves.length - 1 - this.seen;
         S(node, unseen > 0);
-        HTML(node, this.moves.length - 1 - this.seen);
+        TEXT(node, this.moves.length - 1 - this.seen);
     }
 
     /**
@@ -2973,21 +2976,21 @@ class XBoard {
         if (stats)
             Assign(dico, stats);
 
-        HTML('.xeval', format_eval(dico.eval, true), mini);
+        TextHTML('.xeval', format_eval(dico.eval, true), mini);
 
         if (this.name == 'pva') {
-            HTML(`.xleft`, Undefined(dico.stime, '-'), mini);
-            HTML('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
-            HTML(`.xtime`, Undefined(dico.depth, '-'), mini);
+            TEXT(`.xleft`, Undefined(dico.stime, '-'), mini);
+            TEXT('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
+            TEXT(`.xtime`, Undefined(dico.depth, '-'), mini);
 
             let arrow = player.arrow;
             if (arrow)
                 this.arrow(arrow[0], arrow[1]);
         }
         else {
-            HTML(`.xleft`, player.sleft, mini);
-            HTML('.xshort', resize_text(player.short, 15), mini);
-            HTML(`.xtime`, player.stime, mini);
+            TEXT(`.xleft`, player.sleft, mini);
+            TextHTML('.xshort', resize_text(player.short, 15), mini);
+            TEXT(`.xtime`, player.stime, mini);
         }
     }
 
@@ -3095,12 +3098,13 @@ class XBoard {
 
             let list = move_list[id],
                 list_end = list.length - 1,
+                node = list[list_end].firstChild,
                 text = texts[id];
 
             list[1] = text;
             text = resize_text(text, 4, 'mini-move');
 
-            if (text[0] == '<' || list[list_end].firstChild.nodeType != 3)
+            if (text[0] == '<' || !node || node.nodeType != 3)
                 for (let i = list_end; i >= 2; i --)
                     list[i].innerHTML = text;
             else
