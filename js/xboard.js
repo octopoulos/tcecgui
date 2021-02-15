@@ -331,8 +331,8 @@ class XBoard {
 
             move['ply'] = ply;
             this.moves[ply] = move;
-            book = move['book']? 'book': '';
-            num_book += (book? 1: 0);
+            book = move['book']? 1: 0;
+            num_book += book;
 
             let san = move['m'];
             if (!san)
@@ -449,7 +449,7 @@ class XBoard {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
                 if (!memory || memory[1] != item)
-                    texts[ply2] = [item, ''];
+                    texts[ply2] = [item, 0];
 
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
@@ -466,7 +466,7 @@ class XBoard {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
                 if (!memory || memory[1] != item)
-                    texts[ply2] = [item, ''];
+                    texts[ply2] = [item, 0];
 
                 visibles.add(ply2);
                 visibles.add(ply2 - ((ply & 1)? 3: 1));
@@ -1110,6 +1110,7 @@ class XBoard {
             if (!list[0])
                 continue;
             list[0] = 0;
+            list[2] = 0;
             for (let i = list.length; i >= 3; i --)
                 Class(list[i], 'dn -book');
         }
@@ -3053,7 +3054,7 @@ class XBoard {
             let dico, tag,
                 id4 = id % 4,
                 ply = Floor(id / 2),
-                [text, book] = texts[id] || ['', ''],
+                [text, book] = texts[id] || ['', 0],
                 visible = visibles.has(id)? 1: 0;
 
             if (id4 == 0) {
@@ -3120,7 +3121,7 @@ class XBoard {
             let list = move_list[id],
                 list_end = list.length - 1,
                 node = list[list_end].firstChild,
-                [text, book] = texts[id] || ['', ''],
+                [text, book] = texts[id] || ['', 0],
                 new_book = (list[2] != book);
 
             list[1] = text;
