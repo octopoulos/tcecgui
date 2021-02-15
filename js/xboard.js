@@ -1101,12 +1101,17 @@ class XBoard {
      * Hide move list + nodes
      */
     clear_moves() {
-        for (let list of this.move_list) {
+        let last_id = (this.moves.length << 1) + 1,
+            move_list = this.move_list,
+            num_list = move_list.length;
+
+        for (let i = last_id; i < num_list; i ++) {
+            let list = move_list[i];
             if (!list[0])
                 continue;
             list[0] = 0;
             for (let i = list.length; i >= 2; i --)
-                Class(list[i], 'dn -book -real');
+                Class(list[i], 'dn -book');
         }
     }
 
@@ -1778,8 +1783,10 @@ class XBoard {
         this.xsquares = _('.xsquares', root);
 
         this.parents = [this.xmoves, this.pv_node].filter(parent => parent);
+
+        let manual = this.main_manual;
         for (let parent of this.parents)
-            HTML(parent, `<i class="agree${this.main_manual? ' dn': ''}">0</i><i class="last dn">*</i>`);
+            HTML(parent, `<i class="agree${manual? ' dn': ''}">0</i><i class="last${manual? '': 'dn'}">*</i>`);
 
         this.node_agrees = this.parents.map(node => node.firstChild);
         this.node_currents = this.parents.map(_ => null);
