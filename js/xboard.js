@@ -3090,8 +3090,8 @@ class XBoard {
             if (dones.has(id))
                 return;
 
-            let visible = (visibles.has(id) || (keep_prev && id <= (ply << 1)))? 1: 0;
-            if (list[0] == visible)
+            let visible = visibles.has(id)? 1: 0;
+            if (list[0] == visible || (!visible && keep_prev))
                 return;
 
             list[0] = visible;
