@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-15
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -113,8 +113,6 @@ function A(sel, parent) {
  * @param {string|Array<Node>} sel CSS selector OR list of nodes
  * @param {Function} callback (node, index=, array=)
  * @param {Node=} parent
- * @example
- * E('input[type=text]', node => {LS(node)})     // print all the text <input> nodes
  */
 function E(sel, callback, parent) {
     if (!sel) return;
@@ -227,11 +225,6 @@ function C(sel, callback, parent) {
  * @param {string} class_ 'add +also_add -remove ^toggle'
  * @param {boolean|number=} add true for normal behavior (default), otherwise invert all - and +
  * @param {Node?} parent
- * @example
- * Class('img', 'dn')               // hide every image
- * Class('img', '-dn')              // restore every image
- * Class('img', '^dn')              // toggle every image
- * Class('img', '-dn +underline')   // multiple classes can be combined
  */
 function Class(sel, class_, add=true, parent=null) {
     if (!sel) return;
@@ -341,8 +334,6 @@ function Contain(list, pattern) {
  * @param {Object=} attrs
  * @param {Array<Node>=} children
  * @returns {Node} created node
- * @example
- * node = CreateNode('li', '<span>new comment</span>')  // <li><span>new comment</span></li>
  */
 function CreateNode(tag, html, attrs, children) {
     let node = document.createElement(tag);
@@ -480,9 +471,6 @@ function HasClasses(node, classes) {
  * + handle dn
  * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
- * @example
- * Hide('body')     // hide the body
- * Hide('a')        // hide all links
  */
 function Hide(sel, parent) {
     if (!sel) return;
@@ -783,9 +771,6 @@ function ScrollDocument(top, smooth, offset=0) {
  * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
  * @param {string=} mode to use for node.display, by default '' but could be block
- * @example
- * Show('body')     // show the body
- * Show('a')        // show all links
  */
 function Show(sel, parent, mode='') {
     if (!sel) return;
@@ -1036,9 +1021,6 @@ function Toggle(sel, parent) {
  * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
  * @returns {boolean?} true if ALL nodes are visible
- * @example
- * Visible('body')  // true
- * Visible('.dn')   // false
  */
 function Visible(sel, parent) {
     if (!sel) return null;
@@ -1750,6 +1732,8 @@ if (typeof exports != 'undefined') {
         Hide: Hide,
         HTML: HTML,
         Id: Id,
+        Index: Index,
+        InsertNodes: InsertNodes,
         InvalidEmail: InvalidEmail,
         InvalidPhone: InvalidPhone,
         IS_NODE: IS_NODE,
@@ -1773,6 +1757,7 @@ if (typeof exports != 'undefined') {
         ParseJSON: ParseJSON,
         PI: PI,
         Pow: Pow,
+        Prop: Prop,
         QueryString: QueryString,
         RandomInt: RandomInt,
         Round: Round,
@@ -1780,6 +1765,7 @@ if (typeof exports != 'undefined') {
         Safe: Safe,
         SafeId: SafeId,
         SetDefault: SetDefault,
+        Show: Show,
         Sign: Sign,
         Split: Split,
         Stringify: Stringify,
@@ -1787,6 +1773,7 @@ if (typeof exports != 'undefined') {
         TEXT: TEXT,
         TextHTML: TextHTML,
         Title: Title,
+        Toggle: Toggle,
         Undefined: Undefined,
         Upper: Upper,
         Visible: Visible,
