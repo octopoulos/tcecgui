@@ -1786,7 +1786,7 @@ class XBoard {
 
         let manual = this.main_manual;
         for (let parent of this.parents)
-            HTML(parent, `<i class="agree${manual? ' dn': ''}">0</i><i class="last${manual? '': 'dn'}">*</i>`);
+            HTML(parent, `<i class="agree${manual? ' dn': ''}">0</i><i class="last${manual? '': ' dn'}">*</i>`);
 
         this.node_agrees = this.parents.map(node => node.firstChild);
         this.node_currents = this.parents.map(_ => null);
