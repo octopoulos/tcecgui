@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-06
 //
 // general 3d rendering code
 //
@@ -10,7 +10,7 @@
 globals
 _, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CameraControls, clear_timeout,
 DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, Id, IsString, KEY_TIMES, Keys, KEYS,
-load_library, LS, navigator, Now, require,
+LoadLibrary, LS, navigator, Now, require,
 S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes,
 Vector2:true, Visible, window, Y, y_x
 */
@@ -60,11 +60,13 @@ let audiobox = {
     button_repeat_time,
     buttons = {},
     camera,
+    camera_auto,
     camera_control,
     camera_id,
     camera_id2,
     camera_look,
     camera_pos,
+    camera_reverse,
     camera_target,
     CAMERAS = {
         'static': {
@@ -463,7 +465,7 @@ function new_vector3(x, y, z) {
  * Render the 3D scene
  */
 function render() {
-    if (!cube || !clock || !Y.three)
+    if (!cube || !clock || !T || !Y.three)
         return;
 
     let [can_render, can_simulate] = virtual_can_render_simulate? virtual_can_render_simulate(): [true, true],
@@ -737,8 +739,9 @@ function set_camera_control(pause, target, transition) {
 /**
  * Set the camera view
  * @param {string=} id
+ * @param {boolean=} auto was set automatically, not manually
  */
-function set_camera_id(id) {
+function set_camera_id(id, auto) {
     // default value
     if (!id) {
         id = Y.camera_id;
@@ -757,6 +760,10 @@ function set_camera_id(id) {
     // change the camera view
     camera_id = id;
     save_option('camera_id', id);
+    if (!auto) {
+        camera_auto = 0;
+        camera_reverse = false;
+    }
 }
 
 /**
@@ -854,7 +861,7 @@ function update_time(delta) {
  * Convert a btQuaternion to Quaternion
  * @param {!Object} quaternion
  * @param {Object=} target
- * @returns {Object}
+ * @returns {!Object}
  */
 function three_quat(quaternion, target) {
     target = target || t_quat;
@@ -1226,7 +1233,7 @@ function start_3d() {
     if (T)
         init_3d(true);
     else
-        load_library('./js/4d_.js?version=1', () => init_3d(true));
+        LoadLibrary('./js/4d_.js?version=1', () => init_3d(true));
 }
 
 /**
