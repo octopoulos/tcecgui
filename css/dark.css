@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-21
+@version 2021-02-14
 - used in Live mode
 - inherits from light.css
 */
@@ -63,7 +63,7 @@ textarea:hover {
     color: #bbb;
 }
 .book {
-    color: #f90;
+    color: #f90 !important;
 }
 .draw {
     color: #f5f5f5;

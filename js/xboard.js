@@ -1106,7 +1106,7 @@ class XBoard {
                 continue;
             list[1] = 0;
             for (let i = list.length; i >= 2; i --)
-                list[i].classList.remove('dn');
+                Class(list[i], '-dn -book -real');
         }
     }
 

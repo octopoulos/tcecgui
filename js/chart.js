@@ -1,5 +1,5 @@
 // chart.js
-// @version 2021-02-06
+// @version 2021-02-14
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
@@ -2637,9 +2637,8 @@ function indexMode(chart, e, options) {
         var element = meta.data[items[0]._index];
 
         // don't count items that are skipped (null data)
-        if (element && !element._view.skip) {
+        if (element && element._view && !element._view.skip)
             elements.push(element);
-        }
     });
 
     return elements;
