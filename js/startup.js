@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-13
+// @version 2021-02-14
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -27,8 +27,8 @@ PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, set_section,
 SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_popup, SP, start_3d, start_game, startup_3d,
-startup_config, startup_game, startup_graph, Style, TAB_NAMES, TABLES, THEMES, TIMEOUT_adjust, TIMEOUT_tables, timers,
-toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
+startup_config, startup_game, startup_graph, Style, TAB_NAMES, TABLES, TEXT, TextHTML, THEMES, TIMEOUT_adjust,
+TIMEOUT_tables, timers, toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
@@ -668,7 +668,7 @@ function create_swaps() {
                 value += add * 10;
 
             save_option(name, Clamp(value, -1, 1200));
-            HTML(sizer, Y[name]);
+            TEXT(sizer, Y[name]);
             Show(sizer);
             add_timeout('size', () => Hide('.size'), TIMEOUT_size);
             resize();
@@ -885,7 +885,7 @@ function init_globals() {
     changed_hash();
     api_translate_get(Y.new_version);
 
-    HTML(Id('version'), VERSION);
+    TEXT(Id('version'), VERSION);
     HTML(Id('champions'), CHAMPIONS.map(text => {
         let [season, winner] = text.split('|');
         return `<i data-t="Season"></i> ${season}: ${winner}`;
@@ -1231,7 +1231,7 @@ function show_live_engines() {
             continue;
         hardware = hardware.replace(/th/g, 'TH').replace(/ TB$/, '');
         let sel = `[data-x="live+${id}"]`;
-        HTML(sel, hardware);
+        TextHTML(sel, hardware);
         Style(sel, `top:${single_line? 0.35: 1.9}em`);
     }
 }

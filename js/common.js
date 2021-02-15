@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-06
+// @version 2021-02-14
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -87,9 +87,6 @@ let Abs = Math.abs,
  * @param {Node|string|Element|EventTarget} sel CSS selector or node
  * @param {Node=} parent parent node, document by default
  * @returns {Node} found node
- * @example
- * _('input')      // get the first <input> nodes
- * _('a', node)    // get the first link inside the node
  */
 function _(sel, parent) {
     if (!sel) return null;
@@ -103,9 +100,6 @@ function _(sel, parent) {
  * @param {string|Array<Node>} sel CSS selector OR list of nodes
  * @param {Node|Object=} parent parent node, document by default
  * @returns {!Array<Node>} found nodes
- * @example
- * A('input')       // get all the <input> nodes
- * A('a', node)     // get all the links inside the node
  */
 function A(sel, parent) {
     if (!sel) return [];
@@ -140,6 +134,8 @@ function Id(id, parent) {
     if (!id) return null;
     if (IsObject(id))
         return /** @type {Node} */(id);
+    if (IS_NODE)
+        return (parent || document).querySelector(`#${id}`);
     return (parent || document).getElementById(id);
 }
 
@@ -508,28 +504,32 @@ function Hide(sel, parent) {
  * @param {string|number=} html
  * @param {Node=} parent
  * @returns {string} html of the first matched node
- * @example
- * HTML(document.documentElement)       // get the HTML of the whole page
- * HTML('a')                            // get the HTML of the first link
- * HTML('a', '<strong>hello</strong>')  // replace the content of all links
  */
 function HTML(sel, html, parent) {
     if (!sel) return '';
     if (IsObject(sel)) {
-        if (html !== undefined && html != sel.innerHTML)
-            sel.innerHTML = html + '';
+        if (html !== undefined) {
+            html += '';
+            if (html != sel.innerHTML)
+                sel.innerHTML = html;
+            return html;
+        }
         return sel.innerHTML;
     }
     //
+    if (html === undefined) {
+        let node = _(sel, parent);
+        return node? node.innerHTML: '';
+    }
+    html += '';
     let result;
     E(/** @type {string} */(sel), node => {
-        if (html !== undefined && html != node.innerHTML)
-            node.innerHTML = html + '';
-        // FUTURE: use ?? operator
-        if (result == undefined)
-            result = node.innerHTML;
+        if (html != node.innerHTML)
+            node.innerHTML = html;
+        if (result === undefined)
+            result = html;
     }, parent);
-    return result;
+    return result || '';
 }
 
 /**
@@ -908,31 +908,99 @@ function Submit(sel, callback, parent) {
 /**
  * Get / set the textContent of nodes
  * @param {Node|string} sel CSS selector or node
- * @param {string=} text
+ * @param {string|number=} text
  * @param {Node=} parent
  * @returns {string}
- * @example
- * TEXT('title')                    // get the title of the page
- * TEXT(document.documentElement)   // get the text of the whole page
- * TEXT('a', 'hello')               // replace the content of all links
  */
 function TEXT(sel, text, parent) {
     if (!sel) return '';
     if (IsObject(sel)) {
-        if (text !== undefined)
-            sel.innerHTML = text;
+        if (text !== undefined) {
+            text += '';
+            let child = sel.firstChild;
+            if (!child)
+                sel.appendChild(document.createTextNode(text));
+            else if (child.nodeType == 3)
+                child.nodeValue = text;
+            else if (sel.innerHTML != text)
+                 sel.textContent = text;
+            return text;
+        }
         return sel.textContent.trim();
     }
     //
+    if (text === undefined) {
+        let node = _(sel, parent);
+        return node? node.textContent.trim(): '';
+    }
+    text += '';
     let result;
     E(/** @type {string} */(sel), node => {
-        if (text !== undefined)
-            node.innerHTML = text;
-        // FUTURE: use ?? operator
+        let child = node.firstChild;
+        if (!child)
+            node.appendChild(document.createTextNode(text));
+        else if (child.nodeType == 3)
+            child.nodeValue = text;
+        else if (node.innerHTML != text)
+            node.textContent = text;
         if (result === undefined)
-            result = node.textContent.trim();
+            result = text;
     }, parent);
-    return result;
+    return result || '';
+}
+
+/**
+ * Get / set TEXT/HTML of nodes
+ * @param {Node|string} sel CSS selector or node
+ * @param {string|number=} text
+ * @param {Node=} parent
+ * @returns {string}
+ */
+function TextHTML(sel, text, parent) {
+    if (!sel) return '';
+    if (IsObject(sel)) {
+        if (text !== undefined) {
+            text += '';
+            if (!text.includes('<')) {
+                let child = sel.firstChild;
+                if (!child)
+                    sel.appendChild(document.createTextNode(text));
+                else if (child.nodeType == 3)
+                    child.nodeValue = text;
+                else if (sel.innerHTML != text)
+                    sel.textContent = text;
+                return text;
+            }
+            else if (sel.innerHTML != text)
+                sel.innerHTML = text;
+            return text;
+        }
+        return sel.textContent.trim();
+    }
+    //
+    if (text === undefined) {
+        let node = _(sel, parent);
+        return node? node.textContent.trim(): '';
+    }
+    text += '';
+    let is_html = (text.includes('<')),
+        result;
+    E(/** @type {string} */(sel), node => {
+        if (!is_html) {
+            let child = node.firstChild;
+            if (!child)
+                node.appendChild(document.createTextNode(text));
+            else if (child.nodeType == 3)
+                child.nodeValue = text;
+            else if (node.innerHTML != text)
+                node.textContent = text;
+        }
+        else if (node.innerHTML != text)
+            node.innerHTML = text;
+        if (result === undefined)
+            result = text;
+    }, parent);
+    return result || '';
 }
 
 /**
@@ -1647,6 +1715,7 @@ if (typeof exports != 'undefined') {
         ArrayJS: ArrayJS,
         Assign: Assign,
         Atan: Atan,
+        Attrs: Attrs,
         AttrsNS: AttrsNS,
         C: C,
         Clamp: Clamp,
@@ -1707,6 +1776,8 @@ if (typeof exports != 'undefined') {
         Split: Split,
         Stringify: Stringify,
         Style: Style,
+        TEXT: TEXT,
+        TextHTML: TextHTML,
         Title: Title,
         Undefined: Undefined,
         Upper: Upper,

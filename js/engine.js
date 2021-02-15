@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-10
+// @version 2021-02-14
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -16,8 +16,8 @@ DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, F
 HTML, Id, Input, IS_NODE, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
 LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow, QueryString,
 require, Resource,
-S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TEXT, Title, Undefined,
-Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
+S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TextHTML, Title,
+Undefined, Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
 */
 'use strict';
 
@@ -1420,7 +1420,7 @@ function resize_text(text, resize, class_='resize') {
  */
 function set_text(node, text) {
     Attrs(node, {'data-t': text});
-    TEXT(node, translate_expression(text));
+    TextHTML(node, translate_expression(text));
 }
 
 /**
@@ -1524,7 +1524,7 @@ function translate_node(node) {
         let resize = node.dataset['tr'];
         if (resize)
             translated = resize_text(translated, parseInt(resize, 10));
-        TEXT(node, translated);
+        TextHTML(node, translated);
     }
 }
 
