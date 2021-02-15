@@ -771,6 +771,12 @@ class XBoard {
             y1 = ROTATE(rotate, dico['from'] >> 4),
             y2 = ROTATE(rotate, dico['to'] >> 4);
 
+        // should not happen, but there's a bug when using PVA maybe
+        if (x1 == x2 && y1 == y2) {
+            LS('arrow error', id, dico);
+            return;
+        }
+
         x1 = 5 + 10 * x1;
         x2 = 5 + 10 * x2;
         y1 = 5 + 10 * y1;
