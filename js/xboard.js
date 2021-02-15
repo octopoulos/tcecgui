@@ -1111,8 +1111,8 @@ class XBoard {
                 continue;
             list[0] = 0;
             list[2] = 0;
-            for (let i = list.length; i >= 3; i --)
-                Class(list[i], 'dn -book');
+            for (let child of list[3])
+                Class(child, 'dn -book');
         }
     }
 
@@ -2964,17 +2964,18 @@ class XBoard {
         let list = this.move_list[(ply << 1) + 1];
         if (!list)
             return false;
-        for (let i = list.length - 1; i >= 3; i --) {
-            let current2 = memory[i - 2],
-                node = list[i];
-            if (node != current2) {
-                Class(current2, class_, false);
-                Class(node, class_);
-                memory[i - 2] = node;
-                if (callback)
-                    callback(node);
-            }
-        }
+
+        list[3].forEach((child, id) => {
+            let current2 = memory[id];
+            if (child == current2)
+                return;
+
+            Class(current2, class_, false);
+            Class(child, class_);
+            memory[id] = child;
+            if (callback)
+                callback(child);
+        });
         return true;
     }
 
@@ -3075,7 +3076,7 @@ class XBoard {
             }
             // 1:white, 3:black
             else {
-                dico = {'class': `${book? 'book': 'real'}${visible? '': ' dn'}`, 'data-i': ply};
+                dico = {'class': `real${book? ' book': ''}${visible? '': ' dn'}`, 'data-i': ply};
                 tag = 'a';
                 if (text)
                     text = resize_text(text, 4, 'mini-move');
@@ -3084,11 +3085,11 @@ class XBoard {
             }
             dones.add(id);
 
-            let list = [visible? 1: 0, text, book];
+            let list = [visible? 1: 0, text, book, []];
             for (let parent of this.parents) {
                 let node = CreateNode(tag, text, dico);
                 parent.appendChild(node);
-                list.push(node);
+                list[3].push(node);
             }
             move_list[id] = list;
         }
@@ -3104,23 +3105,21 @@ class XBoard {
                 return;
 
             list[0] = visible;
-            for (let i = list.length - 1; i >= 3; i --) {
-                let child = list[i];
-                if (visible)
+            if (visible)
+                for (let child of list[3])
                     child.classList.remove('dn');
-                else
+            else
+                for (let child of list[3])
                     child.classList.add('dn');
-            }
         });
 
-        // 3) change texts + book/real class
+        // 3) change texts + book class
         Keys(texts).forEach(id => {
             if (dones.has(id))
                 return;
 
             let list = move_list[id],
-                list_end = list.length - 1,
-                node = list[list_end].firstChild,
+                node = list[3].firstChild,
                 [text, book] = texts[id] || ['', 0],
                 new_book = (list[2] != book);
 
@@ -3128,20 +3127,18 @@ class XBoard {
             list[2] = book;
             text = resize_text(text, 4, 'mini-move');
 
+            // text
             if (text[0] == '<' || !node || node.nodeType != 3)
-                for (let i = list_end; i >= 3; i --) {
-                    let child = list[i];
+                for (let child of list[3])
                     child.innerHTML = text;
-                    if (new_book)
-                        Class(child, 'book -real', book);
-                }
             else
-                for (let i = list_end; i >= 3; i --) {
-                    let child = list[i];
+                for (let child of list[3])
                     child.firstChild.nodeValue = text;
-                    if (new_book)
-                        Class(child, 'book -real', book);
-                }
+
+            // book
+            if (new_book)
+                for (let child of list[3])
+                    Class(child, 'book', book);
         });
 
         // 4) agree
