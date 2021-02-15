@@ -4137,6 +4137,7 @@ function update_pgn(section, data, extras, reset_moves) {
         }
 
         main.reset(section, {evals: is_same, start_fen: pgn.frc});
+        main.clear_moves();
         if (is_same) {
             reset_sub_boards(section, 7, true, pgn.frc);
             if (section == section_board()) {
