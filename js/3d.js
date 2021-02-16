@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-06
+// @version 2021-02-16
 //
 // general 3d rendering code
 //
@@ -1141,7 +1141,7 @@ function show_modal(show, text, title, name) {
         translate_nodes(node);
     }
 
-    Style(node, `opacity:${show? 1: 0}`);
+    Style(node, [['opacity', show? 1: 0]]);
 
     if (show) {
         add_timeout('pad', gamepad_modal, 300);

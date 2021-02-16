@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // game board:
 // - 4 rendering modes:
@@ -275,11 +275,11 @@ class XBoard {
             node = _(`[data-c="${coord}"] > .xhigh`, this.xsquares),
             opacity = Y[`${type}_opacity`];
 
-        Style(node, `background:${color};opacity:${opacity}`);
-        Class(node, (type == 'target')? 'target -source': 'source -target');
+        Style(node, [['background', color], ['opacity', opacity]]);
+        Class(node, [['target'], ['source', 1]], (type == 'target'));
 
         if (type == 'turn')
-            Class(`[data-c="${coord}"]`, 'source', true, this.xpieces);
+            Class(`[data-c="${coord}"]`, [['source']], true, this.xpieces);
     }
 
     /**
@@ -694,12 +694,12 @@ class XBoard {
      * @param {boolean} animate false => remove highlights
      */
     animate_html(move, animate) {
-        this.clear_high('source target', false);
+        this.clear_high([['source'], ['target']], false);
 
         let prev = this.move2;
         if (prev) {
-            Style(prev.node_from, 'box-shadow: none');
-            Style(prev.node_to, 'box-shadow: none');
+            Style(prev.node_from, [['box-shadow', 'none']]);
+            Style(prev.node_to, [['box-shadow', 'none']]);
         }
         if (!animate)
             return;
@@ -708,7 +708,7 @@ class XBoard {
             node_from = this.squares[SQUARES_INV[move['from']] || move['from']],
             node_to = this.squares[SQUARES_INV[move['to']] || move['to']],
             size = this.high_size,
-            high_style = `box-shadow: inset 0 0 ${size}em ${size}em ${color}`;
+            high_style = [['box-shadow', `inset 0 0 ${size}em ${size}em ${color}`]];
 
         Style(node_from, high_style);
         Style(node_to, high_style);
@@ -902,7 +902,7 @@ class XBoard {
 
         svg.dist = delta_x + delta_y;
         svg.path = path;
-        Style(body, `opacity:${Y['arrow_opacity'] * opacity}`);
+        Style(body, [['opacity', Y['arrow_opacity'] * opacity]]);
         S(body, shown);
         if (DEV['arrow'])
             LS(id, 'drew arrow');
@@ -911,7 +911,7 @@ class XBoard {
         [...this.svgs]
             .sort((a, b) => ((b.dist || 0) - (a.dist || 0)))
             .forEach((svg, id) => {
-                Style(svg.svg, `z-index:${id}`);
+                Style(svg.svg, [['z-index', id]]);
             });
     }
 
@@ -934,7 +934,7 @@ class XBoard {
     check_locked(object) {
         if (this.locked) {
             this.locked_obj = object;
-            Style(this.node_locks[1], 'color:#f00');
+            Style(this.node_locks[1], [['color', '#f00']]);
         }
         return this.locked;
     }
@@ -1101,16 +1101,16 @@ class XBoard {
 
     /**
      * Clear highlight squares
-     * @param {string} type source, target, turn, restore
+     * @param {Array<*>} types source, target, turn, restore
      * @param {boolean=} restore
      */
-    clear_high(type, restore) {
-        Style('.xhigh', 'background:transparent', true, this.xsquares);
-        Class('.xhigh', type, false, this.xsquares);
-        if (type == 'source target')
-            Class('.source', '-source', true, this.xpieces);
+    clear_high(types, restore) {
+        Style('.xhigh', [['background' ,'transparent']], true, this.xsquares);
+        Class('.xhigh', types, false, this.xsquares);
+        if (types.length == 2 && types[0][0] == 'source' && types[1][0] == 'target')
+            Class('.source', [['source']], false, this.xpieces);
         if (restore)
-            Style('.source', `background:${Y['turn_color']};opacity:${Y['turn_opacity']}`, true, this.xsquares);
+            Style('.source', [['background', Y['turn_color']], ['opacity', Y['turn_opacity']]], true, this.xsquares);
     }
 
     /**
@@ -1128,7 +1128,7 @@ class XBoard {
             list[0] = 0;
             list[2] = 0;
             for (let child of list[3])
-                Class(child, 'dn -book');
+                Class(child, [['dn'], ['book', 1]]);
         }
     }
 
@@ -1397,7 +1397,7 @@ class XBoard {
         // hide current
         if (!timers[name])
             for (let node of this.node_currents)
-                Class(node, '-current');
+                Class(node, [['current', 1]]);
 
         add_timeout(name, () => this.update_memory(memory, ply, class_, callback), TIMEOUT_compare);
     }
@@ -1555,7 +1555,7 @@ class XBoard {
             if (!this.manual || this.place(e) || !this.pick(e))
                 return;
 
-            this.clear_high('target', this.picked == null);
+            this.clear_high([['target']], this.picked == null);
             if (this.picked == null)
                 return;
 
@@ -2013,7 +2013,7 @@ class XBoard {
         }
         else {
             this.set_fen(fen, true);
-            this.clear_high('source target', false);
+            this.clear_high([['source'], ['target']], false);
             this.picked = null;
 
             // delete some moves when playing earlier move in PVA
@@ -2272,7 +2272,7 @@ class XBoard {
                 nodes = [],
                 [piece_size, style, transform] = this.get_piece_background(this.size);
 
-            Class(this.xpieces, 'smooth', this.smooth);
+            Class(this.xpieces, [['smooth']], this.smooth);
 
             // a) pieces that must appear should be moved instantly to the right position
             Keys(this.pieces).forEach(char => {
@@ -2285,7 +2285,7 @@ class XBoard {
                     let col = ROTATE(rotate, index & 15),
                         row = ROTATE(rotate, index >> 4),
                         style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
-                    Style(node, `transform:${style_transform};transition:none`);
+                    Style(node, [['transform', style_transform], ['transition', 'none']]);
                     direct = false;
                 }
             });
@@ -2322,11 +2322,16 @@ class XBoard {
                                     `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
                                 z_index = (node.style.transform == style_transform)? 2: 3;
 
-                            Style(node, `transform:${style_transform};opacity:1;pointer-events:all;z-index:${z_index}`);
-                            Style(node, 'transition:none', false);
+                            Style(node, [
+                                ['transform', style_transform],
+                                ['opacity', 1],
+                                ['pointer-events', 'all'],
+                                ['z-index', z_index],
+                            ]);
+                            Style(node, [['transition', 'none']], false);
                         }
                         else
-                            Style(node, 'opacity:0;pointer-events:none');
+                            Style(node, [['opacity', 0], ['pointer-events', 'none']]);
                     }
                 });
 
@@ -2473,17 +2478,19 @@ class XBoard {
             frame_size2 = size * num_col,
             min_height = frame_size + 10 + Visible('.xbottom', node) * 23;
 
-        Style(node, `font-size:${size}px`);
-        Style('.xframe', `height:${frame_size}px;width:${frame_size}px`, true, node);
-        Style('.xoverlay', `height:${frame_size2}px;width:${frame_size2}px`, true, node);
-        Style('.xmoves', `max-width:${frame_size}px`, true, node);
-        Style('.xbottom, .xcontain, .xtop', `width:${frame_size}px`, true, node);
+        Style(node, [['font-size', `${size}px`]]);
+        Style('.xframe', [['height', `${frame_size}px`], ['width', `${frame_size}px`]], true, node);
+        Style('.xoverlay', [['height', `${frame_size2}px`], ['width', `${frame_size2}px`]], true, node);
+        Style('.xmoves', [['max-width', `${frame_size}px`]], true, node);
+        Style('.xbottom, .xcontain, .xtop', [['width', `${frame_size}px`]], true, node);
 
         if (this.name == 'xfen') {
             border = 0;
             min_height = 'unset';
         }
-        Style('.xcontain', `left:${border}px;min-height:${min_height}px;top:${border}px`, true, node);
+        Style('.xcontain', [
+            ['left', `${border}px`], ['min-height', `${min_height}px`], ['top', `${border}px`]
+        ], true, node);
 
         this.size = size;
         if (instant)
@@ -2552,7 +2559,7 @@ class XBoard {
         let [lock, unlock] = this.node_locks;
         S(lock, !locked);
         S(unlock, locked);
-        Style(unlock, 'color:#f00', false);
+        Style(unlock, [['color', '#f00']], false);
 
         if (!locked && this.locked_obj) {
             let [type, param1, param2] = this.locked_obj;
@@ -2575,7 +2582,7 @@ class XBoard {
         // 1) hide the marker?
         if (ply == -2) {
             for (let node of this.node_markers)
-                Class(node, '-marker -seen');
+                Class(node, [['marker'], ['seen']], false);
             return;
         }
 
@@ -2754,7 +2761,7 @@ class XBoard {
         let moves = this.chess_moves(),
             froms = new Set(moves.map(move => MoveFrom(move)));
 
-        this.clear_high('source target', false);
+        this.clear_high([['source'], ['target']], false);
         for (let from of froms)
             this.add_high(from, 'turn');
 
@@ -2827,7 +2834,7 @@ class XBoard {
                 return;
             }
             if (!suggest)
-                this.clear_high('source target', false);
+                this.clear_high([['source'], ['target']], false);
 
             this.pv_string = '';
             Clear(this.pv_strings);
@@ -3040,8 +3047,8 @@ class XBoard {
             if (child == current2)
                 return;
 
-            Class(current2, class_, false);
-            Class(child, class_);
+            Class(current2, [[class_]], false);
+            Class(child, [[class_]]);
             memory[id] = child;
             if (callback)
                 callback(child);
@@ -3214,17 +3221,17 @@ class XBoard {
             if (new_flag) {
                 if (new_flag & 1)
                     for (let child of list[3])
-                        Class(child, 'book', flag & 1);
+                        Class(child, [['book']], flag & 1);
                 if (new_flag & 2)
                     for (let child of list[3])
-                        Class(child, 'fail', flag & 2);
+                        Class(child, [['fail']], flag & 2);
             }
         });
 
         // 4) agree
         for (let parent of this.parents) {
             let child = parent.firstChild;
-            Class(child, origin);
+            Class(child, [[origin]]);
             if (agree != undefined)
                 child.firstChild.nodeValue = `[${agree}]`;
         }
