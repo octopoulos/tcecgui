@@ -364,7 +364,7 @@ class XBoard {
 
         // 3) update HTML
         this.update_move_list('X', visibles, texts, last_ply, agree, keep_prev);
-        this.update_memory(this.node_currents, cur_ply, 'current');
+        this.delayed_memory('moves', this.node_currents, cur_ply, last_ply, 'current');
 
         this.valid = true;
 
@@ -506,7 +506,7 @@ class XBoard {
 
         // 4) update HTML
         this.update_move_list('Y', visibles, texts, ply, agree, keep_prev);
-        this.update_memory(this.node_currents, want_ply, 'current');
+        this.delayed_memory('moves', this.node_currents, want_ply, last_ply, 'current');
         this.moves = moves;
         this.text = string;
 
@@ -1164,6 +1164,8 @@ class XBoard {
             return;
         this.clicked = false;
 
+        clear_timeout(`compare_${this.id}`);
+
         // 1) compare the moves if there's a dual
         let dual = this.dual,
             real = this.real,
@@ -1358,13 +1360,46 @@ class XBoard {
         if (this.locked)
             return;
 
-        let delta = (Now(true) - last_key) * 1000,
-            force = (!this.dual || this.dual.locked)? 1: 3;
-
-        if (want_ply >= last_ply - 1 || delta > Y['key_repeat'] * 2)
+        let force = (!this.dual || this.dual.locked)? 1: 3;
+        if (this.is_ready(want_ply, last_ply)) {
             this.compare_duals(want_ply, force);
-        else
-            add_timeout(`compare_${this.id}`, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
+            return;
+        }
+
+        // hide marker + seen
+        let name = `compare_${this.id}`;
+        if (!timers[name]) {
+            this.set_marker(-2);
+            if (this.dual)
+                this.dual.set_marker(-2);
+        }
+        add_timeout(name, () => this.compare_duals(want_ply, force), TIMEOUT_compare);
+    }
+
+    /**
+     * Update current/marker/seen + memory, with a possible delay
+     * @param {string} prefix
+     * @param {Array<Node>} memory
+     * @param {number} ply
+     * @param {number} last_ply
+     * @param {string} class_
+     * @param {Function=} callback
+     */
+    delayed_memory(prefix, memory, ply, last_ply, class_, callback) {
+        let name = `${prefix}_${this.id}`;
+
+        if (this.is_ready(ply, last_ply)) {
+            clear_timeout(name);
+            this.update_memory(memory, ply, class_, callback);
+            return;
+        }
+
+        // hide current
+        if (!timers[name])
+            for (let node of this.node_currents)
+                Class(node, '-current');
+
+        add_timeout(name, () => this.update_memory(memory, ply, class_, callback), TIMEOUT_compare);
     }
 
     /**
@@ -1902,6 +1937,17 @@ class XBoard {
         }
 
         return false;
+    }
+
+    /**
+     * Should we display markers?
+     * @param {number} ply
+     * @param {number} last_ply
+     * @returns {boolean}
+     */
+    is_ready(ply, last_ply) {
+        let delta = (Now(true) - last_key) * 1000;
+        return (ply >= last_ply - 1 || delta > Y['key_repeat'] * 2);
     }
 
     /**
@@ -2521,12 +2567,19 @@ class XBoard {
 
     /**
      * Set the @ marker + agree length
-     * @param {number} ply
-     * @param {number} agree
-     * @param {number} cur_ply
+     * @param {number} ply -2 to hide the marker
+     * @param {number=} agree
+     * @param {number=} cur_ply
      */
     set_marker(ply, agree, cur_ply) {
-        // update agree in chart
+        // 1) hide the marker?
+        if (ply == -2) {
+            for (let node of this.node_markers)
+                Class(node, '-marker -seen');
+            return;
+        }
+
+        // 2) update agree in chart
         let move = this.moves[cur_ply];
         if (move) {
             move.agree = agree;
@@ -2534,7 +2587,7 @@ class XBoard {
             this.hook(this, 'agree', move);
         }
 
-        // update the @ marker + agree length
+        // 3) update the @ marker + agree length
         this.update_memory(this.node_markers, ply, 'marker');
 
         for (let parent of this.parents)
@@ -2583,7 +2636,7 @@ class XBoard {
             this.ply = -1;
             this.set_fen(null, true, true);
             this.hide_arrows();
-            this.update_cursor(ply);
+            this.set_seen(ply);
             this.animate({}, animate);
             if (manual)
                 this.changed_ply({'ply': -1});
@@ -2664,11 +2717,24 @@ class XBoard {
         if (manual)
             this.changed_ply(move);
 
-        this.update_cursor(ply);
+        this.set_seen(ply);
         if (animate == undefined && (!this.smooth || is_last))
             animate = true;
         this.animate(move, animate);
         return move;
+    }
+
+    /**
+     * Set the seen cursor
+     * @param {number} ply
+     */
+    set_seen(ply) {
+        this.update_memory(this.node_seens, ply, 'seen', node => {
+            let parent = node.parentNode,
+                top = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
+            if (parent.scrollTop != top)
+                parent.scrollTop = top;
+        });
     }
 
     /**
@@ -2954,19 +3020,6 @@ class XBoard {
             unseen = this.moves.length - 1 - this.seen;
         S(node, unseen > 0);
         TEXT(node, this.moves.length - 1 - this.seen);
-    }
-
-    /**
-     * Update the cursor
-     * @param {number} ply
-     */
-    update_cursor(ply) {
-        this.update_memory(this.node_seens, ply, 'seen', node => {
-            let parent = node.parentNode,
-                top = node.offsetTop + (node.offsetHeight - parent.clientHeight) / 2;
-            if (parent.scrollTop != top)
-                parent.scrollTop = top;
-        });
     }
 
     /**

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-15
 //
 // Game specific code:
 // - control the board, moves
@@ -5006,7 +5006,7 @@ function update_hardware(section, id, nodes, {engine, hardware, short}={}) {
     for (let child of nodes) {
         let node = _('[data-x="name"]', child);
         if (node && node.title != full_engine) {
-            TextHTML(node, resize_text(short, 15, 'small'));
+            TextHTML(node, resize_text(short, 15));
             Attrs(node, {title: full_engine});
             Assign(player, {
                 feature: Undefined(ENGINE_FEATURES[short], 0),
