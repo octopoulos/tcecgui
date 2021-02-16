@@ -524,13 +524,6 @@ function HTML(sel, html, parent) {
  * Compute the index of the node (how many siblings are before it)
  * @param {Node|string} node CSS selector or node
  * @returns {number} computed index
- * @example
- * <tr>
- *     <td id="first"></td>
- *     <td id="second"></td>
- * </tr>
- * Index(Id('first'))       // 1
- * Index(Id('second'))      // 2
  */
 function Index(node) {
     if (IsString(node))
@@ -570,23 +563,20 @@ function Input(sel, callback, parent) {
  * Insert nodes into a parent
  * @param {Node|string} parent
  * @param {!Array<Node>} nodes
- * @param {boolean=} preprend should the nodes be preprended or appended?
- * @example
- * InsertNodes(#chat', nodes, true)     // preprend
+ * @param {boolean=} prepend should the nodes be preprended or appended?
  */
-function InsertNodes(parent, nodes, preprend) {
+function InsertNodes(parent, nodes, prepend) {
     if (IsString(parent))
         parent = _(parent);
     if (!parent)
         return;
 
-    for (let node of nodes) {
-        let child = parent.firstChild;
-        if (child && preprend)
+    let child = parent.firstChild;
+    for (let node of nodes)
+        if (prepend && child)
             parent.insertBefore(node, child);
         else
             parent.appendChild(node);
-    }
 }
 
 /**
@@ -598,9 +588,6 @@ function InsertNodes(parent, nodes, preprend) {
  * @param {boolean=} obj.self true => the parent can be the node itself
  * @param {string=} obj.tag 'a div'
  * @returns {Node} parent node or null or undefined
- * @example
- * Parent(node, {attrs: 'id=ok', tag: 'div')        // find a parent with tag <div> and whose ID='ok'
- * Parent(node, {attrs: 'id=ok', tag: 'a div')      // find a parent with tag <a> or <div> and whose ID='ok'
  */
 function Parent(node, {tag, class_, attrs, self}={}) {
     if (IsString(node))
@@ -672,8 +659,6 @@ function Parent(node, {tag, class_, attrs, self}={}) {
  * @param {string} prop property to change
  * @param {string|boolean=} value value to set
  * @param {Node=} parent
- * @example
- * Prop('input', 'checked', true)       // check the button
  */
 function Prop(sel, prop, value, parent) {
     if (!sel) return;
@@ -694,11 +679,6 @@ function Prop(sel, prop, value, parent) {
  * @param {*=} show true to show the node
  * @param {Node=} parent
  * @param {string=} mode to use for node.display, by default '' but could be block
- * @example
- * S('a')                       // hide all links
- * S('a', true)                 // show all links
- * S('a', true, null, 'block')  // show all links with display=block
- * S('a', true, null, 'none')   // hide all links
  */
 function S(sel, show, parent, mode='') {
     if (!sel) return;
@@ -792,10 +772,6 @@ function Show(sel, parent, mode='') {
  * @param {string} style
  * @param {boolean=} add to set/add the style, otherwise remove it
  * @param {Node=} parent
- * @example
- * Style(document.documentElement, 'opacity:0.1')   // make the page almost transparent
- * Style('a', 'opacity:0.5')                        // set the opacity of all links
- * Style('a', 'opacity', false)                     // remove the opacity from all links
  */
 function Style(sel, style, add=true, parent=null) {
     if (!sel) return;
@@ -1001,8 +977,6 @@ function TextHTML(sel, text, parent) {
  * + handle dn
  * @param {Node|string} sel CSS selector or node
  * @param {Node=} parent
- * @example
- * Toggle('a')      // toggle all links
  */
 function Toggle(sel, parent) {
     if (!sel) return;
