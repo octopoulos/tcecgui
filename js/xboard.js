@@ -3192,7 +3192,7 @@ class XBoard {
                 return;
 
             let list = move_list[id],
-                node = list[3].firstChild,
+                node = list[3][0].firstChild,
                 [text, flag] = texts[id] || ['', 0],
                 new_flag = list[2] ^ flag;
 
