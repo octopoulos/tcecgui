@@ -183,7 +183,7 @@ function add_timeout(name, func, timer, is_interval) {
 
     if (timer)
         timers[name] = [
-            is_interval? setInterval(func, timer): setTimeout(func, timer),
+            is_interval? setInterval(func, timer): setTimeout(() => {clear_timeout(name); func();}, timer),
             is_interval? 1: 0,
         ];
     else
