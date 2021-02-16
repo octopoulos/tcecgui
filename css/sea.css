@@ -1,7 +1,7 @@
 /*
 sea.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-01-20
+@version 2021-02-15
 - inherits from light.css
 */
 body,
@@ -22,6 +22,9 @@ html {
 }
 .control:hover {
     color: #04b;
+}
+.marker.seen::before {
+    background: rgba(165, 225, 255, 0.85);
 }
 
 /* tables */

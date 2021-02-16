@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-14
+@version 2021-02-15
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -709,14 +709,14 @@ input.multi2 {
 .current {
     font-weight: 700;
 }
-.mobil:after {
+.mobil::after {
     content: '>';
 }
-.mobil:before {
+.mobil::before {
     content: '<';
 }
 .seen {
-    background-color: #222 !important;
+    background: #222 !important;
     color: #ff0 !important;
 }
 .marker::before {
@@ -724,8 +724,11 @@ input.multi2 {
     content: '@ ';
     font-weight: 500;
 }
-.marker.seen::before,
+.marker.seen::before {
+    background: rgba(255, 255, 255, 0.85);
+}
 #moves-pv1 .marker::before {
+    background: #000;
     color: #fff;
 }
 .grid > .marker::before {
@@ -735,7 +738,7 @@ input.multi2 {
     color: #f00 !important;
 }
 .void {
-    background-color: #191919;
+    background: #191919;
 }
 #popup-fen {
     border-radius: 0;

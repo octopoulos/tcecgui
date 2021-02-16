@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-15
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -124,7 +124,7 @@ let AD_STYLES = {},
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000,
-    TIMEOUT_stream = 30000,
+    TIMEOUT_stream = 45000,
     TIMEOUT_three = 5000,
     TIMEOUT_twitch = 5000;
 
