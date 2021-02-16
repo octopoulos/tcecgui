@@ -17,6 +17,11 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
 -          : 2021-02-15 : benchmark analyse_fen + make a c++ version if too slow
+-          : 2021-02-15 : accelerate Style using a list or dico instead of string
+-          : 2021-02-15 : accelerate Style using a list or dico instead of string
+2021-02-15 : 2021-02-15 : graph presence is slowing everything down
+2021-02-15 : 2021-02-13 : 1314 plies in 27.931s => 47.045 plies/s
+2021-02-15 : 2021-02-13 : 1314 plies in 43.257s => 30.377 plies/s
 2021-02-14 : 2021-02-13 : 1314 plies in 42.185s => 31.149 plies/s
 2021-02-14 : 2021-02-14 : speed: use TEXT + TextHTML
 2021-02-13 : 2021-02-13 : speed: add_moves should reuse the nodes

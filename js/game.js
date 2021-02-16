@@ -5092,7 +5092,8 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
     if (!is_same)
         return false;
 
-    if (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply)) {
+    let is_current = (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply));
+    if (is_current) {
         let is_hide = !Y.eval,
             dico = {
                 'depth': data['depth'],
@@ -5122,9 +5123,8 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
             LS(`ULE: ${section}`);
         update_live_charts(moves || [data], id + 2);
         check_missing_moves(ply, round);
+        update_agree(section, id + 2);
     }
-
-    update_agree(section, id + 2);
     return true;
 }
 
