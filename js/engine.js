@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -325,7 +325,7 @@ function destroy_popup(node, flag) {
     if (flag & 1)
         HTML(node, '');
     if (flag & 2)
-        Style(node, 'height:unset;transform:unset;width:unset');
+        Style(node, [['height', 'unset'], ['transform', 'unset'], ['width', 'unset']]);
 }
 
 /**
@@ -998,7 +998,7 @@ function show_popup(name, show, {
             dataset['xy'] = xy || '';
             x += full_scroll.x;
             y += full_scroll.y;
-            Style(node, `transform:translate(${px}%, ${py}%) translate(${x}px, ${y}px)`);
+            Style(node, [['transform', `translate(${px}%, ${py}%) translate(${x}px, ${y}px)`]]);
         }
     }
 
@@ -1030,7 +1030,7 @@ function show_popup(name, show, {
                 if (popup_adjust & 256)
                     width = '100%';
             }
-            Style(node, `height:${height};width:${width}`);
+            Style(node, [['height', height], ['width', width]]);
 
             // shadow
             Class(node, `${shadow == 0? '': '-'}shadow0 ${shadow == 2? '': '-'}shadow2`);
@@ -2272,7 +2272,7 @@ function set_scroll() {
     if (full_target) {
         full_scroll.x = Clamp(full_scroll.x, 0, full_target.clientWidth - window.innerWidth);
         full_scroll.y = Clamp(full_scroll.y, 0, full_target.clientHeight - window.innerHeight);
-        Style(full_target, `transform:translate(${-full_scroll.x}px,${-full_scroll.y}px)`);
+        Style(full_target, [['transform', `translate(${-full_scroll.x}px,${-full_scroll.y}px)`]]);
     }
 }
 
@@ -2675,7 +2675,7 @@ function draw_rectangle(node, orient, mx, my) {
         }
     }
 
-    Style(rect_node, `left:${x}px;height:${y2 - y1}px;top:${y1}px;width:${w}px`);
+    Style(rect_node, [['left', `${x}px`], ['height', `${y2 - y1}px`], ['top', `${y1}px`], ['width', `${w}px`]]);
     Show(rect_node);
 }
 

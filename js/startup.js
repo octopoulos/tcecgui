@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1056,8 +1056,8 @@ function resize() {
     if (parent)
         siblings = From(parent.children).map(child => `#${child.dataset['x']}`).join(', ');
 
-    Style(siblings, `height:${yheight};width:100%`);
-    Style('#chat, #chat2', `height:${chat_height}px;width:100%`);
+    Style(siblings, [['height', yheight], ['width', '100%']]);
+    Style('#chat, #chat2', [['height', `${chat_height}px`], ['width', '100%']]);
 
     // 4) resize panels + stats
     resize_panels();
@@ -1068,7 +1068,7 @@ function resize() {
         let parent = node.parentNode,
             width = parent.clientWidth - 2,
             height = width / Max(0.5, Y['graph_aspect_ratio']);
-        Style(node, `height:${height}px;width:${width}px`);
+        Style(node, [['height', `${height}px`], ['width', `${width}px`]]);
     });
 
     if (Visible('#table-brak'))
@@ -1114,7 +1114,7 @@ function resize_panels() {
 
     // swaps
     S('.swap', Y['panel_adjust']);
-    Style('.swaps', 'min-height:0.6em', !Y['panel_adjust']);
+    Style('.swaps', [['min-height', '0.6em']], !Y['panel_adjust']);
 
     Style('.area > *', 'max-width:100%');
     Style('#bottom > *', `max-width:calc(${(100 / Y['column_bottom'])}% - ${Y['column_bottom'] * 2}px)`);
@@ -1130,7 +1130,7 @@ function resize_panels() {
     // column/row mode
     E('.status', node => {
         let area = get_area(node);
-        Style(node, `margin-bottom:1em;margin-top:0`, area.clientWidth < 390);
+        Style(node, [['margin-bottom', '1em'], ['margin-top', 0]], area.clientWidth < 390);
     });
     Keys(xboards).forEach(key => {
         let board = xboards[key];
@@ -1149,7 +1149,7 @@ function resize_panels() {
     order_boards();
     resize_move_lists();
 
-    Style(Id('engine'), `font-size:${Y['engine_font']}px`);
+    Style(Id('engine'), [['font-size', `${Y['engine_font']}px`]]);
     Style('#engine > div', `padding:${Y['engine_spacing']}em`);
 
     // resize all charts
@@ -1157,7 +1157,7 @@ function resize_panels() {
         let area = get_area(node);
         if (area && !['bottom', 'top'].includes(area.id)) {
             let width = area.clientWidth;
-            Style(node, `height:${width / Max(0.5, Y['graph_aspect_ratio'])}px;width:${width}px`);
+            Style(node, [['height', `${width / Max(0.5, Y['graph_aspect_ratio'])}px`], ['width', `${width}px`]]);
         }
     });
     Keys(charts).forEach(key => charts[key].rect = null);
@@ -1173,7 +1173,7 @@ function set_3d_scene(three) {
         save_option('three', three);
     three = Y.three;
 
-    Style(Id('three'), `color:${three? '#fff': '#555'}`);
+    Style(Id('three'), [['color', three? '#fff': '#555']]);
     S(Id('canvas'), three);
     if (three)
         start_3d();
@@ -1232,7 +1232,7 @@ function show_live_engines() {
         hardware = hardware.replace(/th/g, 'TH').replace(/ TB$/, '');
         let sel = `[data-x="live+${id}"]`;
         TextHTML(sel, hardware);
-        Style(sel, `top:${single_line? 0.35: 1.9}em`);
+        Style(sel, [['top', `${single_line? 0.35: 1.9}em`]]);
     }
 }
 
@@ -1275,7 +1275,7 @@ function update_background() {
     if (node.style.backgroundImage != image_url)
         node.style.backgroundImage = image_url;
 
-    Style(node, `background-color:${(color == '#000000')? '': color};opacity:${opacity}`);
+    Style(node, [['background-color', (color == '#000000')? '': color], ['opacity', opacity]]);
 }
 
 /**
@@ -1333,7 +1333,7 @@ function update_visible() {
     Class('.eval', 'eval-left', eval_left);
     S('.hardware', hardware);
     Class('.live-basic', 'w100', !hardware || !single_line);
-    Style('.live-basic', `grid-template-columns:${templates.join(' ')}`);
+    Style('.live-basic', [['grid-template-columns', templates.join(' ')]]);
     S('.live-more', !single_line);
     S('.percent', Y['percent']);
     Class('.percent', 'tar', !hardware || !single_line);
@@ -1536,7 +1536,7 @@ function set_global_events() {
     // swap panes
     Events('#center, #left, #left_2, #right, #right_2', 'mouseenter mouseleave', function(e) {
         if (Y['panel_adjust'])
-            Style('.swap', `opacity:${(e.type == 'mouseenter')? 1: 0}`, true, this);
+            Style('.swap', [['opacity', (e.type == 'mouseenter')? 1: 0]], true, this);
     });
 
     // theme + twitch

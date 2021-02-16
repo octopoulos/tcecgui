@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // Game specific code:
 // - control the board, moves
@@ -803,8 +803,8 @@ function order_boards() {
         let main = xboards[y_x];
         if (main) {
             let rotate = main.rotate;
-            Style(Id('box-pv0'), `order:${1 - rotate}`);
-            Style(Id('box-pv1'), `order:${rotate}`);
+            Style(Id('box-pv0'), [['order', 1 - rotate]]);
+            Style(Id('box-pv1'), [['order', rotate]]);
         }
     }
 }
@@ -954,7 +954,7 @@ function show_board_info(name, resize_flag, show) {
     S('.xbottom, .xtop', show, node);
     Class('.xbottom', '-xcolor0 xcolor1', rotate, node);
     Class('.xtop', 'xcolor0 -xcolor1', rotate, node);
-    Style('.xframe', `top:${show? 23: 0}px`, true, node);
+    Style('.xframe', [['top', `${show? 23: 0}px`]], true, node);
 
     // update clock
     if (turn >= 0) {
@@ -1043,7 +1043,7 @@ function update_engine_pieces() {
         let node = Id(`king${i}`),
             offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_size;
         Style('div', `${style};background-position-x:${offset}px`, true, node);
-        Style(node, `transform:scale(${20 / piece_size})`);
+        Style(node, [['transform', `scale(${20 / piece_size})`]]);
     }
 }
 
@@ -1685,7 +1685,7 @@ function get_wrap(name, body) {
     if (wrap == 'auto')
         wrap = y_wrap;
     if (body)
-        Style(body, 'white-space:nowrap', !wrap);
+        Style(body, [['white-space', 'nowrap']], !wrap);
     return wrap;
 }
 
@@ -2141,7 +2141,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         if (rotate) {
             let th_width = Clamp(window_width / 4, 90, 120);
             for (let node of nodes)
-                Style('th', `width:${th_width}px`, true, node);
+                Style('th', [['width', `${th_width}px`]], true, node);
         }
 
         update_svg(table);
@@ -2188,7 +2188,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                         + `<div class="xcopy">${translate_default('COPIED')}</div>`
                     + '</vert>'
                 );
-                Style(overlay, 'opacity:1;transition:opacity 0s');
+                Style(overlay, [['opacity', 1], ['transition', 'opacity 0s']]);
             }
             else
                 popup_custom('popup-fen', 'fen', e, '', TEXT(this));
@@ -2306,7 +2306,7 @@ function expand_season(node, show) {
         Toggle(next);
     else
         S(next, show);
-    Style('svg.down', `transform:${Visible(next)? 'rotate(-90deg)': 'none'}`, true, node);
+    Style('svg.down', [['transform', Visible(next)? 'rotate(-90deg)': 'none']], true, node);
 }
 
 /**
@@ -3042,7 +3042,7 @@ function resize_bracket(force) {
         width = (window_width <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
 
     old_width = window_width;
-    Style(node.firstChild, `height:${node.clientHeight}px;width:${width}px`);
+    Style(node.firstChild, [['height', `${node.clientHeight}px`], ['width', `${width}px`]]);
     create_connectors();
 }
 
@@ -3514,11 +3514,11 @@ function resize_game() {
             return;
 
         // [44.4% W | 44.4% D | 44.4% B] => 17755 units
-        Style(node, `font-size:${Min(13, units / 17755 * Y['percent_width'] / 100)}px`);
+        Style(node, [['font-size', `${Min(13, units / 17755 * Y['percent_width'] / 100)}px`]]);
 
         // [D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M] => 26730 units
         if (next && HasClass(next, 'live-more'))
-            Style(next, `font-size:${Min(12, units * ratio / 26730)}px`);
+            Style(next, [['font-size', `${Min(12, units * ratio / 26730)}px`]]);
     });
 
     // 4) graph + update table after a timeout
@@ -3539,8 +3539,8 @@ function resize_table(name) {
             let ewidth = node.parentNode.clientWidth,
                 num_column = (ewidth < 740? 3: 6),
                 width = (ewidth < 330)? 102: 115;
-            Style(node, `grid-template-columns:repeat(${num_column}, ${width}px)`);
-            Style('.stats', `width:${width - 6}px`, true, node);
+            Style(node, [['grid-template-columns', `repeat(${num_column}, ${width}px)`]]);
+            Style('.stats', [['width', `${width - 6}px`]], true, node);
         });
     }
 }
@@ -4858,7 +4858,7 @@ function shake_screen() {
         if (DEV['effect2'])
             LS(boom_info);
         shake *= boom_info.decay;
-        Style(BOOM_ELEMENTS, `transform:translate(${coords[0]}px,${coords[1]}px)`);
+        Style(BOOM_ELEMENTS, [['transform', `translate(${coords[0]}px,${coords[1]}px)`]]);
 
         // stop when it's not shaking anymore
         boom_info.last = now;
@@ -4872,7 +4872,7 @@ function shake_screen() {
         AnimationFrame(shake_screen);
     else {
         shake_animation = null;
-        Style(BOOM_ELEMENTS, `transform:${boom_info.transform}`);
+        Style(BOOM_ELEMENTS, [['transform', boom_info.transform]]);
     }
 }
 
@@ -6445,7 +6445,7 @@ function popup_custom(id, name, e, scolor, text) {
                 xfen.instant();
                 if (!xfen.set_fen(text, true))
                     return;
-                Style(xfen.overlay, 'opacity:0;transition:opacity 0.5s');
+                Style(xfen.overlay, [['opacity', 0], ['transition', 'opacity 0.5s']]);
             }
         }
 
@@ -6463,24 +6463,24 @@ function popup_custom(id, name, e, scolor, text) {
             y2 = -100;
         }
 
-        Style(popup, `transform:translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`);
+        Style(popup, [['transform', `translate(${x}px,${y}px) translate(${x2}%, ${y2}%)`]]);
         show = true;
     }
 
     Class(popup, 'popup-show', show);
-    Style(popup, `min-width:${Min(num_col * 165 + 32, visible_width * 2/3)}px`, num_col);
+    Style(popup, [['min-width', `${Min(num_col * 165 + 32, visible_width * 2/3)}px`]], num_col);
 
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
         clear_timeout(`popup-${name}`);
         Class(popup, 'popup-enable');
         Show(popup);
-        Style(popup, 'z-index:-1', false);
+        Style(popup, [['z-index', 1]], false);
     }
     else
         add_timeout(`popup-${name}`, () => {
             Class(popup, '-popup-enable');
-            Style(popup, 'z-index:-1');
+            Style(popup, [['z-index', -1]]);
         }, 300);
 }
 

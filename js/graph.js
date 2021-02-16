@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // jshint -W069
 /*
@@ -386,8 +386,8 @@ function mark_ply_chart(name, ply, max_ply) {
         let scales = chart.scales,
             x = scales.x_axis_0.getPixelForValue(data.x),
             y = scales.y_axis_0.getPixelForValue(data.y);
-        Style(markers[0], `height:${rect.height}px;left:${x - 0.5}px;top:0;width:1px`);
-        Style(markers[1], `height:1px;left:0;top:${y - 0.5}px;width:${rect.width}px`);
+        Style(markers[0], [['height', `${rect.height}px`], ['left', `${x - 0.5}px`], ['top', 0], ['width', '1px']]);
+        Style(markers[1], [['height', '1px'], ['left', 0], ['top', `${y - 0.5}px`], ['width', `${rect.width}px`]]);
     }
     for (let marker of markers)
         S(marker, data);
@@ -816,7 +816,7 @@ function update_live_charts(moves, id) {
  * Update the marker color+opacity
  */
 function update_markers() {
-    Style('.cmarker', `background:${Y['marker_color']};opacity:${Y['marker_opacity']}`);
+    Style('.cmarker', [['background', Y['marker_color']], ['opacity', Y['marker_opacity']]]);
 }
 
 /**
@@ -1077,7 +1077,7 @@ function init_graph() {
 
         queued_charts.length = 0;
         update_markers();
-        Style('canvas', 'visibility:visible');
+        Style('canvas', [['visibility', 'visible']]);
     }, TIMEOUT_graph);
 }
 

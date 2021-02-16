@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -89,7 +89,8 @@ let Abs = Math.abs,
  * @returns {Node} found node
  */
 function _(sel, parent) {
-    if (!sel) return null;
+    if (!sel)
+        return null;
     if (IsObject(sel))
         return /** @type {Node} */(sel);
     return (parent || document).querySelector(/** @type {string} */(sel));
@@ -102,7 +103,8 @@ function _(sel, parent) {
  * @returns {!Array<Node>} found nodes
  */
 function A(sel, parent) {
-    if (!sel) return [];
+    if (!sel)
+        return [];
     if (IsArray(sel))
         return /** @type {!Array<Node>} */(sel);
     return (parent || document).querySelectorAll(sel);
@@ -115,7 +117,8 @@ function A(sel, parent) {
  * @param {Node=} parent
  */
 function E(sel, callback, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsArray(sel))
         sel.forEach(callback);
     else
@@ -129,7 +132,8 @@ function E(sel, callback, parent) {
  * @returns {Node}
  */
 function Id(id, parent) {
-    if (!id) return null;
+    if (!id)
+        return null;
     if (IsObject(id))
         return /** @type {Node} */(id);
     if (IS_NODE)
@@ -146,7 +150,8 @@ function Id(id, parent) {
  * @param {Node=} parent
  */
 function Attrs(sel, attrs, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
@@ -176,7 +181,8 @@ function Attrs(sel, attrs, parent) {
  * @param {Node=} parent
  */
 function AttrsNS(sel, attrs, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         Keys(attrs).forEach(key => {
             let value = attrs[key];
@@ -208,7 +214,8 @@ function AttrsNS(sel, attrs, parent) {
  * C('img', function() {LS(this.src)})  // print the URL of the image being clicked
  */
 function C(sel, callback, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.onclick = callback;
         return;
@@ -222,70 +229,124 @@ function C(sel, callback, parent) {
 /**
  * Add / remove classes
  * @param {Node|string} sel CSS selector or node
- * @param {string} class_ 'add +also_add -remove ^toggle'
+ * @param {Array<*>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean|number=} add true for normal behavior (default), otherwise invert all - and +
- * @param {Node?} parent
+ * @param {Node?=} parent
  */
-function Class(sel, class_, add=true, parent=null) {
-    if (!sel) return;
+function Class(sel, classes, add=true, parent=null) {
+    if (!sel)
+        return;
 
+    // string
+    if (IsString(classes)) {
+        classes = /** @type {string} */(classes);
+        if (IsObject(sel)) {
+            let list = sel.classList;
+            classes.split(' ').forEach(item => {
+                if (!item)
+                    return;
+
+                let first = item.substr(0, 1),
+                    right = item.substr(1);
+                if (first == '-') {
+                    if (add)
+                        list.remove(right);
+                    else
+                        list.add(right);
+                }
+                else if (first == '+') {
+                    if (add)
+                        list.add(right);
+                    else
+                        list.remove(right);
+                }
+                else if (first == '^')
+                    list.toggle(right);
+                else if (add)
+                    list.add(item);
+                else
+                    list.remove(item);
+            });
+            return;
+        }
+        //
+        E(/** @type {string} */(sel), node => {
+            let list = node.classList;
+            classes.split(' ').forEach(item => {
+                if (!item)
+                    return;
+
+                let first = item.substr(0, 1),
+                    right = item.substr(1);
+                if (first == '-') {
+                    if (add)
+                        list.remove(right);
+                    else
+                        list.add(right);
+                }
+                else if (first == '+') {
+                    if (add)
+                        list.add(right);
+                    else
+                        list.remove(right);
+                }
+                else if (first == '^')
+                    list.toggle(right);
+                else if (add)
+                    list.add(item);
+                else
+                    list.remove(item);
+            });
+        }, parent);
+        return;
+    }
+
+    // array
     if (IsObject(sel)) {
+        classes = /** @type {Array<*>} */(classes);
         let list = sel.classList;
-        class_.split(' ').forEach(item => {
-            if (!item)
-                return;
-
-            let first = item.substr(0, 1),
-                right = item.substr(1);
-            if (first == '-') {
+        for (let [name, flag] of classes) {
+            switch (flag) {
+            case 1:
                 if (add)
-                    list.remove(right);
+                    list.remove(name);
                 else
-                    list.add(right);
-            }
-            else if (first == '+') {
+                    list.add(name);
+                break;
+            case 2:
+                list.toggle(name);
+                break;
+            default:
                 if (add)
-                    list.add(right);
+                    list.add(name);
                 else
-                    list.remove(right);
+                    list.remove(name);
             }
-            else if (first == '^')
-                list.toggle(right);
-            else if (add)
-                list.add(item);
-            else
-                list.remove(item);
-        });
+        }
         return;
     }
     //
     E(/** @type {string} */(sel), node => {
         let list = node.classList;
-        class_.split(' ').forEach(item => {
-            if (!item)
-                return;
-
-            let first = item.substr(0, 1),
-                right = item.substr(1);
-            if (first == '-') {
+        for (let [name, flag] of classes) {
+            switch (flag) {
+            case 1:
                 if (add)
-                    list.remove(right);
+                    list.remove(name);
                 else
-                    list.add(right);
-            }
-            else if (first == '+') {
+                    list.add(name);
+                break;
+            case 2:
+                list.toggle(name);
+                break;
+            default:
                 if (add)
-                    list.add(right);
+                    list.add(name);
                 else
-                    list.remove(right);
+                    list.remove(name);
+                break;
             }
-            else if (first == '^')
-                list.toggle(right);
-            else if (add)
-                list.add(item);
-            else
-                list.remove(item);
-        });
+        }
     }, parent);
 }
 
@@ -386,7 +447,8 @@ function CreateSVG(type, attrs, children) {
  * Events(window, '!resize', e => {LS(e)});     // window.onresize = function ...
  */
 function Events(sel, events, callback, options, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
 
     let direct;
     if (events.slice(0, 1) == '!') {
@@ -473,7 +535,8 @@ function HasClasses(node, classes) {
  * @param {Node=} parent
  */
 function Hide(sel, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = 'none';
@@ -494,7 +557,8 @@ function Hide(sel, parent) {
  * @returns {string} html of the first matched node
  */
 function HTML(sel, html, parent) {
-    if (!sel) return '';
+    if (!sel)
+        return '';
     if (IsObject(sel)) {
         if (html !== undefined) {
             html += '';
@@ -548,7 +612,8 @@ function Index(node) {
  * Input('input[sb-field=username]', e => {LS(e)})   // username is being modified
  */
 function Input(sel, callback, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.oninput = callback;
         return;
@@ -661,7 +726,8 @@ function Parent(node, {tag, class_, attrs, self}={}) {
  * @param {Node=} parent
  */
 function Prop(sel, prop, value, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel[prop] = value;
         return;
@@ -681,7 +747,8 @@ function Prop(sel, prop, value, parent) {
  * @param {string=} mode to use for node.display, by default '' but could be block
  */
 function S(sel, show, parent, mode='') {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = show? mode: 'none';
@@ -753,7 +820,8 @@ function ScrollDocument(top, smooth, offset=0) {
  * @param {string=} mode to use for node.display, by default '' but could be block
  */
 function Show(sel, parent, mode='') {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.classList.remove('dn');
         sel.style.display = mode;
@@ -769,80 +837,138 @@ function Show(sel, parent, mode='') {
 /**
  * Change the style of nodes
  * @param {Node|string} sel CSS selector or node
- * @param {string} style
+ * @param {Array<*>|string} styles [['font-size', 10, flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean=} add to set/add the style, otherwise remove it
- * @param {Node=} parent
+ * @param {Node?=} parent
  */
-function Style(sel, style, add=true, parent=null) {
-    if (!sel) return;
+function Style(sel, styles, add=true, parent=null) {
+    if (!sel)
+        return;
 
+    // string
+    if (IsString(styles)) {
+        styles = /** @type {string} */(styles);
+        if (IsObject(sel)) {
+            let list = sel.style;
+            styles.split(/\s*;+\s*/).forEach(item => {
+                let split,
+                    first = item.substr(0, 1),
+                    right = item.substr(1);
+                if (first == '-') {
+                    split = right.split(':');
+                    if (add)
+                        list.removeProperty(split[0]);
+                    else
+                        list.setProperty(split[0], split[1]);
+                } else if (first == '+') {
+                    split = right.split(':');
+                    if (add)
+                        list.setProperty(split[0], split[1]);
+                    else
+                        list.removeProperty(split[0]);
+                } else if (first == '^') {
+                    split = right.split(':');
+                    if (list.getPropertyValue(split[0]))
+                        list.removeProperty(split[0]);
+                    else
+                        list.setProperty(split[0], split[1]);
+                } else {
+                    split = item.split(':');
+                    if (add)
+                        list.setProperty(split[0], split[1]);
+                    else
+                        list.removeProperty(split[0]);
+                }
+            });
+            return;
+        }
+        //
+        E(/** @type {string} */(sel), node => {
+            let list = node.style;
+            styles.split(/\s*;+\s*/).forEach(item => {
+                let split,
+                    first = item.substr(0, 1),
+                    right = item.substr(1);
+                if (first == '-') {
+                    split = right.split(':');
+                    if (add)
+                        list.removeProperty(split[0]);
+                    else
+                        list.setProperty(split[0], split[1]);
+                } else if (first == '+') {
+                    split = right.split(':');
+                    if (add)
+                        list.setProperty(split[0], split[1]);
+                    else
+                        list.removeProperty(split[0]);
+                } else if (first == '^') {
+                    split = right.split(':');
+                    if (list.getPropertyValue(split[0]))
+                        list.removeProperty(split[0]);
+                    else
+                        list.setProperty(split[0], split[1]);
+                } else {
+                    split = item.split(':');
+                    if (add)
+                        list.setProperty(split[0], split[1]);
+                    else
+                        list.removeProperty(split[0]);
+                }
+            });
+        }, parent);
+    }
+
+    // array
     if (IsObject(sel)) {
+        styles = /** @type {Array<*>} */(styles);
         let list = sel.style;
-        style.split(/\s*;+\s*/).forEach(item => {
-            let split,
-                first = item.substr(0, 1),
-                right = item.substr(1);
-            if (first == '-') {
-                split = right.split(':');
+        for (let [name, value, flag] of styles) {
+            switch (flag) {
+            case 1:
                 if (add)
-                    list.removeProperty(split[0]);
+                    list.removeProperty(name);
                 else
-                    list.setProperty(split[0], split[1]);
-            } else if (first == '+') {
-                split = right.split(':');
+                    list.setProperty(name, value);
+                break;
+            case 2:
+                if (list.getPropertyValue(name))
+                    list.removeProperty(name);
+                else
+                    list.setProperty(name, value);
+                break;
+            default:
                 if (add)
-                    list.setProperty(split[0], split[1]);
+                    list.setProperty(name, value);
                 else
-                    list.removeProperty(split[0]);
-            } else if (first == '^') {
-                split = right.split(':');
-                if (list.getPropertyValue(split[0]))
-                    list.removeProperty(split[0]);
-                else
-                    list.setProperty(split[0], split[1]);
-            } else {
-                split = item.split(':');
-                if (add)
-                    list.setProperty(split[0], split[1]);
-                else
-                    list.removeProperty(split[0]);
+                    list.removeProperty(name);
             }
-        });
+        }
         return;
     }
     //
     E(/** @type {string} */(sel), node => {
         let list = node.style;
-        style.split(/\s*;+\s*/).forEach(item => {
-            let split,
-                first = item.substr(0, 1),
-                right = item.substr(1);
-            if (first == '-') {
-                split = right.split(':');
+        for (let [name, value, flag] of styles) {
+            switch (flag) {
+            case 1:
                 if (add)
-                    list.removeProperty(split[0]);
+                    list.removeProperty(name);
                 else
-                    list.setProperty(split[0], split[1]);
-            } else if (first == '+') {
-                split = right.split(':');
+                    list.setProperty(name, value);
+                break;
+            case 2:
+                if (list.getPropertyValue(name))
+                    list.removeProperty(name);
+                else
+                    list.setProperty(name, value);
+                break;
+            default:
                 if (add)
-                    list.setProperty(split[0], split[1]);
+                    list.setProperty(name, value);
                 else
-                    list.removeProperty(split[0]);
-            } else if (first == '^') {
-                split = right.split(':');
-                if (list.getPropertyValue(split[0]))
-                    list.removeProperty(split[0]);
-                else
-                    list.setProperty(split[0], split[1]);
-            } else {
-                split = item.split(':');
-                if (add)
-                    list.setProperty(split[0], split[1]);
-                else
-                    list.removeProperty(split[0]);
+                    list.removeProperty(name);
             }
-        });
+        }
     }, parent);
 }
 
@@ -855,7 +981,8 @@ function Style(sel, style, add=true, parent=null) {
  * Submit('body', () => {return false})    // prevent any Submit
  */
 function Submit(sel, callback, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         sel.onsubmit = callback;
         return;
@@ -874,7 +1001,8 @@ function Submit(sel, callback, parent) {
  * @returns {string}
  */
 function TEXT(sel, text, parent) {
-    if (!sel) return '';
+    if (!sel)
+        return '';
     if (IsObject(sel)) {
         if (text !== undefined) {
             text += '';
@@ -926,7 +1054,8 @@ function TEXT(sel, text, parent) {
  * @returns {string}
  */
 function TextHTML(sel, text, parent) {
-    if (!sel) return '';
+    if (!sel)
+        return '';
     if (IsObject(sel)) {
         if (text !== undefined) {
             text += '';
@@ -979,7 +1108,8 @@ function TextHTML(sel, text, parent) {
  * @param {Node=} parent
  */
 function Toggle(sel, parent) {
-    if (!sel) return;
+    if (!sel)
+        return;
     if (IsObject(sel)) {
         S(sel, !Visible(sel));
         return;
@@ -997,7 +1127,8 @@ function Toggle(sel, parent) {
  * @returns {boolean?} true if ALL nodes are visible
  */
 function Visible(sel, parent) {
-    if (!sel) return null;
+    if (!sel)
+        return null;
     if (IsObject(sel)) {
         if (sel.classList.contains('dn'))
             return false;
@@ -1094,7 +1225,7 @@ function CopyClipboard(text, callback) {
     else {
         let node = CreateNode('input');
         node.value = text;
-        Style(node, `left:-9999px;position:absolute`);
+        Style(node, [['left', '-9999px'], ['position', 'absolute']]);
         document.body.appendChild(node);
         node.select();
         if (document.execCommand)

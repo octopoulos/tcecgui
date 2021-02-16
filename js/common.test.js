@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-15
+// @version 2021-02-16
 //
 /*
 globals
@@ -95,6 +95,7 @@ let {
 
 // Class
 [
+    // string
     ['<i class="book">N</i>', 'i', '', undefined, 'book'],
     ['<i class="book">N</i>', 'i', '-book', undefined, ''],
     ['<i class="book">N</i>', 'i', '^book', undefined, ''],
@@ -104,10 +105,20 @@ let {
     ['<i class="book">N</i>', 'i', 'book -fail', false, 'fail'],
     ['<i class="book">N</i>', 'i', 'real +turn', undefined, 'book real turn'],
     ['<i class="book">N</i>', 'i', 'real ^turn ^book', undefined, 'real turn'],
-].forEach(([html, sel, class_, add, answer], id) => {
+    // array
+    ['<i class="book">N</i>', 'i', [], undefined, 'book'],
+    ['<i class="book">N</i>', 'i', [['book', 1]], undefined, ''],
+    ['<i class="book">N</i>', 'i', [['book', 2]], undefined, ''],
+    ['<i class="book">N</i>', 'i', [['book', 2]], true, ''],
+    ['<i class="book">N</i>', 'i', [['book', 2]], false, ''],
+    ['<i class="book">N</i>', 'i', [['book'], ['fail', 1]], true, 'book'],
+    ['<i class="book">N</i>', 'i', [['book'], ['fail', 1]], false, 'fail'],
+    ['<i class="book">N</i>', 'i', [['real'], ['turn', 0]], undefined, 'book real turn'],
+    ['<i class="book">N</i>', 'i', [['real'], ['turn', 2], ['book', 2]], undefined, 'real turn'],
+].forEach(([html, sel, classes, add, answer], id) => {
     test(`Class:${id}`, () => {
         let soup = CreateNode('div', html);
-        Class(sel, class_, add, soup);
+        Class(sel, classes, add, soup);
         expect(From(_(sel, soup).classList).join(' ')).toEqual(answer);
     });
 });
@@ -867,16 +878,26 @@ let {
 
 // Style
 [
+    // string
     ['<a></a>', 'a', 'opacity:0.5', undefined, '<a style="opacity: 0.5;"></a>'],
     ['<a></a>', 'a', 'color:red;opacity:0.5', true, '<a style="color: red; opacity: 0.5;"></a>'],
     ['<a style="opacity:0.1"></a>', 'a', 'opacity', false, '<a style=""></a>'],
     ['<a style="opacity:0.1"></a>', 'a', 'opacity:0.5', false, '<a style=""></a>'],
     ['<a style="color:red;opacity:0.1"></a>', 'a', 'opacity:0.5', false, '<a style="color: red;"></a>'],
     ['<a style="color:red;opacity:0.1"></a>', 'a', 'color:blue;opacity:0.5', false, '<a style=""></a>'],
-].forEach(([html, sel, style, add, answer], id) => {
+    ['<a></a>', 'a', 'font-size:2em;z-index:5', true, '<a style="font-size: 2em; z-index: 5;"></a>'],
+    // array
+    ['<a></a>', 'a', [['opacity', '0.5']], undefined, '<a style="opacity: 0.5;"></a>'],
+    ['<a></a>', 'a', [['color', 'red'], ['opacity', '0.5']], true, '<a style="color: red; opacity: 0.5;"></a>'],
+    ['<a style="opacity:0.1"></a>', 'a', [['opacity']], false, '<a style=""></a>'],
+    ['<a style="opacity:0.1"></a>', 'a', [['opacity', '0.5']], false, '<a style=""></a>'],
+    ['<a style="color:red;opacity:0.1"></a>', 'a', [['opacity' ,'0.5']], false, '<a style="color: red;"></a>'],
+    ['<a style="color:red;opacity:0.1"></a>', 'a', [['color', 'blue'], ['opacity', '0.5']], false, '<a style=""></a>'],
+    ['<a></a>', 'a', [['font-size', '2em'], ['z-index', '5']], true, '<a style="font-size: 2em; z-index: 5;"></a>'],
+].forEach(([html, sel, styles, add, answer], id) => {
     test(`Style:${id}`, () => {
         let soup = CreateNode('div', html);
-        Style(sel, style, add, soup);
+        Style(sel, styles, add, soup);
         expect(soup.innerHTML).toEqual(answer);
     });
 });
