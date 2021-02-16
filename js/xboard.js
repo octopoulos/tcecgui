@@ -3192,7 +3192,7 @@ class XBoard {
                 return;
 
             let list = move_list[id],
-                node = list[3][0].firstChild,
+                node = list[3][0],
                 [text, flag] = texts[id] || ['', 0],
                 new_flag = list[2] ^ flag;
 
@@ -3201,6 +3201,8 @@ class XBoard {
             text = resize_text(text, 4, 'mini-move');
 
             // text
+            if (node)
+                node = node.firstChild;
             if (text[0] == '<' || !node || node.nodeType != 3)
                 for (let child of list[3])
                     child.innerHTML = text;
