@@ -91,7 +91,6 @@ let AI = 'ai',
     TIMEOUT_click = 200,
     TIMEOUT_compare = 100,
     TIMEOUT_pick = 600,
-    TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
     UNICODES = [0, 9817, 9816, 9815, 9814, 9813, 9812, 0, 0, 9817, 9822, 9821, 9820, 9819, 9818],
     WB_LOWER = ['white', 'black'],
@@ -573,13 +572,11 @@ class XBoard {
             off += 16;
         }
 
-        // 2) match chars and pieces
+        // 2) perfect matches
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 piece[0] = 0;
         });
-
-        // perfect matches
         for (let char of chars) {
             for (let item of pieces[char[0]]) {
                 if (!item[0] && char[1] == item[1]) {
@@ -590,46 +587,71 @@ class XBoard {
             }
         }
 
-        // imperfect matches
-        let imps = [];
-        for (let [char, index, type] of chars) {
-            if (!char)
-                continue;
-
-            let items = pieces[char];
-            for (let item of items) {
-                if (item[0])
+        // 3) imperfect matches
+        // simple algorithm
+        if (!this.smooth) {
+            for (let [char, index] of chars) {
+                if (!char)
                     continue;
-                let coord = item[1],
-                    filec = coord >> 4,
-                    filei = index >> 4,
-                    hmult = (type == 'p')? 2: 1,
-                    diff = (coord < -7)? 999: Abs(filei - filec) * hmult + Abs((index & 15) - (coord & 15));
 
-                // keep bishop on the same color
-                if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
-                    diff += 128;
-                imps.push([diff, index, item]);
+                let win,
+                    best = Infinity,
+                    items = pieces[char];
+                for (let item of items) {
+                    if (item[0])
+                        continue;
+                    let diff = (item[1] < -7)? 999: Abs((index >> 4) - (item[1] >> 4)) + Abs((index & 15) - (item[1] & 15));
+                    if (diff < best) {
+                        best = diff;
+                        win = item;
+                    }
+                }
+                win[0] = 1;
+                win[1] = index;
+            }
+        }
+        // complex algorithm
+        else {
+            let imps = [];
+            for (let [char, index, type] of chars) {
+                if (!char)
+                    continue;
+
+                let items = pieces[char];
+                for (let item of items) {
+                    if (item[0])
+                        continue;
+                    let coord = item[1],
+                        filec = coord >> 4,
+                        filei = index >> 4,
+                        hmult = (type == 'p')? 2: 1,
+                        diff = (coord < -7)? 999: Abs(filei - filec) + Abs((index & 15) - (coord & 15)) * hmult;
+
+                    // keep bishop on the same color
+                    if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
+                        diff += 128;
+                    imps.push([diff, index, item]);
+                }
+            }
+
+            imps.sort((a, b) => a[0] - b[0]);
+            for (let [_, index, item] of imps) {
+                if (item[0] || temp[index])
+                    continue;
+                item[0] = 1;
+                item[1] = index;
+                temp[index] = 1;
             }
         }
 
-        imps.sort((a, b) => a[0] - b[0]);
-        for (let [_, index, item] of imps) {
-            if (item[0] || temp[index])
-                continue;
-            item[0] = 1;
-            item[1] = index;
-            temp[index] = 1;
-        }
-
-        // 3) move non found pieces off the board
+        // 4) move non found pieces off the board
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 if (!piece[0])
                     piece[1] = -8;
         });
 
-        // 4) update variables
+        // 5) update variables
         let temp_grid = this.grid;
         this.grid = grid;
         this.grid2 = temp_grid;
@@ -2645,6 +2667,7 @@ class XBoard {
             this.hide_arrows();
             this.set_seen(ply);
             this.animate({}, animate);
+            this.set_seen(-1);
             if (manual)
                 this.changed_ply({'ply': -1});
             return {};
@@ -3038,7 +3061,7 @@ class XBoard {
      * @returns {boolean}
      */
     update_memory(memory, ply, class_, callback) {
-        let list = this.move_list[(ply << 1) + 1];
+        let list = this.move_list[(ply == -1)? 0: (ply << 1) + 1];
         if (!list)
             return false;
 

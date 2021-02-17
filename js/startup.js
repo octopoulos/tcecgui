@@ -2034,6 +2034,12 @@ function prepare_settings() {
         'board': {
             'analysis': analyses,
             'animate': [ON_OFF, 1],
+            'animation speed': {
+                '_multi': 2,
+                '_title': 'how fast pieces can move, in ms',
+                'animate_min': option_number(500, 0, 5000, 10, {}, 'min'),
+                'animate_max': option_number(500, 0, 5000, 10, {}, 'max'),
+            },
             'arrow': '',
             'board_theme': [Keys(BOARD_THEMES), 'chess24'],
             'custom_black': {
@@ -2073,7 +2079,7 @@ function prepare_settings() {
             'highlight_size_pv': option_number(0.088, 0, 0.4, 0.001),
             'notation_pv': [ON_OFF, 1],
             'piece_theme_pv': [Keys(PIECE_THEMES), 'chess24'],
-            'show_delay': option_number(100, 0, 2000, 10),
+            // 'show_delay': option_number(100, 0, 2000, 10),
             'show_ply': show_plies,
             'status_pv': [ON_OFF, 1],
         },

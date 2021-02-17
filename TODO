@@ -18,6 +18,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
 -          : 2021-02-15 : benchmark analyse_fen + make a c++ version if too slow
 ~          : 2021-02-16 : replace Class + Style: Style\([^\s]+,\s['`]
+-          : 2021-02-16 : regularly check if the status should be shown or hidden
+2021-02-16 : 2021-02-16 : click on << should highlight "1" + scroll
 2021-02-16 : 2021-02-13 : 1314 plies in 27.656s => 47.512 plies/s
 2021-02-16 : 2021-02-15 : accelerate Class + Style using a list or dico instead of string
 2021-02-15 : 2021-02-15 : graph presence is slowing everything down
