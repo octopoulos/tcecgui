@@ -962,7 +962,7 @@ class XBoard {
                     moves = this.moves,
                     ply = this.ply;
 
-                if (!this.hold || !moves[ply - 1] || !moves[ply + 1])
+                if (!moves[ply - 1] || !moves[ply + 1])
                     smooth = smooth_max;
                 else {
                     // 16ms = very fast

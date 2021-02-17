@@ -5312,7 +5312,6 @@ function benchmark(round=10, running=0) {
             // events
             C('#bench-stop', function() {
                 bench_stop = 1;
-                main.release();
                 if (Now(true) <= bench_countdown || this.dataset['t'] == 'OK')
                     Hide(node);
             });
@@ -5369,7 +5368,6 @@ function benchmark(round=10, running=0) {
             Attrs(Id('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
             Hide(Id('bench-sub'));
-            main.release();
         }
         return;
     }
@@ -5384,7 +5382,6 @@ function benchmark(round=10, running=0) {
         TEXT(count, (left > 3)? '': Ceil(left));
     else {
         last_key = now;
-        main.hold = 'play';
         main.speed = 8;
         main.go_next();
     }
