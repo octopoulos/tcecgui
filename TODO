@@ -19,7 +19,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-02-17 : if the ply only differs by 1 => use "add_move" to calculate animation faster
 -          : 2021-01-10 : right click to draw lines
 ~          : 2021-02-16 : replace Class + Style: Style\([^\s]+,\s['`]
--          : 2021-02-16 : regularly check if the status should be shown or hidden
+2021-02-17 : 2021-02-16 : regularly check if the status should be shown or hidden
 2021-02-17 : 2021-02-16 : variable animation speed
 2021-02-16 : 2021-02-16 : click on << should highlight "1" + scroll
 2021-02-16 : 2021-02-13 : 1314 plies in 27.656s => 47.512 plies/s

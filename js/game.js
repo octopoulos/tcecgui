@@ -20,9 +20,9 @@ DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IS_NODE,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
-last_key:true, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max, Min, Module,
-navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, QueryString, RandomInt, redraw_eval_charts,
-require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
+last_key:true, last_scroll, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max,
+Min, Module, navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, QueryString, RandomInt,
+redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, set_section,
 SetDefault, Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN,
 STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle,
@@ -393,7 +393,8 @@ let ANALYSIS_URLS = {
     TIMEOUT_queue = 100,                // check the queue after updating a table
     TIMEOUT_scroll = 300,
     TIMEOUT_search = 100,               // filtering the table when input changes
-    TIMEOUT_tables = 10000,              // load the tables
+    TIMEOUT_status = 1000,              // status change
+    TIMEOUT_tables = 10000,             // load the tables
     tour_info = {
         'archive': {},
         'live': {},
@@ -6560,6 +6561,12 @@ function start_game() {
                 });
             });
         }, {async: ''});
+
+    // status change detector
+    add_timeout('status', () => {
+        if (Now(true) < last_scroll + TIMEOUT_status * 0.001)
+            show_board_info(y_x, 2);
+    }, TIMEOUT_status, true);
 }
 
 /**
