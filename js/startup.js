@@ -2037,7 +2037,7 @@ function prepare_settings() {
             'animation_speed': {
                 '_multi': 2,
                 '_title': 'how fast pieces can move, in ms',
-                'smooth_min': option_number(100, 0, 2000, 10, {}, 'min'),
+                'smooth_min': option_number(200, 0, 2000, 10, {}, 'min'),
                 'smooth_max': option_number(500, 0, 2000, 10, {}, 'max'),
             },
             'arrow': '',

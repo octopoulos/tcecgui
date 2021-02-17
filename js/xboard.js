@@ -967,7 +967,7 @@ class XBoard {
                 else {
                     // 16ms = very fast
                     // 80ms = slow enough
-                    let ratio = 1 - Exp((16 - delta) * 0.05);
+                    let ratio = (delta < 16)? 0: 1 - Exp((16 - delta) * 0.05);
                     smooth = Round((Y['smooth_min'] * (1 - ratio) + smooth_max * ratio) / 10) * 10;
                 }
             }
@@ -2836,13 +2836,19 @@ class XBoard {
 
         // override the css
         let node = Id('extra-css'),
-            lines = TEXT(node).split('\n'),
-            ms = smooth / 1000,
-            new_line = `.smooth-${Pad(smooth, 3)} > div {transition: opacity ${ms}s, transform ${ms}s;}`;
-        lines.push(new_line);
-        TEXT(node, lines.sort().join('\n'));
+            lines = new Set(TEXT(node).split('\n')),
+            smooth_max = Y['smooth_max'],
+            smooth_min = Y['smooth_min'];
 
         SMOOTHS.add(smooth);
+        for (let item = smooth_min - smooth_min % 10; item <= smooth_max; item += 10)
+            SMOOTHS.add(item);
+
+        for (let item of SMOOTHS) {
+            let ms = item / 1000;
+            lines.add(`.smooth-${Pad(item, 3)} > div {transition: opacity ${ms}s, transform ${ms}s;}`);
+        }
+        TEXT(node, [...lines].sort().join('\n'));
     }
 
     /**
