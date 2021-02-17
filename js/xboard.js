@@ -2762,7 +2762,8 @@ class XBoard {
             can_source = (this.name == y_x || (this.main && Y['audio_live_archive']) || (this.manual && Y['audio_pva']));
 
         if (can_source && can_moves) {
-            let audio_delay = Y['audio_delay'],
+            let ratio = this.smooth / 500,
+                audio_delay = Y['audio_delay'] * ratio,
                 offset = 0,
                 text = move['m'] || '???',
                 last = text.slice(-1),
@@ -2782,7 +2783,7 @@ class XBoard {
                 volume = 1 - 0.3 * Exp(-speed * 0.03);
 
             if (text.includes('x')) {
-                let capture_delay = Y['capture_delay'];
+                let capture_delay = Y['capture_delay'] * ratio;
                 if (capture_delay < 0)
                     offset = -capture_delay;
                 sounds.push(['capture', audio_delay + capture_delay]);
