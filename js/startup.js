@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -2034,11 +2034,11 @@ function prepare_settings() {
         'board': {
             'analysis': analyses,
             'animate': [ON_OFF, 1],
-            'animation speed': {
+            'animation_speed': {
                 '_multi': 2,
                 '_title': 'how fast pieces can move, in ms',
-                'animate_min': option_number(500, 0, 5000, 10, {}, 'min'),
-                'animate_max': option_number(500, 0, 5000, 10, {}, 'max'),
+                'smooth_min': option_number(100, 0, 2000, 10, {}, 'min'),
+                'smooth_max': option_number(500, 0, 2000, 10, {}, 'max'),
             },
             'arrow': '',
             'board_theme': [Keys(BOARD_THEMES), 'chess24'],

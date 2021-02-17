@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-15
+@version 2021-02-17
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -554,9 +554,6 @@ input.multi2 {
     top: 0;
     width: 1em;
     z-index: 2;
-}
-.smooth > div {
-    transition: opacity 0.5s, transform 0.5s;
 }
 .xpiece > img {
     height: 100%;

@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // game board:
 // - 4 rendering modes:
@@ -22,7 +22,7 @@ cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
-require, resize_text,
+require, resize_text, Round,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32,
 Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
 */
@@ -82,6 +82,7 @@ let AI = 'ai',
         'p': 6,
     },
     ROTATE = (rotate, coord) => (rotate? 7 - coord: coord),
+    SMOOTHS = new Set(),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -206,6 +207,7 @@ class XBoard {
         this.hold = null;                               // mouse/touch hold target
         this.hold_step = 0;
         this.hold_time = 0;                             // last time the event was repeated
+        this.last_time = 0;                             // last render time
         this.locked = 0;                                // &1:locked, &2:manual
         this.locked_obj = null;
         this.main_manual = this.main || this.manual;
@@ -244,7 +246,8 @@ class XBoard {
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.seens = new Set();                         // seen plies for boom/explode
         this.shared = null;
-        this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.smooth_prev = -1;
+        this.smooth0 = -1;                              // used to temporarily prevent transitions
         this.speed = 0;
         this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
@@ -408,7 +411,7 @@ class XBoard {
             }
             // got 1st move => probably just (re)loaded the page
             else
-                this.set_ply(this.moves.length - 1, {animate: true});
+                this.set_ply(this.moves.length - 1, {animate: 1});
         }
 
         // 5) next move
@@ -668,7 +671,7 @@ class XBoard {
      * -                 < 0    never  ------------------------------------
      * -                 > 0    will   ------------------------------------
      * @param {Move=} move
-     * @param {boolean} animate
+     * @param {number} animate
      */
     animate(move, animate) {
         this.delayed_picks(!!move);
@@ -693,7 +696,7 @@ class XBoard {
     /**
      * Animate a move in 3D
      * @param {Move} move
-     * @param {boolean} animate
+     * @param {number} animate
      */
     animate_3d(move, animate) {
         if (!T)
@@ -713,7 +716,7 @@ class XBoard {
     /**
      * Animate a move in the DOM
      * @param {Move} move
-     * @param {boolean} animate false => remove highlights
+     * @param {number} animate false => remove highlights
      */
     animate_html(move, animate) {
         this.clear_high([['source'], ['target']], false);
@@ -723,6 +726,8 @@ class XBoard {
             Style(prev.node_from, [['box-shadow', 'none']]);
             Style(prev.node_to, [['box-shadow', 'none']]);
         }
+
+        this.set_smooth(animate? this.smooth: 0);
         if (!animate)
             return;
 
@@ -935,6 +940,51 @@ class XBoard {
             .forEach((svg, id) => {
                 Style(svg.svg, [['z-index', id]]);
             });
+    }
+
+    /**
+     * Calculate a new smooth value
+     * + update smooth HTML
+     */
+    calculate_smooth() {
+        let smooth = this.smooth,
+            smooth_prev = this.smooth_prev;
+
+        // 1) calculate
+        if (this.smooth0 == -1) {
+            let smooth_max = Y['smooth_max'],
+                smooth_min = Y['smooth_min'];
+
+            if (smooth_min >= smooth_max)
+                smooth = smooth_min;
+            else {
+                let delta = Floor((Now(true) - this.last_time) * 1000),
+                    moves = this.moves,
+                    ply = this.ply;
+
+                if (!this.hold || !moves[ply - 1] || !moves[ply + 1])
+                    smooth = smooth_max;
+                else {
+                    // 16ms = very fast
+                    // 80ms = slow enough
+                    let ratio = 1 - Exp((16 - delta) * 0.05);
+                    smooth = Round((Y['smooth_min'] * (1 - ratio) + smooth_max * ratio) / 10) * 10;
+                }
+            }
+            this.set_smooth(smooth);
+        }
+
+        // 2) update smooth class
+        if (smooth == smooth_prev)
+            return;
+
+        let smooths = [];
+        if (smooth_prev >= 0)
+            smooths.push([`smooth-${Pad(smooth_prev, 3)}`, 1]);
+        smooths.push([`smooth-${Pad(smooth, 3)}`]);
+        Class(this.xpieces, smooths);
+
+        this.smooth_prev = smooth;
     }
 
     /**
@@ -1167,7 +1217,7 @@ class XBoard {
 
         let ply = parent.dataset['i'];
         if (ply != undefined)
-            this.set_ply(ply * 1, {animate: true, manual: true});
+            this.set_ply(ply * 1, {animate: 1, manual: true});
 
         callback(this, 'move', ply);
     }
@@ -1645,7 +1695,7 @@ class XBoard {
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
 
-        let success = this.set_ply(ply, {animate: true, manual: true});
+        let success = this.set_ply(ply, {animate: 1, manual: true});
         if (!is_manual)
             return success;
 
@@ -1670,7 +1720,7 @@ class XBoard {
             start = this.main_manual? -1: 0;
         while (ply > start && !this.moves[ply])
             ply --;
-        let move = this.set_ply(ply, {animate: true, manual: true});
+        let move = this.set_ply(ply, {animate: 1, manual: true});
         this.set_ai(false, 0);
         this.set_ai(false, 1);
         this.destroy_workers(true);
@@ -1883,7 +1933,8 @@ class XBoard {
      * Hold the smooth value for 1 render frame
      */
     instant() {
-        this.smooth = false;
+        this.smooth0 = this.smooth;
+        this.set_smooth(0);
     }
 
     /**
@@ -2212,8 +2263,11 @@ class XBoard {
         }
 
         // restore smooth
-        if (this.smooth0)
-            this.smooth = this.smooth0;
+        if (this.smooth0 != -1) {
+            this.set_smooth(this.smooth0);
+            this.smooth0 = -1;
+        }
+        this.last_time = Now(true);
         this.frame ++;
     }
 
@@ -2294,7 +2348,8 @@ class XBoard {
                 nodes = [],
                 [piece_size, style, transform] = this.get_piece_background(this.size);
 
-            Class(this.xpieces, [['smooth']], this.smooth);
+            // smooth update?
+            this.calculate_smooth();
 
             // a) pieces that must appear should be moved instantly to the right position
             Keys(this.pieces).forEach(char => {
@@ -2638,7 +2693,7 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {Object} obj
-     * @param {boolean=} obj.animate
+     * @param {number=} obj.animate
      * @param {boolean=} obj.check only execute if ply != current ply
      * @param {boolean=} obj.instant call instant()
      * @param {boolean=} obj.manual ply was set manually => send the 'ply' in the hook
@@ -2765,6 +2820,29 @@ class XBoard {
             if (parent.scrollTop != top)
                 parent.scrollTop = top;
         });
+    }
+
+    /**
+     * Set the smooth value
+     * @param {number} smooth
+     */
+    set_smooth(smooth) {
+        if (smooth == this.smooth)
+            return;
+
+        this.smooth = smooth;
+        if (SMOOTHS.has(smooth))
+            return;
+
+        // override the css
+        let node = Id('extra-css'),
+            lines = TEXT(node).split('\n'),
+            ms = smooth / 1000,
+            new_line = `.smooth-${Pad(smooth, 3)} > div {transition: opacity ${ms}s, transform ${ms}s;}`;
+        lines.push(new_line);
+        TEXT(node, lines.sort().join('\n'));
+
+        SMOOTHS.add(smooth);
     }
 
     /**

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // Game specific code:
 // - control the board, moves
@@ -1009,7 +1009,7 @@ function update_board_theme(mode) {
                 board_theme = Y[`board_theme${suffix}`],
                 colors = (board_theme == 'custom')? [Y[`custom_white${suffix}`], Y[`custom_black${suffix}`]]: BOARD_THEMES[board_theme],
                 piece_theme = Y[`piece_theme${suffix}`],
-                smooth = Y[`animate${suffix}`],
+                smooth = Y[`animate${suffix}`]? Y['smooth_max']: 0,
                 theme = Assign({ext: 'png', name: piece_theme, off: [0, 0], size: 80}, PIECE_THEMES[piece_theme]);
 
             Assign(board, {
@@ -1019,7 +1019,7 @@ function update_board_theme(mode) {
                 high_size: Y[`highlight_size${suffix}`],
                 notation: Y[`notation${suffix}`]? 6: 0,
                 smooth: smooth,
-                smooth0: smooth,
+                smooth_new: true,
                 theme: theme,
             });
         }
@@ -5311,6 +5311,7 @@ function benchmark(round=10, running=0) {
             // events
             C('#bench-stop', function() {
                 bench_stop = 1;
+                main.release();
                 if (Now(true) <= bench_countdown || this.dataset['t'] == 'OK')
                     Hide(node);
             });
@@ -5367,6 +5368,7 @@ function benchmark(round=10, running=0) {
             Attrs(Id('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
             Hide(Id('bench-sub'));
+            main.release();
         }
         return;
     }
@@ -5381,6 +5383,7 @@ function benchmark(round=10, running=0) {
         TEXT(count, (left > 3)? '': Ceil(left));
     else {
         last_key = now;
+        main.hold = 'play';
         main.speed = 8;
         main.go_next();
     }
