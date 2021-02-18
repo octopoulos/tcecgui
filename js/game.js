@@ -6129,8 +6129,10 @@ function handle_board_events(board, type, value, e, force) {
         board_target = board;
         Y.s = (board.name == 'pva')? 'pva': section;
         // used for CTRL+C
-        value = /** @type {Node} */(value);
-        context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
+        if (value) {
+            value = /** @type {Node} */(value);
+            context_target = HasClasses(value, 'live-pv|xmoves')? value: null;
+        }
         move = board.moves[board.ply];
         break;
     case 'agree':
