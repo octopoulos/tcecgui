@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-17
+// @version 2021-02-18
 //
 // Game specific code:
 // - control the board, moves
@@ -6564,7 +6564,7 @@ function start_game() {
     // status change detector
     add_timeout('status', () => {
         if (Now(true) < last_scroll + TIMEOUT_status * 0.001)
-            show_board_info(y_x, 2);
+            show_board_info(y_x, 0);
     }, TIMEOUT_status, true);
 }
 
