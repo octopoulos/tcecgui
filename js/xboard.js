@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // game board:
 // - 4 rendering modes:
@@ -22,7 +22,7 @@ cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
-require, resize_text,
+require, resize_text, Round,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32,
 Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
 */
@@ -82,6 +82,7 @@ let AI = 'ai',
         'p': 6,
     },
     ROTATE = (rotate, coord) => (rotate? 7 - coord: coord),
+    SMOOTHS = new Set(),
     SPRITE_OFFSETS = Assign({}, ...FIGURES.map((key, id) => ({[key]: id}))),
     SQUARES_INV = Assign({}, ...Keys(SQUARES).map(key => ({[SQUARES[key]]: key}))),
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -91,7 +92,6 @@ let AI = 'ai',
     TIMEOUT_click = 200,
     TIMEOUT_compare = 100,
     TIMEOUT_pick = 600,
-    TIMEOUT_think = 500,
     TIMEOUT_vote = 1200,
     UNICODES = [0, 9817, 9816, 9815, 9814, 9813, 9812, 0, 0, 9817, 9822, 9821, 9820, 9819, 9818],
     WB_LOWER = ['white', 'black'],
@@ -207,6 +207,7 @@ class XBoard {
         this.hold = null;                               // mouse/touch hold target
         this.hold_step = 0;
         this.hold_time = 0;                             // last time the event was repeated
+        this.last_time = 0;                             // last render time
         this.locked = 0;                                // &1:locked, &2:manual
         this.locked_obj = null;
         this.main_manual = this.main || this.manual;
@@ -245,7 +246,8 @@ class XBoard {
         this.seen = 0;                                  // last seen move -> used to show the counter
         this.seens = new Set();                         // seen plies for boom/explode
         this.shared = null;
-        this.smooth0 = this.smooth;                     // used to temporarily prevent transitions
+        this.smooth_prev = -1;
+        this.smooth0 = -1;                              // used to temporarily prevent transitions
         this.speed = 0;
         this.squares = {};                              // square nodes
         this.start_fen = START_FEN;
@@ -409,7 +411,7 @@ class XBoard {
             }
             // got 1st move => probably just (re)loaded the page
             else
-                this.set_ply(this.moves.length - 1, {animate: true});
+                this.set_ply(this.moves.length - 1, {animate: 1});
         }
 
         // 5) next move
@@ -573,13 +575,11 @@ class XBoard {
             off += 16;
         }
 
-        // 2) match chars and pieces
+        // 2) perfect matches
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 piece[0] = 0;
         });
-
-        // perfect matches
         for (let char of chars) {
             for (let item of pieces[char[0]]) {
                 if (!item[0] && char[1] == item[1]) {
@@ -590,46 +590,71 @@ class XBoard {
             }
         }
 
-        // imperfect matches
-        let imps = [];
-        for (let [char, index, type] of chars) {
-            if (!char)
-                continue;
-
-            let items = pieces[char];
-            for (let item of items) {
-                if (item[0])
+        // 3) imperfect matches
+        // simple algorithm
+        if (!this.smooth) {
+            for (let [char, index] of chars) {
+                if (!char)
                     continue;
-                let coord = item[1],
-                    filec = coord >> 4,
-                    filei = index >> 4,
-                    hmult = (type == 'p')? 2: 1,
-                    diff = (coord < -7)? 999: Abs(filei - filec) * hmult + Abs((index & 15) - (coord & 15));
 
-                // keep bishop on the same color
-                if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
-                    diff += 128;
-                imps.push([diff, index, item]);
+                let win,
+                    best = Infinity,
+                    items = pieces[char];
+                for (let item of items) {
+                    if (item[0])
+                        continue;
+                    let diff = (item[1] < -7)? 999: Abs((index >> 4) - (item[1] >> 4)) + Abs((index & 15) - (item[1] & 15));
+                    if (diff < best) {
+                        best = diff;
+                        win = item;
+                    }
+                }
+                win[0] = 1;
+                win[1] = index;
+            }
+        }
+        // complex algorithm
+        else {
+            let imps = [];
+            for (let [char, index, type] of chars) {
+                if (!char)
+                    continue;
+
+                let items = pieces[char];
+                for (let item of items) {
+                    if (item[0])
+                        continue;
+                    let coord = item[1],
+                        filec = coord >> 4,
+                        filei = index >> 4,
+                        hmult = (type == 'p')? 2: 1,
+                        diff = (coord < -7)? 999: Abs(filei - filec) + Abs((index & 15) - (coord & 15)) * hmult;
+
+                    // keep bishop on the same color
+                    if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
+                        diff += 128;
+                    imps.push([diff, index, item]);
+                }
+            }
+
+            imps.sort((a, b) => a[0] - b[0]);
+            for (let [_, index, item] of imps) {
+                if (item[0] || temp[index])
+                    continue;
+                item[0] = 1;
+                item[1] = index;
+                temp[index] = 1;
             }
         }
 
-        imps.sort((a, b) => a[0] - b[0]);
-        for (let [_, index, item] of imps) {
-            if (item[0] || temp[index])
-                continue;
-            item[0] = 1;
-            item[1] = index;
-            temp[index] = 1;
-        }
-
-        // 3) move non found pieces off the board
+        // 4) move non found pieces off the board
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
                 if (!piece[0])
                     piece[1] = -8;
         });
 
-        // 4) update variables
+        // 5) update variables
         let temp_grid = this.grid;
         this.grid = grid;
         this.grid2 = temp_grid;
@@ -646,7 +671,7 @@ class XBoard {
      * -                 < 0    never  ------------------------------------
      * -                 > 0    will   ------------------------------------
      * @param {Move=} move
-     * @param {boolean} animate
+     * @param {number} animate
      */
     animate(move, animate) {
         this.delayed_picks(!!move);
@@ -671,7 +696,7 @@ class XBoard {
     /**
      * Animate a move in 3D
      * @param {Move} move
-     * @param {boolean} animate
+     * @param {number} animate
      */
     animate_3d(move, animate) {
         if (!T)
@@ -691,7 +716,7 @@ class XBoard {
     /**
      * Animate a move in the DOM
      * @param {Move} move
-     * @param {boolean} animate false => remove highlights
+     * @param {number} animate false => remove highlights
      */
     animate_html(move, animate) {
         this.clear_high([['source'], ['target']], false);
@@ -701,6 +726,8 @@ class XBoard {
             Style(prev.node_from, [['box-shadow', 'none']]);
             Style(prev.node_to, [['box-shadow', 'none']]);
         }
+
+        this.set_smooth(animate? this.smooth: 0);
         if (!animate)
             return;
 
@@ -913,6 +940,51 @@ class XBoard {
             .forEach((svg, id) => {
                 Style(svg.svg, [['z-index', id]]);
             });
+    }
+
+    /**
+     * Calculate a new smooth value
+     * + update smooth HTML
+     */
+    calculate_smooth() {
+        let smooth = this.smooth,
+            smooth_prev = this.smooth_prev;
+
+        // 1) calculate
+        if (this.smooth0 == -1) {
+            let smooth_max = Y['smooth_max'],
+                smooth_min = Y['smooth_min'];
+
+            if (smooth_min >= smooth_max)
+                smooth = smooth_min;
+            else {
+                let delta = Floor((Now(true) - this.last_time) * 1000),
+                    moves = this.moves,
+                    ply = this.ply;
+
+                if (!moves[ply - 1] || !moves[ply + 1])
+                    smooth = smooth_max;
+                else {
+                    // 16ms = very fast
+                    // 80ms = slow enough
+                    let ratio = (delta < 16)? 0: 1 - Exp((16 - delta) * 0.05);
+                    smooth = Round((Y['smooth_min'] * (1 - ratio) + smooth_max * ratio) / 10) * 10;
+                }
+            }
+            this.set_smooth(smooth);
+        }
+
+        // 2) update smooth class
+        if (smooth == smooth_prev)
+            return;
+
+        let smooths = [];
+        if (smooth_prev >= 0)
+            smooths.push([`smooth-${Pad(smooth_prev, 3)}`, 1]);
+        smooths.push([`smooth-${Pad(smooth, 3)}`]);
+        Class(this.xpieces, smooths);
+
+        this.smooth_prev = smooth;
     }
 
     /**
@@ -1145,7 +1217,7 @@ class XBoard {
 
         let ply = parent.dataset['i'];
         if (ply != undefined)
-            this.set_ply(ply * 1, {animate: true, manual: true});
+            this.set_ply(ply * 1, {animate: 1, manual: true});
 
         callback(this, 'move', ply);
     }
@@ -1623,7 +1695,7 @@ class XBoard {
         while (ply < num_move - 1 && !this.moves[ply])
             ply ++;
 
-        let success = this.set_ply(ply, {animate: true, manual: true});
+        let success = this.set_ply(ply, {animate: 1, manual: true});
         if (!is_manual)
             return success;
 
@@ -1648,7 +1720,7 @@ class XBoard {
             start = this.main_manual? -1: 0;
         while (ply > start && !this.moves[ply])
             ply --;
-        let move = this.set_ply(ply, {animate: true, manual: true});
+        let move = this.set_ply(ply, {animate: 1, manual: true});
         this.set_ai(false, 0);
         this.set_ai(false, 1);
         this.destroy_workers(true);
@@ -1861,7 +1933,8 @@ class XBoard {
      * Hold the smooth value for 1 render frame
      */
     instant() {
-        this.smooth = false;
+        this.smooth0 = this.smooth;
+        this.set_smooth(0);
     }
 
     /**
@@ -2190,8 +2263,11 @@ class XBoard {
         }
 
         // restore smooth
-        if (this.smooth0)
-            this.smooth = this.smooth0;
+        if (this.smooth0 != -1) {
+            this.set_smooth(this.smooth0);
+            this.smooth0 = -1;
+        }
+        this.last_time = Now(true);
         this.frame ++;
     }
 
@@ -2272,7 +2348,8 @@ class XBoard {
                 nodes = [],
                 [piece_size, style, transform] = this.get_piece_background(this.size);
 
-            Class(this.xpieces, [['smooth']], this.smooth);
+            // smooth update?
+            this.calculate_smooth();
 
             // a) pieces that must appear should be moved instantly to the right position
             Keys(this.pieces).forEach(char => {
@@ -2616,7 +2693,7 @@ class XBoard {
      * Set the ply + update the FEN
      * @param {number} ply
      * @param {Object} obj
-     * @param {boolean=} obj.animate
+     * @param {number=} obj.animate
      * @param {boolean=} obj.check only execute if ply != current ply
      * @param {boolean=} obj.instant call instant()
      * @param {boolean=} obj.manual ply was set manually => send the 'ply' in the hook
@@ -2645,6 +2722,7 @@ class XBoard {
             this.hide_arrows();
             this.set_seen(ply);
             this.animate({}, animate);
+            this.set_seen(-1);
             if (manual)
                 this.changed_ply({'ply': -1});
             return {};
@@ -2684,7 +2762,8 @@ class XBoard {
             can_source = (this.name == y_x || (this.main && Y['audio_live_archive']) || (this.manual && Y['audio_pva']));
 
         if (can_source && can_moves) {
-            let audio_delay = Y['audio_delay'],
+            let ratio = this.smooth / 500,
+                audio_delay = Y['audio_delay'] * ratio,
                 offset = 0,
                 text = move['m'] || '???',
                 last = text.slice(-1),
@@ -2704,7 +2783,7 @@ class XBoard {
                 volume = 1 - 0.3 * Exp(-speed * 0.03);
 
             if (text.includes('x')) {
-                let capture_delay = Y['capture_delay'];
+                let capture_delay = Y['capture_delay'] * ratio;
                 if (capture_delay < 0)
                     offset = -capture_delay;
                 sounds.push(['capture', audio_delay + capture_delay]);
@@ -2742,6 +2821,35 @@ class XBoard {
             if (parent.scrollTop != top)
                 parent.scrollTop = top;
         });
+    }
+
+    /**
+     * Set the smooth value
+     * @param {number} smooth
+     */
+    set_smooth(smooth) {
+        if (smooth == this.smooth)
+            return;
+
+        this.smooth = smooth;
+        if (SMOOTHS.has(smooth))
+            return;
+
+        // override the css
+        let node = Id('extra-css'),
+            lines = new Set(TEXT(node).split('\n')),
+            smooth_max = Y['smooth_max'],
+            smooth_min = Y['smooth_min'];
+
+        SMOOTHS.add(smooth);
+        for (let item = smooth_min - smooth_min % 10; item <= smooth_max; item += 10)
+            SMOOTHS.add(item);
+
+        for (let item of SMOOTHS) {
+            let ms = item / 1000;
+            lines.add(`.smooth-${Pad(item, 3)} > div {transition: opacity ${ms}s, transform ${ms}s;}`);
+        }
+        TEXT(node, [...lines].sort().join('\n'));
     }
 
     /**
@@ -3038,7 +3146,7 @@ class XBoard {
      * @returns {boolean}
      */
     update_memory(memory, ply, class_, callback) {
-        let list = this.move_list[(ply << 1) + 1];
+        let list = this.move_list[(ply == -1)? 0: (ply << 1) + 1];
         if (!list)
             return false;
 

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -73,6 +73,7 @@ let __PREFIX = '_',
         'pl': 'pol',
         'sv': 'swe',
     },
+    last_scroll = 0,
     libraries = {},
     LINKS = {},
     LOCALHOST = (typeof location == 'object') && location.port == 8080,
@@ -2997,6 +2998,7 @@ function set_engine_events() {
 
     // iframe support: scroll going to opposite expected way => stop the animation
     Events(window, 'scroll', () => {
+        last_scroll = Now(true);
         if (Abs(touch_speed.x) <= 0.03 && Abs(touch_speed.y) <= 0.03)
             return;
         let y = ScrollDocument(),

@@ -11,13 +11,17 @@ DONE         CREATED      DESCRIPTION
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
 -          : 2020-09-17 : variable material value
 -          : 2020-09-17 : static arrays of 256 moves per depth might be faster than std::vector
--          : 2021-01-10 : right click to draw lines
 -          : 2021-01-11 : count kibitzers only if they have enough nodes
 -          : 2021-01-20 : make # defaults for # resolutions + DPR, ex: Surface Pro 7: 1368 x 802 x 2
 -          : 2021-01-22 : right click on tab => tabs per row: saved in areas: [name, tabs, visible]
 -          : 2021-01-29 : precalculate agree + agree2 in a worker thread with wasm.js
 -          : 2021-02-15 : benchmark analyse_fen + make a c++ version if too slow
+-          : 2021-02-17 : if the ply only differs by 1 => use "add_move" to calculate animation faster
+-          : 2021-01-10 : right click to draw lines
 ~          : 2021-02-16 : replace Class + Style: Style\([^\s]+,\s['`]
+2021-02-17 : 2021-02-16 : regularly check if the status should be shown or hidden
+2021-02-17 : 2021-02-16 : variable animation speed
+2021-02-16 : 2021-02-16 : click on << should highlight "1" + scroll
 2021-02-16 : 2021-02-13 : 1314 plies in 27.656s => 47.512 plies/s
 2021-02-16 : 2021-02-15 : accelerate Class + Style using a list or dico instead of string
 2021-02-15 : 2021-02-15 : graph presence is slowing everything down

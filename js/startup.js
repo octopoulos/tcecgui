@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-17
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1960,12 +1960,12 @@ function prepare_settings() {
         },
         'audio': {
             'audio_book': [ON_OFF, 1],
-            'audio_delay': option_number(150, 0, 2000),
+            'audio_delay': option_number(150, 0, 2000, 1, {}, 'audio delay when animation speed is 500ms'),
             'audio_live_archive': [ON_OFF, 0],
             'audio_moves': [['none', 'all', 'last'], 'all'],
             'audio_pva': [ON_OFF, 1],
             'audio_set': [['custom', bamboo, 'kan'], 'custom'],
-            'capture_delay': option_number(-200, -1000, 1000),
+            'capture_delay': option_number(-200, -1000, 1000, 1, {}, 'capture delay when animation speed is 500ms'),
             'sound_capture': [['off', `${bamboo2}capture`, 'kan - capture', old], `${bamboo2}capture`],
             'sound_check': [['off', `${bamboo2}check`, old], `${bamboo2}check`],
             'sound_checkmate': [['off', `${bamboo2}checkmate`, old], `${bamboo2}checkmate`],
@@ -2034,6 +2034,12 @@ function prepare_settings() {
         'board': {
             'analysis': analyses,
             'animate': [ON_OFF, 1],
+            'animation_speed': {
+                '_multi': 2,
+                '_title': 'how fast pieces can move, in ms',
+                'smooth_min': option_number(250, 0, 2000, 10, {}, 'min'),
+                'smooth_max': option_number(500, 0, 2000, 10, {}, 'max'),
+            },
             'arrow': '',
             'board_theme': [Keys(BOARD_THEMES), 'chess24'],
             'custom_black': {
@@ -2073,7 +2079,7 @@ function prepare_settings() {
             'highlight_size_pv': option_number(0.088, 0, 0.4, 0.001),
             'notation_pv': [ON_OFF, 1],
             'piece_theme_pv': [Keys(PIECE_THEMES), 'chess24'],
-            'show_delay': option_number(100, 0, 2000, 10),
+            // 'show_delay': option_number(100, 0, 2000, 10),
             'show_ply': show_plies,
             'status_pv': [ON_OFF, 1],
         },
