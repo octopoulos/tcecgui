@@ -1533,6 +1533,8 @@ class XBoard {
 
         // controls
         C('[data-x]', function(e) {
+            callback(that, 'activate', null);
+
             let name = this.dataset['x'];
             switch (name) {
             case 'end':
