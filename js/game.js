@@ -5335,6 +5335,7 @@ function benchmark(round=10, running=0) {
         }
 
         main.set_ply(-1, {manual: true});
+        now = Now(true);
         bench_start = started? now: -1;
     }
     // finished
