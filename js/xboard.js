@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-17
+// @version 2021-02-19
 //
 // game board:
 // - 4 rendering modes:
@@ -464,7 +464,7 @@ class XBoard {
             if (item == '...') {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
-                if (!memory || memory[1] != item)
+                if (!memory || memory[1] != item || memory[2] != 0)
                     texts[ply2] = [item, 0];
 
                 visibles.add(ply2);
@@ -481,7 +481,7 @@ class XBoard {
             else {
                 let ply2 = (ply << 1) + 1,
                     memory = move_list[ply2];
-                if (!memory || memory[1] != item)
+                if (!memory || memory[1] != item || memory[2] != 0)
                     texts[ply2] = [item, 0];
 
                 // make the turn visible

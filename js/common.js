@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-19
 //
 // utility JS functions used in all the sites
 // no state is being required
@@ -245,7 +245,6 @@ function Class(sel, classes, add=true, parent=null) {
             classes.split(' ').forEach(item => {
                 if (!item)
                     return;
-
                 let first = item.substr(0, 1),
                     right = item.substr(1);
                 if (first == '-') {
@@ -275,7 +274,6 @@ function Class(sel, classes, add=true, parent=null) {
             classes.split(' ').forEach(item => {
                 if (!item)
                     return;
-
                 let first = item.substr(0, 1),
                     right = item.substr(1);
                 if (first == '-') {
@@ -306,6 +304,8 @@ function Class(sel, classes, add=true, parent=null) {
         classes = /** @type {Array<*>} */(classes);
         let list = sel.classList;
         for (let [name, flag] of classes) {
+            if (!name)
+                continue;
             switch (flag) {
             case 1:
                 if (add)
@@ -329,6 +329,8 @@ function Class(sel, classes, add=true, parent=null) {
     E(/** @type {string} */(sel), node => {
         let list = node.classList;
         for (let [name, flag] of classes) {
+            if (!name)
+                continue;
             switch (flag) {
             case 1:
                 if (add)
@@ -923,6 +925,8 @@ function Style(sel, styles, add=true, parent=null) {
         styles = /** @type {Array<*>} */(styles);
         let list = sel.style;
         for (let [name, value, flag] of styles) {
+            if (!name)
+                continue;
             switch (flag) {
             case 1:
                 if (add)
@@ -949,6 +953,8 @@ function Style(sel, styles, add=true, parent=null) {
     E(/** @type {string} */(sel), node => {
         let list = node.style;
         for (let [name, value, flag] of styles) {
+            if (!name)
+                continue;
             switch (flag) {
             case 1:
                 if (add)

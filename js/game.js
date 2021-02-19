@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-18
+// @version 2021-02-19
 //
 // Game specific code:
 // - control the board, moves
@@ -885,8 +885,13 @@ function resize_move_lists() {
             if (grid && width > scrollbar)
                 ratio = Min(1, (width - scrollbar) / grid / 112);
 
-            let extra = grid? `grid-template-columns: repeat(${grid}, 1fr 2fr 2fr`: '';
-            Style(node, `font-size:${font * ratio}px;height:${height}px;${extra};width:${wextra}`);
+            let extra = grid? ['grid-template-columns', `repeat(${grid}, 1fr 2fr 2fr)`]: [];
+            Style(node, [
+                ['font-size', `${font * ratio}px`],
+                extra,
+                ['height', `${height}px`],
+                ['width', wextra],
+            ]);
             Class(node, 'grid', grid);
         });
     }
@@ -6355,6 +6360,10 @@ function opened_table(node, name, tab) {
         break;
     case 'info':
         HTML(node, HTML(Id('desc')));
+        break;
+    case 'kibitz':
+    case 'pv':
+        resize_game();
         break;
     case 'log':
         fill_combo('#nlog', [0, 5, 10, 'all'], Y['live_log']);
