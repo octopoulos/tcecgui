@@ -17,7 +17,7 @@
 // jshint -W069
 /*
 globals
-_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C,
+_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, CacheId,
 cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
 get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
@@ -221,12 +221,13 @@ class XBoard {
         this.next = null;
         this.node = _(this.id);
         this.node_agrees = [];                          // [0]
+        this.node_count = null;                         // (15)
         this.node_currents = [];                        // current ply
         this.node_lasts = [];                           // *, 1-0, ...
         this.node_locks = [];                           // lock, unlock
         this.node_markers = [];                         // marker ply
+        this.node_minis = [{}, {}];
         this.node_seens = [];                           // seen ply
-        this.overlay = null;                            // svg objects will be added there
         this.parents = [];
         this.pgn = {};
         this.picked = null;                             // picked piece
@@ -262,7 +263,9 @@ class XBoard {
         this.thinking = false;
         this.valid = true;
         this.workers = [];                              // web workers
+        this.xframe = null;
         this.xmoves = null;
+        this.xoverlay = null;                           // svg objects will be added there
         this.xpieces = null;
         this.xsquares = null;
     }
@@ -882,7 +885,7 @@ class XBoard {
                 }
                 // kibitzer => player head
                 else {
-                    AttrsNS(Id(`mk${name}_${other_id}_1`), {
+                    AttrsNS(CacheId(`mk${name}_${other_id}_1`), {
                         'fill': mix_hex_colors(head_color, scolor, head_mix),
                     });
                     shown = false;
@@ -1350,8 +1353,8 @@ class XBoard {
         AttrsNS(path, {'marker-end': `url(#mk${name}_${id}_1)`, 'marker-start': `url(#mk${name}_${id}_0)`});
 
         arrow = CreateNode('div', null, {'class': 'arrow', 'id': `ar${id}`}, [svg]);
-        if (this.overlay)
-            this.overlay.appendChild(arrow);
+        if (this.xoverlay)
+            this.xoverlay.appendChild(arrow);
         this.svgs[id].svg = arrow;
         return arrow;
     }
@@ -1547,9 +1550,7 @@ class XBoard {
                 that.play(false, true, 'event_hook');
                 break;
             case 'rotate':
-                that.rotate = (that.rotate + 1) & 1;
-                that.instant();
-                that.render(7);
+                that.set_rotate((that.rotate + 1) & 1);
                 callback(that, 'control', name, e);
                 break;
             case 'start':
@@ -1903,8 +1904,9 @@ class XBoard {
             `<horis class="xmoves fabase${this.list? '': ' dn'}"></horis>`,
         ].join(''));
 
-        this.overlay = _('.xoverlay', root);
+        this.xframe = _('.xframe', root);
         this.xmoves = _('.xmoves', root);
+        this.xoverlay = _('.xoverlay', root);
         this.xpieces = _('.xpieces', root);
         this.xsquares = _('.xsquares', root);
 
@@ -1914,12 +1916,27 @@ class XBoard {
         for (let parent of this.parents)
             HTML(parent, `<i class="agree${manual? ' dn': ''}">0</i><i class="last${manual? '': ' dn'}">*</i>`);
 
+        // multi nodes
         this.node_agrees = this.parents.map(node => node.firstChild);
         this.node_currents = this.parents.map(_ => null);
         this.node_lasts = this.parents.map(node => node.children[1]);
         this.node_locks = [_(`[data-x="lock"]`, root), _(`[data-x="unlock"]`, root)];
         this.node_markers = this.parents.map(_ => null);
+        this.node_minis = [0, 1].map(id => {
+            let node = _(`.xcolor${id}`, root);
+            return {
+                _: node,
+                cog: _('.xcog', node),
+                eval_: _('.xeval', node),
+                left: _('.xleft', node),
+                short: _('.xshort', node),
+                time: _('.xtime', node),
+            };
+        });
         this.node_seens = this.parents.map(_ => null);
+
+        // single nodes
+        this.node_count = _('.count', root);
 
         // initialise the pieces to zero
         this.pieces = Assign({}, ...FIGURES.map(key => ({[key]: []})));
@@ -2423,7 +2440,8 @@ class XBoard {
         }
 
         this.dirty = 0;
-        Show('.xframe, .xpieces', this.node);
+        Show(this.xframe);
+        Show(this.xpieces);
     }
 
     /**
@@ -2467,7 +2485,8 @@ class XBoard {
             text = lines.join('\n');
         this.output(`<pre style="font-size:${font_size}em">${text}</pre>`);
 
-        Hide('.xframe, .xpieces', this.node);
+        Hide(this.xframe);
+        Hide(this.xpieces);
         return text;
     }
 
@@ -2558,9 +2577,9 @@ class XBoard {
             min_height = frame_size + 10 + Visible('.xbottom', node) * 23;
 
         Style(node, [['font-size', `${size}px`]]);
-        Style('.xframe', [['height', `${frame_size}px`], ['width', `${frame_size}px`]], true, node);
-        Style('.xoverlay', [['height', `${frame_size2}px`], ['width', `${frame_size2}px`]], true, node);
-        Style('.xmoves', [['max-width', `${frame_size}px`]], true, node);
+        Style(this.xframe, [['height', `${frame_size}px`], ['width', `${frame_size}px`]]);
+        Style(this.xmoves, [['max-width', `${frame_size}px`]]);
+        Style(this.xoverlay, [['height', `${frame_size2}px`], ['width', `${frame_size2}px`]]);
         Style('.xbottom, .xcontain, .xtop', [['width', `${frame_size}px`]], true, node);
 
         if (this.name == 'xfen') {
@@ -2813,6 +2832,29 @@ class XBoard {
     }
 
     /**
+     * Set the board rotation
+     * @param {number} rotate
+     * @returns {boolean}
+     */
+    set_rotate(rotate) {
+        if (rotate == this.rotate)
+            return false;
+
+        let minis = this.node_minis,
+            temp = minis[0];
+        minis[0] = minis[1];
+        minis[1] = temp;
+
+        Class(minis[0]._, [['xcolor0'], ['xcolor1', 1]]);
+        Class(minis[1]._, [['xcolor0', 1], ['xcolor1']]);
+
+        this.rotate = rotate;
+        this.instant();
+        this.render(7);
+        return true;
+    }
+
+    /**
      * Set the seen cursor
      * @param {number} ply
      */
@@ -2838,7 +2880,7 @@ class XBoard {
             return;
 
         // override the css
-        let node = Id('extra-css'),
+        let node = CacheId('extra-css'),
             lines = new Set(TEXT(node).split('\n')),
             smooth_max = Y['smooth_max'],
             smooth_min = Y['smooth_min'];
@@ -2910,7 +2952,7 @@ class XBoard {
             }).join('');
 
         if (san_list)
-            HTML(Id('pva-pv'), `<i class="agree">[${this.depth}/${moves.length}]</i>${san_list}`);
+            HTML(CacheId('pva-pv'), `<i class="agree">[${this.depth}/${moves.length}]</i>${san_list}`);
         return san_list;
     }
 
@@ -3133,7 +3175,7 @@ class XBoard {
      * Update the counter
      */
     update_counter() {
-        let node = _('.count', this.node),
+        let node = this.node_count,
             unseen = this.moves.length - 1 - this.seen;
         S(node, unseen > 0);
         TEXT(node, this.moves.length - 1 - this.seen);
@@ -3172,28 +3214,28 @@ class XBoard {
      * @param {Object=} stats
      */
     update_mini(id, stats) {
-        let mini = _(`.xcolor${id}`, this.node),
+        let mini = this.node_minis[id],
             player = this.players[id],
             dico = Assign({}, player);
 
         if (stats)
             Assign(dico, stats);
 
-        TextHTML('.xeval', format_eval(dico.eval, true), mini);
+        TextHTML(mini.eval_, format_eval(dico.eval, true));
 
         if (this.name == 'pva') {
-            TEXT(`.xleft`, Undefined(dico.stime, '-'), mini);
-            HTML('.xshort', `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`, mini);
-            TEXT(`.xtime`, Undefined(dico.depth, '-'), mini);
+            TEXT(mini.left, Undefined(dico.stime, '-'));
+            HTML(mini.short, `<div>${Undefined(dico.node, '-')}</div><div>${Undefined(dico.speed, '-')}</div>`);
+            TEXT(mini.time, Undefined(dico.depth, '-'));
 
             let arrow = player.arrow;
             if (arrow)
                 this.arrow(arrow[0], arrow[1]);
         }
         else {
-            TEXT(`.xleft`, player.sleft, mini);
-            TextHTML('.xshort', resize_text(player.short, 15), mini);
-            TEXT(`.xtime`, player.stime, mini);
+            TEXT(mini.left, player.sleft);
+            TextHTML(mini.short, resize_text(player.short, 15));
+            TEXT(mini.time, player.stime);
         }
     }
 

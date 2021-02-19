@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-19
 //
 /*
 globals
@@ -9,10 +9,11 @@ expect, require, test
 'use strict';
 
 let {
-    _, A, Attrs, Clamp, Class, Clear, Contain, CreateNode, DefaultFloat, DefaultInt, E, Format, FormatFloat, FormatUnit,
-    From, FromSeconds, FromTimestamp, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone,
-    IsDigit, IsFloat, IsObject, IsString, Merge, Pad, Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show,
-    Split, Style, TEXT, TextHTML, Title, Toggle, Undefined, Visible, VisibleHeight, VisibleWidth,
+    _, A, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultFloat, DefaultInt, E, Format,
+    FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes,
+    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Keys, Merge, Pad, Parent, ParseJSON, PI, Prop,
+    QueryString, S, SetDefault, Show, Split, Style, TEXT, TextHTML, Title, Toggle, Undefined, Visible, VisibleHeight,
+    VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,22 @@ let {
         Attrs(sel, attrs, soup);
         let nodes = A(sel, soup);
         expect(From(nodes).map(node => node.outerHTML)).toEqual(answer);
+    });
+});
+
+// CacheId
+[
+    ['<a id="one">one</a><i id="two">2</i>', 'zero', [], null],
+    ['<a id="one">one</a><i id="two">2</i>', 'one', ['one'], '<a id="one">one</a>'],
+    ['<a id="one">one</a><i id="two">2</i>', 'one', ['one'], '<a id="one">one</a>'],
+    ['<a id="one">one</a><i id="two">2</i>', 'two', ['one', 'two'], '<i id="two">2</i>'],
+    ['<a id="one">one</a><i id="two">2</i>', 'zero', ['one', 'two'], null],
+].forEach(([html, sel, answer, answer_nodes], id) => {
+    test(`CacheId:${id}`, () => {
+        let soup = CreateNode('div', html),
+            node = CacheId(sel, soup);
+        expect(Keys(CACHE_IDS)).toEqual(answer);
+        expect(node? node.outerHTML: node).toEqual(answer_nodes);
     });
 });
 

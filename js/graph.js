@@ -1,12 +1,12 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-19
 //
 // jshint -W069
 /*
 globals
-_, A, Abs, add_timeout, Assign, C, calculate_feature_q, Clamp, CreateNode,
-DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Id, Keys,
+_, A, Abs, add_timeout, Assign, C, CacheId, calculate_feature_q, Clamp, CreateNode,
+DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Keys,
 Log, Log10, LS, Max, Merge, Min, mix_hex_colors, Pad, Pow, require, Round,
 S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
 */
@@ -261,7 +261,7 @@ function create_charts() {
 
     // 2) click events
     Keys(charts).forEach(name => {
-        C(Id(`chart-${name}`), e => {
+        C(CacheId(`chart-${name}`), e => {
             let chart = charts[name],
                 point = chart.getElementAtEvent(e)[0];
             if (!point)
@@ -354,7 +354,7 @@ function invert_eval(eval_) {
  * @param {number} max_ply
  */
 function mark_ply_chart(name, ply, max_ply) {
-    if (!Visible(Id(`table-${name}`)))
+    if (!Visible(CacheId(`table-${name}`)))
         return;
 
     let data, offset,
@@ -828,7 +828,7 @@ function update_markers() {
 function update_player_chart(name, moves) {
     if (DEV['chart'])
         LS(`UPC: ${name}`);
-    if (!Visible(Id(`table-${name}`)))
+    if (!Visible(CacheId(`table-${name}`)))
         return;
 
     let data = chart_data[name];

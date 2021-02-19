@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-17
+// @version 2021-02-19
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -14,13 +14,13 @@
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, activate_tabs, add_history, add_timeout,
 ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme,
+C, CacheId, cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme,
 changed_hash, changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups,
 context_areas, context_target:true,
 DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
 E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key, game_action_keyup, get_area,
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HIDES, HTML,
-ICONS:true, Id, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
+ICONS:true, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
 move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, ParseJSON, PD,
 PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
@@ -375,7 +375,7 @@ function change_setting_special(name, value, close) {
         tab_element(context_target);
         break;
     case 'live_log':
-        if (Visible(Id('table-log')))
+        if (Visible(CacheId('table-log')))
             listen_log();
         break;
     case 'mobility':
@@ -445,8 +445,8 @@ function change_theme(theme) {
     if (node && node.href.slice(-icon.length) != icon)
         node.href = icon;
 
-    S(Id('theme0'), theme != def);
-    S(Id('theme1'), theme == def);
+    S(CacheId('theme0'), theme != def);
+    S(CacheId('theme1'), theme == def);
     update_theme(themes);
 }
 
@@ -476,9 +476,9 @@ function check_hash_special(dico) {
     Y.s = section;
 
     let is_live = (section == 'live'),
-        parent = Id('tables');
-    Class(Id('nav-archive'), 'yellow', !is_live);
-    Class(Id('nav-live'), 'red', is_live);
+        parent = CacheId('tables');
+    Class(CacheId('nav-archive'), 'yellow', !is_live);
+    Class(CacheId('nav-live'), 'red', is_live);
     change_theme();
 
     populate_areas();
@@ -486,7 +486,7 @@ function check_hash_special(dico) {
     S('.tab[data-x="log"]', is_live, parent);
 
     Attrs('[data-x="sched"] i[data-t]', {'data-t': is_live? 'Schedule': 'Games'});
-    translate_nodes(Id('table-tabs'));
+    translate_nodes(CacheId('table-tabs'));
 
     // changed section
     if (ready)
@@ -757,11 +757,11 @@ function handle_drop(e) {
 
     // 1) resolve tab => nodes
     if (HasClass(drag_source, 'drop')) {
-        drag_source = Id(drag_source.dataset['x']);
+        drag_source = CacheId(drag_source.dataset['x']);
         in_tab |= 1;
     }
     if (HasClass(child, 'drop')) {
-        child = Id(child.dataset['x']);
+        child = CacheId(child.dataset['x']);
         in_tab |= 2;
     }
 
@@ -885,8 +885,8 @@ function init_globals() {
     changed_hash();
     api_translate_get(Y.new_version);
 
-    TEXT(Id('version'), VERSION);
-    HTML(Id('champions'), CHAMPIONS.map(text => {
+    TEXT(CacheId('version'), VERSION);
+    HTML(CacheId('champions'), CHAMPIONS.map(text => {
         let [season, winner] = text.split('|');
         return `<i data-t="Season"></i> ${season}: ${winner}`;
     }).join(' | '));
@@ -906,7 +906,7 @@ function init_globals() {
     if (!Y.no_ad && !DEV['ad'] && !LOCALHOST) {
         add_timeout('adblock', () => {
             if (_('.google-ad').clientHeight <= 0) {
-                HTML('.adblock', HTML(Id('adblock')));
+                HTML('.adblock', HTML(CacheId('adblock')));
                 Show('.adblock');
             }
         }, TIMEOUT_adblock);
@@ -922,7 +922,7 @@ function init_globals() {
             resize();
 
         if (Y.stream)
-            ScrollDocument(Id('overview'));
+            ScrollDocument(CacheId('overview'));
     }, TIMEOUT_font, true);
 
     // suspend/resume
@@ -1121,9 +1121,9 @@ function resize_panels() {
     Style('#top > *', `max-width:calc(${(100 / Y['column_top'])}% - ${Y['column_top'] * 2}px)`);
 
     // special cases
-    let node = Id('engine');
+    let node = CacheId('engine');
     if (node) {
-        Attrs(Id('eval'), {'data-t': (node.clientWidth > 330)? 'Evaluation': 'Eval'});
+        Attrs(CacheId('eval'), {'data-t': (node.clientWidth > 330)? 'Evaluation': 'Eval'});
         translate_nodes(node);
     }
 
@@ -1149,7 +1149,7 @@ function resize_panels() {
     order_boards();
     resize_move_lists();
 
-    Style(Id('engine'), [['font-size', `${Y['engine_font']}px`]]);
+    Style(CacheId('engine'), [['font-size', `${Y['engine_font']}px`]]);
     Style('#engine > div', `padding:${Y['engine_spacing']}em`);
 
     // resize all charts
@@ -1173,8 +1173,8 @@ function set_3d_scene(three) {
         save_option('three', three);
     three = Y.three;
 
-    Style(Id('three'), [['color', three? '#fff': '#555']]);
-    S(Id('canvas'), three);
+    Style(CacheId('three'), [['color', three? '#fff': '#555']]);
+    S(CacheId('canvas'), three);
     if (three)
         start_3d();
 }
@@ -1183,8 +1183,8 @@ function set_3d_scene(three) {
  * Show the About popup
  */
 function show_about() {
-    HTML(Id('popup-desc'), HTML(Id('desc')));
-    show_popup('about', true, {center: true, html: HTML(Id('about')), overlay: 1});
+    HTML(CacheId('popup-desc'), HTML(CacheId('desc')));
+    show_popup('about', true, {center: true, html: HTML(CacheId('about')), overlay: 1});
 }
 
 /**
@@ -1197,7 +1197,7 @@ function show_archive_live() {
     Hide(is_live? '#archive': '#live');
     Hide(`#moves-${is_live? 'archive': 'live'}`);
     if (!Y['moves_copy'])
-        Hide(Id(`moves-${section}`));
+        Hide(CacheId(`moves-${section}`));
 }
 
 /**
@@ -1205,7 +1205,7 @@ function show_archive_live() {
  * @param {string} name
  */
 function show_custom_colors(name) {
-    let modal = Id('modal'),
+    let modal = CacheId('modal'),
         show = (Y[name] == 'custom');
     for (let color of WB_LOWER) {
         let node = _(`[data-t="Custom ${color}"]`, modal);
@@ -1263,7 +1263,7 @@ function tab_element(target) {
  * Update the background
  */
 function update_background() {
-    let node = Id('background');
+    let node = CacheId('background');
     if (!node)
         return;
 
@@ -1301,8 +1301,8 @@ function update_shortcuts() {
                 let name = target.dataset['t'];
                 tab.dataset['t'] = SHORTCUT_NAMES[name] || name;
                 translate_nodes(tab.parentNode);
-                let node = Id(`shortcut_${id}`),
-                    table = Id(`table-${shortcut}`);
+                let node = CacheId(`shortcut_${id}`),
+                    table = CacheId(`table-${shortcut}`);
 
                 // not in tables => direct copy, ex: "stats"
                 if (!TABLES[shortcut] || !HTML(node)) {
@@ -1373,7 +1373,7 @@ function window_click(e) {
             show_about();
             return;
         case 'load_pgn':
-            let file = Id('file');
+            let file = CacheId('file');
             Attrs(file, {'data-x': id});
             file.click();
             return;
@@ -1440,7 +1440,7 @@ function window_click(e) {
  * Happens after a popup is displayed
  */
 function set_modal_events_special() {
-    let modal = Id('modal'),
+    let modal = CacheId('modal'),
         node = _('[data-t="Board theme"]', modal);
     if (!node)
         return;
@@ -1554,8 +1554,8 @@ function set_global_events() {
     C('#three', () => set_3d_scene(!Y.three));
     C('#full0, #full1', () => {
         toggle_fullscreen(full => {
-            S(Id('full0'), full);
-            S(Id('full1'), !full);
+            S(CacheId('full0'), full);
+            S(CacheId('full1'), !full);
             resize();
         });
     });
@@ -1679,13 +1679,13 @@ function set_global_events() {
             return;
         if (e.target.tagName == 'HTML') {
             Class('.area', '-dragging');
-            Hide(Id('rect'));
+            Hide(CacheId('rect'));
         }
     });
     Events(window, 'drop', handle_drop);
 
     // file
-    Events(Id('file'), 'change', function() {
+    Events(CacheId('file'), 'change', function() {
         let file = this.files[0],
             id = this.dataset['x'],
             reader = new FileReader();

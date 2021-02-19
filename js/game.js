@@ -12,7 +12,7 @@
 // jshint -W069
 /*
 globals
-_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C,
+_, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, CacheId,
 calculate_feature_q, cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp,
 clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, CopyClipboard,
 create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
@@ -237,10 +237,10 @@ let ANALYSIS_URLS = {
     },
     last_sound,
     LIVE_TABLES = [
-        ['#table-live0', '#box-live0 .status'],
-        ['#table-live1', '#box-live1 .status'],
-        ['#moves-pv0', '#box-pv0 .status'],
-        ['#moves-pv1', '#box-pv1 .status'],
+        ['#table-live0', '#status-live0'],
+        ['#table-live1', '#status-live1'],
+        ['#moves-pv0', '#status-pv0'],
+        ['#moves-pv1', '#status-pv1'],
     ],
     // number_items, type (0:string, 1:int, 2:float)
     LOG_KEYS = {
@@ -798,14 +798,14 @@ function lock_sub_boards(locked) {
  * PV board order
  */
 function order_boards() {
-    if (HasClass(Id('table-pv'), 'frow'))
+    if (HasClass(CacheId('table-pv'), 'frow'))
         Style('#box-pv0, #box-pv1', 'order:unset');
     else {
         let main = xboards[y_x];
         if (main) {
             let rotate = main.rotate;
-            Style(Id('box-pv0'), [['order', 1 - rotate]]);
-            Style(Id('box-pv1'), [['order', rotate]]);
+            Style(CacheId('box-pv0'), [['order', 1 - rotate]]);
+            Style(CacheId('box-pv1'), [['order', rotate]]);
         }
     }
 }
@@ -914,7 +914,7 @@ function section_board(section) {
 /**
  * Show/hide the timers around the board
  * @param {string} name
- * @param {number} resize_flag &1:force resize_game, &2:no resize
+ * @param {number} resize_flag &1:force resize_game, &2:no resize, &4:skip visible
  * @param {boolean=} show undefined => show when center/engine is disabled
  * @returns {boolean} true if visibility has changed
  */
@@ -934,7 +934,7 @@ function show_board_info(name, resize_flag, show) {
             if (window_width <= 568)
                 show = true;
             else {
-                let engine = Id('engine'),
+                let engine = CacheId('engine'),
                     rect_e = engine.getBoundingClientRect();
 
                 if (!Visible(engine) || rect_e.top > window_height || rect_e.top + rect_e.height < 0
@@ -946,29 +946,30 @@ function show_board_info(name, resize_flag, show) {
             show = (status != 0);
     }
 
-    if (Visible('.xbottom', node) == show) {
+    if (!(resize_flag & 4) && Visible('.xbottom', node) == show) {
         if (resize_flag & 1)
             resize_game();
         return false;
     }
 
     // update top/bottom
-    let players = main.players,
-        rotate = board.rotate,
+    let minis = board.node_minis,
+        players = main.players,
         turn = players[0].turn? 0: players[1].turn? 1: -1;
 
-    S('.xbottom, .xtop', show, node);
-    Class('.xbottom', '-xcolor0 xcolor1', rotate, node);
-    Class('.xtop', 'xcolor0 -xcolor1', rotate, node);
-    Style('.xframe', [['top', `${show? 23: 0}px`]], true, node);
+    S(minis[0]._, show);
+    S(minis[1]._, show);
+    Style(board.xframe, [['top', `${show? 23: 0}px`]]);
 
     // update clock
     if (turn >= 0) {
-        Show(`.xcolor${turn} .xcog`, node);
-        Hide(`.xcolor${1 - turn} .xcog`, node);
+        Show(minis[turn].cog);
+        Hide(minis[1 - turn].cog);
     }
-    else
-        Hide('.xcog', node);
+    else {
+        Hide(minis[0].cog);
+        Hide(minis[1].cog);
+    }
 
     Y.offset = show? -46.5: 0;
     board.update_mini(0);
@@ -1046,7 +1047,7 @@ function update_engine_pieces() {
         [piece_size, style] = main.get_piece_background(20);
 
     for (let i of [0, 1]) {
-        let node = Id(`king${i}`),
+        let node = CacheId(`king${i}`),
             offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_size;
         Style('div', `${style};background-position-x:${offset}px`, true, node);
         Style(node, [['transform', `scale(${20 / piece_size})`]]);
@@ -1219,7 +1220,7 @@ function analyse_crosstable(section, data) {
     update_table(section, 'stand', stand_rows);
 
     // 3) table-cross: might need to update the columns too
-    let node = Id('table-cross'),
+    let node = CacheId('table-cross'),
         new_columns = [...Split(TABLES.cross), ...abbrevs],
         scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
         snew_columns = new_columns.join('|');
@@ -1342,7 +1343,7 @@ function check_pagination(parent) {
 
     // many rows => enable pagination
     // - only create the HTML if it doesn't already exist
-    let node = Id(`${parent}-pagin`),
+    let node = CacheId(`${parent}-pagin`),
         pages = A('.page', node);
 
     if (pages.length != num_page + 2) {
@@ -1372,8 +1373,8 @@ function check_pagination(parent) {
 function check_paginations() {
     for (let parent of PAGINATION_PARENTS) {
         let num_page = check_pagination(parent);
-        S(Id(`${parent}-pagin`), num_page > 1);
-        S(Id(`${parent}-search`), Abs(num_page) >= 1);
+        S(CacheId(`${parent}-pagin`), num_page > 1);
+        S(CacheId(`${parent}-search`), Abs(num_page) >= 1);
     }
 }
 
@@ -1496,7 +1497,7 @@ function create_tables() {
         let is_overview = (name == 'overview'),
             table = TABLES[name],
             html = create_table(Split(table), is_overview);
-        HTML(Id(`${is_overview? '': 'table-'}${name}`), html);
+        HTML(CacheId(`${is_overview? '': 'table-'}${name}`), html);
     });
     translate_nodes('body');
 
@@ -1727,7 +1728,7 @@ function show_tables(section, is_cup) {
     old_cup = is_cup;
 
     let active = get_active_tab('table').name,
-        parent = Id('tables'),
+        parent = CacheId('tables'),
         target = (active == 'sched')? active: (is_cup? 'brak': 'stand');
     S('[data-x="brak"], [data-x="event"]', is_cup, parent);
     S('[data-x="cross"], [data-x="h2h"], [data-x="stand"]', !is_cup, parent);
@@ -1735,7 +1736,7 @@ function show_tables(section, is_cup) {
     Class('div.tab', '-active', true, parent);
     Class(`[data-x="${target}"]`, 'active', true, parent);
     Hide('div.scroller', parent);
-    Show(Id(`table-${target}`));
+    Show(CacheId(`table-${target}`));
 }
 
 /**
@@ -1766,8 +1767,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     // - but maybe a direct copy, ex: "stats"
     if (!TABLES[name]) {
         if (is_shortcut) {
-            let node = Id(`table-${name}`);
-            HTML(Id(source), HTML(node));
+            let node = CacheId(`table-${name}`);
+            HTML(CacheId(source), HTML(node));
             resize_table(name);
         }
         return;
@@ -1783,8 +1784,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         is_h2h_archive = (is_h2h && (section == 'archive' || tour_info[section]['cup'])),
         is_sched_archive = (is_sched && (section == 'archive' || tour_info[section]['cup'])),
         page_key = `page_${parent}`,
-        table = Id(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
-        table2 = Id(`table-${output || name}`),
+        table = CacheId(`${(is_shortcut || parent == 'quick')? '': 'table-'}${output || source}`),
+        table2 = CacheId(`table-${output || name}`),
         body = _('tbody', table);
 
     if (!table)
@@ -1885,7 +1886,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 data = data.filter(item => words.every(word => item._text.includes(word)));
             }
 
-            let node = Id(`${parent}-pagin`),
+            let node = CacheId(`${parent}-pagin`),
                 num_row = data.length,
                 num_page = Ceil(num_row / row_page);
 
@@ -2188,7 +2189,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         Events('td.fen', '!click mouseenter mousemove mouseleave', function(e) {
             if (e.type == 'click') {
                 CopyClipboard(TEXT(this));
-                let overlay = xboards['xfen'].overlay;
+                let overlay = xboards['xfen'].xoverlay;
                 HTML(overlay,
                     '<vert class="fcenter facenter h100">'
                         + `<div class="xcopy">${translate_default('COPIED')}</div>`
@@ -2409,7 +2410,7 @@ function open_game() {
  * Set table-season events
  */
 function set_season_events() {
-    let table = Id('table-season');
+    let table = CacheId('table-season');
 
     // expand/collapse
     C('.season', function() {
@@ -2630,7 +2631,7 @@ function calculate_event_stats(section, rows) {
         ].join('');
     });
 
-    let parent = Id('table-stats'),
+    let parent = CacheId('table-stats'),
         node = _('.estats', parent);
     HTML(node, lines.join(''));
     translate_nodes(node);
@@ -2639,7 +2640,7 @@ function calculate_event_stats(section, rows) {
     for (let id = 1; id <= 3; id ++) {
         let key = `shortcut_${id}`;
         if (Y[key] == 'stats')
-            HTML(Id(key), HTML(parent));
+            HTML(CacheId(key), HTML(parent));
     }
 
     resize_table('stats');
@@ -2861,7 +2862,7 @@ function create_bracket(section, data) {
 
     // 3) result
     lines.push('<div id="svgs"></div></hori>');
-    let node = Id('table-brak');
+    let node = CacheId('table-brak');
     HTML(node, lines.join(''));
     translate_nodes(node);
 
@@ -3043,7 +3044,7 @@ function resize_bracket(force) {
         if ((window_width > 640 && old_width > 640) || (window_width <= 640 && old_width <= 640))
             return;
 
-    let node = Id('table-brak'),
+    let node = CacheId('table-brak'),
         round = A('.rounds', node).length,
         width = (window_width <= 640)? (204 + 18) * round + 20: (227 + 38) * round + 10;
 
@@ -3697,7 +3698,7 @@ function update_materials(move) {
     });
 
     for (let id of [0, 1]) {
-        let node = Id(`material${id}`),
+        let node = CacheId(`material${id}`),
             html = HTML(node),
             material = materials[id].join('');
         if (html != material)
@@ -3714,14 +3715,14 @@ function update_mobility() {
         move = main.moves[ply] || {};
 
     let mobility = main.chess_mobility(move),
-        node = Id('mobil'),
+        node = CacheId('mobil'),
         [goal, gply] = move.goal || [];
 
     if (node) {
         TEXT(node, isNaN(goal)? '?': `${goal < 0? '-': ''}G${Abs(goal)}`);
         node.dataset['i'] = gply;
     }
-    TEXT(Id(`mobil${1 - (ply & 1)}`), Abs(mobility));
+    TEXT(CacheId(`mobil${1 - (ply & 1)}`), Abs(mobility));
 }
 
 /**
@@ -3758,7 +3759,7 @@ function update_move_info(section, ply, move, fresh) {
         main.update_mini(id, stats);
     if (!is_pva) {
         Keys(stats).forEach(key => {
-            TextHTML(Id(`${key}${id}`), stats[key]);
+            TextHTML(CacheId(`${key}${id}`), stats[key]);
         });
 
         if (fresh || y_x == 'archive') {
@@ -3798,11 +3799,11 @@ function update_move_pv(section, ply, move) {
         eval_ = is_book? 'book': move['wv'],
         id = ply & 1,
         board = xboards[`pv${id}`],
-        box_node = _(`#box-pv${id} .status`),
+        box_node = CacheId(`status-pv${id}`),
         main = xboards[section],
         cur_ply = main.ply,
         player = main.players[id],
-        node = Id(`moves-pv${id}`),
+        node = CacheId(`moves-pv${id}`),
         status_eval = is_book? '': format_eval(move['wv']),
         status_score =
             is_book? 'book': calculate_probability(player.short, eval_, ply, move['wdl'] || (player.info || {}).wdl);
@@ -3812,7 +3813,7 @@ function update_move_pv(section, ply, move) {
             TextHTML(`[data-x="eval"]`, status_eval, child);
             TEXT(`[data-x="score"]`, status_score, child);
         }
-        TextHTML(`.xcolor${id} .xeval`, format_eval(eval_, true), main.node);
+        TextHTML(main.node_minis[id].eval_, format_eval(eval_, true));
     }
 
     // PV should jump directly to a new position, no transition
@@ -3877,7 +3878,7 @@ function update_options(section) {
         });
 
         players[id].options = Assign({}, pgn_options);
-        update_hardware(section, id, [Id(`moves-pv${id}`)], {hardware: info.join(' ').trim()});
+        update_hardware(section, id, [CacheId(`moves-pv${id}`)], {hardware: info.join(' ').trim()});
     }
 }
 
@@ -3893,7 +3894,7 @@ function update_overview_basic(section, headers) {
         return;
 
     let main = xboards[section],
-        overview = Id('overview'),
+        overview = CacheId('overview'),
         players = main.players;
 
     // 1) overview
@@ -3926,9 +3927,9 @@ function update_overview_basic(section, headers) {
 
     // 2) engines
     WB_TITLE.forEach((title, id) => {
-        let box_node = _(`#box-pv${id} .status`),
+        let box_node = CacheId(`status-pv${id}`),
             name = headers[title],
-            node = Id(`moves-pv${id}`),
+            node = CacheId(`moves-pv${id}`),
             player = players[id],
             short = get_short_name(name),
             src = `image/engine/${short}.png`;
@@ -3941,11 +3942,11 @@ function update_overview_basic(section, headers) {
         });
         update_hardware(section, id, [box_node, node], {engine: name, short: short});
 
-        TextHTML(Id(`engine${id}`), format_engine(name, true, 21));
-        TextHTML(`.xcolor${id} .xshort`, resize_text(short, 15, 'small'), xboards[section].node);
+        TextHTML(CacheId(`engine${id}`), format_engine(name, true, 21));
+        TextHTML(main.node_minis[id].short, resize_text(short, 15, 'small'));
 
         // load engine image
-        let image = Id(`logo${id}`);
+        let image = CacheId(`logo${id}`);
         if (image && image.src != src) {
             image.onerror = () => {
                 image.src = 'image/tcec2.jpg';
@@ -4051,7 +4052,7 @@ function update_overview_moves(section, headers, moves, is_new) {
  */
 function update_overview_result(move, num_ply, finished) {
     let fen,
-        overview = Id('overview');
+        overview = CacheId('overview');
 
     if (move && move['fen']) {
         fen = move['fen'];
@@ -4109,7 +4110,7 @@ function update_pgn(section, data, extras, reset_moves) {
         moves = pgn['Moves'],
         new_game = pgn.gameChanged,
         num_move = moves.length,
-        overview = Id('overview'),
+        overview = CacheId('overview'),
         players = main.players;
 
     if (headers) {
@@ -4165,7 +4166,7 @@ function update_pgn(section, data, extras, reset_moves) {
                 info: {},
             });
         }
-        TEXT(Id('movesleft'), '');
+        TEXT(CacheId('movesleft'), '');
 
         if (reset_moves && !LOCALHOST)
             add_timeout('tables', () => download_tables(false, 1), TIMEOUT_tables);
@@ -4248,7 +4249,7 @@ function update_scores(section) {
         players = main.players;
     for (let id of [0, 1]) {
         let player = players[id];
-        TEXT(Id(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
+        TEXT(CacheId(`score${id}`), `${Undefined(player.score, '-')} (${Undefined(player.elo, '-')})`);
     }
 }
 
@@ -4366,8 +4367,8 @@ function analyse_log(line) {
 
     // 3) update eval + WDL
     if (Y.eval && info['eval'] != undefined) {
-        let box_node = _(`#box-pv${id} .status`),
-            node = Id(`moves-pv${id}`),
+        let box_node = CacheId(`status-pv${id}`),
+            node = CacheId(`moves-pv${id}`),
             status_eval = format_eval(info['eval']),
             status_score = calculate_probability(player.short, info['eval'], main.moves.length, info['wdl']);
 
@@ -4472,7 +4473,7 @@ function boom_effect(section, type, info, volume, intensities, params, callback)
             LS(`${type}: ply=${main.moves.length} : ${sound} : ${boom_param} : ${info}`);
 
         // 5) visual stuff
-        let body = Id('body2'),
+        let body = CacheId('body2'),
             red = BOOM_REDS[type].replace('{ALPHA}', (0.4 * volume).toFixed(3)),
             visual = Y[`${type}_visual`];
 
@@ -4898,8 +4899,8 @@ function start_clock(section, id, finished, delta) {
         if (y_x != section)
             return;
 
-        S(Id(`cog${id}`), !finished);
-        Hide(`#cog${1 - id}`);
+        S(CacheId(`cog${id}`), !finished);
+        Hide(CacheId(`cog${1 - id}`));
     }
 
     let main = xboards[section],
@@ -4969,19 +4970,19 @@ function update_clock(section, id, move) {
     time = isNaN(time)? '-': FromSeconds(time).slice(1, -1).map(item => Pad(item)).join(':');
 
     if (same) {
-        TEXT(Id(`remain${id}`), left);
-        TEXT(Id(`time${id}`), time);
+        TEXT(CacheId(`remain${id}`), left);
+        TEXT(CacheId(`time${id}`), time);
     }
     player.sleft = left;
     player.stime = time;
 
-    let mini = _(`.xcolor${id}`, main.node);
+    let mini = main.node_minis[id];
     if (same) {
-        TEXT(`.xleft`, left, mini);
-        TEXT(`.xtime`, time, mini);
+        TEXT(mini.keft, left);
+        TEXT(mini.time, time);
     }
     else if (section == 'pva')
-        TEXT(`.xleft`, time, mini);
+        TEXT(mini.left, time);
 }
 
 /**
@@ -5071,11 +5072,11 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
         data = moves[moves.length - 1];
     }
 
-    let box_node = _(`#box-live${id} .status`),
+    let box_node = CacheId(`status-live${id}`),
         cur_ply = main.ply,
         eval_ = data['eval'],
         last_ply = main.moves.length - 1,
-        node = Id(`table-live${id}`),
+        node = CacheId(`table-live${id}`),
         ply = split_move_string(data['pv']).ply;
 
     data['ply'] = ply;
@@ -5155,7 +5156,7 @@ function update_player_eval(section, data, same_pv) {
         engine = data['engine'],
         eval_ = data['eval'],
         id = Undefined(data['id'], data['color']),
-        mini = _(`.xcolor${id}`, main.node),
+        mini = main.node_minis[id],
         player = main.players[id],
         sd = data['seldepth'],
         short = get_short_name(engine);
@@ -5203,7 +5204,7 @@ function update_player_eval(section, data, same_pv) {
             'tb': format_unit(data['tbhits']),
         };
         Keys(stats).forEach(key => {
-            TextHTML(Id(`${key}${id}`), stats[key]);
+            TextHTML(CacheId(`${key}${id}`), stats[key]);
         });
 
         // update the live part on the left
@@ -5211,7 +5212,7 @@ function update_player_eval(section, data, same_pv) {
                 'eval': format_eval(eval_),
                 'score': calculate_probability(short, eval_, cur_ply, data['wdl'] || (player.info || {})['wdl']),
             },
-            node = Id(`moves-pv${id}`);
+            node = CacheId(`moves-pv${id}`);
 
         // update engine name if it has changed
         update_hardware(section, id, [node], {engine: engine, short: short});
@@ -5220,14 +5221,14 @@ function update_player_eval(section, data, same_pv) {
             TextHTML(`[data-x="${key}"]`, dico[key], node);
         });
 
-        TextHTML(`.xshort`, resize_text(short, 15, 'small'), mini);
-        TextHTML(`.xeval`, format_eval(eval_), mini);
+        TextHTML(mini.short, resize_text(short, 15, 'small'));
+        TextHTML(mini.eval_, format_eval(eval_));
         if (data['nodes'] > 1)
             add_player_eval(player, ply, eval_);
 
         // moves left
         if (Y['moves_left'] && data['movesleft'] != undefined)
-            TEXT(Id('movesleft'), `#${data['movesleft']}`);
+            TEXT(CacheId('movesleft'), `#${data['movesleft']}`);
     }
 
     if (DEV['chart'])
@@ -5271,7 +5272,7 @@ function add_benchmark_result(class_, step, num_move, elapsed, speed) {
     if (class_)
         dico['class'] = `bench${class_}`;
 
-    InsertNodes(Id('bench-grid'), [
+    InsertNodes(CacheId('bench-grid'), [
         step,
         num_move,
         IsString(elapsed)? elapsed: elapsed.toFixed(3),
@@ -5286,7 +5287,7 @@ function add_benchmark_result(class_, step, num_move, elapsed, speed) {
  */
 function benchmark(round=10, running=0) {
     let main = xboards[y_x],
-        node = Id('benchmark'),
+        node = CacheId('benchmark'),
         now = Now(true),
         num_move = main.moves.length,
         run_over = (main.ply >= num_move - 1);
@@ -5301,16 +5302,12 @@ function benchmark(round=10, running=0) {
             bench_stats.length = 0;
             bench_stop = 0;
 
-            let html = [
-                    '<vert id="bench-title" data-t="Benchmark"></vert>',
-                    '<vert id="bench-sub" class="dn"></vert>',
-                    '<vert id="bench-count">&nbsp;</vert>',
-                    '<grid id="bench-grid"></grid>',
-                    '<vert><a id="bench-stop" data-t="STOP"></a></vert>',
-                ].join('');
-
-            HTML(node, html);
             Show(node);
+            Attrs(CacheId('bench-title'), {'data-t': 'Benchmark'});
+            Hide(CacheId('bench-sub'));
+            HTML(CacheId('bench-grid'), '');
+            Attrs(CacheId('bench-stop'), {'data-t': 'STOP'});
+
             add_benchmark_result(0, ...['round', 'plies', 'time', 'plies/s'].map(text => `<i data-t="${text}"></i>`));
             translate_nodes(node);
 
@@ -5327,8 +5324,8 @@ function benchmark(round=10, running=0) {
 
         let started = (now > bench_countdown);
         if (bench_start < 0 && started) {
-            Attrs(Id('bench-title'), {'data-t': 'Benchmark in progress ...'});
-            let sub = Id('bench-sub');
+            Attrs(CacheId('bench-title'), {'data-t': 'Benchmark in progress ...'});
+            let sub = CacheId('bench-sub');
             Attrs(sub, {'data-t': device.mobile? "Don't touch the screen.": "Don't move the mouse."});
             Show(sub);
             translate_nodes(node);
@@ -5370,16 +5367,16 @@ function benchmark(round=10, running=0) {
             if (total_time > 0)
                 add_benchmark_result(0, '<i data-t="total"></i>', total_plies, total_time);
 
-            Attrs(Id('bench-title'), {'data-t': 'Benchmark over.'});
-            Attrs(Id('bench-stop'), {'data-t': 'OK'});
+            Attrs(CacheId('bench-title'), {'data-t': 'Benchmark over.'});
+            Attrs(CacheId('bench-stop'), {'data-t': 'OK'});
             translate_nodes(node);
-            Hide(Id('bench-sub'));
+            Hide(CacheId('bench-sub'));
         }
         return;
     }
 
     // go to next ply - or countdown
-    let count = Id('bench-count'),
+    let count = CacheId('bench-count'),
         left = bench_countdown - now,
         is_waiting = (left > 0);
     S(count, is_waiting);
@@ -5404,7 +5401,7 @@ function game_action_key(code) {
 
     if (is_overlay_visible()) {
         let changes = 0,
-            modal_node = Id('modal'),
+            modal_node = CacheId('modal'),
             parent = Visible(modal_node)? modal_node: null,
             items = From(A('.item', parent)).filter(item => Visible(item)),
             length = items.length,
@@ -5508,7 +5505,7 @@ function game_action_key(code) {
                             ply = board_target.ply;
                         // try to set the same ply
                         pva.set_ply((ply < num_move)? ply: num_move - 1);
-                        if (Visible(Id('table-pva')))
+                        if (Visible(CacheId('table-pva')))
                             board_target = pva;
                     }
 
@@ -5528,7 +5525,7 @@ function game_action_key(code) {
             break;
         }
 
-        TEXT(Id('keycode'), code);
+        TEXT(CacheId('keycode'), code);
     }
 
     return okay;
@@ -5722,7 +5719,7 @@ function change_setting_game(name, value) {
         save_option('explosion_visual', value? 'all': 0);
         break;
     case 'game_PV':
-        S(Id('pva-pv'), value);
+        S(CacheId('pva-pv'), value);
         break;
     case 'graph_color_0':
     case 'graph_color_1':
@@ -5759,7 +5756,7 @@ function change_setting_game(name, value) {
         save_option('moob_visual', value? 'all': 0);
         break;
     case 'moves_left':
-        Class(Id('movesleft'), 'hidden', !value);
+        Class(CacheId('movesleft'), 'hidden', !value);
         break;
     case 'rows_per_page':
         update_tab = true;
@@ -6090,7 +6087,7 @@ function copy_pgn(board, download, only_text, flag=7) {
 function get_context_board() {
     // 1) modal is visible => try to get board
     let target, target2,
-        modal = Id('modal');
+        modal = CacheId('modal');
     if (HasClass(modal, 'popup-show')) {
         let title = _('div.item-title', modal);
         if (title) {
@@ -6162,7 +6159,7 @@ function handle_board_events(board, type, value, e, force) {
             board.render(3);
         }
         else if (value == 'rotate') {
-            show_board_info(board.name, 2);
+            show_board_info(board.name, 6);
             redraw_arrows();
             order_boards();
         }
@@ -6304,7 +6301,7 @@ function open_table(sel) {
         if (context_area)
             context_area[2] &= ~2;
         Class(node, '-active');
-        Hide(Id(node.dataset['x']));
+        Hide(CacheId(node.dataset['x']));
     }, parent);
 
     // activate 1 tab
@@ -6316,7 +6313,7 @@ function open_table(sel) {
     save_option('areas');
 
     let key = target,
-        node = Id(target);
+        node = CacheId(target);
     Show(node);
 
     // further processing
@@ -6360,7 +6357,7 @@ function opened_table(node, name, tab) {
         analyse_crosstable(section, table_data[section].crossx);
         break;
     case 'info':
-        HTML(node, HTML(Id('desc')));
+        HTML(node, HTML(CacheId('desc')));
         break;
     case 'kibitz':
     case 'pv':
@@ -6395,11 +6392,11 @@ function opened_table(node, name, tab) {
         board_target = xboards['pva'];
         target = 'pva';
     }
-    else if (board_target.name == 'pva' && !Visible(Id('table-pva')))
+    else if (board_target.name == 'pva' && !Visible(CacheId('table-pva')))
         target = section;
 
     if (target)
-        handle_board_events(xboards[target], 'activate', Id(target), {}, true);
+        handle_board_events(xboards[target], 'activate', CacheId(target), {}, true);
 }
 
 /**
@@ -6415,7 +6412,7 @@ function popup_custom(id, name, e, scolor, text) {
         return;
 
     let num_col, show,
-        popup = Id(id),
+        popup = CacheId(id),
         type = e.type,
         visible_height = VisibleHeight(),
         visible_width = VisibleWidth();
@@ -6458,7 +6455,7 @@ function popup_custom(id, name, e, scolor, text) {
                 xfen.instant();
                 if (!xfen.set_fen(text, true))
                     return;
-                Style(xfen.overlay, [['opacity', 0], ['transition', 'opacity 0.5s']]);
+                Style(xfen.xoverlay, [['opacity', 0], ['transition', 'opacity 0.5s']]);
             }
         }
 
@@ -6557,7 +6554,7 @@ function start_game() {
     create_tables();
     create_boards();
     show_board_info('pva', 0, true);
-    S(Id('pva-pv'), Y['game_PV']);
+    S(CacheId('pva-pv'), Y['game_PV']);
 
     Y.wasm = 0;
     if (Y.wasm)

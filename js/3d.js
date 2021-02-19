@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-16
+// @version 2021-02-19
 //
 // general 3d rendering code
 //
@@ -8,8 +8,8 @@
 // jshint -W069
 /*
 globals
-_, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CameraControls, clear_timeout,
-DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, Id, IsString, KEY_TIMES, Keys, KEYS,
+_, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CacheId, CameraControls, clear_timeout,
+DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, IsString, KEY_TIMES, Keys, KEYS,
 LoadLibrary, LS, navigator, Now, require,
 S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes,
 Vector2:true, Visible, window, Y, y_x
@@ -253,7 +253,7 @@ function init_3d(force) {
     init_lights();
 
     // renderer
-    let canvas = Id('canvas'),
+    let canvas = CacheId('canvas'),
     context = canvas.getContext('webgl2') || canvas.getContext('webgl');
     renderer = new T.WebGLRenderer({
         antialias: false,
@@ -1104,7 +1104,7 @@ function gamepad_modal() {
  * @returns {boolean}
  */
 function is_overlay_visible() {
-    return !!Visible(Id('overlay'));
+    return !!Visible(CacheId('overlay'));
 }
 
 /**
@@ -1132,11 +1132,11 @@ function show_menu() {
  * @param {string=} name
  */
 function show_modal(show, text, title, name) {
-    S(Id('overlay'), show);
+    S(CacheId('overlay'), show);
 
-    let node = Id('modal');
+    let node = CacheId('modal');
     if (IsString(text)) {
-        Attrs(Id('modal-title'), {'data-t': title? title: ''});
+        Attrs(CacheId('modal-title'), {'data-t': title? title: ''});
         HTML(node, text);
         translate_nodes(node);
     }
@@ -1191,7 +1191,7 @@ function update_debug() {
     if (virtual_update_debug_special)
         lines = [...lines, ...virtual_update_debug_special()];
 
-    HTML(Id('debug'), `<div>${lines.join('</div><div>')}</div>`);
+    HTML(CacheId('debug'), `<div>${lines.join('</div><div>')}</div>`);
 }
 
 // STARTUP
