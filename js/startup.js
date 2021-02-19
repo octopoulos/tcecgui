@@ -1329,7 +1329,7 @@ function update_visible() {
         templates = [eval_left? '3em': 'auto', 'auto', '1fr'];
 
     S('.status', Y['status_pv']);
-    S('.eval', Y.eval);
+    S('.eval', Y['eval']);
     Class('.eval', 'eval-left', eval_left);
     S('.hardware', hardware);
     Class('.live-basic', 'w100', !hardware || !single_line);

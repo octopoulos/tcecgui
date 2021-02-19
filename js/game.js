@@ -3808,10 +3808,10 @@ function update_move_pv(section, ply, move) {
         status_score =
             is_book? 'book': calculate_probability(player.short, eval_, ply, move['wdl'] || (player.info || {}).wdl);
 
-    if (Y.eval) {
+    if (Y['eval']) {
         for (let child of [box_node, node]) {
-            TextHTML(`[data-x="eval"]`, status_eval, child);
-            TEXT(`[data-x="score"]`, status_score, child);
+            TextHTML(_('[data-x="eval"]', child), status_eval);
+            TEXT(_('[data-x="score"]', child), status_score);
         }
         TextHTML(main.node_minis[id].eval_, format_eval(eval_, true));
     }
@@ -4366,15 +4366,15 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
-    if (Y.eval && info['eval'] != undefined) {
+    if (Y['eval'] && info['eval'] != undefined) {
         let box_node = CacheId(`status-pv${id}`),
             node = CacheId(`moves-pv${id}`),
             status_eval = format_eval(info['eval']),
             status_score = calculate_probability(player.short, info['eval'], main.moves.length, info['wdl']);
 
         for (let child of [box_node, node]) {
-            TextHTML(`[data-x="eval"]`, status_eval, child);
-            TEXT(`[data-x="score"]`, status_score, child);
+            TextHTML(_('[data-x="eval"]', child), status_eval);
+            TEXT(_('[data-x="score"]', child), status_score);
         }
     }
 
@@ -5101,7 +5101,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
 
     let is_current = (ply == cur_ply + 1 || force_ply || (cur_ply == last_ply && ply > cur_ply));
     if (is_current) {
-        let is_hide = !Y.eval,
+        let is_hide = !Y['eval'],
             dico = {
                 'depth': data['depth'],
                 'eval': is_hide? 'hide*': format_eval(eval_),
@@ -5117,7 +5117,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
                 return;
 
             for (let child of [box_node, node])
-                TextHTML(`[data-x="${key}"]`, Undefined(value, '-'), child);
+                TextHTML(_(`[data-x="${key}"]`, child), Undefined(value, '-'));
         });
     }
 
@@ -5218,7 +5218,7 @@ function update_player_eval(section, data, same_pv) {
         update_hardware(section, id, [node], {engine: engine, short: short});
 
         Keys(dico).forEach(key => {
-            TextHTML(`[data-x="${key}"]`, dico[key], node);
+            TextHTML(_(`[data-x="${key}"]`, node), dico[key]);
         });
 
         TextHTML(mini.short, resize_text(short, 15, 'small'));
