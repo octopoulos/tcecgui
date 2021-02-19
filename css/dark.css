@@ -65,6 +65,9 @@ textarea:hover {
 .book {
     color: #f90 !important;
 }
+.seen {
+    color: #ff0 !important;
+}
 .draw {
     color: #f5f5f5;
 }
