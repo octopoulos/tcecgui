@@ -188,6 +188,7 @@ let ANALYSIS_URLS = {
         'tour': 60,
         'winner': 3600 * 24,
     },
+    changed_sections = 0,
     // need to have at least 1 non empty/0 field for those columns, otherwise: hidden
     COLUMNS_REQUIRED = {
         'stand': ['crashes', 'rmobility_score', 'diff'],
@@ -5875,7 +5876,7 @@ function changed_section() {
         download_live();
     else {
         let hash = hashes[section];
-        if (Y['archive_scroll'] && !hash.game) {
+        if (Y['archive_scroll'] && !hash.game && changed_sections) {
             if (!['sched', 'season'].includes(get_active_tab('table').name))
                 open_table('season');
             scroll_adjust('#tables');
@@ -5893,6 +5894,8 @@ function changed_section() {
     update_overview_moves(section, headers, xboards[section].moves);
     update_options(section);
     update_agrees(section);
+
+    changed_sections ++;
 }
 
 /**
