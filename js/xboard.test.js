@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-14
+// @version 2021-02-19
 //
 /*
 globals
@@ -101,6 +101,12 @@ live.id = 'null';
             b: [[1, 2], [1, 5]],
             B: [[1, 114], [1, 117]],
         },
+    ],
+    [
+        'd4 d5 Bf4 e5 g3 exf4 Bg2 c5 dxc5 d4 Bxb7 Bf5 Bxa8',
+        START_FEN,
+        true,
+        {B: [[1, 114], [1, 117]]},
     ],
 ].forEach(([move_list, fen, answer, answer_pieces], id) => {
     test(`analyse_fen:${id}`, () => {
