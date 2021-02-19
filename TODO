@@ -19,6 +19,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-02-17 : if the ply only differs by 1 => use "add_move" to calculate animation faster
 -          : 2021-01-10 : right click to draw lines
 ~          : 2021-02-16 : replace Class + Style: \bStyle\([^\s]+,\s['`]
+2021-02-19 : 2021-02-19 : 1314 plies in 24.933s => 52.701 plies/s
 2021-02-19 : 2021-02-19 : CacheId => extra speed boost
 2021-02-17 : 2021-02-13 : 1314 plies in 25.392s => 51.749 plies/s
 2021-02-17 : 2021-02-16 : regularly check if the status should be shown or hidden
