@@ -631,8 +631,8 @@ class XBoard {
                         diff = (coord < -7)? 999: Abs(filei - filec) + Abs((index & 15) - (coord & 15)) * hmult;
 
                     // keep bishop on the same color
-                    if (type == 'b' && (filei + (index & 1)) != (filec + (coord & 1)))
-                        diff += 128;
+                    if (type == 'b' && ((filei & 1) ^ (index & 1)) != ((filec & 1) ^ (coord & 1)))
+                        diff += 1280;
                     imps.push([diff, index, item]);
                 }
             }
@@ -650,8 +650,8 @@ class XBoard {
         // 4) move non found pieces off the board
         Keys(pieces).forEach(key => {
             for (let piece of pieces[key])
-                if (!piece[0])
-                    piece[1] = -8;
+                if (!piece[0] && piece[1] >= 0)
+                    piece[1] -= 256;
         });
 
         // 5) update variables
