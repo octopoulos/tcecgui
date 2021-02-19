@@ -1014,6 +1014,7 @@ function quick_setup(force) {
     let old = Y.new_version;
     if (!force && (old == undefined || old >= '20210109e' || Y.seen || y_x == 'archive' || Y.stream))
         return;
+    activate_tabs();
     show_popup('options', true, {center: 1, overlay: 1, setting: 'quick_setup'});
 }
 
