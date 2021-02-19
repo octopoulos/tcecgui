@@ -49,8 +49,15 @@
     <vert id="modal" class="popup"></vert>
 </div>
 <div id="rect"></div>
-<div id="benchmark" class="dn"></div>
 <input id="file" type="file" class="dn">
+<!-- benchmark -->
+<div id="benchmark" class="dn">
+    <vert id="bench-title" data-t="Benchmark"></vert>
+    <vert id="bench-sub" class="dn"></vert>
+    <vert id="bench-count">&nbsp;</vert>
+    <grid id="bench-grid"></grid>
+    <vert><a id="bench-stop" data-t="STOP"></a></vert>
+</div>
 <!-- header -->
 <horis id="header" class="fcenter">
     <hori id="sub-header" class="fbetween">
@@ -270,21 +277,21 @@
                 <vert id="table-pv" class="drag dn">
                     <div id="box-pv0">
                         <hori id="pv0" class="xboard fastart"></hori>
-                        <div class="status"></div>
+                        <div id="status-pv0" class="status"></div>
                     </div>
                     <div id="box-pv1">
                         <hori id="pv1" class="xboard fastart"></hori>
-                        <div class="status"></div>
+                        <div id="status-pv1" class="status"></div>
                     </div>
                 </vert>
                 <vert id="table-kibitz" class="drag dn">
                     <div id="box-live0">
                         <hori id="live0" class="xboard fastart"></hori>
-                        <div class="status"></div>
+                        <div id="status-live0" class="status"></div>
                     </div>
                     <div id="box-live1">
                         <hori id="live1" class="xboard fastart"></hori>
-                        <div class="status"></div>
+                        <div id="status-live1" class="status"></div>
                     </div>
                 </vert>
                 <vert id="table-pva" class="drag dn">

@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-09
+// @version 2021-02-19
 //
 // all socket functions are here
 //
@@ -8,8 +8,8 @@
 // jshint -W069
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, Class, create_cup, CreateNode,
-DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, InsertNodes,
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, InsertNodes,
 LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, update_live_eval, update_pgn,
 update_player_eval, update_table, update_twitch, window, Y, y_x
 */
@@ -169,7 +169,7 @@ function event_sockets() {
  * @param {string} html
  */
 function insert_log(html) {
-    let live_log = Id('live-log'),
+    let live_log = CacheId('live-log'),
         log_history = Y['log_history'],
         node = CreateNode('div', html);
     InsertNodes(live_log, [node], true);
@@ -208,7 +208,7 @@ function listen_log(new_room) {
         socket.emit('room', `room${new_room}`);
         insert_log(`<div class="win">entered: ${new_room}</div>`);
     }
-    Id('nlog').value = prev_room;
+    CacheId('nlog').value = prev_room;
 }
 
 /**
@@ -231,7 +231,7 @@ function log_socket(name, data, cache) {
  * @param {string=} text if there's no text, then just hide it
  */
 function show_banner(text) {
-    let node = Id('banner');
+    let node = CacheId('banner');
     if (text) {
         HTML(node, text);
         Show(node);
@@ -254,7 +254,7 @@ function update_twitch(dark, chat_url, only_resize) {
 
     // 1) update twitch chat IF there was a change
     dark = Y['twitch_dark'];
-    let node = Id('chat');
+    let node = CacheId('chat');
     if (!node)
         return;
 
@@ -270,10 +270,10 @@ function update_twitch(dark, chat_url, only_resize) {
         node.src = src;
     S('#chat, #under-chat', src);
     S('#chat2, #show-chat', !src);
-    S(Id('twitch0'), src && dark);
-    S(Id('twitch1'), src && !dark);
+    S(CacheId('twitch0'), src && dark);
+    S(CacheId('twitch1'), src && !dark);
 
-    let right = Id('right'),
+    let right = CacheId('right'),
         active = _('.active', right),
         active_name = active? active.dataset['x']: '',
         has_narrow = HasClass(right, 'narrow'),
@@ -289,14 +289,14 @@ function update_twitch(dark, chat_url, only_resize) {
     }
 
     // 2) update twitch video IF there was a change
-    node = Id('twitch-vid');
+    node = CacheId('twitch-vid');
     current = node.src;
     src = Y['twitch_video']? TWITCH_CHANNEL: '';
 
     if (!only_resize && current != src)
         node.src = src;
     S('#hide-video, #twitch-vid', src);
-    S(Id('show-video'), !src);
+    S(CacheId('show-video'), !src);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

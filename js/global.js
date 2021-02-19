@@ -8,7 +8,7 @@
 // jshint -W069
 /*
 globals
-Abs, Assign, Atan, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, Id, IsDigit, Keys,
+Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, IsDigit, Keys,
 LS, Max, Min, Pad, Pow, require, reset_default, Round, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
@@ -132,8 +132,8 @@ function close_popups() {
         virtual_close_popups('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
-    HTML(Id('modal'), '');
-    Hide(Id('overlay'));
+    HTML(CacheId('modal'), '');
+    Hide(CacheId('overlay'));
 }
 
 /**

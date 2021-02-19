@@ -3,7 +3,6 @@
 // @version 2021-02-19
 //
 // utility JS functions used in all the sites
-// no state is being required
 //
 /*
 globals
@@ -17,6 +16,8 @@ console, document, exports, FormData, global, location, navigator, Node, request
 let Abs = Math.abs,
     Assign = Object.assign,
     Atan = Math.atan,
+    CACHE_COUNTS = {},
+    CACHE_IDS = {},
     Ceil = Math.ceil,
     Cos = Math.cos,
     // dummy object
@@ -227,6 +228,22 @@ function C(sel, callback, parent) {
 }
 
 /**
+ * Get and update an id
+ * @param {Node|string} id
+ * @param {Node=} parent parent node, document by default
+ * @returns {Node}
+ */
+function CacheId(id, parent) {
+    // CACHE_COUNTS[id] = (CACHE_COUNTS[id] || 0) + 1;
+    if (CACHE_IDS[id])
+        return CACHE_IDS[id];
+    let node = Id(id, parent);
+    if (node)
+        CACHE_IDS[id] = node;
+    return node;
+}
+
+/**
  * Add / remove classes
  * @param {Node|string} sel CSS selector or node
  * @param {Array<*>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
@@ -308,6 +325,7 @@ function Class(sel, classes, add=true, parent=null) {
                 continue;
             switch (flag) {
             case 1:
+            case true:
                 if (add)
                     list.remove(name);
                 else
@@ -333,6 +351,7 @@ function Class(sel, classes, add=true, parent=null) {
                 continue;
             switch (flag) {
             case 1:
+            case true:
                 if (add)
                     list.remove(name);
                 else
@@ -929,6 +948,7 @@ function Style(sel, styles, add=true, parent=null) {
                 continue;
             switch (flag) {
             case 1:
+            case true:
                 if (add)
                     list.removeProperty(name);
                 else
@@ -957,6 +977,7 @@ function Style(sel, styles, add=true, parent=null) {
                 continue;
             switch (flag) {
             case 1:
+            case true:
                 if (add)
                     list.removeProperty(name);
                 else
@@ -1819,6 +1840,8 @@ if (typeof exports != 'undefined') {
         Attrs: Attrs,
         AttrsNS: AttrsNS,
         C: C,
+        CACHE_IDS: CACHE_IDS,
+        CacheId: CacheId,
         Clamp: Clamp,
         Class: Class,
         Clear: Clear,

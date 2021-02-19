@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-17
+// @version 2021-02-19
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -10,10 +10,10 @@
 // jshint -W069
 /*
 globals
-_, A, Abs, AnimationFrame, Assign, Attrs, C, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
+_, A, Abs, AnimationFrame, Assign, Attrs, C, CacheId, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
 DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass, Hide, history,
-HTML, Id, Input, IS_NODE, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+HTML, Input, IS_NODE, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
 LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow, QueryString,
 require, Resource,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TextHTML, Title,
@@ -842,7 +842,7 @@ function show_popup(name, show, {
         click_target = null;
 
     // find the modal
-    let node = click_target || Id(node_id || 'modal');
+    let node = click_target || CacheId(node_id || 'modal');
     if (!node)
         return;
 
@@ -861,7 +861,7 @@ function show_popup(name, show, {
         show = (data_id != (id || name) || !HasClass(node, 'popup-show') || (xy && xy + '' != dataset['xy']));
 
     if (!adjust && overlay != undefined)
-        S(Id('overlay'), show && overlay);
+        S(CacheId('overlay'), show && overlay);
 
     if (show || adjust) {
         let px = 0,
@@ -919,7 +919,7 @@ function show_popup(name, show, {
                 y = win_y / 2 - height / 2;
             }
             else {
-                let target = Id(id),
+                let target = CacheId(id),
                     rect = target? target.getBoundingClientRect(): null;
 
                 // align the popup with the target, if any
@@ -1305,7 +1305,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
                 if (data.text)
                     lines.push(`<input name="${key}" type="text"${class_}${holder} value=""${focus}${title}>`);
                 lines.push('<label for="file" data-t="Choose file"></label>');
-                Attrs(Id('file'), {'data-x': key});
+                Attrs(CacheId('file'), {'data-x': key});
                 break;
             case 'list':
                 lines.push([
@@ -1714,7 +1714,7 @@ function set_combo_value(letter, value, save=true) {
  * @returns {boolean} true if the theme was changed
  */
 function update_theme(themes, callback, version=1) {
-    let parent = Id('extra-style');
+    let parent = CacheId('extra-style');
     if (!parent)
         return false;
     if (!themes)
@@ -1851,7 +1851,7 @@ function guess_browser_language() {
  */
 function is_fullscreen() {
     let full = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
-    full_target = full? Id('body'): null;
+    full_target = full? CacheId('body'): null;
     return full;
 }
 
@@ -2649,7 +2649,7 @@ function create_url_list(dico) {
  * @param {number=} my mouse y
  */
 function draw_rectangle(node, orient, mx, my) {
-    let rect_node = Id('rect');
+    let rect_node = CacheId('rect');
     if (!node) {
         Hide(rect_node);
         return;
@@ -2778,7 +2778,7 @@ function populate_areas(activate) {
 
     // 2) process all areas
     Keys(areas).forEach(key => {
-        let parent = Id(key);
+        let parent = CacheId(key);
         if (!parent)
             return;
 
@@ -2796,7 +2796,7 @@ function populate_areas(activate) {
             sorder = areas[key].filter(item => (item[2] & 1)).map(item => item[0]).join(' ');
 
         for (let [id, tab, show] of areas[key]) {
-            let node = Id(id);
+            let node = CacheId(id);
             if (!node)
                 continue;
 
@@ -2868,7 +2868,7 @@ function populate_areas(activate) {
         for (let vector of areas[key]) {
             let no_tab,
                 [id, tab, show] = vector,
-                node = Id(id);
+                node = CacheId(id);
             if (!node)
                 continue;
 
@@ -2940,7 +2940,7 @@ function populate_areas(activate) {
 function set_draggable() {
     let drag = !!Y['drag_and_drop'];
     Attrs('.drag, .drop', {'draggable': drag});
-    Hide(Id('rect'));
+    Hide(CacheId('rect'));
     Class('.area', '-dragging');
 }
 
@@ -3016,7 +3016,7 @@ function set_engine_events() {
  */
 function set_modal_events(parent) {
     // settings events
-    parent = parent || Id('modal');
+    parent = parent || CacheId('modal');
     if (parent.dataset['ev'] == 0)
         return;
 
