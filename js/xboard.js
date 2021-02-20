@@ -3376,7 +3376,7 @@ class XBoard {
                         Class(child, [['book']], flag & 1);
                 if (new_flag & 2)
                     for (let child of list[3])
-                        Class(child, [['fail']], flag & 2);
+                        Class(child, [['fail']], !!(flag & 2));
             }
         });
 
