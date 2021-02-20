@@ -125,13 +125,13 @@ let {
     // array
     ['<i class="book">N</i>', 'i', [], undefined, 'book'],
     ['<i class="book">N</i>', 'i', [['book', 1]], undefined, ''],
-    ['<i class="book">N</i>', 'i', [['book', 2]], undefined, ''],
-    ['<i class="book">N</i>', 'i', [['book', 2]], true, ''],
-    ['<i class="book">N</i>', 'i', [['book', 2]], false, ''],
-    ['<i class="book">N</i>', 'i', [['book'], ['fail', 1]], true, 'book'],
+    ['<i class="book">N</i>', 'i', [['book', -1]], undefined, ''],
+    ['<i class="book">N</i>', 'i', [['book', -1]], true, ''],
+    ['<i class="book">N</i>', 'i', [['book', -1]], false, ''],
+    ['<i class="book">N</i>', 'i', [['book'], ['fail', true]], true, 'book'],
     ['<i class="book">N</i>', 'i', [['book'], ['fail', 1]], false, 'fail'],
     ['<i class="book">N</i>', 'i', [['real'], ['turn', 0]], undefined, 'book real turn'],
-    ['<i class="book">N</i>', 'i', [['real'], ['turn', 2], ['book', 2]], undefined, 'real turn'],
+    ['<i class="book">N</i>', 'i', [['real'], ['turn', false], ['book', -1]], undefined, 'real turn'],
 ].forEach(([html, sel, classes, add, answer], id) => {
     test(`Class:${id}`, () => {
         let soup = CreateNode('div', html);
