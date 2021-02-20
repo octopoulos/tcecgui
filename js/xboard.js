@@ -3374,11 +3374,9 @@ class XBoard {
                 if (new_flag & 1)
                     for (let child of list[3])
                         Class(child, [['book']], flag & 1);
-                if (new_flag & 2) {
-                    LS('change fail for', list, flag, flag & 2);
+                if (new_flag & 2)
                     for (let child of list[3])
                         Class(child, [['fail']], flag & 2);
-                }
             }
         });
 
