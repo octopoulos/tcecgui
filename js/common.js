@@ -323,23 +323,23 @@ function Class(sel, classes, add=true, parent=null) {
         for (let [name, flag] of classes) {
             if (!name)
                 continue;
-            switch (flag) {
-            case 1:
-            case true:
-                if (add)
-                    list.remove(name);
-                else
-                    list.add(name);
-                break;
-            case 2:
-                list.toggle(name);
-                break;
-            default:
+            // add
+            if (!flag) {
                 if (add)
                     list.add(name);
                 else
                     list.remove(name);
             }
+            // remove
+            else if (flag > 0) {
+                if (add)
+                    list.remove(name);
+                else
+                    list.add(name);
+            }
+            // toggle
+            else
+                list.toggle(name);
         }
         return;
     }
@@ -349,24 +349,23 @@ function Class(sel, classes, add=true, parent=null) {
         for (let [name, flag] of classes) {
             if (!name)
                 continue;
-            switch (flag) {
-            case 1:
-            case true:
-                if (add)
-                    list.remove(name);
-                else
-                    list.add(name);
-                break;
-            case 2:
-                list.toggle(name);
-                break;
-            default:
+            // add
+            if (!flag) {
                 if (add)
                     list.add(name);
                 else
                     list.remove(name);
-                break;
             }
+            // remove
+            else if (flag > 0) {
+                if (add)
+                    list.remove(name);
+                else
+                    list.add(name);
+            }
+            // toggle
+            else
+                list.toggle(name);
         }
     }, parent);
 }
@@ -946,26 +945,25 @@ function Style(sel, styles, add=true, parent=null) {
         for (let [name, value, flag] of styles) {
             if (!name)
                 continue;
-            switch (flag) {
-            case 1:
-            case true:
-                if (add)
-                    list.removeProperty(name);
-                else
-                    list.setProperty(name, value);
-                break;
-            case 2:
-                if (list.getPropertyValue(name))
-                    list.removeProperty(name);
-                else
-                    list.setProperty(name, value);
-                break;
-            default:
+            // add
+            if (!flag) {
                 if (add)
                     list.setProperty(name, value);
                 else
                     list.removeProperty(name);
             }
+            // remove
+            else if (flag > 0) {
+                if (add)
+                    list.removeProperty(name);
+                else
+                    list.setProperty(name, value);
+            }
+            // toggle
+            else if (list.getPropertyValue(name))
+                list.removeProperty(name);
+            else
+                list.setProperty(name, value);
         }
         return;
     }
@@ -975,26 +973,26 @@ function Style(sel, styles, add=true, parent=null) {
         for (let [name, value, flag] of styles) {
             if (!name)
                 continue;
-            switch (flag) {
-            case 1:
-            case true:
-                if (add)
-                    list.removeProperty(name);
-                else
-                    list.setProperty(name, value);
-                break;
-            case 2:
-                if (list.getPropertyValue(name))
-                    list.removeProperty(name);
-                else
-                    list.setProperty(name, value);
-                break;
-            default:
+            // add
+            if (!flag) {
                 if (add)
                     list.setProperty(name, value);
                 else
                     list.removeProperty(name);
             }
+            // remove
+            else if (flag > 0) {
+                if (add)
+                    list.removeProperty(name);
+                else
+                    list.setProperty(name, value);
+                break;
+            }
+            // toggle
+            else if (list.getPropertyValue(name))
+                list.removeProperty(name);
+            else
+                list.setProperty(name, value);
         }
     }, parent);
 }
