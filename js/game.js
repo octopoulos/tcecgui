@@ -1142,12 +1142,31 @@ function analyse_crosstable(section, data) {
                 let count = 0,
                     total = 0,
                     scores = games['Scores'].map((game, i) => {
-                        let link = create_game_link(section, game['Game'], '', true),
+                        let color, text,
+                            link = create_game_link(section, game['Game'], '', true),
                             score = game['Result'],
-                            sep = i? ((max_column && (i % max_column == 0))? '<br>': ' '): '';
+                            sep = i? ((max_column && (i % max_column == 0))? '<br>': ''): '',
+                            winner = game['Winner'];
+
+                        if (score > 0 && score < 1) {
+                            color = '';
+                            text = '½';
+                        }
+                        else {
+                            if (score == 0) {
+                                color = (winner == 'White')? 'b': 'w';
+                                text = score;
+                            }
+                            else if (score == 1) {
+                                color = (winner == 'White')? 'w': 'b';
+                                text = score;
+                            }
+                            color = `${color}cross `;
+                        }
+
                         count ++;
                         total += score;
-                        return `${sep}<a href="${link}" data-g="${game['Game']}" class="${SCORE_NAMES[score]}">${(score > 0 && score < 1)? '½': score}</a>`;
+                        return `${sep}<a href="${link}" data-g="${game['Game']}" class="${color}${SCORE_NAMES[score]}">${text}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
                 cross_row[`x_${abbrev}`] = count? (total / count + total * 1e-5 - count * 1e-7): -1;
