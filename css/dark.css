@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-14
+@version 2021-02-19
 - used in Live mode
 - inherits from light.css
 */
@@ -141,6 +141,12 @@ textarea:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #fff;
     white-space: normal;
+}
+.bcross {
+    background: rgba(0, 0, 0, 0.48);
+}
+.wcross {
+    background: rgba(255, 255, 255, 0.23);
 }
 
 /* bracket */
