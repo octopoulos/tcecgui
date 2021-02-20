@@ -1203,7 +1203,7 @@ class XBoard {
             list[0] = 0;
             list[2] = 0;
             for (let child of list[3])
-                Class(child, [['dn'], ['book', 1]]);
+                Class(child, [['dn'], ['book', 1], ['fail', 1]]);
         }
     }
 
@@ -3374,9 +3374,11 @@ class XBoard {
                 if (new_flag & 1)
                     for (let child of list[3])
                         Class(child, [['book']], flag & 1);
-                if (new_flag & 2)
+                if (new_flag & 2) {
+                    LS('change fail for', list, flag, flag & 2);
                     for (let child of list[3])
-                        Class(child, [['fail']], !!(flag & 2));
+                        Class(child, [['fail']], flag & 2);
+                }
             }
         });
 
