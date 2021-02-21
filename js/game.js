@@ -2626,7 +2626,7 @@ function calculate_event_stats(section, rows) {
                 win_draws += !!(decisive & 2);
                 num_pair ++;
 
-                let text = ` dec${decisive}${(decisive & 1)? ' dec1': ''}`;
+                let text = ` dec${Pad(decisive, 2)}${(decisive & 1)? ' dec01': ''}`;
                 for (let item of [curr, next])
                     if (!item[1]['_text'].includes(text))
                         item[1]['_text'] += text;
@@ -3117,7 +3117,7 @@ function resize_bracket(force) {
  * @returns {number}
  */
 function create_seek(text, flag, class_='win') {
-    return text? `<a class="${class_}" data-seek="dec${flag}">${text}</a>`: text;
+    return text? `<a class="${class_}" data-seek="dec${Pad(flag, 2)}">${text}</a>`: text;
 }
 
 // PGN
