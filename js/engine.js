@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-02-20
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -536,8 +536,7 @@ function load_defaults() {
     });
 
     // use browser language
-    if (!Y['language'])
-        guess_browser_language();
+    guess_browser_language();
 }
 
 /**
@@ -1835,13 +1834,17 @@ function guess_browser_language() {
     let indices = Assign({}, ...Keys(LANGUAGES).map(lan => ({[lan.slice(0, 2)]: lan}))),
         languages = [...[navigator.language], ...(navigator.languages || [])];
     Assign(indices, LANGUAGES_23);
+
     for (let lan of languages) {
         lan = lan.split('-')[0];
         let index = indices[lan];
-        if (index) {
+        if (!index)
+            continue;
+
+        if (!Y['language'])
             Y['language'] = index;
-            break;
-        }
+        DEFAULTS['language'] = index;
+        break;
     }
 }
 

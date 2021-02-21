@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-19
+@version 2021-02-20
 - used in Live mode
 - inherits from light.css
 */
@@ -143,10 +143,10 @@ textarea:hover {
     white-space: normal;
 }
 .bcross {
-    background: rgba(0, 0, 0, 0.48);
+    background: rgba(0, 0, 0, 0.24);
 }
 .wcross {
-    background: rgba(255, 255, 255, 0.23);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* bracket */

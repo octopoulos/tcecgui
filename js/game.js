@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-02-20
 //
 // Game specific code:
 // - control the board, moves
@@ -204,9 +204,12 @@ let ANALYSIS_URLS = {
     ],
     // decisive head 2 head
     DECISIVES = {
-        '0-1|1-0': 3,
-        '1-0|1/2-1/2': 1,
-        '0-1|1/2-1/2': 1,
+        '0-1|0-1': 16,                  // busted
+        '0-1|1-0': 5,                   // double win
+        '0-1|1/2-1/2': 3,               // win + draw
+        '1-0|1-0': 16,                  // busted
+        '1-0|1/2-1/2': 3,               // win + draw
+        '1/2-1/2|1/2-1/2': 8,           // double draw
     },
     DEFAULT_ACTIVES = {
         'archive': 'season',
@@ -216,9 +219,9 @@ let ANALYSIS_URLS = {
         'fischerandom': 1,
     },
     ENGINE_FEATURES = {
-        'AllieStein': 1 + 4,              // & 1 => NN engine
+        'AllieStein': 1 + 4,            // & 1 => NN engine
         'Chat': 256,
-        'LCZero': 1 + 2,                  // & 2 => Leela variations
+        'LCZero': 1 + 2,                // & 2 => Leela variations
         'ScorpioNN': 1,
         'Stoofvlees': 1 + 8,
     },
@@ -348,6 +351,14 @@ let ANALYSIS_URLS = {
         '=': 'draw',
     },
     shake_animation,
+    STATS_TITLES = {
+        'reverses': 'engine A vs B, then engine B vs A',
+        'decisive_openings': 'winner = 2-0 or 1.5-0.5',
+        'double_wins': 'winner = 2-0',
+        'double_draws': 'result = 1-1 with 2 draws',
+        '{Win} & {draw}': 'winner = 1.5-0.5',
+        'busted_openings': 'result = 1-1 with a win + loss',
+    },
     table_data = {
         'archive': {},
         'live': {},
@@ -784,6 +795,7 @@ function create_boards(mode='html') {
     update_board_theme(7);
 
     xboards['pva'].reset(y_x);
+    S('i.agree', Y['agree_length']);
 }
 
 /**
@@ -2583,28 +2595,42 @@ function calculate_event_stats(section, rows) {
             min_time = [time, game];
 
         let open_engine = /** @type {!Object} */(SetDefault(open_engines, unique, {}));
-        SetDefault(open_engine, pair, []).push(result);
+        SetDefault(open_engine, pair, []).push([result, row]);
     }
 
     // 3) encounters
-    let decisives = 0,
-        kills = 0,
+    let busted = 0,
+        decisives = 0,
+        double_draws = 0,
+        double_wins = 0,
         num_half = (num_engine * (num_engine - 1)) / 2,
         num_pair = 0,
         num_round = Ceil(length / num_half / 2),
-        reverse = (games >= length)? ' #': ((Floor(games / num_half) & 1)? ' (R)': '');
+        reverse = (games >= length)? ' #': ((Floor(games / num_half) & 1)? ' (R)': ''),
+        win_draws = 0;
 
     Keys(open_engines).forEach(eco => {
         let open_engine = open_engines[eco];
         Keys(open_engine).forEach(pair => {
             let value = open_engine[pair];
-            for (let i = 0; i < value.length; i += 2)
-                if (value[i + 1]) {
-                    let decisive = DECISIVES[value.slice(i, i + 2).sort().join('|')];
-                    decisives += (decisive & 1);
-                    kills += !!(decisive & 2);
-                    num_pair ++;
-                }
+            for (let i = 0; i < value.length; i += 2) {
+                let curr = value[i],
+                    next = value[i + 1];
+                if (!next)
+                    continue;
+                let decisive = DECISIVES[[curr[0], next[0]].sort().join('|')];
+                busted += !!(decisive & 16);
+                decisives += (decisive & 1);
+                double_draws += !!(decisive & 8);
+                double_wins += !!(decisive & 4);
+                win_draws += !!(decisive & 2);
+                num_pair ++;
+
+                let text = ` dec${decisive}${(decisive & 1)? ' dec1': ''}`;
+                for (let item of [curr, next])
+                    if (!item[1]['_text'].includes(text))
+                        item[1]['_text'] += text;
+            }
         });
     });
 
@@ -2623,30 +2649,40 @@ function calculate_event_stats(section, rows) {
         'progress': length? format_percent(games/length): '-',
         'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
-        'white_wins': `${results['1-0']} [${format_percent(results['1-0'] / games)}]`,
-        'black_wins': `${results['0-1']} [${format_percent(results['0-1'] / games)}]`,
-        'draws': `${results['1/2-1/2']} [${format_percent(results['1/2-1/2'] / games)}]`,
-        //
         'reverses': num_pair,
-        'decisive_openings': `${decisives} [${format_percent(decisives / num_pair)}]`,
-        'double_wins': `${kills} [${format_percent(kills / num_pair)}]`,
+        'decisive_openings': [create_seek(decisives, 1), format_percent(decisives / num_pair)],
+        'double_wins': [create_seek(double_wins, 5), format_percent(double_wins / num_pair)],
+        'double_draws': [create_seek(double_draws, 8, 'game'), format_percent(double_draws / num_pair)],
+        '{Win} & {draw}': [create_seek(win_draws, 3), format_percent(win_draws / num_pair)],
+        'busted_openings': [create_seek(busted, 16), format_percent(busted / num_pair)],
         //
         'average_moves': Round(moves / games),
-        'min_moves': `${min_moves[0]} [${create_game_link(section, min_moves[1])}]`,
-        'max_moves': `${max_moves[0]} [${create_game_link(section, max_moves[1])}]`,
-        //
+        'min_moves': [min_moves[0], create_game_link(section, min_moves[1])],
+        'max_moves': [max_moves[0], create_game_link(section, max_moves[1])],
         'average_time': format_hhmmss(seconds / games),
-        'min_time': `${format_hhmmss(min_time[0])} [${create_game_link(section, min_time[1])}]`,
-        'max_time': `${format_hhmmss(max_time[0])} [${create_game_link(section, max_time[1])}]`,
+        'min_time': [format_hhmmss(min_time[0]), create_game_link(section, min_time[1])],
+        'max_time': [format_hhmmss(max_time[0]), create_game_link(section, max_time[1])],
+        //
+        'white_wins': [results['1-0'], format_percent(results['1-0'] / games)],
+        'black_wins': [results['0-1'], format_percent(results['0-1'] / games)],
+        'draws': [results['1/2-1/2'], format_percent(results['1/2-1/2'] / games)],
+
     };
     Assign(stats, dico);
 
     // 5) create the table
     let lines = Keys(dico).map(key => {
-        let title = Title(key.replace(/_/g, ' '));
+        let name = Title(key.replace(/_/g, ' ')),
+            stat = stats[key],
+            title = STATS_TITLES[key];
+
+        if (IsArray(stat))
+            stat = `${stat[0]} [${stat[1]}]`;
+        title = title? ` title="${title}"`: '';
+
         return [
             '<vert class="stats faround">',
-                `<div class="stats-title" data-t="${title}"></div><div>${stats[key]}</div>`,
+                `<div class="stats-title" data-t="${name}"${title}></div><div>${stat}</div>`,
             '</vert>',
         ].join('');
     });
@@ -3071,6 +3107,17 @@ function resize_bracket(force) {
     old_width = window_width;
     Style(node.firstChild, [['height', `${node.clientHeight}px`], ['width', `${width}px`]]);
     create_connectors();
+}
+
+/**
+ * Create a seek link
+ * @param {number} text
+ * @param {number} flag
+ * @param {string=} class_
+ * @returns {number}
+ */
+function create_seek(text, flag, class_='win') {
+    return text? `<a class="${class_}" data-seek="dec${flag}">${text}</a>`: text;
 }
 
 // PGN
@@ -4998,7 +5045,7 @@ function update_clock(section, id, move) {
 
     let mini = main.node_minis[id];
     if (same) {
-        TEXT(mini.keft, left);
+        TEXT(mini.left, left);
         TEXT(mini.time, time);
     }
     else if (section == 'pva')
@@ -5688,7 +5735,7 @@ function change_setting_game(name, value) {
     // using exact name
     switch (name) {
     case 'agree_length':
-        handle_board_events(main, 'ply', main.moves[main.ply]);
+        S('i.agree', value);
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {

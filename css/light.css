@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-19
+@version 2021-02-20
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -996,10 +996,10 @@ hsub {
     padding: 0 5px;
 }
 .bcross {
-    background: rgba(0, 0, 0, 0.14);
+    background: rgba(0, 0, 0, 0.08);
 }
 .wcross {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.24);
 }
 
 /* engines */
