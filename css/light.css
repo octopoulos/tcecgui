@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-20
+@version 2021-02-21
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -904,8 +904,12 @@ hsub {
 .cross {
     white-space: nowrap;
 }
-.draw {
-    color: #666;
+.draw,
+.draw0 {
+    color: #999;
+}
+.draw1 {
+    color: #444;
 }
 .fen {
     font-size: 0.85em;
@@ -915,13 +919,20 @@ hsub {
 .game {
     color: #11b;
 }
+.seek {
+    color: #07f;
+}
 .mono {
     font-family: consolas;
     font-size: large;
     text-align: left;
 }
-.loss {
+.loss,
+.loss1 {
     color: #f00;
+}
+.loss0 {
+    color: #f90;
 }
 .opening {
     min-width: 16em;
@@ -937,8 +948,12 @@ hsub {
 }
 .name.win,
 .url,
-.win {
+.win,
+.win0 {
     color: #008000;
+}
+.win1 {
+    color: #07c;
 }
 .year {
     font-size: 0.85em;
@@ -994,12 +1009,6 @@ hsub {
 }
 .cross > a {
     padding: 0 5px;
-}
-.bcross {
-    background: rgba(0, 0, 0, 0.08);
-}
-.wcross {
-    background: rgba(255, 255, 255, 0.24);
 }
 
 /* engines */

@@ -21,7 +21,8 @@ DONE         CREATED      DESCRIPTION
 ~          : 2021-02-16 : replace Class + Style: \bStyle\([^\s]+,\s['`]
 -          : 2021-02-20 : PVA playing with "d=4 e=att h=1 o=2 q=8 s=ab t=0 x=20" every=0 => choppy
 -          : 2021-02-20 : use analyse_log code when getting live data, calling add_moves_string
-2021-02-21 : 2021-02-21 : improved end game
+2021-02-21 : 2021-02-21 : better colors for crosstable: easy to see black & white games
+2021-02-21 : 2021-02-21 : improved evals for end game
 2021-02-20 : 2021-02-20 : 3 missing outcomes + links
 2021-02-19 : 2021-02-19 : crosstable shows dark/light background for win/loss
 2021-02-19 : 2021-02-19 : 1314 plies in 24.933s => 52.701 plies/s
