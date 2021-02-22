@@ -547,6 +547,8 @@ function format_fen(fen) {
  * @returns {string}
  */
 function format_hhmmss(seconds) {
+    if (!Number.isFinite(seconds))
+        return '-';
     let days = Floor(seconds / 86400);
     seconds = seconds % 86400;
     let text = FromSeconds(seconds).slice(0, -1).map(item => Pad(item)).join(':');

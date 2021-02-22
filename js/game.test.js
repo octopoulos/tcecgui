@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-11
+// @version 2021-02-21
 /*
 globals
 expect, global, require, test
@@ -993,10 +993,10 @@ function init_players(ply, players, evals) {
 
 // format_hhmmss
 [
-    [null, '00:00:00'],
-    [NaN, 'aN:aN:aN'],
-    [Infinity, 'Infinityd, aN:aN:aN'],
-    ['', '00:00:00'],
+    [null, '-'],
+    [NaN, '-'],
+    [Infinity, '-'],
+    ['', '-'],
     [0, '00:00:00'],
     [31, '00:00:31'],
     [314, '00:05:14'],
