@@ -1805,8 +1805,8 @@ function prepare_settings() {
             'left0': [
                 ['archive', 0, 1],
                 ['live', 0, 1],
-                ['moves-pv0', 0, 1],
                 ['moves-pv1', 0, 1],
+                ['moves-pv0', 0, 1],
                 ['table-live0', 0, 1],
                 ['table-live1', 0, 1],
             ],
