@@ -904,9 +904,12 @@ hsub {
 .cross {
     white-space: nowrap;
 }
+.gap {
+    margin-left: 8px;
+}
 .draw,
 .draw0 {
-    color: #999;
+    color: #888;
 }
 .draw1 {
     color: #444;
@@ -1008,7 +1011,7 @@ hsub {
     word-break: break-all;
 }
 .cross > a {
-    padding: 0 5px;
+    padding: 0 4px;
 }
 
 /* engines */

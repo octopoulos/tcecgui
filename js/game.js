@@ -1119,7 +1119,7 @@ function analyse_crosstable(section, data) {
         data_x = table_data[section]['sched'] || {},
         rows = data_x.data || [];
     for (let row of rows) {
-        let game = row['game'],
+        let game = row['_id'] + 1,
             white = row['white'];
         if (game && white)
             colors[game] = white;
@@ -1188,7 +1188,7 @@ function analyse_crosstable(section, data) {
                             text = score;
                         }
 
-                        let class_ = `${SCORE_NAMES[score]}${color}`;
+                        let class_ = `${SCORE_NAMES[score]}${color}${(i && !sep && !(i & 1))? ' gap': ''}`;
                         count ++;
                         total += score;
                         return `${sep}<a href="${link}" data-g="${game['Game']}" class="${class_}">${text}</a>`;
