@@ -186,20 +186,20 @@ int MOBILITY_LIMITS[] = {
     // material eval
     PIECE_SCORES[] = {
         0,
-        160,        // P
+        161,        // P
         720,        // N
-        750,        // B
+        752,        // B
         1200,       // R
-        2500,       // Q
-        5000,       // K
+        2496,       // Q
+        4992,       // K
         0,
         0,
-        160,        // p
+        161,        // p
         720,        // n
-        750,        // b
+        752,        // b
         1200,       // r
-        2500,       // q
-        5000,       // k
+        2496,       // q
+        4992,       // k
         0,
     },
     PROMOTE_SCORES[] = {
@@ -1422,43 +1422,57 @@ public:
      * - 8/5n2/8/3K4/8/8/b7/7k w - - 0 1  KNB vs K
      */
     int evaluate() {
+        // 1) draw
         if (half_moves >= 100)
             return 0;
-        int score = 0;
+        int mat0 = materials[WHITE],
+            mat1 = materials[BLACK],
+            low0 = (!(mat0 & 15) && mat0 < 6000),
+            low1 = (!(mat1 & 15) && mat1 < 6000),
+            score = 0;
 
+        if (low0) {
+            if (low1)
+                return 0;
+            mat1 += 1000;
+        }
+        else if (low1)
+            mat0 += 1000;
+
+        // 2) material
         if (eval_mode & 1) {
-            score += materials[WHITE] - materials[BLACK];
+            score += mat0 - mat1;
             // KRR vs KR => KR should not exchange the rook
-            float ratio = materials[WHITE] * 1.0f / (materials[WHITE] + materials[BLACK]) - 0.5f;
+            float ratio = mat0 * 1.0f / (mat0 + mat1) - 0.5f;
             score += int(ratio * 2048 + 0.5f);
         }
 
-        // mobility
+        // 3) mobility
         if (eval_mode & 2) {
-            if (!materials[WHITE]) {
+            if (mat0 <= 5000) {
                 auto king = kings[WHITE],
                     king2 = kings[BLACK];
-                score -= (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
-                score += (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
+                score -= (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 25;
+                score += (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 40;
                 score += mobilities[6] * 15;
             }
             else
                 for (auto i = 1; i < 7; i ++)
                     score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
 
-            if (!materials[BLACK]) {
+            if (mat1 <= 5000) {
                 auto king = kings[BLACK],
                     king2 = kings[WHITE];
-                score -= (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 15;
-                score += (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 10;
-                score += mobilities[6] * 15;
+                score += (std::abs(Filer(king) * 2 - 7) + std::abs(Rank(king) * 2 - 7)) * 25;
+                score -= (std::abs(Filer(king) - Filer(king2)) + std::abs(Rank(king) - Rank(king2))) * 40;
+                score -= mobilities[14] * 15;
             }
             else
                 for (auto i = 9; i < 15; i ++)
                     score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
         }
 
-        // attacks + defenses
+        // 4) attacks + defenses
         if (eval_mode & 4) {
             for (auto i = 1; i < 7; i ++)
                 score += attacks[i] + defenses[i];
@@ -1466,7 +1480,7 @@ public:
                 score -= attacks[i] + defenses[i];
         }
 
-        // squares
+        // 5) squares
         if (eval_mode & 8)
             score += positions[WHITE] - positions[BLACK];
 
