@@ -1113,7 +1113,19 @@ function analyse_crosstable(section, data) {
         titles = Assign({}, ...orders.map(name => ({[dicos[name]['Abbreviation']]: get_short_name(name)}))),
         wrap_cross = get_wrap('cross');
 
-    // 1) analyse all data => create rows for both tables
+    // 1) check the schedule
+    // - needed when crosstable has no color information
+    let colors = {},
+        data_x = table_data[section]['sched'] || {},
+        rows = data_x.data || [];
+    for (let row of rows) {
+        let game = row['game'],
+            white = row['white'];
+        if (game && white)
+            colors[game] = white;
+    }
+
+    // 2) analyse all data => create rows for both tables
     for (let name of orders) {
         let dico = dicos[name],
             results = dico['Results'];
@@ -1156,13 +1168,17 @@ function analyse_crosstable(section, data) {
                     scores = games['Scores'].map((game, i) => {
                         let text,
                             color = Undefined(game['Color'], ''),
-                            link = create_game_link(section, game['Game'], '', true),
+                            game_id = game['Game'],
+                            link = create_game_link(section, game_id, '', true),
                             score = game['Result'],
                             sep = i? ((max_column && (i % max_column == 0))? '<br>': ''): '',
                             winner = game['Winner'];
 
-                        if (score > 0 && score < 1)
+                        if (score > 0 && score < 1) {
+                            if (color == '')
+                                color = (colors[game_id] == name)? 0: 1;
                             text = '½';
+                        }
                         else if (score == 0) {
                             color = (winner == 'White')? 1: 0;
                             text = score;
@@ -1222,7 +1238,7 @@ function analyse_crosstable(section, data) {
         SetDefault(encounters, score, {})[name] = 0;
     }
 
-    // 2) direct encounters
+    // 3) direct encounters
     // - skip if only 2 engines
     if (orders.length > 2)
         Keys(encounters).forEach(key => {
@@ -1248,7 +1264,7 @@ function analyse_crosstable(section, data) {
 
     update_table(section, 'stand', stand_rows);
 
-    // 3) table-cross: might need to update the columns too
+    // 4) table-cross: might need to update the columns too
     let node = CacheId('table-cross'),
         new_columns = [...Split(TABLES.cross), ...abbrevs],
         scolumns = From(A('th', node)).map(node => node.textContent).join('|'),
