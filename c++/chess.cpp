@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-07
+// @version 2021-01-21
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -117,7 +117,7 @@ int MOBILITY_LIMITS[] = {
     // attacks + defenses
     // those values could be optimized automatically
     PIECE_ATTACKS[16][16] = {
-        //  .   P   N   B   R   Q   K   .   .   p   n   b   r   q   k   .
+        //   P   N   B   R   Q   K   .   .   p   n   b   r   q   k   .
         {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
         {0,  7, 15, 10,  2,  1,  0,  0,  0,  1,  1,  1,  1,  1,  5,  0},    // P
         {0,  5,  9,  9,  8,  8,  0,  0,  0,  5,  2,  9,  5,  5,  5,  0},    // N
@@ -227,9 +227,10 @@ std::map<std::string, int> EVAL_MODES = {
     {"hce", 1 + 2},
     {"mat", 1},
     {"mob", 2},
-    {"nn", 1 + 2 + 4 + 32},
+    {"nn", 1 + 2 + 4 + 8 + 16 + 32},
     {"null", 0},
-    {"sq", 1 + 2 + 4 + 8},
+    {"pawn", 1 + 2 + 4 + 8},
+    {"king", 1 + 2 + 4 + 8 + 16},
 };
 // piece names for print
 std::map<char, Piece> PIECES = {
@@ -1427,17 +1428,24 @@ public:
             return 0;
         int mat0 = materials[WHITE],
             mat1 = materials[BLACK],
-            low0 = (!(mat0 & 15) && mat0 < 6000),
-            low1 = (!(mat1 & 15) && mat1 < 6000),
+            num_pawn0 = mat0 & 15,
+            num_pawn1 = mat1 & 15,
+            low0 = (!num_pawn0 && mat0 < 6000),
+            low1 = (!num_pawn1 && mat1 < 6000),
             score = 0;
 
         if (low0) {
             if (low1)
                 return 0;
-            mat1 += 1000;
+            mat0 -= 300;
+            if (num_pawn1)
+                mat1 += 600;
         }
-        else if (low1)
-            mat0 += 1000;
+        else if (low1) {
+            mat1 -= 300;
+            if (num_pawn0)
+                mat0 += 600;
+        }
 
         // 2) material
         if (eval_mode & 1) {
@@ -1480,10 +1488,29 @@ public:
                 score -= attacks[i] + defenses[i];
         }
 
-        // 5) squares
-        if (eval_mode & 8)
-            score += positions[WHITE] - positions[BLACK];
+        // 5) pawns
+        if (eval_mode & 8) {
+            for (auto square = SQUARE_A8; square <= SQUARE_H1; square ++) {
+                if (square & 0x88) {
+                    square += 7;
+                    continue;
+                }
+                auto piece = board[square];
+                if (piece == PAWN) {
+                    if (board[square + 1] == PAWN)
+                        score += 15;
+                }
+                else if (piece == PAWN + 8) {
+                    if (board[square + 1] == PAWN + 8)
+                        score -= 15;
+                }
+            }
+        }
 
+        // 6) king
+        if (eval_mode & 16) {
+
+        }
         return score * (1 - (turn << 1));
     }
 
@@ -1498,6 +1525,10 @@ public:
         memset(positions, 0, sizeof(positions));
 
         for (auto i = SQUARE_A8; i <= SQUARE_H1; i ++) {
+            if (i & 0x88) {
+                i += 7;
+                continue;
+            }
             auto piece = board[i];
             if (!piece)
                 continue;

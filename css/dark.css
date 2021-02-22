@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-02-20
+@version 2021-02-21
 - used in Live mode
 - inherits from light.css
 */
@@ -68,8 +68,12 @@ textarea:hover {
 .seen {
     color: #ff0 !important;
 }
-.draw {
+.draw,
+.draw0 {
     color: #f5f5f5;
+}
+.draw1 {
+    color: #888;
 }
 #archive .real,
 #live .real,
@@ -112,12 +116,25 @@ textarea:hover {
 .game {
     color: #fa0;
 }
+.seek {
+    color: #0cf;
+}
 .sub2 {
     color: #fc0;
 }
 .url,
-.win {
+.win,
+.win0 {
     color: #4f1;
+}
+.win1 {
+    color: #08e;
+}
+.loss0 {
+    color: #fa0;
+}
+.loss1 {
+    color: #f00;
 }
 .tab,
 .tab:hover {
@@ -141,12 +158,6 @@ textarea:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #fff;
     white-space: normal;
-}
-.bcross {
-    background: rgba(0, 0, 0, 0.24);
-}
-.wcross {
-    background: rgba(255, 255, 255, 0.06);
 }
 
 /* bracket */

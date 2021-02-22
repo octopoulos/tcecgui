@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-20
+// @version 2021-02-21
 //
 // Game specific code:
 // - control the board, moves
@@ -1154,31 +1154,28 @@ function analyse_crosstable(section, data) {
                 let count = 0,
                     total = 0,
                     scores = games['Scores'].map((game, i) => {
-                        let color, text,
+                        let text,
+                            color = Undefined(game['Color'], ''),
                             link = create_game_link(section, game['Game'], '', true),
                             score = game['Result'],
                             sep = i? ((max_column && (i % max_column == 0))? '<br>': ''): '',
                             winner = game['Winner'];
 
-                        if (score > 0 && score < 1) {
-                            color = '';
+                        if (score > 0 && score < 1)
                             text = '½';
+                        else if (score == 0) {
+                            color = (winner == 'White')? 1: 0;
+                            text = score;
                         }
-                        else {
-                            if (score == 0) {
-                                color = (winner == 'White')? 'b': 'w';
-                                text = score;
-                            }
-                            else if (score == 1) {
-                                color = (winner == 'White')? 'w': 'b';
-                                text = score;
-                            }
-                            color = `${color}cross `;
+                        else if (score == 1) {
+                            color = (winner == 'White')? 0: 1;
+                            text = score;
                         }
 
+                        let class_ = `${SCORE_NAMES[score]}${color}`;
                         count ++;
                         total += score;
-                        return `${sep}<a href="${link}" data-g="${game['Game']}" class="${color}${SCORE_NAMES[score]}">${text}</a>`;
+                        return `${sep}<a href="${link}" data-g="${game['Game']}" class="${class_}">${text}</a>`;
                 }).join('');
                 cross_row[abbrev] = `<div class="cross">${scores}</div>`;
                 cross_row[`x_${abbrev}`] = count? (total / count + total * 1e-5 - count * 1e-7): -1;
@@ -2626,7 +2623,7 @@ function calculate_event_stats(section, rows) {
                 win_draws += !!(decisive & 2);
                 num_pair ++;
 
-                let text = ` dec${Pad(decisive, 2)}${(decisive & 1)? ' dec01': ''}`;
+                let text = ` dec=${Pad(decisive, 2)}${(decisive & 1)? ' dec=01': ''}`;
                 for (let item of [curr, next])
                     if (!item[1]['_text'].includes(text))
                         item[1]['_text'] += text;
@@ -2650,11 +2647,11 @@ function calculate_event_stats(section, rows) {
         'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
         'reverses': num_pair,
-        'decisive_openings': [create_seek(decisives, 1), format_percent(decisives / num_pair)],
-        'double_wins': [create_seek(double_wins, 5), format_percent(double_wins / num_pair)],
-        'double_draws': [create_seek(double_draws, 8, 'game'), format_percent(double_draws / num_pair)],
-        '{Win} & {draw}': [create_seek(win_draws, 3), format_percent(win_draws / num_pair)],
-        'busted_openings': [create_seek(busted, 16), format_percent(busted / num_pair)],
+        'decisive_openings': [create_seek(decisives, 'dec=01'), format_percent(decisives / num_pair)],
+        'double_wins': [create_seek(double_wins, 'dec=05'), format_percent(double_wins / num_pair)],
+        'double_draws': [create_seek(double_draws, 'dec=08'), format_percent(double_draws / num_pair)],
+        '{Win} & {draw}': [create_seek(win_draws, 'dec=03'), format_percent(win_draws / num_pair)],
+        'busted_openings': [create_seek(busted, 'dec=16'), format_percent(busted / num_pair)],
         //
         'average_moves': Round(moves / games),
         'min_moves': [min_moves[0], create_game_link(section, min_moves[1])],
@@ -2663,9 +2660,9 @@ function calculate_event_stats(section, rows) {
         'min_time': [format_hhmmss(min_time[0]), create_game_link(section, min_time[1])],
         'max_time': [format_hhmmss(max_time[0]), create_game_link(section, max_time[1])],
         //
-        'white_wins': [results['1-0'], format_percent(results['1-0'] / games)],
-        'black_wins': [results['0-1'], format_percent(results['0-1'] / games)],
-        'draws': [results['1/2-1/2'], format_percent(results['1/2-1/2'] / games)],
+        'white_wins': [create_seek(results['1-0'], '1-0'), format_percent(results['1-0'] / games)],
+        'black_wins': [create_seek(results['0-1'], '0-1'), format_percent(results['0-1'] / games)],
+        'draws': [create_seek(results['1/2-1/2'], '1/2-1/2'), format_percent(results['1/2-1/2'] / games)],
 
     };
     Assign(stats, dico);
@@ -3112,12 +3109,11 @@ function resize_bracket(force) {
 /**
  * Create a seek link
  * @param {number} text
- * @param {number} flag
- * @param {string=} class_
+ * @param {string} data
  * @returns {number}
  */
-function create_seek(text, flag, class_='win') {
-    return text? `<a class="${class_}" data-seek="dec${Pad(flag, 2)}">${text}</a>`: text;
+function create_seek(text, data) {
+    return text? `<a class="seek" data-seek="${data}">${text}</a>`: text;
 }
 
 // PGN

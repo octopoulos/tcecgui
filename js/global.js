@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-20
+// @version 2021-02-21
 //
 // global variables/functions shared across multiple js files
 //
@@ -26,7 +26,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210220',
+    VERSION = '20210221',
     virtual_close_popups,
     xboards = {};
 

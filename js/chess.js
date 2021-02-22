@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-02-21
 // - fast javascript implementation, 30000x faster
 // - FRC support
 // jshint -W069
@@ -221,9 +221,10 @@ let EVAL_MODES = {
         'hce': 1 + 2,
         'mat': 1,
         'mob': 2,
-        'nn': 1 + 2 + 4 + 32,
+        'nn': 1 + 2 + 4 + 8 + 16 + 32,
         'null': 0,
-        'sq': 1 + 2 + 4 + 8,
+        'pawn': 1 + 2 + 4 + 8,
+        'king': 1 + 2 + 4 + 8 + 16,
     },
     // piece names for print
     PIECES = {
@@ -1419,17 +1420,24 @@ var Chess = function(fen_) {
             return 0;
         let mat0 = materials[WHITE],
             mat1 = materials[BLACK],
-            low0 = (!(mat0 & 15) && mat0 < 6000),
-            low1 = (!(mat1 & 15) && mat1 < 6000),
+            num_pawn0 = mat0 & 15,
+            num_pawn1 = mat1 & 15,
+            low0 = (!num_pawn0 && mat0 < 6000),
+            low1 = (!num_pawn1 && mat1 < 6000),
             score = 0;
 
         if (low0) {
             if (low1)
                 return 0;
-            mat1 += 1000;
+            mat0 -= 300;
+            if (num_pawn1)
+                mat1 += 600;
         }
-        else if (low1)
-            mat0 += 1000;
+        else if (low1) {
+            mat1 -= 300;
+            if (num_pawn0)
+                mat0 += 600;
+        }
 
         // 2) material
         if (eval_mode & 1) {
@@ -1472,10 +1480,29 @@ var Chess = function(fen_) {
                 score -= attacks[i] + defenses[i];
         }
 
-        // 5) squares
-        if (eval_mode & 8)
-            score += positions[WHITE] - positions[BLACK];
+        // 5) pawns
+        if (eval_mode & 8) {
+            for (let square = SQUARE_A8; square <= SQUARE_H1; square ++) {
+                if (square & 0x88) {
+                    square += 7;
+                    continue;
+                }
+                let piece = board[square];
+                if (piece == PAWN) {
+                    if (board[square + 1] == PAWN)
+                        score += 15;
+                }
+                else if (piece == PAWN + 8) {
+                    if (board[square + 1] == PAWN + 8)
+                        score -= 15;
+                }
+            }
+        }
 
+        // 6) king
+        if (eval_mode & 16) {
+
+        }
         return score * (1 - (turn << 1));
     }
 
@@ -1490,6 +1517,10 @@ var Chess = function(fen_) {
         positions.fill(0);
 
         for (let i = SQUARE_A8; i <= SQUARE_H1; i ++) {
+            if (i & 0x88) {
+                i += 7;
+                continue;
+            }
             let piece = board[i];
             if (!piece)
                 continue;
