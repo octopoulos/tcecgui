@@ -1746,7 +1746,7 @@ function get_wrap(name, body) {
  * @param {string} text
  */
 function set_games_filter(text) {
-    _('#table-search .search').value = text;
+    CacheId('search').value = text;
     filter_table_rows('table', text, {name: 'sched', source: 'sched'});
 }
 
@@ -6345,8 +6345,9 @@ function handle_board_events(board, type, value, e, force) {
 /**
  * Select a tab and open the corresponding table
  * @param {string|Node} sel
+ * @param {boolean=} clicked user clicked on the tab?
  */
-function open_table(sel) {
+function open_table(sel, clicked) {
     clear_timeout('active');
 
     let tab = sel;
@@ -6366,6 +6367,9 @@ function open_table(sel) {
     if (parent.id == 'table-tabs') {
         Y['table_tab'][y_x] = target;
         save_option('table_tab');
+
+        if (clicked && target == 'sched')
+            set_games_filter('');
 
         // TODO: ugly hack, fix this later
         if (target.slice(0, 6) != 'table-')

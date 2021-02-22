@@ -1409,7 +1409,7 @@ function window_click(e) {
                 break;
             }
             if (HasClass(target, 'tab')) {
-                open_table(target);
+                open_table(target, true);
                 break;
             }
 
