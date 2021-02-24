@@ -2621,7 +2621,7 @@ function calculate_event_stats(section, rows) {
         num_half = (num_engine * (num_engine - 1)) / 2,
         num_pair = 0,
         num_round = Ceil(length / num_half / 2),
-        reverse = (games >= length)? ' #': ((Floor(games / num_half) & 1)? ' (R)': ''),
+        reverse = (games >= length && num_round > 1)? ' #': ((Floor(games / num_half) & 1)? ' (R)': ''),
         win_draws = 0;
 
     Keys(open_engines).forEach(eco => {
@@ -2662,7 +2662,7 @@ function calculate_event_stats(section, rows) {
         //
         'games': `${games}/${length}`,
         'progress': length? format_percent(games/length): '-',
-        'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${(length > 1)? reverse: ''}`,
+        'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
         'reverses': num_pair,
         'decisive_openings': [create_seek(decisives, 'dec=01'), format_percent(decisives / num_pair)],
