@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-02-23
 //
 // Game specific code:
 // - control the board, moves
@@ -2592,7 +2592,7 @@ function calculate_event_stats(section, rows) {
             result = row['result'],
             time = parse_time(row['duration']),
             // ideally, this should be the starting FEN after the book
-            unique = (num_engine <= 2)? 'x': row['eco'];
+            unique = (num_engine <= 2 || 1)? 'x': row['eco'];
 
         games ++;
         moves += move;
@@ -2657,12 +2657,12 @@ function calculate_event_stats(section, rows) {
     let dico = {
         //
         'start_time': `${start_time} <i class="year">${start_date}</i>`,
-        'end_time': `${end_time} <i class="year">${end_date}</i>`,
+        'end_time': length? `${end_time} <i class="year">${end_date}</i>`: '-',
         'duration': format_hhmmss(stats._duration),
         //
         'games': `${games}/${length}`,
         'progress': length? format_percent(games/length): '-',
-        'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
+        'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${(length > 1)? reverse: ''}`,
         //
         'reverses': num_pair,
         'decisive_openings': [create_seek(decisives, 'dec=01'), format_percent(decisives / num_pair)],
@@ -2671,12 +2671,12 @@ function calculate_event_stats(section, rows) {
         '{Win} & {draw}': [create_seek(win_draws, 'dec=03'), format_percent(win_draws / num_pair)],
         'busted_openings': [create_seek(busted, 'dec=16'), format_percent(busted / num_pair)],
         //
-        'average_moves': Round(moves / games),
-        'min_moves': [min_moves[0], create_game_link(section, min_moves[1])],
-        'max_moves': [max_moves[0], create_game_link(section, max_moves[1])],
+        'average_moves': games? Round(moves / games): '-',
+        'min_moves': [(min_moves[0] < Infinity)? min_moves[0]: '-', create_game_link(section, min_moves[1])],
+        'max_moves': [(max_moves[0] >= 0)? max_moves[0]: '-', create_game_link(section, max_moves[1])],
         'average_time': format_hhmmss(seconds / games),
-        'min_time': [format_hhmmss(min_time[0]), create_game_link(section, min_time[1])],
-        'max_time': [format_hhmmss(max_time[0]), create_game_link(section, max_time[1])],
+        'min_time': [(min_time[0] < Infinity)? format_hhmmss(min_time[0]): '-', create_game_link(section, min_time[1])],
+        'max_time': [(max_time[0] >= 0)? format_hhmmss(max_time[0]): '-', create_game_link(section, max_time[1])],
         //
         'white_wins': [create_seek(results['1-0'], '1-0'), format_percent(results['1-0'] / games)],
         'black_wins': [create_seek(results['0-1'], '0-1'), format_percent(results['0-1'] / games)],
@@ -2692,7 +2692,7 @@ function calculate_event_stats(section, rows) {
             title = STATS_TITLES[key];
 
         if (IsArray(stat))
-            stat = `${stat[0]} [${stat[1]}]`;
+            stat = (stat[0] == '-' || stat[1] == '-')? stat[0]: `${stat[0]} [${stat[1]}]`;
         title = title? ` title="${title}"`: '';
 
         return [
@@ -5280,9 +5280,9 @@ function update_player_eval(section, data, same_pv) {
             'engine': format_engine(data['engine'], true, 21),
             'eval': format_eval(eval_, true),
             'logo': short,
-            'node': format_unit(data['nodes']),
+            'node': format_unit(data['nodes'], '-'),
             'speed': (data['nps'] != undefined)? `${format_unit(data['nps'])}nps`: data['speed'],
-            'tb': format_unit(data['tbhits']),
+            'tb': format_unit(data['tbhits'], '-'),
         };
         Keys(stats).forEach(key => {
             TextHTML(CacheId(`${key}${id}`), stats[key]);
