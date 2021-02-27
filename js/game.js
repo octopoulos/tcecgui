@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-23
+// @version 2021-02-27
 //
 // Game specific code:
 // - control the board, moves
@@ -400,6 +400,7 @@ let ANALYSIS_URLS = {
     TIMEOUT_bench_load = 250,
     TIMEOUT_graph_resize = 250,
     TIMEOUT_info = 20,                  // show board info when opened a table
+    TIMEOUT_live = 1500,                // download live when enabling live_engine_1/2
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -1578,26 +1579,27 @@ function download_live() {
             redraw_eval_charts(section);
     }
 
-    // evals
-    let dico = {no_cache: true};
-    download_table(section, 'data.json', null, data => {
-        update_live_eval(section, data, 0);
-        _done();
-    }, dico);
-    download_table(section, 'data1.json', null, data => {
-        update_live_eval(section, data, 1);
-        _done();
-    }, dico);
-
     // live engines
-    download_table(section, 'liveeval.json', null, data => {
-        update_live_eval(section, data, 0);
-        _done();
-    }, dico);
-    download_table(section, 'liveeval1.json', null, data => {
-        update_live_eval(section, data, 1);
-        _done();
-    }, dico);
+    let dico = {no_cache: true};
+    for (let id of [0, 1]) {
+        if (!Y[`live_engine_${id + 1}`]) {
+            _done();
+            _done();
+            continue;
+        }
+
+        // eval
+        download_table(section, `data${id || ''}.json`, null, data => {
+            update_live_eval(section, data, id);
+            _done();
+        }, dico);
+
+        // chart
+        download_table(section, `liveeval${id || ''}.json`, null, data => {
+            update_live_eval(section, data, id);
+            _done();
+        }, dico);
+    }
 }
 
 /**
@@ -5823,6 +5825,16 @@ function change_setting_game(name, value) {
             save_option('scales');
             set_scale_func(target);
             update_chart(target);
+        }
+        break;
+    case 'live_engine_1':
+    case 'live_engine_2':
+        if (value)
+            add_timeout('live', download_live, TIMEOUT_live);
+        else {
+            let chart = charts['eval'];
+            chart.data.datasets[+name.slice(-1) + 1].data.length = 0;
+            chart.update();
         }
         break;
     case 'marker_color':
