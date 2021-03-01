@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-02-27
 //
 // jshint -W069
 /*
@@ -742,6 +742,9 @@ function update_live_chart(name, moves, id) {
     if (DEV['chart'])
         LS(`ULC: ${name} : ${id}`);
     if (!moves)
+        return;
+    // live engine is not desired?
+    if (id >= 2 && !Y[`live_engine_${id - 1}`])
         return;
 
     // library hasn't loaded yet => queue

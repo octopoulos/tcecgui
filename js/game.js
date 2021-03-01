@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-02-27
 //
 // Game specific code:
 // - control the board, moves
@@ -400,6 +400,7 @@ let ANALYSIS_URLS = {
     TIMEOUT_bench_load = 250,
     TIMEOUT_graph_resize = 250,
     TIMEOUT_info = 20,                  // show board info when opened a table
+    TIMEOUT_live = 1500,                // download live when enabling live_engine_1/2
     TIMEOUT_live_delay = 2,
     TIMEOUT_live_reload = 30,
     TIMEOUT_queue = 100,                // check the queue after updating a table
@@ -1578,26 +1579,27 @@ function download_live() {
             redraw_eval_charts(section);
     }
 
-    // evals
-    let dico = {no_cache: true};
-    download_table(section, 'data.json', null, data => {
-        update_live_eval(section, data, 0);
-        _done();
-    }, dico);
-    download_table(section, 'data1.json', null, data => {
-        update_live_eval(section, data, 1);
-        _done();
-    }, dico);
-
     // live engines
-    download_table(section, 'liveeval.json', null, data => {
-        update_live_eval(section, data, 0);
-        _done();
-    }, dico);
-    download_table(section, 'liveeval1.json', null, data => {
-        update_live_eval(section, data, 1);
-        _done();
-    }, dico);
+    let dico = {no_cache: true};
+    for (let id of [0, 1]) {
+        if (!Y[`live_engine_${id + 1}`]) {
+            _done();
+            _done();
+            continue;
+        }
+
+        // eval
+        download_table(section, `data${id || ''}.json`, null, data => {
+            update_live_eval(section, data, id);
+            _done();
+        }, dico);
+
+        // chart
+        download_table(section, `liveeval${id || ''}.json`, null, data => {
+            update_live_eval(section, data, id);
+            _done();
+        }, dico);
+    }
 }
 
 /**
@@ -2592,7 +2594,7 @@ function calculate_event_stats(section, rows) {
             result = row['result'],
             time = parse_time(row['duration']),
             // ideally, this should be the starting FEN after the book
-            unique = (num_engine <= 2)? 'x': row['eco'];
+            unique = (num_engine <= 2 || 1)? 'x': row['eco'];
 
         games ++;
         moves += move;
@@ -2621,7 +2623,7 @@ function calculate_event_stats(section, rows) {
         num_half = (num_engine * (num_engine - 1)) / 2,
         num_pair = 0,
         num_round = Ceil(length / num_half / 2),
-        reverse = (games >= length)? ' #': ((Floor(games / num_half) & 1)? ' (R)': ''),
+        reverse = (games >= length && num_round > 1)? ' #': ((Floor(games / num_half) & 1)? ' (R)': ''),
         win_draws = 0;
 
     Keys(open_engines).forEach(eco => {
@@ -2657,7 +2659,7 @@ function calculate_event_stats(section, rows) {
     let dico = {
         //
         'start_time': `${start_time} <i class="year">${start_date}</i>`,
-        'end_time': `${end_time} <i class="year">${end_date}</i>`,
+        'end_time': length? `${end_time} <i class="year">${end_date}</i>`: '-',
         'duration': format_hhmmss(stats._duration),
         //
         'games': `${games}/${length}`,
@@ -2671,12 +2673,12 @@ function calculate_event_stats(section, rows) {
         '{Win} & {draw}': [create_seek(win_draws, 'dec=03'), format_percent(win_draws / num_pair)],
         'busted_openings': [create_seek(busted, 'dec=16'), format_percent(busted / num_pair)],
         //
-        'average_moves': Round(moves / games),
-        'min_moves': [min_moves[0], create_game_link(section, min_moves[1])],
-        'max_moves': [max_moves[0], create_game_link(section, max_moves[1])],
+        'average_moves': games? Round(moves / games): '-',
+        'min_moves': [(min_moves[0] < Infinity)? min_moves[0]: '-', create_game_link(section, min_moves[1])],
+        'max_moves': [(max_moves[0] >= 0)? max_moves[0]: '-', create_game_link(section, max_moves[1])],
         'average_time': format_hhmmss(seconds / games),
-        'min_time': [format_hhmmss(min_time[0]), create_game_link(section, min_time[1])],
-        'max_time': [format_hhmmss(max_time[0]), create_game_link(section, max_time[1])],
+        'min_time': [(min_time[0] < Infinity)? format_hhmmss(min_time[0]): '-', create_game_link(section, min_time[1])],
+        'max_time': [(max_time[0] >= 0)? format_hhmmss(max_time[0]): '-', create_game_link(section, max_time[1])],
         //
         'white_wins': [create_seek(results['1-0'], '1-0'), format_percent(results['1-0'] / games)],
         'black_wins': [create_seek(results['0-1'], '0-1'), format_percent(results['0-1'] / games)],
@@ -2692,7 +2694,7 @@ function calculate_event_stats(section, rows) {
             title = STATS_TITLES[key];
 
         if (IsArray(stat))
-            stat = `${stat[0]} [${stat[1]}]`;
+            stat = (stat[0] == '-' || stat[1] == '-')? stat[0]: `${stat[0]} [${stat[1]}]`;
         title = title? ` title="${title}"`: '';
 
         return [
@@ -5280,9 +5282,9 @@ function update_player_eval(section, data, same_pv) {
             'engine': format_engine(data['engine'], true, 21),
             'eval': format_eval(eval_, true),
             'logo': short,
-            'node': format_unit(data['nodes']),
+            'node': format_unit(data['nodes'], '-'),
             'speed': (data['nps'] != undefined)? `${format_unit(data['nps'])}nps`: data['speed'],
-            'tb': format_unit(data['tbhits']),
+            'tb': format_unit(data['tbhits'], '-'),
         };
         Keys(stats).forEach(key => {
             TextHTML(CacheId(`${key}${id}`), stats[key]);
@@ -5823,6 +5825,16 @@ function change_setting_game(name, value) {
             save_option('scales');
             set_scale_func(target);
             update_chart(target);
+        }
+        break;
+    case 'live_engine_1':
+    case 'live_engine_2':
+        if (value)
+            add_timeout('live', download_live, TIMEOUT_live);
+        else {
+            let chart = charts['eval'];
+            chart.data.datasets[+name.slice(-1) + 1].data.length = 0;
+            chart.update();
         }
         break;
     case 'marker_color':

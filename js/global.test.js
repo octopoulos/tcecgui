@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-11
+// @version 2021-02-23
 //
 /*
 globals
@@ -326,6 +326,7 @@ global.DEFAULTS = {
     [false, 318315, undefined, undefined, '318.3k'],
     [true, NaN, undefined, undefined, 'N/A'],
     [true, undefined, '-', undefined, '-'],
+    [true, undefined, undefined, undefined, 'undefined'],
 ].forEach(([is_si, number, def, keep_decimal, answer], id) => {
     test(`format_unit:${id}`, () => {
         Y.SI_units = is_si;
