@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-20
+// @version 2021-03-02
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -280,6 +280,8 @@ function add_history() {
  * @param {boolean=} close close the popup
  */
 function change_setting(name, value, close) {
+    let old_value = Y[name];
+
     if (value != undefined) {
         // TODO: clamp the value if min/max are defined
         if ('fi'.includes(TYPES[name]) && !isNaN(value))
@@ -306,7 +308,19 @@ function change_setting(name, value, close) {
 
     switch (name) {
     case 'language':
-        if (value == 'eng' || translates['_lan'] == value)
+        // load a language file?
+        if (value == 'zzz') {
+            if (old_value == 'eng')
+                old_value = 'fra';
+            _('select[name="language"]').value = old_value;
+            save_option(name, old_value);
+
+            let file = CacheId('file');
+            Attrs(file, {'data-x': name});
+            file.click();
+            break;
+        }
+        else if (value == 'eng' || translates['_lan'] == value)
             translate_nodes('body');
         else if (value != 'eng')
             api_translate_get();
@@ -2954,8 +2968,9 @@ function set_draggable() {
  * Get translations
  * @param {boolean=} force
  * @param {Function=} callback
+ * @param {Object=} custom_data provide translations directly
  */
-function api_translate_get(force, callback) {
+function api_translate_get(force, callback, custom_data) {
     /**
      * @param {Object=} data
      */
@@ -2969,6 +2984,12 @@ function api_translate_get(force, callback) {
         translate_nodes('body');
         if (callback)
             callback();
+    }
+
+    // 0) custom data
+    if (custom_data) {
+        _done(custom_data);
+        return;
     }
 
     // 1) cached?

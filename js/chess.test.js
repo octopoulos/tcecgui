@@ -191,8 +191,8 @@ beforeEach(() => {
     [false, 'd=4 t=8 q=10', 5, [5, 1, 1e9, 0, 8, 10]],
     [false, 'd=6', 0, [6, 1, 1e9, 0, 0, 0]],
     [false, 'd=6', 4, [4, 1, 1e9, 0, 0, 0]],
-    [false, 'd=7 e=pawn', 0, [7, 15, 1e9, 0, 0, 0]],
-    [false, 'd=7 e=king', 0, [7, 31, 1e9, 0, 0, 0]],
+    [false, 'd=7 e=paw', 0, [7, 15, 1e9, 0, 0, 0]],
+    [false, 'd=7 e=kin', 0, [7, 23, 1e9, 0, 0, 0]],
     [false, 'd=8 e=nn n=1000 s=ab t=30', 0, [8, 63, 1000, 2, 30, 0]],
     [true, 'e=hce q=5', 0, [4, 3, 1e9, 0, 0, 5]],
     [true, 'e=att', 0, [4, 7, 1e9, 0, 0, 0]],
@@ -247,7 +247,7 @@ beforeEach(() => {
 
 // evaluate
 [
-    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=null', [0, 0]],
+    ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=nul', [0, 0]],
     ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mat', [-483, -483]],
     ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=mob', [212, 212]],
     ['7k/2q3bP/p2pbp2/r3n3/3QP3/2N5/2P1B3/3RK1R1 b - - 0 33', 'e=hce', [-271, -271]],

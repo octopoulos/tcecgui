@@ -724,7 +724,8 @@ input.multi2 {
 .marker.seen::before {
     background: rgba(255, 255, 255, 0.85);
 }
-#moves-pv1 .marker::before {
+#moves-pv1 .marker::before,
+#pv1 .marker::before {
     background: #000;
     color: #fff;
 }

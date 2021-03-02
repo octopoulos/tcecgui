@@ -217,14 +217,14 @@ let MOBILITY_LIMITS = I8([
 
 // extras
 let EVAL_MODES = {
-        'att': 1 + 2 + 4,
-        'hce': 1 + 2,
-        'mat': 1,
-        'mob': 2,
-        'nn': 1 + 2 + 4 + 8 + 16 + 32,
-        'null': 0,
-        'pawn': 1 + 2 + 4 + 8,
-        'king': 1 + 2 + 4 + 8 + 16,
+        "att": 1 + 2 + 4,
+        "hce": 1 + 2,
+        "mat": 1,
+        "mob": 2,
+        "nn": 1 + 2 + 4 + 8 + 16 + 32,
+        "nul": 0,
+        "paw": 1 + 2 + 4 + 8,
+        "kin": 1 + 2 + 4 + 16,
     },
     // piece names for print
     PIECES = {
@@ -1408,7 +1408,7 @@ var Chess = function(fen_) {
 
     /**
      * Evaluate the current position
-     * - eval_mode: 0:null, 1:mat, 2:hc2, &4:qui, 8:nn
+     * - eval_mode: 0:nul, 1:mat, 2:hc2, 4:att, 8:paw, 16:kin, 32:nn
      * - 8/5q2/8/3K4/8/8/8/7k w - - 0 1 KQ vs K
      * - 8/5r2/8/3K4/8/8/8/7k w - - 0 1 KR vs K
      * - 8/5n2/8/3K4/8/8/b7/7k w - - 0 1  KNB vs K
@@ -1449,6 +1449,8 @@ var Chess = function(fen_) {
 
         // 3) mobility
         if (eval_mode & 2) {
+            let factor = (eval_mode & 16)? 1: 2;
+
             if (mat0 <= 5000) {
                 let king = kings[WHITE],
                     king2 = kings[BLACK];
@@ -1458,7 +1460,7 @@ var Chess = function(fen_) {
             }
             else
                 for (let i = 1; i < 7; i ++)
-                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
+                    score += Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * factor;
 
             if (mat1 <= 5000) {
                 let king = kings[BLACK],
@@ -1469,7 +1471,7 @@ var Chess = function(fen_) {
             }
             else
                 for (let i = 9; i < 15; i ++)
-                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * 2;
+                    score -= Min(mobilities[i] * MOBILITY_SCORES[i], MOBILITY_LIMITS[i]) * factor;
         }
 
         // 4) attacks + defenses
@@ -1500,9 +1502,8 @@ var Chess = function(fen_) {
         }
 
         // 6) king
-        if (eval_mode & 16) {
-
-        }
+        // if (eval_mode & 16) {
+        // }
         return score * (1 - (turn << 1));
     }
 
