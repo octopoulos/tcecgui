@@ -11,7 +11,7 @@ let fs = require('fs'),
     glob = require('glob'),
     unzipper = require('unzipper'),
     {
-        Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, Keys, LS, Max, Now, Pad, SetDefault,
+        Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, IsDigit, Keys, LS, Max, Now, Pad, SetDefault,
     } = require('./js/common.js'),
     {fix_move_format} = require('./js/global.js'),
     {extract_threads, parse_pgn} = require('./js/game.js');
@@ -161,7 +161,7 @@ function get_pgn_stats(data, origin) {
         // add synonym
         let name2 = [name, event, threads, gpus].map(item => item || '').join('|');
         if (threads)
-            synonyms[`${name}|${event}`] = name2;
+            synonyms[`${name}|${event}`] = name2.replace(' copy', '');
 
         if (name == engine_check) {
             moves.forEach((move, mi) => {
@@ -199,7 +199,7 @@ function merge_stats(result) {
             stats = result[key];
 
         // no threads => resolve synonym
-        if (!splits[2]) {
+        if (!splits[2] || splits[0].includes(' copy')) {
             let name_key = splits.slice(0, 2).join('|'),
                 synonym = synonyms[name_key];
             if (synonym) {
@@ -238,6 +238,12 @@ function merge_stats(result) {
         sort_engine = OPTIONS.engine,
         sort_event = OPTIONS.event,
         spaces = maxs.map(max => create_spaces(max));
+
+    // skip 40StockfishClassical 202007311012
+    keys = keys.filter(key => {
+        LS(key, IsDigit(key[0]), IsDigit(key[1]) && key.includes('Stockfish'));
+        return !IsDigit(key[0]) || !IsDigit(key[1]) || !key.includes('Stockfish');
+    });
 
     keys.sort((a, b) => {
         let sa = a.split('|'),

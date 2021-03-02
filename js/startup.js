@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-03-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1729,6 +1729,9 @@ function set_global_events() {
                     change_setting(id, data);
                     save_option('last_preset', file.name.split('.').slice(0, -1).join('.'));
                     break;
+                case 'language':
+                    api_translate_get(false, undefined, ParseJSON(data));
+                    break;
                 case 'load_pgn':
                     let new_section = 'archive';
                     if (update_pgn(new_section, data)) {
@@ -2418,7 +2421,7 @@ function prepare_settings() {
             '_pop': true,
             '_prefix': 'game_',
             'game_depth': option_number(4, 0, 8),
-            'game_evaluation': [['null', 'mat', 'mob', 'hce', 'att', 'pawn', 'king', 'nn'], 'att'],
+            'game_evaluation': [['nul', 'mat', 'mob', 'hce', 'att', 'paw', 'kin', 'nn'], 'att'],
             'game_options_black': [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             'game_options_white': [{type: 'area'}, 'd=4 e=att h=1 o=2 q=8 s=ab t=2 x=20'],
             'game_search': [['ab=AlphaBeta', 'mm=Minimax', 'rnd=RandomMove'], 'ab'],
@@ -2512,6 +2515,7 @@ function startup() {
         'pol': 'polski',
         'rus': 'русский',
         'ukr': 'українська',
+        'zzz': '...',
     };
 
     // assign virtual functions
