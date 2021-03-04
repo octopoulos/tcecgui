@@ -2062,7 +2062,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'date':
                 // TODO: fix winners.json
-                value = value.replace('February', 'Feb').replace('October', 'Oct');
+                value = value.replace('February', 'Feb').replace('June', 'Jun').replace('October', 'Oct');
                 break;
             case 'download':
             case 'pgn':
