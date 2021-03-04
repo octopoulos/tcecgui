@@ -4249,7 +4249,7 @@ function update_pgn(section, data, extras, reset_moves) {
             LS(pgn);
         }
 
-        main.reset(section, {evals: is_same, start_fen: pgn.frc});
+        main.reset(section, {evals: is_same, render: is_same, start_fen: pgn.frc});
         main.clear_moves(main.moves.length);
         if (is_same) {
             reset_sub_boards(section, 7, true, pgn.frc);
