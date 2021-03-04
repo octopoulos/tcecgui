@@ -385,6 +385,9 @@ let ANALYSIS_URLS = {
         'winner': 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
+    TERMINATIONS = {
+        'Fifty moves rule': 'Fifty-move rule',
+    },
     THREAD_KEYS = {
         'cores': 4,
         'cpus': 3,
@@ -2147,7 +2150,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 value = `${row['started']? '': '<i data-t="{Estd}: "></i>'}${time} <i class="year">${date}</i>`;
                 break;
             case 'termination':
-                value = `<i data-t="${value}"></i>`;
+                value = `<i data-t="${TERMINATIONS[value] || value}"></i>`;
                 break;
             case 'white':
                 if (row['result'] == '1-0')
