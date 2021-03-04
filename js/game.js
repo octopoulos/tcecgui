@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-27
+// @version 2021-03-04
 //
 // Game specific code:
 // - control the board, moves
@@ -798,7 +798,7 @@ function create_boards(mode='html') {
     update_board_theme(7);
 
     xboards['pva'].reset(y_x);
-    S('i.agree', Y['agree_length']);
+    show_agree();
 }
 
 /**
@@ -925,6 +925,20 @@ function section_board(section) {
     }
     Y.s = section || y_x;
     return section || y_x;
+}
+
+/**
+ * Show/hide agree length
+ */
+function show_agree() {
+    let agree = Y['agree_length'];
+
+    Keys(xboards).forEach(key => {
+        let board = xboards[key],
+            show = (agree && !board.main_manual);
+        for (let parent of board.parents)
+            Class('i.agree', [['dn']], !show, parent);
+    });
 }
 
 /**
@@ -5751,7 +5765,7 @@ function change_setting_game(name, value) {
     // using exact name
     switch (name) {
     case 'agree_length':
-        S('i.agree', value);
+        show_agree();
         break;
     case 'show_ply':
         Keys(xboards).forEach(key => {
