@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-03-04
 /*
 globals
 expect, global, require, test
@@ -974,6 +974,7 @@ function init_players(ply, players, evals) {
     ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
     ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
     ['Stoofvlees II a14', true, 1, 'Stoofvlees<div class="version version-small">II a14</div>'],
+    ['Stoofvlees II a14', true, -2, 'Stoofvlees<div class="version2">II a14</div>'],
     ['SuperBaronizer', undefined, undefined, 'SuperBaronizer'],
 ].forEach(([text, multi_line, scale, answer], id) => {
     test(`format_engine:${id}`, () => {

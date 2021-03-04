@@ -526,7 +526,7 @@ function format_engine(engine, multi_line, scale) {
         return engine;
     let tag = multi_line? 'div': 'i',
         version = engine.slice(pos + 1),
-        version_class = `version${(scale && version.length >= scale)? ' version-small': ''}`;
+        version_class = `version${(scale < 0)? -scale: ((scale && version.length >= scale)? ' version-small': '')}`;
     return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
 }
 
@@ -2060,6 +2060,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                     class_ = 'loss';
                 value = format_engine(value, wrap);
                 break;
+            case 'date':
+                // TODO: fix winners.json
+                value = value.replace('February', 'Feb').replace('October', 'Oct');
+                break;
             case 'download':
             case 'pgn':
                 value = `<a href="${HOST_ARCHIVE}/${value}"><i data-svg="download"></i></a>`;
@@ -2067,7 +2071,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'engine':
             case 'runner':
             case 'winner':
-                if (!is_winner) {
+                if (is_winner)
+                    value = format_engine(value, true, -2);
+                else {
                     td_class = 'tal';
                     value = [
                         '<hori>',
@@ -2114,7 +2120,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 break;
             case 'score':
                 if (is_winner)
-                    value = value.replace(/-/g, '<br>- ').replace('Abandonded', '-');
+                    value = value.replace(/-/g, '<br>').replace('Abandonded', '-');
                 else {
                     let numbers = Split(row['gamesno'] || '', ',');
                     value = value.split('').map((item, id) => {
