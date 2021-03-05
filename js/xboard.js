@@ -1226,6 +1226,7 @@ class XBoard {
             this.set_ply(ply * 1, {animate: 1, manual: true});
 
         callback(this, 'move', ply);
+        this.play(true, true, 'clicked_move_list');
     }
 
     /**
@@ -1567,7 +1568,7 @@ class XBoard {
             }
 
             if (CONTROL_STOPS[name])
-                that.play(true, true, 'hook');
+                that.play(true, true, 'event_hook');
             SP(e);
         }, this.node);
 
