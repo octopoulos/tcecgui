@@ -2751,7 +2751,6 @@ function calculate_event_stats(section, rows) {
             '</vert>',
         ].join('');
     });
-    LS(lines);
 
     let parent = CacheId('table-stats'),
         node = _('.estats', parent);
