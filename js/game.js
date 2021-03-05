@@ -1159,7 +1159,7 @@ function analyse_crosstable(section, data) {
     }
 
     // keep a SQUARE shape, but also multiple of 2
-    let max_column = wrap_cross? Max(2, Ceil(Sqrt(max_game))): 0;
+    let max_column = wrap_cross? Max(2, Floor(Sqrt(max_game) + 0.5)): 0;
     max_column += (max_column & 1);
 
     for (let name of orders) {
