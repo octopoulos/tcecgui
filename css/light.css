@@ -1040,7 +1040,8 @@ hsub {
 }
 .version2 {
     color: #555;
-    font-size: 0.8em;
+    font-size: 0.85em;
+    word-break: break-all;
 }
 .engine,
 .version-small {
