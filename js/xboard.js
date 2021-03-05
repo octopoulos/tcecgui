@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-03-04
 //
 // game board:
 // - 4 rendering modes:
@@ -722,7 +722,7 @@ class XBoard {
      * @param {number} animate false => remove highlights
      */
     animate_html(move, animate) {
-        this.clear_high([['source'], ['target']], false);
+        this.clear_high();
 
         let prev = this.move2;
         if (prev) {
@@ -1176,10 +1176,13 @@ class XBoard {
 
     /**
      * Clear highlight squares
-     * @param {Array<*>} types source, target, turn, restore
+     * @param {Array<*>=} types source, target, turn, restore
      * @param {boolean=} restore
      */
     clear_high(types, restore) {
+        if (!types)
+            types = [['source'], ['target']];
+
         Style('.xhigh', [['background' ,'transparent']], true, this.xsquares);
         Class('.xhigh', types, false, this.xsquares);
         if (types.length == 2 && types[0][0] == 'source' && types[1][0] == 'target')
@@ -2105,7 +2108,7 @@ class XBoard {
         }
         else {
             this.set_fen(fen, true);
-            this.clear_high([['source'], ['target']], false);
+            this.clear_high();
             this.picked = null;
 
             // delete some moves when playing earlier move in PVA
@@ -2527,6 +2530,9 @@ class XBoard {
             this.evals[section].length = 0;
 
         this.clear_moves();
+        if (render)
+            this.clear_high();
+
         this.set_fen(null, render);
         this.set_last(this.last);
 
@@ -2913,7 +2919,7 @@ class XBoard {
         let moves = this.chess_moves(),
             froms = new Set(moves.map(move => MoveFrom(move)));
 
-        this.clear_high([['source'], ['target']], false);
+        this.clear_high();
         for (let from of froms)
             this.add_high(from, 'turn');
 
@@ -2986,7 +2992,7 @@ class XBoard {
                 return;
             }
             if (!suggest)
-                this.clear_high([['source'], ['target']], false);
+                this.clear_high();
 
             this.pv_string = '';
             Clear(this.pv_strings);
