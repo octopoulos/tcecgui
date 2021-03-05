@@ -388,7 +388,7 @@ class XBoard {
             this.delayed_compare(cur_ply, num_move - 1);
         }
         // way behind => set mode to quick
-        else if (delta >= 5) {
+        else if (delta >= 5 && this.ply >= this.seen) {
             if (!num_book || num_book < num_new) {
                 this.play_mode = 'quick';
                 let ratio = Exp((5 - delta) * 0.1);
@@ -2531,7 +2531,7 @@ class XBoard {
 
         this.clear_moves();
         if (render)
-            this.clear_high();
+            this.animate_html();
 
         this.set_fen(null, render);
         this.set_last(this.last);
