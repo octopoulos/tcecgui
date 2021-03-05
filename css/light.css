@@ -1672,6 +1672,7 @@ hsub {
 /* allow text selection */
 .adblock,
 #benchmark,
+.cross > a,
 #engine,
 #footer,
 .link,
