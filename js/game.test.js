@@ -11,7 +11,7 @@ let {Assign, FromTimestamp, IsArray, IsString, Keys, ParseJSON, Stringify, Undef
     {DEV, load_defaults, set_section, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
-        check_boom, check_explosion, check_explosion_boom, copy_pgn, create_boards, create_game_link,
+        check_boom, check_explosion, check_explosion_boom, copy_pgn, create_boards, create_game_link, create_seek,
         current_archive_link, extract_threads, fix_header_opening, format_engine, format_fen, format_hhmmss,
         format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, parse_time_control, tour_info,
         update_live_eval, update_materials, update_pgn, update_player_eval,
@@ -847,12 +847,26 @@ function init_players(ply, players, evals) {
 
 // create_game_link
 [
-    [{}, 'live', 1, '', '<a class="game" href="#game=1">1</a>'],
-    [{link: 'season=18&div=l3'}, 'live', 1, '', '<a class="game" href="#div=l3&game=1&season=18">1</a>'],
-].forEach(([info, section, game, text, answer], id) => {
+    [{}, 'live', 1, '', undefined, undefined, '<a class="game" href="#game=1">1</a>'],
+    [{}, 'live', 1, '', 4, undefined, '<a class="game" href="#game=1">[1]</a>'],
+    [{}, 'live', 1, '', 1, undefined, '#game=1'],
+    [{}, 'live', 1, '', 2, undefined, ['#game=1', undefined, '<i class="game">1</i>']],
+    [{}, 'live', 1, '', 6, 'yes', ['#game=1', 'yes', '<i class="game">[1]</i>']],
+    [{link: 'season=18&div=l3'}, 'live', 1, '', 0, '', '<a class="game" href="#div=l3&game=1&season=18">1</a>'],
+].forEach(([info, section, game, text, mode, prefix, answer], id) => {
     test(`create_game_link:${id}`, () => {
         Assign(tour_info[section], info);
-        expect(create_game_link(section, game, text)).toEqual(answer);
+        expect(create_game_link(section, game, text, mode, prefix)).toEqual(answer);
+    });
+});
+
+// create_seek
+[
+    [0, 10, 'dec=x', ['', 0, '']],
+    [1, 10, 'dec=x', ['dec=x', '<i class="seek">1</i>', '10%']],
+].forEach(([value, total, data, answer], id) => {
+    test(`create_seek:${id}`, () => {
+        expect(create_seek(value, total, data)).toEqual(answer);
     });
 });
 

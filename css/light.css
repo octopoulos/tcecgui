@@ -923,6 +923,10 @@ hsub {
 .game {
     color: #11b;
 }
+.link {
+    color: inherit;
+    display: block;
+}
 .seek {
     color: #07f;
 }
@@ -932,11 +936,12 @@ hsub {
     text-align: left;
 }
 .loss,
-.loss1 {
+.loss1,
+.loss .version {
     color: #f00;
 }
 .loss0 {
-    color: #f90;
+    color: #f80;
 }
 .opening {
     min-width: 16em;
@@ -953,11 +958,14 @@ hsub {
 .name.win,
 .url,
 .win,
-.win0 {
+.win .version {
     color: #008000;
 }
+.win0 {
+    color: #090;
+}
 .win1 {
-    color: #07c;
+    color: #06c;
 }
 .year {
     font-size: 0.85em;

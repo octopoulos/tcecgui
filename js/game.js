@@ -501,14 +501,29 @@ function calculate_score(text) {
  * @param {string} section archive, live
  * @param {number} game
  * @param {string=} text if not set, then use game as the text
- * @param {boolean=} only_link returns the link directly, instead of the <a ... > HTML
- * @returns {string}
+ * @param {number=} mode &1:returns the link directly, instead of the <a ... > HTML, &2:get array, &4:bracket
+ * @param {string=} prefix prefixed text
+ * @returns {Array<string>|string}
  */
-function create_game_link(section, game, text, only_link) {
+function create_game_link(section, game, text, mode, prefix) {
     let link = '#' + QueryString({query: `${tour_info[section].link}&game=${game}`, string: true});
-    if (only_link)
+    if (mode & 1)
         return link;
-    return `<a class="game" href="${link}">${text || game}</a>`;
+
+    let bracket = (mode & 4),
+        value = `${bracket? '[': ''}${text || game}${bracket? ']': ''}`;
+    return (mode & 2)? [link, prefix, `<i class="game">${value}</i>`]: `<a class="game" href="${link}">${value}</a>`;
+}
+
+/**
+ * Create a seek link
+ * @param {number} value
+ * @param {number} total
+ * @param {string} data
+ * @returns {Array<string>} ex: dec=x, <i class="seek">1</i>, 10%
+ */
+function create_seek(value, total, data) {
+    return (value && total)? [data, `<i class="seek">${value}</i>`, format_percent(value / total)]: ['', value, ''];
 }
 
 /**
@@ -1189,7 +1204,7 @@ function analyse_crosstable(section, data) {
                         let text,
                             color = Undefined(game['Color'], ''),
                             game_id = game['Game'],
-                            link = create_game_link(section, game_id, '', true),
+                            link = create_game_link(section, game_id, '', 1),
                             score = game['Result'],
                             sep = i? ((max_column && (i % max_column == 0))? '<br>': ''): '',
                             winner = game['Winner'];
@@ -2254,7 +2269,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             }
             // make sure the game is over
             else if (_('a.game[href]', this))
-                location.hash = create_game_link(section, game, '', true);
+                location.hash = create_game_link(section, game, '', 1);
         }, table);
 
         // fen preview
@@ -2677,7 +2692,8 @@ function calculate_event_stats(section, rows) {
     // 4) result object
     let stats = event_stats[section],
         [end_date, end_time] = FromTimestamp(stats._end),
-        [start_date, start_time] = FromTimestamp(start);
+        [start_date, start_time] = FromTimestamp(start),
+        kill_text = Y['reverse_kills']? 'reverse_kills': 'double_wins';
 
     let dico = {
         //
@@ -2690,22 +2706,23 @@ function calculate_event_stats(section, rows) {
         'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
         'reverses': num_pair,
-        'decisive_openings': [create_seek(decisives, 'dec=01'), format_percent(decisives / num_pair)],
-        'double_wins': [create_seek(double_wins, 'dec=05'), format_percent(double_wins / num_pair)],
-        'double_draws': [create_seek(double_draws, 'dec=08'), format_percent(double_draws / num_pair)],
-        '{Win} & {draw}': [create_seek(win_draws, 'dec=03'), format_percent(win_draws / num_pair)],
-        'busted_openings': [create_seek(busted, 'dec=16'), format_percent(busted / num_pair)],
+        'decisive_openings': create_seek(decisives, num_pair, 'dec=01'),
+        [kill_text]: create_seek(double_wins, num_pair, 'dec=05'),
+        'double_draws': create_seek(double_draws, num_pair, 'dec=08'),
+        '{Win} & {draw}': create_seek(win_draws, num_pair, 'dec=03'),
+        'busted_openings': create_seek(busted, num_pair, 'dec=16'),
         //
         'average_moves': games? Round(moves / games): '-',
-        'min_moves': [(min_moves[0] < Infinity)? min_moves[0]: '-', create_game_link(section, min_moves[1])],
-        'max_moves': [(max_moves[0] >= 0)? max_moves[0]: '-', create_game_link(section, max_moves[1])],
+        'min_moves': create_game_link(section, min_moves[1], '', 2, (min_moves[0] < Infinity)? min_moves[0]: '-'),
+        'max_moves': create_game_link(section, max_moves[1], '', 2, (max_moves[0] >= 0)? max_moves[0]: '-'),
         'average_time': format_hhmmss(seconds / games),
-        'min_time': [(min_time[0] < Infinity)? format_hhmmss(min_time[0]): '-', create_game_link(section, min_time[1])],
-        'max_time': [(max_time[0] >= 0)? format_hhmmss(max_time[0]): '-', create_game_link(section, max_time[1])],
+        'min_time': create_game_link(
+            section, min_time[1], '', 2, (min_time[0] < Infinity)? format_hhmmss(min_time[0]): '-'),
+        'max_time': create_game_link(section, max_time[1], '', 2, (max_time[0] >= 0)? format_hhmmss(max_time[0]): '-'),
         //
-        'white_wins': [create_seek(results['1-0'], '1-0'), format_percent(results['1-0'] / games)],
-        'black_wins': [create_seek(results['0-1'], '0-1'), format_percent(results['0-1'] / games)],
-        'draws': [create_seek(results['1/2-1/2'], '1/2-1/2'), format_percent(results['1/2-1/2'] / games)],
+        'white_wins': create_seek(results['1-0'], games, '1-0'),
+        'black_wins': create_seek(results['0-1'], games, '0-1'),
+        'draws': create_seek(results['1/2-1/2'], games, '1/2-1/2'),
 
     };
     Assign(stats, dico);
@@ -2713,19 +2730,28 @@ function calculate_event_stats(section, rows) {
     // 5) create the table
     let lines = Keys(dico).map(key => {
         let name = Title(key.replace(/_/g, ' ')),
+            seek = '',
             stat = stats[key],
             title = STATS_TITLES[key];
 
-        if (IsArray(stat))
-            stat = (stat[0] == '-' || stat[1] == '-')? stat[0]: `${stat[0]} [${stat[1]}]`;
+        if (IsArray(stat)) {
+            let [link, first, second] = stat;
+            if (link)
+                seek = ` ${(link[0] == '#')? 'href': 'data-seek'}="${link}"`;
+            if (second)
+                second = `[${second}]`;
+            stat = (first == '-' || second == '-')? first: `${first} ${second}`;
+        }
         title = title? ` title="${title}"`: '';
 
+        let tag = seek? 'a': 'div';
         return [
             '<vert class="stats faround">',
-                `<div class="stats-title" data-t="${name}"${title}></div><div>${stat}</div>`,
+                `<div class="stats-title" data-t="${name}"${title}></div><${tag} class="link"${seek}>${stat}</${tag}>`,
             '</vert>',
         ].join('');
     });
+    LS(lines);
 
     let parent = CacheId('table-stats'),
         node = _('.estats', parent);
@@ -3147,16 +3173,6 @@ function resize_bracket(force) {
     old_width = window_width;
     Style(node.firstChild, [['height', `${node.clientHeight}px`], ['width', `${width}px`]]);
     create_connectors();
-}
-
-/**
- * Create a seek link
- * @param {number} text
- * @param {string} data
- * @returns {number}
- */
-function create_seek(text, data) {
-    return text? `<a class="seek" data-seek="${data}">${text}</a>`: text;
 }
 
 // PGN
@@ -5874,6 +5890,10 @@ function change_setting_game(name, value) {
     case 'moves_left':
         Class(CacheId('movesleft'), 'hidden', !value);
         break;
+    case 'reverse_kills':
+        calculate_event_stats(section);
+        update_table(section, 'stats');
+        break;
     case 'rows_per_page':
         update_tab = true;
         break;
@@ -6747,6 +6767,7 @@ if (typeof exports != 'undefined')
         copy_pgn: copy_pgn,
         create_boards: create_boards,
         create_game_link: create_game_link,
+        create_seek: create_seek,
         current_archive_link: current_archive_link,
         extract_threads: extract_threads,
         fix_header_opening: fix_header_opening,
