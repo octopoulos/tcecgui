@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-05
+// @version 2021-03-06
 /*
 globals
 expect, global, require, test
@@ -12,9 +12,9 @@ let {Assign, FromTimestamp, IsArray, IsString, Keys, ParseJSON, Stringify, Undef
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
         check_boom, check_explosion, check_explosion_boom, copy_pgn, create_boards, create_game_link, create_seek,
-        current_archive_link, extract_threads, fix_header_opening, format_engine, format_fen, format_hhmmss,
-        format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, parse_time_control, tour_info,
-        update_live_eval, update_materials, update_pgn, update_player_eval,
+        current_archive_link, extract_threads, fix_header_opening, fix_zero_moves, format_engine, format_fen,
+        format_hhmmss, format_opening, format_percent, get_short_name, parse_date_time, parse_pgn, parse_time_control,
+        tour_info, update_live_eval, update_materials, update_pgn, update_player_eval,
     } = require('./game.js'),
     {get_fen_ply, xboards} = require('./global.js'),
     {create_chart_data} = require('./graph.js'),
@@ -971,6 +971,39 @@ function init_players(ply, players, evals) {
         let board = xboards.live;
         fix_header_opening(board, headers);
         expect(headers.Opening).toEqual(answer);
+    });
+});
+
+// fix_zero_moves
+[
+    [{}, {}, {}],
+    [
+        {100: {wv: '250.00'}, 101: {n: 0, wv: '0.00'}},
+        {},
+        {100: {ply: 100, wv: '250.00'}, 101: {n: 0, ply: 101, wv: undefined}},
+    ],
+    [
+        {101: {n: 0, mt: 0, ply: 101, wv: '0.00'}},
+        {100: {wv: '250.00'}},
+        {101: {n: 0, mt: 0, ply: 101, wv: undefined}},
+    ],
+].forEach(([moves, main_moves, answer], id) => {
+    test(`fix_zero_moves:${id}`, () => {
+        let answer2 = [],
+            main_moves2 = [],
+            moves2 = [];
+        Keys(moves).forEach(key => {
+            moves2[key] = moves[key];
+            moves2[key].ply = +key;
+        });
+        Keys(main_moves).forEach(key => {
+            main_moves2[key] = main_moves[key];
+        });
+        fix_zero_moves(moves2, main_moves2);
+        Keys(answer).forEach(key => {
+            answer2[key] = answer[key];
+        });
+        expect(moves2).toEqual(answer2);
     });
 });
 
