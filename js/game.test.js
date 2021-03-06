@@ -987,6 +987,11 @@ function init_players(ply, players, evals) {
         {100: {wv: '250.00'}},
         {101: {n: 0, mt: 0, ply: 101, wv: undefined}},
     ],
+    [
+        {101: {n: 1e6, mt: 1000, ply: 101, wv: '0.00'}},
+        {100: {wv: '250.00'}},
+        {101: {n: 1e6, mt: 1000, ply: 101, wv: '0.00'}},
+    ],
 ].forEach(([moves, main_moves, answer], id) => {
     test(`fix_zero_moves:${id}`, () => {
         let answer2 = [],
