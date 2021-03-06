@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-03-04
+@version 2021-03-05
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -920,6 +920,9 @@ hsub {
     min-width: 16em;
     word-break: break-all;
 }
+.rotate .fen {
+    min-width: 4em;
+}
 .game {
     color: #11b;
 }
@@ -945,6 +948,9 @@ hsub {
 }
 .opening {
     min-width: 16em;
+}
+.rotate .opening {
+    min-width: 4em;
 }
 .sub {
     font-size: 0.9em;

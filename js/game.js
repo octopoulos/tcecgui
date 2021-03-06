@@ -2047,8 +2047,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
         let row_id = Undefined(row['id'], row['_id']);
 
         let vector = columns.filter(key => !hidden[key]).map(key => {
-            let class_ = '',
-                td_class = '',
+            let td_class = '',
                 value = row[key];
 
             if (value == undefined) {
@@ -2069,11 +2068,15 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 td_class = 'opening';
                 break;
             case 'black':
+            case 'white':
+                let vclass = '';
                 if (row['result'] == '0-1')
-                    class_ = 'win';
+                    vclass = (key[0] == 'w')? 'loss': 'win';
                 else if (row['result'] == '1-0')
-                    class_ = 'loss';
-                value = format_engine(value, wrap);
+                    vclass = (key[0] == 'w')? 'win': 'loss';
+                if (vclass)
+                    vclass = ` class="${vclass}"`;
+                value = `<vert${vclass}>${format_engine(value, wrap)}</vert>`;
                 break;
             case 'date':
                 // TODO: fix winners.json
@@ -2173,13 +2176,6 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'termination':
                 value = `<i data-t="${TERMINATIONS[value] || value}"></i>`;
                 break;
-            case 'white':
-                if (row['result'] == '1-0')
-                    class_ = 'win';
-                else if (row['result'] == '0-1')
-                    class_ = 'loss';
-                value = format_engine(value, wrap);
-                break;
             default:
                 if (IsString(value)) {
                     if (is_cross && !td_class & key.length == 2)
@@ -2189,11 +2185,8 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 }
             }
 
-            if (class_)
-                value = `<div class="${class_}">${value}</div>`;
             if (td_class)
                 td_class = ` class="${td_class}"`;
-
             return `<td${td_class}>${value}</td>`;
         });
 
