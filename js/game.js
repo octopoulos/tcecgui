@@ -2743,7 +2743,7 @@ function calculate_event_stats(section, rows) {
     };
     Assign(stats, dico);
 
-    TEXT('#overview td[data-x="game"]', `${games + 1}/${length}`);
+    TEXT('#overview td[data-x="game"]', `${Min(games + 1, length)}/${length}${(games >= length)? ' #': ''}`);
 
     // 5) create the table
     let lines = Keys(dico).map(key => {
