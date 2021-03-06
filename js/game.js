@@ -3395,6 +3395,34 @@ function fix_header_opening(board, headers) {
 }
 
 /**
+ * Fix moves with a zero eval that should be undefined instead
+ * @param {Array<Move>} moves
+ * @param {Array<Move>} main_moves
+ */
+function fix_zero_moves(moves, main_moves) {
+    let prev,
+        prev_eval = 0;
+
+    moves.forEach(move => {
+        let eval_ = clamp_eval(move['wv']),
+            ply = get_move_ply(move);
+
+        if (!prev) {
+            let main_move = main_moves[ply - 1];
+            if (main_move) {
+                prev = main_move;
+                prev_eval = clamp_eval(main_move['wv']);
+            }
+        }
+        if (prev && eval_ == 0 && prev_eval > 0.5 && (move['d'] <= 1 || move['n'] < 10 || move['mt'] < 1000))
+            move['wv'] = undefined;
+
+        prev = move;
+        prev_eval = Abs(eval_);
+    });
+}
+
+/**
  * Parse raw pgn data
  * @param {string} section
  * @param {string|Object} data
@@ -4316,6 +4344,7 @@ function update_pgn(section, data, extras, reset_moves) {
         main.clear_moves();
 
     // 4) add the moves
+    fix_zero_moves(moves, main.moves);
     main.add_moves(moves, {keep_prev: true});
     check_missing_moves();
     main.time = Now(true);
@@ -6788,6 +6817,7 @@ if (typeof exports != 'undefined')
         current_archive_link: current_archive_link,
         extract_threads: extract_threads,
         fix_header_opening: fix_header_opening,
+        fix_zero_moves: fix_zero_moves,
         format_engine: format_engine,
         format_fen: format_fen,
         format_hhmmss: format_hhmmss,
