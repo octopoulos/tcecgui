@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-03-05
+@version 2021-03-06
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1771,6 +1771,12 @@ svg.down {
     #ad0,
     #ad1 {
         display: none;
+    }
+    #shortcut_1,
+    #shortcut_2,
+    #shortcut_3,
+    #table-winner {
+        max-height: unset;
     }
 }
 @media (max-width: 640px) {
