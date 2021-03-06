@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-03-04
+@version 2021-03-05
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -920,8 +920,15 @@ hsub {
     min-width: 16em;
     word-break: break-all;
 }
+.rotate .fen {
+    min-width: 4em;
+}
 .game {
     color: #11b;
+}
+.link {
+    color: inherit;
+    display: block;
 }
 .seek {
     color: #07f;
@@ -932,14 +939,18 @@ hsub {
     text-align: left;
 }
 .loss,
-.loss1 {
+.loss1,
+.loss .version {
     color: #f00;
 }
 .loss0 {
-    color: #f90;
+    color: #f80;
 }
 .opening {
     min-width: 16em;
+}
+.rotate .opening {
+    min-width: 4em;
 }
 .sub {
     font-size: 0.9em;
@@ -953,11 +964,14 @@ hsub {
 .name.win,
 .url,
 .win,
-.win0 {
+.win .version {
     color: #008000;
 }
+.win0 {
+    color: #090;
+}
 .win1 {
-    color: #07c;
+    color: #06c;
 }
 .year {
     font-size: 0.85em;
@@ -1057,6 +1071,12 @@ hsub {
 .engine::-webkit-scrollbar,
 .version-small::-webkit-scrollbar {
     display: none;
+}
+.rotate .split {
+    word-break: break-all;
+}
+.rotate .tal {
+    vertical-align: top;
 }
 #overview {
     font-size: 0.95em;
@@ -1664,8 +1684,10 @@ hsub {
 /* allow text selection */
 .adblock,
 #benchmark,
+.cross > a,
 #engine,
 #footer,
+.link,
 .live-basic,
 #live-log,
 .live-more,

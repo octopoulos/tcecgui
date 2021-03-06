@@ -130,14 +130,15 @@ textarea:hover {
 }
 .url,
 .win,
-.win0 {
+.win0,
+.win .version {
     color: #4f1;
 }
 .win1 {
-    color: #08e;
+    color: #08c;
 }
 .loss0 {
-    color: #fa0;
+    color: #f90;
 }
 .loss1 {
     color: #f00;
