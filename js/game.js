@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-05
+// @version 2021-03-06
 //
 // Game specific code:
 // - control the board, moves
@@ -374,7 +374,7 @@ let ANALYSIS_URLS = {
         'h2h':
             `{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening`
             + '|Termination|ECO|Final FEN|Start',
-        'overview': 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Opening|ECO|Event|Viewers',
+        'overview': 'TC|Adj Rule|50|Draw|Win|TB|Result|Round|Game|Opening|ECO|Event|Viewers',
         'sched':
             '{Game}#|White|white_ev=W.ev|black_ev=B.ev|Black|Result|rmobility_result=r-Mobility|Moves|Duration|Opening'
             + '|Termination|ECO|Final FEN|Start',
@@ -2029,7 +2029,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 5) process all rows => render the HTML
-    let columns = From(A('th', table2 || table)).map(node => node.dataset['x']),
+    let columns = From(A('thead > tr > th', table2 || table)).map(node => node.dataset['x']),
         hidden = {},
         is_cross = (name == 'cross'),
         is_game = (name == 'game'),
@@ -2742,6 +2742,8 @@ function calculate_event_stats(section, rows) {
 
     };
     Assign(stats, dico);
+
+    TEXT('#overview td[data-x="game"]', `${games + 1}/${length}`);
 
     // 5) create the table
     let lines = Keys(dico).map(key => {
