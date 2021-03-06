@@ -1,4 +1,4 @@
-Updated on 2021-03-05
+Updated on 2021-03-06
 
 How nps is calculated for each game:
 - nps = total nodes / total time, so, moves with a long thinking time have a lot of impact
@@ -38,7 +38,7 @@ Koivisto 4.16                                 : 144966958 : 144.9M : s20   : 172
 RubiChess 2.0.1                               : 139676516 : 139.6M : s20   : 176     :      : 3
 Ethereal TCEC S20 DivP (PEXT)                 : 138134832 : 138.1M : s20   : 176     :      : 2
 Stockfish 20210113                            : 136800768 : 136.8M : s20   : 172     :      : 120
-Vajolet2 2.9.0-TCEC-S19                       : 132026268 : 132.0M : s20   : 176     :      : 30
+Vajolet2 2.9.0-TCEC-S19                       : 131846510 : 131.8M : s20   : 176     :      : 36
 Counter 3.7                                   : 130795402 : 130.7M : s20   : 176     :      : 2
 Stockfish 202102202249                        : 128292089 : 128.2M : s20   : 172     :      : 3
 KomodoDragon 2647.00                          : 124381617 : 124.3M : s20   : 176     :      : 60
@@ -55,7 +55,7 @@ Monolith 20210221                             : 111640296 : 111.6M : s20   : 176
 FabChess 1.16                                 : 107822740 : 107.8M : s20   : 176     :      : 19
 Ethereal 12.89A_PRO_Cup_8                     : 105765730 : 105.7M : s20   : 176     :      : 5
 RubiChess 1.9_803c91ad5c                      : 104342687 : 104.3M : s20   : 176     :      : 33
-KomodoDragon 2671.00                          : 102582299 : 102.5M : s20   : 176     :      : 5
+KomodoDragon 2671.00                          : 101364689 : 101.3M : s20   : 176     :      : 12
 Wasp 4.10                                     : 100358087 : 100.3M : s20   : 128     :      : 34
 Marvin 5.1.0-a4                               :  98533632 :  98.5M : s20   : 176     :      : 2
 Winter 9.1                                    :  94843069 :  94.8M : s20   : 176     :      : 20
@@ -72,10 +72,10 @@ Winter 9.4                                    :  83413626 :  83.4M : s20   : 176
 Arasan v22.1.0-31-d9b3e64                     :  82209155 :  82.2M : s20   : 176     :      : 2
 Demolito dev-20201019                         :  81831050 :  81.8M : s20   : 176     :      : 12
 Pedone 20201206                               :  81602793 :  81.6M : s20   : 176     :      : 23
-SlowChess Blitz 2.41 avx                      :  71141051 :  71.1M : s20   : 176     :      : 36
+SlowChess Blitz 2.41 avx                      :  71418577 :  71.4M : s20   : 176     :      : 43
 SlowChess Blitz 2.5 avx                       :  62343279 :  62.3M : s20   : 176     :      : 32
-Minic 3.04                                    :  45244448 :  45.2M : s20   : 176     :      : 5
 Marvin 5.0.0-a9                               :  43500245 :  43.5M : s20   : 176     :      : 20
+Minic 3.04                                    :  42895132 :  42.8M : s20   : 176     :      : 11
 Minic 3.01_ne_nu                              :  41873202 :  41.8M : s20   : 176     :      : 42
 Seer 1.2.1                                    :  39753077 :  39.7M : s20   : 176     :      : 2
 Seer 1.2.1_dev                                :  38870616 :  38.8M : s20   : 176     :      : 49

@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-04
+// @version 2021-03-05
 //
 // Game specific code:
 // - control the board, moves
@@ -531,18 +531,43 @@ function create_seek(value, total, data) {
  * @param {string} engine
  * @param {boolean=} multi_line engine + version on 2 different lines
  * @param {number=} scale
+ * @param {boolean=} split KomodoDragon => Komodo + Dragon
  * @returns {string}
  */
-function format_engine(engine, multi_line, scale) {
+function format_engine(engine, multi_line, scale, split) {
     if (!engine)
         return '';
+
+    // no space => no version
     let pos = engine.indexOf(' ');
     if (pos < 0)
         return engine;
-    let tag = multi_line? 'div': 'i',
+
+    let name = engine.slice(0, pos),
+        tag = multi_line? 'div': 'i',
         version = engine.slice(pos + 1),
         version_class = `version${(scale < 0)? -scale: ((scale && version.length >= scale)? ' version-small': '')}`;
-    return `${engine.slice(0, pos)}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
+
+    // KomodoDragon => Komodo + Dragon
+    if (split) {
+        let parts = [],
+            prev = 0,
+            start = 0;
+        for (let i = 0, length = name.length; i < length; i ++) {
+            let code = name.charCodeAt(i);
+            // a:97, Z:90
+            if (prev >= 97 && code <= 90) {
+                parts.push(name.slice(start, i));
+                start = i;
+            }
+            prev = code;
+        }
+        if (parts.length) {
+            parts.push(name.slice(start));
+            name = parts.map(part => `<i class="nowrap">${part}</i>`).join('');
+        }
+    }
+    return `${name}${multi_line? '': ' '}<${tag} class="${version_class}">${version}</${tag}>`;
 }
 
 /**
@@ -2071,12 +2096,10 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'white':
                 let vclass = '';
                 if (row['result'] == '0-1')
-                    vclass = (key[0] == 'w')? 'loss': 'win';
+                    vclass = (key[0] == 'w')? ' loss': ' win';
                 else if (row['result'] == '1-0')
-                    vclass = (key[0] == 'w')? 'win': 'loss';
-                if (vclass)
-                    vclass = ` class="${vclass}"`;
-                value = `<vert${vclass}>${format_engine(value, wrap)}</vert>`;
+                    vclass = (key[0] == 'w')? ' win': ' loss';
+                value = `<div class="split${vclass}">${format_engine(value, wrap, 0, true)}</div>`;
                 break;
             case 'date':
                 // TODO: fix winners.json
@@ -2090,13 +2113,13 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             case 'runner':
             case 'winner':
                 if (is_winner)
-                    value = format_engine(value, true, -2);
+                    value = format_engine(value, true, -2, true);
                 else {
                     td_class = 'tal';
                     value = [
                         '<hori>',
                             `<img class="left-image" src="image/engine/${get_short_name(value)}.png">`,
-                            `<div>${format_engine(value, wrap)}</div>`,
+                            `<div class="split">${format_engine(value, wrap, 0, true)}</div>`,
                         '</hori>',
                     ].join('');
                 }

@@ -1072,6 +1072,12 @@ hsub {
 .version-small::-webkit-scrollbar {
     display: none;
 }
+.rotate .split {
+    word-break: break-all;
+}
+.rotate .tal {
+    vertical-align: top;
+}
 #overview {
     font-size: 0.95em;
     margin-bottom: 0;

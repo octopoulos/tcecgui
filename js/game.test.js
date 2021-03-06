@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-04
+// @version 2021-03-05
 /*
 globals
 expect, global, require, test
@@ -976,30 +976,49 @@ function init_players(ply, players, evals) {
 
 // format_engine
 [
-    ['', undefined, undefined, ''],
-    [undefined, undefined, undefined, ''],
-    ['Fire 8_beta', undefined, undefined, 'Fire <i class="version">8_beta</i>'],
-    ['LCZero v0.24-sv-t60-3010', undefined, undefined, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
-    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, undefined, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
-    ['LCZero v0.25.1-svjio-t60-3972-mlh', undefined, 20, 'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>'],
-    ['LCZero v0.26.0-sv-t60-4229-mlh', undefined, 21, 'LCZero <i class="version version-small">v0.26.0-sv-t60-4229-mlh</i>'],
-    ['Stockfish 20200407DC', undefined, undefined, 'Stockfish <i class="version">20200407DC</i>'],
-    ['StockfishNNUE 20200704-StockFiNN-0.2', undefined, 21, 'StockfishNNUE <i class="version version-small">20200704-StockFiNN-0.2</i>'],
-    ['Stoofvlees II a14', undefined, undefined, 'Stoofvlees <i class="version">II a14</i>'],
-    ['Stoofvlees II a14', true, undefined, 'Stoofvlees<div class="version">II a14</div>'],
-    ['Stoofvlees II a14', true, 1, 'Stoofvlees<div class="version version-small">II a14</div>'],
-    ['Stoofvlees II a14', true, -2, 'Stoofvlees<div class="version2">II a14</div>'],
-    ['SuperBaronizer', undefined, undefined, 'SuperBaronizer'],
-].forEach(([text, multi_line, scale, answer], id) => {
+    ['', undefined, undefined, undefined, ''],
+    [undefined, undefined, undefined, undefined, ''],
+    ['Fire 8_beta', undefined, undefined, undefined, 'Fire <i class="version">8_beta</i>'],
+    ['Fire 8_beta', false, 0, true, 'Fire <i class="version">8_beta</i>'],
+    ['KomodoDragon 2671.00', false, 0, false, 'KomodoDragon <i class="version">2671.00</i>'],
+    ['KomodoDragon 2671.00', true, 0, false, 'KomodoDragon<div class="version">2671.00</div>'],
+    [
+        'KomodoDragon 2671.00', true, 0, true,
+        '<i class="nowrap">Komodo</i><i class="nowrap">Dragon</i><div class="version">2671.00</div>',
+    ],
+    ['LCZero v0.24-sv-t60-3010', undefined, 0, false, 'LCZero <i class="version">v0.24-sv-t60-3010</i>'],
+    ['LCZero v0.25.1-svjio-t60-3972-mlh', 0, 0, 0, 'LCZero <i class="version">v0.25.1-svjio-t60-3972-mlh</i>'],
+    [
+        'LCZero v0.25.1-svjio-t60-3972-mlh', false, 20, undefined,
+        'LCZero <i class="version version-small">v0.25.1-svjio-t60-3972-mlh</i>',
+    ],
+    ['LCZero v0.26.0-sv-t60-4229-mlh', 0, 21, 0, 'LCZero <i class="version version-small">v0.26.0-sv-t60-4229-mlh</i>'],
+    ['Stockfish 20200407DC', 0, 0, false, 'Stockfish <i class="version">20200407DC</i>'],
+    [
+        'StockfishNNUE 20200704-StockFiNN-0.2', false, 21, undefined,
+        'StockfishNNUE <i class="version version-small">20200704-StockFiNN-0.2</i>',
+    ],
+    ['Stoofvlees II a14', undefined, undefined, false, 'Stoofvlees <i class="version">II a14</i>'],
+    ['Stoofvlees II a14', true, undefined, false, 'Stoofvlees<div class="version">II a14</div>'],
+    ['Stoofvlees II a14', true, 1, false, 'Stoofvlees<div class="version version-small">II a14</div>'],
+    ['Stoofvlees II a14', true, -2, false, 'Stoofvlees<div class="version2">II a14</div>'],
+    ['SuperBaronizer', undefined, undefined, false, 'SuperBaronizer'],
+].forEach(([text, multi_line, scale, split, answer], id) => {
     test(`format_engine:${id}`, () => {
-        expect(format_engine(text, multi_line, scale)).toEqual(answer);
+        expect(format_engine(text, multi_line, scale, split)).toEqual(answer);
     });
 });
 
 // format_fen
 [
-    ['1r4k1/8/1P1p1pP1/p2P4/2P2P2/P4N2/5K2/4R3 w - - 0 48', '<i class="nowrap">1r4k1</i>/<i class="nowrap">8</i>/<i class="nowrap">1P1p1pP1</i>/<i class="nowrap">p2P4</i>/<i class="nowrap">2P2P2</i>/<i class="nowrap">P4N2</i>/<i class="nowrap">5K2</i>/<i class="nowrap">4R3</i> <i class="nowrap">w - - 0 48</i>'],
-    ['8/3R2r1/8/4p1k1/4P3/5K2/8/8 b - - 0 91', '<i class="nowrap">8</i>/<i class="nowrap">3R2r1</i>/<i class="nowrap">8</i>/<i class="nowrap">4p1k1</i>/<i class="nowrap">4P3</i>/<i class="nowrap">5K2</i>/<i class="nowrap">8</i>/<i class="nowrap">8</i> <i class="nowrap">b - - 0 91</i>'],
+    [
+        '1r4k1/8/1P1p1pP1/p2P4/2P2P2/P4N2/5K2/4R3 w - - 0 48',
+        '<i class="nowrap">1r4k1</i>/<i class="nowrap">8</i>/<i class="nowrap">1P1p1pP1</i>/<i class="nowrap">p2P4</i>/<i class="nowrap">2P2P2</i>/<i class="nowrap">P4N2</i>/<i class="nowrap">5K2</i>/<i class="nowrap">4R3</i> <i class="nowrap">w - - 0 48</i>',
+    ],
+    [
+        '8/3R2r1/8/4p1k1/4P3/5K2/8/8 b - - 0 91',
+        '<i class="nowrap">8</i>/<i class="nowrap">3R2r1</i>/<i class="nowrap">8</i>/<i class="nowrap">4p1k1</i>/<i class="nowrap">4P3</i>/<i class="nowrap">5K2</i>/<i class="nowrap">8</i>/<i class="nowrap">8</i> <i class="nowrap">b - - 0 91</i>',
+    ],
 ].forEach(([fen, answer], id) => {
     test(`format_fen:${id}`, () => {
         expect(format_fen(fen)).toEqual(answer);
