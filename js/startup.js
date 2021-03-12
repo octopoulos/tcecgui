@@ -125,7 +125,7 @@ let AD_STYLES = {},
     TIMEOUT_quick = 20,
     TIMEOUT_resume = 3000,
     TIMEOUT_size = 1000,
-    TIMEOUT_stream = 45000,
+    TIMEOUT_stream = 40000,
     TIMEOUT_three = 5000,
     TIMEOUT_twitch = 5000;
 
@@ -536,13 +536,13 @@ function check_stream() {
     scroll_adjust('#overview');
     Hide('.adblock, .google-ad');
 
-    // alternate between shortcut_1 and shortcut_2
+    // alternate between shortcut_1/2/3
     if (!timers['stream'])
         add_timeout('stream', () => {
             stream_click ++;
 
-            let shortcuts = [1, 2].map(id => _(`.tab[data-x="shortcut_${id}"]`)).filter(node => Visible(node)),
-                target = shortcuts[stream_click & 1];
+            let shortcuts = [1, 2, 3].map(id => _(`.tab[data-x="shortcut_${id}"]`)).filter(node => Visible(node)),
+                target = shortcuts[stream_click % 3];
             if (target)
                 target.click();
 
@@ -2509,6 +2509,7 @@ function startup() {
 
     LANGUAGES = {
         'bul': 'български',
+        'deu': 'Deutsch',
         'eng': 'English',
         'spa': 'español',
         'fra': 'français',

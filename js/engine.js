@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-02
+// @version 2021-03-11
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -1505,6 +1505,12 @@ function translate_expression(text) {
     // 3) translate [...]
     if (text.includes('['))
         text = text.replace(/\[(.*?)\]/g, (_match, p1) => TRANSLATE_SPECIALS[p1] || `[${p1}]`);
+
+    // 4) Animations|geschwindigkeit
+    if (text.includes('|')) {
+        let middle = text.split('|').map(part => `<i class="nowrap">${part}</i>`).join('');
+        text = `<i class="breakall">${middle}</i>`;
+    }
     return text;
 }
 
