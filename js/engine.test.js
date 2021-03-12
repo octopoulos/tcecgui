@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-03
+// @version 2021-03-11
 //
 /*
 globals
@@ -727,6 +727,11 @@ Y.areas = {
     [{}, 'Belgium', 'Belgique'],
     [{}, '{Belgium} #1', 'Belgique #1'],
     [{}, '{Japan} vs {Italy}', 'Japon vs Italy'],
+    [
+        {},
+        'Animations|geschwindigkeit',
+        '<i class="breakall"><i class="nowrap">Animations</i><i class="nowrap">geschwindigkeit</i></i>',
+    ],
 ].forEach(([y, text, answer], id) => {
     test(`translate_expression:${id}`, () => {
         Assign(Y, y);
