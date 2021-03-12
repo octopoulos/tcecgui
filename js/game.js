@@ -352,12 +352,13 @@ let ANALYSIS_URLS = {
     },
     shake_animation,
     STATS_TITLES = {
-        'reverses': 'engine A vs B, then engine B vs A',
-        'decisive_openings': 'winner = 2-0 or 1.5-0.5',
-        'double_wins': 'winner = 2-0',
-        'double_draws': 'result = 1-1 with 2 draws',
         '{Win} & {draw}': 'winner = 1.5-0.5',
         'busted_openings': 'result = 1-1 with a win + loss',
+        'decisive_openings': 'winner = 2-0 or 1.5-0.5',
+        'double_draws': 'result = 1-1 with 2 draws',
+        'double_wins': 'winner = 2-0',
+        'reverse_kills': 'winner = 2-0',
+        'reverses': 'engine A vs B, then engine B vs A',
     },
     table_data = {
         'archive': {},
