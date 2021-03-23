@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-06
+// @version 2021-03-23
 //
 // Game specific code:
 // - control the board, moves
@@ -6095,7 +6095,6 @@ function copy_pgn(board, download, only_text, flag=7) {
         if (!board)
             return '';
     }
-    set_section('live');
 
     // 2) headers
     let fen = board.start_fen,

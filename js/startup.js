@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-04
+// @version 2021-03-23
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -1307,10 +1307,8 @@ function update_shortcuts() {
                     table = CacheId(`table-${shortcut}`);
 
                 // not in tables => direct copy, ex: "stats"
-                if (!TABLES[shortcut] || !HTML(node)) {
-                    HTML(node, HTML(table));
-                    names.add(shortcut);
-                }
+                HTML(node, HTML(table));
+                names.add(shortcut);
             }
         }
         S(tab, shortcut);
@@ -1380,12 +1378,6 @@ function window_click(e) {
             file.click();
             return;
         }
-
-        let seek = dataset['seek'];
-        if (seek) {
-            show_filtered_games(seek);
-            return;
-        }
     }
 
     while (target) {
@@ -1429,6 +1421,12 @@ function window_click(e) {
                         close_popups();
                     else
                         show_popup('options', true, {id: 'options', setting: set, target: parent, xy: xy});
+                    return;
+                }
+
+                let seek = dataset['seek'];
+                if (seek) {
+                    show_filtered_games(seek);
                     return;
                 }
             }
@@ -1967,7 +1965,7 @@ function prepare_settings() {
         cores = navigator.hardwareConcurrency,
         min_max = 'min and max values, hidden if both are 0',
         old = 'move',
-        shortcuts = [...['off'], ...[...Keys(TABLES), ...['stats']].sort()],
+        shortcuts = [...['off'], ...[...Keys(TABLES).filter(table => table != 'overview'), ...['stats']].sort()],
         show_plies = [['first', 'diverging', 'last'], 'diverging'];
 
     merge_settings({
