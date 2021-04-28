@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-23
+// @version 2021-04-28
 //
 // Game specific code:
 // - control the board, moves
@@ -3427,11 +3427,11 @@ function fix_zero_moves(moves, main_moves) {
  * Parse raw pgn data
  * @param {string} section
  * @param {string|Object} data
- * @param {number=} mode &1:header, &2:options, &4:moves
+ * @param {number=} mode &1:header, &2:options, &4:moves, &8:fix moves/pv
  * @param {string=} origin debug information
  * @returns {Object}
  */
-function parse_pgn(section, data, mode=7, origin='') {
+function parse_pgn(section, data, mode=15, origin='') {
     if (!data)
         return null;
 
@@ -3485,11 +3485,10 @@ function parse_pgn(section, data, mode=7, origin='') {
         return null;
 
     // fix FEN for FRC (archive)
-    let fen = headers['FEN'];
-    if (fen) {
-        let board = xboards[section] || xboards['pva'];
+    let board = xboards[section] || xboards['pva'],
+        fen = headers['FEN'];
+    if (fen)
         fix_header_opening(board, headers);
-    }
 
     pgn['Headers'] = headers;
     if (!(mode & 6))
@@ -3524,10 +3523,16 @@ function parse_pgn(section, data, mode=7, origin='') {
     // 3) moves
     let has_text,
         info = {},
+        last_fen = fen || START_FEN,
+        prev_fen = last_fen,
         moves = [],
-        ply = get_fen_ply(fen || START_FEN);
+        ply = get_fen_ply(last_fen);
     length = data.length;
     start = 0;
+
+    if (mode & 8)
+        board.chess_load(last_fen);
+
     for (let i = 0; i < length; i ++) {
         let char = data[i];
 
@@ -3549,19 +3554,34 @@ function parse_pgn(section, data, mode=7, origin='') {
                 }));
                 delete info[''];
 
-                // pv: Be3 b5 dxc5 Nxc5
-                // => 16. Be3 b5 17. dxc5 Nxc5
                 let pv = info['pv'];
-                if (IsString(pv) && !pv.includes('.')) {
-                    pv = pv.split(' ').map((item, id) => {
-                        let curr = id + ply,
-                            is_white = !(curr & 1),
-                            move_num = Floor(curr / 2) + 1;
-                        if (!id)
-                            return `${move_num}.${is_white? ' ': '..'}${item}`;
-                        return `${is_white? move_num: ''}${is_white? '. ': ''}${item}`;
-                    }).join(' ');
-                    info['pv'] = pv;
+                if (IsString(pv)) {
+                    // fix pv?
+                    if (mode & 8) {
+                        board.chess_load(prev_fen);
+                        let result = board.chess.multiSan(pv, true, false),
+                            new_pv = result.map(item => item.m).join(' ');
+                        if (pv != new_pv) {
+                            if (DEV['fen2'])
+                                LS(ply, [pv, new_pv]);
+                            pv = new_pv;
+                        }
+                    }
+
+                    // pv: Be3 b5 dxc5 Nxc5
+                    // => 16. Be3 b5 17. dxc5 Nxc5
+                    if (!pv.includes('.')) {
+                        pv = pv.split(' ').map((item, id) => {
+                            let curr = id + ply,
+                                is_white = !(curr & 1),
+                                move_num = Floor(curr / 2) + 1;
+                            if (!id)
+                                return `${move_num}.${is_white? ' ': '..'}${item}`;
+                            return `${is_white? move_num: ''}${is_white? '. ': ''}${item}`;
+                        }).join(' ');
+
+                        info['pv'] = pv;
+                    }
                 }
                 Assign(moves[ply], info);
 
@@ -3598,6 +3618,19 @@ function parse_pgn(section, data, mode=7, origin='') {
                     break;
 
                 ply ++;
+                // fix move?
+                if (mode & 8) {
+                    board.chess_load(last_fen);
+                    let result = board.chess_move(move);
+                    if (move != result.san) {
+                        if (DEV['fen2'])
+                            LS(`${ply} : ${move}`, result);
+                        move = result.san;
+                    }
+                    prev_fen = last_fen;
+                    last_fen = board.chess_fen();
+                }
+
                 moves[ply] = {
                     'm': move,
                     'ply': ply,

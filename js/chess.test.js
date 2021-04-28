@@ -1,6 +1,6 @@
 // chess.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-04-28
 //
 /*
 globals
@@ -709,6 +709,16 @@ beforeEach(() => {
         'Nf7', [true, false],
         {capture: 0, fen: '', flag: 0, from: 54, m: 'Nf7+', ply: 92, promote: 0, pv: '', score: 115, to: 21},
     ],
+    [
+        '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
+        'Qd2c2', [true, false],
+        {capture: 0, fen: '', flag: 0, from: 0, m: '', ply: -2, promote: 0, pv: '', score: 0, to: 0},
+    ],
+    [
+        '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
+        'Qd2c2', [true, true],
+        {capture: 0, fen: '', flag: 0, from: 99, m: 'Q2c2', ply: 60, promote: 0, pv: '', score: 100, to: 98},
+    ],
 ].forEach(([fen, move, [decorate, sloppy], answer], id) => {
     test(`moveSan:${id}`, () => {
         chess.load(fen, false);
@@ -791,7 +801,7 @@ beforeEach(() => {
     [
         START_FEN,
         '1. d4 d5 2. c4',
-        false,
+        [false, true],
         [
             {
                 capture: 0, fen: 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1', flag: 0, from: 99,
@@ -811,17 +821,18 @@ beforeEach(() => {
     [
         START_FEN,
         '1. b4 e5 2. Bb2 d6 3. e3 Be7 4. c4 Nf6 5. Nc3 O-O 6. Qc2 c6 7. Nf3 Bg4 8. Be2 Nbd7 9. h3 Bh5 10. O-O Bg6 11. Qb3 Ne4 12. Nxe4 Bxe4 13. Bc3 Qc7 14. a4 a5 15. bxa5 Nc5 16. Qb2 Bf6 17. d4 exd4 18. exd4 Ne6 19. Nd2 Bf5 20. Rfd1 Rfe8 21. Bf1 c5 22. Nb3 h6 23. dxc5 Bxc3 24. Qxc3 Nxc5 25. Nd4 Qd7 26. Qb4 Ra6 27. Ra2 Be6 28. Nxe6 Qxe6 29. Re2 Qc8 30. Rxe8+ Qxe8 31. g3 Qe7 32. Bg2 Kf8 33. Bd5 Qd7 34. Rd4 Qxa4 35. Qb1 Rxa5 36. Kg2 Ne6 37. Bxe6 fxe6 38. Qxb7 Qe8 39. Rxd6 Qa8 40. Qxa8+ Rxa8 41. Rxe6 Kf7 42. Rc6 h5 43. Rc5 g6 44. Kf3 Ra2 45. h4 Rc2 46. Kf4 Rxf2+ 47. Kg5 Rf3 48. Rc7+ Ke6 49. Kxg6 Rxg3+ 50. Kxh5',
-        false,
+        [false, false],
         undefined,
         '8/2R5/4k3/7K/2P4P/6r1/8/8 b - - 0 50',
     ],
-].forEach(([fen, multi, sloppy, answer, new_fen], id) => {
+].forEach(([fen, multi, [sloppy, create_fen], answer, new_fen], id) => {
     test(`multiSan:${id}`, () => {
         chess.load(fen, false);
-        let moves = ArrayJS(chess.multiSan(multi, sloppy));
+        let moves = ArrayJS(chess.multiSan(multi, sloppy, create_fen));
         if (answer) {
             for (let move of moves)
-                expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
+                if (move.fen)
+                    expect(get_move_ply({fen: move.fen})).toEqual(move.ply);
             expect(moves).toEqual(answer);
         }
         expect(chess.fen()).toEqual(new_fen);

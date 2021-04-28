@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-01-21
+// @version 2021-04-28
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -2068,7 +2068,7 @@ public:
      * @param text c2c4 a7a8a ...
      * @param sloppy allow sloppy parser
      */
-    std::vector<MoveText> multiSan(std::string multi, bool sloppy) {
+    std::vector<MoveText> multiSan(std::string multi, bool sloppy, bool create_fen) {
         std::vector<MoveText> result;
         int prev = 0,
             size = multi.size();
@@ -2083,7 +2083,7 @@ public:
                 if (obj.from == obj.to)
                     break;
                 makeMove(packObject(obj));
-                obj.fen = createFen();
+                obj.fen = create_fen? createFen(): "";
                 obj.ply = fen_ply + ply;
                 obj.score = 0;
                 result.emplace_back(obj);

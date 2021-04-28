@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-04
+// @version 2021-04-28
 //
 // game board:
 // - 4 rendering modes:
@@ -1152,7 +1152,7 @@ class XBoard {
                 && text[0] == Lower(text[0]) && text[2] == Lower(text[2]))
             result = chess.moveUci(text, true);
         else
-            result = IsString(text)? chess.moveSan(text, decorate, false): chess.moveObject(text, true);
+            result = IsString(text)? chess.moveSan(text, decorate, true): chess.moveObject(text, true);
 
         if (result['from'] != result['to']) {
             result['san'] = result['m'];

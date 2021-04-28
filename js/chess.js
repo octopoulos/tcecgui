@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-21
+// @version 2021-04-28
 // - fast javascript implementation, 30000x faster
 // - FRC support
 // jshint -W069
@@ -2027,9 +2027,10 @@ var Chess = function(fen_) {
      * Parse a list of SAN moves + create FEN for each move
      * @param {string} text c2c4 a7a8a ...
      * @param {boolean} sloppy allow sloppy parser
+     * @param {boolean} create_fen
      * @returns {Array<Object>}
      */
-    function multiSan(multi, sloppy) {
+    function multiSan(multi, sloppy, create_fen) {
         let result = [],
             texts = multi.split(' ');
         for (let text of texts) {
@@ -2041,7 +2042,7 @@ var Chess = function(fen_) {
             if (obj['from'] == obj['to'])
                 break;
             makeMove(packObject(obj));
-            obj['fen'] = createFen();
+            obj['fen'] = create_fen? createFen(): "";
             obj['ply'] = fen_ply + ply;
             obj['score'] = 0;
             result.push(obj);
