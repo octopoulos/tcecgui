@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-04-28
 //
 // all socket functions are here
 //
@@ -10,8 +10,8 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, InsertNodes,
-LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true, update_live_eval, update_pgn,
-update_player_eval, update_table, update_twitch, window, Y, y_x
+LoadLibrary, LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true,
+update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, window, Y, y_x
 */
 'use strict';
 
@@ -24,7 +24,7 @@ if (typeof global != 'undefined') {
 // >>
 
 // modify those values in config.js
-let TWITCH_CHANNEL = 'https://player.twitch.tv/?channel=TCEC_Chess_TV&parent=tcec-chess.com/',
+let TWITCH_CHANNEL = 'TCEC_Chess_TV',
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
 let log_time = 0,
@@ -39,6 +39,7 @@ let log_time = 0,
     TIMEOUT_check = 60,
     TIMEOUT_log = 500,
     TIMEOUT_users = 5000,
+    twitch_player,
     virtual_resize;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,7 +259,7 @@ function update_twitch(dark, chat_url, only_resize) {
     if (!node)
         return;
 
-    if (LOCALHOST) {
+    if (LOCALHOST && 0) {
         Y['twitch_chat'] = 0;
         Y['twitch_video'] = 0;
     }
@@ -290,13 +291,45 @@ function update_twitch(dark, chat_url, only_resize) {
 
     // 2) update twitch video IF there was a change
     node = CacheId('twitch-vid');
-    current = node.src;
-    src = Y['twitch_video']? TWITCH_CHANNEL: '';
+    let channel = Y['twitch_video']? TWITCH_CHANNEL: '';
 
-    if (!only_resize && current != src)
-        node.src = src;
-    S('#hide-video, #twitch-vid', src);
-    S(CacheId('show-video'), !src);
+    if (!only_resize) {
+        if (!twitch_player) {
+            if (channel) {
+                LoadLibrary('https://player.twitch.tv/js/embed/v1.js', () => {
+                    let options = {
+                            channel: TWITCH_CHANNEL,
+                            height: 400,
+                            parent: ['tcec-chess.com'],
+                            width: 420,
+                        },
+                        PLAYER = window['Twitch'].Player;
+                    twitch_player = new PLAYER('twitch-vid', options);
+                    window['twitch_player'] = twitch_player;
+
+                    // set the lowest bitrate by default
+                    twitch_player.addEventListener(PLAYER.ONLINE, () => {
+                        let bitrate = Infinity,
+                            group = 'auto';
+                        for (let quality of twitch_player.getQualities())
+                            if (quality.bitrate < bitrate) {
+                                bitrate = quality.bitrate;
+                                group = quality.group;
+                            }
+
+                        twitch_player.setQuality(group);
+                        twitch_player.play();
+                    });
+                });
+            }
+        }
+        else if (!channel)
+            twitch_player.pause();
+        else if (twitch_player.getChannel() != channel)
+            twitch_player.setChannel(channel);
+    }
+    S('#hide-video, #twitch-vid', channel);
+    S(CacheId('show-video'), !channel);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
