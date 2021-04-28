@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-06
+// @version 2021-04-28
 /*
 globals
 expect, global, require, test
@@ -2199,6 +2199,27 @@ function init_players(ply, players, evals) {
                 {m: 'Kd8', ply: 83}, {m: 'Rxd7+', ply: 84}, {m: 'Nxd7', ply: 85}, {m: 'f6', ply: 86},
                 {m: 'Rh8', ply: 87},
             ],
+        },
+    ],
+    [
+        `
+        [FEN "2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31"]
+        [Setup "1"]
+
+        31. Qd2c2 {d=20, sd=49, pd=Bh6, mt=32075, tl=1490098, s=142545, n=15759193, pv=Qd2c2 f5 Bc1 Bxc1 Qdxc1 Nf6 f3 Bc6 Qg2 O-O Ne2 Bd7 h4 Be6 Ra3 Nh5 Qa2 fxe4 dxe4 Qeb7 Rb3 Qbd7 Rd3 Qcb7 O-O Bh3 Qf2 Bxf1 Qfxf1 Qxe4 fxe4, tb=0, h=0.0, ph=50.0, wv=0.52, R50=48, Rd=-11, Rr=-1000, mb=+0+0-1+1+0,}
+        `,
+        15,
+        {
+            Headers: {
+                FEN: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
+                Setup: '1',
+            },
+            Moves: [{
+                R50: 48, Rd: -11, Rr: -1000, d: 20, h: '0.0', m: 'Q2c2', mb: '+0+0-1+1+0', mt: 32075, n: 15759193,
+                pd: 'Bh6', ph: '50.0', ply: 60,
+                pv: '31. Q2c2 f5 32. Bc1 Bxc1 33. Qdxc1 Nf6 34. f3 Bc6 35. Qg2 O-O 36. Ne2 Bd7 37. h4 Be6 38. Ra3 Nh5 39. Qa2 fxe4 40. dxe4 Qeb7 41. Rb3 Qbd7 42. Rd3 Qcb7 43. O-O Bh3 44. Qf2 Bxf1 45. Qfxf1 Qxe4 46. fxe4',
+                s: 142545, sd: 49, tb: 0, tl: 1490098, wv: '0.52',
+            }],
         },
     ],
 ].forEach(([data, mode, answer], id) => {
