@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-04-29
 /*
 globals
 expect, global, require, test
@@ -2220,6 +2220,22 @@ function init_players(ply, players, evals) {
                 pv: '31. Q2c2 f5 32. Bc1 Bxc1 33. Qdxc1 Nf6 34. f3 Bc6 35. Qg2 O-O 36. Ne2 Bd7 37. h4 Be6 38. Ra3 Nh5 39. Qa2 fxe4 40. dxe4 Qeb7 41. Rb3 Qbd7 42. Rd3 Qcb7 43. O-O Bh3 44. Qf2 Bxf1 45. Qfxf1 Qxe4 46. fxe4',
                 s: 142545, sd: 49, tb: 0, tl: 1490098, wv: '0.52',
             }],
+        },
+    ],
+    [
+        `
+        [FEN "2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31"]
+        [Setup "1"]
+
+        31. Qd2c2 {d=20, pv=, sd=49,}
+        `,
+        15,
+        {
+            Headers: {
+                FEN: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
+                Setup: '1',
+            },
+            Moves: [{d: 20, m: 'Q2c2', ply: 60, pv: '', sd: 49}],
         },
     ],
 ].forEach(([data, mode, answer], id) => {

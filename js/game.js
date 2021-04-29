@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-04-29
 //
 // Game specific code:
 // - control the board, moves
@@ -3545,7 +3545,7 @@ function parse_pgn(section, data, mode=15, origin='') {
                         right = items.slice(1).join('=');
                     // book, => book=true,
                     if (!right)
-                        right = true;
+                        right = (items.length == 1)? true: '';
                     else if (isNaN(right) || right.includes('.'))
                         right = right.trim();
                     else
@@ -3555,7 +3555,7 @@ function parse_pgn(section, data, mode=15, origin='') {
                 delete info[''];
 
                 let pv = info['pv'];
-                if (IsString(pv)) {
+                if (pv && IsString(pv)) {
                     // fix pv?
                     if (mode & 8) {
                         board.chess_load(prev_fen);

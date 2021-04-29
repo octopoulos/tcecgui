@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-04-29
 //
 // all socket functions are here
 //
@@ -38,6 +38,7 @@ let log_time = 0,
     TIMEOUT_banner = 30000,
     TIMEOUT_check = 60,
     TIMEOUT_log = 500,
+    TIMEOUT_pause = 3000,
     TIMEOUT_users = 5000,
     twitch_player,
     virtual_resize;
@@ -323,8 +324,11 @@ function update_twitch(dark, chat_url, only_resize) {
                 });
             }
         }
-        else if (!channel)
+        else if (!channel) {
             twitch_player.pause();
+            if (!twitch_player.isPaused())
+                add_timeout('pause', twitch_player.pause, TIMEOUT_pause);
+        }
         else if (twitch_player.getChannel() != channel)
             twitch_player.setChannel(channel);
     }
