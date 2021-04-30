@@ -10,8 +10,8 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, InsertNodes,
-LoadLibrary, LOCALHOST, LS, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true,
-update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, window, Y, y_x
+LoadLibrary, LOCALHOST, LS, Min, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true,
+update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, VisibleWidth, window, Y, y_x
 */
 'use strict';
 
@@ -297,12 +297,15 @@ function update_twitch(dark, chat_url, only_resize) {
     if (!only_resize) {
         if (!twitch_player) {
             if (channel) {
+                let width = Min(420, VisibleWidth() - 2),
+                    height = Min(320, (width / 1.32) >> 0);
+
                 LoadLibrary('https://player.twitch.tv/js/embed/v1.js', () => {
                     let options = {
                             channel: TWITCH_CHANNEL,
-                            height: 320,
+                            height: height,
                             parent: ['tcec-chess.com'],
-                            width: 420,
+                            width: width,
                         },
                         PLAYER = window['Twitch'].Player;
                     twitch_player = new PLAYER('twitch-vid', options);

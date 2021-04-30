@@ -1653,9 +1653,7 @@ hsub {
     z-index: 1;
 }
 #twitch-vid {
-    height: 320px;
-    max-width: 100%;
-    width: 420px;
+    max-width: calc(100vw - 2px);
     z-index: 1;
 }
 #theme1 {
