@@ -300,7 +300,7 @@ function update_twitch(dark, chat_url, only_resize) {
                 LoadLibrary('https://player.twitch.tv/js/embed/v1.js', () => {
                     let options = {
                             channel: TWITCH_CHANNEL,
-                            height: 400,
+                            height: 320,
                             parent: ['tcec-chess.com'],
                             width: 420,
                         },
