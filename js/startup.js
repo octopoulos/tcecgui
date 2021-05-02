@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-23
+// @version 2021-05-02
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -944,18 +944,22 @@ function init_globals() {
  * @param {number} id
  */
 function insert_google_ad(id) {
-    let html = [
-        // '<ins class="adsbygoogle"',
-        //     `style="display:block;${AD_STYLES[id] || ''}"`,
-        //     'data-ad-client="ca-pub-6544406400639567"',
-        //     'data-ad-slot="4926769371"',
-        //     'data-ad-format="auto"',
-        //     'data-full-width-responsive="true">',
-        // '</ins>',
-        '<a rel="nofollow" href="https://decodechess.com/">',
-            '<img src="/image/300x250decodea.jpg" width="300" height="250">',
-        '</a>'
-    ].join('');
+    let [suffix, width, height] = [
+            [9, 252, 210],
+            [2021, 438, 250],
+        ][id],
+        html = [
+            // '<ins class="adsbygoogle"',
+            //     `style="display:block;${AD_STYLES[id] || ''}"`,
+            //     'data-ad-client="ca-pub-6544406400639567"',
+            //     'data-ad-slot="4926769371"',
+            //     'data-ad-format="auto"',
+            //     'data-full-width-responsive="true">',
+            // '</ins>',
+            '<a rel="nofollow" href="https://www.chessdom.com/" target="_blank">',
+                `<img src="image/Chessdom_${suffix}.png" width="${width}" height="${height}">`,
+            '</a>'
+        ].join('');
 
     HTML(`#ad${id} > hori`, html);
     (window.adsbygoogle = window.adsbygoogle || []).push({});
