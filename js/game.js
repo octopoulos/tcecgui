@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-29
+// @version 2021-05-07
 //
 // Game specific code:
 // - control the board, moves
@@ -386,6 +386,27 @@ let ANALYSIS_URLS = {
         'winner': 'name=S#|winner=Champion|runner=Runner-up|Score|Date',
     },
     TB_URL = 'https://syzygy-tables.info/?fen={FEN}',
+    TERMINATION_NORMALS = {
+        '-': 1,
+        '': 1,
+        '3-fold repetition': 1,
+        '3-Fold repetition': 1,
+        'Black loses on time': 1,
+        'Black mates': 1,
+        'Black resigns': 1,
+        'Fifty moves rule': 1,
+        'in progress': 1,
+        'Manual adjudication': 1,
+        'Stalemate': 1,
+        'SyzygyTB': 1,
+        'TB position': 1,
+        'TCEC Adjudication': 1,
+        'TCEC draw rule': 1,
+        'TCEC win rule': 1,
+        'White loses on time': 1,
+        'White mates': 1,
+        'White resigns': 1,
+    },
     TERMINATIONS = {
         'Fifty moves rule': 'Fifty-move rule',
     },
@@ -1950,8 +1971,9 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
     let empty = reverse? -1: 1,
         [def, number_reverse] = NUMBER_COLUMNS[sort] || [((sort.slice(0, 2) == 'x_')? -2: undefined), 0],
-        is_number = (def != undefined);
-    // LS('sort=', sort, 'number_column=', number_column, 'is_number=', is_number);
+        is_number = (def != undefined),
+        is_termination = (sort == 'termination');
+    // LS('sort=', sort, 'is_number=', is_number, 'reverse=', reverse);
 
     data.sort((a, b) => {
         let ax = a[sort],
@@ -1962,8 +1984,15 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
             return -empty;
 
         // special cases:
-        // G5.0 => 5.0
-        if (def == 80000) {
+        // - red terminations
+        if (is_termination) {
+            let ay = TERMINATION_NORMALS[ax] || 0,
+                by = TERMINATION_NORMALS[bx] || 0;
+            if (ay != by)
+                return ay - by;
+        }
+        // - G5.0 => 5.0
+        else if (def == 80000) {
             ax = (ax[0] == '-')? DefaultFloat(ax.slice(2), def) - 0.001: DefaultFloat(ax.slice(1), def) + 0.001;
             bx = (bx[0] == '-')? DefaultFloat(bx.slice(2), def) - 0.001: DefaultFloat(bx.slice(1), def) + 0.001;
             return ax - bx;
@@ -2198,6 +2227,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
                 value = `${row['started']? '': '<i data-t="{Estd}: "></i>'}${time} <i class="year">${date}</i>`;
                 break;
             case 'termination':
+                td_class = TERMINATION_NORMALS[value]? '': 'loss';
                 value = `<i data-t="${TERMINATIONS[value] || value}"></i>`;
                 break;
             default:
