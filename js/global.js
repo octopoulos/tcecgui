@@ -9,7 +9,7 @@
 /*
 globals
 Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, IsDigit, Keys,
-LS, Max, Min, Pad, Pow, require, reset_default, Round, save_default, save_option, show_popup, Split, Undefined, Y
+LS, Max, Min, Pow, require, reset_default, save_default, save_option, show_popup, Split, Undefined, Y
 */
 'use strict';
 
