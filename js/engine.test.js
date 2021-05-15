@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-11
+// @version 2021-05-14
 //
 /*
 globals
@@ -8,14 +8,16 @@ expect, require, test
 */
 'use strict';
 
-let {Assign, Clear, Keys} = require('./common.js'),
+let {Assign, Clear, CreateNode, Id} = require('./common.js'),
     {
-        add_font, add_history, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup, create_field_value,
-        create_page_array, create_svg_icon, create_url_list, DEFAULTS, DEV, DEV_NAMES, done_touch, find_area, FONTS,
-        get_float, get_int, get_object, get_string, guess_types, ICONS, import_settings, KEYS, load_defaults,
-        merge_settings, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history,
-        sanitise_data, save_default, save_option, show_settings, translate, translate_default, translate_expression,
-        translates, TYPES, X_SETTINGS, Y, y_states,
+        add_font, add_history, add_move, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup,
+        create_field_value, create_page_array, create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV,
+        DEV_NAMES, done_touch, fill_combo, find_area, FONTS, get_area, get_changed_touches, get_float, get_int,
+        get_object, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults, merge_settings,
+        mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history,
+        sanitise_data, save_default, save_option, show_settings, stop_drag, touch_event, touch_handle, touch_moves,
+        translate, translate_default, translate_expression, translate_node, translate_nodes, translates, TYPES,
+        X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
@@ -24,15 +26,17 @@ Assign(DEFAULTS, {
     skip: 0,
     theme: '',
 });
-
 Assign(DEV_NAMES, {
     E: 'engine',
     S: 'no_socket',
     w: 'wasm',
 });
-
 Assign(ICONS, {
-    play: 'VB="0 0 448 512"><PFC d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/>',
+    play: 'VB="0 0 448 512"><PFC d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7z"/>',
+});
+Assign(LANGUAGES, {
+    eng: 'English',
+    fra: 'français',
 });
 
 Assign(translates, {
@@ -99,6 +103,28 @@ Y.areas = {
         Assign(Y, y);
         add_history();
         expect(y_states.length).toBe(length + 1);
+    });
+});
+
+// add_move
+[
+    [null, {x: 10, y: 8}, 150, 1, 1, [0, 0], []],
+    [[5, 5, 100], {x: 10, y: 8}, 150, 1, 1, [0, 0], []],
+].forEach(([drag, change, stamp, ratio_x, ratio_y, answer, answer_array], id) => {
+    test(`add_move:${id}`, () => {
+        if (!drag)
+            stop_drag();
+        else {
+            touch_handle({
+                clientX: drag[0],
+                clientY: drag[1],
+                target: {},
+                timeStamp: drag[2],
+                type: 'mousedown',
+            });
+        }
+        expect(add_move(change, stamp, ratio_x, ratio_y)).toEqual(answer);
+        expect(touch_moves).toEqual(answer_array);
     });
 });
 
@@ -210,7 +236,12 @@ Y.areas = {
 [
     ['', ''],
     ['next', ''],
-    ['play', '<svg class="svg play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/></svg>'],
+    [
+        'play',
+        '<svg class="svg play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">'
+            + '<path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7z"/>'
+        + '</svg>',
+    ],
 ].forEach(([name, answer], id) => {
     test(`create_svg_icon:${id}`, () => {
         expect(create_svg_icon(name)).toEqual(answer);
@@ -228,6 +259,48 @@ Y.areas = {
     });
 });
 
+// detect_device
+[
+    {iphone: false, mobile: false, os: '?'},
+].forEach((answer, id) => {
+    test(`detect_device:${id}`, () => {
+        expect(detect_device()).toEqual(answer);
+    });
+});
+
+// fill_combo
+[
+    [
+        '', null, ['wipeout', 'wipeout x'], 'wipeout', undefined, true,
+        '<option value="wipeout" selected="selected">wipeout</option>'
+        + '<option value="wipeout x">wipeout x</option>',
+    ],
+    [
+        '<select id="cog"></select>', 'g', ['a', 'b'], 'b', undefined, undefined,
+        '<select id="cog">'
+            + '<option value="a" data-t="a">a</option>'
+            + '<option value="b" selected="selected" data-t="b">b</option>'
+        + '</select>',
+    ],
+    [
+        '<select id="cog"></select>', '#cog', ['a', 'b'], 'b', undefined, undefined,
+        '<select id="cog">'
+            + '<option value="a" data-t="a">a</option>'
+            + '<option value="b" selected="selected" data-t="b">b</option>'
+        + '</select>',
+    ],
+    [
+        '<select id="cog"></select>', '#other', ['a', 'b'], 'b', undefined, undefined,
+        '<select id="cog"></select>',
+    ],
+].forEach(([html, letter, values, select, dico, no_translate, answer], id) => {
+    test(`fill_combo:${id}`, () => {
+        let soup = CreateNode('a', html);
+        fill_combo((letter == null)? soup: letter, values, select, dico, no_translate, soup);
+        expect(soup.innerHTML).toEqual(answer);
+    });
+});
+
 // find_area
 [
     ['test', {id: -1}],
@@ -235,6 +308,35 @@ Y.areas = {
 ].forEach(([name, answer], id) => {
     test(`find_area:${id}`, () => {
         expect(find_area(name)).toEqual(answer);
+    });
+});
+
+// get_area
+[
+    ['<div id="area"><a id="child"></a></div>', null],
+    ['<vert id="area" class="area"><a id="child"></a></vert>', 'area'],
+    ['<vert id="area" class="area"><div><a id="child"></a></div></vert>', 'area'],
+    ['<vert id="area" class="area2"><div><a id="child"></a></div></vert>', null],
+    ['<vert id="area" class="area"><div><a id="child2"></a></div></vert>', null],
+].forEach(([html, answer], id) => {
+    test(`get_area:${id}`, () => {
+        let soup = CreateNode('div', html),
+            area = answer? Id(answer, soup): null,
+            node = Id('child', soup);
+        expect(get_area(node)).toEqual(area);
+    });
+});
+
+// get_changed_touches
+[
+    [{}, [{x: undefined, y: undefined}]],
+    [{clientX: 50, clientY: 60}, [{x: 50, y: 60}]],
+    [{clientX: 50, clientY: 60, touches: [{clientX: 100, clientY: 70}]}, [{x: 100, y: 70}]],
+    [{touches: [{clientX: 100, clientY: 70}, {clientX: 90, clientY: 60}]}, [{x: 100, y: 70}, {x: 90, y: 60}]],
+    [{changedTouches: [{clientX: 5, clientY: 6}], touches: [{clientX: 90, clientY: 60}]}, [{x: 5, y: 6}]],
+].forEach(([e, answer], id) => {
+    test(`get_changed_touches:${id}`, () => {
+        expect(get_changed_touches(e)).toEqual(answer);
     });
 });
 
@@ -390,9 +492,7 @@ Y.areas = {
 ].forEach(([settings, answer], id) => {
     test(`guess_types:${id}`, () => {
         guess_types(settings);
-        Keys(answer).forEach(key => {
-            expect(TYPES).toHaveProperty(key, answer[key]);
-        });
+        expect(TYPES).toEqual(expect.objectContaining(answer));
     });
 });
 
@@ -404,38 +504,34 @@ Y.areas = {
 ].forEach(([data, reset, answer], id) => {
     test(`import_settings:${id}`, () => {
         import_settings(data, reset);
-        Keys(answer).forEach(key => {
-            expect(Y).toHaveProperty(key, answer[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(answer));
     });
 });
 
 // load_defaults
 [
-    {language: '', limit: 20},
+    {language: 'eng', limit: 20},
 ].forEach((answer, id) => {
     test(`load_defaults:${id}`, () => {
         Clear(Y);
         guess_types(DEFAULTS);
         load_defaults();
-        Keys(answer).forEach(key => {
-            expect(Y).toHaveProperty(key, answer[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(answer));
     });
 });
 
 // merge_settings
 [
     [{}, {}, {}, {}],
-    [{advanced: {debug: ''}}, {advanced: {debug: ''}}, {debug: undefined}, {debug: undefined}],
+    [{advanced: {debug: ''}}, {advanced: {debug: ''}}, {}, {}],
     [
         {audio: {volume: [{min: 0, max: 10, type: 'number'}, 5]}},
         {
             advanced: {debug: ''},
             audio: {volume: [{min: 0, max: 10, type: 'number'}, 5]},
         },
-        {debug: undefined, volume: 5},
-        {debug: undefined, volume: 'i'}
+        {volume: 5},
+        {volume: 'i'}
     ],
     [
         {
@@ -452,8 +548,8 @@ Y.areas = {
                 volume: [{min: 0, max: 10, type: 'number'}, 5],
             },
         },
-        {debug: undefined, key_time: 0, music: 0, volume: 5},
-        {debug: undefined, key_time: 'i', music: 'i', volume: 'i'},
+        {key_time: 0, music: 0, volume: 5},
+        {key_time: 'i', music: 'i', volume: 'i'},
     ],
     [
         {
@@ -515,12 +611,23 @@ Y.areas = {
     test(`merge_settings:${id}`, () => {
         merge_settings(x_settings);
         expect(X_SETTINGS).toEqual(answer);
-        Keys(answer_def).forEach(key => {
-            expect(DEFAULTS).toHaveProperty(key, answer_def[key]);
-        });
-        Keys(answer_type).forEach(key => {
-            expect(TYPES).toHaveProperty(key, answer_type[key]);
-        });
+        expect(DEFAULTS).toEqual(expect.objectContaining(answer_def));
+        expect(TYPES).toEqual(expect.objectContaining(answer_type));
+    });
+});
+
+// mix_hex_colors
+[
+    ['#ffffff', '#000000', 0.5, '#808080'],
+    ['#000000', '#ffffff', 0.5, '#808080'],
+    ['#ffffff', '#000000', 0.3, '#b3b3b3'],
+    ['#ff0000', '#0000ff', 0.2, '#cc0033'],
+    ['#ff0000', '#0000ff', 0, '#ff0000'],
+    ['#ff0000', '#0000ff', 1, '#0000ff'],
+    ['#ff0000', '#0000ff', 2, '#0000ff'],
+].forEach(([color1, color2, mix, answer], id) => {
+    test(`mix_hex_colors:${id}`, () => {
+        expect(mix_hex_colors(color1, color2, mix)).toEqual(answer);
     });
 });
 
@@ -562,9 +669,9 @@ Y.areas = {
 
 // reset_default
 [
-    ['language', undefined, ''],
-    ['language', 'fra', ''],
-    ['language', '', ''],
+    ['language', undefined, 'eng'],
+    ['language', 'fra', 'eng'],
+    ['language', '', 'eng'],
     ['limit', 500, 20],
     ['limit', undefined, 20],
 ].forEach(([name, value, answer], id) => {
@@ -578,14 +685,12 @@ Y.areas = {
 
 // reset_settings
 [
-    [{'language': 'fra', 'theme': 'dark'}, true, {language: '', theme: ''}],
+    [{'language': 'fra', 'theme': 'dark'}, true, {language: 'eng', theme: ''}],
 ].forEach(([data, reset, answer], id) => {
     test(`reset_settings:${id}`, () => {
         Assign(Y, data);
         reset_settings(data, reset);
-        Keys(answer).forEach(key => {
-            expect(Y).toHaveProperty(key, answer[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(answer));
     });
 });
 
@@ -619,13 +724,9 @@ Y.areas = {
         add_history();
         Assign(Y, y2);
         add_history();
-        Keys(y2).forEach(key => {
-            expect(Y).toHaveProperty(key, y2[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(y2));
         restore_history(-1);
-        Keys(y).forEach(key => {
-            expect(Y).toHaveProperty(key, y[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(y));
     });
 });
 
@@ -641,18 +742,15 @@ Y.areas = {
         Assign(Y, y);
         Assign(DEFAULTS, defaults);
         Assign(TYPES, types);
-
         sanitise_data();
-        Keys(answer).forEach(key => {
-            expect(Y[key]).toEqual(answer[key]);
-        });
+        expect(Y).toEqual(expect.objectContaining(answer));
     });
 });
 
 // save_default
 [
-    ['language', undefined, '', undefined],
-    ['language', 'eng', 'eng', 'eng'],
+    ['language', undefined, 'eng', undefined],
+    ['language', 'eng', 'eng', undefined],
     ['language', 'fra', 'fra', 'fra'],
     ['language', undefined, 'fra', 'fra'],
     ['language', '', '', undefined],
@@ -683,11 +781,56 @@ Y.areas = {
 
 // show_settings
 [
-    ['unknown', {}, '<grid class="options"><div class="item-title span" data-set="" data-n="unknown" data-t="Unknown options"></div><a class="item item-title span" data-set="-1" data-t="OK"></a></grid>'],
-    ['audio', {}, '<grid class="options"><div class="item-title span" data-set="" data-n="audio" data-t="Audio options"></div><a class="item"><i data-t="Volume"></i></a><vert class="fcenter"><input name="volume" type="number" class="setting" min="0" max="10" step="1" value="5"undefined></vert><a class="item"><i data-t="Music"></i></a><vert class="fcenter"><select name="music"><option value="1" data-t="on"></option><option value="0" selected data-t="off"></option></select></vert><a class="item item-title span" data-set="-1" data-t="OK"></a></grid>'],
+    [
+        'unknown', {},
+        '<grid class="options">'
+            + '<div class="item-title span" data-set="" data-n="unknown" data-t="Unknown options"></div>'
+            + '<a class="item item-title span" data-set="-1" data-t="OK"></a>'
+        + '</grid>',
+    ],
+    [
+        'audio', {},
+        '<grid class="options">'
+            + '<div class="item-title span" data-set="" data-n="audio" data-t="Audio options"></div>'
+            + '<a class="item"><i data-t="Volume"></i></a>'
+            + '<vert class="fcenter">'
+                + '<input name="volume" type="number" class="setting" min="0" max="10" step="1" value="5"undefined>'
+            + '</vert>'
+            + '<a class="item"><i data-t="Music"></i></a>'
+            + '<vert class="fcenter">'
+                + '<select name="music">'
+                    + '<option value="1" data-t="on"></option>'
+                    + '<option value="0" selected data-t="off"></option>'
+                + '</select>'
+            + '</vert>'
+            + '<a class="item item-title span" data-set="-1" data-t="OK"></a>'
+        + '</grid>',
+    ],
 ].forEach(([name, dico, answer], id) => {
     test(`show_settings:${id}`, () => {
         expect(show_settings(name, dico)).toEqual(answer);
+    });
+});
+
+// touch_event
+[
+    [{}, {change: {x: undefined, y: undefined}, error: -1, stamp: undefined}],
+    [{clientX: 50, clientY: 60, timeStamp: 100}, {change: {x: 50, y: 60}, error: -1, stamp: 100}],
+    [
+        {clientX: 50, clientY: 60, timeStamp: 100, touches: [{clientX: 100, clientY: 70}]},
+        {change: {x: 100, y: 70}, error: -1, stamp: 100},
+    ],
+    [
+        {timeStamp: 200, touches: [{clientX: 100, clientY: 70}, {clientX: 90, clientY: 60}]},
+        {change: {x: 95, y: 65}, error: -1, stamp: 200},
+    ],
+    [
+        {changedTouches: [{clientX: 5, clientY: 6}], timeStamp: 100, touches: [{clientX: 90, clientY: 60}]},
+        {change: {x: 5, y: 6}, error: -1, stamp: 100},
+    ],
+].forEach(([e, answer], id) => {
+    test(`touch_event:${id}`, () => {
+        expect(touch_event(e)).toEqual(answer);
     });
 });
 
@@ -736,5 +879,55 @@ Y.areas = {
     test(`translate_expression:${id}`, () => {
         Assign(Y, y);
         expect(translate_expression(text)).toEqual(answer);
+    });
+});
+
+// translate_node
+[
+    ['', {}, '<a></a>'],
+    ['hi', {}, '<a>hi</a>'],
+    ['hi', {'data-t': 'hello'}, '<a data-t="hello">hello</a>'],
+    ['hi', {'data-t': 'hello', 'data-t2': 'href'}, '<a data-t="hello" data-t2="href" href="hello">hi</a>'],
+    ['hi', {'data-t': 'Japan'}, '<a data-t="Japan">Japon</a>'],
+    ['hi', {'data-t': 'Japan vs Italy'}, '<a data-t="Japan vs Italy">Japan vs Italy</a>'],
+    ['hi', {'data-t': '{Japan} vs {Italy}'}, '<a data-t="{Japan} vs {Italy}">Japon vs Italy</a>'],
+    //
+    ['hi<div data-t="{Belgium} #1"></div>', {}, '<a>hi<div data-t="{Belgium} #1"></div></a>'],
+    ['hi<div data-t="{Belgium} #1"></div>', {'data-t': 'void'}, '<a data-t="void">void</a>'],
+    [
+        '<a data-t="Japan">X</a><a data-t="Belgium">Y</a>',
+        {},
+        '<a><a data-t="Japan">X</a><a data-t="Belgium">Y</a></a>',
+    ],
+].forEach(([html, attrs, answer], id) => {
+    test(`translate_node:${id}`, () => {
+        let soup = CreateNode('a', html, attrs);
+        translate_node(soup);
+        expect(soup.outerHTML).toEqual(answer);
+    });
+});
+
+// translate_nodes
+[
+    ['', {}, '<a></a>'],
+    ['hi', {}, '<a>hi</a>'],
+    ['hi', {'data-t': 'hello'}, '<a data-t="hello">hello</a>'],
+    ['hi', {'data-t': 'hello', 'data-t2': 'href'}, '<a data-t="hello" data-t2="href" href="hello">hi</a>'],
+    ['hi', {'data-t': 'Japan'}, '<a data-t="Japan">Japon</a>'],
+    ['hi', {'data-t': 'Japan vs Italy'}, '<a data-t="Japan vs Italy">Japan vs Italy</a>'],
+    ['hi', {'data-t': '{Japan} vs {Italy}'}, '<a data-t="{Japan} vs {Italy}">Japon vs Italy</a>'],
+    //
+    ['hi<div data-t="{Belgium} #1"></div>', {}, '<a>hi<div data-t="{Belgium} #1">Belgique #1</div></a>'],
+    ['hi<div data-t="{Belgium} #1"></div>', {'data-t': 'void'}, '<a data-t="void">void</a>'],
+    [
+        '<a data-t="Japan">X</a><a data-t="Belgium">Y</a>',
+        {},
+        '<a><a data-t="Japan">Japon</a><a data-t="Belgium">Belgique</a></a>',
+    ],
+].forEach(([html, attrs, answer], id) => {
+    test(`translate_nodes:${id}`, () => {
+        let soup = CreateNode('a', html, attrs);
+        translate_nodes(soup);
+        expect(soup.outerHTML).toEqual(answer);
     });
 });

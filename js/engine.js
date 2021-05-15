@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-03-11
+// @version 2021-05-14
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -12,10 +12,10 @@
 globals
 _, A, Abs, AnimationFrame, Assign, Attrs, C, CacheId, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HasClass, Hide, history,
-HTML, Input, IS_NODE, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
-LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Parent, ParseJSON, PD, Pow, QueryString,
-require, Resource,
+DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HAS_DOCUMENT, HAS_GLOBAL,
+HasClass, Hide, history, HTML, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Pad, Parent, ParseJSON, PD, Pow, QueryString,
+require, Resource, Round,
 S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TextHTML, Title,
 Undefined, Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
 */
@@ -34,6 +34,7 @@ let __PREFIX = '_',
     animation,
     api = {},
     api_times = {},
+    app_start = Now(true),
     AUTO_ON_OFF = ['auto', 'on', 'off'],
     change_queue,
     click_target,
@@ -77,7 +78,7 @@ let __PREFIX = '_',
     libraries = {},
     LINKS = {},
     LOCALHOST = (typeof location == 'object') && location.port == 8080,
-    localStorage = (IS_NODE || window).localStorage,
+    localStorage = (HAS_GLOBAL || window).localStorage,
     MAX_HISTORY = 20,
     me = {},
     // &1:no import/export, &2:no change setting, &4:update Y but no localStorage
@@ -247,13 +248,37 @@ function create_field_value(text) {
 }
 
 /**
+ * Mix 2 hex colors
+ * @param {string} color1 #ffff00, ffff00
+ * @param {string} color2 #0000ff
+ * @param {number} mix how much of color2 to use, 0..1
+ * @returns {string} #808080
+ */
+function mix_hex_colors(color1, color2, mix) {
+    if (mix <= 0)
+        return color1;
+    else if (mix >= 1)
+        return color2;
+
+    let off1 = (color1[0] == '#')? 1: 0,
+        off2 = (color2[0] == '#')? 1: 0;
+
+    return '#' + [0, 2, 4].map(i => {
+        let color =
+              parseInt(color1.slice(off1 + i, off1 + i + 2), 16) * (1 - mix)
+            + parseInt(color2.slice(off2 + i, off2 + i + 2), 16) * mix;
+        return Pad(Round(color).toString(16));
+    }).join('');
+}
+
+/**
  * Set the current section
  * @param {string} section
  */
 function set_section(section) {
     y_x = section;
-    if (IS_NODE)
-        IS_NODE.y_x = y_x;
+    if (HAS_GLOBAL)
+        HAS_GLOBAL.y_x = y_x;
 }
 
 // SETTINGS
@@ -1595,17 +1620,21 @@ function create_svg_icon(name) {
 
 /**
  * Fill a combo filter
- * @param {string?} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
+ * @param {Node|string?} letter, ex: m=mode, v=view ... or a selector; null => get the HTML
  * @param {Array<string>|Object<string, string>=} values list of values for the combo, default to [DEFAULTS[letter]]
  * @param {string=} select the value to be selected, default to Y[letter]
  * @param {Object=} dico used to name the values, ex: 01 => cheater
  * @param {boolean=} no_translate don't translate the options
+ * @param {Node=} parent parent node, document by default
  * @returns {string} the selected value, or the HTML
  */
-function fill_combo(letter, values, select, dico, no_translate) {
+function fill_combo(letter, values, select, dico, no_translate, parent) {
+    if (!HAS_DOCUMENT)
+        return '';
     dico = Undefined(dico, {});
 
-    if (letter != null) {
+    if (IsString(letter)) {
+        letter = /** @type {string} */letter;
         if (values == null)
             values = [DEFAULTS[letter]];
         if (select == null)
@@ -1669,7 +1698,7 @@ function fill_combo(letter, values, select, dico, no_translate) {
 
     // set the HTML: 1 letter => #co+letter, otherwise letter is a selector
     if (letter) {
-        let sel = letter_selector(letter);
+        let sel = IsString(letter)? _(letter_selector(/** @type {string} */letter), parent): letter;
         HTML(sel, lines.join(''));
         translate_nodes(sel);
     }
@@ -1826,6 +1855,7 @@ function check_hash(no_special) {
 
 /**
  * Detect the device
+ * @returns {!Object}
  */
 function detect_device() {
     let agent = navigator.userAgent || navigator.vendor || window.opera,
@@ -1845,6 +1875,7 @@ function detect_device() {
     device.iphone = mobile && (os == 'ios');
     device.os = os;
     device.mobile = mobile;
+    return device;
 }
 
 /**
@@ -2008,7 +2039,7 @@ function init_websockets() {
     // reconnect when closed
     socket.onclose = () => {
         socket = null;
-        socket_error(`socket close: ${Now(true)}`);
+        socket_error(`socket close: ${Now(true) - app_start}`);
     };
     socket.onopen = () => {
         socket_fail = 0;
@@ -3143,6 +3174,7 @@ if (typeof exports != 'undefined') {
         activate_tabs: activate_tabs,
         add_font: add_font,
         add_history: add_history,
+        add_move: add_move,
         add_timeout: add_timeout,
         AUTO_ON_OFF: AUTO_ON_OFF,
         calculate_text_width: calculate_text_width,
@@ -3154,12 +3186,17 @@ if (typeof exports != 'undefined') {
         create_svg_icon: create_svg_icon,
         create_url_list: create_url_list,
         DEFAULTS: DEFAULTS,
+        detect_device: detect_device,
         DEV: DEV,
         DEV_NAMES: DEV_NAMES,
         device: device,
         done_touch: done_touch,
+        draw_rectangle: draw_rectangle,
+        fill_combo: fill_combo,
         find_area: find_area,
         FONTS: FONTS,
+        get_area: get_area,
+        get_changed_touches: get_changed_touches,
         get_float: get_float,
         get_int: get_int,
         get_object: get_object,
@@ -3168,12 +3205,14 @@ if (typeof exports != 'undefined') {
         HIDES: HIDES,
         ICONS: ICONS,
         import_settings: import_settings,
+        KEY_TIMES: KEY_TIMES,
         KEYS: KEYS,
         LANGUAGES: LANGUAGES,
         load_defaults: load_defaults,
         LOCALHOST: LOCALHOST,
         me: me,
         merge_settings: merge_settings,
+        mix_hex_colors: mix_hex_colors,
         move_pane: move_pane,
         NO_IMPORTS: NO_IMPORTS,
         ON_OFF: ON_OFF,
@@ -3189,15 +3228,24 @@ if (typeof exports != 'undefined') {
         sanitise_data: sanitise_data,
         save_default: save_default,
         save_option: save_option,
+        set_combo_value: set_combo_value,
         set_section: set_section,
+        set_text: set_text,
+        show_popup: show_popup,
         show_settings: show_settings,
         socket: socket,
+        stop_drag: stop_drag,
         TAB_NAMES: TAB_NAMES,
         THEMES: THEMES,
         timers: timers,
+        touch_event: touch_event,
+        touch_handle: touch_handle,
+        touch_moves: touch_moves,
         translate: translate,
         translate_default: translate_default,
         translate_expression: translate_expression,
+        translate_node: translate_node,
+        translate_nodes: translate_nodes,
         TRANSLATE_SPECIALS: TRANSLATE_SPECIALS,
         translates: translates,
         TYPES: TYPES,

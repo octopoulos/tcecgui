@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-05-14
 //
 // game board:
 // - 4 rendering modes:
@@ -20,7 +20,7 @@ globals
 _, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, CacheId,
 cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
 DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
-get_fen_ply, get_move_ply, global, Hide, HTML, I8, Id, InsertNodes, IS_NODE, IsDigit, IsString, Keys,
+get_fen_ply, get_move_ply, global, HAS_GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 require, resize_text, Round,
 S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32,
@@ -2971,7 +2971,7 @@ class XBoard {
      */
     think(suggest, step) {
         // disable this for tests
-        if (this.finished || IS_NODE)
+        if (this.finished || HAS_GLOBAL)
             return;
 
         let moves, num_move,

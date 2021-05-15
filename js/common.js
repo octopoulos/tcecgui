@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-05-14
 //
 // utility JS functions used in all the sites
 //
@@ -52,7 +52,8 @@ let Abs = Math.abs,
     Exp = Math.exp,
     Floor = Math.floor,
     From = Array.from,
-    IS_NODE = (typeof global != 'undefined')? global: null,
+    HAS_DOCUMENT = (typeof document != 'undefined')? document: null,
+    HAS_GLOBAL = (typeof global != 'undefined')? global: null,
     IsArray = Array.isArray,
     IsFloat = value => (Number.isFinite(value) && !Number.isInteger(value)),
     IsFunction = value => (typeof(value) == 'function'),
@@ -137,7 +138,7 @@ function Id(id, parent) {
         return null;
     if (IsObject(id))
         return /** @type {Node} */(id);
-    if (IS_NODE)
+    if (HAS_GLOBAL)
         return (parent || document).querySelector(`#${id}`);
     return (parent || document).getElementById(id);
 }
@@ -1859,6 +1860,8 @@ if (typeof exports != 'undefined') {
         From: From,
         FromSeconds: FromSeconds,
         FromTimestamp: FromTimestamp,
+        HAS_DOCUMENT: HAS_DOCUMENT,
+        HAS_GLOBAL: HAS_GLOBAL,
         HashText: HashText,
         Hex2RGB: Hex2RGB,
         Hide: Hide,
@@ -1868,7 +1871,6 @@ if (typeof exports != 'undefined') {
         InsertNodes: InsertNodes,
         InvalidEmail: InvalidEmail,
         InvalidPhone: InvalidPhone,
-        IS_NODE: IS_NODE,
         IsArray: IsArray,
         IsDigit: IsDigit,
         IsFloat: IsFloat,

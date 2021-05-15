@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-07
+// @version 2021-05-14
 //
 // Game specific code:
 // - control the board, moves
@@ -18,7 +18,7 @@ clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:tr
 create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
-global, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval, IS_NODE,
+global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
 is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 last_key:true, last_scroll, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max,
 Min, Module, navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, QueryString, RandomInt,
@@ -5043,7 +5043,7 @@ function clock_tick(section, id) {
 
     player.elapsed = elapsed;
     update_clock(section, id);
-    if (!IS_NODE)
+    if (!HAS_GLOBAL)
         add_timeout(`clock-${section}${id}`, () => clock_tick(section, id), timeout);
 }
 

@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-05-14
 //
 /*
 globals
@@ -361,9 +361,7 @@ live.id = 'null';
     test(`reset:${id}`, () => {
         Assign(live, states);
         live.reset(Y.x);
-        Keys(answer).forEach(key => {
-            expect(live[key]).toEqual(answer[key]);
-        });
+        expect(live).toEqual(expect.objectContaining(answer));
     });
 });
 

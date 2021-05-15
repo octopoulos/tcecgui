@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-07
+// @version 2021-05-14
 //
 // global variables/functions shared across multiple js files
 //
@@ -26,7 +26,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210507',
+    VERSION = '20210514',
     virtual_close_popups,
     xboards = {};
 
@@ -275,30 +275,6 @@ function leela_cp_to_score(cp) {
 }
 
 /**
- * Mix 2 hex colors
- * @param {string} color1 #ffff00, ffff00
- * @param {string} color2 #0000ff
- * @param {number} mix how much of color2 to use, 0..1
- * @returns {string} #808080
- */
-function mix_hex_colors(color1, color2, mix) {
-    if (mix <= 0)
-        return color1;
-    else if (mix >= 1)
-        return color2;
-
-    let off1 = (color1[0] == '#')? 1: 0,
-        off2 = (color2[0] == '#')? 1: 0;
-
-    return '#' + [0, 2, 4].map(i => {
-        let color =
-              parseInt(color1.slice(off1 + i, off1 + i + 2), 16) * (1 - mix)
-            + parseInt(color2.slice(off2 + i, off2 + i + 2), 16) * mix;
-        return Pad(Round(color).toString(16));
-    }).join('');
-}
-
-/**
  * Get the seconds from a time text
  * @param {string} text
  * @returns {number}
@@ -445,7 +421,6 @@ if (typeof exports != 'undefined') {
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
-        mix_hex_colors: mix_hex_colors,
         reset_defaults: reset_defaults,
         reset_old_settings: reset_old_settings,
         split_move_string: split_move_string,
