@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-05-14
 //
 /*
 globals
@@ -9,11 +9,11 @@ expect, require, test
 'use strict';
 
 let {
-    _, A, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultFloat, DefaultInt, E, Format,
-    FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes,
-    InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Keys, Merge, Pad, Parent, ParseJSON, PI, Prop,
-    QueryString, S, SetDefault, Show, Split, Style, TEXT, TextHTML, Title, Toggle, Undefined, Visible, VisibleHeight,
-    VisibleWidth,
+    _, A, ArrayJS, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultFloat, DefaultInt, E,
+    Format, FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HasClass, HasClasses, HashText, Hex2RGB, Hide,
+    HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Keys, Merge, Pad,
+    Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split, Style, TEXT, TextHTML, Title, Toggle,
+    Undefined, Visible, VisibleHeight, VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +49,22 @@ let {
         let soup = CreateNode('div', html),
             nodes = A(sel, soup);
         expect(From(nodes).map(node => node.outerHTML)).toEqual(answer);
+    });
+});
+
+// ArrayJS
+[
+    [[1, 2, 3], [1, 2, 3]],
+    [
+        {
+            get: id => ['good', 'weather', 'today'][id],
+            size: () => 3,
+        },
+        ['good', 'weather', 'today'],
+    ],
+].forEach(([vector, answer], id) => {
+    test(`ArrayJS:${id}`, () => {
+        expect(ArrayJS(vector)).toEqual(answer);
     });
 });
 
@@ -305,6 +321,34 @@ let {
         let [date, time] = FromTimestamp(stamp);
         expect(answer[0]).toContain(date);
         expect(answer[1]).toContain(time);
+    });
+});
+
+// HasClass
+[
+    ['dn', 'dn', true],
+    ['small dn', 'dn', true],
+    ['small dn', 'small dn', false],
+].forEach(([sclass, class_, answer], id) => {
+    test(`HasClass:${id}`, () => {
+        let node = CreateNode('div', '', {class: sclass});
+        expect(HasClass(node, class_)).toEqual(answer);
+    });
+});
+
+// HasClasses
+[
+    ['dn', 'dn', true],
+    ['small dn', 'dn', true],
+    ['small dn', 'small dn', true],
+    ['small dn', '-small', false],
+    ['small dn', '+small', true],
+    ['small dn', '+small +dn', true],
+    ['small dn', '+small -dn', false],
+].forEach(([sclass, classes, answer], id) => {
+    test(`HasClasses:${id}`, () => {
+        let node = CreateNode('div', '', {class: sclass});
+        expect(HasClasses(node, classes)).toEqual(answer);
     });
 });
 

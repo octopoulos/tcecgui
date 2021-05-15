@@ -502,7 +502,7 @@ function Events(sel, events, callback, options, parent) {
 /**
  * Check if a node has a class
  * @param {Node|string} node CSS selector or node
- * @param {string} class_ can be multiple classes separated by spaces
+ * @param {string} class_ class name to match exactly
  * @returns {boolean}
  */
 function HasClass(node, class_) {
@@ -1862,6 +1862,8 @@ if (typeof exports != 'undefined') {
         FromTimestamp: FromTimestamp,
         HAS_DOCUMENT: HAS_DOCUMENT,
         HAS_GLOBAL: HAS_GLOBAL,
+        HasClass: HasClass,
+        HasClasses: HasClasses,
         HashText: HashText,
         Hex2RGB: Hex2RGB,
         Hide: Hide,
