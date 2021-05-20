@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-20
 //
 // global variables/functions shared across multiple js files
 //
@@ -8,8 +8,8 @@
 // jshint -W069
 /*
 globals
-Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, Hide, HTML, IsDigit, Keys,
-LS, Max, Min, Pow, require, reset_default, save_default, save_option, show_popup, Split, Undefined, Y
+Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, HTML, IsDigit, Keys,
+LS, Max, Min, Pow, require, reset_default, save_default, save_option, Split, Undefined, virtual_can_close_popups:true, Y
 */
 'use strict';
 
@@ -124,16 +124,16 @@ function calculate_feature_q(feature, eval_, ply) {
 }
 
 /**
- * Close all popups
+ * Can close popups = first step in "close popups"
+ * @returns {boolean}
  */
-function close_popups() {
-    show_popup();
+function can_close_popups() {
     if (virtual_close_popups)
         virtual_close_popups('popup-fen', 'fen', {type: 'mouseleave'});
 
     // empty the content to prevent controls for still interacting with the popup (ex: SELECT)
     HTML(CacheId('modal'), '');
-    Hide(CacheId('overlay'));
+    return true;
 }
 
 /**
@@ -179,7 +179,7 @@ function fix_move_format(move) {
             move['s'] = (move['mt'] >= 2000)? Floor(move['n'] / move['mt'] * 1000): '-';
         // fix insta-moves speed
         else if (move['mt'] && move['mt'] < 2000) {
-            let speed = move['n'] / (move['mt'] + 500) * 1000;
+            let speed = move['n'] / (move['mt'] + (move['n'] > 500)? 5: 300) * 1000;
             if (move['s'] > speed * 3)
                 move['s'] = '-';
         }
@@ -404,6 +404,16 @@ function stockfish_win_rate_model(cp, ply) {
  */
 function stoof_cp_to_score(cp) {
     return Atan(cp / 194) / 1.55564;
+}
+
+// STARTUP
+//////////
+
+/**
+ * Initialise structures with global data
+ */
+function startup_global() {
+    virtual_can_close_popups = can_close_popups;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

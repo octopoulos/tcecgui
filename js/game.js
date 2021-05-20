@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-20
 //
 // Game specific code:
 // - control the board, moves
@@ -3443,7 +3443,7 @@ function fix_zero_moves(moves, main_moves) {
                 prev_eval = clamp_eval(main_move['wv']);
             }
         }
-        if (prev && eval_ == 0 && prev_eval > 0.5 && (move['d'] <= 1 || move['n'] < 10 || move['mt'] < 1000))
+        if (prev && eval_ == 0 && prev_eval > 0.5 && (move['d'] <= 1 || move['n'] < 10 || move['mt'] <= 1))
             move['wv'] = undefined;
 
         prev = move;
@@ -3513,10 +3513,11 @@ function parse_pgn(section, data, mode=15, origin='') {
         return null;
 
     // fix FEN for FRC (archive)
-    let board = xboards[section] || xboards['pva'],
-        fen = headers['FEN'];
-    if (fen)
+    let fen = headers['FEN'];
+    if (fen) {
+        let board = xboards[section] || xboards['pva'];
         fix_header_opening(board, headers);
+    }
 
     pgn['Headers'] = headers;
     if (!(mode & 6))
@@ -3549,14 +3550,38 @@ function parse_pgn(section, data, mode=15, origin='') {
         return pgn;
 
     // 3) moves
-    let has_text,
+    let moves = parse_pgn_moves(section, data, mode, fen, origin);
+
+    // 4) result
+    let variant = headers['Variant'];
+    if (!headers['Opening'] && variant && !DUMMY_OPENINGS[variant])
+        headers['Opening'] = variant;
+
+    pgn['Moves'] = moves;
+    if (DEV['fen'])
+        LS(pgn);
+    return pgn;
+}
+
+/**
+ * Parse the moves section of the PGN
+ * @param {string} section
+ * @param {string|Object} data
+ * @param {number=} mode &1:header, &2:options, &4:moves, &8:fix moves/pv
+ * @param {string=} fen valid FEN just before those new moves
+ * @param {string=} origin debug information
+ * @returns {Array<Move>}
+ */
+function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
+    let board = xboards[section] || xboards['pva'],
+        has_text,
         info = {},
         last_fen = fen || START_FEN,
+        length = data.length,
         prev_fen = last_fen,
         moves = [],
-        ply = get_fen_ply(last_fen);
-    length = data.length;
-    start = 0;
+        ply = get_fen_ply(last_fen),
+        start = 0;
 
     if (mode & 8)
         board.chess_load(last_fen);
@@ -3674,15 +3699,7 @@ function parse_pgn(section, data, mode=15, origin='') {
             has_text = true;
     }
 
-    // 4) result
-    let variant = headers['Variant'];
-    if (!headers['Opening'] && variant && !DUMMY_OPENINGS[variant])
-        headers['Opening'] = variant;
-
-    pgn['Moves'] = moves;
-    if (DEV['fen'])
-        LS(pgn);
-    return pgn;
+    return moves;
 }
 
 /**
@@ -6887,6 +6904,7 @@ if (typeof exports != 'undefined')
         get_short_name: get_short_name,
         parse_date_time: parse_date_time,
         parse_pgn: parse_pgn,
+        parse_pgn_moves: parse_pgn_moves,
         parse_time_control: parse_time_control,
         PIECE_THEMES: PIECE_THEMES,
         TABLES: TABLES,

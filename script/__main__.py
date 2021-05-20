@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-01-05
+# @version 2021-05-19
 
 """
 Main
@@ -37,10 +37,6 @@ def main():
     # utils
     if args_set & {'inspector'}:
         main_util(parser)
-    elif args.inspector:
-        from inspector import Inspect
-        inspector = Inspect()
-        inspector.go()
     # sync
     elif args.sync:
         main_sync(parser)

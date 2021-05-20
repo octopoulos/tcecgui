@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-18
 //
 // utility JS functions used in all the sites
 //
@@ -1226,7 +1226,7 @@ function Clamp(number, min, max, min_set) {
 /**
  * Remove all properties of an object
  * @param {!Object} dico
- * @returns {Object}
+ * @returns {!Object}
  */
 function Clear(dico) {
     Keys(dico).forEach(key => {
@@ -1718,10 +1718,6 @@ function RandomSpread(range) {
  * @example
  * // get the context of the file
  * Resource('./fragment.frag', (status, text) => {LS(text)}, {type: 'text'})
- * // api call
- * Resource('api/user_login', (status, result) => {
- *     LS(result)}, Stringify({user: 'David'}
- * ), {method: 'POST'})
  */
 function Resource(url, callback, {content=null, form, headers={}, method='GET', type='json'}={}) {
     let xhr = new XMLHttpRequest();
@@ -1870,6 +1866,7 @@ if (typeof exports != 'undefined') {
         HTML: HTML,
         Id: Id,
         Index: Index,
+        Input: Input,
         InsertNodes: InsertNodes,
         InvalidEmail: InvalidEmail,
         InvalidPhone: InvalidPhone,

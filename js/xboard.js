@@ -23,8 +23,8 @@ DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, F
 get_fen_ply, get_move_ply, global, HAS_GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 require, resize_text, Round,
-S, SetDefault, Show, Sign, socket, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32,
-Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
+S, SetDefault, Show, Sign, socket_io, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event,
+U32, Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
 */
 'use strict';
 
@@ -2104,7 +2104,7 @@ class XBoard {
             let prev_fen = this.moves.length? this.moves[this.moves.length - 1]['fen']: this.start_fen,
                 uci = this.chess.ucifyObject(move);
             if ((now - this.move_time) * 1000 > TIMEOUT_vote)
-                socket.emit('vote', {'fen': prev_fen, 'move': uci, 'time': now});
+                socket_io.emit('vote', {'fen': prev_fen, 'move': uci, 'time': now});
             this.arrow(3, move);
         }
         else {

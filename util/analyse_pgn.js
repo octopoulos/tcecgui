@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-05-20
 /*
 globals
 process, require
@@ -12,9 +12,9 @@ let fs = require('fs'),
     unzipper = require('unzipper'),
     {
         Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, IsDigit, Keys, LS, Max, Now, Pad, SetDefault,
-    } = require('./js/common.js'),
-    {fix_move_format} = require('./js/global.js'),
-    {extract_threads, parse_pgn} = require('./js/game.js');
+    } = require('../js/common.js'),
+    {fix_move_format} = require('../js/global.js'),
+    {extract_threads, parse_pgn} = require('../js/game.js');
 
 let engine_check = 'LCZero 0.27.0d-Tilps-dje-magic_JH.94-100',
     OPTIONS = {},

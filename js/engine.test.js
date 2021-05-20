@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-19
 //
 /*
 globals
@@ -8,16 +8,16 @@ expect, require, test
 */
 'use strict';
 
-let {Assign, Clear, CreateNode, Id} = require('./common.js'),
+let {Assign, CACHE_IDS, Clear, CreateNode, Id} = require('./common.js'),
     {
         add_font, add_history, add_move, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup,
         create_field_value, create_page_array, create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV,
         DEV_NAMES, done_touch, fill_combo, find_area, FONTS, get_area, get_changed_touches, get_float, get_int,
         get_object, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults, merge_settings,
         mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history,
-        sanitise_data, save_default, save_option, show_settings, stop_drag, touch_event, touch_handle, touch_moves,
-        translate, translate_default, translate_expression, translate_node, translate_nodes, translates, TYPES,
-        X_SETTINGS, Y, y_states,
+        sanitise_data, save_default, save_option, set_text, show_popup, show_settings, stop_drag, touch_event,
+        touch_handle, touch_moves, translate, translate_default, translate_expression, translate_node, translate_nodes,
+        translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
@@ -45,25 +45,27 @@ Assign(translates, {
     Japan: 'Japon',
 });
 
-Y.areas = {
-    bottom: [],
-    center0: [
-        ['engine', 1, 3],
-        ['table-tb', 1, 1],
-        ['table-kibitz', 0, 1],
-    ],
-    left0: [
-        ['archive', 0, 1],
-        ['live', 0, 1],
-    ],
-    right0: [
-        ['table-chat', 1, 3],
-        ['shortcut_1', 1, 1],
-        ['shortcut_2', 1, 1],
-        ['table-info', 0, 0],
-    ],
-    top: [],
-};
+Assign(Y, {
+    areas: {
+        bottom: [],
+        center0: [
+            ['engine', 1, 3],
+            ['table-tb', 1, 1],
+            ['table-kibitz', 0, 1],
+        ],
+        left0: [
+            ['archive', 0, 1],
+            ['live', 0, 1],
+        ],
+        right0: [
+            ['table-chat', 1, 3],
+            ['shortcut_1', 1, 1],
+            ['shortcut_2', 1, 1],
+            ['table-info', 0, 0],
+        ],
+        top: [],
+    },
+});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -779,6 +781,47 @@ Y.areas = {
     });
 });
 
+
+// set_text
+[
+    ['hi', '<a data-t="hi">hi</a>'],
+    ['Japan', '<a data-t="Japan">Japon</a>'],
+    ['{Belgium} #1', '<a data-t="{Belgium} #1">Belgique #1</a>'],
+].forEach(([text, answer], id) => {
+    test(`set_text:${id}`, () => {
+        let soup = CreateNode('a', '');
+        set_text(soup, text);
+        expect(soup.outerHTML).toEqual(answer);
+    });
+});
+
+// show_popup
+[
+    ['me', true, {node_id: 'pop'}, '<a id="pop" style="transform: unset;" data-ev="1"></a>'],
+    ['me', true, {center: 1, html: 'hi', node_id: 'pop'}, '<a id="pop" style="transform: unset;" data-ev="1">hi</a>'],
+    [
+        'me', false, {center: 1, html: 'hi', node_id: 'modal'},
+        '<a id="modal" class="instant" data-id="" data-name="" style="transform: unset;" data-center="" data-my="" data-xy=""></a>',
+    ],
+    [
+        'me', true, {center: 1, html: 'hi', node_id: 'modal'},
+        '<a id="modal" style="transform: translate(0%, 0%) translate(508px, 384px);" data-center="1" data-my="" data-xy="" class="instant popup-show popup-enable" data-id="" data-name="me" data-ev="1">hi</a>',
+    ],
+    [
+        'me', true, {center: 1, html: 'hi', node_id: 'modal', xy: [150, 120]},
+        '<a id="modal" style="transform: translate(0%, 0%) translate(508px, 384px);" data-center="1" data-my="" data-xy="150,120" class="instant popup-show popup-enable" data-id="" data-name="me" data-ev="1">hi</a>',
+    ],
+].forEach(([name, show, options, answer], id) => {
+    test(`show_popup:${id}`, () => {
+        Clear(CACHE_IDS);
+        let html = `<a id="${options.node_id}"></a>`,
+            soup = CreateNode('div', html);
+        options.parent = soup;
+        show_popup(name, show, options);
+        expect(soup.innerHTML).toEqual(answer);
+    });
+});
+
 // show_settings
 [
     [
@@ -929,5 +972,20 @@ Y.areas = {
         let soup = CreateNode('a', html, attrs);
         translate_nodes(soup);
         expect(soup.outerHTML).toEqual(answer);
+    });
+});
+
+// update_svg
+[
+    [
+        '<a data-svg="play"></a><a data-svg="next"></a>',
+        '<a><svg class="svg play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7z"></path></svg></a>'
+        + '<a data-svg="next"></a>',
+    ],
+].forEach(([html, answer], id) => {
+    test(`update_svg:${id}`, () => {
+        let soup = CreateNode('a', html);
+        update_svg(soup);
+        expect(soup.innerHTML).toEqual(answer);
     });
 });

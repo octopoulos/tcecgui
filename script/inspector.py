@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-02-03
+# @version 2021-05-19
 
 """
 Inspect JS files
@@ -21,6 +21,7 @@ from commoner import read_text_safe
 
 BASE = os.path.dirname(os.path.dirname(__file__))
 JS_FOLDER = os.path.join(BASE, 'js')
+SERVER_FOLDER = os.path.join(BASE, 'server')
 
 SKIP_SOURCES = {'all', 'chart', 'tcec'}
 
@@ -34,6 +35,7 @@ class Inspect:
         self.re_exports = re.compile(r'[Aa]ssign\(exports, {(.*?)}\);', re.S)
         self.re_function = re.compile(r'/\*\*(.*?)\*/\r?\n(?:async )?function\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
         self.re_globals = re.compile(r'/\*\s*globals\s*(.*?)\*/', re.S)
+        self.re_requires = re.compile(r'\{?(\w[\w,.= \r\n]+)\}? = require\(.*\n')
         self.re_split = re.compile(r'[,\s]')
 
     def analyse_file(self, filename: str):
@@ -87,6 +89,21 @@ class Inspect:
             if num_doc != num_param:
                 print(f'{filename}: args: {name}: {num_doc} vs {num_param}')
 
+        # 4) check requires
+        unused = []
+        requires = self.re_requires.findall(data)
+        for require in requires:
+            items = require.split(',')
+            for item in items:
+                # const uWS = path.x => 'uWS'
+                item = item.split(' = ')[0].strip().split(' ')[-1:][0]
+                rematch = re.findall(rf'\b{item}\b', data)
+                if not rematch or len(rematch) < 2:
+                    unused.append(item)
+
+        if unused:
+            print(f"{filename}: unrequired: {', '.join(unused)}")
+
     def analyse_folder(self, folder: str):
         """Analyse a folder
         """
@@ -123,6 +140,7 @@ class Inspect:
         """
         self.analyse_folder(BASE)
         self.analyse_folder(JS_FOLDER)
+        self.analyse_folder(SERVER_FOLDER)
 
 
 if __name__ == '__main__':

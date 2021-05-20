@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-19
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -29,6 +29,18 @@ if (typeof global != 'undefined' && typeof require != 'undefined') {
 }
 // >>
 
+// global messages
+let MSG_IP_GET = 1,
+    MSG_USER_COUNT = 2,
+    MSG_USER_SUBSCRIBE = 3,
+    MSG_USER_UNSUBSCRIBE = 4,
+    //
+    MSG_USER_EDIT = 5,
+    MSG_USER_FORGOT = 6,
+    MSG_USER_LOGIN = 7,
+    MSG_USER_LOGOUT = 8,
+    MSG_USER_REGISTER = 9;
+
 let __PREFIX = '_',
     ANCHORS = {},
     animation,
@@ -50,8 +62,11 @@ let __PREFIX = '_',
     },
     device = {},
     drag,
+    drag_class,
+    DRAG_CLASSES = [],
     drag_moved,
     drag_scroll = 3,
+    drag_source,
     drag_target,
     drag_type,
     FONTS = {
@@ -74,6 +89,7 @@ let __PREFIX = '_',
         'pl': 'pol',
         'sv': 'swe',
     },
+    last_click,
     last_scroll = 0,
     libraries = {},
     LINKS = {},
@@ -81,17 +97,26 @@ let __PREFIX = '_',
     localStorage = (HAS_GLOBAL || window).localStorage,
     MAX_HISTORY = 20,
     me = {},
+    MODAL_IDS = {
+        'input': 1,
+        'modal': 1,
+        'popup': 1,
+    },
     // &1:no import/export, &2:no change setting, &4:update Y but no localStorage
     NO_IMPORTS = {
+        'dev': 1,
         'import_settings': 2,
         'language': 1,
         'password': 2,
         'preset': 1,
         'seen': 1,
+        'version': 1,
+        'x': 1,
     },
     NO_TRANSLATES = {
         '#': 1,
     },
+    old_tabs = '',
     ON_OFF = ['on', 'off'],
     PANES = {},
     ping = 0,
@@ -110,6 +135,7 @@ let __PREFIX = '_',
     THEMES = [''],
     TIMEOUT_activate = 500,                             // activate tabs in populate_areas
     TIMEOUT_adjust = 250,
+    TIMEOUT_ip = 120,
     TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
     TIMEOUT_translate = LOCALHOST? 60: 3600 * 2,
@@ -141,9 +167,11 @@ let __PREFIX = '_',
     TRANSLATES = {},
     TYPES = {},
     // virtual functions, can be assigned
+    virtual_can_close_popups,
     virtual_change_setting_special,
     virtual_check_hash_special,
     virtual_click_tab,
+    virtual_closed_popup,
     virtual_drag_done,
     virtual_hide_areas,
     virtual_import_settings,
@@ -156,6 +184,9 @@ let __PREFIX = '_',
     virtual_set_modal_events_special,
     virtual_socket_message,
     virtual_socket_open,
+    virtual_window_click_dataset,
+    virtual_window_click_parent,
+    virtual_window_click_parent_dataset,
     WS = (typeof WebSocket != 'undefined')? WebSocket: null,
     X_SETTINGS = {},
     Y = {},                                             // params
@@ -860,6 +891,7 @@ function save_storage(name, value) {
  * @param {number=} obj.offset mouse offset from the popup
  * @param {string=} obj.node_id popup id
  * @param {boolean=} obj.overlay dark overlay is used behind the popup
+ * @param {Node=} obj.parent parent node
  * @param {string=} obj.setting
  * @param {number=} obj.shadow 0:none, 1:normal, 2:light
  * @param {Node=} obj.target element that was clicked
@@ -867,7 +899,7 @@ function save_storage(name, value) {
  */
 function show_popup(name, show, {
         adjust, bar_x=20, center, class_, event=1, html='', id, instant=true, margin_y=0, node_id, offset=[0, 0],
-        overlay, setting, shadow=1, target, xy}={}) {
+        overlay, parent, setting, shadow=1, target, xy}={}) {
     // remove the red rectangle
     if (!adjust)
         set_draggable();
@@ -880,7 +912,7 @@ function show_popup(name, show, {
         click_target = null;
 
     // find the modal
-    let node = click_target || CacheId(node_id || 'modal');
+    let node = click_target || CacheId(node_id || 'modal', parent);
     if (!node)
         return;
 
@@ -1634,7 +1666,7 @@ function fill_combo(letter, values, select, dico, no_translate, parent) {
     dico = Undefined(dico, {});
 
     if (IsString(letter)) {
-        letter = /** @type {string} */letter;
+        letter = /** @type {string} */(letter);
         if (values == null)
             values = [DEFAULTS[letter]];
         if (select == null)
@@ -1698,7 +1730,7 @@ function fill_combo(letter, values, select, dico, no_translate, parent) {
 
     // set the HTML: 1 letter => #co+letter, otherwise letter is a selector
     if (letter) {
-        let sel = IsString(letter)? _(letter_selector(/** @type {string} */letter), parent): letter;
+        let sel = IsString(letter)? _(letter_selector(/** @type {string} */(letter)), parent): letter;
         HTML(sel, lines.join(''));
         translate_nodes(sel);
     }
@@ -1722,11 +1754,12 @@ function letter_selector(letter) {
  * @param {string} letter combo letter: g, m, t, c, f + special cases: n, o, s
  * @param {string} value
  * @param {boolean|string=} save in memory, if string: use this for saving, ex: #classes => class
+ * @param {Node=} parent parent node, document by default
  */
-function set_combo_value(letter, value, save=true) {
+function set_combo_value(letter, value, save=true, parent=null) {
     // n, o, s special cases
-    if (virtual_set_combo_special && !virtual_set_combo_special(letter, value)) {
-        let combo = _(letter_selector(letter)),
+    if (!virtual_set_combo_special || !virtual_set_combo_special(letter, value)) {
+        let combo = _(letter_selector(letter), parent),
             index = 0;
         if (!combo)
             return;
@@ -1818,7 +1851,7 @@ function update_theme(themes, callback, version=1) {
 
 /**
  * Resolve the SVG
- * @param {Node=} parent
+ * @param {Node=} parent parent node, document by default
  */
 function update_svg(parent) {
     E('[data-svg]', node => {
@@ -2062,7 +2095,7 @@ function init_websockets() {
 
 /**
  * Socket error
- * @param {string} text
+ * @param {string} text error text
  */
 function socket_error(text) {
     LS(text);
@@ -2079,8 +2112,18 @@ function socket_error(text) {
  * @returns {boolean?}
  */
 function socket_send(data) {
-    if (!socket || socket.readyState != WS.OPEN)
-        return false;
+    // no socket => use ajax
+    if (!socket || socket.readyState != WS.OPEN) {
+        if (DEV['socket'])
+            LS('socket_ajax:', data);
+        api_message(data, result => {
+            if (result != null)
+                virtual_socket_message(result);
+        });
+        return true;
+    }
+
+    // send socket
     let success = null;
     try {
         socket.send(Stringify(data));
@@ -2582,6 +2625,13 @@ function add_font(font, sizes) {
 }
 
 /**
+ * Adjust popup position
+ */
+function adjust_popups() {
+    show_popup('', null, {adjust: true});
+}
+
+/**
  * Calculate the text width in px
  * @param {string} text
  * @param {string=} font
@@ -2595,6 +2645,27 @@ function calculate_text_width(text, font) {
     for (let char of text.split(''))
         width += widths[char] || widths[''] || default_width;
     return width;
+}
+
+/**
+ * Close the input box and possibly rename the tab
+ * @param {boolean=} cancel don't rename the tab
+ */
+function close_input(cancel) {
+}
+
+/**
+ * Close all popups
+ */
+function close_popups() {
+    if (virtual_can_close_popups && !virtual_can_close_popups())
+        return;
+
+    show_popup();
+    Hide(CacheId('overlay'));
+
+    if (virtual_closed_popup)
+        virtual_closed_popup();
 }
 
 /**
@@ -2761,6 +2832,28 @@ function get_drop_id(target) {
         id: parent? (parent.id || parent.dataset['x']): null,
         node: parent,
     };
+}
+
+/**
+ * Hide a drag element
+ * @param {Node} target
+ */
+function hide_element(target) {
+    let drop = get_drop_id(target),
+        areas = Y['areas'];
+    if (!drop.node)
+        return;
+
+    Keys(areas).forEach(key => {
+        for (let vector of areas[key])
+            if (vector[0] == drop.id) {
+                vector[2] &= ~1;
+                break;
+            }
+    });
+
+    Hide(drop.node);
+    populate_areas();
 }
 
 /**
@@ -2998,8 +3091,96 @@ function set_draggable() {
     Class('.area', '-dragging');
 }
 
+/**
+ * Handle a general window click
+ * @param {Event} e
+ */
+function window_click(e) {
+    Clear(KEYS);
+    let cannot = cannot_click();
+    if (cannot == 1)
+        return;
+
+    let target = e.target,
+        dataset = target.dataset,
+        type = e.type,
+        is_click = (type == 'click');
+    last_click = target;
+
+    // special 1
+    if (virtual_window_click_dataset)
+        if (virtual_window_click_dataset(dataset))
+            return;
+
+    while (target) {
+        let id = target.id;
+        if (id) {
+            if (MODAL_IDS[id] || id.includes('modal') || id.includes('popup'))
+                return;
+        }
+        if (HasClass(target, 'nav'))
+            return;
+        // special 2
+        if (virtual_window_click_parent) {
+            let result = virtual_window_click_parent();
+            if (result == 1)
+                return;
+            else if (result == 2)
+                break;
+        }
+
+        if (is_click) {
+            // sub settings
+            let dataset = target.dataset;
+            if (dataset) {
+                let set = target.dataset['set'];
+                if (set != undefined) {
+                    let parent = Parent(target, {class_: 'popup'}),
+                        xy = '';
+                    if (parent && parent.dataset) {
+                        let item = parent.dataset['xy'];
+                        if (item)
+                            xy = item.split(',').map(item => item * 1);
+                    }
+                    if (set == -1)
+                        close_popups();
+                    else
+                        show_popup('options', true, {id: 'options', setting: set, target: parent, xy: xy});
+                    return;
+                }
+
+                // special 3
+                if (virtual_window_click_parent_dataset) {
+                    let result = virtual_window_click_parent_dataset(dataset);
+                    if (result == 1)
+                        return;
+                    else if (result == 2)
+                        break;
+                }
+            }
+        }
+
+        target = target.parentNode;
+    }
+
+    close_input();
+    close_popups();
+}
+
 // API
 //////
+
+/**
+ * Send an API message
+ * @param {Array} vector format=[code, message]
+ * @param {Function=} callback
+ */
+function api_message(vector, callback) {
+    Resource('/api/', (http_code, data) => {
+        if (callback)
+            callback((http_code == 200)? data: null);
+    }, {content: Stringify(vector), method: 'POST'});
+}
 
 /**
  * Get translations
@@ -3049,9 +3230,97 @@ function api_translate_get(force, callback, custom_data) {
         });
 }
 
+/**
+ * Get the IP, for login/register + call_me
+ * @param {Function=} callback
+ */
+function get_ip(callback) {
+    if (Y.ip && Now() < Y.ip_time + TIMEOUT_ip) {
+        if (callback)
+            callback(Y.ip);
+        return;
+    }
+
+    api_message([MSG_IP_GET], data => {
+        if (data == null)
+            return;
+        Y.ip = data[1];
+        Y.ip_time = Now();
+        if (callback)
+            callback(data[1]);
+    });
+}
+
 // EVENTS
 /////////
 
+/**
+ * Drag and drop events
+ * @param {Function=} handle_drop
+ * @param {number=} force_orient 1:vert, 2:hori
+ */
+function set_drag_events(handle_drop, force_orient=0) {
+    Events(window, 'dragstart', e => {
+        if (!Y['drag_and_drop'])
+            return;
+        // no drag and drop on text
+        let target = e.target;
+        if (target.nodeType != 1)
+            return;
+        let parent = Parent(target, {attrs: 'draggable=true', self: true});
+        if (!parent)
+            return;
+
+        for (let class_ of DRAG_CLASSES)
+            if (HasClass(parent, class_)) {
+                drag_class = class_;
+                break;
+            }
+        drag_source = parent;
+        close_popups();
+    });
+
+    Events(window, 'dragenter dragover', e => {
+        if (!Y['drag_and_drop'])
+            return;
+        let child = get_drop_id(e.target).node,
+            parent = Parent(e.target, {class_: 'area', self: true});
+        if (child == drag_source)
+            child = null;
+        else if (!child)
+            child = parent;
+
+        if (drag_class)
+            if (!HasClass(child, drag_class) || HasClass(child, 'first'))
+                child = null;
+
+        // tab=drop or top/bottom area => vertical bar, otherwise horizontal
+        let orient = ((parent && ['bottom', 'top'].includes(parent.id)) || HasClass(child, 'drop'))? 1: 2;
+        draw_rectangle(child, force_orient || orient, e.clientX, e.clientY);
+        if (!child)
+            return;
+
+        Class('.area', 'dragging');
+        SP(e);
+        PD(e);
+    });
+
+    Events(window, 'dragexit dragleave', e => {
+        if (!Y['drag_and_drop'])
+            return;
+        if (e.target.tagName == 'HTML') {
+            Class('.area', '-dragging');
+            Hide(CacheId('rect'));
+        }
+    });
+
+    if (handle_drop)
+        Events(window, 'drop', handle_drop);
+}
+
+/**
+ * Global engine events
+ */
 function set_engine_events() {
     Events(window, 'mousedown touchstart', () => {
         cancel_animation();
@@ -3073,7 +3342,7 @@ function set_engine_events() {
 
 /**
  * Used when showing a modal
- * @param {Node=} parent
+ * @param {Node=} parent parent node, document by default
  */
 function set_modal_events(parent) {
     // settings events
@@ -3191,6 +3460,7 @@ if (typeof exports != 'undefined') {
         DEV_NAMES: DEV_NAMES,
         device: device,
         done_touch: done_touch,
+        DRAG_CLASSES: DRAG_CLASSES,
         draw_rectangle: draw_rectangle,
         fill_combo: fill_combo,
         find_area: find_area,
@@ -3213,6 +3483,7 @@ if (typeof exports != 'undefined') {
         me: me,
         merge_settings: merge_settings,
         mix_hex_colors: mix_hex_colors,
+        MODAL_IDS: MODAL_IDS,
         move_pane: move_pane,
         NO_IMPORTS: NO_IMPORTS,
         ON_OFF: ON_OFF,

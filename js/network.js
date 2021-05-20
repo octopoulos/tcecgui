@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-29
+// @version 2021-05-20
 //
 // all socket functions are here
 //
@@ -9,9 +9,10 @@
 /*
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
-DEV, exports, From, global, HasClass, Hide, HOST, HTML, InsertNodes,
-LoadLibrary, LOCALHOST, LS, Max, Min, Now, RandomInt, require, S, save_option, set_viewers, Show, socket:true,
-update_live_eval, update_pgn, update_player_eval, update_table, update_twitch, VisibleWidth, window, Y, y_x
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, init_websockets, InsertNodes, IsArray,
+LoadLibrary, LOCALHOST, LS, Max, Min, MSG_USER_COUNT, MSG_USER_SUBSCRIBE, Now, RandomInt, ParseJSON, require,
+S, save_option, set_viewers, Show, socket_io:true, socket_send, update_live_eval, update_pgn, update_player_eval,
+update_table, update_twitch, virtual_socket_message:true, VisibleWidth, window, Y, y_x
 */
 'use strict';
 
@@ -34,6 +35,7 @@ let log_time = 0,
         'archive': {},
         'live': {},
     },
+    socket_io,
     socket_ready = false,
     TIMEOUT_banner = 30000,
     TIMEOUT_check = 60,
@@ -46,33 +48,33 @@ let log_time = 0,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Connect/disconnect the socket
+ * Connect/disconnect the socket_io
  */
 function check_socket_io() {
     // 1) disconnect?
     if (DEV['no_socket']) {
-        if (socket && socket.connected)
-            socket.close();
+        if (socket_io && socket_io.connected)
+            socket_io.close();
         return;
     }
 
     // 2) connect
-    if (!socket)
-        socket = window.io.connect(HOST);
-    else if (!socket.connected)
-        socket.connect(HOST);
+    if (!socket_io)
+        socket_io = window.io.connect(HOST);
+    else if (!socket_io.connected)
+        socket_io.connect(HOST);
 
     if (!socket_ready)
         event_sockets();
 }
 
 /**
- * Initialise socket events
+ * Initialise socket_io events
  * + handle all messages
  */
 function event_sockets() {
     // live_log
-    socket.on('htmlread', data => {
+    socket_io.on('htmlread', data => {
         log_time = Now();
 
         log_socket('htmlread', data);
@@ -88,72 +90,72 @@ function event_sockets() {
             }
     });
 
-    socket.on('banner', data => {
+    socket_io.on('banner', data => {
         log_socket('banner', data);
         show_banner(data);
     });
-    socket.on('bracket', data => {
+    socket_io.on('bracket', data => {
         log_socket('bracket', data);
         create_cup('live', data);
     });
-    socket.on('crash', data => {
+    socket_io.on('crash', data => {
         log_socket('crash', data);
         update_table('live', 'crash', data);
     });
-    socket.on('crosstable', data => {
+    socket_io.on('crosstable', data => {
         log_socket('crosstable', data);
         analyse_crosstable('live', data);
     });
-    socket.on('livechart', data => {
+    socket_io.on('livechart', data => {
         log_socket('livechart', data);
         update_live_eval('live', data, 0);
     });
-    socket.on('livechart1', data => {
+    socket_io.on('livechart1', data => {
         log_socket('livechart1', data);
         update_live_eval('live', data, 1);
     });
-    socket.on('liveeval', data => {
+    socket_io.on('liveeval', data => {
         log_socket('liveeval', data);
         update_live_eval('live', data, 0);
     });
-    socket.on('liveeval1', data => {
+    socket_io.on('liveeval1', data => {
         log_socket('liveeval1', data);
         update_live_eval('live', data, 1);
     });
-    socket.on('pgn', data => {
+    socket_io.on('pgn', data => {
         log_socket('pgn', data);
         update_pgn('live', data);
     });
-    socket.on('schedule', data => {
+    socket_io.on('schedule', data => {
         log_socket('schedule', data);
         update_table('live', 'sched', data);
     });
-    socket.on('tournament', data => {
+    socket_io.on('tournament', data => {
         log_socket('tournament', data, true);
         analyse_tournament('live', data);
         if (y_x == 'live')
             update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
     });
-    socket.on('updeng', data => {
+    socket_io.on('updeng', data => {
         log_socket('updeng', data);
         if (!DEV['wasm'])
             update_player_eval('live', data);
     });
-    socket.on('users', data => {
+    socket_io.on('users', data => {
         log_socket('users', data);
         set_viewers(data.count);
     });
 
     // unused => store the data anyway
-    socket.on('enginerating', data => {
+    socket_io.on('enginerating', data => {
         log_socket('enginerating', data, true);
     });
-    socket.on('lastpgntime', data => {
+    socket_io.on('lastpgntime', data => {
         log_socket('lastpgntime', data, true);
     });
 
     //
-    add_timeout('get_users', () => socket.emit('getusers', 'd'), TIMEOUT_users);
+    add_timeout('get_users', () => socket_io.emit('getusers', 'd'), TIMEOUT_users);
     add_timeout('check', () => {
         if (!Y['log_auto_start'])
             return;
@@ -188,7 +190,7 @@ function insert_log(html) {
  * @param {string|number=} new_room
  */
 function listen_log(new_room) {
-    if (!socket)
+    if (!socket_io)
         return;
     if (new_room == undefined)
         new_room = Y['live_log'];
@@ -200,28 +202,28 @@ function listen_log(new_room) {
 
     // 1) leave the previous room
     if (prev_room && prev_room != new_room) {
-        socket.emit('noroom', `room${prev_room}`);
+        socket_io.emit('noroom', `room${prev_room}`);
         insert_log(`<div class="loss">left: ${prev_room}</div>`);
         prev_room = 0;
     }
     // 2) enter the next room
     if (new_room && prev_room != new_room) {
         prev_room = new_room;
-        socket.emit('room', `room${new_room}`);
+        socket_io.emit('room', `room${new_room}`);
         insert_log(`<div class="win">entered: ${new_room}</div>`);
     }
     CacheId('nlog').value = prev_room;
 }
 
 /**
- * Log a socket message + optionally cache it
+ * Log a socket_io message + optionally cache it
  * @param {string} name
  * @param {Object} data
  * @param {boolean=} cache
  */
 function log_socket(name, data, cache) {
-    if (DEV['socket']) {
-        LS(`socket/${name}:`);
+    if (DEV['socket_io']) {
+        LS(`socket_io/${name}:`);
         LS(data);
     }
     if (cache)
@@ -239,6 +241,47 @@ function show_banner(text) {
         Show(node);
     }
     add_timeout('banner', () => Hide(node), TIMEOUT_banner);
+}
+
+/**
+ * Handle socket messages
+ * + handle ajax as well
+ * @param {Event} e
+ * @returns {boolean}
+ */
+function socket_message(e) {
+    let datax = IsArray(e)? e: ParseJSON(e.data);
+    if (!datax || !IsArray(datax))
+        return false;
+
+    let [method, data, error] = /** @type {!Array} */(datax);
+    if (error)
+        return false;
+
+    switch (method) {
+    case MSG_USER_COUNT:
+        set_viewers(data);
+        break;
+    case 'log':
+        log_time = Now();
+
+        let date = new Date().toLocaleTimeString(),
+            lines = data.split('\n').reverse(),
+            text = lines.map(line => line.replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
+        insert_log(`<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`);
+        for (let line of lines)
+            if (line.includes(' pv ')) {
+                analyse_log(line);
+                break;
+            }
+        break;
+    case 'pgn':
+        LS('PGN!!!', data);
+        update_pgn('live', data);
+        break;
+    }
+
+    return true;
 }
 
 /**
@@ -337,6 +380,19 @@ function update_twitch(dark, chat_url, only_resize) {
     }
     S('#hide-video, #twitch-vid', channel);
     S(CacheId('show-video'), !channel);
+}
+
+/**
+ * Initialise structures with game specific data
+ */
+function startup_network() {
+    init_websockets();
+
+    add_timeout('network', () => {
+        socket_send([MSG_USER_SUBSCRIBE, {channels: ['count', 'pgn']}]);
+    }, 1000);
+
+    virtual_socket_message = socket_message;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

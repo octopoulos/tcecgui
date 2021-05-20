@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-02
+// @version 2021-05-20
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -13,28 +13,29 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, activate_tabs, add_history, add_timeout,
-ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
-C, CacheId, cannot_click, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme,
-changed_hash, changed_section, charts, check_hash, check_socket_io, Clamp, Class, Clear, clear_timeout, close_popups,
-context_areas, context_target:true,
-DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, draw_rectangle,
+adjust_popups, ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+C, CacheId, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
+changed_section, charts, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
+context_target:true,
+DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, drag_source:true,
 E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key, game_action_keyup, get_area,
-get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, HIDES, HTML,
-ICONS:true, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
+get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, hide_element,
+HIDES, HTML, ICONS:true, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
-move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, ParseJSON, PD,
-PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
+MODAL_IDS, move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent,
+ParseJSON, PD, PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
-S, SafeId, save_option, scroll_adjust, ScrollDocument, set_draggable, set_engine_events, set_game_events, set_section,
-SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_filtered_games, show_popup, SP, start_3d,
-start_game, startup_3d, startup_config, startup_game, startup_graph, Style, TAB_NAMES, TABLES, TEXT, TextHTML, THEMES,
-TIMEOUT_adjust, TIMEOUT_tables, timers, toggle_fullscreen, touch_handle, translate_nodes, TRANSLATE_SPECIALS,
-translates:true, TYPES,
+S, SafeId, save_option, scroll_adjust, ScrollDocument, set_drag_events, set_draggable, set_engine_events,
+set_game_events, set_section, SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_filtered_games,
+show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, startup_network, Style,
+TAB_NAMES, TABLES, TEXT, TextHTML, THEMES, TIMEOUT_adjust, TIMEOUT_tables, timers, toggle_fullscreen, touch_handle,
+translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
 Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
 virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
-virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true, Visible, VisibleWidth,
-WB_LOWER, wheel_event, window, X_SETTINGS, xboards, Y, y_x
+virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true,
+virtual_window_click_dataset:true, virtual_window_click_parent:true, virtual_window_click_parent_dataset:true, Visible,
+VisibleWidth, WB_LOWER, wheel_event, window, window_click, X_SETTINGS, xboards, Y, y_x
 */
 'use strict';
 
@@ -74,7 +75,6 @@ let AD_STYLES = {},
             'graph',
         '.swaps': 'panel',
     },
-    drag_source,
     LEVELS = {
         'custom': '',
         'dog': 'd=3 e=hce h=1 q=0 s=ab t=0',
@@ -149,13 +149,6 @@ function action_key(code) {
         close_popups();
         break;
     }
-}
-
-/**
- * Adjust popup position
- */
-function adjust_popups() {
-    show_popup('', null, {adjust: true});
 }
 
 /**
@@ -834,28 +827,6 @@ function hide_areas(hides) {
 }
 
 /**
- * Hide a drag element
- * @param {Node} target
- */
-function hide_element(target) {
-    let drop = get_drop_id(target),
-        areas = Y['areas'];
-    if (!drop.node)
-        return;
-
-    Keys(areas).forEach(key => {
-        for (let vector of areas[key])
-            if (vector[0] == drop.id) {
-                vector[2] &= ~1;
-                break;
-            }
-    });
-
-    Hide(drop.node);
-    populate_areas();
-}
-
-/**
  * Happens after the settings are imported
  */
 function import_settings_special() {
@@ -1354,94 +1325,63 @@ function update_visible() {
 }
 
 /**
- * Handle a general window click
- * @param {Event} e
+ * Window click on the first target
+ * @param {!Object} dataset
+ * @returns {number} 0:nothing, 1:return
  */
-function window_click(e) {
-    Clear(KEYS);
-    let cannot = cannot_click();
-    if (cannot == 1)
-        return;
-
-    let in_modal,
-        target = e.target,
-        type = e.type,
-        is_click = (type == 'click'),
-        dataset = target.dataset;
-
-    // special cases
-    if (dataset) {
-        let id = dataset['id'];
-        switch (id) {
-        case 'about':
-            show_about();
-            return;
-        case 'load_pgn':
-            let file = CacheId('file');
-            Attrs(file, {'data-x': id});
-            file.click();
-            return;
-        }
+function window_click_dataset(dataset) {
+    let id = dataset['id'];
+    switch (id) {
+    case 'about':
+        show_about();
+        return 1;
+    case 'load_pgn':
+        let file = CacheId('file');
+        Attrs(file, {'data-x': id});
+        file.click();
+        return 1;
     }
 
-    while (target) {
-        let id = target.id;
-        if (id) {
-            if (['archive', 'live'].includes(id))
-                break;
-            if (id.includes('modal') || id.includes('popup')) {
-                in_modal = id;
-                return;
-            }
-        }
-        if (HasClasses(target, 'fen|nav'))
-            return;
-        if (HasClasses(target, 'live-pv|xmoves'))
-            context_target = target;
-
-        if (is_click) {
-            if (HasClass(target, 'popup-close')) {
-                in_modal = false;
-                break;
-            }
-            if (HasClass(target, 'tab')) {
-                open_table(target, true);
-                break;
-            }
-
-            // sub settings
-            let dataset = target.dataset;
-            if (dataset) {
-                let set = target.dataset['set'];
-                if (set != undefined) {
-                    let parent = Parent(target, {class_: 'popup'}),
-                        xy = '';
-                    if (parent && parent.dataset) {
-                        let item = parent.dataset['xy'];
-                        if (item)
-                            xy = item.split(',').map(item => item * 1);
-                    }
-                    if (set == -1)
-                        close_popups();
-                    else
-                        show_popup('options', true, {id: 'options', setting: set, target: parent, xy: xy});
-                    return;
-                }
-
-                let seek = dataset['seek'];
-                if (seek) {
-                    show_filtered_games(seek);
-                    return;
-                }
-            }
-        }
-
-        target = target.parentNode;
-    }
-
-    if (!in_modal)
-        close_popups();
+    return 0;
 }
+
+/**
+ * Window click => some parent of the target
+ * @param {Node} parent
+ * @param {boolean} is_click
+ * @returns {number} 0:nothing, 1:return, 2:break
+ */
+function window_click_parent(parent, is_click) {
+    if (HasClass(parent, 'fen'))
+        return 1;
+    if (HasClasses(parent, 'live-pv|xmoves'))
+        context_target = parent;
+
+    if (is_click) {
+        if (HasClass(parent, 'popup-close'))
+            return 2;
+        if (HasClass(parent, 'tab')) {
+            open_table(parent, true);
+            return 2;
+        }
+    }
+    return 0;
+}
+
+/**
+ * Window click => dataset of some parent of the target
+ * @param {!Object} dataset
+ * @returns {number} 0:nothing, 1:return, 2:break
+ */
+function window_click_parent_dataset(dataset) {
+    let seek = dataset['seek'];
+    if (seek) {
+        show_filtered_games(seek);
+        return 1;
+    }
+    return 0;
+}
+
 
 // EVENTS
 /////////
@@ -1652,48 +1592,6 @@ function set_global_events() {
         }
     });
 
-    // drag and drop
-    Events(window, 'dragstart', e => {
-        if (!Y['drag_and_drop'])
-            return;
-        // no drag and drop on text
-        let target = e.target;
-        if (target.nodeType != 1)
-            return;
-        let parent = Parent(target, {attrs: 'draggable=true', self: true});
-        if (parent)
-            drag_source = parent;
-    });
-    Events(window, 'dragenter dragover', e => {
-        if (!Y['drag_and_drop'])
-            return;
-        let child = get_drop_id(e.target).node,
-            parent = Parent(e.target, {class_: 'area', self: true});
-        if (child == drag_source)
-            child = null;
-        else if (!child)
-            child = parent;
-
-        // tab=drop or top/bottom area => vertical bar, otherwise horizontal
-        let orient = ((parent && ['bottom', 'top'].includes(parent.id)) || HasClass(child, 'drop'))? 1: 2;
-        draw_rectangle(child, orient, e.clientX, e.clientY);
-        if (!child)
-            return;
-
-        Class('.area', 'dragging');
-        SP(e);
-        PD(e);
-    });
-    Events(window, 'dragexit dragleave', e => {
-        if (!Y['drag_and_drop'])
-            return;
-        if (e.target.tagName == 'HTML') {
-            Class('.area', '-dragging');
-            Hide(CacheId('rect'));
-        }
-    });
-    Events(window, 'drop', handle_drop);
-
     // file
     Events(CacheId('file'), 'change', function() {
         let file = this.files[0],
@@ -1746,6 +1644,9 @@ function set_global_events() {
                 }
         };
     });
+
+    // drag and drop
+    set_drag_events(handle_drop);
 }
 
 // MAIN
@@ -1885,6 +1786,11 @@ function prepare_settings() {
             'archive': 1,
             'moves-archive': 1,
         },
+    });
+
+    Assign(MODAL_IDS, {
+        'archive': 1,
+        'live': 1,
     });
 
     let no_imports = Assign({}, ...Keys(DEFAULT_NO_IMPORTS).map(key => ({[key]: 1})));
@@ -2532,12 +2438,16 @@ function startup() {
     virtual_reset_settings_special = reset_settings_special;
     virtual_resize = resize;
     virtual_set_modal_events_special = set_modal_events_special;
+    virtual_window_click_dataset = window_click_dataset;
+    virtual_window_click_parent = window_click_parent;
+    virtual_window_click_parent_dataset = window_click_parent_dataset;
 
     // pre-process
     detect_device();
     startup_config();
     startup_3d();
     startup_game();
+    startup_network();
 
     prepare_settings();
     load_settings();

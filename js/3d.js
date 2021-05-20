@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-19
+// @version 2021-05-19
 //
 // general 3d rendering code
 //
@@ -75,6 +75,7 @@ let audiobox = {
             pos: [0, 0, 0],
         },
     },
+    canvas,
     clock,
     clock2,
     controls,
@@ -208,9 +209,7 @@ function init_3d(force) {
         return;
 
     // vars
-    if (!T)
-        T = window.T = window.THREE;
-
+    update_three();
     Object3D = T.Object3D;
     Quaternion = T.Quaternion;
     Vector2 = T.Vector2;
@@ -248,13 +247,11 @@ function init_3d(force) {
 
     // scene
     scene = new T.Scene();
-    if (virtual_init_3d_special)
-        virtual_init_3d_special();
     init_lights();
 
     // renderer
-    let canvas = CacheId('canvas'),
-    context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    canvas = CacheId('canvas');
+    let context = canvas.getContext('webgl2') || canvas.getContext('webgl');
     renderer = new T.WebGLRenderer({
         antialias: false,
         canvas: canvas,
@@ -269,6 +266,9 @@ function init_3d(force) {
     });
     renderer.shadowMap.enabled = !!Y['shadow'];
     // renderer.shadowMap.type = T.PCFSoftShadowMap;
+
+    if (virtual_init_3d_special)
+        virtual_init_3d_special();
 
     // more
     if (DEV['frame']) {
@@ -685,7 +685,6 @@ function resize_3d() {
 
         if (virtual_random_position)
             camera.position.copy(virtual_random_position(1));
-        set_camera_id('static');
 
         Assign(camera, {
             pos2: camera.position.clone(),
@@ -712,8 +711,8 @@ function resize_3d() {
 
 /**
  * Set controls to the current camera
- * @param {boolean} pause
- * @param {Vector3} target
+ * @param {boolean=} pause
+ * @param {Vector3=} target
  * @param {boolean=} transition
  */
 function set_camera_control(pause, target, transition) {
@@ -749,6 +748,12 @@ function set_camera_id(id, auto) {
             id = 'far';
     }
 
+    if (id == 'auto') {
+        id = (camera_id == 'auto')? 'far': camera_id;
+        camera_auto = 1;
+        auto = true;
+    }
+
     // remember a good camera view
     let bads = {reverse: 1};
     for (let id2 of [id, camera_id])
@@ -759,8 +764,8 @@ function set_camera_id(id, auto) {
 
     // change the camera view
     camera_id = id;
-    save_option('camera_id', id);
     if (!auto) {
+        save_option('camera_id', id);
         camera_auto = 0;
         camera_reverse = false;
     }
@@ -826,7 +831,7 @@ function update_light_settings() {
  */
 function update_renderer() {
     if (renderer) {
-        let ratio = 4;
+        let ratio = 2;
         if (y_x == 'play')
             ratio = DefaultInt((Y['resolution'] || '').split(':').slice(-1)[0], 2);
 
@@ -1194,8 +1199,16 @@ function update_debug() {
     HTML(CacheId('debug'), `<div>${lines.join('</div><div>')}</div>`);
 }
 
-// STARTUP
-//////////
+/**
+ * Update the T global variable
+ */
+function update_three() {
+    if (!T)
+        T = window.T = window.THREE;
+}
+
+// EVENTS
+/////////
 
 /**
  * 3d UI events
@@ -1226,6 +1239,9 @@ function set_3d_events() {
     C('#back', () =>  show_modal(true));
 }
 
+// STARTUP
+//////////
+
 /**
  * Start the 3D engine
  */
@@ -1240,7 +1256,7 @@ function start_3d() {
  * Initialise structures
  */
 function startup_3d() {
-    T = window.T = window.T || window.THREE || null;
+    update_three();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

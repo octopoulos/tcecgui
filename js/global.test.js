@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-20
 //
 /*
 globals
@@ -279,6 +279,27 @@ global.DEFAULTS = {
             n: 10000,
             s: 5000,
             wv: undefined,
+        },
+    ],
+    [
+        {
+            d: 12,
+            mt: 59,
+            n: 61867,
+            s: 1031116,
+            sd: 12,
+            tl: 951,
+            wv: 0.37,
+        },
+        {
+            _fixed: 1,
+            d: 12,
+            mt: 59,
+            n: 61867,
+            s: 1031116,
+            sd: 12,
+            tl: 951,
+            wv: 0.37,
         },
     ],
 ].forEach(([move, answer], id) => {

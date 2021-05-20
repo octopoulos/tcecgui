@@ -1,11 +1,14 @@
+// seeds.js
+// @author octopoulo <polluxyz@gmail.com>
+// @version 2021-05-20
 /*
 globals
 require
 */
 'use strict';
 
-let {LS} = require('./js/common.js'),
-    {calculate_seeds} = require('./js/game.js');
+let {LS} = require('../js/common.js'),
+    {calculate_seeds} = require('../js/game.js');
 
 let engines_full = [
     "Stockfish",
