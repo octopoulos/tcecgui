@@ -28,6 +28,10 @@ if (typeof global != 'undefined') {
 let TWITCH_CHANNEL = 'TCEC_Chess_TV',
     TWITCH_CHAT = 'https://www.twitch.tv/embed/TCEC_Chess_TV/chat?parent=tcec-chess.com';
 
+// messages
+let MSG_CUSTOM_LOG = 5,
+    MSG_CUSTOM_PGN = 6;
+
 let log_time = 0,
     num_listen = 0,
     prev_room = 0,
@@ -287,14 +291,53 @@ function socket_message(e) {
         return false;
 
     switch (method) {
+    // messages
+    case MSG_CUSTOM_LOG:
+        handle_log(data);
+        break;
+    case MSG_CUSTOM_PGN:
+        update_pgn('live', data);
+        break;
     case MSG_USER_COUNT:
         set_viewers(data);
         break;
-    case 'log':
-        handle_log(data);
+
+    // full files
+    case 'banner.txt':
+        show_banner(data);
         break;
-    case 'pgn':
-        update_pgn('live', data);
+    case 'crash.json':
+        update_table('live', 'crash', data);
+        break;
+    case 'crosstable.json':
+        analyse_crosstable('live', data);
+        break;
+    case 'data.json':
+        update_live_eval('live', data, 0);
+        break;
+    case 'data1.json':
+        update_live_eval('live', data, 1);
+        break;
+    case 'enginerating.json':
+        break;
+    case 'Eventcrosstable.json':
+        create_cup('live', data);
+        break;
+    case 'gamelist.json':
+        break;
+    case 'liveeval.json':
+        update_live_eval('live', data, 0);
+        break;
+    case 'liveeval1.json':
+        update_live_eval('live', data, 1);
+        break;
+    case 'schedule.json':
+        update_table('live', 'sched', data);
+        break;
+    case 'tournament.json':
+        analyse_tournament('live', data);
+        if (y_x == 'live')
+            update_twitch(null, `https://www.twitch.tv/embed/${data.twitchaccount}/chat`);
         break;
     }
 

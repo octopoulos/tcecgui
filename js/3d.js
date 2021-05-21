@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-19
+// @version 2021-05-20
 //
 // general 3d rendering code
 //
@@ -1001,7 +1001,7 @@ function gamepad_update() {
  * @returns {boolean}
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded, start=0, voice, volume=1}={}) {
-    if (!cube || !cube.sounds || !name)
+    if (!cube || !cube.sounds || !name || Y['silent_mode'])
         return false;
 
     // ext can be in the name

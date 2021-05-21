@@ -35,11 +35,11 @@ let MSG_IP_GET = 1,
     MSG_USER_SUBSCRIBE = 3,
     MSG_USER_UNSUBSCRIBE = 4,
     //
-    MSG_USER_EDIT = 5,
-    MSG_USER_FORGOT = 6,
-    MSG_USER_LOGIN = 7,
-    MSG_USER_LOGOUT = 8,
-    MSG_USER_REGISTER = 9;
+    MSG_USER_EDIT = 15,
+    MSG_USER_FORGOT = 16,
+    MSG_USER_LOGIN = 17,
+    MSG_USER_LOGOUT = 18,
+    MSG_USER_REGISTER = 19;
 
 let __PREFIX = '_',
     ANCHORS = {},
@@ -1261,7 +1261,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             scolor = '#f00';
         let label = slabel? slabel: `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
             style = scolor? `${(Y['theme'] == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
-            title2 = title? `data-t="${title}" data-t2="title"`: '';
+            title2 = title? `data-t="${title.replace(/"/g, '&quot;')}" data-t2="title"`: '';
 
         // price [min/max]
         if (sextra) {

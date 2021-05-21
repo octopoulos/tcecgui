@@ -395,6 +395,11 @@ function change_setting_special(name, value, close) {
     case 'theme':
         change_theme(value);
         break;
+    case 'twitch_chat':
+    case 'twitch_dark':
+    case 'twitch_video':
+        update_twitch();
+        break;
     case 'unhide':
         Keys(context_areas).forEach(key => {
             context_areas[key][2] |= 1;
@@ -1736,9 +1741,7 @@ function prepare_settings() {
             'archive': 'season',
             'live': 'stand',
         },
-        'twitch_chat': 1,
         'twitch_dark': 0,
-        'twitch_video': 1,
         'version': '0',
     });
     guess_types(DEFAULTS);
@@ -1786,11 +1789,6 @@ function prepare_settings() {
             'archive': 1,
             'moves-archive': 1,
         },
-    });
-
-    Assign(MODAL_IDS, {
-        'archive': 1,
-        'live': 1,
     });
 
     let no_imports = Assign({}, ...Keys(DEFAULT_NO_IMPORTS).map(key => ({[key]: 1})));
@@ -1889,6 +1887,7 @@ function prepare_settings() {
             'theme': [THEMES, THEMES[0]],
         },
         'audio': {
+            'silent_mode': [ON_OFF, 0],
             'audio_book': [ON_OFF, 1],
             'audio_delay': option_number(150, 0, 2000, 1, {}, 'audio delay when animation speed is 500ms'),
             'audio_live_archive': [ON_OFF, 0],
@@ -2105,12 +2104,8 @@ function prepare_settings() {
             },
             'drag_and_drop': [ON_OFF, 0],
             'join_next': [ON_OFF, 0],
-            'log_auto_start': [ON_OFF, 1],
-            'log_history': option_number(100, -1, 1000),
-            'log_pv': [ON_OFF, 1, 'use livelog pv'],
             'popup_right_click': [ON_OFF, 1, 'right click on elements for a popup menu'],
-            'reload_missing': [ON_OFF, 1],
-            'reverse_kills': [ON_OFF, 0],
+            'reverse_kills': [ON_OFF, 0, 'replace "double wins" with "reverse kills"'],
             'rows_per_page': [[10, 20, 50, 100, 1000], 10],
             'scroll_inertia': option_number(0.95, 0, 0.99, 0.01),
             'wheel_adjust': option_number(63, 0, 240),
@@ -2218,6 +2213,19 @@ function prepare_settings() {
             'move_height_live': option_number(52, 39, 1600, 0.5),
             'move_height_pv': option_number(91, 65, 1600, 0.5),
             'move_height_pva': option_number(70, 65, 1600, 0.5),
+        },
+        'network': {
+            'log_auto_start': [ON_OFF, 1],
+            'log_history': option_number(100, -1, 1000),
+            'log_pv': [ON_OFF, 1, 'use livelog pv'],
+            'network': [
+                ['auto', 'socket.io', 'websocket'], 'auto',
+                'socket.io: slow + unreliable + more traffic\nwebsocket: fast + reliable + less traffic',
+            ],
+            'reload_missing': [ON_OFF, 1, 'reload the full PGN when moves are missing'],
+            'twitch_chat': [ON_OFF, 1],
+            'twitch_dark': [ON_OFF, 0, 'Twitch chat dark mode'],
+            'twitch_video': [ON_OFF, 1, 'show the Twitch stream at the bottom of the page'],
         },
         'panel': {
             'column_bottom': option_number(4, 1, 8),
