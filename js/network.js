@@ -9,10 +9,10 @@
 /*
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
-DEV, exports, From, global, HasClass, Hide, HOST, HTML, init_websockets, InsertNodes, IsArray,
+DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, init_websockets, InsertNodes, IsArray,
 LoadLibrary, LOCALHOST, LS, Max, Min, MSG_USER_COUNT, MSG_USER_SUBSCRIBE, Now, RandomInt, ParseJSON, require,
 S, save_option, set_viewers, Show, socket_io:true, socket_send, update_live_eval, update_pgn, update_player_eval,
-update_table, update_twitch, virtual_socket_message:true, VisibleWidth, window, Y, y_x
+update_table, update_twitch, VisibleWidth, window, Y, y_x
 */
 'use strict';
 
@@ -169,6 +169,34 @@ function event_sockets() {
 }
 
 /**
+ * Handle log from websocket
+ * @param {Array} data
+ */
+function handle_log(data) {
+    log_time = Now();
+
+    // 1) insert text
+    let lines = data.reverse(),
+        text = lines.map(([id, line]) => `<div class="log${id}">${line}</div>`).join('');
+    insert_log(`<p align=left>${text}</p>`);
+
+    // 2) insert date
+    let date = new Date().toLocaleTimeString(),
+        exist_date = Id(date);
+    if (!exist_date)
+        exist_date = CreateNode('div', date, {class: 'log-date', id: date});
+
+    InsertNodes(CacheId('live-log'), [exist_date], true);
+
+    // 3) analyse log
+    for (let line of lines)
+        if (line.includes(' pv ')) {
+            analyse_log(line);
+            break;
+        }
+}
+
+/**
  * Insert a log entry at the top of live_log
  * @param {string} html
  */
@@ -263,20 +291,9 @@ function socket_message(e) {
         set_viewers(data);
         break;
     case 'log':
-        log_time = Now();
-
-        let date = new Date().toLocaleTimeString(),
-            lines = data.split('\n').reverse(),
-            text = lines.map(line => line.replace(/</g, '&lt;').replace(/>/g, '&gt;')).join('<br>');
-        insert_log(`<h5><b><i><u>${date}</u></i></b></h5><p align=left>${text}</p>`);
-        for (let line of lines)
-            if (line.includes(' pv ')) {
-                analyse_log(line);
-                break;
-            }
+        handle_log(data);
         break;
     case 'pgn':
-        LS('PGN!!!', data);
         update_pgn('live', data);
         break;
     }
@@ -386,13 +403,12 @@ function update_twitch(dark, chat_url, only_resize) {
  * Initialise structures with game specific data
  */
 function startup_network() {
-    init_websockets();
-
-    add_timeout('network', () => {
-        socket_send([MSG_USER_SUBSCRIBE, {channels: ['count', 'pgn']}]);
-    }, 1000);
-
-    virtual_socket_message = socket_message;
+    init_websockets({
+        message: socket_message,
+        open: () => {
+            socket_send([MSG_USER_SUBSCRIBE, {channels: ['count', 'log', 'pgn']}]);
+        },
+    });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

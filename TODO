@@ -21,7 +21,7 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-02-20 : PVA playing with "d=4 e=att h=1 o=2 q=8 s=ab t=0 x=20" every=0 => choppy
 -          : 2021-02-20 : use analyse_log code when getting live data, calling add_moves_string
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
-~          : 2020-05-20 : parse_pgn_moves
+2020-05-20 : 2020-05-20 : parse_pgn_moves
 2021-05-19 : 2020-05-19 : use native websockets + test with the new server
 2021-03-11 - 2021-03-11 : German language
 2021-03-06 : 2021-03-06 : fake evals detection

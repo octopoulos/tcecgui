@@ -7,7 +7,7 @@ expect, global, require, test
 */
 'use strict';
 
-let {Assign, FromTimestamp, IsArray, IsString, Keys, ParseJSON, Stringify, Undefined} = require('./common.js'),
+let {Assign, Clear, FromTimestamp, IsArray, IsString, Keys, ParseJSON, Stringify, Undefined} = require('./common.js'),
     {DEV, load_defaults, set_section, Y} = require('./engine.js'),
     {
         analyse_log, calculate_h2h, calculate_probability, calculate_score, calculate_seeds, check_adjudication,
@@ -1152,6 +1152,7 @@ function init_players(ply, players, evals) {
 
 // parse_pgn
 [
+    [null, {}, null],
     [
         `
         [Event "F/S Return Match"]
@@ -1165,7 +1166,7 @@ function init_players(ply, players, evals) {
         1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 {This opening is called the Ruy Lopez.}
         4. Ba4 Nf6 5. O-O 1/2-1/2
         `,
-        7,
+        {mode: 7},
         {
             Headers: {
                 Black: 'Spassky, Boris V.',
@@ -1220,7 +1221,7 @@ function init_players(ply, players, evals) {
         10. Ne1 {d=21, sd=62, mt=178275, tl=5049095, s=19793, n=3528600, pv=Ne1 Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 b6 axb6 axb6 Ra3 Ra5 Qb3 Nh7 Nb5 Bxb5 cxb5 Qd7 Bxb4 cxb4 Qxb4 Qxb5 Qxb5 Rxb5 Nd3 Ra5 Rb3 Rb8 Nb4 Rba8 Nc6 R5a6 f3 h5 h4 Bh6 Bh3 Kg7 Kf2 Nf6 Ke2 Kf8 Kd3 Kg7 Ke2, tb=0, h=9.8, ph=0.0, wv=0.78, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         Bd7 {d=16, sd=62, pd=Qe2, mt=137082, tl=5176035, s=45633, n=6277978, pv=Bd7 a4 Na6 Bg5 h6 Bd2 Nb4 a5 Kh7 Nb5 Ne8 Qb3 a6 Nc3 b6 axb6 Qxb6 Qd1 Qd8 Ra3 Qe7 Qe2 f5 exf5 gxf5 g4 fxg4 Be4+ Kg8 Bb1 Nf6 Ng2 e4, tb=0, h=0.0, ph=0.0, wv=0.40, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         `,
-        7,
+        {mode: 7},
         {
             BlackEngineOptions: {
                 Backend: 'demux',
@@ -1489,7 +1490,7 @@ function init_players(ply, players, evals) {
         10. c3 {d=42, sd=57, pd=c5, mt=16209, tl=5131837, s=289034, n=4684667, pv=c3 Nh4 Nxh4 Qxh4 Bb5 a6 Bxd7+ Kxd7 dxc5 Bxc5 Be3 Qg4 Qd2 Be7 Ng3 Rhd8 Bb6 Rh8 a4 Rc6 a5 Rhc8 f3 Qg5 Be3 Qg6 Ra4 h6 Rf4 Bd3 Ne4 Bc4 b4 Ke8 Rg4 Qh7 Nc5 Bb5 Qd1, tb=0, h=92.4, ph=100.0, wv=0.57, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         *
         `,
-        7,
+        {mode: 7},
         {
             BlackEngineOptions: {
                 Hash: '65536',
@@ -1726,7 +1727,7 @@ function init_players(ply, players, evals) {
         3. e5 {d=21, sd=36, pd=d5, mt=11367, tl=287132, s=50349, n=478414, pv=e5 Bf5 c3 e6 Nd2 f6 f4 g5 Ndf3 gxf4 Bb5 fxe5 Nxe5 Qh4+ Kf1 Ne7 Ngf3 Qh5 Bxf4 Bg7 Kg1 O-O Nd7 Rf7 Ng5 Bg4 Qd2 Rxf4 Qxf4 e5, tb=0, h=7.6, ph=100.0, wv=0.62, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         Bf5 {d=23, sd=36, pd=e5, mt=3567, tl=282506, s=3912544, n=13959958, pv=Bf5 Bb5 e6 Ne2 Qd7 c3 a6 Ba4 f6 O-O O-O-O f4 Nge7 Be3 Kb8 Nd2 Bg4 h3 Nf5 Bf2 Bxe2 Qxe2 Ncxd4 cxd4 Qxa4, tb=0, h=6.9, ph=100.0, wv=0.11, R50=49, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         `,
-        7,
+        {mode: 7},
         {
             BlackEngineOptions: {
                 Hash: '2048',
@@ -1882,7 +1883,7 @@ function init_players(ply, players, evals) {
         1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Bd7 6. a3 c4 7. Be2 Nge7 8. Nbd2 Na5
         1/2-1/2
         `,
-        7,
+        {mode: 7},
         {
             Headers: {
                 Black: "Komodo 2246.00",
@@ -1933,7 +1934,7 @@ function init_players(ply, players, evals) {
         21. Nd5 Qd7 22. Bb2 Kh8 23. Bc3 Nc6 24. Qb2 Qf7 25. Nxf6 Qxf6 26. Bxc6 bxc6 27. Rxc6 Rd7
         *
         `,
-        7,
+        {mode: 7},
         {
             Headers: {
                 White: 'LCZero v0.26.0-sv-t60-4229-mlh',
@@ -2029,7 +2030,7 @@ function init_players(ply, players, evals) {
         d6 {d=34, sd=55, mt=138857, tl=1666143, s=87176274, n=12102420613, pv=d6 g3 f5 Nb3 fxe4 Bxe4 Nb6 d4 Nf6 Bg2 g5 a4 a6 a5 Bb5 Ne2 Nc4 Nbc1 d5 Bb4 g4 Nd3 Ne4 Qe1 Qf7 Nc3 Nxc3+ Bxc3 e6 Qe2 Qg8 Qe1, tb=1, h=100.0, ph=0.0, wv=0.00, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         2. a4 {d=12, sd=35, pd=a5, mt=43360, tl=1723830, s=249188, n=10538392, pv=a4 f5 g3 g5 d4 fxe4 Bxe4 Nf6 Bg2 a6 Nge2 Qg8 a5 e6 f4 h6 Ra3 Ne7 Nd3 Bb5 Nc3 Bc6 Bf2, tb=0, h=53.6, ph=0.0, wv=0.72, R50=50, Rd=-11, Rr=-11, mb=+0+0+0+0+0,}
         `,
-        1,
+        {mode: 1},
         {
             Headers: {
                 Black: 'Stockfish 191107',
@@ -2085,7 +2086,7 @@ function init_players(ply, players, evals) {
         Qxc4+ {d=27, sd=52, mt=6610, tl=116677, s=146562326, n=763882844, pv=Qxc4+ bxc4 b3 h7 b2 h8=Q b1=Q+ Kf2 Qc2+ Kg3 Kb7 Qd4 Qh7 c5 Qc7+ Kg4 Qc6 Kf5 Qc7 c6+ Kc8 Qc4 Qh7+ Kf6 Qh6+ Kf7 Qh5+ Ke6 Qg6+ Kd5 Qf7+ Kd4 Qg7+ Kc5 Qa7+ Kd6 Qc7+ Ke6 Kb8 Qe4 Qh2 Kf7 Qh5+ Kf8 Kc7 Kg8, tb=null, h=100.0, ph=0.0, wv=4.24, R50=50, Rd=-11, Rr=-1000, mb=+3+0+0+0-1,}
         1-0
         `,
-        7,
+        {mode: 7},
         {
             BlackEngineOptions: {
                 Hash: '65536',
@@ -2170,7 +2171,7 @@ function init_players(ply, players, evals) {
 
         42... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *
         `,
-        7,
+        {mode: 7},
         {
             Headers: {
                 FEN: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
@@ -2189,7 +2190,7 @@ function init_players(ply, players, evals) {
 
         42. ... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *
         `,
-        7,
+        {mode: 7},
         {
             Headers: {
                 FEN: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
@@ -2208,13 +2209,14 @@ function init_players(ply, players, evals) {
 
         31. Qd2c2 {d=20, sd=49, pd=Bh6, mt=32075, tl=1490098, s=142545, n=15759193, pv=Qd2c2 f5 Bc1 Bxc1 Qdxc1 Nf6 f3 Bc6 Qg2 O-O Ne2 Bd7 h4 Be6 Ra3 Nh5 Qa2 fxe4 dxe4 Qeb7 Rb3 Qbd7 Rd3 Qcb7 O-O Bh3 Qf2 Bxf1 Qfxf1 Qxe4 fxe4, tb=0, h=0.0, ph=50.0, wv=0.52, R50=48, Rd=-11, Rr=-1000, mb=+0+0-1+1+0,}
         `,
-        15,
+        {mode: 15},
         {
             Headers: {
                 FEN: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
                 Setup: '1',
             },
             Moves: [{
+                fen: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1BQ2P1P/1Q1QK1NR b Hh - 3 31',
                 R50: 48, Rd: -11, Rr: -1000, d: 20, h: '0.0', m: 'Q2c2', mb: '+0+0-1+1+0', mt: 32075, n: 15759193,
                 pd: 'Bh6', ph: '50.0', ply: 60,
                 pv: '31. Q2c2 f5 32. Bc1 Bxc1 33. Qdxc1 Nf6 34. f3 Bc6 35. Qg2 O-O 36. Ne2 Bd7 37. h4 Be6 38. Ra3 Nh5 39. Qa2 fxe4 40. dxe4 Qeb7 41. Rb3 Qbd7 42. Rd3 Qcb7 43. O-O Bh3 44. Qf2 Bxf1 45. Qfxf1 Qxe4 46. fxe4',
@@ -2229,44 +2231,55 @@ function init_players(ply, players, evals) {
 
         31. Qd2c2 {d=20, pv=, sd=49,}
         `,
-        15,
+        {mode: 15},
         {
             Headers: {
                 FEN: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1B1Q1P1P/1Q1QK1NR w Kk - 2 31',
                 Setup: '1',
             },
-            Moves: [{d: 20, m: 'Q2c2', ply: 60, pv: '', sd: 49}],
+            Moves: [{
+                d: 20, fen: '2qqk1nr/1b2qp1p/3p2pb/2p1p3/2P1P3/2RP2P1/1BQ2P1P/1Q1QK1NR b Hh - 3 31', m: 'Q2c2',
+                ply: 60, pv: '', sd: 49,
+            }],
         },
     ],
-].forEach(([data, mode, answer], id) => {
+].forEach(([data, obj, answer], id) => {
     test(`parse_pgn:${id}`, () => {
-        if (answer.Moves) {
+        if (answer && answer.Moves) {
             let moves = [];
             for (let move of answer.Moves)
                 moves[move.ply] = move;
             answer.Moves = moves;
         }
-        expect(parse_pgn('archive', data, mode)).toEqual(answer);
+        expect(parse_pgn('archive', data, obj)).toEqual(answer);
     });
 });
 
 // parse_pgn_moves
 [
+    [null, {}, []],
+    [
+        'hello',
+        {mode: 15},
+        [],
+    ],
     [
         '42. ... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *',
-        15,
-        '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
+        {fen: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42', mode: 15},
         [
-            {m: 'Kd8', ply: 83}, {m: 'Rxd7+', ply: 84}, {m: 'Nxd7', ply: 85}, {m: 'f6', ply: 86},
-            {m: 'Rh8', ply: 87},
+            {fen: '3k4/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 w - - 19 43', m: 'Kd8', ply: 83},
+            {fen: '3k4/3R1p1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 0 43', m: 'Rxd7+', ply: 84},
+            {fen: '3k4/3n1p1r/r1p5/1p1pBPRp/pP3P1P/P6K/2P1B3/8 w - - 0 44', m: 'Nxd7', ply: 85},
+            {fen: '3k4/3n1p1r/r1p2P2/1p1pB1Rp/pP3P1P/P6K/2P1B3/8 b - - 0 44', m: 'f6', ply: 86},
+            {fen: '3k3r/3n1p2/r1p2P2/1p1pB1Rp/pP3P1P/P6K/2P1B3/8 w - - 1 45', m: 'Rh8', ply: 87},
         ],
     ],
-].forEach(([data, mode, fen, answer], id) => {
+].forEach(([data, obj, answer], id) => {
     test(`parse_pgn_moves:${id}`, () => {
         let moves = [];
         for (let move of answer)
             moves[move.ply] = move;
-        expect(parse_pgn_moves('archive', data, mode, fen)).toEqual(moves);
+        expect(parse_pgn_moves('archive', data, obj)).toEqual(moves);
     });
 });
 
@@ -2369,14 +2382,15 @@ function init_players(ply, players, evals) {
 
 // update_pgn
 [
-    ['live', null, false, 0],
-    ['live', '', false, 0],
-    ['live', 'HELP ME\n\n1 2 3\n*', false, 0],
-    ['live', '[Round "0.7"]', false, 0],
-    ['live', '[Round "0.8"]\n\n1. a3', true, 0],
-    ['live', '[Round "0.9"]\n\n1. a3\n*', true, 1],
+    ['live', {}, null, false, 0],
+    ['live', {}, '', false, 0],
+    ['live', {}, 'HELP ME\n\n1 2 3\n*', false, 0],
+    ['live', {}, '[Round "0.7"]', false, 0],
+    ['live', {}, '[Round "0.8"]\n\n1. a3', true, 0],
+    ['live', {}, '[Round "0.9"]\n\n1. a3\n*', true, 1],
     [
         'live',
+        {},
         `
         [Round "23.1"]
         [White "LCZero v0.26.0-sv-t60-4229-mlh"]
@@ -2393,10 +2407,43 @@ function init_players(ply, players, evals) {
         true,
         54,
     ],
-].forEach(([section, data, answer, num_move], id) => {
+    [
+        'live',
+        {
+            fen: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
+            pgn: {
+                Headers: {},
+            },
+        },
+        '42. ... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *',
+        true,
+        88,
+    ],
+    [
+        'live',
+        {
+            fen: '2k5/3nRp1r/r1p2n2/1p1pBPRp/pP3P1P/P6K/2P1B3/8 b - - 18 42',
+            pgn: {
+                Headers: {},
+                Moves: [{m: 'd4', ply: 0}, {m: 'd5', ply: 1}],
+            },
+        },
+        '42. ... Kd8 43. Rxd7+ Nxd7 44. f6 Rh8 *',
+        true,
+        88,
+    ],
+].forEach(([section, board_data, data, answer, num_move], id) => {
+    if (id != 2)
+        return;
     test(`update_pgn:${id}`, () => {
         let main = xboards[section];
         main.moves.length = 0;
+
+        if (board_data)
+            Assign(main, board_data);
+        else
+            Clear(main.pgn);
+
         expect(update_pgn(section, data)).toEqual(answer);
         expect(main.moves.length).toEqual(num_move);
     });

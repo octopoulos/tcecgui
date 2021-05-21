@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-04-29
+@version 2021-05-20
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -1232,11 +1232,37 @@ hsub {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     outline: 0;
 }
+
+/* log */
 #live-log {
     font-family: consolas;
     font-size: 12px;
     max-height: 80vh;
     width: 100%;
+}
+.log-date {
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-top: 0.25em;
+}
+/* 0: other pv, 1: startpos, 2: go, 4: last pv, 8: bestmove */
+.log0 {
+    color: #444;
+}
+.log1 {
+    color: #666;
+}
+.log2 {
+    color: #05c;
+}
+.log4 {
+    color: #000;
+}
+.log8 {
+    color: #d30;
+}
+.log16 {
+    color: #080;
 }
 
 /* bracket */

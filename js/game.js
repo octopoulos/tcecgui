@@ -3455,11 +3455,12 @@ function fix_zero_moves(moves, main_moves) {
  * Parse raw pgn data
  * @param {string} section
  * @param {string|Object} data
- * @param {number=} mode &1:header, &2:options, &4:moves, &8:fix moves/pv
- * @param {string=} origin debug information
+ * @param {Object} obj
+ * @param {number=} obj.mode &1:header, &2:options, &4:moves, &8:fix moves/pv
+ * @param {string=} obj.origin debug information
  * @returns {Object}
  */
-function parse_pgn(section, data, mode=15, origin='') {
+function parse_pgn(section, data, {mode=15, origin=''}={}) {
     if (!data)
         return null;
 
@@ -3550,7 +3551,7 @@ function parse_pgn(section, data, mode=15, origin='') {
         return pgn;
 
     // 3) moves
-    let moves = parse_pgn_moves(section, data, mode, fen, origin);
+    let moves = parse_pgn_moves(section, data, {mode: mode, fen: fen, origin: origin});
 
     // 4) result
     let variant = headers['Variant'];
@@ -3567,12 +3568,16 @@ function parse_pgn(section, data, mode=15, origin='') {
  * Parse the moves section of the PGN
  * @param {string} section
  * @param {string|Object} data
- * @param {number=} mode &1:header, &2:options, &4:moves, &8:fix moves/pv
- * @param {string=} fen valid FEN just before those new moves
- * @param {string=} origin debug information
+ * @param {Object} obj
+ * @param {string=} obj.fen valid FEN just before those new moves
+ * @param {number=} obj.mode &1:header, &2:options, &4:moves, &8:fix moves/pv, &16:no error allowed
+ * @param {string=} obj.origin debug information
  * @returns {Array<Move>}
  */
-function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
+function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
+    if (!data)
+        return [];
+
     let board = xboards[section] || xboards['pva'],
         has_text,
         info = {},
@@ -3636,6 +3641,8 @@ function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
                         info['pv'] = pv;
                     }
                 }
+                if (!moves[ply])
+                    moves[ply] = {};
                 Assign(moves[ply], info);
 
                 i = pos;
@@ -3658,6 +3665,8 @@ function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
                     // error detected!!
                 if (number != expected) {
                     LS(`ERROR: ${origin} : ply=${ply} : ${number} != ${expected} : ${data.slice(start, start + 20)}`);
+                    if (mode & 16)
+                        return [];
                     break;
                 }
             }
@@ -3670,7 +3679,9 @@ function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
                 if (RESULTS[move] != undefined)
                     break;
 
+                let move_fen;
                 ply ++;
+
                 // fix move?
                 if (mode & 8) {
                     board.chess_load(last_fen);
@@ -3679,15 +3690,24 @@ function parse_pgn_moves(section, data, mode=15, fen='', origin='') {
                         if (DEV['fen2'])
                             LS(`${ply} : ${move}`, result);
                         move = result.san;
+                        if (!move) {
+                            if (mode & 16)
+                                return [];
+                            break;
+                        }
                     }
                     prev_fen = last_fen;
                     last_fen = board.chess_fen();
+                    move_fen = last_fen;
                 }
 
                 moves[ply] = {
                     'm': move,
                     'ply': ply,
                 };
+                if (move_fen)
+                    moves[ply]['fen'] = move_fen;
+
                 info = {};
                 if (DEV['fen'])
                     LS(`${ply} : ${move}`);
@@ -4334,8 +4354,26 @@ function update_overview_result(move, num_ply, finished) {
 function update_pgn(section, data, extras, reset_moves) {
     let main = xboards[section],
         pgn = parse_pgn(section, data);
-    if (!pgn)
-        return false;
+
+    if (!pgn) {
+        // maybe got a sliced PGN => combine with the existing one
+        let ok;
+        pgn = main.pgn;
+        if (pgn && pgn.Headers) {
+            let moves = pgn.Moves || [],
+                last_move = moves[moves.length - 1],
+                last_fen = last_move? last_move.fen: null;
+
+            let new_moves = parse_pgn_moves(section, data, {fen: last_fen, mode: 31});
+            if (new_moves.length)
+                ok = true;
+            if (!pgn.Moves)
+                pgn.Moves = [];
+            Assign(pgn.Moves, new_moves);
+        }
+        if (!ok)
+            return false;
+    }
     Assign(pgn, extras || {});
 
     // 0) trim keys, ex: " WhiteEngineOptions": ...

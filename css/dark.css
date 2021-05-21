@@ -1,7 +1,7 @@
 /*
 dark.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-03-04
+@version 2021-05-20
 - used in Live mode
 - inherits from light.css
 */
@@ -165,6 +165,23 @@ textarea:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #fff;
     white-space: normal;
+}
+
+/* 0: other pv, 1: startpos, 2: go, 4: last pv, 8: bestmove */
+.log0 {
+    color: #ccc;
+}
+.log1 {
+    color: #aaa;
+}
+.log2 {
+    color: #9ac;
+}
+.log4 {
+    color: #fff;
+}
+.log8 {
+    color: #fc0;
 }
 
 /* bracket */

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-19
+// @version 2021-05-20
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -182,6 +182,7 @@ let __PREFIX = '_',
     virtual_sanitise_data_special,
     virtual_set_combo_special,
     virtual_set_modal_events_special,
+    virtual_socket_close,
     virtual_socket_message,
     virtual_socket_open,
     virtual_window_click_dataset,
@@ -2059,8 +2060,12 @@ function check_sockets() {
 
 /**
  * Initialise websockets
+ * @param {Object} obj
+ * @param {Function=} obj.close
+ * @param {Function=} obj.message
+ * @param {Function=} obj.open
  */
-function init_websockets() {
+function init_websockets({close, message, open}={}) {
     if (socket && socket.readyState <= WS.OPEN)
         return;
     if (DEV['socket'])
@@ -2069,25 +2074,35 @@ function init_websockets() {
     socket = new WS(`ws${location.protocol == 'https:'? 's': ''}://${location.host}/api/`);
     socket.binaryType = 'arraybuffer';
 
+    // set virtuals
+    if (close)
+        virtual_socket_close = close;
+    if (message)
+        virtual_socket_message = message;
+    if (open)
+        virtual_socket_open = open;
+
     // reconnect when closed
     socket.onclose = () => {
         socket = null;
         socket_error(`socket close: ${Now(true) - app_start}`);
+        if (virtual_socket_close)
+            virtual_socket_close();
     };
     socket.onopen = () => {
         socket_fail = 0;
         if (virtual_socket_open)
             virtual_socket_open();
     };
-    socket.onmessage = message => {
+    socket.onmessage = data => {
         pong = Now(true);
-        let vector = new Uint8Array(message.data);
+        let vector = new Uint8Array(data.data);
         if (vector[0] == 0) {
             if (DEV['socket'])
                 LS(`pong: ${pong - ping}`);
         }
         else if (virtual_socket_message)
-            virtual_socket_message(message);
+            virtual_socket_message(data);
     };
 
     check_sockets();
@@ -2117,7 +2132,7 @@ function socket_send(data) {
         if (DEV['socket'])
             LS('socket_ajax:', data);
         api_message(data, result => {
-            if (result != null)
+            if (result != null && virtual_socket_message)
                 virtual_socket_message(result);
         });
         return true;
@@ -3505,6 +3520,7 @@ if (typeof exports != 'undefined') {
         show_popup: show_popup,
         show_settings: show_settings,
         socket: socket,
+        socket_send: socket_send,
         stop_drag: stop_drag,
         TAB_NAMES: TAB_NAMES,
         THEMES: THEMES,
