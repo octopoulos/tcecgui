@@ -2086,6 +2086,7 @@ function prepare_settings() {
             // 'wasm': [ON_OFF, 0],
         },
         'engine': {
+            'checkmate': [['moves', 'plies'], 'moves', 'moves: M#8, plies: M16'],
             'engine_font': option_number(16, 8, 24, 0.25),
             'engine_spacing': option_number(0.2, 0, 5, 0.0025),
             'material_color': [['inverted', 'normal'], 'normal', 'normal will show black pieces under white player'],

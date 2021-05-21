@@ -4631,12 +4631,16 @@ function analyse_log(line) {
             info['eval'] = (value / 100) * (id == 1? -1: 1);
         else if (key == 'mate') {
             // convert mate to plies
-            value *= 2;
-            if (value > 0)
-                value --;
-            if (id == 1)
-                value = -value;
-            info['eval'] = `${value < 0? '-': ''}M${Abs(value)}`;
+            let prefix = '#';
+            if (Y['checkmate'] == 'plies') {
+                value *= 2;
+                if (value > 0)
+                    value --;
+                if (id == 1)
+                    value = -value;
+                prefix = '';
+            }
+            info['eval'] = `${value < 0? '-': ''}M${prefix}${Abs(value)}`;
         }
         else if (key == 'wdl' && id == 1)
             info['wdl'] = value.split(' ').reverse().join(' ');
