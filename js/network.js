@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 // all socket functions are here
 //
@@ -10,7 +10,7 @@
 globals
 _, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, init_websockets, InsertNodes, IsArray,
-LoadLibrary, LOCALHOST, LS, Max, Min, MSG_USER_COUNT, MSG_USER_SUBSCRIBE, Now, RandomInt, ParseJSON, require,
+LoadLibrary, LS, Max, Min, MSG_USER_COUNT, MSG_USER_SUBSCRIBE, Now, ParseJSON, RandomInt, require,
 S, save_option, set_viewers, Show, socket_io:true, socket_send, update_live_eval, update_pgn, update_player_eval,
 update_table, update_twitch, VisibleWidth, window, Y, y_x
 */
@@ -312,12 +312,6 @@ function socket_message(e) {
     case 'crosstable.json':
         analyse_crosstable('live', data);
         break;
-    case 'data.json':
-        update_live_eval('live', data, 0);
-        break;
-    case 'data1.json':
-        update_live_eval('live', data, 1);
-        break;
     case 'enginerating.json':
         break;
     case 'Eventcrosstable.json':
@@ -362,11 +356,6 @@ function update_twitch(dark, chat_url, only_resize) {
     let node = CacheId('chat');
     if (!node)
         return;
-
-    if (LOCALHOST && 0) {
-        Y['twitch_chat'] = 0;
-        Y['twitch_video'] = 0;
-    }
 
     let current = node.src,
         src = Y['twitch_chat']? `${TWITCH_CHAT}${dark? '&darkpopout': ''}`: '';

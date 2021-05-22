@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-18
+// @version 2021-05-21
 //
 // utility JS functions used in all the sites
 //
@@ -247,7 +247,7 @@ function CacheId(id, parent) {
 /**
  * Add / remove classes
  * @param {Node|string} sel CSS selector or node
- * @param {Array<*>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
+ * @param {!Array<!Array>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean|number=} add true for normal behavior (default), otherwise invert all - and +
  * @param {Node?=} parent
  */
@@ -318,8 +318,8 @@ function Class(sel, classes, add=true, parent=null) {
     }
 
     // array
+    classes = /** @type {!Array<!Array>} */(classes);
     if (IsObject(sel)) {
-        classes = /** @type {Array<*>} */(classes);
         let list = sel.classList;
         for (let [name, flag] of classes) {
             if (!name)
@@ -858,7 +858,7 @@ function Show(sel, parent, mode='') {
 /**
  * Change the style of nodes
  * @param {Node|string} sel CSS selector or node
- * @param {Array<*>|string} styles [['font-size', 10, flag=]], flag:0=add, 1=remove, 2=toggle
+ * @param {!Array<!Array>|string} styles [['font-size', 10, flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean=} add to set/add the style, otherwise remove it
  * @param {Node?=} parent
  */
@@ -940,8 +940,8 @@ function Style(sel, styles, add=true, parent=null) {
     }
 
     // array
+    styles = /** @type {!Array<!Array>} */(styles);
     if (IsObject(sel)) {
-        styles = /** @type {Array<*>} */(styles);
         let list = sel.style;
         for (let [name, value, flag] of styles) {
             if (!name)
@@ -1058,7 +1058,7 @@ function TEXT(sel, text, parent) {
         if (!node.childElementCount) {
             let child = node.firstChild;
             if (!child)
-                node.appendChild(document.createTextNode(text));
+                node.appendChild(document.createTextNode(/** @type {string} */(text)));
             else if (child.nodeType == 3)
                 child.nodeValue = text;
             else if (node.innerHTML != text)
@@ -1113,7 +1113,7 @@ function TextHTML(sel, text, parent) {
         if (!is_html && !node.childElementCount) {
             let child = node.firstChild;
             if (!child)
-                node.appendChild(document.createTextNode(text));
+                node.appendChild(document.createTextNode(/** @type {string} */(text)));
             else if (child.nodeType == 3)
                 child.nodeValue = text;
             else if (node.innerHTML != text)

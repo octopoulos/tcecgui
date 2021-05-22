@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -22,8 +22,8 @@ E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_ac
 get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, hide_element,
 HIDES, HTML, ICONS:true, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
-MODAL_IDS, move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent,
-ParseJSON, PD, PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
+move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, ParseJSON, PD,
+PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_drag_events, set_draggable, set_engine_events,
 set_game_events, set_section, SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_filtered_games,
@@ -76,7 +76,7 @@ let AD_STYLES = {},
         '.swaps': 'panel',
     },
     // help in the settings
-    HELP_ADVANCED = 'advanced feature',
+    HELP_ADVANCED = '[advanced feature]',
     HELP_ANIMATE = 'smooth animation',
     HELP_COLOR_01 = 'players: white + black',
     HELP_COLOR_23 = 'kibitzers: blue + red',
@@ -324,11 +324,11 @@ function change_setting_special(name, value, close) {
         break;
     case 'game_960':
         pva.frc = value;
-        pva.delayed_picks();
+        pva.delayedPicks();
         break;
     case 'game_advice':
         pva.finished = false;
-        pva.set_ai(false);
+        pva.setAi(false);
         pva.think(true);
         break;
     case 'game_depth':
@@ -343,14 +343,14 @@ function change_setting_special(name, value, close) {
     case 'game_new_FEN':
     case 'game_new_game':
         pva.frc = Y['game_960'];
-        pva.new_game();
+        pva.newGame();
         break;
     case 'game_search':
         configure('s', value);
         break;
     case 'game_think':
         pva.finished = false;
-        pva.set_ai(true);
+        pva.setAi(true);
         pva.think();
         break;
     case 'game_time':
@@ -471,7 +471,7 @@ function change_theme(theme) {
 
 /**
  * Called whenever the page loads and whenever the hash changes
- * @param {Object} dico
+ * @param {!Object} dico
  */
 function check_hash_special(dico) {
     check_stream();
@@ -844,7 +844,7 @@ function handle_drop(e) {
 /**
  * Which elements should be hidden dynamically?
  * - used at the start of populate_areas
- * @param {Object} hides
+ * @param {!Object} hides
  */
 function hide_areas(hides) {
     if (!Y['moves_copy'])
@@ -2136,7 +2136,8 @@ function prepare_settings() {
             'reverse_kills': [ON_OFF, 0, 'replace "double wins" with "reverse kills"'],
             'rows_per_page': [[10, 20, 50, 100, 1000], 10],
             'scroll_inertia': option_number(0.95, 0, 0.99, 0.01, {}, HELP_ADVANCED),
-            'wheel_adjust': option_number(63, 0, 240, 1, {}, ''),
+            'wheel_adjust':
+                option_number(63, 0, 240, 1, {}, 'adjust the scrolling when using wheel scroll\nmax amount in pixels'),
             'wrap': [ON_OFF, 1, 'wrap cell content'],
             'wrap_cross': [AUTO_ON_OFF, 'auto'],
             'wrap_h2h': [AUTO_ON_OFF, 'auto'],
@@ -2251,7 +2252,8 @@ function prepare_settings() {
             'log_pv': [ON_OFF, 1, 'use LiveLog to update the PV in real time'],
             'network': [
                 ['auto', 'socket.io', 'websocket'], 'auto',
-                'socket.io: slow + unreliable + more traffic\nwebsocket: fast + reliable + less traffic',
+                'socket.io: slow + unreliable + more traffic = works on the old server\n'
+                + 'websocket: fast + reliable + less traffic = needs the new server',
             ],
             'reload_missing': [ON_OFF, 1, 'reload the full PGN when moves are missing'],
             'twitch_chat': [ON_OFF, 1],

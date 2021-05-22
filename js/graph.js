@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-27
+// @version 2021-05-21
 //
 // jshint -W069
 /*
@@ -101,7 +101,7 @@ function calculate_win(id, eval_, ply) {
         score = calculate_feature_q(feature, /** @type {number} */(eval_), ply) * 2;
         score = Sign(score) * Round(Abs(score) * 10) / 10;
     }
-    else if (eval_ && eval_.includes('-'))
+    else if (eval_ && (eval_ + '').includes('-'))
         score = -100;
     else if (eval_ != undefined)
         score = 100;
@@ -158,7 +158,7 @@ function clamp_eval(eval_) {
         return eval_;
     }
 
-    if (eval_ && eval_.includes('-'))
+    if (eval_ && (eval_ + '').includes('-'))
         eval_ = -EVAL_CLAMP;
     else if (eval_ != undefined)
         eval_ = EVAL_CLAMP;
@@ -272,7 +272,7 @@ function create_charts() {
                 dico = chart.data.datasets[ds_index].data[index];
 
             if (dico)
-                xboards[Y.s].set_ply(dico['ply'], {manual: true});
+                xboards[Y.s].setPly(dico['ply'], {manual: true});
         });
 
         // add markers
@@ -316,13 +316,13 @@ function fix_labels(labels) {
  */
 function format_time(seconds) {
     let [hour, min, sec] = FromSeconds(seconds);
-    return (hour > 0)? `${hour}h${Pad(min)}`: (min > 0)? `${min}:${Pad(sec)}`: sec;
+    return (hour > 0)? `${hour}h${Pad(min)}`: (min > 0)? `${min}:${Pad(sec)}`: sec + '';
 }
 
 /**
  * Get tooltip data
- * @param {Object} item tooltip item
- * @param {Object} data
+ * @param {!Object} item tooltip item
+ * @param {!Object} data
  * @returns {Object}
  */
 function get_tooltip_data(item, data) {
@@ -472,7 +472,7 @@ function new_chart(name, has_legend, y_ticks, scale, tooltip_callback, dico, num
  * @param {string} color
  * @param {string=} yaxis
  * @param {Object=} dico
- * @returns {Object}
+ * @returns {!Object}
  */
 function new_dataset(label, color, yaxis, dico) {
     let dataset = {
@@ -496,7 +496,7 @@ function new_dataset(label, color, yaxis, dico) {
  * @param {number} id 0 for left, 1 for right
  * @param {Object=} y_ticks
  * @param {Object=} dico
- * @returns {Object}
+ * @returns {!Object}
  */
 function new_y_axis(id, y_ticks, dico) {
     let y_axis = {
@@ -546,7 +546,7 @@ function redraw_eval_charts(section) {
 
 /**
  * Reset a chart
- * @param {Object} chart
+ * @param {!Object} chart
  * @param {string} name
  */
 function reset_chart(chart, name) {
@@ -591,7 +591,7 @@ function scale_boom(x) {
 /**
  * Set the y_axis scaling function (not custom)
  * @param {string} name
- * @returns {Array<Function>}
+ * @returns {!Array<Function>}
  */
 function set_scale_func(name) {
     let funcs = (Y['scales'][name] & 1)? [
@@ -938,7 +938,7 @@ function update_player_charts(moves) {
  * f(x) = 10 * (1 - exp(-x * 0.16))
  * g(x) = -ln((10 - x)/10) / 0.16
  * https://www.symbolab.com/solver/function-inverse-calculator
- * @param {Object} chart
+ * @param {!Object} chart
  */
 function update_scale_boom(chart) {
     let scale = chart.scales.y_axis_0;
@@ -953,7 +953,7 @@ function update_scale_boom(chart) {
 
 /**
  * Update the custom scale
- * @param {Object} chart
+ * @param {!Object} chart
  */
 function update_scale_custom(chart) {
     let scale = chart.scales.y_axis_0;
@@ -1031,7 +1031,7 @@ function update_scale_custom(chart) {
  * f(x) = 12 - 84 / (x + 7)
  * g(x) = -7 * x / (x - 12)
  * https://www.symbolab.com/solver/function-inverse-calculator
- * @param {Object} chart
+ * @param {!Object} chart
  */
 function update_scale_eval(chart) {
     let scale = chart.scales.y_axis_0;
@@ -1046,7 +1046,7 @@ function update_scale_eval(chart) {
 
 /**
  * Update the linear scale for the EVAL graph
- * @param {Object} chart
+ * @param {!Object} chart
  */
 function update_scale_linear(chart) {
     let eval_clamp = Y['graph_eval_clamp'],

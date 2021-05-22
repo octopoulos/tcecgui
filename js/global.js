@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 // global variables/functions shared across multiple js files
 //
@@ -8,7 +8,7 @@
 // jshint -W069
 /*
 globals
-Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, HTML, IsDigit, Keys,
+Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, HTML, IsDigit, IsString, Keys,
 LS, Max, Min, Pow, require, reset_default, save_default, save_option, Split, Undefined, virtual_can_close_popups:true, Y
 */
 'use strict';
@@ -26,7 +26,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210520',
+    VERSION = '20210521',
     virtual_close_popups,
     xboards = {};
 
@@ -77,7 +77,7 @@ function allie_cp_to_score(cp) {
 /**
  * Update move values but skips empty strings like fen='' and pv=''
  * @param {Move} move
- * @param {Object} dico
+ * @param {!Object} dico
  */
 function assign_move(move, dico) {
     Assign(move, ...Keys(dico).filter(key => {
@@ -137,6 +137,56 @@ function can_close_popups() {
 }
 
 /**
+ * Convert a checkmate between moves and plies
+ * ply to move:
+ *      black says -M2 => next move = -M#1 (no M2)
+ * @param {number|string} text
+ * @param {number} ply ply or id
+ * @returns {string}
+ */
+function convert_checkmate(value, ply) {
+    let positive = 1,
+        want_ply = (Y['checkmate'] == 'plies');
+
+    // 1) already got M or M# => good sign
+    if (IsString(value)) {
+        positive = (value[0] == '-')? 0: 1;
+
+        if (value.includes('M#')) {
+            if (!want_ply)
+                return value;
+
+            value = value.replace('M#', '') << 1;
+            if ((ply & 1) == positive)
+                value --;
+        }
+        else if (value.includes('M')) {
+            if (want_ply)
+                return value;
+
+            value = value.replace('M', '');
+            if ((ply & 1) == positive)
+                value ++;
+            value = (value / 2) >> 0;
+        }
+    }
+    // 2) number => mate is in moves by default + invert sign if black
+    else {
+        if (ply & 1)
+            value = -value;
+        positive = (value < 0)? 0: 1;
+
+        if (want_ply) {
+            value <<= 1;
+            if ((ply & 1) == positive)
+                value --;
+        }
+    }
+
+    return `${positive? '': '-'}M${want_ply? '': '#'}${Abs(value)}`;
+}
+
+/**
  * Fix old move format from Season 1
  * @param {Move} move
  */
@@ -190,14 +240,20 @@ function fix_move_format(move) {
 
 /**
  * Format the eval to make the 2 decimals smaller if the eval is high
+ * + can convert checkmate
  * @param {number} value
+ * @param {number} ply required for checkmate conversion, id is also ok
  * @param {boolean=} process can make decimals smaller
- * @returns {number}
+ * @returns {string}
  */
-function format_eval(value, process) {
+function format_eval(value, ply, process) {
     let float = parseFloat(value);
-    if (isNaN(float))
+    if (isNaN(float)) {
+        // checkmate conversion?
+        if (IsString(value) && value.includes('M'))
+            value = convert_checkmate(value, ply);
         return value;
+    }
 
     let small_decimal = Y['small_decimal'],
         text = float.toFixed(2);
@@ -276,7 +332,7 @@ function leela_cp_to_score(cp) {
 
 /**
  * Get the seconds from a time text
- * @param {string} text
+ * @param {string} time
  * @returns {number}
  */
 function parse_time(time) {
@@ -425,6 +481,7 @@ if (typeof exports != 'undefined') {
         allie_cp_to_score: allie_cp_to_score,
         assign_move: assign_move,
         calculate_feature_q: calculate_feature_q,
+        convert_checkmate: convert_checkmate,
         fix_move_format: fix_move_format,
         format_eval: format_eval,
         format_unit: format_unit,

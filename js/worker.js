@@ -1,6 +1,6 @@
 // worker.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-02-05
+// @version 2021-05-21
 //
 // jshint -W069
 /*
@@ -69,7 +69,7 @@ function create_chess(engine) {
  * @param {Array<number>} moves
  * @param {string} pv_string
  * @param {boolean} scan_all
- * @returns {Array<*>} best_move, score, depth, hash_stats
+ * @returns {!Array<*>} best_move, score, depth, hash_stats
  */
 function think(engine, fen, moves, pv_string, scan_all) {
     // 1) generate all moves + analyse them

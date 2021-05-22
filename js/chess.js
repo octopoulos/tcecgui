@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-05-21
 // - fast javascript implementation, 30000x faster
 // - FRC support
 // jshint -W069
@@ -361,6 +361,7 @@ let PIECE_SQUARES = [
 let MoveText;
 
 // null object
+/** @type {MoveText} */
 let NULL_OBJ = {
     'capture': 0,
     'fen': '',
@@ -492,7 +493,7 @@ var Chess = function(fen_) {
 
     /**
      * Add a ply state
-     * @param {Object} move
+     * @param {number} move
      */
     function addState(move) {
         let state = ply_states[ply & 127];
@@ -507,7 +508,7 @@ var Chess = function(fen_) {
      * Add a top level move
      * @param {number} move
      * @param {number} score
-     * @param {Array<number>} pv
+     * @param {!Array<number>} pv
      */
     function addTopMove(move, score, pv) {
         let uci = ucifyMove(move),
@@ -541,7 +542,7 @@ var Chess = function(fen_) {
      * @param {number} beta
      * @param {number} depth
      * @param {number} max_depth
-     * @param {Array<number>} pv
+     * @param {!Array<number>} pv
      * @returns {number}
      */
     function alphaBeta(alpha, beta, depth, max_depth, pv) {
@@ -579,7 +580,7 @@ var Chess = function(fen_) {
             else
                 score = quiesce(alpha, beta, max_quiesce);
 
-            updateEntry(entry[5], board_hash, score, BOUND_EXACT, idepth, 0);
+            updateEntry(entry[5], board_hash, score, BOUND_EXACT, idepth, null);
             move_id ++;
             return score;
         }
@@ -680,7 +681,7 @@ var Chess = function(fen_) {
     /**
      * Uniquely identify ambiguous moves
      * @param {number} move
-     * @param {Array<number>} moves
+     * @param {!Array<number>} moves
      * @returns {string}
      */
     function disambiguate(move, moves) {
@@ -720,8 +721,8 @@ var Chess = function(fen_) {
     /**
      * Find an entry in the transposition table
      * @param {number} hash
-     * @param {Array<number>} hit true if the hash matches
-     * @returns {Array<number>} hash, score, bound, depth, move, index
+     * @param {Array<boolean>} hit true if the hash matches
+     * @returns {!Array<number>} hash, score, bound, depth, move, index
      */
     function findEntry(hash, hit) {
         if (!hash_mode)
@@ -751,7 +752,7 @@ var Chess = function(fen_) {
      * Mini max tree search
      * @param {number} depth
      * @param {number} max_depth
-     * @param {Array<number>} pv
+     * @param {!Array<number>} pv
      * @returns {number}
      */
     function miniMax(depth, max_depth, pv) {
@@ -862,6 +863,7 @@ var Chess = function(fen_) {
      * @param {number} alpha
      * @param {number} beta
      * @param {number} depth_left
+     * @returns {number}
      */
     function quiesce(alpha, beta, depth_left) {
         let delta = PIECE_SCORES[QUEEN];
@@ -914,7 +916,7 @@ var Chess = function(fen_) {
      * @param {number} score
      * @param {number} bound
      * @param {number} depth
-     * @param {Move} move
+     * @param {Move?} move
      */
     function updateEntry(entry, hash, score, bound, depth, move) {
         if (!hash_mode)
@@ -1238,7 +1240,7 @@ var Chess = function(fen_) {
     /**
      * Create the moves
      * @param {boolean} only_capture
-     * @returns {Array<number>} moves
+     * @returns {!Array<number>} moves
      */
     function createMoves(only_capture) {
         let moves = [],
@@ -1536,7 +1538,7 @@ var Chess = function(fen_) {
      */
     function hashBoard() {
         if (!zobrist_ready)
-            init_zobrist();
+            initZobrist();
 
         // 1) board
         board_hash = 0;
@@ -1595,7 +1597,7 @@ var Chess = function(fen_) {
     /**
      * Initialise the zobrist table
      */
-    function init_zobrist() {
+    function initZobrist() {
         let collision = 0,
             seed = 1070372;
 
@@ -1640,6 +1642,7 @@ var Chess = function(fen_) {
 
     /**
      * Get a list of all legal moves
+     * @returns {!Array<number>}
      */
     function legalMoves() {
         let moves = createMoves(false);
@@ -1745,7 +1748,7 @@ var Chess = function(fen_) {
 
     /**
      * Make a raw move, no verification is being performed
-     * @param {Object} move
+     * @param {number} move
      * @returns {boolean} false if the move is not legal
      */
     function makeMove(move) {
@@ -1889,9 +1892,9 @@ var Chess = function(fen_) {
 
     /**
      * Try an object move
-     * @param {Object} obj {from: 23, to: 7, promote: 5}
+     * @param {!Object} obj {from: 23, to: 7, promote: 5}
      * @param {boolean} decorate add + # decorators
-     * @returns {Object}
+     * @returns {MoveText}
      */
     function moveObject(obj, decorate) {
         let flag = 0,
@@ -1947,7 +1950,7 @@ var Chess = function(fen_) {
             obj['m'] = decorate? decorateSan(san): san;
             obj['ply'] = fen_ply + ply;
         }
-        return Assign({}, NULL_OBJ, obj);
+        return /** @type MoveText*/(Assign({}, NULL_OBJ, obj));
     }
 
     /**
@@ -1955,7 +1958,7 @@ var Chess = function(fen_) {
      * @param {string} text Nxb7, a8=Q
      * @param {boolean} decorate add + # decorators
      * @param {boolean} sloppy allow sloppy parser
-     * @returns {Object}
+     * @returns {MoveText}
      */
     function moveSan(text, decorate, sloppy) {
         let moves = legalMoves(),
@@ -1974,7 +1977,7 @@ var Chess = function(fen_) {
      * 4. ... Nge7 is overly disambiguated because the knight on c6 is pinned
      * 4. ... Ne7 is technically the valid SAN
      * @param {number} move
-     * @param {Array<number>} moves
+     * @param {!Array<number>} moves
      * @returns {string}
      */
     function moveToSan(move, moves) {
@@ -2012,7 +2015,7 @@ var Chess = function(fen_) {
      * Try an UCI move
      * @param {string} text c2c4, a7a8a
      * @param {boolean} decorate add + # decorators
-     * @returns {Object}
+     * @returns {MoveText}
      */
     function moveUci(text, decorate) {
         let obj = {
@@ -2025,10 +2028,10 @@ var Chess = function(fen_) {
 
     /**
      * Parse a list of SAN moves + create FEN for each move
-     * @param {string} text c2c4 a7a8a ...
+     * @param {string} multi c2c4 a7a8a ...
      * @param {boolean} sloppy allow sloppy parser
      * @param {boolean} create_fen
-     * @returns {Array<Object>}
+     * @returns {!Array<Object>}
      */
     function multiSan(multi, sloppy, create_fen) {
         let result = [],
@@ -2052,8 +2055,8 @@ var Chess = function(fen_) {
 
     /**
      * Parse a list of UCI moves + create SAN + FEN for each move
-     * @param {string} text c2c4 a7a8a ...
-     * @returns {Array<Object>}
+     * @param {string} multi c2c4 a7a8a ...
+     * @returns {!Array<Object>}
      */
     function multiUci(multi) {
         let result = [],
@@ -2079,7 +2082,7 @@ var Chess = function(fen_) {
      * - captures
      * - castle
      * - nb/r/q/r/p
-     * @param {Array<number>} moves
+     * @param {!Array<number>} moves
      */
     function orderMoves(moves) {
         // use previous PV to reorder the first move
@@ -2109,6 +2112,7 @@ var Chess = function(fen_) {
      * - 22-24 : promote
      * - 25-31 : to
      * @param {MoveText} obj
+     * @returns {number}
      */
     function packObject(obj) {
         let value = 0
@@ -2122,6 +2126,7 @@ var Chess = function(fen_) {
 
     /**
      * Get params
+     * @returns {!Array<number>}
      */
     function params() {
         let result = [
@@ -2228,9 +2233,9 @@ var Chess = function(fen_) {
     /**
      * Convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
      * @param {string} san Nf3, Nf3+?!
-     * @param {Array<number>} moves list of moves to match the san against
+     * @param {!Array<number>} moves list of moves to match the san against
      * @param {boolean} sloppy allow sloppy parser
-     * @returns {Object}
+     * @returns {MoveText}
      */
     function sanToObject(san, moves, sloppy) {
         // 1) try exact matching
@@ -2240,7 +2245,7 @@ var Chess = function(fen_) {
                 let obj = unpackMove(move);
                 obj['m'] = san;
                 obj['ply'] = fen_ply + ply + 1;
-                return Assign({}, NULL_OBJ, obj);
+                return /** @type MoveText */(Assign({}, NULL_OBJ, obj));
             }
 
         // 2) try sloppy matching
@@ -2297,7 +2302,7 @@ var Chess = function(fen_) {
                 let obj = unpackMove(move);
                 obj['m'] = moveToSan(move, moves);
                 obj['ply'] = fen_ply + ply + 1;
-                return Assign({}, NULL_OBJ, obj);
+                return /** @type MoveText */(Assign({}, NULL_OBJ, obj));
             }
         }
         return NULL_OBJ;
@@ -2309,7 +2314,7 @@ var Chess = function(fen_) {
      * @param {string} move_string list of numbers
      * @param {string} pv_string previous pv
      * @param {boolean} scan_all_
-     * @returns {Array<MoveText>} updated moves
+     * @returns {!Array<MoveText>} updated moves
      */
     function search(move_string, pv_string, scan_all_) {
         // 1) prepare search
@@ -2508,62 +2513,59 @@ var Chess = function(fen_) {
     // BINDING CODE
     ///////////////
 
-    // CHESS BINDINGS
-    return {
-        //
-        anToSquare: anToSquare,
-        attacked: attacked,
-        attacks: () => attacks,
-        avgDepth: () => max_depth,
-        board: () => board,
-        boardHash: () => board_hash,
-        castling: () => castling,
-        checked: color => kingAttacked(color),
-        cleanSan: cleanSan,
-        clear: clear,
-        configure: configure,
-        currentFen: () => fen,
-        decorateSan: decorateSan,
-        defenses: () => defenses,
-        evaluate: evaluate,
-        fen: createFen,
-        fen960: createFen960,
-        frc: () => frc,
-        hashBoard: hashBoard,
-        hashStats: () => [tt_adds, tt_hits],
-        load: load,
-        makeMove: makeMove,
-        material: color => materials[color],
-        mobilities: () => mobilities,
-        moveObject: moveObject,
-        moves: legalMoves,
-        moveSan: moveSan,
-        moveToSan: moveToSan,
-        moveUci: moveUci,
-        multiSan: multiSan,
-        multiUci: multiUci,
-        nodes: () => nodes,
-        order: orderMoves,
-        packObject: packObject,
-        params: params,
-        perft: perft,
-        piece: text => PIECES[text] || 0,
-        print: print,
-        prepare: prepareSearch,
-        put: put,
-        reset: reset,
-        sanToObject: sanToObject,
-        search: search,
-        selDepth: () => Max(avg_depth, sel_depth),
-        squareToAn: squareToAn,
-        trace: () => trace,
-        turn: () => turn,
-        ucifyMove: ucifyMove,
-        ucifyObject: ucifyObject,
-        undo: undoMove,
-        unpackMove: unpackMove,
-        version: () => '20201102',
-    };
+    this.anToSquare = anToSquare;
+    this.attacked = attacked;
+    this.attacks = () => attacks;
+    this.avgDepth = () => max_depth;
+    this.board = () => board;
+    this.boardHash = () => board_hash;
+    this.castling = () => castling;
+    this.checked = color => kingAttacked(color);
+    this.cleanSan = cleanSan;
+    this.clear = clear;
+    this.configure = configure;
+    this.currentFen = () => fen;
+    this.decorateSan = decorateSan;
+    this.defenses = () => defenses;
+    this.evaluate = evaluate;
+    this.fen = createFen;
+    this.fen960 = createFen960;
+    this.frc = () => frc;
+    this.hashBoard = hashBoard;
+    this.hashStats = () => [tt_adds, tt_hits];
+    this.load = load;
+    this.makeMove = makeMove;
+    this.material = color => materials[color];
+    this.mobilities = () => mobilities;
+    this.moveObject = moveObject;
+    this.moves = legalMoves;
+    this.moveSan = moveSan;
+    this.moveToSan = moveToSan;
+    this.moveUci = moveUci;
+    this.multiSan = multiSan;
+    this.multiUci = multiUci;
+    this.nodes = () => nodes;
+    this.order = orderMoves;
+    this.packObject = packObject;
+    this.params = params;
+    this.perft = perft;
+    this.piece = text => PIECES[text] || 0;
+    this.print = print;
+    this.prepare = prepareSearch;
+    this.put = put;
+    this.reset = reset;
+    this.sanToObject = sanToObject;
+    this.search = search;
+    this.selDepth = () => Max(avg_depth, sel_depth);
+    this.squareToAn = squareToAn;
+    this.trace = () => trace;
+    this.turn = () => turn;
+    this.ucifyMove = ucifyMove;
+    this.ucifyObject = ucifyObject;
+    this.undo = undoMove;
+    this.unpackMove = unpackMove;
+    this.version = () => '20201102';
+    return this;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

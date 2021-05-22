@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -2123,7 +2123,7 @@ function socket_error(text) {
 
 /**
  * Send data to a socket
- * @param {!Object} data
+ * @param {!Array} data
  * @returns {boolean?}
  */
 function socket_send(data) {
@@ -3201,7 +3201,7 @@ function api_message(vector, callback) {
  * Get translations
  * @param {boolean=} force
  * @param {Function=} callback
- * @param {Object=} custom_data provide translations directly
+ * @param {*=} custom_data provide translations directly
  */
 function api_translate_get(force, callback, custom_data) {
     /**

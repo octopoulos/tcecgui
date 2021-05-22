@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 /*
 globals
 process, require
@@ -44,7 +44,7 @@ function create_spaces(size, fill=' ') {
  * Get Multi PGN stats
  * - accumulate all individual speeds
  * @param {string} data
- * @param {Object} result
+ * @param {QObject} result
  * @param {string=} origin
  */
 function get_multi_pgn_stats(data, result, origin) {
@@ -62,7 +62,7 @@ function get_multi_pgn_stats(data, result, origin) {
  * Get PGN stats
  * @param {string} name
  * @param {string=} origin
- * @returns {Object}
+ * @returns {!Object}
  */
 function get_pgn_stats(data, origin) {
     let dico = parse_pgn('', data, 7, origin);
@@ -185,7 +185,7 @@ function get_pgn_stats(data, origin) {
 
 /**
  * Merge stats
- * @param {Object} result
+ * @param {!Object} result
  * @returns {string}
  */
 function merge_stats(result) {
@@ -307,7 +307,7 @@ function merge_stats(result) {
 /**
  * Open a file and process it
  * @param {string} filename
- * @param {Object} result
+ * @param {!Object} result
  * @param {Function} callback
  */
 function open_file(filename, result, callback) {
@@ -364,8 +364,8 @@ function open_file(filename, result, callback) {
 
 /**
  * Show the results
- * @param {Object} result
- * @param {Array<string>} filenames
+ * @param {!Object} result
+ * @param {!Array<string>} filenames
  */
 function done(result, filenames) {
     let [day] = FromTimestamp(),

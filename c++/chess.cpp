@@ -1,6 +1,6 @@
 // chess.cpp
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-04-28
+// @version 2021-05-21
 // - wasm implementation, 2x faster than fast chess.js
 // - FRC support
 // - emcc --bind -o ../js/chess-wasm.js chess.cpp -s WASM=1 -Wall -s MODULARIZE=1 -O3 --closure 1
@@ -1544,7 +1544,7 @@ public:
      */
     void hashBoard() {
         if (!zobrist_ready)
-            init_zobrist();
+            initZobrist();
 
         // 1) board
         board_hash = 0;
@@ -1604,7 +1604,7 @@ public:
      * Initialise the zobrist table
      * - 0 is used for en passant + castling
      */
-    void init_zobrist() {
+    void initZobrist() {
         auto collision = 0;
 
         xorshift64();

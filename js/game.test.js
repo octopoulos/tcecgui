@@ -1,6 +1,6 @@
 // game.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 /*
 globals
 expect, global, require, test
@@ -75,7 +75,7 @@ function init_players(ply, players, evals) {
         '128877364 Komodo 14.1(71): info depth 91 time 568 nodes 2508046 score mate -4 nps 4407815 hashfull 0 tbhits 123007 pv d3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
         1,
         {
-            depth: 91, engine: 'Komodo 14.1', eval: 'M8', hashfull: 0, id: 1, mate: -4, nodes: 2508046, nps: 4407815,
+            depth: 91, engine: 'Komodo 14.1', eval: 'M#4', hashfull: 0, id: 1, mate: -4, nodes: 2508046, nps: 4407815,
             ply: 145, tbhits: 123007, time: 568,
             pv: 'd3c5 a8b8 c5b7 b8e8 b5a6 e8c6 a6a5 c6b6',
             pvs: {
@@ -96,7 +96,7 @@ function init_players(ply, players, evals) {
         '128814060 Stockfish 202011101829_nn-c3ca321c51c9(70): info depth 77 seldepth 26 multipv 1 score mate 13 wdl 1000 0 0 nodes 575877930 nps 258009825 hashfull 21 tbhits 6492754 time 2232 pv h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
         0,
         {
-            depth: 77, engine: 'Stockfish 202011101829_nn-c3ca321c51c9', eval: 'M25', hashfull: 21, id: 0, mate: 13,
+            depth: 77, engine: 'Stockfish 202011101829_nn-c3ca321c51c9', eval: 'M#13', hashfull: 21, id: 0, mate: 13,
             nodes: 575877930, nps: 258009825, ply: 128, seldepth: 26, tbhits: 6492754, time: 2232, wdl: '1000 0 0',
             pv: 'h7g7 c5e6 g7g6 d6d7 h6h7 e6f8 g6g7 d7d6 h7h8q f8e6 g7g6 d6c5 g6e6 c5c4 e6d6 f5f4 h8c8 c4b5',
             pvs: {
@@ -474,7 +474,7 @@ function init_players(ply, players, evals) {
             players[0] = players_[0];
             players[1] = players_[1];
         }
-        main.set_fen(fen);
+        main.setFen(fen);
 
         analyse_log(line);
         let info = ParseJSON(Stringify(players[player_id].info || {})),
@@ -657,7 +657,7 @@ function init_players(ply, players, evals) {
         if (player.boomed)
             expect(player.boom_ply).toEqual(ply);
         if (answer_more) {
-            let text = result.slice(1, -1).map(x => x.toFixed(3)).join(', ');
+            let text = result[2].slice(0, -1).map(x => x.toFixed(3)).join(', ');
             expect(text).toEqual(answer_more.map(x => x.toFixed(3)).join(', '));
         }
     });

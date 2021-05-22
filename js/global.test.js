@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 /*
 globals
@@ -11,9 +11,9 @@ expect, global, require, test
 let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
     {
-        add_player_eval, allie_cp_to_score, assign_move, calculate_feature_q, fix_move_format, format_eval, format_unit,
-        get_fen_ply, get_move_ply, leela_cp_to_score, reset_defaults, split_move_string, stockfish_wdl,
-        stockfish_win_rate_model, stoof_cp_to_score
+        add_player_eval, allie_cp_to_score, assign_move, calculate_feature_q, convert_checkmate, fix_move_format,
+        format_eval, format_unit, get_fen_ply, get_move_ply, leela_cp_to_score, reset_defaults, split_move_string,
+        stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
 
 global.DEFAULTS = {
@@ -103,6 +103,87 @@ global.DEFAULTS = {
 ].forEach(([feature, eval_, ply, answer], id) => {
     test(`calculate_feature_q:${id}`, () => {
         expect(calculate_feature_q(feature, eval_, ply)).toBeCloseTo(answer, 3);
+    });
+});
+
+// convert_checkmate
+[
+    // plies
+    [1, 'M1', 0, 'M1'],
+    [1, 'M1', 1, 'M1'],
+    [1, '-M1', 0, '-M1'],
+    [1, '-M1', 1, '-M1'],
+    [1, 'M#0', 0, 'M0'],            // white says #M0 => white just mated => M0
+    [1, 'M#0', 1, 'M1'],            // black says #M0 => impossible => make it M1
+    [1, '-M#0', 0, '-M1'],          // white says -#M0 => black mates next move => -M1
+    [1, '-M#0', 1, '-M0'],          // black says -#M0 => black just mated => -M0
+    [1, 0, 0, 'M0'],
+    [1, 0, 1, 'M1'],
+    [1, 'M#1', 0, 'M2'],            // white says M#1 => white mates next move => M2
+    [1, 'M#1', 1, 'M1'],            // black says M#1 => white mates next move => M1
+    [1, '-M#1', 0, '-M3'],          // white says -M#1 => black mates next move => -M3
+    [1, '-M#1', 1, '-M2'],          // black says -M#1 => black mates next move => -M2
+    [1, 1, 0, 'M2'],
+    [1, -1, 1, 'M1'],
+    [1, -1, 0, '-M3'],
+    [1, 1, 1, '-M2'],
+    [1, 'M#2', 0, 'M4'],
+    [1, 'M#2', 1, 'M3'],
+    [1, '-M#2', 0, '-M5'],
+    [1, '-M#2', 1, '-M4'],
+    [1, 2, 0, 'M4'],
+    [1, -2, 1, 'M3'],
+    [1, -2, 0, '-M5'],
+    [1, 2, 1, '-M4'],
+    // moves
+    [0, 'M1', 0, 'M#0'],            // approx: white says M1 => probably means it just mated => M#0
+    [0, 'M1', 1, 'M#1'],            //         black says M1 => white mates next move => M#1
+    [0, '-M1', 0, '-M#0'],          //         white says -M1 => black mates SAME move => -M#0
+    [0, '-M1', 1, '-M#0'],          // approx: black says -M1 => probably means it just mated => -M#0
+    [0, 0, 0, 'M#0'],
+    [0, 0, 1, 'M#0'],
+    [0, 'M2', 0, 'M#1'],            //         white says M2 => white mates next move = M#1
+    [0, 'M2', 1, 'M#1'],            // approx: black says M2 => impossible => make it M#1
+    [0, '-M2', 0, '-M#0'],          // approx: white says -M2 => impossible => make it -M#0
+    [0, '-M2', 1, '-M#1'],          //         black says -M2 => black wins next move = -M#1
+    [0, 1, 0, 'M#1'],
+    [0, -1, 1, 'M#1'],
+    [0, -1, 0, '-M#1'],
+    [0, 1, 1, '-M#1'],
+    [0, 'M3', 0, 'M#1'],            // approx
+    [0, 'M3', 1, 'M#2'],
+    [0, '-M3', 0, '-M#1'],
+    [0, '-M3', 1, '-M#1'],          // approx
+    [0, 2, 0, 'M#2'],
+    [0, -2, 1, 'M#2'],
+    [0, -2, 0, '-M#2'],
+    [0, 2, 1, '-M#2'],
+    [0, 'M4', 0, 'M#2'],
+    [0, 'M4', 1, 'M#2'],            // approx
+    [0, '-M4', 0, '-M#1'],          // approx
+    [0, '-M4', 1, '-M#2'],
+    // check consistency
+    [1, 'M#3', 0, 'M6'],
+    [0, 'M6', 0, 'M#3'],
+    [1, 'M#3', 1, 'M5'],
+    [0, 'M5', 1, 'M#3'],
+    [1, '-M#3', 0, '-M7'],
+    [0, '-M7', 0, '-M#3'],
+    [1, '-M#3', 1, '-M6'],
+    [0, '-M6', 1, '-M#3'],
+    //
+    [1, 'M#8', 0, 'M16'],
+    [0, 'M16', 0, 'M#8'],
+    [1, 'M#8', 1, 'M15'],
+    [0, 'M15', 1, 'M#8'],
+    [1, '-M#8', 0, '-M17'],
+    [0, '-M17', 0, '-M#8'],
+    [1, '-M#8', 1, '-M16'],
+    [0, '-M16', 1, '-M#8'],
+].forEach(([want_ply, value, ply, answer], id) => {
+    test(`convert_checkmate:${id}`, () => {
+        Y.checkmate = want_ply? 'plies': 'moves';
+        expect(convert_checkmate(value, ply)).toEqual(answer);
     });
 });
 
@@ -311,30 +392,36 @@ global.DEFAULTS = {
 
 // format_eval
 [
-    [0, null, undefined, null],
-    [0, NaN, undefined, NaN],
-    [0, Infinity, undefined, 'Infinity'],
-    [0, '', undefined, ''],
-    [0, 0, undefined, '0.00'],
-    [1, 0, true, '<i>0.</i><i class="smaller">00</i>'],
-    [1, 0, false, '0.00'],
-    [10, 0, true, '0.00'],
-    [1, 0, true, '<i>0.</i><i class="smaller">00</i>'],
-    [1, 0.98, true, '<i>0.</i><i class="smaller">98</i>'],
-    [1, 0.987654321, false, '0.99'],
-    [1, 0.987654321, true, '<i>0.</i><i class="smaller">99</i>'],
-    [1, '150.142', true, '<i>150.</i><i class="smaller">14</i>'],
-    [1, 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
-    [10, 10.15535, true, '<i>10.</i><i class="smaller">16</i>'],
-    [100, 10.15535, true, '10.16'],
-    [1, -198.42, true, '<i>-198.</i><i class="smaller">42</i>'],
-    [1, '-198.42', true, '<i>-198.</i><i class="smaller">42</i>'],
-    [0, '-198.42', true, '-198.42'],
-    [1, 'M#43', true, 'M#43'],
-].forEach(([small_decimal, value, process, answer], id) => {
+    [{}, null, 0, undefined, null],
+    [{}, NaN, 0, undefined, NaN],
+    [{}, Infinity, 0, undefined, 'Infinity'],
+    [{}, '', 0, undefined, ''],
+    [{}, 0, 0, undefined, '0.00'],
+    [{small_decimal: 1}, 0, 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    [{small_decimal: 1}, 0, 0, false, '0.00'],
+    [{small_decimal: 10}, 0, 0, true, '0.00'],
+    [{small_decimal: 1}, 0, 0, true, '<i>0.</i><i class="smaller">00</i>'],
+    [{small_decimal: 1}, 0.98, 0, true, '<i>0.</i><i class="smaller">98</i>'],
+    [{small_decimal: 1}, 0.987654321, 0, false, '0.99'],
+    [{small_decimal: 1}, 0.987654321, 0, true, '<i>0.</i><i class="smaller">99</i>'],
+    [{small_decimal: 1}, '150.142', 0, true, '<i>150.</i><i class="smaller">14</i>'],
+    [{small_decimal: 1}, 10.15535, 0, true, '<i>10.</i><i class="smaller">16</i>'],
+    [{small_decimal: 10}, 10.15535, 0, true, '<i>10.</i><i class="smaller">16</i>'],
+    [{small_decimal: 100}, 10.15535, 0, true, '10.16'],
+    [{small_decimal: 1}, -198.42, 0, true, '<i>-198.</i><i class="smaller">42</i>'],
+    [{small_decimal: 1}, '-198.42', 0, true, '<i>-198.</i><i class="smaller">42</i>'],
+    [{small_decimal: 0}, '-198.42', 0, true, '-198.42'],
+    //
+    [{checkmate: 'moves', small_decimal: 1}, 'M#43', 0, true, 'M#43'],
+    [{checkmate: 'plies', small_decimal: 1}, 'M#43', 0, true, 'M86'],
+    [{checkmate: 'plies', small_decimal: 1}, 'M#43', 1, true, 'M85'],
+    [{checkmate: 'plies', small_decimal: 1}, 'M#43', 2, true, 'M86'],
+    [{checkmate: 'moves', small_decimal: 1}, 'M43', 0, true, 'M#21'],
+    [{checkmate: 'plies', small_decimal: 1}, 'M43', 0, true, 'M43'],
+].forEach(([y, value, ply, process, answer], id) => {
     test(`format_eval:${id}`, () => {
-        Y.small_decimal = small_decimal;
-        expect(format_eval(value, process)).toEqual(answer);
+        Assign(Y, y);
+        expect(format_eval(value, ply, process)).toEqual(answer);
     });
 });
 

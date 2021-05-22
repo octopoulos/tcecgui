@@ -1,6 +1,6 @@
 // xboard.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-05-21
 //
 /*
 globals
@@ -31,7 +31,7 @@ live.id = 'null';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// add_moves_string
+// addMovesString
 [
     [
         '1. d4 Nf6 2. c4 c5 3. d5',
@@ -62,9 +62,9 @@ live.id = 'null';
         ],
     ],
 ].forEach(([text, cur_ply, answer], id) => {
-    test(`add_moves_string:${id}`, () => {
+    test(`addMovesString:${id}`, () => {
         live.reset(Y.x);
-        live.add_moves_string(text, {cur_ply: cur_ply});
+        live.addMovesString(text, {cur_ply: cur_ply});
 
         let offset = answer[0],
             array = new Array(offset);
@@ -75,7 +75,7 @@ live.id = 'null';
     });
 });
 
-// analyse_fen
+// analyseFen
 [
     ['', 'invalid fen', false, {}],
     ['', START_FEN, true, {}],
@@ -109,22 +109,22 @@ live.id = 'null';
         {B: [[1, 114], [1, 117]]},
     ],
 ].forEach(([move_list, fen, answer, answer_pieces], id) => {
-    test(`analyse_fen:${id}`, () => {
+    test(`analyseFen:${id}`, () => {
         if (move_list) {
-            live.set_fen(START_FEN);
+            live.setFen(START_FEN);
             for (let move of move_list.split(' ')) {
-                live.chess_move(move, false);
-                live.analyse_fen(live.chess_fen());
+                live.chessMove(move, false);
+                live.analyseFen(live.chessFen());
             }
         }
-        expect(live.analyse_fen(fen)).toEqual(answer);
+        expect(live.analyseFen(fen)).toEqual(answer);
         Keys(answer_pieces).forEach(key => {
             expect(live.pieces[key]).toEqual(expect.arrayContaining(answer_pieces[key]));
         });
     });
 });
 
-// arrow_html
+// arrowHtml
 // white(#cdcdbe), black(#666666), blue(#236ad6), red(#eb282d)
 [
     // a8a5, white -> black -> blue -> red
@@ -158,10 +158,10 @@ live.id = 'null';
         ],
     ],
 ].forEach(([reset, id_, dico, opacity, answer], id) => {
-    test(`arrow_html:${id}`, () => {
+    test(`arrowHtml:${id}`, () => {
         if (reset)
             live.svgs = [{id: 0}, {id: 1}, {id: 2}, {id: 3}];
-        live.arrow_html(id_, dico, opacity);
+        live.arrowHtml(id_, dico, opacity);
 
         let results = [];
         for (let svg of live.svgs) {
@@ -185,7 +185,7 @@ live.id = 'null';
     });
 });
 
-// chess_fen
+// chessFen
 [
     [START_FEN, 'd5', START_FEN],
     [START_FEN, 'd4', 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1'],
@@ -193,26 +193,26 @@ live.id = 'null';
     ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'O-O', 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b ha - 1 1'],
     ['r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1', 'O-O-O', 'r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b ha - 1 1'],
 ].forEach(([fen, move_list, answer], id) => {
-    test(`chess_fen:${id}`, () => {
-        live.chess_load(fen);
+    test(`chessFen:${id}`, () => {
+        live.chessLoad(fen);
         if (move_list)
             for (let move of move_list.split(' '))
-                live.chess_move(move, false);
-        expect(live.chess_fen()).toEqual(answer);
+                live.chessMove(move, false);
+        expect(live.chessFen()).toEqual(answer);
     });
 });
 
-// chess_load
+// chessLoad
 [
     START_FEN,
 ].forEach((fen, id) => {
-    test(`chess_load:${id}`, () => {
-        live.chess_load(fen);
-        expect(live.chess_fen()).toEqual(fen);
+    test(`chessLoad:${id}`, () => {
+        live.chessLoad(fen);
+        expect(live.chessFen()).toEqual(fen);
     });
 });
 
-// chess_mobility
+// chessMobility
 [
     [{fen: '5k2/5Q2/5K2/8/8/8/8/8 b - - 0 1'}, 0],
     [{fen: '8/8/8/8/8/5k2/5p2/5K2 w - - 0 1'}, -0.5],
@@ -221,12 +221,12 @@ live.id = 'null';
     [{fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}, -20.5],
     [{fen: 'b1nrk1r1/p3bppp/4p1n1/Pqp5/5P2/1P1Np3/2QP1NPP/B1R1KBR1 w Qq - 0 12', frc: true}, -36.5],
 ].forEach(([move, answer], id) => {
-    test(`chess_mobility:${id}`, () => {
-        expect(live.chess_mobility(move)).toEqual(answer);
+    test(`chessMobility:${id}`, () => {
+        expect(live.chessMobility(move)).toEqual(answer);
     });
 });
 
-// chess_move
+// chessMove
 [
     [
         START_FEN, 'd5', undefined,
@@ -293,13 +293,13 @@ live.id = 'null';
         {capture: 4, fen: '', flag: 0, from: 96, m: 'a2b1q', san: 'axb1=Q', ply: 51, promote: 5, pv: '', score: 810, to: 113},
     ],
 ].forEach(([fen, move, options, answer], id) => {
-    test(`chess_move:${id}`, () => {
-        live.chess_load(fen);
-        expect(live.chess_move(move, options)).toEqual(answer);
+    test(`chessMove:${id}`, () => {
+        live.chessLoad(fen);
+        expect(live.chessMove(move, options)).toEqual(answer);
     });
 });
 
-// frc_index
+// frcIndex
 [
     ['rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1', -1],
     ['bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w HFhf - 0 1', 0],
@@ -310,12 +310,12 @@ live.id = 'null';
     ['bbrnkrqn/pppppppp/8/8/8/8/PPPPPPPP/BBRNKRQN w FCfc - 0 1', 640],
     ['rkrnnqbb/pppppppp/8/8/8/8/PPPPPPPP/RKRNNQBB w CAca - 0 1', 959],
 ].forEach(([fen, answer], id) => {
-    test(`frc_index:${id}`, () => {
-        expect(live.frc_index(fen)).toEqual(answer);
+    test(`frcIndex:${id}`, () => {
+        expect(live.frcIndex(fen)).toEqual(answer);
     });
 });
 
-// render_text
+// renderText
 [
     [
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -347,10 +347,10 @@ live.id = 'null';
         ].join('\n'),
     ],
 ].forEach(([fen, options, answer], id) => {
-    test(`render_text:${id}`, () => {
+    test(`renderText:${id}`, () => {
         Assign(live, options);
-        live.set_fen(fen);
-        expect(live.render_text()).toEqual(answer);
+        live.setFen(fen);
+        expect(live.renderText()).toEqual(answer);
     });
 });
 
@@ -365,20 +365,20 @@ live.id = 'null';
     });
 });
 
-// set_fen
+// setFen
 [
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1', null],
     ['4rrk1/1pq1bppp/p1np1n2/P4R2/4P3/2N1B3/1PPQB1PP/R6K w - - 3 21', null],
     ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', null],
     ['6k1/pr3p1p/4p1p1/3pB1N1/bp1P2Rq/1nr4B/7K/1R1Q4', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'],
 ].forEach(([fen, answer], id) => {
-    test(`set_fen:${id}`, () => {
-        live.set_fen(fen);
+    test(`setFen:${id}`, () => {
+        live.setFen(fen);
         expect(live.fen).toEqual(answer || fen);
     });
 });
 
-// set_locked
+// setLocked
 [
     [0, 0],
     [1, 1],
@@ -393,13 +393,13 @@ live.id = 'null';
     [1, 1],
     [0, 0],
 ].forEach(([locked, answer], id) => {
-    test(`set_locked:${id}`, () => {
-        live.set_locked(locked);
+    test(`setLocked:${id}`, () => {
+        live.setLocked(locked);
         expect(live.locked).toEqual(answer);
     });
 });
 
-// show_pv
+// showPv
 [
     [
         {
@@ -412,7 +412,7 @@ live.id = 'null';
         + '<i class="turn">4.</i><i class="real">Ne4</i><i class="real">d6</i>',
     ],
 ].forEach(([move, answer], id) => {
-    test(`show_pv:${id}`, () => {
-        expect(live.show_pv(move)).toEqual(answer);
+    test(`showPv:${id}`, () => {
+        expect(live.showPv(move)).toEqual(answer);
     });
 });

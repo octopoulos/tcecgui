@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-05-21
 //
 // Game specific code:
 // - control the board, moves
@@ -14,8 +14,8 @@
 globals
 _, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, Attrs, audiobox, C, CacheId,
 calculate_feature_q, cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp,
-clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, CopyClipboard,
-create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
+clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, convert_checkmate,
+CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
 Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
 global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
@@ -495,7 +495,7 @@ function calculate_probability(short_engine, eval_, ply, wdl) {
 /**
  * Calculate White and Black points
  * @param {string} text
- * @returns {Object}
+ * @returns {!Object}
  */
 function calculate_score(text) {
     let black = 0,
@@ -523,7 +523,7 @@ function calculate_score(text) {
  * @param {string=} text if not set, then use game as the text
  * @param {number=} mode &1:returns the link directly, instead of the <a ... > HTML, &2:get array, &4:bracket
  * @param {string=} prefix prefixed text
- * @returns {Array<string>|string}
+ * @returns {!Array<string>|string}
  */
 function create_game_link(section, game, text, mode, prefix) {
     let link = '#' + QueryString({query: `${tour_info[section].link}&game=${game}`, string: true});
@@ -540,7 +540,7 @@ function create_game_link(section, game, text, mode, prefix) {
  * @param {number} value
  * @param {number} total
  * @param {string} data
- * @returns {Array<string>} ex: dec=x, <i class="seek">1</i>, 10%
+ * @returns {!Array<string>} ex: dec=x, <i class="seek">1</i>, 10%
  */
 function create_seek(value, total, data) {
     return (value && total)? [data, `<i class="seek">${value}</i>`, format_percent(value / total)]: ['', value, ''];
@@ -706,7 +706,7 @@ function get_short_name(engine) {
 
 /**
  * Get XHR elapsed time
- * @param {Object} xhr
+ * @param {!Object} xhr
  * @returns {number}
  */
 function get_xhr_elapsed(xhr) {
@@ -801,8 +801,8 @@ function check_draw_arrow(board) {
             if (next) {
                 board.next = next;
                 if (next.from == undefined && next.m) {
-                    board.chess_load(fen);
-                    let result = board.chess_move(next.m);
+                    board.chessLoad(fen);
+                    let result = board.chessMove(next.m);
                     Assign(next, result);
                     next.ply = next_ply;
                     if (DEV['arrow'])
@@ -870,7 +870,7 @@ function create_boards(mode='html') {
  */
 function lock_sub_boards(locked) {
     for (let sub of SUB_BOARDS)
-        xboards[sub].set_locked(locked);
+        xboards[sub].setLocked(locked);
 }
 
 /**
@@ -1065,10 +1065,10 @@ function show_board_info(name, resize_flag, show) {
     }
 
     Y.offset = show? -46.5: 0;
-    board.update_mini(0);
-    board.update_mini(1);
-    if (board.manual && !board.is_ai())
-        board.show_picks(true);
+    board.updateMini(0);
+    board.updateMini(1);
+    if (board.manual && !board.isAi())
+        board.showPicks(true);
 
     if (!(resize_flag & 2))
         resize_game();
@@ -1137,7 +1137,7 @@ function update_board_theme(mode) {
  */
 function update_engine_pieces() {
     let main = xboards['live'],
-        [piece_size, style] = main.get_piece_background(20);
+        [piece_size, style] = main.getPieceBackground(20);
 
     for (let i of [0, 1]) {
         let node = CacheId(`king${i}`),
@@ -1168,7 +1168,7 @@ function add_queue(section, parent) {
  * Analyse the crosstable data
  * - create table-stand + table-cross
  * @param {string} section archive, live
- * @param {Object} data
+ * @param {!Object} data
  */
 function analyse_crosstable(section, data) {
     if (!data)
@@ -1369,7 +1369,7 @@ function analyse_crosstable(section, data) {
  * - calculate the scores
  * @param {string} section
  * @param {Array<Object>} rows
- * @returns {Array<Object>} filtered rows
+ * @returns {!Array<Object>} filtered rows
  */
 function calculate_h2h(section, rows) {
     let main = xboards[section],
@@ -2380,7 +2380,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
 /**
  * Handle the seasons file
- * @param {Object} data
+ * @param {!Object} data
  */
 function analyse_seasons(data) {
     let seasons = (data || {}).Seasons,
@@ -2557,7 +2557,8 @@ function set_season_events() {
             return;
 
         // 'season=18&div=l3' or 'season=cup5&round=round16'
-        let dico = Assign({div: '', round: '', stage: ''}, QueryString({query: this.dataset['u']}));
+        let query = QueryString({query: this.dataset['u']}),
+            dico = Assign({div: '', round: '', stage: ''}, /** @type Object */(query));
         Keys(dico).forEach(key => {
             save_option(key, dico[key]);
         });
@@ -2588,7 +2589,7 @@ function set_season_events() {
 /**
  * Handle tournament data
  * @param {string} section archive, live
- * @param {Object} data
+ * @param {!Object} data
  */
 function analyse_tournament(section, data) {
     let tour = tour_info[section];
@@ -2613,7 +2614,7 @@ function analyse_tournament(section, data) {
  * - support non power of 2 => 0 will be the 'skip' seed
  * @param {number} num_team
  * @param {number=} new_mode
- * @returns {Array<number>}
+ * @returns {!Array<number>}
  */
 function calculate_seeds(num_team, new_mode) {
     let number = 2,
@@ -2893,7 +2894,7 @@ function create_bracket(section, data) {
         prev_finished = true,
         round = 0,
         round_results = data['results'][0] || [],
-        seeds = calculate_seeds(num_team * 2, tour_info[section].cup >= 6);
+        seeds = calculate_seeds(num_team * 2, (tour_info[section].cup >= 6)? 1: 0);
 
     // assign seeds
     teams.forEach((team, id) => {
@@ -3124,7 +3125,7 @@ function create_connectors() {
         Class('[data-s]', 'high', false, parent);
         if (e.type != 'mouseleave')
             Class(`[data-s="${this.dataset['s']}"]`, 'high', true, parent);
-    }, null, parent);
+    }, undefined, parent);
 }
 
 /**
@@ -3226,9 +3227,9 @@ function resize_bracket(force) {
 
 /**
  * Check the adjudication
- * @param {Object} dico
+ * @param {!Object} dico
  * @param {number=} total_moves
- * @returns {Object} 50, draw, win
+ * @returns {!Object} 50, draw, win
  */
 function check_adjudication(dico, total_moves) {
     if (dico)
@@ -3369,7 +3370,7 @@ function download_pgn(section, url, reset_moves, callback) {
 
 /**
  * Extract thread count from the options
- * @param {Object} options
+ * @param {!Object} options
  * @returns {number|string}
  */
 function extract_threads(options) {
@@ -3399,8 +3400,8 @@ function extract_threads(options) {
 
 /**
  * Find the FRC #
- * @param {Object} board
- * @param {Object} headers
+ * @param {XBoard} board
+ * @param {!Object} headers
  */
 function fix_header_opening(board, headers) {
     let fen = headers['FEN'],
@@ -3411,7 +3412,7 @@ function fix_header_opening(board, headers) {
     if (fen && get_fen_ply(fen) > -1)
         return;
 
-    fen = headers['FEN'] = board.chess_load(fen) || fen;
+    fen = headers['FEN'] = board.chessLoad(fen) || fen;
 
     // generate all 960 FRC openings
     // - only done once, then it's cached in memory
@@ -3473,7 +3474,8 @@ function parse_pgn(section, data, {mode=15, origin=''}={}) {
         return /** @type {!Object} */(json);
 
     // B) parse the raw PGN
-    let end, inside, start,
+    let inside, start,
+        end = 0,
         headers = {},
         num_header = 0,
         length = data.length,
@@ -3572,7 +3574,7 @@ function parse_pgn(section, data, {mode=15, origin=''}={}) {
  * @param {string=} obj.fen valid FEN just before those new moves
  * @param {number=} obj.mode &1:header, &2:options, &4:moves, &8:fix moves/pv, &16:no error allowed
  * @param {string=} obj.origin debug information
- * @returns {Array<Move>}
+ * @returns {!Array<Move>}
  */
 function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
     if (!data)
@@ -3589,7 +3591,7 @@ function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
         start = 0;
 
     if (mode & 8)
-        board.chess_load(last_fen);
+        board.chessLoad(last_fen);
 
     for (let i = 0; i < length; i ++) {
         let char = data[i];
@@ -3616,7 +3618,7 @@ function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
                 if (pv && IsString(pv)) {
                     // fix pv?
                     if (mode & 8) {
-                        board.chess_load(prev_fen);
+                        board.chessLoad(prev_fen);
                         let result = board.chess.multiSan(pv, true, false),
                             new_pv = result.map(item => item.m).join(' ');
                         if (pv != new_pv) {
@@ -3684,8 +3686,8 @@ function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
 
                 // fix move?
                 if (mode & 8) {
-                    board.chess_load(last_fen);
-                    let result = board.chess_move(move);
+                    board.chessLoad(last_fen);
+                    let result = board.chessMove(move);
                     if (move != result.san) {
                         if (DEV['fen2'])
                             LS(`${ply} : ${move}`, result);
@@ -3697,7 +3699,7 @@ function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
                         }
                     }
                     prev_fen = last_fen;
-                    last_fen = board.chess_fen();
+                    last_fen = board.chessFen();
                     move_fen = last_fen;
                 }
 
@@ -3941,7 +3943,7 @@ function update_materials(move) {
     let invert = (Y['material_color'] == 'inverted')? 1: 0,
         is_string = IsString(material),
         size = 28,
-        [piece_size, style] = xboards['live'].get_piece_background(size),
+        [piece_size, style] = xboards['live'].getPieceBackground(size),
         scale = size / piece_size;
 
     'qrbnp'.split('').forEach((key, j) => {
@@ -3980,7 +3982,7 @@ function update_mobility() {
         ply = main.ply,
         move = main.moves[ply] || {};
 
-    let mobility = main.chess_mobility(move),
+    let mobility = main.chessMobility(move),
         node = CacheId('mobil'),
         [goal, gply] = move.goal || [];
 
@@ -4014,7 +4016,7 @@ function update_move_info(section, ply, move, fresh) {
         players = main.players,
         stats = {
             'depth': is_book? '-': `${depth}/${Undefined(move['sd'], depth)}`,
-            'eval': format_eval(eval_, true),
+            'eval': format_eval(eval_, ply, true),
             'node': is_book? '-': format_unit(move['n'], '-'),
             'speed': is_book? '-': `${format_unit(move['s'], '0')}nps`,
             'tb': is_book? '-': format_unit(move['tb'], '-'),
@@ -4022,7 +4024,7 @@ function update_move_info(section, ply, move, fresh) {
 
     // pva?
     if (is_pva)
-        main.update_mini(id, stats);
+        main.updateMini(id, stats);
     if (!is_pva) {
         Keys(stats).forEach(key => {
             TextHTML(CacheId(`${key}${id}`), stats[key]);
@@ -4070,7 +4072,7 @@ function update_move_pv(section, ply, move) {
         cur_ply = main.ply,
         player = main.players[id],
         node = CacheId(`moves-pv${id}`),
-        status_eval = is_book? '': format_eval(move['wv']),
+        status_eval = is_book? '': format_eval(move['wv'], ply),
         status_score =
             is_book? 'book': calculate_probability(player.short, eval_, ply, move['wdl'] || (player.info || {}).wdl);
 
@@ -4079,7 +4081,7 @@ function update_move_pv(section, ply, move) {
             TextHTML(_('[data-x="eval"]', child), status_eval);
             TEXT(_('[data-x="score"]', child), status_score);
         }
-        TextHTML(main.node_minis[id].eval_, format_eval(eval_, true));
+        TextHTML(main.node_minis[id].eval_, format_eval(eval_, ply, true));
     }
 
     // PV should jump directly to a new position, no transition
@@ -4087,9 +4089,9 @@ function update_move_pv(section, ply, move) {
 
     if (move['pv']) {
         if (IsString(move['pv']))
-            board.add_moves_string(move['pv'], {agree: move.agree, cur_ply: cur_ply, force: true});
+            board.addMovesString(move['pv'], {agree: move.agree, cur_ply: cur_ply, force: true});
         else
-            board.add_moves(move['pv']['Moves'], {agree: move.agree, cur_ply: cur_ply});
+            board.addMoves(move['pv']['Moves'], {agree: move.agree, cur_ply: cur_ply});
     }
     else {
         // no pv available =>
@@ -4098,7 +4100,7 @@ function update_move_pv(section, ply, move) {
         // TODO: try to readjust the existing PV to match the current move
         if (ply < main.moves.length - 1) {
             board.moves[ply] = move;
-            board.set_ply(ply);
+            board.setPly(ply);
         }
     }
 
@@ -4151,7 +4153,7 @@ function update_options(section) {
 /**
  * Update basic overview info, before adding the moves
  * @param {string} section
- * @param {Object} headers
+ * @param {!Object} headers
  */
 function update_overview_basic(section, headers) {
     if (!headers)
@@ -4232,7 +4234,7 @@ function update_overview_basic(section, headers) {
 /**
  * Update overview info, after adding the moves
  * @param {string} section
- * @param {Object} headers
+ * @param {!Object} headers
  * @param {Array<Move>} moves
  * @param {boolean=} is_new have we received new moves (from update_pgn)?
  * @returns {boolean?} finished
@@ -4287,10 +4289,10 @@ function update_overview_moves(section, headers, moves, is_new) {
             play_sound(audiobox, (result == '1/2-1/2')? Y['sound_draw']: Y['sound_win']);
         if (DEV['new'])
             LS(`finished: result=${result} : is_live=${is_live} : is_new=${is_new}`);
-        main.set_last(result);
+        main.setLast(result);
     }
     else
-        main.set_last(main.last);
+        main.setLast(main.last);
 
     // 4) materials
     // - only update if the ply is the current one
@@ -4428,7 +4430,7 @@ function update_pgn(section, data, extras, reset_moves) {
         }
 
         main.reset(section, {evals: is_same, render: is_same, start_fen: pgn.frc});
-        main.clear_moves(main.moves.length);
+        main.clearMoves(main.moves.length);
         if (is_same) {
             reset_sub_boards(section, 7, true, pgn.frc);
             if (section == section_board()) {
@@ -4458,11 +4460,11 @@ function update_pgn(section, data, extras, reset_moves) {
     }
     // can happen after resume
     else if (reset_moves)
-        main.clear_moves();
+        main.clearMoves();
 
     // 4) add the moves
     fix_zero_moves(moves, main.moves);
-    main.add_moves(moves, {keep_prev: true});
+    main.addMoves(moves, {keep_prev: true});
     check_missing_moves();
     main.time = Now(true);
 
@@ -4629,19 +4631,8 @@ function analyse_log(line) {
         // invert scores when black
         if (key == 'cp')
             info['eval'] = (value / 100) * (id == 1? -1: 1);
-        else if (key == 'mate') {
-            // convert mate to plies
-            let prefix = '#';
-            if (Y['checkmate'] == 'plies') {
-                value *= 2;
-                if (value > 0)
-                    value --;
-                if (id == 1)
-                    value = -value;
-                prefix = '';
-            }
-            info['eval'] = `${value < 0? '-': ''}M${prefix}${Abs(value)}`;
-        }
+        else if (key == 'mate')
+            info['eval'] = convert_checkmate(value, id);
         else if (key == 'wdl' && id == 1)
             info['wdl'] = value.split(' ').reverse().join(' ');
     }
@@ -4655,10 +4646,11 @@ function analyse_log(line) {
         return;
 
     // 3) update eval + WDL
+    let ply = main.moves.length;
     if (Y['eval'] && info['eval'] != undefined) {
         let box_node = CacheId(`status-pv${id}`),
             node = CacheId(`moves-pv${id}`),
-            status_eval = format_eval(info['eval']),
+            status_eval = format_eval(info['eval'], ply),
             status_score = calculate_probability(player.short, info['eval'], main.moves.length, info['wdl']);
 
         for (let child of [box_node, node]) {
@@ -4671,9 +4663,6 @@ function analyse_log(line) {
     // - don't update if the new PV is a subset of the previous pv
     if (!Y['log_pv'])
         return;
-
-    let fail = pv.split(' ').length,
-        ply = main.moves.length;
 
     for (let key of Keys(pvs)) {
         let [memory, moves] = pvs[key];
@@ -4708,7 +4697,8 @@ function analyse_log(line) {
     }
 
     // fail?
-    let moves = info['moves'] || [];
+    let fail = pv.split(' ').length,
+        moves = info['moves'] || [];
     if (pv) {
         for (let move of moves)
             if (move.fail)
@@ -4844,7 +4834,7 @@ function boom_sound(type, volume, intensities, callback) {
  * @param {number} offset ply offset
  * @param {Array<number>=} force for debugging
  * @param {boolean=} only_check only check if a boom should occur
- * @returns {!Array<number>} [0] on success
+ * @returns {!Array<*>} [0] on success
  */
 function check_boom(section, offset, force, only_check) {
     if (Y['disable_everything'])
@@ -4908,7 +4898,7 @@ function check_boom(section, offset, force, only_check) {
     if (only_check)
         return [0, best];
 
-    let is_moob = ((force && Abs(force) < 0.1) || best[3]),
+    let is_moob = best[3],
         type = is_moob? 'moob': 'boom';
 
     // 3) scaling with intensity:
@@ -4939,7 +4929,7 @@ function check_boom(section, offset, force, only_check) {
     });
     if (DEV['boom4'])
         LS([rate, red_coeff, volume].map(value => value.toFixed(3)).join(', '));
-    return [0, rate, red_coeff, volume, intensities];
+    return [0, best, [rate, red_coeff, volume, intensities]];
 }
 
 /**
@@ -5317,7 +5307,7 @@ function update_hardware(section, id, nodes, {engine, hardware, short}={}) {
  * Update data from one of the Live engines
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
- * @param {Object} data
+ * @param {!Object} data
  * @param {number} id 0, 1
  * @param {number=} force_ply update with this data.pv even if there's more recent text + forces invert_black
  * @param {boolean=} no_graph
@@ -5393,7 +5383,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
         let is_hide = !Y['eval'],
             dico = {
                 'depth': data['depth'],
-                'eval': is_hide? 'hide*': format_eval(eval_),
+                'eval': is_hide? 'hide*': format_eval(eval_, ply),
                 'node': format_unit(data['nodes']),
                 'score': is_hide? 'hide*': calculate_probability(short, eval_, ply, wdl),
                 'speed': data['speed'],
@@ -5412,7 +5402,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
 
     if (force_ply)
         board.text = '';
-    board.add_moves_string(data['pv'], {agree: data.agree, cur_ply: cur_ply, force: force_ply});
+    board.addMovesString(data['pv'], {agree: data.agree, cur_ply: cur_ply, force: force_ply});
 
     if (!no_graph && section == section_board()) {
         if (DEV['chart'])
@@ -5428,7 +5418,7 @@ function update_live_eval(section, data, id, force_ply, no_graph) {
  * Update data from a Player
  * - data contains a PV string, but no FEN info => this fen will be computed only when needed
  * @param {string} section archive, live
- * @param {Object} data
+ * @param {!Object} data
  * @param {boolean=} same_pv true if the pv hasn't changed
  * @returns {boolean}
  */
@@ -5461,8 +5451,8 @@ function update_player_eval(section, data, same_pv) {
             data['ply'] = moves[0]['ply'];
             board.reset(section, {instant: true});
             let last_move = main.moves.slice(-1)[0];
-            board.set_fen(last_move? last_move['fen']: main.fen);
-            board.add_moves(moves, {agree: data.agree, cur_ply: data['ply']});
+            board.setFen(last_move? last_move['fen']: main.fen);
+            board.addMoves(moves, {agree: data.agree, cur_ply: data['ply']});
             if (DEV['ply']) {
                 LS(`added ${moves.length} moves : ${data['ply']} <> ${cur_ply}`);
                 LS(board.moves);
@@ -5470,7 +5460,7 @@ function update_player_eval(section, data, same_pv) {
         }
         else if (data['pv']) {
             data['ply'] = split_move_string(data['pv']).ply;
-            board.add_moves_string(data['pv'], {agree: data.agree, cur_ply: cur_ply});
+            board.addMovesString(data['pv'], {agree: data.agree, cur_ply: cur_ply});
         }
     }
 
@@ -5486,7 +5476,7 @@ function update_player_eval(section, data, same_pv) {
         let stats = {
             'depth': dsd,
             'engine': format_engine(data['engine'], true, 21),
-            'eval': format_eval(eval_, true),
+            'eval': format_eval(eval_, ply, true),
             'logo': short,
             'node': format_unit(data['nodes'], '-'),
             'speed': (data['nps'] != undefined)? `${format_unit(data['nps'])}nps`: data['speed'],
@@ -5498,8 +5488,8 @@ function update_player_eval(section, data, same_pv) {
 
         // update the live part on the left
         let dico = {
-                'eval': format_eval(eval_),
-                'score': calculate_probability(short, eval_, cur_ply, data['wdl'] || (player.info || {})['wdl']),
+                'eval': format_eval(eval_, ply),
+                'score': calculate_probability(short, eval_, ply, data['wdl'] || (player.info || {})['wdl']),
             },
             node = CacheId(`moves-pv${id}`);
 
@@ -5511,7 +5501,7 @@ function update_player_eval(section, data, same_pv) {
         });
 
         TextHTML(mini.short, resize_text(short, 15, 'small'));
-        TextHTML(mini.eval_, format_eval(eval_));
+        TextHTML(mini.eval_, format_eval(eval_, ply));
         if (data['nodes'] > 1)
             add_player_eval(player, ply, eval_);
 
@@ -5620,7 +5610,7 @@ function benchmark(round=10, running=0) {
             translate_nodes(node);
         }
 
-        main.set_ply(-1, {manual: true});
+        main.setPly(-1, {manual: true});
         now = Now(true);
         bench_start = started? now: -1;
     }
@@ -5675,7 +5665,7 @@ function benchmark(round=10, running=0) {
     else {
         last_key = now;
         main.speed = 8;
-        main.go_next();
+        main.goNext();
     }
     AnimationFrame(() => benchmark(round, is_waiting? 2: 1));
 }
@@ -5772,7 +5762,7 @@ function game_action_key(code) {
             if (code == 37)
                 board_target.play(true, true, 'game_action_key');
             board_target.hold = KEY_NAMES[code];
-            board_target.hold_button(KEY_NAMES[code], 0, true);
+            board_target.holdButton(KEY_NAMES[code], 0, true);
             break;
         // CTRL+C, v, y, z
         case 67:
@@ -5793,7 +5783,7 @@ function game_action_key(code) {
                         let num_move = pva.moves.length,
                             ply = board_target.ply;
                         // try to set the same ply
-                        pva.set_ply((ply < num_move)? ply: num_move - 1);
+                        pva.setPly((ply < num_move)? ply: num_move - 1);
                         if (Visible(CacheId('table-pva')))
                             board_target = pva;
                     }
@@ -5899,7 +5889,7 @@ function paste_text(text) {
 
     // try FEN
     let fen = board.fen;
-    if (board.set_fen(text, true)) {
+    if (board.setFen(text, true)) {
         if (board.fen != fen) {
             board.reset(section, {evals: true, start_fen: board.fen});
             if (board_target.name == 'pva')
@@ -5908,11 +5898,11 @@ function paste_text(text) {
     }
     // move string
     else
-        board.add_moves_string(text);
+        board.addMovesString(text);
 
     // moves + make sure the board is paused
     if (moves)
-        board.add_moves(moves);
+        board.addMoves(moves);
     board.play(true, false, 'paste_text');
 }
 
@@ -5931,7 +5921,7 @@ function init_3d_special() {
 
 /**
  * Random position for looking at the chessboard
- * @returns {Object}
+ * @returns {!Object}
  */
 function random_position() {
     return {x: -1.34, y: -1.98, z: 0.97};
@@ -5954,6 +5944,10 @@ function change_setting_game(name, value) {
         section = y_x,
         main = xboards[sboard];
 
+    let ivalue = 0;
+    if (!isNaN(value))
+        ivalue = value;
+
     // using exact name
     switch (name) {
     case 'agree_length':
@@ -5963,7 +5957,7 @@ function change_setting_game(name, value) {
         Keys(xboards).forEach(key => {
             let board = xboards[key];
             if (!board.main)
-                board.delayed_compare(main.ply, main.moves.length - 1);
+                board.delayedCompare(main.ply, main.moves.length - 1);
         });
         break;
     case 'analysis_chessdb':
@@ -6027,7 +6021,7 @@ function change_setting_game(name, value) {
     case 'graph_scale':
         let target = ((context_target || {}).id || '').split('-')[1];
         if (charts[target]) {
-            Y['scales'][target] = value * 1;
+            Y['scales'][target] = ivalue;
             save_option('scales');
             set_scale_func(target);
             update_chart(target);
@@ -6255,7 +6249,7 @@ function copy_pgn(board, download, only_text, flag=7) {
             }
         }
         else if (board.name == 'pva') {
-            let fen960 = board.frc_index(fen),
+            let fen960 = board.frcIndex(fen),
                 players = board.players;
 
             Assign(headers, {
@@ -6321,13 +6315,13 @@ function copy_pgn(board, download, only_text, flag=7) {
                 headers['FEN'] = fen;
                 headers['SetUp'] = 1;
             }
-            board.chess_load(fen);
+            board.chessLoad(fen);
         }
 
         // play move because maybe missing info (pv0, pv1)
-        let result = board.chess_move(move['m']);
+        let result = board.chessMove(move['m']);
         assign_move(move, result);
-        move['fen'] = board.chess_fen();
+        move['fen'] = board.chessFen();
         move['ply'] = get_move_ply(move);
 
         // add move info
@@ -6500,7 +6494,7 @@ function handle_board_events(board, type, value, e, force) {
             update_move_info(name, cur_ply, move);
             mark_ply_charts(cur_ply, board.moves.length - 1);
             if (board.name == 'pva') {
-                board.show_pv(move);
+                board.showPv(move);
                 update_agree('pva', -1);
             }
         }
@@ -6509,7 +6503,7 @@ function handle_board_events(board, type, value, e, force) {
             lock_sub_boards(0);
 
             // show PV's
-            // - important to invalidate the boards to prevent wrong compare_duals
+            // - important to invalidate the boards to prevent wrong compareDuals
             reset_sub_boards(section, 1);
             update_move_pv(section, prev_ply, prev_move);
             update_move_pv(section, cur_ply, move);
@@ -6711,7 +6705,7 @@ function opened_table(node, name, tab) {
  * Show a popup with the engine info
  * @param {string} id popup id
  * @param {string} name timeout name
- * @param {Event} e
+ * @param {Event|!Object} e
  * @param {string|number} scolor 0, 1, popup
  * @param {string=} text
  */
@@ -6761,7 +6755,7 @@ function popup_custom(id, name, e, scolor, text) {
             let xfen = xboards['xfen'];
             if (xfen.fen != text) {
                 xfen.instant();
-                if (!xfen.set_fen(text, true))
+                if (!xfen.setFen(text, true))
                     return;
                 Style(xfen.xoverlay, [['opacity', 0], ['transition', 'opacity 0.5s']]);
             }
@@ -6786,7 +6780,7 @@ function popup_custom(id, name, e, scolor, text) {
     }
 
     Class(popup, 'popup-show', show);
-    Style(popup, [['min-width', `${Min(num_col * 165 + 32, visible_width * 2/3)}px`]], num_col);
+    Style(popup, [['min-width', `${Min(num_col * 165 + 32, visible_width * 2/3)}px`]], !!num_col);
 
     // trick to be able to put the mouse on the popup and copy text
     if (show) {
@@ -6827,7 +6821,7 @@ function set_game_events() {
     C('#mobil', function() {
         let ply = this.dataset['i'];
         if (ply != undefined)
-            xboards[y_x].set_ply(ply, {manual: true});
+            xboards[y_x].setPly(ply, {manual: true});
     });
 
     // tabs
