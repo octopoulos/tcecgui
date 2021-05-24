@@ -1,6 +1,6 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-05-23
 //
 // jshint -W069
 /*
@@ -602,7 +602,8 @@ function set_scale_func(name) {
     let chart = charts[name];
     if (chart) {
         let scale = chart.scales.y_axis_0;
-        scale.options.funcs = funcs;
+        if (scale)
+            scale.options.funcs = funcs;
     }
     return funcs;
 }
@@ -719,10 +720,13 @@ function update_chart_options(name, mode) {
                 });
 
             // axes
-            let scales = options.scales;
-            scales.xAxes[0].ticks.fontSize = text_size;
+            let scales = options.scales,
+                xticks = scales.xAxes[0].ticks;
+            if (xticks)
+                xticks.fontSize = text_size;
             for (let yaxis of scales.yAxes)
-                yaxis.ticks.fontSize = text_size;
+                if (yaxis.ticks)
+                    yaxis.ticks.fontSize = text_size;
 
             options.legend.labels.fontSize = text_size;
             options.legend.labels.padding = text_size * 0.8;
@@ -942,6 +946,9 @@ function update_player_charts(moves) {
  */
 function update_scale_boom(chart) {
     let scale = chart.scales.y_axis_0;
+    if (!scale)
+        return;
+
     scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
@@ -957,6 +964,8 @@ function update_scale_boom(chart) {
  */
 function update_scale_custom(chart) {
     let scale = chart.scales.y_axis_0;
+    if (!scale)
+        return;
 
     // 1) calculate the 2 regions + center
     let datasets = scale.chart.data.datasets,
@@ -1035,6 +1044,9 @@ function update_scale_custom(chart) {
  */
 function update_scale_eval(chart) {
     let scale = chart.scales.y_axis_0;
+    if (!scale)
+        return;
+
     scale.options.funcs = (Y['graph_eval_mode'] == 'percent') ? [
         x => x,
         y => y,
@@ -1051,6 +1063,9 @@ function update_scale_eval(chart) {
 function update_scale_linear(chart) {
     let eval_clamp = Y['graph_eval_clamp'],
         scale = chart.scales.y_axis_0;
+    if (!scale)
+        return;
+
     scale.options.funcs = (eval_clamp > 0)? [
         x => Clamp(x, -eval_clamp, eval_clamp),
         y => y,

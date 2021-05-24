@@ -748,7 +748,7 @@ function Misc()
             {
                 if (!_TEST) {
                     io.local.emit('enginerating', data);
-                    exec("cp /var/www/json/shared/enginerating.json /var/www/json/archive/" + retPgn.abb + "_Enginerating.egjson", function(err, stdout, stderr) {
+                    exec("cp /var/www/json/shared/enginerating.json /var/www/json/archive/" + retPgn.abb + "_Enginerating.json", function(err, stdout, stderr) {
                         console.log ("Doing it:" + stdout + stderr);
                     });
                 }

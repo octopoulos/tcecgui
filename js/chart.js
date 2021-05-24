@@ -1416,10 +1416,11 @@ function listenArrayEvents(array, listener) {
                 var args = Array.prototype.slice.call(arguments);
                 var res = base.apply(this, args);
 
-                helpers.each(array._chartjs.listeners, function(object) {
-                    if (IsFunction(object[method]))
-                        object[method].apply(object, args);
-                });
+                if (array._chartjs)
+                    helpers.each(array._chartjs.listeners, function(object) {
+                        if (IsFunction(object[method]))
+                            object[method].apply(object, args);
+                    });
 
                 return res;
             }
@@ -2347,6 +2348,8 @@ var controller_line = core_datasetController.extend({
         var x, y;
 
         var options = me._resolveDataElementOptions(point, index);
+        if (!xScale || ! yScale)
+            return;
 
         x = xScale.getPixelForValue(IsObject(value)? value : NaN, index, datasetIndex);
         y = reset ? yScale.getBasePixel() : me.calculatePointY(value, index, datasetIndex);
@@ -2417,7 +2420,8 @@ var controller_line = core_datasetController.extend({
         // Only consider points that are drawn in case the spanGaps option is used
         if (lineModel.spanGaps) {
             points = points.filter(function(pt) {
-                return !pt._model.skip;
+                let model = pt._model;
+                return model && !model.skip;
             });
         }
 

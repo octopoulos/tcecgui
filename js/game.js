@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-05-24
 //
 // Game specific code:
 // - control the board, moves
@@ -2471,7 +2471,8 @@ function open_event(section, callback) {
             'eventtag': '',
             'frc': 0,
         }),
-        link = current_archive_link(section);
+        link = current_archive_link(section),
+        season = Y['season'] || '';
 
     Keys(data).forEach(key => {
         let subs = data[key]['sub'];
@@ -2479,7 +2480,13 @@ function open_event(section, callback) {
             let sub = subs[sub_key];
             if (sub['url'] == link) {
                 found = sub['abb'];
+                Assign(info, sub);
                 Assign(info, data[key]);
+
+                // guess that: cup8 => TCEC_Cup_8_event
+                let pos = season.indexOf('cup');
+                if (pos == 0)
+                    info['eventtag'] = `TCEC_Cup_${season.slice(3)}_event`;
                 return;
             }
         });
@@ -2502,19 +2509,19 @@ function open_event(section, callback) {
     show_tables(section, !!event_tag);
     if (event_tag) {
         if (bracket_link != event_tag)
-            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.cjson`, 'brak', data => {
+            download_table(section, `${HOST_ARCHIVE}/${event_tag}_Eventcrosstable.json`, 'brak', data => {
                 create_cup(section, data, true);
                 bracket_link = event_tag;
             }, dico);
     }
     else
-        download_table(section, `${prefix}_Crosstable.cjson`, 'cross', data => {
+        download_table(section, `${prefix}_Crosstable.json`, 'cross', data => {
             analyse_crosstable(section, data);
         }, dico);
 
-    download_table(section, `${prefix}_crash.xjson`, 'crash', null, dico);
-    download_table(section, `${prefix}_Enginerating.egjson`, null, null, dico);
-    download_table(section, `${prefix}_Schedule.sjson`, 'sched', null, Assign({show: !event_tag}, dico));
+    download_table(section, `${prefix}_crash.json`, 'crash', null, dico);
+    download_table(section, `${prefix}_Enginerating.json`, null, null, dico);
+    download_table(section, `${prefix}_Schedule.json`, 'sched', null, Assign({show: !event_tag}, dico));
 
     open_game();
     if (callback)

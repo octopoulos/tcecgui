@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-05-23
 //
 // all socket functions are here
 //
@@ -63,8 +63,11 @@ function check_socket_io() {
     }
 
     // 2) connect
-    if (!socket_io)
-        socket_io = window.io.connect(HOST);
+    if (!socket_io) {
+        let io = window['io'];
+        if (io)
+            socket_io = io.connect(HOST);
+    }
     else if (!socket_io.connected)
         socket_io.connect(HOST);
 
@@ -77,6 +80,9 @@ function check_socket_io() {
  * + handle all messages
  */
 function event_sockets() {
+    if (!socket_io)
+        return;
+
     // live_log
     socket_io.on('htmlread', data => {
         log_time = Now();
