@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-23
+// @version 2021-05-24
 //
 // all socket functions are here
 //
@@ -55,10 +55,15 @@ let log_time = 0,
  * Connect/disconnect the socket_io
  */
 function check_socket_io() {
+    let is_websocket = (Y['network'] == 'websocket');
+
     // 1) disconnect?
-    if (DEV['no_socket']) {
-        if (socket_io && socket_io.connected)
+    if (DEV['no_socket'] || is_websocket) {
+        if (socket_io && socket_io.connected) {
             socket_io.close();
+            if (is_websocket)
+                startup_network();
+        }
         return;
     }
 
@@ -441,6 +446,9 @@ function update_twitch(dark, chat_url, only_resize) {
  * Initialise structures with game specific data
  */
 function startup_network() {
+    if (Y['network'] == 'socket.io')
+        return;
+
     init_websockets({
         message: socket_message,
         open: () => {

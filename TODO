@@ -21,8 +21,8 @@ DONE         CREATED      DESCRIPTION
 -          : 2021-02-20 : PVA playing with "d=4 e=att h=1 o=2 q=8 s=ab t=0 x=20" every=0 => choppy
 -          : 2021-02-20 : use analyse_log code when getting live data, calling add_moves_string
 ~          : 2020-09-17 : hce improvement: direct flux (attacked - defended and by whom)
--          : 2021-05-21 : network: auto, socket.io, websocket
 -          : 2021-05-21 : some bugs in players info: eval, single line, ...
+2021-05-24 : 2021-05-21 : network: auto, socket.io, websocket
 2021-05-24 : 2021-05-24 : rename cjson, egjson, sjson, xjson => json
 2021-05-21 : 2021-05-21 : Xboard functions use camelCase
 2021-05-21 : 2021-05-21 : help: game, graph, info, live, moves, network, panel, popups, quick

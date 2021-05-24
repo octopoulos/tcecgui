@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-05-24
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -397,6 +397,9 @@ function change_setting_special(name, value, close) {
         break;
     case 'moves_copy':
         populate_areas();
+        break;
+    case 'network':
+        check_socket_io();
         break;
     case 'preset':
         load_preset(value + '');
@@ -2489,7 +2492,6 @@ function startup() {
     startup_config();
     startup_3d();
     startup_game();
-    startup_network();
 
     prepare_settings();
     load_settings();
@@ -2502,6 +2504,7 @@ function startup() {
     set_engine_events();
     set_game_events();
     startup_graph();
+    startup_network();
     add_history();
     ready ++;
 
