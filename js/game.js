@@ -2897,7 +2897,7 @@ function create_bracket(section, data) {
             ({[`${item[1]['name']}|${item[0]['name']}`]: [item[1]['origscore'], item[0]['origscore']]})
         )),
         teams = data['teams'],
-        num_team = teams.length,
+        num_team = 26, //teams.length,
         prev_finished = true,
         round = 0,
         round_results = data['results'][0] || [],
@@ -2998,7 +2998,7 @@ function create_bracket(section, data) {
                     [score_class, score, seed, place] = scores[id] || [];
 
                 if (!name) {
-                    name = 'TBD';
+                    name = (seed == 0)? 'BYE': 'TBD';
                     score = '--';
                     name_class = ' none';
                     score_class = ' none';
