@@ -2,38 +2,25 @@
   "name": "tcec.gui",
   "version": "1.0.0",
   "description": "Web GUI for TCEC on Chessdom.com Please create issues for feature requests",
-  "main": "cluster.js",
-  "dependencies": {
-    "axios": "^0.18.1",
-    "chess.js": "^0.10.2",
-    "chokidar": "^2.1.8",
-    "deep-equal": "^1.1.0",
-    "express": "^4.16.3",
-    "glob": "^7.1.6",
-    "jest": "^26.0.1",
-    "md5": "^2.2.1",
-    "neek": "^1.1.2",
-    "nodejs-tail": "^1.1.0",
-    "read-last-lines": "^1.7.1",
-    "socket.io": "^2.1.1",
-    "unused": "^0.2.2",
-    "unzipper": "^0.10.11",
-    "xregexp": "^4.3.0",
-    "yargs": "^13.3.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "jest",
-    "start": "node server.js"
-  },
+  "author": "octopoulos",
+  "main": "index.js",
+  "homepage": "https://github.com/TCEC-Chess/tcecgui#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/TCEC-Chess/tcecgui.git"
   },
-  "author": "",
-  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/TCEC-Chess/tcecgui/issues"
   },
-  "homepage": "https://github.com/TCEC-Chess/tcecgui#readme"
+  "license": "Apache-2.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "advanced": "py ./script/__main__.py --sync --advanced --force",
+    "clean": "py ./script/__main__.py --sync --clean",
+    "cook": "py ./script/__main__.py --sync --zip",
+    "inspect": "py ./script/inspector.py",
+    "start": "node server/main.js",
+    "test": "jest"
+  }
 }

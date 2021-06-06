@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -12,12 +12,13 @@
 globals
 _, A, Abs, AnimationFrame, Assign, Attrs, C, CacheId, cancelAnimationFrame, Ceil, Clamp, Class, Clear, clearInterval,
 clearTimeout, CreateNode,
-DefaultFloat, DefaultInt, document, DownloadObject, E, Events, exports, Floor, From, global, HAS_DOCUMENT, HAS_GLOBAL,
-HasClass, Hide, history, HTML, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject, IsString, Keys,
+DefaultFloat, DefaultInt, DefaultObject, document, DownloadObject, E, Events, exports, Floor, From, global,
+HAS_DOCUMENT, HAS_GLOBAL, HasClass, Hide, history, HTML, Input, IsArray, IsDigit, IsFloat, IsFunction, IsObject,
+IsString, Keys,
 LoadLibrary, location, Lower, LS, Max, Min, NAMESPACE_SVG, navigator, Now, Pad, Parent, ParseJSON, PD, Pow, QueryString,
 require, Resource, Round,
-S, Safe, ScrollDocument, SetDefault, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TextHTML, Title,
-Undefined, Upper, Visible, VisibleHeight, VisibleWidth, WebSocket, window
+S, Safe, ScrollDocument, setInterval, setTimeout, Show, Sign, SP, Stringify, Style, TextHTML, Title, Undefined, Upper,
+Visible, VisibleHeight, VisibleWidth, WebSocket, window
 */
 'use strict';
 
@@ -35,11 +36,23 @@ let MSG_IP_GET = 1,
     MSG_USER_SUBSCRIBE = 3,
     MSG_USER_UNSUBSCRIBE = 4,
     //
-    MSG_USER_EDIT = 15,
-    MSG_USER_FORGOT = 16,
-    MSG_USER_LOGIN = 17,
-    MSG_USER_LOGOUT = 18,
-    MSG_USER_REGISTER = 19;
+    MSG_USER_EDIT = 10,
+    MSG_USER_FORGOT = 11,
+    MSG_USER_LOGIN = 12,
+    MSG_USER_LOGOUT = 13,
+    MSG_USER_REGISTER = 14;
+
+let MESSAGES = {
+    'ip_get': MSG_IP_GET,
+    'user_count': MSG_USER_COUNT,
+    'user_edit': MSG_USER_EDIT,
+    'user_forgot': MSG_USER_FORGOT,
+    'user_login': MSG_USER_LOGIN,
+    'user_logout': MSG_USER_LOGOUT,
+    'user_register': MSG_USER_REGISTER,
+    'user_subscribe': MSG_USER_SUBSCRIBE,
+    'user_unsubscribe': MSG_USER_UNSUBSCRIBE,
+};
 
 let __PREFIX = '_',
     ANCHORS = {},
@@ -190,12 +203,21 @@ let __PREFIX = '_',
     virtual_window_click_parent_dataset,
     WS = (typeof WebSocket != 'undefined')? WebSocket: null,
     X_SETTINGS = {},
-    Y = {},                                             // params
+    Y = {
+        s: '',
+        x: '',
+    },                                             // params
     y_index = -1,
+    y_s = '',
     y_states = [],
     y_x = '';
 
-/** @typedef {{x:number, y:number}} */
+/**
+ * @typedef {{
+ * x: number,
+ * y: number,
+ * subVectors: (Function|undefined),
+ * }} */
 let Vector2;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -305,12 +327,22 @@ function mix_hex_colors(color1, color2, mix) {
 
 /**
  * Set the current section
- * @param {string} section
+ * @param {string} section null to skip
+ * @param {string=} subsection null/undefined to skip
  */
-function set_section(section) {
-    y_x = section;
-    if (HAS_GLOBAL)
+function set_section(section, subsection) {
+    if (section != null) {
+        Y.x = section;
+        y_x = section;
+    }
+    if (subsection != null) {
+        Y.s = subsection;
+        y_s = subsection;
+    }
+    if (HAS_GLOBAL) {
+        HAS_GLOBAL.y_s = y_s;
         HAS_GLOBAL.y_x = y_x;
+    }
 }
 
 // SETTINGS
@@ -639,7 +671,7 @@ function merge_settings(x_settings) {
 
         // audio: { ... }
         if (IsObject(value)) {
-            let exists = /** @type {!Object} */(SetDefault(X_SETTINGS, name, {}));
+            let exists = DefaultObject(X_SETTINGS, name, {});
             Assign(exists, value);
             X_SETTINGS[name] = Assign({}, ...Keys(exists).map(key => ({[key]: exists[key]})));
         }
@@ -1232,6 +1264,9 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
             more_class = ` ${sclass}`;
         else if (sspan)
             more_class = ' item-title span';
+        if (ssvg)
+            more_class = `${more_class} frow`;
+
         sid = sid? ` data-id="${sid}"`: '';
 
         if (IsFunction(third) && !third())
@@ -1259,7 +1294,7 @@ function show_settings(name, {flag, grid_class='options', item_class='item', tit
         // TODO: improve that part, it can be customised better
         if (string_digit & 2)
             scolor = '#f00';
-        let label = slabel? slabel: `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
+        let label = (slabel != undefined)? slabel: `${Title(clean).replace(/_/g, ' ')}${ssyn}`,
             style = scolor? `${(Y['theme'] == 'dark')? ' class="tshadow"': ''} style="color:${scolor}"`: '',
             title2 = title? `data-t="${title.replace(/"/g, '&quot;')}" data-t2="title"`: '';
 
@@ -1739,6 +1774,15 @@ function fill_combo(letter, values, select, dico, no_translate, parent) {
 }
 
 /**
+ * Get the current (sub)section
+ * @param {string=} section
+ * @returns
+ */
+function get_section(section) {
+    return section || Y.s || y_x;
+}
+
+/**
  * Get the selector for a single letter
  * + letter is a selector if it has more than 1 letter
  * @param {string} letter
@@ -1900,7 +1944,7 @@ function detect_device() {
         os = 'windows';
     else if (/android/i.test(agent))
         os = 'android';
-    else if (/iPad|iPhone|iPod/.test(agent) && !window.MSStream)
+    else if (/iPad|iPhone|iPod/.test(agent) && !window['MSStream'])
         os = 'ios';
 
     if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(agent))
@@ -2123,7 +2167,7 @@ function socket_error(text) {
 
 /**
  * Send data to a socket
- * @param {!Array} data
+ * @param {!Array|!Object} data
  * @returns {boolean?}
  */
 function socket_send(data) {
@@ -2635,7 +2679,7 @@ function activate_tabs() {
  * @param {!Object} sizes sizes when font-size = 1280px
  */
 function add_font(font, sizes) {
-    let widths = /** @type {!Object} */(SetDefault(FONTS, font, {}));
+    let widths = DefaultObject(FONTS, font, {});
     Assign(widths, sizes);
 }
 
@@ -3137,7 +3181,7 @@ function window_click(e) {
             return;
         // special 2
         if (virtual_window_click_parent) {
-            let result = virtual_window_click_parent();
+            let result = virtual_window_click_parent(target, is_click);
             if (result == 1)
                 return;
             else if (result == 2)
@@ -3187,7 +3231,7 @@ function window_click(e) {
 
 /**
  * Send an API message
- * @param {Array} vector format=[code, message]
+ * @param {!Array|!Object} vector format=[code, message]
  * @param {Function=} callback
  */
 function api_message(vector, callback) {
@@ -3201,7 +3245,7 @@ function api_message(vector, callback) {
  * Get translations
  * @param {boolean=} force
  * @param {Function=} callback
- * @param {*=} custom_data provide translations directly
+ * @param {Object=} custom_data provide translations directly
  */
 function api_translate_get(force, callback, custom_data) {
     /**
@@ -3356,6 +3400,32 @@ function set_engine_events() {
 }
 
 /**
+ * Full screen events
+ * @param {Object} obj
+ * @param {Function=} obj.move mouse move event
+ * @param {Function=} obj.wheel mouse wheel event
+ */
+function set_fullscreen_events({move, wheel}={}) {
+    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
+        if (move)
+            move(e);
+        if (!is_fullscreen())
+            return;
+        touch_handle(e, true);
+    });
+    Events(window, 'wheel', e => {
+        if (wheel)
+            wheel(e);
+        if (!is_fullscreen()) {
+            if (Y['wheel_adjust'])
+                add_timeout('adjust', scroll_adjust, TIMEOUT_adjust);
+            return;
+        }
+        wheel_event(e, true);
+    }, {'passive': true});
+}
+
+/**
  * Used when showing a modal
  * @param {Node=} parent parent node, document by default
  */
@@ -3371,7 +3441,7 @@ function set_modal_events(parent) {
         let name = this.name;
         if (name || HasClass(this, 'item-title')) {
             click_target = Parent(this, {class_: 'popup', self: true});
-            change_setting(name, undefined, (this.dataset['set'] == '-1' || HasClass(this, 'span'))? 2: 0);
+            change_setting(name, undefined, this.dataset['set'] == '-1' || HasClass(this, 'span'));
             return;
         }
 
@@ -3485,6 +3555,7 @@ if (typeof exports != 'undefined') {
         get_float: get_float,
         get_int: get_int,
         get_object: get_object,
+        get_section: get_section,
         get_string: get_string,
         guess_types: guess_types,
         HIDES: HIDES,

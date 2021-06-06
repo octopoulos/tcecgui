@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-24
+// @version 2021-06-05
 //
 // Game specific code:
 // - control the board, moves
@@ -16,17 +16,17 @@ _, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign
 calculate_feature_q, cannot_click, Ceil, change_setting, chart_data, charts, check_hash, check_socket_io, Clamp,
 clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, convert_checkmate,
 CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
-DefaultFloat, DefaultInt, DEV, device, document, DownloadObject, E, Events, Exp, exports, fill_combo, fix_move_format,
-Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply, get_move_ply, get_object,
-global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes, invert_eval,
-is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
+DefaultArray, DefaultFloat, DefaultInt, DefaultObject, DEV, device, document, DownloadObject, E, Events, Exp, exports,
+fill_combo, fix_move_format, Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply,
+get_move_ply, get_object, global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
+invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 last_key:true, last_scroll, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max,
 Min, Module, navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, QueryString, RandomInt,
 redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, set_section,
-SetDefault, Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN,
-STATE_KEYS, stockfish_wdl, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle,
-translate_default, translate_nodes,
+Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
+stockfish_wdl, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle, translate_default,
+translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_click_tab:true, virtual_close_popups:true,
 virtual_init_3d_special:true, virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE,
@@ -1137,13 +1137,13 @@ function update_board_theme(mode) {
  */
 function update_engine_pieces() {
     let main = xboards['live'],
-        [piece_size, style] = main.getPieceBackground(20);
+        piece_info = main.getPieceBackground(20);
 
     for (let i of [0, 1]) {
         let node = CacheId(`king${i}`),
-            offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_size;
-        Style('div', `${style};background-position-x:${offset}px`, true, node);
-        Style(node, [['transform', `scale(${20 / piece_size})`]]);
+            offset = -SPRITE_OFFSETS[['K', 'k'][i]] * piece_info.size;
+        Style('div', `${piece_info.style};background-position-x:${offset}px`, true, node);
+        Style(node, [['transform', `scale(${20 / piece_info.size})`]]);
     }
 }
 
@@ -1173,7 +1173,7 @@ function add_queue(section, parent) {
 function analyse_crosstable(section, data) {
     if (!data)
         return;
-    SetDefault(table_data, section, {}).crossx = data;
+    DefaultObject(table_data, section, {}).crossx = data;
 
     // 0) get season #
     let season = (data['Event'] || '').match(/Season\s+(\d+)/);
@@ -1225,7 +1225,7 @@ function analyse_crosstable(section, data) {
     for (let name of orders) {
         let dico = dicos[name],
             elo = dico['Rating'],
-            head_opponent = SetDefault(head_opponents, name, {}),
+            head_opponent = DefaultObject(head_opponents, name, {}),
             new_elo = Round(elo + (dico['Elo'] || 0)),
             results = dico['Results'],
             score = dico['Score'];
@@ -1315,7 +1315,7 @@ function analyse_crosstable(section, data) {
         stand_rows.push(stand_row);
 
         // encounters
-        SetDefault(encounters, score, {})[name] = 0;
+        DefaultObject(encounters, score, {})[name] = 0;
     }
 
     // 3) direct encounters
@@ -1418,7 +1418,7 @@ function change_page(parent, value) {
     let page,
         page_key = `page_${parent}`,
         section = y_x,
-        data_x = SetDefault(table_data[section], active, {data: []}),
+        data_x = DefaultObject(table_data[section], active, {data: []}),
         num_row = data_x[`rows_${parent}`],
         num_page = Ceil(num_row / Y['rows_per_page']);
 
@@ -1870,7 +1870,7 @@ function show_tables(section, is_cup) {
  * - handles all the tables
  * @param {string} section archive, live
  * @param {string} name h2h, sched, stand, ...
- * @param {Array<Object>=} rows if null then uses the cached table_data
+ * @param {Array<!Object>=} rows if null then uses the cached table_data
  * @param {string=} parent chart, engine, quick, table
  * @param {Object} obj
  * @param {string=} obj.output output the result to another name
@@ -1901,7 +1901,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
     }
 
     // 2) update table data
-    let data_x = SetDefault(table_data[section], name, {data: []}),
+    let data_x = DefaultObject(table_data[section], name, {data: []}),
         data = data_x.data,
         is_h2h = (name == 'h2h'),
         is_same = (section == y_x),
@@ -2702,8 +2702,8 @@ function calculate_event_stats(section, rows) {
         if (min_time[0] > time)
             min_time = [time, game];
 
-        let open_engine = /** @type {!Object} */(SetDefault(open_engines, unique, {}));
-        SetDefault(open_engine, pair, []).push([result, row]);
+        let open_engine = DefaultObject(open_engines, unique, {});
+        DefaultArray(open_engine, pair, []).push([result, row]);
     }
 
     // 3) encounters
@@ -2970,10 +2970,10 @@ function create_bracket(section, data) {
                     // propagate the winner to the next round
                     if (finished) {
                         if (class_ == ' win')
-                            SetDefault(nexts, `${Floor(i / 2)}`, [{}, {}])[i & 1] = item;
+                            DefaultArray(nexts, `${Floor(i / 2)}`, [{}, {}])[i & 1] = item;
                         // match for 3rd place
                         else if (class_ == ' loss' && number == 2)
-                            SetDefault(nexts, '1', [{}, {}])[i & 1] = item;
+                            DefaultArray(nexts, '1', [{}, {}])[i & 1] = item;
                     }
 
                     if (number == 1 && i == 1)
@@ -3950,7 +3950,9 @@ function update_materials(move) {
     let invert = (Y['material_color'] == 'inverted')? 1: 0,
         is_string = IsString(material),
         size = 28,
-        [piece_size, style] = xboards['live'].getPieceBackground(size),
+        piece_info = xboards['live'].getPieceBackground(size),
+        piece_size = piece_info.size,
+        piece_style = piece_info.style,
         scale = size / piece_size;
 
     'qrbnp'.split('').forEach((key, j) => {
@@ -3966,7 +3968,7 @@ function update_materials(move) {
             let offset = -SPRITE_OFFSETS[id2? Upper(key): key] * piece_size;
             materials[id].push(
                 `<div style="height:${size}px;width:${size}px;transform:scale(${scale})">`
-                    + `<div style="${style};background-position-x:${offset}px"></div>`
+                    + `<div style="${piece_style};background-position-x:${offset}px"></div>`
                 + '</div>'
             );
         }
@@ -5800,10 +5802,13 @@ function game_action_key(code) {
                 }
                 // paste => try to add the FEN, if fails then moves string
                 else if (code == 86) {
-                    if (board_target.manual)
-                        navigator.clipboard.readText().then(text => {
-                            paste_text(text);
-                        });
+                    if (board_target.manual) {
+                        let clipboard = navigator['clipboard'];
+                        if (clipboard)
+                            clipboard.readText().then(text => {
+                                paste_text(text);
+                            });
+                    }
                 }
                 // redo/undo
                 else
@@ -6713,7 +6718,7 @@ function opened_table(node, name, tab) {
  * @param {string} id popup id
  * @param {string} name timeout name
  * @param {Event|!Object} e
- * @param {string|number} scolor 0, 1, popup
+ * @param {string|number=} scolor 0, 1, popup
  * @param {string=} text
  */
 function popup_custom(id, name, e, scolor, text) {
@@ -6868,7 +6873,11 @@ function start_game() {
     Y.wasm = 0;
     if (Y.wasm)
         load_library('js/chess-wasm.js', () => {
-            window.Module().then(instance => {
+            let module = window['Module'];
+            if (!module)
+                return;
+
+            module().then(instance => {
                 let ChessWASM = instance.Chess;
                 Keys(xboards).forEach(key => {
                     xboards[key].chess = new ChessWASM();

@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 //
 // global variables/functions shared across multiple js files
 //
@@ -26,24 +26,9 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210521',
+    VERSION = '20210605',
     virtual_close_popups,
     xboards = {};
-
-/**
- * @typedef {{
- * _fixed: (number|undefined),
- * agree: (number|undefined),
- * fen0: (string|undefined),
- * goal: (Array<number>|undefined),
- * id: (number|undefined),
- * invert: (boolean|undefined),
- * mobil: (number|undefined),
- * node_from: (Node|undefined),
- * node_to: (Node|undefined),
- * seen: (number|undefined),
- * }} */
-let Move;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -91,7 +76,7 @@ function assign_move(move, dico) {
 /**
  * Calculate the probability to draw or win
  * - works for AA and NN engines
- * @param {string} short_engine short engine name
+ * @param {number} feature &1:NN
  * @param {number} eval_
  * @param {number} ply
  * @returns {number} q %
@@ -140,7 +125,7 @@ function can_close_popups() {
  * Convert a checkmate between moves and plies
  * ply to move:
  *      black says -M2 => next move = -M#1 (no M2)
- * @param {number|string} text
+ * @param {number|string} value
  * @param {number} ply ply or id
  * @returns {string}
  */
@@ -150,6 +135,7 @@ function convert_checkmate(value, ply) {
 
     // 1) already got M or M# => good sign
     if (IsString(value)) {
+        value = /** @type {string} */(value);
         positive = (value[0] == '-')? 0: 1;
 
         if (value.includes('M#')) {
@@ -250,7 +236,8 @@ function format_eval(value, ply, process) {
     let float = parseFloat(value);
     if (isNaN(float)) {
         // checkmate conversion?
-        if (IsString(value) && value.includes('M'))
+        value += '';
+        if (value.includes('M'))
             value = convert_checkmate(value, ply);
         return value;
     }

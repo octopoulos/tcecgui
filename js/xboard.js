@@ -1,6 +1,6 @@
 // xboard.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 //
 // game board:
 // - 4 rendering modes:
@@ -19,12 +19,13 @@
 globals
 _, A, Abs, add_player_eval, add_timeout, AnimationFrame, ArrayJS, Assign, assign_move, AttrsNS, audiobox, C, CacheId,
 cannot_popup, Chess, Class, Clear, clear_timeout, COLOR, CreateNode, CreateSVG,
-DefaultInt, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds, GaussianRandom,
-get_fen_ply, get_move_ply, global, HAS_GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsObject, IsString, Keys,
+DefaultInt, DefaultObject, DEV, EMPTY, Events, Exp, exports, Floor, format_eval, format_unit, From, FromSeconds,
+GaussianRandom, get_fen_ply, get_move_ply, global, HAS_GLOBAL, Hide, HTML, I8, Id, InsertNodes, IsDigit, IsObject,
+IsString, Keys,
 Lower, LS, Max, Min, mix_hex_colors, MoveFrom, MoveOrder, MoveTo, Now, Pad, Parent, PIECES, play_sound, RandomInt,
 require, resize_text, Round,
-S, SetDefault, Show, Sign, socket_io, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event,
-U32, Undefined, update_svg, Upper, Visible, window, Worker, Y, y_x
+S, Show, Sign, socket_io, SP, split_move_string, SQUARES, Style, T, TEXT, TextHTML, timers, touch_event, U32, Undefined,
+update_svg, Upper, Visible, window, Worker, Y, y_x
 */
 'use strict';
 
@@ -97,22 +98,8 @@ let AI = 'ai',
     WB_LOWER = ['white', 'black'],
     WB_TITLE = ['White', 'Black'];
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// TYPES
-////////
-
 /**
- * Move
- * @typedef {Object} Move
- * @property {Object} adjudication
- * @property {boolean} book
- * @property {string} fen
- * @property {string|number} from
- * @property {Object} material
- * @property {string} m                     // Bf6
- * @property {Object} pv
- * @property {string|number} to
+ * @typedef {import("./typedef.js").Move} Move
  */
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,6 +218,7 @@ class XBoard {
         this.node_seens = [];                           // seen ply
         this.parents = [];
         this.pgn = {};
+        /** @type {Object} */
         this.picked = null;                             // picked piece
         this.pieces = {};                               // b: [[found, row, col], ...]
         this.play_id = `click_play_${this.id}`;         // for timers
@@ -504,7 +492,7 @@ class XBoard {
             is_current = (new_ply == cur_ply || force || this.manual || (cur_ply == last_ply && new_ply > last_ply));
 
         if (!is_current && this.real) {
-            Assign(SetDefault(moves, this.real.ply, {}), {'fen': this.real.fen});
+            Assign(DefaultObject(moves, this.real.ply, {}), {'fen': this.real.fen});
             is_current = (new_ply == this.real.ply + 1);
         }
         if (!is_current)
@@ -1155,7 +1143,7 @@ class XBoard {
         else if (IsString(text))
             result = chess.moveSan(/** @type string */(text), decorate, true);
         else
-            result = chess.moveObject(text, true);
+            result = chess.moveObject(/** @type {!Object} */(text), true);
 
         if (result['from'] != result['to']) {
             result['san'] = result['m'];
@@ -1668,7 +1656,7 @@ class XBoard {
     /**
      * Get piece background
      * @param {number} size
-     * @returns {!Array<*>} piece_size, style, transform
+     * @returns {{size:number, style:string, transform:string}}
      */
     getPieceBackground(size) {
         let theme = this.theme,
@@ -1676,14 +1664,14 @@ class XBoard {
             piece_size = theme.size;
 
         if (font)
-            return [piece_size, `font-family:${font}`, `scale(${size / piece_size})`];
+            return {size: piece_size, style: `font-family:${font}`, transform: `scale(${size / piece_size})`};
 
         let image = `url(theme/${theme.name}.${theme.ext})`,
             diff = (piece_size - size) / 2,
             style = `background-image:${image};height:${piece_size}px;width:${piece_size}px`,
             transform = `scale(${size / piece_size}) translate(${theme.off[0] - diff}px, ${theme.off[1] - diff}px)`;
 
-        return [piece_size, style, transform];
+        return {size: piece_size, style: style, transform: transform};
     }
 
     /**
@@ -2373,7 +2361,10 @@ class XBoard {
 
             let direct = true,
                 nodes = [],
-                [piece_size, style, transform] = this.getPieceBackground(this.size);
+                piece_info = this.getPieceBackground(this.size),
+                piece_size = piece_info.size,
+                piece_style = piece_info.style,
+                piece_transform = piece_info.transform;
 
             // smooth update?
             this.calculateSmooth();
@@ -2388,7 +2379,7 @@ class XBoard {
 
                     let col = ROTATE(rotate, index & 15),
                         row = ROTATE(rotate, index >> 4),
-                        style_transform = `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
+                        style_transform = `${piece_transform} translate(${col * piece_size}px, ${row * piece_size}px)`;
                     Style(node, [['transform', style_transform], ['transition', 'none']]);
                     direct = false;
                 }
@@ -2406,14 +2397,14 @@ class XBoard {
                             row = index >> 4;
 
                         if (!node) {
-                            let html = this.createPiece(char, style, offset);
+                            let html = this.createPiece(char, piece_style, offset);
                             node = CreateNode('div', html, {'class': 'xpiece'});
                             nodes.push(node);
                             item[2] = node;
                         }
                         // theme change
                         else if (dirty & 4) {
-                            let html = this.createPiece(char, style, offset);
+                            let html = this.createPiece(char, piece_style, offset);
                             HTML(node, html);
                         }
 
@@ -2423,7 +2414,7 @@ class XBoard {
                             row = ROTATE(rotate, row);
 
                             let style_transform =
-                                    `${transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
+                                    `${piece_transform} translate(${col * piece_size}px, ${row * piece_size}px)`,
                                 z_index = (node.style.transform == style_transform)? 2: 3;
 
                             Style(node, [
@@ -2986,7 +2977,7 @@ class XBoard {
 
         // busy thinking => return
         // 8/6R1/5k2/8/8/8/7r/K7 w - - 52 129
-        let reply = SetDefault(this.replies, fen, {});
+        let reply = DefaultObject(this.replies, fen, {});
         if (reply.lefts && reply.moves && !reply.lefts.every(item => !item))
             return true;
 
@@ -3358,6 +3349,7 @@ class XBoard {
 
         // 3) change texts + book class
         Keys(texts).forEach(id => {
+            id *= 1;
             if (dones.has(id))
                 return;
 

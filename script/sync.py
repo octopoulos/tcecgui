@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-02-06
+# @version 2021-06-05
 
 """
 Sync
@@ -47,7 +47,7 @@ JS_FILES = {
         #     'libs/camera-controls',
         # ],
         'all': [
-            'libs/socket.io.dev',
+            # 'libs/socket.io.dev',
             ':common',
             ':chess',
             ':engine',

@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-20
+// @version 2021-06-05
 //
 // general 3d rendering code
 //
@@ -100,8 +100,8 @@ let audiobox = {
     next_paused,
     now,
     now2,
-    old_pos,
-    old_rot,
+    /** @type {Vector3} */old_pos,
+    /** @type {Vector3} */old_rot,
     PARENT_3D = 'body',
     PARTS = [],
     raycaster,
@@ -109,11 +109,11 @@ let audiobox = {
     renderer,
     scene,
     SHADOW_QUALITIES = {
-        off: [0, 0, 0],
+        'off': [0, 0, 0],
         'very low': [1, 33, 512],       // 15.52
-        low: [1, 53, 1024],             // 19.32
-        medium: [2, 80, 2048],          // 25.6
-        high: [2, 106, 4096],           // 38.64
+        'low': [1, 53, 1024],           // 19.32
+        'medium': [2, 80, 2048],        // 25.6
+        'high': [2, 106, 4096],         // 38.64
         'very high': [2, 166, 8192],    // 49.35
     },
     sim_times = [],
@@ -162,9 +162,28 @@ let audiobox = {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/** @typedef {{x:number, y:number, z:number, w:number}} */
+// TYPES
+////////
+
+/**
+ * @typedef {{
+ * x: number,
+ * y: number,
+ * z: number,
+ * w: number,
+ * slerp: Function,
+ * }} */
 let Quaternion;
-/** @typedef {{x:number, y:number, z:number}} */
+
+/**
+ * @typedef {{
+ * x: number,
+ * y: number,
+ * z: number,
+ * fromArray: Function,
+ * lengthSq: Function,
+ * subVectors: Function,
+ * }} */
 let Vector3;
 
 /**
@@ -174,6 +193,23 @@ let Vector3;
  * rotation: *,
  * }} */
 let Object3D;
+
+/**
+ * @typedef {{
+ * arrows: (Object|undefined),
+ * camera: (number|undefined),
+ * floor: (number|undefined),
+ * health: (number|undefined),
+ * is_ai: (boolean|undefined),
+ * is_control: (boolean|undefined),
+ * keys: (Object|undefined),
+ * nick: (string|undefined),
+ * number: (number|undefined),
+ * see: (boolean|undefined),
+ * sounds: (Object|undefined),
+ * times: (Object|undefined),
+ * }} */
+let Cube;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -272,9 +308,12 @@ function init_3d(force) {
 
     // more
     if (DEV['frame']) {
-        stats = new window.Stats();
-        stats.showPanel(0);     // 0: fps, 1: ms, 2: mb, 3+: custom
-        document.body.appendChild(stats.dom);
+        let Stats = window['Stats'];
+        if (Stats) {
+            stats = new Stats();
+            stats.showPanel(0);     // 0: fps, 1: ms, 2: mb, 3+: custom
+            document.body.appendChild(stats.dom);
+        }
     }
     resize_3d();
 
@@ -465,7 +504,7 @@ function new_vector3(x, y, z) {
  * Render the 3D scene
  */
 function render() {
-    if (!cube || !clock || !T || !Y.three)
+    if (!cube || !clock || !T || !Y['three'])
         return;
 
     let [can_render, can_simulate] = virtual_can_render_simulate? virtual_can_render_simulate(): [true, true],
@@ -523,6 +562,7 @@ function render() {
                 clock2.start();
 
                 while (deltas[1] + 0.05 / SIMULATION_HZ < now2) {
+                    now = deltas[1];
                     if (virtual_animate_scenery)
                         virtual_animate_scenery();
 
@@ -698,14 +738,16 @@ function resize_3d() {
     camera.width = width;
 
     if (renderer && !controls && use_controls) {
-        let CameraControls = window.CameraControls;
-        CameraControls.install({T: T, THREE: T});
-        controls = new CameraControls(camera, renderer.domElement);
-        controls.dampingFactor = 0.1;
-        controls.dollyTransition = true;
-        controls.addEventListener('control', () => request_render());
-        controls.addEventListener('controlstart', () => request_render());
-        controls.update();
+        let CameraControls = window['CameraControls'];
+        if (CameraControls) {
+            CameraControls.install({T: T, THREE: T});
+            controls = new CameraControls(camera, renderer.domElement);
+            controls.dampingFactor = 0.1;
+            controls.dollyTransition = true;
+            controls.addEventListener('control', () => request_render());
+            controls.addEventListener('controlstart', () => request_render());
+            controls.update();
+        }
     }
 }
 
@@ -743,7 +785,7 @@ function set_camera_control(pause, target, transition) {
 function set_camera_id(id, auto) {
     // default value
     if (!id) {
-        id = Y.camera_id;
+        id = Y['camera_id'];
         if (!CAMERAS[id])
             id = 'far';
     }
@@ -1005,9 +1047,11 @@ function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded,
         return false;
 
     // ext can be in the name
-    let items = name.split('.');
-    if (items.length == 1)
-        name = `${name}.${ext}`;
+    if (IsString(name)) {
+        let items = name.split('.');
+        if (items.length == 1)
+            name = `${name}.${ext}`;
+    }
 
     let audio = cube.sounds[name];
     // already played the same sound this frame => skip
@@ -1178,6 +1222,7 @@ function update_debug() {
         lines.push(`axes=${Format(axes, sep)}`);
         let text = Keys(buttons).map(key => `${buttons[key]? `${key} `: ''}`).join('');
         lines.push(`buttons=${text}`);
+        lines.push(`keys=${Format(cube.keys, sep)}`);
         text = [37, 38, 39, 40].map(code => KEYS[code]);
         lines.push(`KEYS=${Format(text, sep)}`);
     }
@@ -1204,7 +1249,7 @@ function update_debug() {
  */
 function update_three() {
     if (!T)
-        T = window.T = window.THREE;
+        T = window.T = window['THREE'];
 }
 
 // EVENTS

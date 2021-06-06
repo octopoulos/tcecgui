@@ -1,5 +1,5 @@
 // chart.js
-// @version 2021-05-21
+// @version 2021-06-05
 /*
 globals
 Abs, AnimationFrame, Assign, Ceil, Clamp, console, Cos,
@@ -7,13 +7,13 @@ define, document, Floor, IsArray, IsFunction, IsObject, IsString, Keys,
 Log10, LS, Max, Merge, Min, module, PI, Pow, require, Round,
 Sign, Sin, Sqrt, Undefined, window
 */
+'use strict';
+
 (function (global, factory) {
 typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(function() {}()) :
 typeof define === 'function' && define.amd ? define(['require'], function(require) { return factory(function() {}()); }) :
 (global = global || self, global.Chart = factory());
 }(this, (function () {
-    'use strict';
-
 function noop() {}
 
 function createCommonjsModule(fn, module) {
@@ -667,10 +667,10 @@ var helpers = {
      * Note(SB) for performance sake, this method should only be used when loopable type
      * is unknown or in none intensive code (not called often and small loopable). Else
      * it's preferable to use a regular for() loop and save extra function calls.
-     * @param {Object|Array} loopable - The object or array to be iterated.
+     * @param {!Object|!Array} loopable - The object or array to be iterated.
      * @param {Function} fn - The function to call for each item.
-     * @param {Object} thisArg - The value of `this` provided for the call to `fn`.
-     * @param {boolean} reverse - If true, iterates backward on the loopable.
+     * @param {Object=} thisArg - The value of `this` provided for the call to `fn`.
+     * @param {boolean=} reverse - If true, iterates backward on the loopable.
      */
     each: function(loopable, fn, thisArg, reverse) {
         var i, len, keys;
@@ -685,7 +685,8 @@ var helpers = {
                     fn.call(thisArg, loopable[i], i);
                 }
             }
-        } else if (IsObject(loopable)) {
+        }
+        else if (IsObject(loopable)) {
             keys = Keys(loopable);
             len = keys.length;
             for (i = 0; i < len; i++) {
@@ -727,24 +728,18 @@ var helpers = {
 
     /**
      * Returns a deep copy of `source` without keeping references on objects and arrays.
-     * @param {*} source - The value to clone.
-     * @returns {*}
+     * @param {!Array|!Object} source - The value to clone.
+     * @returns {!Array|!Object}
      */
     clone: function(source) {
-        if (IsArray(source)) {
+        if (IsArray(source))
             return source.map(helpers.clone);
-        }
 
         if (IsObject(source)) {
-            var target = {};
-            var keys = Keys(source);
-            var klen = keys.length;
-            var k = 0;
-
-            for (; k < klen; ++k) {
-                target[keys[k]] = helpers.clone(source[keys[k]]);
-            }
-
+            let target = {};
+            Keys(/** @type {!Object} */(source)).forEach(key => {
+                target[key] = helpers.clone(source[key]);
+            });
             return target;
         }
 
@@ -772,7 +767,7 @@ var helpers = {
      * IMPORTANT: `target` is not cloned and will be updated with `source` properties.
      * @param {Object} target - The target object in which all sources are merged into.
      * @param {Object|Array<Object>} source - Object(s) to merge into `target`.
-     * @param {Object} options - Merging options:
+     * @param {Object=} options - Merging options:
      * @param {Function} options.merger - The merge method (key, target, source, options)
      * @returns {Object} The `target` object.
      */
@@ -944,11 +939,7 @@ var exports$1 = {
 
 var helpers_canvas = exports$1;
 
-var defaults = {};
-
-// TODO(v3): remove 'global' from namespace.  all default are global and
-// there's inconsistency around which options are under 'global'
-Merge(defaults, {
+var core_defaults = {
     global: {
         defaultColor: 'rgba(0,0,0,0.1)',
         defaultFontColor: '#666',
@@ -956,11 +947,12 @@ Merge(defaults, {
         defaultFontSize: 12,
         defaultFontStyle: 'normal',
         defaultLineHeight: 1.2,
+        plugins: {},
         showLines: true,
     },
-});
-
-var core_defaults = defaults;
+    line: {},
+    scale: {},
+};
 
 /**
  * Converts the given font object into a CSS font string.
@@ -1070,7 +1062,7 @@ var helpers_options = {
      * is called with `context` as first argument and the result becomes the new input.
      * @param {number} index - If defined and the current value is an array, the value
      * at `index` become the new input.
-     * @param {Object} info - object to return information about resolution in
+     * @param {Object=} info - object to return information about resolution in
      * @param {boolean} info.cacheable - Will be set to `false` if option is not cacheable.
      * @since 2.7.0
      */
@@ -2564,7 +2556,7 @@ function parseVisibleItems(chart, handler) {
  * Helper function to get the items that intersect the event position
  * @param {Array<ChartElement>} items - elements to filter
  * @param {Object} position - the point to be nearest to
- * @returns {Array<ChartElement>} the nearest items
+ * @returns {!Array<ChartElement>} the nearest items
  */
 function getIntersectItems(chart, position) {
     var elements = [];
@@ -2581,10 +2573,10 @@ function getIntersectItems(chart, position) {
 /**
  * Helper function to get the items nearest to the event position considering all visible items in teh chart
  * @param {Chart} chart - the chart to look at elements from
- * @param {object} position - the point to be nearest to
+ * @param {!Object} position - the point to be nearest to
  * @param {boolean} intersect - if true, only consider items that intersect the position
  * @param {Function} distanceMetric - function to provide the distance between points
- * @returns {Array<ChartElement>} the nearest items
+ * @returns {!Array<ChartElement>} the nearest items
  */
 function getNearestItems(chart, position, intersect, distanceMetric) {
     var minDistance = Number.POSITIVE_INFINITY;
@@ -2686,7 +2678,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use during interaction
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         index: indexMode,
 
@@ -2697,7 +2689,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use during interaction
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         dataset: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2718,7 +2710,7 @@ var core_interaction = {
          * @function Chart.Interaction.modes.intersect
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         point: function(chart, e) {
             var position = getRelativePosition(e, chart);
@@ -2731,7 +2723,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         nearest: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2746,7 +2738,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         x: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -2777,7 +2769,7 @@ var core_interaction = {
          * @param {Chart} chart - the chart we are returning items from
          * @param {Event} e - the event we are find things at
          * @param {IInteractionOptions} options - options to use
-         * @returns {Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
+         * @returns {!Array<ChartElement>} Array of elements that are under the point. If none are found, an empty array is returned
          */
         y: function(chart, e, options) {
             var position = getRelativePosition(e, chart);
@@ -3071,7 +3063,7 @@ var core_layouts = {
      * Sets (or updates) options on the given `item`.
      * @param {Chart} chart - the chart in which the item lives (or will be added to)
      * @param {ILayoutItem} item - the item to configure with the given options
-     * @param {object} options - the new item options.
+     * @param {!Object} options - the new item options.
      */
     configure: function(chart, item, options) {
         var props = ['fullWidth', 'position', 'weight'];
@@ -3673,10 +3665,10 @@ var platform = Assign({
      * Called at chart construction time, returns a context2d instance implementing
      * the [W3C Canvas 2D Context API standard]{@link https://www.w3.org/TR/2dcontext/}.
      * @param {*} item - The native item from which to acquire context (platform specific)
-     * @param {object} options - The chart options
+     * @param {Object} options - The chart options
      * @returns {CanvasRenderingContext2D} context2d instance
      */
-    acquireContext: function() {},
+    acquireContext: function(item, options) {},
 
     /**
      * Called at chart destruction time, releases any resources associated to the context
@@ -3684,7 +3676,7 @@ var platform = Assign({
      * @param {CanvasRenderingContext2D} context - The context2d instance
      * @returns {boolean} true if the method succeeded, else false
      */
-    releaseContext: function() {},
+    releaseContext: function(context) {},
 
     /**
      * Registers the specified listener on the given chart.
@@ -3693,7 +3685,7 @@ var platform = Assign({
      * @param {Function} listener - Receives a notification (an object that implements
      * the {@link IEvent} interface) when an event of the specified type occurs.
      */
-    addEventListener: function() {},
+    addEventListener: function(chart, type, listener) {},
 
     /**
      * Removes the specified listener previously registered with addEventListener.
@@ -3701,15 +3693,29 @@ var platform = Assign({
      * @param {string} type - The ({@link IEvent}) type to remove
      * @param {Function} listener - The listener function to remove from the event target.
      */
-    removeEventListener: function() {}
+    removeEventListener: function(chart, type, listener) {}
 
 }, implementation);
 
-Merge(core_defaults, {
-    global: {
-        plugins: {},
-    },
-});
+/**
+ * @typedef {{
+ * afterEvent: Function,
+ * beforeInit: Function,
+ * beforeUpdate: Function,
+ * id: string,
+ * }} */
+let IPlugin;
+
+/**
+ * @typedef {{
+ * _type: string,
+ * draw: Function,
+ * getCenterPoint: Function,
+ * hasValue: Function,
+ * inRange: Function,
+ * tooltipPosition: Function,
+ * }} */
+let ChartElement;
 
 /**
  * The plugin service singleton
@@ -3782,7 +3788,7 @@ var core_plugins = {
 
     /**
      * Returns all registered plugin instances.
-     * @returns {Array<IPlugin>} array of plugin objects.
+     * @returns {!Array<IPlugin>} array of plugin objects.
      * @since 2.1.5
      */
     getAll: function() {
@@ -3832,7 +3838,7 @@ var core_plugins = {
 
     /**
      * Returns descriptors of enabled plugins for the given chart.
-     * @returns {Array<Object>} { plugin, options }
+     * @returns {!Array<Object>} { plugin, options }
      * @private
      */
     descriptors: function(chart) {
@@ -4109,8 +4115,8 @@ function pushOrConcat(base, toPush) {
 
 /**
  * Returns array of strings split by newline
- * @param {string} value - The value to split by newline.
- * @returns {Array<string>} value if newline present - Returned from String split() method
+ * @param {string} str - The value to split by newline.
+ * @returns {!Array<string>|string} value if newline present - Returned from String split() method
  * @function
  */
 function splitNewlines(str) {
@@ -4885,7 +4891,7 @@ var exports$4 = Element.extend({
     /**
      * Handle an event
      * @private
-     * @param {IEvent} event - The event to handle
+     * @param {Event} e - The event to handle
      * @returns {boolean} true if the tooltip changed
      */
     handleEvent: function(e) {
@@ -5073,6 +5079,14 @@ function compare2Level(l1, l2) {
     };
 }
 
+/**
+ * @typedef {{
+ * animating: boolean,
+ * ctx: !Object,
+ * data: !Object,
+ * options: !Object,
+ * scales: !Array<!Object>,
+ * }} */
 var Chart = function(item, config) {
     this.construct(item, config);
     return this;
@@ -5872,7 +5886,7 @@ Assign(Chart.prototype, /** @lends Chart */ {
     /**
      * Handle an event
      * @private
-     * @param {IEvent} event the event to handle
+     * @param {Event} e the event to handle
      * @returns {boolean} true if the chart needs to re-render
      */
     handleEvent: function(e) {
@@ -7767,7 +7781,7 @@ scale_category._defaults = _defaults;
  * Generate a set of linear ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {Array<number>} array of tick values
+ * @returns {!Array<number>} array of tick values
  */
 function generateTicks(generationOptions, dataRange) {
     var ticks = [];
@@ -7863,7 +7877,7 @@ function updateMinMax(scale, meta, data) {
  * Generate a set of custom ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {Array<number>} array of tick values
+ * @returns {!Array<number>} array of tick values
  */
 function generateTicks$1(generationOptions, dataRange) {
     let [func, inv] = generationOptions.funcs,
@@ -8589,7 +8603,7 @@ var Legend = Element.extend({
     /**
      * Handle an event
      * @private
-     * @param {IEvent} event - The event to handle
+     * @param {Event} e - The event to handle
      */
     handleEvent: function(e) {
         var me = this;

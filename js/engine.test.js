@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-19
+// @version 2021-06-05
 //
 /*
 globals
@@ -13,11 +13,11 @@ let {Assign, CACHE_IDS, Clear, CreateNode, Id} = require('./common.js'),
         add_font, add_history, add_move, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup,
         create_field_value, create_page_array, create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV,
         DEV_NAMES, done_touch, fill_combo, find_area, FONTS, get_area, get_changed_touches, get_float, get_int,
-        get_object, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults, merge_settings,
-        mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text, restore_history,
-        sanitise_data, save_default, save_option, set_text, show_popup, show_settings, stop_drag, touch_event,
-        touch_handle, touch_moves, translate, translate_default, translate_expression, translate_node, translate_nodes,
-        translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
+        get_object, get_section, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults,
+        merge_settings, mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text,
+        restore_history, sanitise_data, save_default, save_option, set_section, set_text, show_popup, show_settings,
+        stop_drag, touch_event, touch_handle, touch_moves, translate, translate_default, translate_expression,
+        translate_node, translate_nodes, translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
@@ -42,6 +42,7 @@ Assign(LANGUAGES, {
 Assign(translates, {
     Argentina: 'Argentine',
     Belgium: 'Belgique',
+    Error: 'Erreur',
     Japan: 'Japon',
 });
 
@@ -408,6 +409,24 @@ Assign(Y, {
     test(`get_object:${id}`, () => {
         save_option(name, value);
         expect(get_object(name, def)).toEqual(answer);
+    });
+});
+
+// get_section
+[
+    [['app', ''], undefined, 'app'],
+    [[null, undefined], undefined, 'app'],
+    [[null, 'bed'], undefined, 'bed'],
+    [[null, 'bed'], 'custom', 'custom'],
+    [[undefined, 'pva'], undefined, 'pva'],
+    [['', 'pva'], undefined, 'pva'],
+    [['live', null], undefined, 'pva'],
+    [[null, ''], undefined, 'live'],
+    [[null, ''], 'custom', 'custom'],
+].forEach(([sections, section, answer], id) => {
+    test(`get_section:${id}`, () => {
+        set_section(sections[0], sections[1]);
+        expect(get_section(section)).toEqual(answer);
     });
 });
 
@@ -781,6 +800,22 @@ Assign(Y, {
     });
 });
 
+// set_section
+[
+    ['app', '', ['app', '']],
+    [null, undefined, ['app', '']],
+    [null, 'bed', ['app', 'bed']],
+    [undefined, 'pva', ['app', 'pva']],
+    ['', 'pva', ['', 'pva']],
+    ['live', null, ['live', 'pva']],
+    [null, '', ['live', '']],
+].forEach(([section, subsection, answer], id) => {
+    test(`set_section:${id}`, () => {
+        set_section(section, subsection);
+        expect(Y.x).toEqual(answer[0]);
+        expect(Y.s).toEqual(answer[1]);
+    });
+});
 
 // set_text
 [

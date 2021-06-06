@@ -1,6 +1,6 @@
 // chess.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 // - fast javascript implementation, 30000x faster
 // - FRC support
 // jshint -W069
@@ -347,16 +347,28 @@ let PIECE_SQUARES = [
 
 /**
  * @typedef {{
- * capture: number,
- * fen: string,
- * flag: number,
- * from: number,
- * m: string,
- * ply: number,
- * promote: number,
- * pv: string,
- * score: number,
- * to: number,
+ * capture: (number|undefined),
+ * flag: (number|undefined),
+ * from: (number|undefined),
+ * ply: (number|undefined),
+ * promote: (number|undefined),
+ * score: (number|undefined),
+ * to: (number|undefined),
+ * }} */
+let Move;
+
+/**
+ * @typedef {{
+ * capture: (number|undefined),
+ * fen: (string|undefined),
+ * flag: (number|undefined),
+ * from: (number|undefined),
+ * m: (string|undefined),
+ * ply: (number|undefined),
+ * promote: (number|undefined),
+ * pv: (string|undefined),
+ * score: (number|undefined),
+ * to: (number|undefined),
  * }} */
 let MoveText;
 
@@ -912,7 +924,7 @@ var Chess = function(fen_) {
     /**
      * Update an entry
      * @param {number} entry table index
-     * @param {Hash} hash
+     * @param {number} hash
      * @param {number} score
      * @param {number} bound
      * @param {number} depth
@@ -1656,7 +1668,7 @@ var Chess = function(fen_) {
 
     /**
      * Load a FEN
-     * @param {string} fen valid or invalid FEN
+     * @param {string} fen_ valid or invalid FEN
      * @param {boolean} must_hash hash the board?
      * @returns {string} empty on error, and the FEN may be corrected
      */

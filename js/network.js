@@ -1,6 +1,6 @@
 // network
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-24
+// @version 2021-06-05
 //
 // all socket functions are here
 //
@@ -8,7 +8,8 @@
 // jshint -W069
 /*
 globals
-_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, create_cup, CreateNode,
+_, A, add_timeout, analyse_crosstable, analyse_log, analyse_tournament, Assign, CacheId, Class, clear_timeout,
+create_cup, CreateNode,
 DEV, exports, From, global, HasClass, Hide, HOST, HTML, Id, init_websockets, InsertNodes, IsArray,
 LoadLibrary, LS, Max, Min, MSG_USER_COUNT, MSG_USER_SUBSCRIBE, Now, ParseJSON, RandomInt, require,
 S, save_option, set_viewers, Show, socket_io:true, socket_send, update_live_eval, update_pgn, update_player_eval,
@@ -446,8 +447,10 @@ function update_twitch(dark, chat_url, only_resize) {
  * Initialise structures with game specific data
  */
 function startup_network() {
-    if (Y['network'] == 'socket.io')
+    if (Y['network'] == 'socket.io') {
+        clear_timeout('ws');
         return;
+    }
 
     init_websockets({
         message: socket_message,

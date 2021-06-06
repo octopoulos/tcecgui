@@ -1,12 +1,13 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 //
 // utility JS functions used in all the sites
-//
+// jshint -W069
 /*
 globals
-console, document, exports, FormData, global, location, navigator, Node, requestAnimationFrame, screen, window, XMLHttpRequest
+console, document, exports, FormData, global,
+location, navigator, Node, requestAnimationFrame, screen, window, XMLHttpRequest
 */
 'use strict';
 
@@ -247,7 +248,7 @@ function CacheId(id, parent) {
 /**
  * Add / remove classes
  * @param {Node|string} sel CSS selector or node
- * @param {!Array<!Array>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
+ * @param {!Array<*>|string} classes [['dn', flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean|number=} add true for normal behavior (default), otherwise invert all - and +
  * @param {Node?=} parent
  */
@@ -318,7 +319,7 @@ function Class(sel, classes, add=true, parent=null) {
     }
 
     // array
-    classes = /** @type {!Array<!Array>} */(classes);
+    classes = /** @type {!Array<!Array<string,number>>} */(classes);
     if (IsObject(sel)) {
         let list = sel.classList;
         for (let [name, flag] of classes) {
@@ -858,7 +859,7 @@ function Show(sel, parent, mode='') {
 /**
  * Change the style of nodes
  * @param {Node|string} sel CSS selector or node
- * @param {!Array<!Array>|string} styles [['font-size', 10, flag=]], flag:0=add, 1=remove, 2=toggle
+ * @param {!Array<*>|string} styles [['font-size', 10, flag=]], flag:0=add, 1=remove, 2=toggle
  * @param {boolean=} add to set/add the style, otherwise remove it
  * @param {Node?=} parent
  */
@@ -940,7 +941,7 @@ function Style(sel, styles, add=true, parent=null) {
     }
 
     // array
-    styles = /** @type {!Array<!Array>} */(styles);
+    styles = /** @type {!Array<!Array<string,*,number>>} */(styles);
     if (IsObject(sel)) {
         let list = sel.style;
         for (let [name, value, flag] of styles) {
@@ -1242,11 +1243,13 @@ function Clear(dico) {
  * @param {Function=} callback
  */
 function CopyClipboard(text, callback) {
-    if (navigator.clipboard)
-        navigator.clipboard.writeText(text).then(() => {
+    let clipboard = navigator['clipboard'];
+    if (clipboard) {
+        clipboard.writeText(text).then(() => {
             if (callback)
                 callback();
         });
+    }
     // support for old browsers
     else {
         let node = CreateNode('input');
@@ -1278,6 +1281,22 @@ function DateOffset(offset) {
 }
 
 /**
+ * Same as Python's set_default
+ * @param {!Object} dico
+ * @param {string} key
+ * @param {!Array} def
+ * @returns {!Array} dico[key]
+ */
+function DefaultArray(dico, key, def) {
+    let child = dico[key];
+    if (child === undefined) {
+        dico[key] = def;
+        child = dico[key];
+    }
+    return child;
+}
+
+/**
  * Default float conversion
  * @param {string|number} value
  * @param {number} def default value when the value is not a valid number
@@ -1301,6 +1320,22 @@ function DefaultInt(value, def) {
         return /** @type {number} */(value);
     value = parseInt(value, 10);
     return isNaN(value)? def: value;
+}
+
+/**
+ * Same as Python's set_default
+ * @param {!Object} dico
+ * @param {string} key
+ * @param {!Object} def
+ * @returns {!Object} dico[key]
+ */
+function DefaultObject(dico, key, def) {
+    let child = dico[key];
+    if (child === undefined) {
+        dico[key] = def;
+        child = dico[key];
+    }
+    return child;
 }
 
 /**
@@ -1844,8 +1879,10 @@ if (typeof exports != 'undefined') {
         CopyClipboard: CopyClipboard,
         CreateNode: CreateNode,
         CreateSVG: CreateSVG,
+        DefaultArray: DefaultArray,
         DefaultFloat: DefaultFloat,
         DefaultInt: DefaultInt,
+        DefaultObject: DefaultObject,
         E: E,
         Events: Events,
         Exp: Exp,

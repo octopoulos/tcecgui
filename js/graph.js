@@ -1,14 +1,15 @@
 // graph.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-23
+// @version 2021-06-05
 //
 // jshint -W069
 /*
 globals
 _, A, Abs, add_timeout, Assign, C, CacheId, calculate_feature_q, Clamp, CreateNode,
-DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global, Keys,
+DefaultObject, DEFAULTS, DEV, Exp, exports, fix_move_format, Floor, format_unit, FromSeconds, get_move_ply, global,
+Keys,
 Log, Log10, LS, Max, Merge, Min, mix_hex_colors, Pad, Pow, require, Round,
-S, save_option, SetDefault, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
+S, save_option, Sign, Style, translate_expression, Visible, window, xboards, Y, y_x
 */
 'use strict';
 
@@ -89,7 +90,7 @@ function calculate_win(id, eval_, ply) {
 
     let main = xboards[Y.s],
         feature = main.players[id].feature,
-        cache_features = SetDefault(cached_percents, feature, {}),
+        cache_features = DefaultObject(cached_percents, feature, {}),
         key = `${eval_}:${ply}`,
         cache = cache_features[key];
 

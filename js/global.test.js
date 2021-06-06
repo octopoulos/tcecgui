@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-21
+// @version 2021-06-05
 //
 /*
 globals
@@ -392,8 +392,8 @@ global.DEFAULTS = {
 
 // format_eval
 [
-    [{}, null, 0, undefined, null],
-    [{}, NaN, 0, undefined, NaN],
+    [{}, null, 0, undefined, 'null'],
+    [{}, NaN, 0, undefined, 'NaN'],
     [{}, Infinity, 0, undefined, 'Infinity'],
     [{}, '', 0, undefined, ''],
     [{}, 0, 0, undefined, '0.00'],

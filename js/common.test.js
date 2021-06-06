@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-14
+// @version 2021-06-05
 //
 /*
 globals
@@ -9,11 +9,11 @@ expect, require, test
 'use strict';
 
 let {
-    _, A, ArrayJS, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultFloat, DefaultInt, E,
-    Format, FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HasClass, HasClasses, HashText, Hex2RGB, Hide,
-    HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone, IsDigit, IsFloat, IsObject, IsString, Keys, Merge, Pad,
-    Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split, Style, TEXT, TextHTML, Title, Toggle,
-    Undefined, Visible, VisibleHeight, VisibleWidth,
+    _, A, ArrayJS, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultArray, DefaultFloat,
+    DefaultInt, DefaultObject, E, Format, FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HasClass,
+    HasClasses, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone, IsDigit, IsFloat,
+    IsObject, IsString, Keys, Merge, Pad, Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split, Style,
+    TEXT, TextHTML, Title, Toggle, Undefined, Visible, VisibleHeight, VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,6 +191,18 @@ let {
     });
 });
 
+// DefaultArray
+[
+    [{}, 'new', ['a', 'b'], {new: ['a', 'b']}],
+    [{lan: 'fra'}, 'new', ['a', 'b'], {lan: 'fra', new: ['a', 'b']}],
+    [[1, 2, 3], 3, {lan: 'fra', options: {x: 1}}, [1, 2, 3, {lan: 'fra', options: {x: 1}}]],
+].forEach(([dico, key, def, answer], id) => {
+    test(`DefaultArray:${id}`, () => {
+        DefaultArray(dico, key, def);
+        expect(dico).toEqual(answer);
+    });
+});
+
 // DefaultFloat
 [
     [undefined, undefined, undefined],
@@ -218,6 +230,18 @@ let {
 ].forEach(([value, def, answer], id) => {
     test(`DefaultInt:${id}`, () => {
         expect(DefaultInt(value, def)).toEqual(answer);
+    });
+});
+
+// DefaultObject
+[
+    [{}, 'areas', {}, {areas: {}}],
+    [{areas: [1, 2, 3]}, 'areas', {}, {areas: [1, 2, 3]}],
+    [[1, 2, 3], 3, {lan: 'fra', options: {x: 1}}, [1, 2, 3, {lan: 'fra', options: {x: 1}}]],
+].forEach(([dico, key, def, answer], id) => {
+    test(`DefaultObject:${id}`, () => {
+        DefaultObject(dico, key, def);
+        expect(dico).toEqual(answer);
     });
 });
 

@@ -1,7 +1,7 @@
 /*
 light.css
 @author octopoulo <polluxyz@gmail.com>
-@version 2021-05-20
+@version 2021-06-05
 - used in Live mode
 - embedded in the HTML by default
 - every other theme will be inserted after this one in thus inherit from it
@@ -477,6 +477,9 @@ grid {
 }
 input.multi2 {
     width: calc(50% - 0.2em);
+}
+.icon {
+    margin-right: 0.5em;
 }
 
 /* board */
@@ -1103,9 +1106,6 @@ hsub {
     height: 1.6em;
     padding-top: 0.4em;
     width: 100%;
-}
-.icon > img {
-    height: 20px;
 }
 .logo {
     height: 44px;
@@ -1742,6 +1742,9 @@ pre,
 svg.down {
     transition: transform 0.2s;
     margin: -1px 0px 0 3px;
+}
+svg.language {
+    font-size: 1.8em;
 }
 .markers {
     position: absolute;

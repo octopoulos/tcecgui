@@ -1,6 +1,6 @@
 // analyse_pgn.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-24
+// @version 2021-06-05
 /*
 globals
 process, require
@@ -11,7 +11,7 @@ let fs = require('fs'),
     glob = require('glob'),
     unzipper = require('unzipper'),
     {
-        Assign, DefaultInt, Floor, FormatUnit, FromTimestamp, IsDigit, Keys, LS, Max, Now, Pad, SetDefault,
+        Assign, DefaultArray, DefaultInt, Floor, FormatUnit, FromTimestamp, IsDigit, Keys, LS, Max, Now, Pad,
     } = require('../js/common.js'),
     {fix_move_format} = require('../js/global.js'),
     {extract_threads, parse_pgn} = require('../js/game.js');
@@ -51,7 +51,7 @@ function getMultiPgnStats(data, result, origin) {
     data.split(/\r?\n\r?\n(?=\[)/).forEach((split, id) => {
         let dico = getPgnStats(split, `${origin}:${id}`);
         Keys(dico).forEach(key => {
-            let entry = SetDefault(result, key, []),
+            let entry = DefaultArray(result, key, []),
                 value = dico[key];
             entry.push(value);
         });

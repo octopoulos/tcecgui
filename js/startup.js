@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-05-24
+// @version 2021-06-05
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -17,25 +17,26 @@ adjust_popups, ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, As
 C, CacheId, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, charts, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
 context_target:true,
-DEFAULT_SCALES, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables, drag_source:true,
-E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key, game_action_keyup, get_area,
-get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses, hashes, Hide, hide_element,
-HIDES, HTML, ICONS:true, import_settings, Index, init_graph, is_fullscreen, KEY_TIMES, Keys, KEYS,
+DEFAULT_SCALES, DefaultArray, DEFAULTS, detect_device, DEV, DEV_NAMES, device, document, download_tables,
+drag_source:true, E, Events, export_settings, exports, FileReader, find_area, Floor, From, game_action_key,
+game_action_keyup, get_area, get_drop_id, get_object, global, guess_types, handle_board_events, HasClass, HasClasses,
+hashes, Hide, hide_element, HIDES, HTML, ICONS:true, import_settings, Index, init_graph, IsObject, KEY_TIMES, Keys,
+KEYS,
 LANGUAGES:true, listen_log, load_defaults, load_library, load_preset, LOCALHOST, location, Max, merge_settings, Min,
 move_pane, navigator, NO_IMPORTS, Now, ON_OFF, open_table, option_number, order_boards, PANES, Parent, ParseJSON, PD,
 PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_settings, reset_settings,
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_drag_events, set_draggable, set_engine_events,
-set_game_events, set_section, SetDefault, SHADOW_QUALITIES, Show, show_banner, show_board_info, show_filtered_games,
-show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph, startup_network, Style,
-TAB_NAMES, TABLES, TEXT, TextHTML, THEMES, TIMEOUT_adjust, TIMEOUT_tables, timers, toggle_fullscreen, touch_handle,
-translate_nodes, TRANSLATE_SPECIALS, translates:true, TYPES,
-Undefined, update_board_theme, update_debug, update_pgn, update_theme, update_twitch, VERSION,
-virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
+set_fullscreen_events, set_game_events, set_section, SHADOW_QUALITIES, Show, show_banner, show_board_info,
+show_filtered_games, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph,
+startup_network, Style,
+TAB_NAMES, TABLES, TEXT, TextHTML, THEMES, TIMEOUT_tables, timers, toggle_fullscreen, translate_nodes,
+TRANSLATE_SPECIALS, translates:true, TYPES, Undefined, update_board_theme, update_debug, update_pgn, update_theme,
+update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
 virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true,
 virtual_window_click_dataset:true, virtual_window_click_parent:true, virtual_window_click_parent_dataset:true, Visible,
-VisibleWidth, WB_LOWER, wheel_event, window, window_click, X_SETTINGS, xboards, Y, y_x
+VisibleWidth, WB_LOWER, window, window_click, X_SETTINGS, xboards, Y, y_x
 */
 'use strict';
 
@@ -193,7 +194,7 @@ function audio_set(set) {
 /**
  * Handler for change settings
  * @param {string} name
- * @param {string|number} value
+ * @param {string|number=} value
  * @param {boolean=} close close the popup
  * @returns {boolean} true if we've handled the setting
  */
@@ -213,9 +214,11 @@ function change_setting_special(name, value, close) {
     if (name != 'preset')
         Y.preset = 'custom';
 
-    let main = xboards[y_x],
+    let ivalue = value * 1,
+        main = xboards[y_x],
         pva = xboards['pva'],
-        result = true;
+        result = true,
+        svalue = /** @type {string} */(value);
 
     add_history();
 
@@ -245,7 +248,7 @@ function change_setting_special(name, value, close) {
         update_board_theme(4);
         break;
     case 'audio_set':
-        audio_set(value);
+        audio_set(svalue);
         break;
     case 'background_color':
     case 'background_opacity':
@@ -323,7 +326,7 @@ function change_setting_special(name, value, close) {
         export_settings(Y['last_preset'] || 'tcec-settings');
         break;
     case 'game_960':
-        pva.frc = value;
+        pva.frc = ivalue;
         pva.delayedPicks();
         break;
     case 'game_advice':
@@ -332,13 +335,13 @@ function change_setting_special(name, value, close) {
         pva.think(true);
         break;
     case 'game_depth':
-        configure('d', value);
+        configure('d', ivalue);
         break;
     case 'game_evaluation':
-        configure('e', value);
+        configure('e', svalue);
         break;
     case 'game_level':
-        configure_string(value + '');
+        configure_string(svalue);
         break;
     case 'game_new_FEN':
     case 'game_new_game':
@@ -346,7 +349,7 @@ function change_setting_special(name, value, close) {
         pva.newGame();
         break;
     case 'game_search':
-        configure('s', value);
+        configure('s', svalue);
         break;
     case 'game_think':
         pva.finished = false;
@@ -354,7 +357,7 @@ function change_setting_special(name, value, close) {
         pva.think();
         break;
     case 'game_time':
-        configure('t', value);
+        configure('t', ivalue);
         break;
     case 'grid':
     case 'grid_copy':
@@ -381,8 +384,8 @@ function change_setting_special(name, value, close) {
         hide_element(context_target);
         break;
     case 'import_settings':
-        let json = ParseJSON(value + '');
-        if (json)
+        let json = ParseJSON(svalue);
+        if (IsObject(json))
             import_settings(json, true);
         break;
     case 'join_next':
@@ -402,8 +405,8 @@ function change_setting_special(name, value, close) {
         check_socket_io();
         break;
     case 'preset':
-        load_preset(value + '');
-        save_option('last_preset', value);
+        load_preset(svalue);
+        save_option('last_preset', svalue);
         break;
     case 'shortcut_1':
     case 'shortcut_2':
@@ -416,7 +419,7 @@ function change_setting_special(name, value, close) {
         handle_board_events(main, 'ply', main.moves[main.ply]);
         break;
     case 'theme':
-        change_theme(value);
+        change_theme(svalue);
         break;
     case 'twitch_chat':
     case 'twitch_dark':
@@ -448,7 +451,7 @@ function change_setting_special(name, value, close) {
 /**
  * Update the theme
  * - if we're in the archive, then also add the [theme]-archive.css
- * @param {string|number=} theme
+ * @param {string=} theme
  */
 function change_theme(theme) {
     let def = THEMES[0];
@@ -772,8 +775,11 @@ function handle_drop(e) {
         return;
     add_history();
 
-    let child = get_drop_id(e.target).node,
-        in_tab = 0,
+    let child = get_drop_id(e.target).node;
+    if (!child)
+        return;
+
+    let in_tab = 0,
         parent = Parent(e.target, {class_: 'area', self: true}),
         rect = child? child.getBoundingClientRect(): null;
 
@@ -808,7 +814,7 @@ function handle_drop(e) {
         parent.insertBefore(drag_source, next? child.nextElementSibling: child);
 
         // 3) from/to tabs
-        let context_area = SetDefault(context_areas, drag_source.id, [drag_source.id, 0, 1]);
+        let context_area = DefaultArray(context_areas, drag_source.id, [drag_source.id, 0, 1]);
         if (in_tab & 2) {
             if (next) {
                 let prev_context = context_areas[child.id] || [];
@@ -1024,7 +1030,7 @@ function quick_setup(force) {
 
 /**
  * Reset to the default/other settings
- * @param {boolean} is_default
+ * @param {boolean=} is_default
  */
 function reset_settings_special(is_default) {
     if (is_default) {
@@ -1538,21 +1544,6 @@ function set_global_events() {
         });
     });
 
-    // fullscreen scrolling
-    Events(window, 'mousedown mouseenter mouseleave mousemove mouseup touchstart touchmove touchend', e => {
-        if (!is_fullscreen())
-            return;
-        touch_handle(e, true);
-    });
-    Events(window, 'wheel', e => {
-        if (!is_fullscreen()) {
-            if (Y['wheel_adjust'])
-                add_timeout('adjust', scroll_adjust, TIMEOUT_adjust);
-            return;
-        }
-        wheel_event(e, true);
-    }, {passive: true});
-
     // context menus
     Keys(CONTEXT_MENUS).forEach(key => {
         Events(key, 'contextmenu', function(e) {
@@ -1610,11 +1601,11 @@ function set_global_events() {
     Events(window, 'contextmenu', e => {
         if (cannot_popup())
             return;
-        let target = e.target;
-        if (HasClasses(target, 'tab drop')) {
-            let id = target.dataset['x'],
+        let node = e.target;
+        if (HasClasses(node, 'tab drop')) {
+            let id = node.dataset['x'],
                 name = (id.includes('shortcut') || id.includes('chat'))? 'quick': 'tab';
-            context_target = target;
+            context_target = node;
             show_popup('options', true, {setting: name, xy: [e.clientX, e.clientY]});
             PD(e);
         }
@@ -1658,7 +1649,9 @@ function set_global_events() {
                     save_option('last_preset', file.name.split('.').slice(0, -1).join('.'));
                     break;
                 case 'language':
-                    api_translate_get(false, undefined, ParseJSON(data));
+                    let json = ParseJSON(data);
+                    if (IsObject(json))
+                        api_translate_get(false, undefined, /** @type {!Object} */(json));
                     break;
                 case 'load_pgn':
                     let new_section = 'archive';
@@ -1673,8 +1666,9 @@ function set_global_events() {
         };
     });
 
-    // drag and drop
+    // extra events
     set_drag_events(handle_drop);
+    set_fullscreen_events();
 }
 
 // MAIN
@@ -1904,7 +1898,10 @@ function prepare_settings() {
         'general': {
             'export_settings': '1',
             'import_settings': [{text: 'Enter JSON data', type: 'link'}, ''],
-            'language': [LANGUAGES, ''],
+            'language': {
+                '_svg': 'language',
+                '_value': [LANGUAGES, ''],
+            },
             'preset': [PRESETS, 'custom'],
             'theme': [THEMES, THEMES[0]],
         },
@@ -2254,7 +2251,7 @@ function prepare_settings() {
             'log_history': option_number(100, -1, 1000, 1, {}, 'max number of lines'),
             'log_pv': [ON_OFF, 1, 'use LiveLog to update the PV in real time'],
             'network': [
-                ['auto', 'socket.io', 'websocket'], 'auto',
+                ['auto', 'socket.io', 'websocket'], 'websocket',
                 'socket.io: slow + unreliable + more traffic = works on the old server\n'
                 + 'websocket: fast + reliable + less traffic = needs the new server',
             ],
@@ -2395,7 +2392,10 @@ function prepare_settings() {
             'boom_effect': [ON_OFF, 0, 'audiovisual effect when an eval spikes'],
             'moob_effect': [ON_OFF, 0, 'audiovisual effect when an engine blunders'],
             'explosion_effect': [ON_OFF, 1, 'audiovisual effect when most engines agree that someone is winning'],
-            'language': [LANGUAGES, ''],
+            'language': {
+                '_svg': 'language',
+                '_value': [LANGUAGES, ''],
+            },
             'theme': [THEMES, THEMES[0]],
             'volume': option_number(10, 0, 20, 0.5, {}, HELP_VOLUME),
         },
@@ -2431,7 +2431,7 @@ function startup() {
 
     // VB=viewBox=; PFC=path fill="currentColor"
     ICONS = {
-        'burger': 'viewBox="0 0 448 512"><PFC d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/>',
+        'burger': 'VB="0 0 448 512"><PFC d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"/>',
         'calendar': 'VB="0 0 448 512"><PFC d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-196c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM192 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40zM64 268c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zm0 128c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H76c-6.6 0-12-5.4-12-12v-40zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z"/>',
         'cog': 'VB="0 0 512 512"><PFC d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7v-49.2c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.5-5.5-.7-11.3-5.6-14.1zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z"/>',
         'compress': 'VB="0 0 448 512"><PFC d="M436 192H312c-13.3 0-24-10.7-24-24V44c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v84h84c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm-276-24V44c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v84H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h124c13.3 0 24-10.7 24-24zm0 300V344c0-13.3-10.7-24-24-24H12c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h84v84c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-84h84c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12H312c-13.3 0-24 10.7-24 24v124c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12z"/>',
@@ -2443,6 +2443,7 @@ function startup() {
         'end': 'VB="0 0 448 512"><PFC d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34zm192-34l-136-136c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l96.4 96.4-96.4 96.4c-9.4 9.4-9.4 24.6 0 33.9l22.6 22.6c9.4 9.4 24.6 9.4 33.9 0l136-136c9.4-9.2 9.4-24.4 0-33.8z"/>',
         'expand': 'VB="0 0 448 512"><PFC d="M0 180V56c0-13.3 10.7-24 24-24h124c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12H64v84c0 6.6-5.4 12-12 12H12c-6.6 0-12-5.4-12-12zM288 44v40c0 6.6 5.4 12 12 12h84v84c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12V56c0-13.3-10.7-24-24-24H300c-6.6 0-12 5.4-12 12zm148 276h-40c-6.6 0-12 5.4-12 12v84h-84c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h124c13.3 0 24-10.7 24-24V332c0-6.6-5.4-12-12-12zM160 468v-40c0-6.6-5.4-12-12-12H64v-84c0-6.6-5.4-12-12-12H12c-6.6 0-12 5.4-12 12v124c0 13.3 10.7 24 24 24h124c6.6 0 12-5.4 12-12z"/>',
         'info': 'VB="0 0 512 512"><PFC d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"/>',
+        'language': 'VB="0 0 640 512"><PFC d="M152.1 236.2c-3.5-12.1-7.8-33.2-7.8-33.2h-.5s-4.3 21.1-7.8 33.2l-11.1 37.5H163zM616 96H336v320h280c13.3 0 24-10.7 24-24V120c0-13.3-10.7-24-24-24zm-24 120c0 6.6-5.4 12-12 12h-11.4c-6.9 23.6-21.7 47.4-42.7 69.9 8.4 6.4 17.1 12.5 26.1 18 5.5 3.4 7.3 10.5 4.1 16.2l-7.9 13.9c-3.4 5.9-10.9 7.8-16.7 4.3-12.6-7.8-24.5-16.1-35.4-24.9-10.9 8.7-22.7 17.1-35.4 24.9-5.8 3.5-13.3 1.6-16.7-4.3l-7.9-13.9c-3.2-5.6-1.4-12.8 4.2-16.2 9.3-5.7 18-11.7 26.1-18-7.9-8.4-14.9-17-21-25.7-4-5.7-2.2-13.6 3.7-17.1l6.5-3.9 7.3-4.3c5.4-3.2 12.4-1.7 16 3.4 5 7 10.8 14 17.4 20.9 13.5-14.2 23.8-28.9 30-43.2H412c-6.6 0-12-5.4-12-12v-16c0-6.6 5.4-12 12-12h64v-16c0-6.6 5.4-12 12-12h16c6.6 0 12 5.4 12 12v16h64c6.6 0 12 5.4 12 12zM0 120v272c0 13.3 10.7 24 24 24h280V96H24c-13.3 0-24 10.7-24 24zm58.9 216.1L116.4 167c1.7-4.9 6.2-8.1 11.4-8.1h32.5c5.1 0 9.7 3.3 11.4 8.1l57.5 169.1c2.6 7.8-3.1 15.9-11.4 15.9h-22.9a12 12 0 0 1-11.5-8.6l-9.4-31.9h-60.2l-9.1 31.8c-1.5 5.1-6.2 8.7-11.5 8.7H70.3c-8.2 0-14-8.1-11.4-15.9z"/>',
         'lock': 'VB="0 0 576 512"><PFC d="M423.5 0C339.5.3 272 69.5 272 153.5V224H48c-26.5 0-48 21.5-48 48v192c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V272c0-26.5-21.5-48-48-48h-48v-71.1c0-39.6 31.7-72.5 71.3-72.9 40-.4 72.7 32.1 72.7 72v80c0 13.3 10.7 24 24 24h32c13.3 0 24-10.7 24-24v-80C576 68 507.5-.3 423.5 0z"/>',
         'log': 'VB="0 0 448 512"><PFC d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/>',
         'medal': 'VB="0 0 512 512"><PFC d="M223.75 130.75L154.62 15.54A31.997 31.997 0 0 0 127.18 0H16.03C3.08 0-4.5 14.57 2.92 25.18l111.27 158.96c29.72-27.77 67.52-46.83 109.56-53.39zM495.97 0H384.82c-11.24 0-21.66 5.9-27.44 15.54l-69.13 115.21c42.04 6.56 79.84 25.62 109.56 53.38L509.08 25.18C516.5 14.57 508.92 0 495.97 0zM256 160c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm92.52 157.26l-37.93 36.96 8.97 52.22c1.6 9.36-8.26 16.51-16.65 12.09L256 393.88l-46.9 24.65c-8.4 4.45-18.25-2.74-16.65-12.09l8.97-52.22-37.93-36.96c-6.82-6.64-3.05-18.23 6.35-19.59l52.43-7.64 23.43-47.52c2.11-4.28 6.19-6.39 10.28-6.39 4.11 0 8.22 2.14 10.33 6.39l23.43 47.52 52.43 7.64c9.4 1.36 13.17 12.95 6.35 19.59z"/>',
