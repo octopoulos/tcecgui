@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-16
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -33,8 +33,9 @@ if (typeof global != 'undefined' && typeof require != 'undefined') {
 // global messages
 let MSG_IP_GET = 1,
     MSG_USER_COUNT = 2,
-    MSG_USER_SUBSCRIBE = 3,
-    MSG_USER_UNSUBSCRIBE = 4,
+    MSG_USER_SESSION = 3,
+    MSG_USER_SUBSCRIBE = 4,
+    MSG_USER_UNSUBSCRIBE = 5,
     //
     MSG_USER_EDIT = 10,
     MSG_USER_FORGOT = 11,
@@ -50,6 +51,7 @@ let MESSAGES = {
     'user_login': MSG_USER_LOGIN,
     'user_logout': MSG_USER_LOGOUT,
     'user_register': MSG_USER_REGISTER,
+    'user_session': MSG_USER_SESSION,
     'user_subscribe': MSG_USER_SUBSCRIBE,
     'user_unsubscribe': MSG_USER_UNSUBSCRIBE,
 };
@@ -110,6 +112,9 @@ let __PREFIX = '_',
     localStorage = (HAS_GLOBAL || window).localStorage,
     MAX_HISTORY = 20,
     me = {},
+    ME_SKIPS = {
+        super: 1,
+    },
     MODAL_IDS = {
         'input': 1,
         'modal': 1,
@@ -148,7 +153,7 @@ let __PREFIX = '_',
     THEMES = [''],
     TIMEOUT_activate = 500,                             // activate tabs in populate_areas
     TIMEOUT_adjust = 250,
-    TIMEOUT_ip = 120,
+    TIMEOUT_ip = 600,
     TIMEOUT_preset = LOCALHOST? 60: 3600 * 2,
     TIMEOUT_touch = 0.5,
     TIMEOUT_translate = LOCALHOST? 60: 3600 * 2,
@@ -191,6 +196,7 @@ let __PREFIX = '_',
     virtual_logout,
     virtual_populate_areas_special,
     virtual_rename_option,
+    virtual_reset_old_settings_special,
     virtual_reset_settings_special,
     virtual_sanitise_data_special,
     virtual_set_combo_special,
@@ -332,7 +338,7 @@ function mix_hex_colors(color1, color2, mix) {
  */
 function set_section(section, subsection) {
     if (section != null) {
-        Y.x = section;
+        Y['x'] = section;
         y_x = section;
     }
     if (subsection != null) {
@@ -801,6 +807,34 @@ function reset_default(name) {
 }
 
 /**
+ * Reset some settings if the version is too old
+ * @param {string} new_version
+ */
+function reset_old_settings(new_version) {
+    let version = Undefined(Y['version'], '');
+    if (version == new_version) {
+        save_option('version', new_version);
+        return;
+    }
+
+    let keys = [];
+    if (virtual_reset_old_settings_special)
+        virtual_reset_old_settings_special(version, keys);
+
+    let changes = [];
+    for (let key of keys)
+        for (let item of key.split(' '))
+            if (Y[item] != DEFAULTS[item]) {
+                changes.push(item);
+                reset_default(item);
+            }
+
+    LS(`version: ${version} => ${new_version} : ${changes}`);
+    save_option('version', new_version);
+    Y.new_version = version;
+}
+
+/**
  * Reset to the default/other settings
  * @param {boolean=} is_default
  */
@@ -874,6 +908,14 @@ function save_default(name, value) {
         remove_storage(name);
     else
         save_storage(name, value);
+}
+
+/**
+ * Utility to quickly save `me`
+ */
+function save_me() {
+    let copy = Assign({}, ...Keys(me).filter(key => !ME_SKIPS[key]).map(key => ({[key]: me[key]})));
+    save_storage('me', copy);
 }
 
 /**
@@ -1997,27 +2039,29 @@ function load_library(url, callback, extra) {
     if (!libraries[url])
         LoadLibrary(url, () => {
             if (DEV['load'])
-                LS(`loaded: ${url}`);
+                LS('load_library:', url);
             libraries[url] = Now();
             if (callback)
                 callback();
         }, extra);
-    else
-        LS(`already loaded: ${url}`);
+    else if (DEV['load'])
+        LS('load_library__already', url);
 }
 
 /**
  * Push history state if it changed
  * @param {Object=} query
- * @param {boolean=} replace replace the state instead of pushing it
- * @param {string=} query_key
- * @param {string=} go change URL location
+ * @param {Object} obj
+ * @param {boolean=} obj.check check the hash after change
+ * @param {string=} obj.go change URL location
+ * @param {string=} obj.key hash, href
+ * @param {boolean=} obj.replace replace the state instead of pushing it
  * @returns {Object} dictionary of changes, or null if empty
  */
-function push_state(query, replace, query_key='hash', go=undefined) {
+function push_state(query, {check, go, key='hash', replace}={}) {
     query = query || {};
     let changes = [],
-        state_keys = STATE_KEYS[y_x] || STATE_KEYS['_'] || [],
+        state_keys = STATE_KEYS[y_s] || STATE_KEYS[y_x] || STATE_KEYS['_'] || [],
         new_state = Assign({}, ...state_keys.filter(x => query[x] || Y[x]).map(x =>
             ({[x]: Undefined(query[x], Y[x])})
         )),
@@ -2034,14 +2078,16 @@ function push_state(query, replace, query_key='hash', go=undefined) {
     if (go)
         location[go] = url;
     else {
-        url = `${QUERY_KEYS[query_key]}${url}`;
-        let exist = location[query_key];
+        url = `${QUERY_KEYS[key]}${url}`;
+        let exist = location[key];
         if (exist == url)
             return null;
         if (replace)
             history.replaceState(new_state, '', url);
         else
             history.pushState(new_state, '', url);
+        if (check)
+            check_hash();
     }
 
     return Assign({}, ...changes.map(change => ({[change]: 1})));
@@ -2133,8 +2179,13 @@ function init_websockets({close, message, open}={}) {
         if (virtual_socket_close)
             virtual_socket_close();
     };
+    socket.onerror = e => {
+        LS('socket error:', Now(true) - app_start, e);
+    };
     socket.onopen = () => {
         socket_fail = 0;
+        // try to reuse the session
+        check_session();
         if (virtual_socket_open)
             virtual_socket_open();
     };
@@ -2143,7 +2194,7 @@ function init_websockets({close, message, open}={}) {
         let vector = new Uint8Array(data.data);
         if (vector[0] == 0) {
             if (DEV['socket'])
-                LS(`pong: ${pong - ping}`);
+                LS('pong:', pong - ping);
         }
         else if (virtual_socket_message)
             virtual_socket_message(data);
@@ -2157,7 +2208,8 @@ function init_websockets({close, message, open}={}) {
  * @param {string} text error text
  */
 function socket_error(text) {
-    LS(text);
+    if (!socket_fail)
+        LS(text);
     socket_fail ++;
     if (socket_fail > 3 && virtual_logout)
         virtual_logout();
@@ -3056,10 +3108,8 @@ function populate_areas(activate) {
             else
                 return;
         }
-        if (DEV['ui']) {
-            LS(key, `populate ${key} : ${error}`);
-            LS(child);
-        }
+        if (DEV['ui'])
+            LS(key, `populate ${key} : ${error}`, child);
 
         // c) restructure the panel => this will cause the chat to reload too
         // remove tabs
@@ -3287,6 +3337,26 @@ function api_translate_get(force, callback, custom_data) {
                 return;
             _done(data);
         });
+}
+
+/**
+ * Check if the session is valid
+ */
+function check_session() {
+    if (!me['session'])
+        return;
+
+    get_ip(() => {
+        socket_send([
+            MSG_USER_SESSION,
+            {
+                'email': me['email'],
+                'ip': Y.ip,
+                'login': me['login'],
+                'session': me['session'],
+            },
+        ]);
+    });
 }
 
 /**
@@ -3568,6 +3638,7 @@ if (typeof exports != 'undefined') {
         LOCALHOST: LOCALHOST,
         me: me,
         merge_settings: merge_settings,
+        MESSAGES: MESSAGES,
         mix_hex_colors: mix_hex_colors,
         MODAL_IDS: MODAL_IDS,
         move_pane: move_pane,
@@ -3584,6 +3655,7 @@ if (typeof exports != 'undefined') {
         restore_history: restore_history,
         sanitise_data: sanitise_data,
         save_default: save_default,
+        save_me: save_me,
         save_option: save_option,
         set_combo_value: set_combo_value,
         set_section: set_section,

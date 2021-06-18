@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-10
 //
 // general 3d rendering code
 //
@@ -92,7 +92,7 @@ let audiobox = {
     is_octo,
     is_paused,
     light_ambient,
-    light_main,
+    /** @type {Light} */light_main,
     light_target,
     light_under,
     modal_name,
@@ -180,14 +180,21 @@ let Quaternion;
  * x: number,
  * y: number,
  * z: number,
+ * addScaledVector: Function,
+ * addVectors: Function,
+ * copy: Function,
+ * dot: Function,
  * fromArray: Function,
  * lengthSq: Function,
+ * multiplyScalar: Function,
  * subVectors: Function,
  * }} */
 let Vector3;
 
 /**
  * @typedef {{
+ * material_none: (Object|undefined),
+ * material_tex: (Object|undefined),
  * position: Vector3,
  * quaternion: Quaternion,
  * rotation: *,
@@ -196,7 +203,19 @@ let Object3D;
 
 /**
  * @typedef {{
+ * name: string,
+ * position: Vector3,
+ * quality: number,
+ * shadow: Object,
+ * ui: boolean,
+ * }}
+ */
+let Light;
+
+/**
+ * @typedef {{
  * arrows: (Object|undefined),
+ * body: (Object|undefined),
  * camera: (number|undefined),
  * floor: (number|undefined),
  * health: (number|undefined),
@@ -205,9 +224,14 @@ let Object3D;
  * keys: (Object|undefined),
  * nick: (string|undefined),
  * number: (number|undefined),
+ * position: Vector3,
+ * quaternion: Quaternion,
  * see: (boolean|undefined),
+ * shape: (Object|undefined),
  * sounds: (Object|undefined),
+ * speed: Vector3,
  * times: (Object|undefined),
+ * traverseVisible: Function,
  * }} */
 let Cube;
 
@@ -219,10 +243,10 @@ let Cube;
 /**
  * Create a directional light
  * @param {string} name
- * @returns {Object3D}
+ * @returns {Light}
  */
 function create_light(name) {
-    let light = new T.DirectionalLight(0xfff0f0, 4);
+    let light = /** @type {Light} */(new T.DirectionalLight(0xfff0f0, 4));
     light.name = name;
     light.ui = true;
     light.position.set(0, 0, 1666);
@@ -971,12 +995,14 @@ function gamepad_update() {
             continue;
 
         if (vibration) {
-            pad.vibrationActuator.playEffect("dual-rumble", {
-                startDelay: 0,
-                duration: 100,
-                weakMagnitude: 0.1,
-                strongMagnitude: 1.0
-            });
+            let actuator = pad['vibrationActuator'];
+            if (actuator)
+                actuator.playEffect("dual-rumble", {
+                    startDelay: 0,
+                    duration: 100,
+                    weakMagnitude: 0.1,
+                    strongMagnitude: 1.0
+                });
             vibration = false;
         }
 

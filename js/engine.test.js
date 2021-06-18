@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-16
 //
 /*
 globals
@@ -13,11 +13,11 @@ let {Assign, CACHE_IDS, Clear, CreateNode, Id} = require('./common.js'),
         add_font, add_history, add_move, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup,
         create_field_value, create_page_array, create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV,
         DEV_NAMES, done_touch, fill_combo, find_area, FONTS, get_area, get_changed_touches, get_float, get_int,
-        get_object, get_section, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults,
+        get_object, get_section, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults, me,
         merge_settings, mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text,
-        restore_history, sanitise_data, save_default, save_option, set_section, set_text, show_popup, show_settings,
-        stop_drag, touch_event, touch_handle, touch_moves, translate, translate_default, translate_expression,
-        translate_node, translate_nodes, translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
+        restore_history, sanitise_data, save_default, save_me, save_option, set_section, set_text, show_popup,
+        show_settings, stop_drag, touch_event, touch_handle, touch_moves, translate, translate_default,
+        translate_expression, translate_node, translate_nodes, translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
@@ -787,6 +787,23 @@ Assign(Y, {
     });
 });
 
+// save_me
+[
+    [null, {}],
+    [{}, {}],
+    [{level: 255}, {level: 255}],
+    [{number: 1}, {level: 255, number: 1}],
+].forEach(([me_, answer], id) => {
+    test(`save_me:${id}`, () => {
+        if (!me_)
+            Clear(me);
+        else
+            Assign(me, me_);
+        save_me();
+        expect(me).toEqual(answer);
+        expect(get_object('me')).toEqual(answer);
+    });
+});
 
 // save_option
 [

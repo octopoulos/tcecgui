@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-16
 //
 // global variables/functions shared across multiple js files
 //
@@ -9,7 +9,8 @@
 /*
 globals
 Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, HTML, IsDigit, IsString, Keys,
-LS, Max, Min, Pow, require, reset_default, save_default, save_option, Split, Undefined, virtual_can_close_popups:true, Y
+Max, Min, Pow, require, save_default, save_option, Split, virtual_can_close_popups:true,
+virtual_reset_old_settings_special:true, Y
 */
 'use strict';
 
@@ -26,7 +27,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210605',
+    VERSION = '20210616',
     virtual_close_popups,
     xboards = {};
 
@@ -342,15 +343,10 @@ function reset_defaults(pattern) {
 
 /**
  * Reset some settings if the version is too old
+ * @param {string} version
+ * @param {!Array<string>} keys
  */
-function reset_old_settings() {
-    let version = Undefined(Y['version'], '');
-    if (version == VERSION) {
-        save_option('version', VERSION);
-        return;
-    }
-
-    let keys = [];
+function reset_old_settings_special(version, keys) {
     if (version < '20200930')
         keys.push('game_wasm');
     if (version < '20201003b')
@@ -367,18 +363,6 @@ function reset_old_settings() {
         save_default('arrow_color_01', Y['arrow_combine_01']);
         save_default('arrow_color_23', Y['arrow_combine_23']);
     }
-
-    let changes = [];
-    for (let key of keys)
-        for (let item of key.split(' '))
-            if (Y[item] != DEFAULTS[item]) {
-                changes.push(item);
-                reset_default(item);
-            }
-
-    LS(`version: ${version} => ${VERSION} : ${changes}`);
-    save_option('version', VERSION);
-    Y.new_version = version;
 }
 
 /**
@@ -457,6 +441,7 @@ function stoof_cp_to_score(cp) {
  */
 function startup_global() {
     virtual_can_close_popups = can_close_popups;
+    virtual_reset_old_settings_special = reset_old_settings_special;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -476,7 +461,6 @@ if (typeof exports != 'undefined') {
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
         reset_defaults: reset_defaults,
-        reset_old_settings: reset_old_settings,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,

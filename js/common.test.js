@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-12
 //
 /*
 globals
@@ -12,8 +12,8 @@ let {
     _, A, ArrayJS, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultArray, DefaultFloat,
     DefaultInt, DefaultObject, E, Format, FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HasClass,
     HasClasses, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone, IsDigit, IsFloat,
-    IsObject, IsString, Keys, Merge, Pad, Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split, Style,
-    TEXT, TextHTML, Title, Toggle, Undefined, Visible, VisibleHeight, VisibleWidth,
+    IsObject, IsString, Keys, Lower, Merge, Pad, Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split,
+    Style, TEXT, TextHTML, Title, Toggle, Undefined, Upper, Visible, VisibleHeight, VisibleParent, VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -643,6 +643,21 @@ let {
     });
 });
 
+// Lower
+[
+    [undefined, ''],
+    [null, ''],
+    ['', ''],
+    [0, ''],
+    ['0', '0'],
+    ['Hello There', 'hello there'],
+    ['Привет', 'привет'],
+].forEach(([text, answer], id) => {
+    test(`Lower:${id}`, () => {
+        expect(Lower(text)).toEqual(answer);
+    });
+});
+
 // Merge
 [
     [{x: {y: 5}}, {x: {y: 6}}, undefined, {x: {y: 6}}],
@@ -1172,6 +1187,21 @@ let {
     });
 });
 
+// Upper
+[
+    [undefined, ''],
+    [null, ''],
+    ['', ''],
+    [0, ''],
+    ['0', '0'],
+    ['Hello There', 'HELLO THERE'],
+    ['Привет', 'ПРИВЕТ'],
+].forEach(([text, answer], id) => {
+    test(`Upper:${id}`, () => {
+        expect(Upper(text)).toEqual(answer);
+    });
+});
+
 // Visible
 [
     ['<div id="x" style="display:none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', '*', false],
@@ -1179,6 +1209,8 @@ let {
     ['<div id="x" style="display:none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', 'a:first-of-type', true],
     ['<div id="x" style="display:none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', 'a.link', false],
     ['<div id="x" style="display:none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', '#x', false],
+    ['<div id="x" style="display: none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', '#x', false],
+    ['<div id="x" style="visibility:hidden">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', '#x', false],
     ['<div id="x" style="display:none">N</div><a>L1</a><a class="link dn"><i>L2</i></a>', 'i', true],
 ].forEach(([html, sel, answer], id) => {
     test(`Visible:${id}`, () => {
@@ -1193,6 +1225,20 @@ let {
 ].forEach((answer, id) => {
     test(`VisibleHeight:${id}`, () => {
         expect(VisibleHeight()).toBeGreaterThan(answer);
+    });
+});
+
+// VisibleParent
+[
+    ['<hori><div><a id="sel"></a></div></hori>', '#sel', true],
+    ['<hori><div class="dn"><a id="sel"></a></div></hori>', '#sel', false],
+    ['<hori><div style="display:none"><a id="sel"></a></div></hori>', '#sel', false],
+    ['<hori><div style="visibility:hidden"><a id="sel"></a></div></hori>', '#sel', false],
+    ['<hori class="dn"><div><a id="sel"></a></div></hori>', '#sel', false],
+].forEach(([html, sel, answer], id) => {
+    test(`VisibleParent:${id}`, () => {
+        let soup = CreateNode('div', html);
+        expect(VisibleParent(sel, soup)).toEqual(answer);
     });
 });
 

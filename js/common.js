@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-12
 //
 // utility JS functions used in all the sites
 // jshint -W069
@@ -63,7 +63,7 @@ let Abs = Math.abs,
     Keys = Object.keys,
     Log = Math.log,
     Log10 = Math.log10,
-    Lower = text => text.toLowerCase(),
+    Lower = text => text? text.toLowerCase(): '',
     LS = console.log.bind(console),
     Max = Math.max,
     Min = Math.min,
@@ -79,7 +79,7 @@ let Abs = Math.abs,
     Sqrt = Math.sqrt,
     Stringify = JSON.stringify.bind(JSON),
     Tanh = Math.tanh,
-    Upper = text => text.toUpperCase();
+    Upper = text => text? text.toUpperCase(): '';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1174,6 +1174,22 @@ function Visible(sel, parent) {
     return true;
 }
 
+/**
+ * Check if the node and its parents are visible
+ * @param {Node|string} sel CSS selector or node
+ * @param {Node=} parent
+ * @returns {boolean}
+ */
+function VisibleParent(sel, parent) {
+    let node = _(sel, parent);
+    while (node && node != parent) {
+        if (!Visible(node))
+            return false;
+        node = node.parentNode;
+    }
+    return true;
+}
+
 // NON-NODE FUNCTIONS
 /////////////////////
 /**
@@ -1948,6 +1964,7 @@ if (typeof exports != 'undefined') {
         Upper: Upper,
         Visible: Visible,
         VisibleHeight: VisibleHeight,
+        VisibleParent: VisibleParent,
         VisibleWidth: VisibleWidth,
     });
 }
