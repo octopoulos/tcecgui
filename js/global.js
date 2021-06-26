@@ -1,6 +1,6 @@
 // global.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-16
+// @version 2021-06-21
 //
 // global variables/functions shared across multiple js files
 //
@@ -9,7 +9,7 @@
 /*
 globals
 Abs, Assign, Atan, CacheId, Clamp, DEFAULTS, Exp, exports, Floor, FormatUnit, global, HTML, IsDigit, IsString, Keys,
-Max, Min, Pow, require, save_default, save_option, Split, virtual_can_close_popups:true,
+Max, Min, Pow, require, save_default, Split, virtual_can_close_popups:true,
 virtual_reset_old_settings_special:true, Y
 */
 'use strict';
@@ -27,7 +27,7 @@ let HOST_ARCHIVE,
     SF_COEFF_AS = [-8.24404295, 64.23892342, -95.73056462, 153.86478679],
     SF_COEFF_BS = [-3.37154371, 28.44489198, -56.67657741,  72.05858751],
     SF_PAWN_VALUE = 2.06,
-    VERSION = '20210616',
+    VERSION = '20210621',
     virtual_close_popups,
     xboards = {};
 
@@ -237,7 +237,7 @@ function format_eval(value, ply, process) {
     let float = parseFloat(value);
     if (isNaN(float)) {
         // checkmate conversion?
-        value += '';
+        value = value + '';
         if (value.includes('M'))
             value = convert_checkmate(value, ply);
         return value;
@@ -328,17 +328,6 @@ function parse_time(time) {
         return 0;
     let [hour, min, sec] = time.split(':');
     return hour * 3600 + min * 60 + sec * 1;
-}
-
-/**
- * Reset default settings matching the pattern
- * @param {RegExp} pattern
- */
-function reset_defaults(pattern) {
-    Keys(DEFAULTS).forEach(key => {
-        if (pattern.test(key))
-            save_option(key, DEFAULTS[key]);
-    });
 }
 
 /**
@@ -460,7 +449,6 @@ if (typeof exports != 'undefined') {
         get_fen_ply: get_fen_ply,
         get_move_ply: get_move_ply,
         leela_cp_to_score: leela_cp_to_score,
-        reset_defaults: reset_defaults,
         split_move_string: split_move_string,
         stockfish_wdl: stockfish_wdl,
         stockfish_win_rate_model: stockfish_win_rate_model,

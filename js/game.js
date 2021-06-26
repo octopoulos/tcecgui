@@ -1,6 +1,6 @@
 // game.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-24
 //
 // Game specific code:
 // - control the board, moves
@@ -17,16 +17,16 @@ calculate_feature_q, cannot_click, Ceil, change_setting, chart_data, charts, che
 clamp_eval, Class, clear_timeout, close_popups, context_areas, context_target:true, controls, convert_checkmate,
 CopyClipboard, create_field_value, create_page_array, create_svg_icon, CreateNode, CreateSVG, cube:true,
 DefaultArray, DefaultFloat, DefaultInt, DefaultObject, DEV, device, document, DownloadObject, E, Events, Exp, exports,
-fill_combo, fix_move_format, Floor, format_eval, format_unit, From, FromSeconds, FromTimestamp, get_area, get_fen_ply,
-get_move_ply, get_object, global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input, InsertNodes,
-invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
+fill_combo, fix_move_format, Floor, format_eval, format_unit, FormatPercent, From, FromSeconds, FromTimestamp, get_area,
+get_fen_ply, get_move_ply, get_object, global, HAS_GLOBAL, HasClass, HasClasses, Hide, HOST_ARCHIVE, HTML, Id, Input,
+InsertNodes, invert_eval, is_overlay_visible, IsArray, IsObject, IsString, Keys, KEYS,
 last_key:true, last_scroll, listen_log, load_library, load_model, LOCALHOST, location, Lower, LS, mark_ply_charts, Max,
 Min, Module, navigator, Now, Pad, Parent, parse_time, ParseJSON, play_sound, push_state, QueryString, RandomInt,
 redraw_eval_charts, require, reset_charts, resize_3d, resize_text, Resource, restore_history, Round,
 S, SafeId, save_option, save_storage, scale_boom, scene, scroll_adjust, set_3d_events, set_scale_func, set_section,
 Show, show_popup, Sign, slice_charts, SP, Split, split_move_string, SPRITE_OFFSETS, Sqrt, START_FEN, STATE_KEYS,
-stockfish_wdl, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle, translate_default,
-translate_nodes,
+stockfish_wdl, Stringify, Style, SUB_BOARDS, TEXT, TextHTML, timers, Title, TITLES, Toggle, touch_handle,
+translate_default, translate_nodes,
 Undefined, update_chart, update_chart_options, update_live_chart, update_live_charts, update_markers,
 update_player_chart, update_player_charts, update_svg, Upper, virtual_click_tab:true, virtual_close_popups:true,
 virtual_init_3d_special:true, virtual_random_position:true, Visible, VisibleHeight, VisibleWidth, WB_LOWER, WB_TITLE,
@@ -493,30 +493,6 @@ function calculate_probability(short_engine, eval_, ply, wdl) {
 }
 
 /**
- * Calculate White and Black points
- * @param {string} text
- * @returns {!Object}
- */
-function calculate_score(text) {
-    let black = 0,
-        white = 0;
-
-    for (let i = 0, length = text.length; i < length; i ++) {
-        let char = text[i];
-        if (char == '0')
-            black ++;
-        else if (char == '1')
-            white ++;
-        else if (char == '=') {
-            black += 0.5;
-            white += 0.5;
-        }
-    }
-
-    return {w: white, b: black};
-}
-
-/**
  * Create a link to a game
  * @param {string} section archive, live
  * @param {number} game
@@ -543,7 +519,7 @@ function create_game_link(section, game, text, mode, prefix) {
  * @returns {!Array<string>} ex: dec=x, <i class="seek">1</i>, 10%
  */
 function create_seek(value, total, data) {
-    return (value && total)? [data, `<i class="seek">${value}</i>`, format_percent(value / total)]: ['', value, ''];
+    return (value && total)? [data, `<i class="seek">${value}</i>`, FormatPercent(value / total)]: ['', value, ''];
 }
 
 /**
@@ -659,15 +635,6 @@ function format_opening(opening) {
         });
 
     return `<i class="nowrap">${left}</i><i class="small">${right.slice(0, -1)}</i>`;
-}
-
-/**
- * Format a value to %
- * @param {number} value
- * @returns {string}
- */
-function format_percent(value) {
-    return isNaN(value)? '-': `${Round(value * 10000) / 100}%`;
 }
 
 /**
@@ -800,19 +767,19 @@ function check_draw_arrow(board) {
             next = board_moves[next_ply];
             if (next) {
                 board.next = next;
-                if (next.from == undefined && next.m) {
+                if (next['from'] == undefined && next['m']) {
                     board.chessLoad(fen);
-                    let result = board.chessMove(next.m);
+                    let result = board.chessMove(next['m']);
                     Assign(next, result);
-                    next.ply = next_ply;
+                    next['ply'] = next_ply;
                     if (DEV['arrow'])
-                        LS(`${board.id} chess ${next.m} => ${next.from} - ${next.to} @${next_ply} / ${next_ply / 2 + 1}`);
+                        LS(`${board.id} chess ${next['m']} => ${next['from']} - ${next['to']} @${next_ply} / ${next_ply / 2 + 1}`);
                 }
                 draw = true;
             }
         }
     }
-    else if (next && next.ply == next_ply) {
+    else if (next && next['ply'] == next_ply) {
         if (DEV['arrow'])
             LS(`${board.id} OK next @${next_ply} / ${next_ply / 2 + 1}`);
         draw = true;
@@ -820,7 +787,7 @@ function check_draw_arrow(board) {
 
     if (draw) {
         if (DEV['arrow'])
-            LS(`     => draw: ${next.m} : ${next.from} => ${next.to} @${next.ply} / ${next.ply / 2 + 1}`);
+            LS(`     => draw: ${next['m']} : ${next['from']} => ${next['to']} @${next['ply']} / ${next['ply'] / 2 + 1}`);
         main.arrow(id, next, is_other? from_opponent: 1);
     }
     else if (DEV['arrow'])
@@ -1294,7 +1261,7 @@ function analyse_crosstable(section, data) {
             no_mob = isNaN(mob);
 
         let stand_row = {
-            '%': games? format_percent(score / games): '-',
+            '%': games? FormatPercent(score / games): '-',
             'crashes': dico['Strikes'],
             'diff': no_mob? missing_mob: `${new_elo - elo} [${new_elo}]`,
             'draws': `${draws_w + draws_b} [${draws_w}/${draws_b}]`,
@@ -1434,7 +1401,7 @@ function change_page(parent, value) {
 
     // refresh the table
     data_x[page_key] = page;
-    update_table(section, active, null, parent, {output: tab.source});
+    update_table(section, active, null, {output: tab.source, parent: parent});
 }
 
 /**
@@ -1525,7 +1492,7 @@ function check_queued_tables() {
         let data = data_x.data;
         if (table == 'h2h') {
             let new_rows = calculate_h2h(section, data);
-            update_table(section, table, new_rows, parent);
+            update_table(section, table, new_rows, {parent: parent});
             check_paginations();
         }
         else
@@ -1714,7 +1681,7 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
                 update_table(section, name, data);
                 if (show && section == y_x) {
                     open_table(name);
-                    let is_game = hashes[section].game;
+                    let is_game = hashes[section]['game'];
                     add_timeout('scroll', () => {
                         scroll_adjust(Y.scroll || (is_game? '#overview': '#tables'));
                     }, TIMEOUT_scroll);
@@ -1723,17 +1690,16 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
         }
     }
 
-    let key,
+    let key = `table_${name}_${section}`,
+        cache = get_object(key),
         timeout = CACHE_TIMEOUTS[name];
 
     if (!no_cache && timeout) {
         // save cache separately for Live and Archive
-        key = `table_${name}_${section}`;
-        let cache = get_object(key);
-        if (cache && (only_cache || Now() < cache.time + timeout)) {
+        if (cache && (only_cache || Now() < cache['time'] + timeout)) {
             if (DEV['json'])
-                LS(`cache found: ${key} : ${Now() - cache.time} < ${timeout}`);
-            _done(cache.data, true);
+                LS(`cache found: ${key} : ${Now() - cache['time']} < ${timeout}`);
+            _done(cache['data'], true);
             return;
         }
         else if (DEV['json'])
@@ -1748,12 +1714,22 @@ function download_table(section, url, name, callback, {add_delta, no_cache, only
         if (code != 200)
             return;
 
-        let now = Now(true);
-        if (data && add_delta)
-            data.delta = get_xhr_elapsed(xhr);
+        let cache_data = cache? cache['data']: null,
+            now = Now(true);
+        if (data && add_delta) {
+            let elapsed = get_xhr_elapsed(xhr);
+            cache_data.delta = elapsed;
+            data.delta = elapsed;
+        }
 
-        if (key) {
-            save_storage(key, {data: data, time: Floor(now)});
+        // new data is the same as the old cache?
+        if (cache && Stringify(data) == Stringify(cache['data'])) {
+            _done(data, true);
+            return;
+        }
+
+        if (!no_cache) {
+            save_storage(key, {'data': data, 'time': Floor(now)});
             if (DEV['json'])
                 LS(`cache saved: ${key}`);
         }
@@ -1802,7 +1778,7 @@ function filter_table_rows(parent, text, force) {
 
     if (data_x) {
         data_x[`filter_${parent}`] = text;
-        update_table(section, active, null, parent, {output: tab.source});
+        update_table(section, active, null, {output: tab.source, parent: parent});
     }
 }
 
@@ -1871,12 +1847,12 @@ function show_tables(section, is_cup) {
  * @param {string} section archive, live
  * @param {string} name h2h, sched, stand, ...
  * @param {Array<!Object>=} rows if null then uses the cached table_data
- * @param {string=} parent chart, engine, quick, table
  * @param {Object} obj
  * @param {string=} obj.output output the result to another name
+ * @param {string=} obj.parent chart, engine, quick, table
  * @param {boolean=} obj.reset clear the table before adding data to it (so far always the case)
  */
-function update_table(section, name, rows, parent='table', {output, reset=true}={}) {
+function update_table(section, name, rows, {output, parent='table', reset=true}={}) {
     if (!name)
         return;
 
@@ -2026,7 +2002,7 @@ function update_table(section, name, rows, parent='table', {output, reset=true}=
 
             // find the active row + update initial page
             if (section == 'archive')
-                active_row = Y.game - 1;
+                active_row = Y['game'] - 1;
             else
                 for (let row of data) {
                     if (!row['moves']) {
@@ -2532,17 +2508,17 @@ function open_event(section, callback) {
  * Open an archived game
  */
 function open_game() {
-    let info = tour_info.archive,
+    let info = tour_info['archive'],
         event = info['url'];
     if (!event)
         return;
 
-    if (Y['season'] && (Y.div || Y['round'] || Y['stage']) && Y.game) {
+    if (Y['season'] && (Y['div'] || Y['round'] || Y['stage']) && Y['game']) {
         push_state();
         check_hash();
     }
-    if (Y.game)
-        download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y.game}.pgn`);
+    if (Y['game'])
+        download_pgn('archive', `${HOST_ARCHIVE}/${event}_${Y['game']}.pgn`);
 }
 
 /**
@@ -2755,7 +2731,7 @@ function calculate_event_stats(section, rows) {
         'duration': format_hhmmss(stats._duration),
         //
         'games': `${games}/${length}`,
-        'progress': length? format_percent(games/length): '-',
+        'progress': length? FormatPercent(games/length): '-',
         'round': `${Min(num_round, Ceil((games + 1) / num_half / 2))}/${num_round}${reverse}`,
         //
         'reverses': num_pair,
@@ -3178,7 +3154,7 @@ function create_cup(section, data, show) {
             return;
 
         let text = names.join(' ');
-        Y.game = 0;
+        Y['game'] = 0;
         if (Y['round'] != round) {
             Y['round'] = round;
             Y.scroll = '#tables';
@@ -3627,7 +3603,7 @@ function parse_pgn_moves(section, data, {fen, mode=15, origin=''}={}) {
                     if (mode & 8) {
                         board.chessLoad(prev_fen);
                         let result = board.chess.multiSan(pv, true, false),
-                            new_pv = result.map(item => item.m).join(' ');
+                            new_pv = result.map(item => item['m']).join(' ');
                         if (pv != new_pv) {
                             if (DEV['fen2'])
                                 LS(ply, [pv, new_pv]);
@@ -3807,7 +3783,7 @@ function resize_game() {
     add_timeout('graph_resize', () => {
         update_chart_options(null, 2);
         for (let parent of ['quick', 'table'])
-            update_table(section, get_active_tab(parent).name, null, parent);
+            update_table(section, get_active_tab(parent).name, null, {parent: parent});
     }, TIMEOUT_graph_resize);
 }
 
@@ -3863,24 +3839,24 @@ function update_agree(section, id) {
             continue;
 
         let ply0, ply1, splits0, splits1,
-            pv0 = move0.pv,
-            pv1 = move1.pv;
+            pv0 = move0['pv'],
+            pv1 = move1['pv'];
 
         if (IsObject(pv0)) {
-            ply0 = move0.ply;
+            ply0 = move0['ply'];
             splits0 = pv0.San.split(' ');
         }
         else {
-            let split = split_move_string(pv0, true, move0.ply);
+            let split = split_move_string(pv0, true, move0['ply']);
             ply0 = split.ply;
             splits0 = split.items;
         }
         if (IsObject(pv1)) {
-            ply1 = move1.ply;
+            ply1 = move1['ply'];
             splits1 = pv1.San.split(' ');
         }
         else {
-            let split = split_move_string(pv1, true, move1.ply);
+            let split = split_move_string(pv1, true, move1['ply']);
             ply1 = split.ply;
             splits1 = split.items;
         }
@@ -4373,7 +4349,7 @@ function update_pgn(section, data, extras, reset_moves) {
         if (pgn && pgn.Headers) {
             let moves = pgn.Moves || [],
                 last_move = moves[moves.length - 1],
-                last_fen = last_move? last_move.fen: null;
+                last_fen = last_move? last_move['fen']: null;
 
             let new_moves = parse_pgn_moves(section, data, {fen: last_fen, mode: 31});
             if (new_moves.length)
@@ -4646,8 +4622,8 @@ function analyse_log(line) {
             info['wdl'] = value.split(' ').reverse().join(' ');
     }
 
-    let prev_ply = prev_info.ply,
-        prev_pv = prev_info.pv || '',
+    let prev_ply = prev_info['ply'],
+        prev_pv = prev_info['pv'] || '',
         pv = info['pv'] || '',
         pvs = prev_info.pvs || {};
     player.info = info;
@@ -5864,8 +5840,8 @@ function load_benchmark(step) {
     add_timeout(name, () => {
         let board = xboards['archive'],
             headers = (board.pgn || {}).Headers,
-            num_live0 = xboards['live0'].evals.archive.length,
-            num_live1 = xboards['live1'].evals.archive.length,
+            num_live0 = xboards['live0'].evals['archive'].length,
+            num_live1 = xboards['live1'].evals['archive'].length,
             num_move = board.moves.length;
 
         if (headers['Round'] == '33.1' && Abs(num_move - num_live0) < 3 && Abs(num_move - num_live1 < 3)) {
@@ -6102,7 +6078,7 @@ function change_setting_game(name, value) {
 
     // update the current tab
     if (update_tab)
-        update_table(section, get_active_tab('table').name, null, 'table');
+        update_table(section, get_active_tab('table').name);
 }
 
 /**
@@ -6315,8 +6291,8 @@ function copy_pgn(board, download, only_text, flag=7) {
         if (!first_fen) {
             let ply = move['ply'] - 1,
                 prev = board.moves[ply] || main.moves[ply];
-            if (prev && prev.fen)
-                fen = prev.fen;
+            if (prev && prev['fen'])
+                fen = prev['fen'];
             else if (ply == -1)
                 fen = board.start_fen;
             else
@@ -6934,7 +6910,6 @@ if (typeof exports != 'undefined')
         BOARD_THEMES: BOARD_THEMES,
         calculate_h2h: calculate_h2h,
         calculate_probability: calculate_probability,
-        calculate_score: calculate_score,
         calculate_seeds: calculate_seeds,
         check_adjudication: check_adjudication,
         check_boom: check_boom,
@@ -6952,7 +6927,6 @@ if (typeof exports != 'undefined')
         format_fen: format_fen,
         format_hhmmss: format_hhmmss,
         format_opening: format_opening,
-        format_percent: format_percent,
         get_short_name: get_short_name,
         parse_date_time: parse_date_time,
         parse_pgn: parse_pgn,

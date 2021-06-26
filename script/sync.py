@@ -1,6 +1,6 @@
 # coding: utf-8
 # @author octopoulo <polluxyz@gmail.com>
-# @version 2021-06-05
+# @version 2021-06-21
 
 """
 Sync
@@ -24,13 +24,16 @@ from css_minify import css_minify
 
 # folders, might want to edit these
 BASE = os.path.dirname(os.path.dirname(__file__))
-COMPILER = 'closure-compiler-v20200406.jar'
+COMPILER = 'closure-compiler-v20210601.jar'
 CSS_FOLDER = join(BASE, 'css')
 JAVA = 'java'
 JS_FOLDER = join(BASE, 'js')
 LOCAL = BASE
 
 # edit these files
+COPY_FILES = {
+}
+
 CSS_FILES = {
     'index': [
         'light',
@@ -70,6 +73,7 @@ JS_MAINS = {
 }
 
 NEED_GZIPS = {
+    # basic
     'index.html',
     'manifest.json',
 
@@ -91,6 +95,8 @@ NEED_GZIPS = {
     'draco_decoder.js',
     'draco_decoder.wasm',
     'draco_wasm_wrapper.js',
+
+    # models
     'pieces-draco.glb',
 
     # translate
@@ -125,17 +131,22 @@ class Sync:
 
     #
     def __init__(self, **kwargs):
-        self.advanced = kwargs.get('advanced')                          # type: bool
-        self.clean = kwargs.get('clean')                                # type: bool
-        self.force = default_int(kwargs.get('force'), 0)                # type: int
-        self.ftp_debug = default_int(kwargs.get('ftp_debug'), 0)        # type: int
+        self.advanced = kwargs.get('advanced')                          # type: int
+        self.clean = kwargs.get('clean')                                # type: int
+        self.copy = kwargs.get('copy')                                  # type: int
+        self.force = kwargs.get('force')                                # type: int
+        self.ftp_debug = kwargs.get('ftp_debug')                        # type: int
         self.host = kwargs.get('host')                                  # type: str
         self.no_compress = kwargs.get('no_compress')                    # type: bool
+        self.prune = kwargs.get('prune')                                # type: int
         self.sync = kwargs.get('sync', 'index')                         # type: str
         self.upload = kwargs.get('upload')                              # type: int
         self.zip = kwargs.get('zip')                                    # type: bool
 
         self.logger = getLogger(self.__class__.__name__)
+
+        self.re_jsdoc = re.compile(r'/\*\*\r?\n(.*?)\*/\r?\n', re.S)
+        self.re_function = re.compile(r'/\*\*\r?\n(.*?)\*/\r?\n(?:async )?function\s*(\w+)\s*\((.*?)\)\s*{(.*?)\r?\n}', re.S)
 
     # FILES
     #######
@@ -194,6 +205,15 @@ class Sync:
             args.extend(['--compilation_level', 'ADVANCED'])
         run(args)
         return output
+
+    def copy_files(self):
+        """Copy some common-js files
+        """
+        for source, dest in COPY_FILES.items():
+            source_abs = abspath(f'{BASE}/{source}')
+            dest_abs = abspath(f'{BASE}/{dest}')
+            print(f'copy {source_abs} => {dest_abs}')
+            shutil.copy(source_abs, dest_abs)
 
     def gzip_files(self, folder: str, depth: int, delete: bool):
         """Gzip all wanted files, recursively
@@ -255,6 +275,65 @@ class Sync:
             JS_FOLDER += '/'
         if LOCAL[-1] != '/':
             LOCAL += '/'
+
+    def remove_doc(self, data: str) -> str:
+        """Replace jsdoc with empty one
+        """
+        blocks = []
+        start = 0
+
+        for match in self.re_jsdoc.finditer(data):
+            span = match.span()
+            blocks.append(data[start: span[0]])
+            blocks.append('/**\n *\n */\n')
+            start = span[1]
+
+        blocks.append(data[start:])
+        return ''.join(blocks)
+
+    def remove_unused(self, data: str) -> str:
+        """Remove unused functions in all.js
+        """
+        blocks = []
+        counts = []
+        bads = 0
+        start = 0
+        total = 0
+
+        for match in self.re_function.finditer(data):
+            name = match.group(2)
+            span = match.span()
+
+            # count the occurences outside the function itself
+            befores = re.findall(fr'\b{name}\b', data[:span[0]])
+            afters = re.findall(fr'\b{name}\b', data[span[1]:])
+            count = len(befores) + len(afters)
+            if self.prune & 2:
+                counts.append([count, name])
+
+            blocks.append(data[start: span[0]])
+
+            if count == 0:
+                bads += 1
+                if not (self.prune & 2):
+                    print(bads, span, name)
+                blocks.append(f'// DELETED FUNCTION: {name}')
+            else:
+                blocks.append(data[span[0]: span[1]])
+
+            start = span[1]
+            total += 1
+
+        blocks.append(data[start:])
+
+        if self.prune & 2:
+            counts = sorted(counts, key=lambda x: x[1])
+            counts = sorted(counts, key=lambda x: x[0], reverse=True)
+            for count, func in counts:
+                print(f'{count:3} : {func}')
+
+        print(f'{total} functions, {bads} removed')
+        return ''.join(blocks)
 
     # INDEX
     #######
@@ -326,6 +405,10 @@ class Sync:
 
             if '4d' in js_output:
                 data = self.compress_3d(data)
+
+            if self.prune:
+                data = self.remove_doc(data)
+                data = self.remove_unused(data)
 
             write_text_safe(all_js, data)
             self.compress_js(all_js)
@@ -473,17 +556,21 @@ class Sync:
     def synchronise(self) -> bool:
         """Synchronise the files
         """
+        # 1) files copy/clean
+        if self.copy:
+            self.copy_files()
+
         if self.clean:
             self.gzip_files(LOCAL, 0, True)
             return
 
-        # 1) create index
+        # 2) create index
         self.normalise_folders()
         self.create_index()
         if self.zip:
             self.gzip_files(LOCAL, 0, False)
 
-        # 2) upload the files
+        # 3) upload the files
         if not self.upload:
             return True
         if is_missing_any({'host', 'password', 'remote', 'user'}, INFO, origin='synchronise'):
@@ -502,12 +589,14 @@ class Sync:
 
 def add_arguments_sync(parser: ArgumentParser):
     add = create_group(parser, 'sync')
-    add('--advanced', action='store_true', help='advanced javascript compilation')
-    add('--clean', action='store_true', help='delete all .gz files')
+    add('--advanced', nargs='?', default=0, const=1, type=int, help='advanced javascript compilation')
+    add('--clean', nargs='?', default=0, const=1, type=int, help='delete all .gz files')
+    add('--copy', nargs='?', default=0, const=1, type=int, help='copy files')
     add('--force', nargs='?', default=0, const=1, type=int, help='force compilation')
     add('--ftp-debug', nargs='?', default=0, const=1, type=int, help='ftp debug level')
     add('--host', nargs='?', default='/', help='host, ex: /seriv/')
     add('--no-compress', nargs='?', default=0, const=1, type=int, help="don't compress JS")
+    add('--prune', nargs='?', default=0, const=1, type=int, help='prune JS')
     add('--sync', nargs='?', default='', const='index', type=str, help='cook the index', choices=['index', 'kick'])
     add('--upload', nargs='?', default=0, const=1, type=int, help='upload via FTP')
     add('--zip', action='store_true', help='create .gz files')

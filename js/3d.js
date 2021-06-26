@@ -1,6 +1,6 @@
 // 3d.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-10
+// @version 2021-06-21
 //
 // general 3d rendering code
 //
@@ -9,10 +9,9 @@
 /*
 globals
 _, Abs, add_timeout, AnimationFrame, Assign, Attrs, Audio, C, CacheId, CameraControls, clear_timeout,
-DefaultInt, DEV, document, Events, Exp, exports, Format, global, HTML, IsString, KEY_TIMES, Keys, KEYS,
+DefaultInt, DEV, document, Events, Exp, exports, Format, global, has_clicked, HTML, IsString, KEY_TIMES, Keys, KEYS,
 LoadLibrary, LS, navigator, Now, require,
-S, save_option, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes,
-Vector2:true, Visible, window, Y, y_x
+S, set_modal_events, Show, Stats, Style, T:true, THREE, translate_nodes, Vector2:true, Visible, window, Y, y_x
 */
 'use strict';
 
@@ -79,8 +78,8 @@ let audiobox = {
     clock,
     clock2,
     controls,
-    cube,
-    cubes = [],
+    /** @type {Cube} */cube,
+    /** @type {!Array<Cube>} */cubes = [],
     debugs = {},
     deltas = [0, 0, 0],
     dirty = 0,
@@ -103,7 +102,7 @@ let audiobox = {
     /** @type {Vector3} */old_pos,
     /** @type {Vector3} */old_rot,
     PARENT_3D = 'body',
-    PARTS = [],
+    /** @type {!Array<string>} */PARTS = [],
     raycaster,
     rendered = 0,
     renderer,
@@ -158,7 +157,8 @@ let audiobox = {
     virtual_update_light_settings_special,
     virtual_update_renderer_special,
     world,
-    world_transform;
+    world_transform,
+    y_three;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -171,6 +171,8 @@ let audiobox = {
  * y: number,
  * z: number,
  * w: number,
+ * setFromAxisAngle: Function,
+ * setFromEuler: Function,
  * slerp: Function,
  * }} */
 let Quaternion;
@@ -183,11 +185,16 @@ let Quaternion;
  * addScaledVector: Function,
  * addVectors: Function,
  * copy: Function,
+ * distanceTo: Function,
+ * distanceToSquared: Function,
+ * divideScalar: Function,
  * dot: Function,
  * fromArray: Function,
  * lengthSq: Function,
  * multiplyScalar: Function,
+ * setScalar: Function,
  * subVectors: Function,
+ * toArray: Function,
  * }} */
 let Vector3;
 
@@ -222,15 +229,20 @@ let Light;
  * is_ai: (boolean|undefined),
  * is_control: (boolean|undefined),
  * keys: (Object|undefined),
- * nick: (string|undefined),
+ * material_none: (Object|undefined),
+ * material_tex: (Object|undefined),
+ * nick: string,
  * number: (number|undefined),
  * position: Vector3,
  * quaternion: Quaternion,
+ * rotation: *,
  * see: (boolean|undefined),
  * shape: (Object|undefined),
  * sounds: (Object|undefined),
  * speed: Vector3,
  * times: (Object|undefined),
+ * getObjectByName: Function,
+ * traverse: Function,
  * traverseVisible: Function,
  * }} */
 let Cube;
@@ -470,28 +482,6 @@ function load_model(name, filename, callback) {
 }
 
 /**
- * Load multiple models
- * @param {!Object} filenames
- * @param {Function} callback
- */
-function load_models(filenames, callback) {
-    let keys = Keys(filenames),
-        loads = new Set(),
-        remains = new Set(keys);
-
-    keys.forEach(key => {
-        let filename = filenames[key];
-        load_model(key, filename, (_model, is_new) => {
-            remains.delete(key);
-            if (is_new)
-                loads.add(key);
-            if (!remains.size)
-                callback(loads);
-        });
-    });
-}
-
-/**
  * Create a new Quaternion
  * @param {number=} x
  * @param {number=} y
@@ -528,7 +518,7 @@ function new_vector3(x, y, z) {
  * Render the 3D scene
  */
 function render() {
-    if (!cube || !clock || !T || !Y['three'])
+    if (!cube || !clock || !T || !y_three)
         return;
 
     let [can_render, can_simulate] = virtual_can_render_simulate? virtual_can_render_simulate(): [true, true],
@@ -776,68 +766,6 @@ function resize_3d() {
 }
 
 /**
- * Set controls to the current camera
- * @param {boolean=} pause
- * @param {Vector3=} target
- * @param {boolean=} transition
- */
-function set_camera_control(pause, target, transition) {
-    if (pause)
-        next_paused = pause;
-    if (controls) {
-        controls.updateCameraUp();
-        // change pivot
-        if (target) {
-            let dir = t_vector.subVectors(target, camera_pos),
-                line = t_vector2.subVectors(camera_look, camera_pos);
-            target = dir.projectOnVector(line).add(camera_pos);
-        }
-        else if (target == 0)
-            target = t_vector.subVectors(camera_look, camera_pos).normalize().add(camera_pos);
-        else
-            target = camera_look;
-        controls.setLookAt(camera_pos.x, camera_pos.y, camera_pos.z, target.x, target.y, target.z, transition);
-    }
-    camera_control = true;
-}
-
-/**
- * Set the camera view
- * @param {string=} id
- * @param {boolean=} auto was set automatically, not manually
- */
-function set_camera_id(id, auto) {
-    // default value
-    if (!id) {
-        id = Y['camera_id'];
-        if (!CAMERAS[id])
-            id = 'far';
-    }
-
-    if (id == 'auto') {
-        id = (camera_id == 'auto')? 'far': camera_id;
-        camera_auto = 1;
-        auto = true;
-    }
-
-    // remember a good camera view
-    let bads = {reverse: 1};
-    for (let id2 of [id, camera_id])
-        if (!bads[id2]) {
-            camera_id2 = id2;
-            break;
-        }
-
-    // change the camera view
-    camera_id = id;
-    if (!auto) {
-        save_option('camera_id', id);
-        camera_auto = 0;
-        camera_reverse = false;
-    }
-}
-
-/**
  * Update the light target
  */
 function update_light() {
@@ -1055,7 +983,7 @@ function gamepad_update() {
 /**
  * Play a sound
  * @param {Cube} cube
- * @param {string} name
+ * @param {string|number} name
  * @param {Object} obj
  * @param {string=} obj._ filename
  * @param {string=} obj.ext
@@ -1069,7 +997,7 @@ function gamepad_update() {
  * @returns {boolean}
  */
 function play_sound(cube, name, {_, cycle, ext='ogg', inside, interrupt, loaded, start=0, voice, volume=1}={}) {
-    if (!cube || !cube.sounds || !name || Y['silent_mode'])
+    if (!has_clicked || !cube || !cube.sounds || !name || Y['silent_mode'])
         return false;
 
     // ext can be in the name
@@ -1222,7 +1150,7 @@ function show_modal(show, text, title, name) {
         add_timeout('pad', gamepad_modal, 300);
         set_modal_events();
         if (virtual_game_action_key)
-            virtual_game_action_key();
+            virtual_game_action_key(0);
     }
     else
         clear_timeout('pad');

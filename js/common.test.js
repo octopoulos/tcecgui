@@ -1,6 +1,6 @@
 // common.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-12
+// @version 2021-06-21
 //
 /*
 globals
@@ -10,10 +10,10 @@ expect, require, test
 
 let {
     _, A, ArrayJS, Attrs, CACHE_IDS, CacheId, Clamp, Class, Clear, Contain, CreateNode, DefaultArray, DefaultFloat,
-    DefaultInt, DefaultObject, E, Format, FormatFloat, FormatUnit, From, FromSeconds, FromTimestamp, HasClass,
-    HasClasses, HashText, Hex2RGB, Hide, HTML, Id, Index, InsertNodes, InvalidEmail, InvalidPhone, IsDigit, IsFloat,
-    IsObject, IsString, Keys, Lower, Merge, Pad, Parent, ParseJSON, PI, Prop, QueryString, S, SetDefault, Show, Split,
-    Style, TEXT, TextHTML, Title, Toggle, Undefined, Upper, Visible, VisibleHeight, VisibleParent, VisibleWidth,
+    DefaultInt, DefaultObject, E, Format, FormatFloat, FormatPercent, FormatUnit, From, FromSeconds, FromTimestamp,
+    HasClass, HasClasses, Hide, HTML, Id, Index, InsertNodes, IsDigit, IsFloat, IsObject, IsString, Keys, Lower, Merge,
+    Pad, Parent, ParseJSON, PI, QueryString, S, Show, Split, Style, TEXT, TextHTML, Title, Toggle, Undefined, Upper,
+    Visible, VisibleHeight, VisibleWidth,
 } = require('./common.js');
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,6 +283,22 @@ let {
     });
 });
 
+// FormatPercent
+[
+    [null, '0%'],
+    [NaN, '-'],
+    [Infinity, 'Infinity%'],
+    ['', '0%'],
+    [0, '0%'],
+    [0.98, '98%'],
+    [0.987654321, '98.77%'],
+    ['150', '15000%'],
+].forEach(([value, answer], id) => {
+    test(`FormatPercent:${id}`, () => {
+        expect(FormatPercent(value)).toEqual(answer);
+    });
+});
+
 // FormatUnit
 [
     [1000000000, undefined, undefined, undefined, '1G'],
@@ -373,31 +389,6 @@ let {
     test(`HasClasses:${id}`, () => {
         let node = CreateNode('div', '', {class: sclass});
         expect(HasClasses(node, classes)).toEqual(answer);
-    });
-});
-
-// HashText
-[
-    ['apple', 2240512858],
-    ['orange', 1138632238],
-].forEach(([text, answer], id) => {
-    test(`HashText:${id}`, () => {
-        expect(HashText(text)).toEqual(answer);
-    });
-});
-
-// Hex2RGB
-[
-    ['000000', undefined, undefined, [0, 0, 0]],
-    ['#000000', undefined, undefined, [0, 0, 0]],
-    ['#87ceeb', undefined, undefined, [135, 206, 235]],
-    ['#87ceeb', true, undefined, 'rgb(135,206,235)'],
-    ['#87ceeb', undefined, 1, [135, 206, 235]],
-    ['#87ceeb', true, 1, 'rgba(135,206,235,1)'],
-    ['#87ceeb', true, 0.5, 'rgba(135,206,235,0.5)'],
-].forEach(([color, get_string, alpha, answer], id) => {
-    test(`Hex2RGB:${id}`, () => {
-        expect(Hex2RGB(color, get_string, alpha)).toEqual(answer);
     });
 });
 
@@ -555,29 +546,6 @@ let {
 
         InsertNodes(_(parent, soup), nodes, prepend, soup);
         expect(soup.innerHTML).toEqual(answer);
-    });
-});
-
-// InvalidEmail
-[
-    ['hello@mail.com', false],
-    ['hello@mail', true],
-    ['hello', true],
-].forEach(([email, answer], id) => {
-    test(`InvalidEmail:${id}`, () => {
-        expect(InvalidEmail(email)).toEqual(answer);
-    });
-});
-
-// InvalidPhone
-[
-    ['911', true],
-    ['+32 460-885 567', false],
-    ['380(632345599', true],
-    ['380(63)2345599', false],
-].forEach(([phone, answer], id) => {
-    test(`InvalidPhone:${id}`, () => {
-        expect(InvalidPhone(phone)).toEqual(answer);
     });
 });
 
@@ -784,34 +752,6 @@ let {
     });
 });
 
-// Prop
-[
-    [
-        '<input name="accept" type="checkbox">',
-        'input',
-        'checked',
-        true,
-        [true],
-        ['<input name="accept" type="checkbox">'],
-    ],
-    [
-        '<input name="accept" type="checkbox"><input name="name" type="hidden">',
-        '*',
-        'type',
-        'text',
-        ['text', 'text'],
-        ['<input name="accept" type="text">', '<input name="name" type="text">'],
-    ],
-].forEach(([html, sel, prop, value, answer, answer_nodes], id) => {
-    test(`Prop:${id}`, () => {
-        let soup = CreateNode('div', html);
-        Prop(sel, prop, value, soup);
-        let nodes = From(A(sel, soup));
-        expect(nodes.map(node => node[prop])).toEqual(answer);
-        expect(nodes.map(node => node.outerHTML)).toEqual(answer_nodes);
-    });
-});
-
 // QueryString
 [
     [{query: 'q=query&lan=eng'}, {lan: 'eng', q: 'query'}],
@@ -904,22 +844,6 @@ let {
         S(sel, show, soup, mode);
         let nodes = A(sel, soup);
         expect(From(nodes).map(node => node.outerHTML)).toEqual(answer);
-    });
-});
-
-// SetDefault
-[
-    [{}, 'new', ['a', 'b'], {new: ['a', 'b']}],
-    [{lan: 'fra'}, 'new', ['a', 'b'], {lan: 'fra', new: ['a', 'b']}],
-    [{}, 'areas', {}, {areas: {}}],
-    [{areas: [1, 2, 3]}, 'areas', {}, {areas: [1, 2, 3]}],
-    [[1, 2, 3], 3, 'FOUR', [1, 2, 3, 'FOUR']],
-    [[1, 2, 3], 3, [5, 6], [1, 2, 3, [5, 6]]],
-    [[1, 2, 3], 3, {lan: 'fra', options: {x: 1}}, [1, 2, 3, {lan: 'fra', options: {x: 1}}]],
-].forEach(([dico, key, def, answer], id) => {
-    test(`SetDefault:${id}`, () => {
-        SetDefault(dico, key, def);
-        expect(dico).toEqual(answer);
     });
 });
 
@@ -1225,20 +1149,6 @@ let {
 ].forEach((answer, id) => {
     test(`VisibleHeight:${id}`, () => {
         expect(VisibleHeight()).toBeGreaterThan(answer);
-    });
-});
-
-// VisibleParent
-[
-    ['<hori><div><a id="sel"></a></div></hori>', '#sel', true],
-    ['<hori><div class="dn"><a id="sel"></a></div></hori>', '#sel', false],
-    ['<hori><div style="display:none"><a id="sel"></a></div></hori>', '#sel', false],
-    ['<hori><div style="visibility:hidden"><a id="sel"></a></div></hori>', '#sel', false],
-    ['<hori class="dn"><div><a id="sel"></a></div></hori>', '#sel', false],
-].forEach(([html, sel, answer], id) => {
-    test(`VisibleParent:${id}`, () => {
-        let soup = CreateNode('div', html);
-        expect(VisibleParent(sel, soup)).toEqual(answer);
     });
 });
 

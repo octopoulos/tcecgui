@@ -1,6 +1,6 @@
 // global.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-21
 //
 /*
 globals
@@ -12,15 +12,9 @@ let {Assign, Keys} = require('./common.js'),
     {Y} = require('./engine.js'),
     {
         add_player_eval, allie_cp_to_score, assign_move, calculate_feature_q, convert_checkmate, fix_move_format,
-        format_eval, format_unit, get_fen_ply, get_move_ply, leela_cp_to_score, reset_defaults, split_move_string,
-        stockfish_wdl, stockfish_win_rate_model, stoof_cp_to_score
+        format_eval, format_unit, get_fen_ply, get_move_ply, leela_cp_to_score, split_move_string, stockfish_wdl,
+        stockfish_win_rate_model, stoof_cp_to_score
     } = require('./global.js');
-
-global.DEFAULTS = {
-    background_color: '#000000',
-    background_image: '',
-    background_opacity: 0,
-};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -500,21 +494,6 @@ global.DEFAULTS = {
 ].forEach(([cp, answer], id) => {
     test(`leela_cp_to_score:${id}`, () => {
         expect(leela_cp_to_score(cp)).toBeCloseTo(answer, 4);
-    });
-});
-
-// reset_defaults
-[
-    [
-        {background_color: '#ff0000', background_image: 'xxyy', background_opacity: 0.5},
-        /^background_/,
-        {background_color: '#000000', background_image: '', background_opacity: 0},
-    ],
-].forEach(([y, pattern, answer], id) => {
-    test(`reset_defaults:${id}`, () => {
-        Assign(Y, y);
-        reset_defaults(pattern);
-        expect(Y).toEqual(expect.objectContaining(answer));
     });
 });
 

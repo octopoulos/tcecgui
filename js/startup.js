@@ -1,6 +1,6 @@
 // startup.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-05
+// @version 2021-06-21
 //
 // Startup
 // - start everything: 3d, game, ...
@@ -13,7 +13,7 @@
 /*
 globals
 _, __PREFIX:true, A, action_key, action_key_no_input, action_keyup_no_input, activate_tabs, add_history, add_timeout,
-adjust_popups, ANCHORS:true, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
+adjust_popups, ANCHORS, api_times:true, api_translate_get, ARCHIVE_KEYS, Assign, Attrs, AUTO_ON_OFF, BOARD_THEMES,
 C, CacheId, cannot_popup, change_page, change_queue, change_setting, change_setting_game, change_theme, changed_hash,
 changed_section, charts, check_hash, check_socket_io, Clamp, Class, clear_timeout, close_popups, context_areas,
 context_target:true,
@@ -28,15 +28,15 @@ PIECE_THEMES, populate_areas, POPUP_ADJUSTS, require, reset_defaults, reset_old_
 resize_bracket, resize_game, resize_move_lists, resize_table, resume_sleep,
 S, SafeId, save_option, scroll_adjust, ScrollDocument, set_drag_events, set_draggable, set_engine_events,
 set_fullscreen_events, set_game_events, set_section, SHADOW_QUALITIES, Show, show_banner, show_board_info,
-show_filtered_games, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game, startup_graph,
-startup_network, Style,
+show_filtered_games, show_popup, SP, start_3d, start_game, startup_3d, startup_config, startup_game, startup_global,
+startup_graph, startup_network, Style,
 TAB_NAMES, TABLES, TEXT, TextHTML, THEMES, TIMEOUT_tables, timers, toggle_fullscreen, translate_nodes,
 TRANSLATE_SPECIALS, translates:true, TYPES, Undefined, update_board_theme, update_debug, update_pgn, update_theme,
 update_twitch, VERSION, virtual_change_setting_special:true, virtual_check_hash_special:true, virtual_hide_areas:true,
 virtual_import_settings:true, virtual_opened_table_special:true, virtual_populate_areas_special:true,
 virtual_reset_settings_special:true, virtual_resize:true, virtual_set_modal_events_special:true,
 virtual_window_click_dataset:true, virtual_window_click_parent:true, virtual_window_click_parent_dataset:true, Visible,
-VisibleWidth, WB_LOWER, window, window_click, X_SETTINGS, xboards, Y, y_x
+VisibleWidth, WB_LOWER, window, window_click, X_SETTINGS, xboards, Y, y_three:true, y_x
 */
 'use strict';
 
@@ -212,7 +212,7 @@ function change_setting_special(name, value, close) {
 
     //
     if (name != 'preset')
-        Y.preset = 'custom';
+        Y['preset'] = 'custom';
 
     let ivalue = value * 1,
         main = xboards[y_x],
@@ -520,7 +520,7 @@ function check_hash_special(dico) {
     if (section != old_x) {
         old_x = section;
         if (old_x == 'live')
-            Y.game = 0;
+            Y['game'] = 0;
 
         changed_section();
         close_popups();
@@ -889,7 +889,8 @@ function init_customs(initial) {
  */
 function init_globals() {
     changed_hash();
-    api_translate_get(Y.new_version);
+    api_translate_get(Y.new_version, resize);
+    check_socket_io();
 
     TEXT(CacheId('version'), VERSION);
     HTML(CacheId('champions'), CHAMPIONS.map(text => {
@@ -905,7 +906,7 @@ function init_globals() {
     // delayed loading
     show_banner();
     update_twitch(null, null, true);
-    if (Y.three)
+    if (y_three)
         add_timeout('three', () => set_3d_scene, TIMEOUT_three);
 
     // google ads
@@ -1182,10 +1183,9 @@ function resize_panels() {
 function set_3d_scene(three) {
     if (three != undefined)
         save_option('three', three);
-    three = Y.three;
 
-    Style(CacheId('three'), [['color', three? '#fff': '#555']]);
-    S(CacheId('canvas'), three);
+    Style(CacheId('three'), [['color', y_three? '#fff': '#555']]);
+    S(CacheId('canvas'), y_three);
     if (three)
         start_3d();
 }
@@ -1416,7 +1416,6 @@ function window_click_parent_dataset(dataset) {
     return 0;
 }
 
-
 // EVENTS
 /////////
 
@@ -1535,7 +1534,7 @@ function set_global_events() {
         save_option(`twitch_${right}`, (left == 'show') * 1);
         update_twitch();
     });
-    C('#three', () => set_3d_scene(!Y.three));
+    C('#three', () => set_3d_scene(!y_three));
     C('#full0, #full1', () => {
         toggle_fullscreen(full => {
             S(CacheId('full0'), full);
@@ -1679,8 +1678,8 @@ function set_global_events() {
  */
 function load_settings() {
     load_defaults();
-    Y.preset = 'custom';
-    reset_old_settings();
+    Y['preset'] = 'custom';
+    reset_old_settings(VERSION);
     fix_old_settings();
 
     api_times = get_object('times') || {};
@@ -1694,7 +1693,7 @@ function prepare_settings() {
     // globals
     Y.no_ad = 0;
     Y.scroll = 0;
-    Y.three = 0;
+    y_three = 0;
     set_section('live');
 
     let DEFAULT_NO_IMPORTS = {
@@ -1765,36 +1764,37 @@ function prepare_settings() {
 
     Assign(DEV_NAMES, {
         'a': 'arrow',
-        'A': 'ad',                  // disable ads (for development)
+        'A': 'ad',                      // disable ads (for development)
         'b': 'board',
         'B': 'boom',
         'c': 'chart',
-        'C': 'cup',                 // force loading bracket.json
+        'C': 'cup',                     // force loading bracket.json
         'd': 'debug',
         'D': 'div',
-        'e': 'eval',                // live eval
+        'e': 'eval',                    // live eval
         'E': 'engine',
-        'f': 'fen',                 // parse_fen
+        'f': 'fen',                     // parse_fen
         'F': 'effect',
         'G': 'global',
-        'h': 'hold',                // hold button
-        'i': 'input',               // gamepad input
-        'j': 'json',                // static json files
-        'l': 'log',                 // analyse_log
+        'h': 'hold',                    // hold button
+        'i': 'input',                   // gamepad input
+        'j': 'json',                    // static json files
+        'l': 'log',                     // analyse_log
         'L': 'load',
         'm': 'mobil',
         'o': 'open',
-        'n': 'new',                 // new game debugging
+        'n': 'new',                     // new game debugging
         'q': 'queue',
-        's': 'socket',              // socket messages
+        's': 'socket',                  // socket messages
         'S': 'no_socket',
-        't': 'time',                // clock + pause/start click
-        'T': 'translate',           // gather translations
-        'U': 'ui',                  // UI events
+        't': 'time',                    // clock + pause/start click
+        'T': 'translate',               // gather translations
+        'U': 'ui',                      // UI events
         'w': 'wasm',
-        'W': 'worker',              // web worker
+        'W': 'worker',                  // web worker
         'X': 'explode',
         'y': 'ply',
+
     });
 
     Assign(HIDES, {
@@ -2414,7 +2414,7 @@ function startup() {
     __PREFIX = 'tc_';
 
     // 1:align_top, 2:align_bottom, + gap, priority
-    ANCHORS = {
+    Assign(ANCHORS, {
         '#bottom': [2, 0, 4],
         '#center0': [1, 4, 1],
         '#left0': [1, 4, 1],
@@ -2427,7 +2427,7 @@ function startup() {
         '#table-search': [2, -2, 1],
         '#tables .scroller': [1, 2, 1],
         '#tables': [1, 2, 1],
-    };
+    });
 
     // VB=viewBox=; PFC=path fill="currentColor"
     ICONS = {
@@ -2490,8 +2490,9 @@ function startup() {
 
     // pre-process
     detect_device();
-    startup_config();
     startup_3d();
+    startup_global();
+    startup_config();
     startup_game();
 
     prepare_settings();
@@ -2509,7 +2510,6 @@ function startup() {
     add_history();
     ready ++;
 
-    check_socket_io();
     init_globals();
     init_customs(true);
     quick_setup();

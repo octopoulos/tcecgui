@@ -1,6 +1,6 @@
 // common.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-12
+// @version 2021-06-21
 //
 // utility JS functions used in all the sites
 // jshint -W069
@@ -583,7 +583,7 @@ function HTML(sel, html, parent) {
         return '';
     if (IsObject(sel)) {
         if (html !== undefined) {
-            html += '';
+            html = html + '';
             if (html != sel.innerHTML)
                 sel.innerHTML = html;
             return html;
@@ -595,7 +595,7 @@ function HTML(sel, html, parent) {
         let node = _(sel, parent);
         return node? node.innerHTML: '';
     }
-    html += '';
+    html = html + '';
     let result;
     E(/** @type {string} */(sel), node => {
         if (html != node.innerHTML)
@@ -738,26 +738,6 @@ function Parent(node, {tag, class_, attrs, self}={}) {
     }
 
     return parent;
-}
-
-/**
- * Change properties
- * @param {Node|string} sel CSS selector or node
- * @param {string} prop property to change
- * @param {string|boolean=} value value to set
- * @param {Node=} parent
- */
-function Prop(sel, prop, value, parent) {
-    if (!sel)
-        return;
-    if (IsObject(sel)) {
-        sel[prop] = value;
-        return;
-    }
-    //
-    E(/** @type {string} */(sel), node => {
-        node[prop] = value;
-    }, parent);
 }
 
 /**
@@ -1000,27 +980,6 @@ function Style(sel, styles, add=true, parent=null) {
 }
 
 /**
- * Submit event on nodes
- * @param {Node|string} sel CSS selector or node
- * @param {Function} callback
- * @param {Node=} parent
- * @example
- * Submit('body', () => {return false})    // prevent any Submit
- */
-function Submit(sel, callback, parent) {
-    if (!sel)
-        return;
-    if (IsObject(sel)) {
-        sel.onsubmit = callback;
-        return;
-    }
-    //
-    E(/** @type {string} */(sel), node => {
-        node.onsubmit = callback;
-    }, parent);
-}
-
-/**
  * Get / set the textContent of nodes
  * @param {Node|string} sel CSS selector or node
  * @param {string|number=} text
@@ -1032,7 +991,7 @@ function TEXT(sel, text, parent) {
         return '';
     if (IsObject(sel)) {
         if (text !== undefined) {
-            text += '';
+            text = text + '';
             if (!sel.childElementCount) {
                 let child = sel.firstChild;
                 if (!child)
@@ -1053,7 +1012,7 @@ function TEXT(sel, text, parent) {
         let node = _(sel, parent);
         return node? node.textContent.trim(): '';
     }
-    text += '';
+    text = text + '';
     let result;
     E(/** @type {string} */(sel), node => {
         if (!node.childElementCount) {
@@ -1085,7 +1044,7 @@ function TextHTML(sel, text, parent) {
         return '';
     if (IsObject(sel)) {
         if (text !== undefined) {
-            text += '';
+            text = text + '';
             if (!sel.childElementCount && !text.includes('<')) {
                 let child = sel.firstChild;
                 if (!child)
@@ -1107,7 +1066,7 @@ function TextHTML(sel, text, parent) {
         let node = _(sel, parent);
         return node? node.textContent.trim(): '';
     }
-    text += '';
+    text = text + '';
     let is_html = (text.includes('<')),
         result;
     E(/** @type {string} */(sel), node => {
@@ -1174,22 +1133,6 @@ function Visible(sel, parent) {
     return true;
 }
 
-/**
- * Check if the node and its parents are visible
- * @param {Node|string} sel CSS selector or node
- * @param {Node=} parent
- * @returns {boolean}
- */
-function VisibleParent(sel, parent) {
-    let node = _(sel, parent);
-    while (node && node != parent) {
-        if (!Visible(node))
-            return false;
-        node = node.parentNode;
-    }
-    return true;
-}
-
 // NON-NODE FUNCTIONS
 /////////////////////
 /**
@@ -1214,30 +1157,20 @@ function ArrayJS(vector) {
 }
 
 /**
- * Choose a random element in an array
- * @param {!Array<*>} array
- * @param {number} length
- * @returns {*}
- */
-function Choice(array, length) {
-    return array[Floor(Random() * (length || array.length))];
-}
-
-/**
  * Clamp a number between min and max
  * Notes:
  * - null acts as 0, so 1 > null and -1 < null
  * - comparisons with undefined return false
  * @param {number} number
  * @param {number} min
- * @param {number} max
+ * @param {number=} max
  * @param {number=} min_set number becomes that value when lower than min
  * @returns {number} clamped number
  */
 function Clamp(number, min, max, min_set) {
     return (number < min)?
         (Number.isFinite(/** @type {number} */(min_set))? /** @type {number} */(min_set): min)
-    : (number > max? max: number);
+    : ((!isNaN(max) && number > max)? max: number);
 }
 
 /**
@@ -1282,24 +1215,9 @@ function CopyClipboard(text, callback) {
 }
 
 /**
- * Get the date, offset by a number of days
- * @param {number} offset day offset
- * @returns {string} date in YYYYMMDD format
- * @example
- * DateOffset(0)       // 20191212
- * DateOffset(1)       // 20191213
- * DateOffset(-1)      // 20191211
- */
-function DateOffset(offset) {
-    let date = new Date();
-    date.setUTCDate(date.getUTCDate() + offset);
-    return date.toISOString().slice(0, 10).replace(/-/g, '');
-}
-
-/**
  * Same as Python's set_default
  * @param {!Object} dico
- * @param {string} key
+ * @param {string|number} key
  * @param {!Array} def
  * @returns {!Array} dico[key]
  */
@@ -1341,7 +1259,7 @@ function DefaultInt(value, def) {
 /**
  * Same as Python's set_default
  * @param {!Object} dico
- * @param {string} key
+ * @param {string|number} key
  * @param {!Object} def
  * @returns {!Object} dico[key]
  */
@@ -1446,6 +1364,15 @@ function FormatFloat(text, align) {
 }
 
 /**
+ * Format a value to %
+ * @param {number} value
+ * @returns {string}
+ */
+function FormatPercent(value) {
+    return isNaN(value)? '-': `${Round(value * 10000) / 100}%`;
+}
+
+/**
  * Format a number:
  * - B: billion, M: million, K: thousand
  * - NaN => n/a
@@ -1536,56 +1463,6 @@ function GaussianRandom() {
         rand = rand / 10 + 0.5;
     }
     return rand;
-}
-
-/**
- * Hash a text
- * @param {string} text
- * @returns {number} hash
- */
-function HashText(text) {
-    let hash = 0;
-    for (let i = 0, length = text.length; i < length; i ++) {
-        let char = text.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0;
-    }
-    return (hash + 2147483647) + 1;
-}
-
-/**
- * Convert a HEX color to RGB(A)
- * @param {string} color
- * @param {boolean=} get_string
- * @param {number=} alpha
- * @returns {string|Array<number>}
- */
-function Hex2RGB(color, get_string, alpha) {
-    let off = (color[0] == '#')? 1: 0,
-        rgb = [0, 2, 4].map(i => parseInt(color.slice(off + i, off + i + 2), 16));
-
-    if (!get_string)
-        return rgb;
-
-    return (alpha == undefined)? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`: `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
-}
-
-/**
- * Check if an email is invalid
- * @param {string} email
- * @returns {boolean}
- */
-function InvalidEmail(email) {
-    return !/^\w[\w.-]+@\w[\w-]+(\.\w+)+$/.test(email);
-}
-
-/**
- * Check if phone is invalid
- * @param {string} phone
- * @returns {boolean}
- */
-function InvalidPhone(phone) {
-    return !/^[+]?([ -]?\d+|\(\d+\)){5,}$/.test(phone);
 }
 
 /**
@@ -1733,27 +1610,8 @@ function QueryString({discard, keep, key='search', replace, query, string}={}) {
  * @param {number=} low
  * @returns {number}
  */
-function RandomFloat(high=1, low=0) {
-    return low + Random() * (high - low);
-}
-
-/**
- * Random from [low to high[
- * @param {number=} high
- * @param {number=} low
- * @returns {number}
- */
 function RandomInt(high=1, low=0) {
     return low + Floor(Random() * (high - low));
-}
-
-/**
- * Random from -range/2, range/2
- * @param {number} range
- * @returns {number}
- */
-function RandomSpread(range) {
-    return range * (Random() - 0.5);
 }
 
 /**
@@ -1797,22 +1655,6 @@ function Resource(url, callback, {content=null, form, headers={}, method='GET', 
 }
 
 /**
- * Same as Python's set_default
- * @param {!Object} dico
- * @param {string} key
- * @param {*} def
- * @returns {*} dico[key]
- */
-function SetDefault(dico, key, def) {
-    let child = dico[key];
-    if (child === undefined) {
-        dico[key] = def;
-        child = dico[key];
-    }
-    return child;
-}
-
-/**
  * Smart split, tries with | and if not found, then with ' '
  * @param {string} text
  * @param {string=} char
@@ -1835,7 +1677,7 @@ function Split(text, char) {
  * @returns {string}
  */
 function Title(text) {
-    text += '';
+    text = text + '';
     return Upper(text.slice(0, 1)) + text.slice(1);
 }
 
@@ -1905,6 +1747,7 @@ if (typeof exports != 'undefined') {
         Floor: Floor,
         Format: Format,
         FormatFloat: FormatFloat,
+        FormatPercent: FormatPercent,
         FormatUnit: FormatUnit,
         From: From,
         FromSeconds: FromSeconds,
@@ -1913,16 +1756,12 @@ if (typeof exports != 'undefined') {
         HAS_GLOBAL: HAS_GLOBAL,
         HasClass: HasClass,
         HasClasses: HasClasses,
-        HashText: HashText,
-        Hex2RGB: Hex2RGB,
         Hide: Hide,
         HTML: HTML,
         Id: Id,
         Index: Index,
         Input: Input,
         InsertNodes: InsertNodes,
-        InvalidEmail: InvalidEmail,
-        InvalidPhone: InvalidPhone,
         IsArray: IsArray,
         IsDigit: IsDigit,
         IsFloat: IsFloat,
@@ -1943,14 +1782,12 @@ if (typeof exports != 'undefined') {
         ParseJSON: ParseJSON,
         PI: PI,
         Pow: Pow,
-        Prop: Prop,
         QueryString: QueryString,
         RandomInt: RandomInt,
         Round: Round,
         S: S,
         Safe: Safe,
         SafeId: SafeId,
-        SetDefault: SetDefault,
         Show: Show,
         Sign: Sign,
         Split: Split,
@@ -1964,7 +1801,6 @@ if (typeof exports != 'undefined') {
         Upper: Upper,
         Visible: Visible,
         VisibleHeight: VisibleHeight,
-        VisibleParent: VisibleParent,
         VisibleWidth: VisibleWidth,
     });
 }

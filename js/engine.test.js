@@ -1,6 +1,6 @@
 // engine.test.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-16
+// @version 2021-06-21
 //
 /*
 globals
@@ -10,17 +10,20 @@ expect, require, test
 
 let {Assign, CACHE_IDS, Clear, CreateNode, Id} = require('./common.js'),
     {
-        add_font, add_history, add_move, AUTO_ON_OFF, calculate_text_width, cannot_click, cannot_popup,
-        create_field_value, create_page_array, create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV,
-        DEV_NAMES, done_touch, fill_combo, find_area, FONTS, get_area, get_changed_touches, get_float, get_int,
-        get_object, get_section, get_string, guess_types, ICONS, import_settings, KEYS, LANGUAGES, load_defaults, me,
-        merge_settings, mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default, reset_settings, resize_text,
-        restore_history, sanitise_data, save_default, save_me, save_option, set_section, set_text, show_popup,
-        show_settings, stop_drag, touch_event, touch_handle, touch_moves, translate, translate_default,
-        translate_expression, translate_node, translate_nodes, translates, TYPES, update_svg, X_SETTINGS, Y, y_states,
+        add_history, add_move, AUTO_ON_OFF, cannot_click, cannot_popup, create_field_value, create_page_array,
+        create_svg_icon, create_url_list, DEFAULTS, detect_device, DEV, DEV_NAMES, done_touch, fill_combo, find_area,
+        get_area, get_changed_touches, get_float, get_int, get_object, get_string, guess_types, ICONS, import_settings,
+        KEYS, LANGUAGES, load_defaults, merge_settings, mix_hex_colors, ON_OFF, option_number, parse_dev, reset_default,
+        reset_defaults, reset_settings, resize_text, restore_history, sanitise_data, save_default, save_option,
+        set_section, show_popup, show_settings, stop_drag, touch_event, touch_handle, touch_moves, translate,
+        translate_default, translate_expression, translate_node, translate_nodes, translates, TYPES, update_svg,
+        X_SETTINGS, Y, y_states,
     } = require('./engine.js');
 
 Assign(DEFAULTS, {
+    background_color: '#000000',
+    background_image: '',
+    background_opacity: 0,
     language: '',
     limit: 20,
     skip: 0,
@@ -70,33 +73,6 @@ Assign(Y, {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// add_font
-// [D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M]
-[
-    ['', {}, {'': {'': 615}}],
-    [
-        'basic',
-        {
-            '': 615, 0: 711, 1: 515, 2: 711, 3: 711, 4: 738, 5: 711, 6: 715, 7: 687, 8: 711, 9: 715,
-            ' ': 352, '.': 309, ':': 309, '/': 530, '[': 425, ']': 425, '%': 1076, '|': 357,
-            B: 774, D: 919, k: 672, M: 1184, n: 747, N: 982, p: 772, s: 552, S: 697, T: 707, W: 1237,
-        },
-        {
-            '': {'': 615},
-            basic: {
-                '': 615, 0: 711, 1: 515, 2: 711, 3: 711, 4: 738, 5: 711, 6: 715, 7: 687, 8: 711, 9: 715,
-                ' ': 352, '.': 309, ':': 309, '/': 530, '[': 425, ']': 425, '%': 1076, '|': 357,
-                B: 774, D: 919, k: 672, M: 1184, n: 747, N: 982, p: 772, s: 552, S: 697, T: 707, W: 1237,
-            },
-        },
-    ],
-].forEach(([font, sizes, answer], id) => {
-    test(`add_font:${id}`, () => {
-        add_font(font, sizes);
-        expect(FONTS).toEqual(answer);
-    });
-});
-
 // add_history
 [
     {chat_height: 10, twitch_chat: 1},
@@ -128,29 +104,6 @@ Assign(Y, {
         }
         expect(add_move(change, stamp, ratio_x, ratio_y)).toEqual(answer);
         expect(touch_moves).toEqual(answer_array);
-    });
-});
-
-// calculate_text_width
-[
-    ['', '', 0],
-    ['?', '', 615],
-    ['1', 'basic', 515],
-    ['11', 'basic', 1030],
-    ['WDB', 'basic', 2930],
-    ['24.3%', 'basic', 3545],
-    ['24.3% W | 75.7% D | 0.0% B', 'basic', 15930],
-    ['52.1% W | 47.2% D | 0.7% B', '', 15990],
-    ['52.1% W | 47.2% D | 0.7% B', 'basic', 15734],
-    ['44.4% W | 44.4% D | 44.4% B', '', 16605],
-    ['44.4% W | 44.4% D | 44.4% B', 'basic', 16905],
-    ['[44.4% W | 44.4% D | 44.4% B]', '', 17835],
-    ['[44.4% W | 44.4% D | 44.4% B]', 'basic', 17755],
-    ['[D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M]', '', 28905],
-    ['[D: 20/61 | TB: 1495 | Sp: 120Mn/s | N: 424.8M]', 'basic', 26730],
-].forEach(([text, font, answer], id) => {
-    test(`calculate_text_width:${id}`, () => {
-        expect(calculate_text_width(text, font)).toEqual(answer);
     });
 });
 
@@ -409,24 +362,6 @@ Assign(Y, {
     test(`get_object:${id}`, () => {
         save_option(name, value);
         expect(get_object(name, def)).toEqual(answer);
-    });
-});
-
-// get_section
-[
-    [['app', ''], undefined, 'app'],
-    [[null, undefined], undefined, 'app'],
-    [[null, 'bed'], undefined, 'bed'],
-    [[null, 'bed'], 'custom', 'custom'],
-    [[undefined, 'pva'], undefined, 'pva'],
-    [['', 'pva'], undefined, 'pva'],
-    [['live', null], undefined, 'pva'],
-    [[null, ''], undefined, 'live'],
-    [[null, ''], 'custom', 'custom'],
-].forEach(([sections, section, answer], id) => {
-    test(`get_section:${id}`, () => {
-        set_section(sections[0], sections[1]);
-        expect(get_section(section)).toEqual(answer);
     });
 });
 
@@ -704,6 +639,24 @@ Assign(Y, {
     });
 });
 
+// reset_defaults
+[
+    [{language: 'fra', limit: 40, skip: 10}, /language|limit/, {language: 'eng', limit: 20, skip: 10}],
+    [{language: 'fra', limit: 40, skip: 10}, /language/, {language: 'eng', limit: 40, skip: 10}],
+    [{language: 'fra', limit: 40, skip: 10}, /.*/, {language: 'eng', limit: 20, skip: 0}],
+    [
+        {background_color: '#ff0000', background_image: 'xxyy', background_opacity: 0.5},
+        /^background_/,
+        {background_color: '#000000', background_image: '', background_opacity: 0},
+    ],
+].forEach(([y, pattern, answer], id) => {
+    test(`reset_defaults:${id}`, () => {
+        Assign(Y, y);
+        reset_defaults(pattern);
+        expect(Y).toEqual(expect.objectContaining(answer));
+    });
+});
+
 // reset_settings
 [
     [{'language': 'fra', 'theme': 'dark'}, true, {language: 'eng', theme: ''}],
@@ -787,24 +740,6 @@ Assign(Y, {
     });
 });
 
-// save_me
-[
-    [null, {}],
-    [{}, {}],
-    [{level: 255}, {level: 255}],
-    [{number: 1}, {level: 255, number: 1}],
-].forEach(([me_, answer], id) => {
-    test(`save_me:${id}`, () => {
-        if (!me_)
-            Clear(me);
-        else
-            Assign(me, me_);
-        save_me();
-        expect(me).toEqual(answer);
-        expect(get_object('me')).toEqual(answer);
-    });
-});
-
 // save_option
 [
     ['width', 100, '100'],
@@ -831,19 +766,6 @@ Assign(Y, {
         set_section(section, subsection);
         expect(Y.x).toEqual(answer[0]);
         expect(Y.s).toEqual(answer[1]);
-    });
-});
-
-// set_text
-[
-    ['hi', '<a data-t="hi">hi</a>'],
-    ['Japan', '<a data-t="Japan">Japon</a>'],
-    ['{Belgium} #1', '<a data-t="{Belgium} #1">Belgique #1</a>'],
-].forEach(([text, answer], id) => {
-    test(`set_text:${id}`, () => {
-        let soup = CreateNode('a', '');
-        set_text(soup, text);
-        expect(soup.outerHTML).toEqual(answer);
     });
 });
 

@@ -1,6 +1,6 @@
 // engine.js
 // @author octopoulo <polluxyz@gmail.com>
-// @version 2021-06-16
+// @version 2021-06-21
 //
 // used as a base for all frameworks
 // unlike common.js, states are required
@@ -41,7 +41,8 @@ let MSG_IP_GET = 1,
     MSG_USER_FORGOT = 11,
     MSG_USER_LOGIN = 12,
     MSG_USER_LOGOUT = 13,
-    MSG_USER_REGISTER = 14;
+    MSG_USER_PASSWORD = 14,
+    MSG_USER_REGISTER = 15;
 
 let MESSAGES = {
     'ip_get': MSG_IP_GET,
@@ -50,6 +51,7 @@ let MESSAGES = {
     'user_forgot': MSG_USER_FORGOT,
     'user_login': MSG_USER_LOGIN,
     'user_logout': MSG_USER_LOGOUT,
+    'user_password': MSG_USER_PASSWORD,
     'user_register': MSG_USER_REGISTER,
     'user_session': MSG_USER_SESSION,
     'user_subscribe': MSG_USER_SUBSCRIBE,
@@ -91,6 +93,7 @@ let __PREFIX = '_',
     },
     full_scroll = {x: 0, y: 0},
     full_target,
+    has_clicked,
     HIDES = {},
     HOST = '',
     ICONS = {},
@@ -119,6 +122,10 @@ let __PREFIX = '_',
         'input': 1,
         'modal': 1,
         'popup': 1,
+    },
+    NO_CYCLES = {
+        'language': 1,
+        'preset': 1,
     },
     // &1:no import/export, &2:no change setting, &4:update Y but no localStorage
     NO_IMPORTS = {
@@ -210,8 +217,11 @@ let __PREFIX = '_',
     WS = (typeof WebSocket != 'undefined')? WebSocket: null,
     X_SETTINGS = {},
     Y = {
+        ip: '',
+        ip_time: 0,
+        new_version: false,
         s: '',
-        x: '',
+        'x': '',
     },                                             // params
     y_index = -1,
     y_s = '',
@@ -807,6 +817,17 @@ function reset_default(name) {
 }
 
 /**
+ * Reset default settings matching the pattern
+ * @param {RegExp} pattern
+ */
+function reset_defaults(pattern) {
+    Keys(DEFAULTS).forEach(key => {
+        if (pattern.test(key))
+            reset_default(key);
+    });
+}
+
+/**
  * Reset some settings if the version is too old
  * @param {string} new_version
  */
@@ -908,14 +929,6 @@ function save_default(name, value) {
         remove_storage(name);
     else
         save_storage(name, value);
-}
-
-/**
- * Utility to quickly save `me`
- */
-function save_me() {
-    let copy = Assign({}, ...Keys(me).filter(key => !ME_SKIPS[key]).map(key => ({[key]: me[key]})));
-    save_storage('me', copy);
 }
 
 /**
@@ -1553,23 +1566,13 @@ function resize_text(text, resize, class_='resize') {
             len += 0.5;
     }
     else {
-        text += '';
+        text = text + '';
         len = text.length;
     }
 
     if (len > resize)
         text = `<span class="${class_}">${text}</span>`;
     return text;
-}
-
-/**
- * Set the text of a node and update its data-t
- * @param {string|Node} node CSS selector or node
- * @param {string} text
- */
-function set_text(node, text) {
-    Attrs(node, {'data-t': text});
-    TextHTML(node, translate_expression(text));
 }
 
 /**
@@ -1700,21 +1703,6 @@ function translate_nodes(parent) {
 ////////
 
 /**
- * Create a canvas for a texture
- * @param {number} width
- * @param {number=} height
- * @returns {!Object}
- */
-function create_canvas(width, height) {
-    let canvas = document.createElement('canvas'),
-        ctx = canvas.getContext('2d');
-
-    canvas.width = width;
-    canvas.height = height || width;
-    return ctx;
-}
-
-/**
  * Create an SVG icon
  * @param {string} name
  * @returns {string}
@@ -1816,15 +1804,6 @@ function fill_combo(letter, values, select, dico, no_translate, parent) {
 }
 
 /**
- * Get the current (sub)section
- * @param {string=} section
- * @returns
- */
-function get_section(section) {
-    return section || Y.s || y_x;
-}
-
-/**
  * Get the selector for a single letter
  * + letter is a selector if it has more than 1 letter
  * @param {string} letter
@@ -1834,44 +1813,6 @@ function letter_selector(letter) {
     if (letter.length == 1)
         letter = `#co${letter}`;
     return letter;
-}
-
-/**
- * Set a combo value
- * @param {string} letter combo letter: g, m, t, c, f + special cases: n, o, s
- * @param {string} value
- * @param {boolean|string=} save in memory, if string: use this for saving, ex: #classes => class
- * @param {Node=} parent parent node, document by default
- */
-function set_combo_value(letter, value, save=true, parent=null) {
-    // n, o, s special cases
-    if (!virtual_set_combo_special || !virtual_set_combo_special(letter, value)) {
-        let combo = _(letter_selector(letter), parent),
-            index = 0;
-        if (!combo)
-            return;
-
-        for (let option of combo.options) {
-            if (option.value.split('|')[0] == value) {
-                combo.selectedIndex = index;
-                break;
-            }
-            index ++;
-        }
-    }
-
-    // save in memory
-    if (save) {
-        if (IsString(save))
-            letter = /** @type {string} */(save);
-
-        if (Y[letter] !== value) {
-            Y[letter] = value;
-            // filter changed => go back to page 1
-            Y.skip = 0;
-        }
-        save_storage(letter, value);
-    }
 }
 
 /**
@@ -2094,15 +2035,6 @@ function push_state(query, {check, go, key='hash', replace}={}) {
 }
 
 /**
- * Change mouse cursor
- * @param {string} cursor
- */
-function set_cursor(cursor='') {
-    if (!device.mobile)
-        document.body.style.cursor = cursor;
-}
-
-/**
  * Toggle full screen mode
  * @param {Function=} callback
  */
@@ -2180,7 +2112,8 @@ function init_websockets({close, message, open}={}) {
             virtual_socket_close();
     };
     socket.onerror = e => {
-        LS('socket error:', Now(true) - app_start, e);
+        if (!socket_fail)
+            LS('socket error:', Now(true) - app_start, e);
     };
     socket.onopen = () => {
         socket_fail = 0;
@@ -2220,13 +2153,27 @@ function socket_error(text) {
 /**
  * Send data to a socket
  * @param {!Array|!Object} data
+ * @param {number=} ajax_session &1:session, &2:email+login
  * @returns {boolean?}
  */
-function socket_send(data) {
+function socket_send(data, ajax_session) {
     // no socket => use ajax
     if (!socket || socket.readyState != WS.OPEN) {
         if (DEV['socket'])
             LS('socket_ajax:', data);
+
+        // add session info when WebSocket is closed
+        if (ajax_session && IsArray(data)) {
+            let obj = data[1];
+            if (IsObject(obj)) {
+                if (ajax_session & 2) {
+                    obj['email'] = me['email'];
+                    obj['login'] = me['login'];
+                }
+                obj['session'] = me['session'];
+            }
+        }
+
         api_message(data, result => {
             if (result != null && virtual_socket_message)
                 virtual_socket_message(result);
@@ -2726,36 +2673,10 @@ function activate_tabs() {
 }
 
 /**
- * Add font + sizes
- * @param {string} font
- * @param {!Object} sizes sizes when font-size = 1280px
- */
-function add_font(font, sizes) {
-    let widths = DefaultObject(FONTS, font, {});
-    Assign(widths, sizes);
-}
-
-/**
  * Adjust popup position
  */
 function adjust_popups() {
     show_popup('', null, {adjust: true});
-}
-
-/**
- * Calculate the text width in px
- * @param {string} text
- * @param {string=} font
- * @returns {number}
- */
-function calculate_text_width(text, font) {
-    let default_width = FONTS[''][''],
-        width = 0,
-        widths = FONTS[font] || {};
-
-    for (let char of text.split(''))
-        width += widths[char] || widths[''] || default_width;
-    return width;
 }
 
 /**
@@ -3205,6 +3126,7 @@ function set_draggable() {
  * @param {Event} e
  */
 function window_click(e) {
+    has_clicked = true;
     Clear(KEYS);
     let cannot = cannot_click();
     if (cannot == 1)
@@ -3530,8 +3452,8 @@ function set_modal_events(parent) {
             }
             break;
         case 'SELECT':
-            if (next.options.length == 2) {
-                next.selectedIndex ^= 1;
+            if (!NO_CYCLES[next.name]) {
+                next.selectedIndex = (next.selectedIndex + 1) % next.options.length;
                 change_setting(next.name, next.value);
             }
             break;
@@ -3596,12 +3518,10 @@ function set_modal_events(parent) {
 if (typeof exports != 'undefined') {
     Object.assign(exports, {
         activate_tabs: activate_tabs,
-        add_font: add_font,
         add_history: add_history,
         add_move: add_move,
         add_timeout: add_timeout,
         AUTO_ON_OFF: AUTO_ON_OFF,
-        calculate_text_width: calculate_text_width,
         cannot_click: cannot_click,
         cannot_popup: cannot_popup,
         clear_timeout: clear_timeout,
@@ -3625,9 +3545,9 @@ if (typeof exports != 'undefined') {
         get_float: get_float,
         get_int: get_int,
         get_object: get_object,
-        get_section: get_section,
         get_string: get_string,
         guess_types: guess_types,
+        has_clicked: has_clicked,
         HIDES: HIDES,
         ICONS: ICONS,
         import_settings: import_settings,
@@ -3650,16 +3570,14 @@ if (typeof exports != 'undefined') {
         populate_areas: populate_areas,
         POPUP_ADJUSTS: POPUP_ADJUSTS,
         reset_default: reset_default,
+        reset_defaults: reset_defaults,
         reset_settings: reset_settings,
         resize_text: resize_text,
         restore_history: restore_history,
         sanitise_data: sanitise_data,
         save_default: save_default,
-        save_me: save_me,
         save_option: save_option,
-        set_combo_value: set_combo_value,
         set_section: set_section,
-        set_text: set_text,
         show_popup: show_popup,
         show_settings: show_settings,
         socket: socket,
